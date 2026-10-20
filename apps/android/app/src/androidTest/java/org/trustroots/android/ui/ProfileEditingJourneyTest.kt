@@ -1,6 +1,11 @@
 package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -8,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
@@ -16,6 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -25,6 +32,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.editprofile.EditProfileScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
+import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class ProfileEditingJourneyTest {
@@ -32,6 +40,38 @@ class ProfileEditingJourneyTest {
     private val server = ServerSocket(0)
 
     @After fun closeServer() = server.close()
+
+    @Test fun profileFormFieldsHaveConsistentVerticalSpacing() {
+        val filledContainerColour = AtomicReference(0)
+        compose.setContent {
+            TrustrootsTheme {
+                val surfaceContainerHighest = MaterialTheme.colorScheme.surfaceContainerHighest.toArgb()
+                SideEffect {
+                    filledContainerColour.set(surfaceContainerHighest)
+                }
+                EditProfileScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
+                    profile = MemberProfile("member-one", "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList()),
+                    onSessionInvalidated = {},
+                    onCancel = {},
+                    onSaved = {},
+                )
+            }
+        }
+
+        val nameBounds = compose.onNodeWithText("Name").fetchSemanticsNode().boundsInRoot
+        val taglineBounds = compose.onNodeWithText("Tagline").fetchSemanticsNode().boundsInRoot
+        val minimumGap = with(compose.density) { 12.dp.toPx() }
+        val sampleX = with(compose.density) { 8.dp.toPx().toInt() }
+        val sampleY = with(compose.density) { 24.dp.toPx().toInt() }
+        val sampledContainerColour = compose.onNodeWithText("Name")
+            .captureToImage()
+            .toPixelMap()[sampleX, sampleY]
+
+        assertEquals("Filled fields should use the Material surface container colour", filledContainerColour.get(), sampledContainerColour.toArgb())
+        assertTrue("Adjacent profile fields should have a consistent gap", taglineBounds.top - nameBounds.bottom >= minimumGap)
+    }
 
     @Test fun editsOwnProfileAndShowsSavedFields() {
         val savedBody = AtomicReference("")

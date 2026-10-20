@@ -13,11 +13,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.res.stringResource
 import org.trustroots.android.R
 import org.trustroots.android.ui.common.LiveFilterField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.api.MemberSession
@@ -112,8 +113,16 @@ internal fun MessageInboxScreen(
                 text.contains(filter.trim(), ignoreCase = true)
             }
             items(filteredThreads, key = { it.id }) { thread ->
-                Row(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(vertical = 8.dp).padding(contentPadding.horizontalInset())) {
-                    Column(Modifier.weight(1f).clickable { selected = thread.otherMember }) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { selected = thread.otherMember }
+                        .testTag("message-thread-${thread.id}")
+                        .padding(horizontal = 20.dp)
+                        .padding(vertical = 8.dp)
+                        .padding(contentPadding.horizontalInset()),
+                ) {
+                    Column(Modifier.weight(1f)) {
                         Row {
                             RemoteArtwork(
                                 url = thread.otherMember.id?.let { api.avatarURL(it, 64) },
@@ -128,7 +137,7 @@ internal fun MessageInboxScreen(
                         }
                     }
                     thread.otherMember.username?.let { username ->
-                        TextButton(onClick = { selectedProfile = username }) { Text("Profile") }
+                        OutlinedButton(onClick = { selectedProfile = username }) { Text("Profile") }
                     }
                 }
                 HorizontalDivider()

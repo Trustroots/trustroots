@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Trustroots.Base" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:colorAccent">@color/trustroots_primary</item>
+        <item name="android:navigationBarColor">@color/trustroots_surface</item>
+        <item name="android:windowBackground">@color/trustroots_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@color/trustroots_surface</item>
+    </style>
+    <style name="Theme.Trustroots" parent="Theme.Trustroots.Base" />
+</resources>

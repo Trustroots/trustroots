@@ -113,7 +113,15 @@ jobs:
           arch: x86_64
           disable-animations: true
           profile: pixel_6
-          script: bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
+          script: |
+            adb shell settings put system screen_off_timeout 2147483647
+            adb shell svc power stayon true
+            adb shell input keyevent KEYCODE_WAKEUP
+            adb shell wm dismiss-keyguard
+            adb shell settings put secure show_ime_with_hard_keyboard 1
+            adb shell ime list -s
+            adb shell settings get secure default_input_method
+            bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
       - name: Merge API 32 notification and WebView compatibility coverage
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:

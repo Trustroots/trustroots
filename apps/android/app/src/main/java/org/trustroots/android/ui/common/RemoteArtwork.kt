@@ -22,12 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.Brush
 import java.net.HttpURLConnection
@@ -37,6 +39,7 @@ import java.io.File
 import java.security.MessageDigest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.trustroots.android.R
 
 private val artworkCache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) {
     override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
@@ -63,7 +66,7 @@ internal fun RemoteArtwork(
                 modifier = Modifier.size(size),
             )
         } else {
-            Text(label.firstOrNull()?.uppercase().orEmpty(), color = Color.White)
+            Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
         }
     }
 }
@@ -77,6 +80,7 @@ internal fun ArtworkHero(
     background: Color,
     blurBackground: Boolean,
     testTag: String,
+    showTitle: Boolean = true,
 ) {
     val bitmap = rememberArtworkBitmap(url, sessionCookie)
     Box(Modifier.fillMaxWidth().height(250.dp).background(background).testTag(testTag)) {
@@ -89,7 +93,12 @@ internal fun ArtworkHero(
             )
         }
         Box(Modifier.fillMaxWidth().height(250.dp).background(
-            Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.20f), Color.Black.copy(alpha = 0.76f))),
+            Brush.verticalGradient(
+                listOf(
+                    colorResource(R.color.artwork_scrim_start),
+                    colorResource(R.color.artwork_scrim_end),
+                ),
+            ),
         ))
         Column(Modifier.align(Alignment.BottomStart).padding(20.dp)) {
             Box(Modifier.size(88.dp).clip(CircleShape).background(background), contentAlignment = Alignment.Center) {
@@ -101,13 +110,25 @@ internal fun ArtworkHero(
                         modifier = Modifier.size(88.dp),
                     )
                 } else {
-                    Text(label.firstOrNull()?.uppercase().orEmpty(), color = Color.White)
+                    Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
                 }
             }
-            Text(label, color = Color.White, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
-            Text(subtitle, color = Color.White, style = MaterialTheme.typography.bodyMedium)
+            if (showTitle) {
+                Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+            }
+            Text(subtitle, color = colorResource(R.color.artwork_on_scrim), style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
+
+@Composable
+private fun readableContentColor(background: Color): Color {
+    val luminance = background.luminance()
+    val whiteContrast = 1.05f / (luminance + 0.05f)
+    val blackContrast = (luminance + 0.05f) / 0.05f
+    return colorResource(
+        if (whiteContrast >= blackContrast) R.color.artwork_light_content else R.color.artwork_dark_content,
+    )
 }
 
 @Composable

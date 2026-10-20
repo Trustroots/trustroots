@@ -17,16 +17,31 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         MessageAlerts.captureIntent(intent)
         ApkUpdateAlerts.reconcile(this)
-        enableEdgeToEdge(
-            navigationBarStyle = SystemBarStyle.dark(
-                scrim = Color.argb(0x33, 0x00, 0x00, 0x00),
-            ),
-        )
+        applyAppearance()
         setContent {
             TrustrootsTheme {
                 TrustrootsApp()
             }
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        applyAppearance()
+    }
+
+    private fun applyAppearance() {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                lightScrim = getColor(R.color.trustroots_light_bar_scrim),
+                darkScrim = getColor(R.color.trustroots_dark_bar_scrim),
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                lightScrim = getColor(R.color.trustroots_light_bar_scrim),
+                darkScrim = getColor(R.color.trustroots_dark_bar_scrim),
+            ),
+        )
+        window.setBackgroundDrawableResource(R.color.trustroots_background)
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -4,8 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
+import android.app.UiModeManager
+import android.graphics.Color
+import android.os.ParcelFileDescriptor
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -16,8 +24,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import org.junit.Assume.assumeTrue
 import org.junit.rules.RuleChain
 import org.junit.rules.TestRule
 import org.junit.runner.Description
@@ -81,6 +92,65 @@ class MainActivityRotationJourneyTest {
         }
     }
 
+    @Test fun keepsSignInFormAndActivityAcrossSystemAppearanceChanges() {
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val uiModeManager = instrumentation.targetContext.getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
+        val originalNightMode = systemNightModeName(uiModeManager.nightMode)
+        assumeTrue(originalNightMode != null)
+        try {
+            setSystemNightMode("no")
+            ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+                compose.waitUntil(10_000) {
+                    compose.onAllNodesWithText("Username or email").fetchSemanticsNodes().isNotEmpty()
+                }
+                compose.onNodeWithText("Username or email").performTextInput("anonymous-member")
+                captureUsabilityScreenshot(compose, "appearance-sign-in-light")
+                val originalActivity = arrayOfNulls<MainActivity>(1)
+                scenario.onActivity { originalActivity[0] = it }
+
+                setSystemNightMode("yes")
+                compose.waitUntil(10_000) {
+                    (scenarioNightState(scenario) and Configuration.UI_MODE_NIGHT_MASK) ==
+                        Configuration.UI_MODE_NIGHT_YES
+                }
+                scenario.onActivity { activity ->
+                    assertSame(originalActivity[0], activity)
+                    assertEquals(
+                        Color.parseColor("#101613"),
+                        activity.getColor(org.trustroots.android.R.color.trustroots_background),
+                    )
+                    val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+                    assertFalse("Night status bar icons must be light", controller.isAppearanceLightStatusBars)
+                    assertFalse("Night navigation bar icons must be light", controller.isAppearanceLightNavigationBars)
+                }
+                val logoPixels = compose.onNodeWithContentDescription("Trustroots").captureToImage().toPixelMap()
+                val wordmarkHasLightInk = (logoPixels.height * 3 / 4 until logoPixels.height).any { y ->
+                    (0 until logoPixels.width).any { x -> logoPixels[x, y].luminance() > 0.9f }
+                }
+                assertTrue("The logo wordmark should remain legible against its night background", wordmarkHasLightInk)
+                compose.onNodeWithText("anonymous-member").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithText("Sign in").performScrollTo().assertIsDisplayed()
+                captureUsabilityScreenshot(compose, "appearance-sign-in-dark")
+            }
+        } finally {
+            setSystemNightMode(requireNotNull(originalNightMode))
+        }
+    }
+
+    private fun setSystemNightMode(mode: String) {
+        val descriptor = InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand("cmd uimode night $mode")
+        ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { it.readBytes() }
+    }
+
+    private fun systemNightModeName(mode: Int): String? = when (mode) {
+        UiModeManager.MODE_NIGHT_AUTO -> "auto"
+        UiModeManager.MODE_NIGHT_CUSTOM -> "custom"
+        UiModeManager.MODE_NIGHT_NO -> "no"
+        UiModeManager.MODE_NIGHT_YES -> "yes"
+        else -> null
+    }
+
     @Test fun newNotificationIntentUpdatesTheCurrentActivityAndConversation() {
         val previousDestination = MessageAlerts.destination.value
         MessageAlerts.clearDestination()
@@ -121,5 +191,11 @@ class MainActivityRotationJourneyTest {
         val orientation = IntArray(1)
         scenario.onActivity { orientation[0] = it.resources.configuration.orientation }
         return orientation[0]
+    }
+
+    private fun scenarioNightState(scenario: ActivityScenario<MainActivity>): Int {
+        val uiMode = IntArray(1)
+        scenario.onActivity { uiMode[0] = it.resources.configuration.uiMode }
+        return uiMode[0]
     }
 }

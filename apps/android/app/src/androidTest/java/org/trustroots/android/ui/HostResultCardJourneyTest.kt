@@ -1,15 +1,25 @@
 package org.trustroots.android.ui
 
+import android.content.res.Configuration
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -21,10 +31,11 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.TrustrootsCircle
+import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class HostResultCardJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test fun displaysHostContextAndOpensProfileFromCard() {
         val opened = AtomicBoolean(false)
@@ -84,5 +95,47 @@ class HostResultCardJourneyTest {
         compose.onNodeWithText("Up to 2 guests", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Close host result", useUnmergedTree = true).performScrollTo().performClick()
         assertTrue(closed.get())
+    }
+
+    @Test fun keepsHostCardWhiteAndReadableInDarkAppearance() {
+        val baseContext = compose.activity
+        val darkConfiguration = Configuration(baseContext.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        }
+        val darkContext = baseContext.createConfigurationContext(darkConfiguration)
+        val displayedOffer = mutableStateOf(
+            HostOffer("offer-three", "yes", "A quiet fictional room.", 1, MessageMember(null, "quiet-fox", "Quiet Fox")),
+        )
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalContext provides darkContext,
+                LocalConfiguration provides darkContext.resources.configuration,
+            ) {
+                TrustrootsTheme {
+                    HostResultCard(
+                        offer = displayedOffer.value,
+                        profile = MemberProfile(null, "quiet-fox", "Quiet Fox", "Travelling slowly", null, null, languages = emptyList()),
+                        sharedCircleIDs = emptySet(),
+                        isMeet = false,
+                        api = MobileApiClient("http://127.0.0.1:1"),
+                        session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                        onClose = {},
+                        onOpenProfile = {},
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithText("@quiet-fox").assertIsDisplayed()
+        compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
+        val pixels = compose.onNodeWithTag("hostResultCard").captureToImage().toPixelMap()
+        val inset = with(compose.density) { 8.dp.roundToPx() }
+        assertEquals(Color.White, pixels[inset, pixels.height / 2])
+
+        compose.runOnIdle {
+            displayedOffer.value = displayedOffer.value.copy(user = MessageMember(null, null, "Quiet Fox"))
+        }
+        val disabledPixels = compose.onNodeWithTag("hostResultCard").captureToImage().toPixelMap()
+        assertEquals(Color.White, disabledPixels[inset, disabledPixels.height / 2])
     }
 }

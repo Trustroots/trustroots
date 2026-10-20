@@ -150,7 +150,7 @@ class FormTransportFailureJourneysTest {
         compose.onNodeWithText("Save changes").performClick()
         val errorText = awaitNewText(initialTexts, apiFixture, expectedRequests = 1)
         assertEquals(0, invalidated.get())
-        compose.onNodeWithText(errorText).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText(errorText).assertIsDisplayed()
         compose.onNodeWithText("A fictional updated tagline.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Save changes").assertIsEnabled()
         assertEquals(null, saved.get())

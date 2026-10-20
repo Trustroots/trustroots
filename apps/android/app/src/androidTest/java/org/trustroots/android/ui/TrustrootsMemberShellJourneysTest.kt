@@ -100,6 +100,16 @@ class TrustrootsMemberShellJourneysTest {
         compose.onNodeWithText("Contacts").assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Send a message").assertDoesNotExist()
+
+        compose.onNodeWithText("Quiet Fox").performClick()
+        waitForText("A welcoming place to pause.")
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A welcoming place to pause.").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Contacts").assertIsDisplayed()
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         assertTrue(requests.any { it.path == "/api/contacts/member-self" })
         assertTrue(requests.any { it.path == "/api/users/quiet-fox" })
     }

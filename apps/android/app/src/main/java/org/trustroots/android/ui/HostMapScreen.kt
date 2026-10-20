@@ -39,7 +39,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.stringResource
-import org.trustroots.android.R
 import org.trustroots.android.ui.common.SubmittedSearchField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -56,10 +55,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -80,6 +80,7 @@ import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
+import org.trustroots.android.R
 import org.trustroots.android.api.HostOffer
 import org.trustroots.android.api.MapOffer
 import org.trustroots.android.api.MemberSession
@@ -114,6 +115,7 @@ internal fun HostMapScreen(
     mapViewFactory: (Context) -> MapView = { MapView(it) },
 ) {
     val context = LocalContext.current
+    val mapBackground = colorResource(R.color.trustroots_pale_green)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     // MapView animations must resume on Android's UI looper after background lookups.
@@ -191,7 +193,7 @@ internal fun HostMapScreen(
             // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
             setDestroyMode(false)
             setTileSource(hostMapTileSource(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN))
-            setBackgroundColor(android.graphics.Color.rgb(236, 249, 245))
+            setBackgroundColor(mapBackground.toArgb())
             setMultiTouchControls(true)
             controller.setZoom(6.5)
             controller.setCenter(GeoPoint(38.7223, -9.1393))
@@ -317,6 +319,7 @@ internal fun HostMapScreen(
         AndroidView(
             factory = { map },
             update = { view ->
+                view.setBackgroundColor(mapBackground.toArgb())
                 view.overlays.removeAll { it is Marker }
                 mapRevision
                 val clusters = clusterOffers(offers, view)
@@ -380,7 +383,7 @@ internal fun HostMapScreen(
         )
         Column(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
-                .testTag("map-controls").background(Color.White)
+                .testTag("map-controls").background(MaterialTheme.colorScheme.surface)
                 .padding(top = contentPadding.calculateTopPadding()),
         ) {
             Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {

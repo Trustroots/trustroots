@@ -1,6 +1,8 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -8,20 +10,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -43,7 +41,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -62,10 +60,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
@@ -73,9 +69,6 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.delay
@@ -90,6 +83,7 @@ import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import org.trustroots.android.analytics.AndroidUsageAnalytics
 import org.trustroots.android.analytics.UsageAnalytics
@@ -102,16 +96,15 @@ import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.notifications.MessageAlerts
-import org.trustroots.android.ui.theme.TrustrootsGreen
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.contacts.ContactsScreen
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalLeaveGuard
-import org.trustroots.android.ui.common.messageOr
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.profile.MemberProfileScreen
+import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
+import org.trustroots.android.ui.signin.SignInScreen
 
 @Composable
 internal fun TrustrootsApp(
@@ -121,6 +114,12 @@ internal fun TrustrootsApp(
 ) {
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
+    val activity = remember(context) {
+        requireNotNull(context.findComponentActivity()) { "TrustrootsApp must run in a ComponentActivity." }
+    }
+    val signInStoreHolder = remember(activity) {
+        ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, analytics) {
         val observer = LifecycleEventObserver { _, event ->
@@ -146,15 +145,18 @@ internal fun TrustrootsApp(
         return
     }
     if (session == null) {
+        val signInViewModel = remember(signInStoreHolder, apiBaseUrl, signedOutMessage) {
+            signInStoreHolder.getViewModel(apiBaseUrl, signedOutMessage)
+        }
         SignInScreen(
             analytics = analytics,
-            apiBaseUrl = apiBaseUrl,
-            initialMessage = signedOutMessage,
+            viewModel = signInViewModel,
             browserContent = browserContent,
             onSignedIn = {
                 sessionStore.save(it)
                 session = it
                 signedOutMessage = null
+                signInStoreHolder.clearDestination()
             },
         )
     } else {
@@ -174,11 +176,13 @@ internal fun TrustrootsApp(
             onSignedOut = {
                 session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
                 sessionStore.clear()
+                signInStoreHolder.clearDestination()
                 session = null
             },
             onSessionInvalidated = {
                 session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
                 sessionStore.clear()
+                signInStoreHolder.clearDestination()
                 session = null
                 signedOutMessage =
                     "Your session expired or is no longer valid. Please sign in again."
@@ -190,7 +194,7 @@ internal fun TrustrootsApp(
 @Composable
 internal fun StartupScreen(firstName: String?) {
     val buildDate = rememberBuildDate()
-    Box(Modifier.fillMaxSize().background(TrustrootsPaleGreen).safeDrawingPadding()) {
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer).safeDrawingPadding()) {
         Column(
             modifier = Modifier.align(Alignment.Center),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -219,155 +223,17 @@ internal fun StartupScreen(firstName: String?) {
 }
 
 @Composable
-private fun rememberBuildDate(): String {
+internal fun rememberBuildDate(): String {
     return remember {
         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT)
             .format(Date(BuildConfig.BUILD_EPOCH_SECONDS * 1_000))
     }
 }
 
-@Composable
-private fun SignInScreen(
-    analytics: UsageAnalytics,
-    apiBaseUrl: String,
-    initialMessage: String?,
-    onSignedIn: (MemberSession) -> Unit,
-    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
-) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var error by remember(initialMessage) { mutableStateOf(initialMessage) }
-    var isLoading by remember { mutableStateOf(false) }
-    var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
-    val scope = rememberCoroutineScope()
-    val api = remember(apiBaseUrl) { MobileApiClient(apiBaseUrl) }
-    val buildDate = rememberBuildDate()
-    val attemptSignIn: () -> Unit = {
-        scope.launch {
-            isLoading = true
-            error = null
-            api.signIn(username.trim(), password)
-                .onSuccess(onSignedIn)
-                .onFailure { error = it.messageOr("Could not reach Trustroots.") }
-            isLoading = false
-        }
-        Unit
-    }
-
-    UsageScreenTracking(analytics, if (browserRoute == null) UsageScreen.SignIn else null)
-    browserRoute?.let { route ->
-        browserContent(route, { browserRoute = null }, PaddingValues.Zero)
-        return
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(TrustrootsPaleGreen)
-            .safeDrawingPadding()
-            .imePadding(),
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 24.dp, top = 72.dp, end = 24.dp, bottom = 72.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Top,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.trustroots_logo),
-                contentDescription = "Trustroots",
-                modifier = Modifier.size(156.dp),
-            )
-            Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "Sharing, hosting and getting people together.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(28.dp))
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username or email") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password") },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done,
-                ),
-                keyboardActions = KeyboardActions(onDone = { attemptSignIn() }),
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            error?.let {
-                Text(
-                    it,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                )
-            }
-            Button(
-                onClick = attemptSignIn,
-                enabled = !isLoading && username.isNotBlank() && password.isNotBlank(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 18.dp),
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = Color.White,
-                        strokeWidth = 2.dp,
-                    )
-                } else {
-                    Text("Sign in")
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                TextButton(
-                    onClick = {
-                        browserRoute = BrowserRoute(
-                            title = "Join Trustroots",
-                            url = "https://www.trustroots.org/signup",
-                        )
-                    },
-                ) { Text("Join") }
-                TextButton(
-                    onClick = {
-                        browserRoute = BrowserRoute(
-                            title = "Reset password",
-                            url = "https://www.trustroots.org/password/forgot",
-                        )
-                    },
-                ) { Text("Forgot password?") }
-            }
-            Spacer(Modifier.height(20.dp))
-            UsageAnalyticsSettings(analytics)
-        }
-        Text(
-            "Build: $buildDate",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
-        )
-    }
+private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (this) {
+    is ComponentActivity -> this
+    is ContextWrapper -> baseContext.findComponentActivity()
+    else -> null
 }
 
 internal enum class Destination(val label: String) {
@@ -510,10 +376,10 @@ private fun MemberShell(
                 Text(
                     "Offline · Showing saved data from " +
                         SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(savedAt)),
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(TrustrootsGreen)
+                        .background(MaterialTheme.colorScheme.primary)
                         .padding(top = contentPadding.calculateTopPadding())
                         .padding(8.dp),
                 )
@@ -640,17 +506,17 @@ internal fun MemberNavigationBar(
 ) {
     NavigationBar(
         modifier = Modifier.shadow(elevation = 8.dp),
-        containerColor = TrustrootsGreen,
+        containerColor = MaterialTheme.colorScheme.primary,
         tonalElevation = 0.dp,
     ) {
         Destination.entries.forEach { item ->
             NavigationBarItem(
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = Color.White,
-                    selectedTextColor = Color.White,
-                    unselectedIconColor = Color.White.copy(alpha = 0.7f),
-                    unselectedTextColor = Color.White.copy(alpha = 0.7f),
-                    indicatorColor = Color.White.copy(alpha = 0.25f),
+                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                    unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
+                    unselectedTextColor = MaterialTheme.colorScheme.onPrimary,
+                    indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
                 ),
                 selected = destination == item,
                 label = { Text(item.label) },
@@ -765,7 +631,7 @@ internal fun MenuScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(TrustrootsPaleGreen)
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
