@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.math.roundToInt
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -174,8 +175,10 @@ class CirclesCollapsingHeaderJourneyTest {
             val back = compose.onNodeWithContentDescription("Back")
             val backBounds = back.getUnclippedBoundsInRoot()
             back.assertIsDisplayed()
-            assertTrue(backBounds.right - backBounds.left >= 48.dp)
-            assertTrue(backBounds.bottom - backBounds.top >= 48.dp)
+            val targetBounds = back.fetchSemanticsNode().boundsInRoot
+            val minimumTargetPixels = with(compose.density) { 48.dp.roundToPx() }
+            assertTrue("Back width must cover 48dp: $targetBounds", targetBounds.width.roundToInt() >= minimumTargetPixels)
+            assertTrue("Back height must cover 48dp: $targetBounds", targetBounds.height.roundToInt() >= minimumTargetPixels)
             assertTrue(backBounds.top >= root.top + 32.dp)
             assertTrue(backBounds.right <= root.right - 24.dp)
             assertTrue(backBounds.bottom <= root.bottom)
