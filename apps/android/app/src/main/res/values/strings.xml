@@ -3,6 +3,9 @@
     <string name="app_name">Trustroots</string>
     <string name="filter_circles">Filter circles</string>
     <string name="clear_circle_filter">Clear circle filter</string>
+    <string name="discover_circles">Discover circles</string>
+    <string name="circles_overview_description">Joining circles helps you find likeminded Trustroots members.</string>
+    <string name="back">Back</string>
     <string name="filter_conversations">Filter conversations</string>
     <string name="clear_conversation_filter">Clear conversation filter</string>
     <string name="member_search_hint">Name or username</string>
@@ -10,4 +13,22 @@
     <string name="clear_member_search">Clear member search</string>
     <string name="search_places">Search places</string>
     <string name="clear_place_search">Clear place search</string>
+    <string name="form_name">Name</string>
+    <string name="form_tagline">Tagline</string>
+    <string name="form_lives_in">Lives in</string>
+    <string name="form_from">From</string>
+    <string name="form_about_me">About me</string>
+    <string name="form_hosting_description">Hosting description</string>
+    <string name="form_maximum_guests">Maximum guests</string>
+    <string name="form_not_hosting_reason">Why you are not hosting</string>
+    <string name="form_public_experience_optional">Public experience (optional)</string>
+    <string name="form_email_address">Email address</string>
+    <string name="form_current_password">Current password</string>
+    <string name="form_new_password">New password</string>
+    <string name="form_verify_new_password">Verify new password</string>
+    <string name="form_username_or_email">Username or email</string>
+    <string name="form_password">Password</string>
+    <string name="form_message">Message</string>
+    <string name="form_send_message">Send</string>
+    <string name="form_sending_message">Sending…</string>
 </resources>

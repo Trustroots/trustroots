@@ -163,6 +163,7 @@ dependencies {
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("org.unifiedpush.android:connector:3.3.5")
     implementation("androidx.webkit:webkit:1.17.1")

@@ -1,12 +1,16 @@
 package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -19,6 +23,7 @@ import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -87,6 +92,7 @@ class PopulatedInboxJourneyTest {
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertDoesNotExist()
         assertTrue(requests.any { it.startsWith("GET /api/users/quiet-fox ") })
+        assertFalse(requests.any { it.startsWith("GET /api/messages/member-fox?") })
     }
 
     @Test fun openingConversationAndReturningReloadsThePopulatedInbox() {
@@ -122,6 +128,37 @@ class PopulatedInboxJourneyTest {
         compose.onNodeWithText("Filter conversations").assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertIsDisplayed()
+        assertTrue(requests.any { it.startsWith("GET /api/messages/member-fox?") })
+    }
+
+    @Test fun tappingTheOpenAreaAtTheEndOfAnInboxRowOpensItsConversation() {
+        startResponder { request ->
+            when {
+                request.startsWith("GET /api/messages?") -> "200 OK" to inboxPayload()
+                request.startsWith("GET /api/messages/member-fox?") -> "200 OK" to
+                    """[{"_id":"message-one","content":"A fictional note from the neighbour.","created":"${Instant.parse("2025-02-03T04:05:06Z")}","userFrom":{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"}}]"""
+                request.contains("/avatar?") -> "404 Not Found" to ""
+                else -> "404 Not Found" to "{}"
+            }
+        }
+        compose.setContent {
+            TrustrootsTheme {
+                MessageInboxScreen(api(), session, onSessionInvalidated = {})
+            }
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("message-thread-thread-fox").performTouchInput {
+            click(Offset(width - 4f, height / 2f))
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A fictional note from the neighbour.")
+                .fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("A fictional note from the neighbour.").assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/messages/member-fox?") })
     }
 

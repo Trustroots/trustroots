@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Surface
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -20,7 +21,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.theme.TrustrootsPaleGreen
 
 /** Matches `config.featureFlags.reference` (enabled in production and development). */
 internal const val referencesEnabled = true
@@ -38,7 +38,7 @@ internal fun ProfileActionBar(
     horizontalInset: PaddingValues,
 ) {
     Surface(
-        color = TrustrootsPaleGreen,
+        color = MaterialTheme.colorScheme.primaryContainer,
         shadowElevation = 2.dp,
         modifier = Modifier.fillMaxWidth().testTag("profileActions"),
     ) {

@@ -196,7 +196,7 @@ class DesignFixesJourneyTest {
             CirclesScreen(api, session, {}, contentPadding = padding)
         } }
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Circle 01").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(29)
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(30)
         compose.onNodeWithText("Circle 30").assertIsDisplayed()
         val last = compose.onNodeWithText("Circle 30").fetchSemanticsNode().boundsInRoot
         val navigation = compose.onNodeWithTag("navigation-circles").fetchSemanticsNode().boundsInRoot
@@ -204,7 +204,7 @@ class DesignFixesJourneyTest {
         compose.onNodeWithText("Circle 30").performClick()
         compose.onNodeWithText("Fictional circle 30 description").assertIsDisplayed()
         compose.onNodeWithText("Join circle").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithContentDescription("Back").performScrollTo().performClick()
+        compose.onNodeWithContentDescription("Back").assertIsDisplayed().performClick()
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
     }
 
