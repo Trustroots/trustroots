@@ -8,6 +8,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -31,6 +33,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Brush
 import java.net.HttpURLConnection
 import java.net.URL
@@ -81,42 +84,87 @@ internal fun ArtworkHero(
     blurBackground: Boolean,
     testTag: String,
     showTitle: Boolean = true,
+    heroHeight: Dp = 250.dp,
+    compact: Boolean = false,
+    bottomContent: (@Composable () -> Unit)? = null,
 ) {
     val bitmap = rememberArtworkBitmap(url, sessionCookie)
-    Box(Modifier.fillMaxWidth().height(250.dp).background(background).testTag(testTag)) {
+    val avatarSize = if (compact) 40.dp else 88.dp
+    Box(Modifier.fillMaxWidth().height(heroHeight).background(background).testTag(testTag)) {
         if (bitmap != null) {
             Image(
                 bitmap = requireNotNull(bitmap).asImageBitmap(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth().height(270.dp).then(if (blurBackground) Modifier.blur(14.dp) else Modifier),
+                modifier = Modifier.fillMaxWidth().height(heroHeight + 20.dp).then(if (blurBackground) Modifier.blur(14.dp) else Modifier),
             )
         }
-        Box(Modifier.fillMaxWidth().height(250.dp).background(
+        Box(Modifier.fillMaxWidth().height(heroHeight).background(
             Brush.verticalGradient(
-                listOf(
-                    colorResource(R.color.artwork_scrim_start),
-                    colorResource(R.color.artwork_scrim_end),
-                ),
+                if (compact) {
+                    listOf(colorResource(R.color.artwork_scrim_end), colorResource(R.color.artwork_scrim_end))
+                } else {
+                    listOf(colorResource(R.color.artwork_scrim_start), colorResource(R.color.artwork_scrim_end))
+                },
             ),
         ))
-        Column(Modifier.align(Alignment.BottomStart).padding(20.dp)) {
-            Box(Modifier.size(88.dp).clip(CircleShape).background(background), contentAlignment = Alignment.Center) {
-                if (bitmap != null) {
-                    Image(
-                        bitmap = requireNotNull(bitmap).asImageBitmap(),
-                        contentDescription = "$label image",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.size(88.dp),
-                    )
-                } else {
-                    Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
+        if (compact) {
+            Column(Modifier.align(Alignment.BottomStart).fillMaxWidth()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).testTag("$testTag-identity"),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    ProfileAvatar(bitmap, avatarSize, label, background)
+                    Column(Modifier.weight(1f)) {
+                        if (showTitle) {
+                            Text(
+                                label,
+                                color = colorResource(R.color.artwork_on_scrim),
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Text(
+                            subtitle,
+                            color = colorResource(R.color.artwork_on_scrim),
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
+                bottomContent?.invoke()
             }
-            if (showTitle) {
-                Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+        } else {
+            Column(Modifier.align(Alignment.BottomStart).fillMaxWidth()) {
+                Column(Modifier.padding(horizontal = 20.dp, vertical = if (bottomContent == null) 20.dp else 12.dp)) {
+                    ProfileAvatar(bitmap, avatarSize, label, background)
+                    if (showTitle) {
+                        Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+                    }
+                    Text(subtitle, color = colorResource(R.color.artwork_on_scrim), style = MaterialTheme.typography.bodyMedium)
+                }
+                bottomContent?.invoke()
             }
-            Text(subtitle, color = colorResource(R.color.artwork_on_scrim), style = MaterialTheme.typography.bodyMedium)
+        }
+    }
+}
+
+@Composable
+private fun ProfileAvatar(bitmap: Bitmap?, size: Dp, label: String, background: Color) {
+    Box(Modifier.size(size).clip(CircleShape).background(background), contentAlignment = Alignment.Center) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap.asImageBitmap(),
+                contentDescription = "$label image",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(size),
+            )
+        } else {
+            Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
         }
     }
 }
