@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package org.trustroots.android.ui
 
 import android.content.Context
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -44,6 +47,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -103,6 +107,7 @@ import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.contacts.ContactsScreen
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.LeaveGuard
@@ -648,6 +653,8 @@ internal fun MenuScreen(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val buildDate = rememberBuildDate()
+    val uiLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     val viewYourProfile = stringResource(R.string.screen_view_your_profile)
     val editProfile = stringResource(R.string.screen_edit_profile)
     val host = stringResource(R.string.screen_host)
@@ -660,13 +667,25 @@ internal fun MenuScreen(
     val communityTagline = stringResource(R.string.screen_travellers_community)
     val apiLabel = stringResource(R.string.screen_api_url, BuildConfig.API_BASE_URL)
     val buildLabel = stringResource(R.string.screen_build_date, buildDate)
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        topBar = {
+            MemberLargeTopAppBar(
+                title = stringResource(R.string.screen_destination_profile),
+                scrollBehavior = scrollBehavior,
+                contentPadding = contentPadding,
+            )
+        },
+    ) { appBarPadding ->
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
-            .padding(contentPadding.horizontalInset())
+        modifier = Modifier.fillMaxSize()
+            .padding(top = appBarPadding.calculateTopPadding())
             .verticalScroll(rememberScrollState())
-            .padding(top = 12.dp),
+            .padding(contentPadding.horizontalInset())
+            .padding(top = 12.dp)
+            .testTag("profileDestinationScreen"),
     ) {
         Column(
             modifier = Modifier
@@ -680,7 +699,7 @@ internal fun MenuScreen(
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "@${session.member.username}",
+                String.format(uiLocale, usernameHandleFormat, session.member.username),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
@@ -709,7 +728,7 @@ internal fun MenuScreen(
                 openBrowser(BrowserRoute(link.label, link.url))
             }
         }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 24.dp))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -735,6 +754,7 @@ internal fun MenuScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
     }
 }
 
