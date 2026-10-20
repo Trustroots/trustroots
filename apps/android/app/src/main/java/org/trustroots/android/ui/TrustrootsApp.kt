@@ -53,7 +53,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material.icons.filled.BubbleChart
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
@@ -62,6 +61,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -90,6 +90,7 @@ import org.trustroots.android.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import org.trustroots.android.analytics.AndroidUsageAnalytics
@@ -135,6 +136,9 @@ internal fun TrustrootsApp(
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
     }
+    val shellGraphStore = remember(activity) {
+        ViewModelProvider(activity).get(MemberShellViewModelStoreOwner::class.java)
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, analytics) {
         val observer = LifecycleEventObserver { _, event ->
@@ -154,6 +158,14 @@ internal fun TrustrootsApp(
         val remaining = 700 - (android.os.SystemClock.elapsedRealtime() - startedAt)
         if (remaining > 0) delay(remaining)
         starting = false
+    }
+    val shellGraphOwner = remember(shellGraphStore, starting, session?.member?.username) {
+        if (starting) null
+        else session?.let { shellGraphStore.activateAccount(it.member.username) }
+            ?: run {
+                shellGraphStore.clearAccount()
+                null
+            }
     }
     if (starting) {
         StartupScreen(session?.member?.displayName?.substringBefore(' '))
@@ -175,33 +187,53 @@ internal fun TrustrootsApp(
             },
         )
     } else {
-        MemberShell(
-            analytics = analytics,
-            session = requireNotNull(session),
-            responseCache = responseCache,
-            apiBaseUrl = apiBaseUrl,
-            reconcileAlerts = reconcileAlerts,
-            browserContent = browserContent,
-            onMemberUpdated = { member ->
-                session?.copy(member = member)?.let { updated ->
-                    sessionStore.save(updated)
-                    session = updated
-                }
-            },
-            onSignedOut = {
-                session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
-                sessionStore.clear()
-                signInStoreHolder.clearDestination()
-                session = null
-            },
-            onSessionInvalidated = {
-                session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
-                sessionStore.clear()
-                signInStoreHolder.clearDestination()
-                session = null
-                signedOutMessage = sessionExpiredMessage
-            },
-        )
+        val activeSession = requireNotNull(session)
+        CompositionLocalProvider(LocalViewModelStoreOwner provides requireNotNull(shellGraphOwner)) {
+            key(activeSession.member.username) {
+                val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
+                val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                    rememberViewModelStoreNavEntryDecorator(),
+                )
+                NavDisplay(
+                    backStack = rootBackStack,
+                    entryDecorators = rootDecorators,
+                    entryProvider = entryProvider {
+                        entry<MemberShellVisit> {
+                            MemberShell(
+                                analytics = analytics,
+                                session = activeSession,
+                                responseCache = responseCache,
+                                apiBaseUrl = apiBaseUrl,
+                                reconcileAlerts = reconcileAlerts,
+                                browserContent = browserContent,
+                                onMemberUpdated = { member ->
+                                    session?.copy(member = member)?.let { updated ->
+                                        sessionStore.save(updated)
+                                        session = updated
+                                    }
+                                },
+                                onSignedOut = {
+                                    session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
+                                    sessionStore.clear()
+                                    signInStoreHolder.clearDestination()
+                                    shellGraphStore.clearAccount()
+                                    session = null
+                                },
+                                onSessionInvalidated = {
+                                    session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
+                                    sessionStore.clear()
+                                    signInStoreHolder.clearDestination()
+                                    shellGraphStore.clearAccount()
+                                    session = null
+                                    signedOutMessage = sessionExpiredMessage
+                                },
+                            )
+                        }
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -265,6 +297,10 @@ internal enum class Destination(@StringRes val label: Int) {
 @Serializable
 internal data class MemberTabVisit(val destination: Destination, val visitID: Long) : NavKey
 
+/** Actual decorated owner for authenticated shell state; the username is a safe resource key. */
+@Serializable
+internal data class MemberShellVisit(val username: String) : NavKey
+
 @Composable
 private fun MemberShell(
     analytics: UsageAnalytics,
@@ -300,7 +336,6 @@ private fun MemberShell(
         else -> UsageScreen.Messages
     }
     UsageScreenTracking(analytics, analyticsScreen)
-    var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
@@ -310,8 +345,41 @@ private fun MemberShell(
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
     var initialMessageSender by remember { mutableStateOf<String?>(null) }
-    var ownAvatarID by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(api) { api.profile(session, session.member.username).onSuccess { ownAvatarID = it.id } }
+    val shellViewModel = rememberMemberShellViewModel(api, session)
+    val shellState by shellViewModel.state.collectAsState()
+    LaunchedEffect(activeVisitID) {
+        shellViewModel.onEvent(MemberShellEvent.ActiveVisitChanged(activeVisitID))
+    }
+    LaunchedEffect(messagesNavigationID) {
+        if (messagesNavigationID > 0) {
+            shellViewModel.onEvent(MemberShellEvent.RefreshUnread)
+        }
+    }
+    val shellLifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(shellLifecycleOwner, shellViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START -> shellViewModel.onEvent(MemberShellEvent.LifecycleChanged(true))
+                Lifecycle.Event.ON_STOP -> shellViewModel.onEvent(MemberShellEvent.LifecycleChanged(false))
+                else -> Unit
+            }
+        }
+        shellViewModel.onEvent(
+            MemberShellEvent.LifecycleChanged(
+                shellLifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED),
+            ),
+        )
+        shellLifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            shellLifecycleOwner.lifecycle.removeObserver(observer)
+            shellViewModel.onEvent(MemberShellEvent.LifecycleChanged(false))
+        }
+    }
+    LaunchedEffect(shellState.pendingSessionInvalidation?.id) {
+        val pending = shellState.pendingSessionInvalidation ?: return@LaunchedEffect
+        onSessionInvalidated()
+        shellViewModel.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
+    }
     val navigateTo: (Destination) -> Unit = { next ->
         if (next != destination) {
             if (destination == Destination.Menu && leaveGuard.value != null) {
@@ -361,22 +429,14 @@ private fun MemberShell(
         }
         leaveGuard.value?.invoke(leave) ?: leave()
     }
-    LaunchedEffect(session, destination, messagesNavigationID) {
-        while (true) {
-            api.inbox(session).onSuccess { threads ->
-                unreadMessageCount = threads.count { !it.read }
-            }
-            delay(60_000)
-        }
-    }
     CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
             bottomBar = {
                 MemberNavigationBar(
                     destination = destination,
-                    unreadMessageCount = unreadMessageCount,
-                    avatarURL = ownAvatarID?.let { api.avatarURL(it, 64) },
+                    unreadMessageCount = shellState.unreadMessageCount,
+                    avatarURL = shellState.avatarID?.let { api.avatarURL(it, 64) },
                     sessionCookie = session.cookieHeader,
                     memberLabel = session.member.displayName,
                     onNavigate = { item ->
