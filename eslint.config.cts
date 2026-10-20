@@ -242,10 +242,19 @@ const legacyConfig = {
       ],
       extends: [
         'plugin:react/recommended',
-        'plugin:testing-library/react',
         'plugin:jest-dom/recommended',
         'prettier',
       ],
+      plugins: ['testing-library'],
+      // Keep the v3 React preset's policy when upgrading the plugin. Newer
+      // presets also enforce test style rules across the existing suite.
+      rules: {
+        'testing-library/await-async-queries': 'error',
+        'testing-library/await-async-utils': 'error',
+        'testing-library/no-await-sync-queries': 'error',
+        'testing-library/no-debugging-utils': 'warn',
+        'testing-library/no-dom-import': ['error', 'react'],
+      },
       settings: {
         react: {
           version: reactVersion,
