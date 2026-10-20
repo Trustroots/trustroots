@@ -5,6 +5,7 @@ import org.gradle.testing.jacoco.tasks.JacocoReport
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
+    id("org.jetbrains.kotlin.plugin.serialization")
     jacoco
 }
 
@@ -158,12 +159,16 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation("androidx.activity:activity-compose:1.13.0")
+    implementation("androidx.navigation3:navigation3-runtime:1.2.0")
+    implementation("androidx.navigation3:navigation3-ui:1.2.0")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
     implementation("org.unifiedpush.android:connector:3.3.5")
     implementation("androidx.webkit:webkit:1.17.1")
