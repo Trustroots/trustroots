@@ -47,7 +47,8 @@ internal class KeyboardTestSupport(private val uiAutomation: UiAutomation, priva
                     "focusedView=${decor.findFocus()?.javaClass?.name} " +
                     "inputActive=${decor.findFocus()?.let(inputMethod::isActive)} " +
                     "imeVisible=${insets?.isVisible(WindowInsetsCompat.Type.ime())} " +
-                    "imeInsets=${insets?.getInsets(WindowInsetsCompat.Type.ime())} $windowDiagnostics",
+                    "imeInsets=${insets?.getInsets(WindowInsetsCompat.Type.ime())} $windowDiagnostics " +
+                    activityFocusDiagnostics(activity, uiAutomation),
                 error,
             )
         }
