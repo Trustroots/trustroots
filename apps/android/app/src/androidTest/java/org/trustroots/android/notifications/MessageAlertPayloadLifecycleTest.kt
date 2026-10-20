@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.app.NotificationManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.os.Build
 import android.os.SystemClock
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -97,7 +98,12 @@ class MessageAlertPayloadLifecycleTest {
 
     @Test
     fun failedDistributorRegistrationShowsItsReason() {
-        MessagePushService().onRegistrationFailed(FailedReason.NETWORK, "anonymous-instance")
+        val service = MessagePushService()
+        // Framework-created services have an attached base Context for resource access.
+        ContextWrapper::class.java.getDeclaredMethod("attachBaseContext", Context::class.java).apply {
+            isAccessible = true
+        }.invoke(service, context)
+        service.onRegistrationFailed(FailedReason.NETWORK, "anonymous-instance")
 
         assertEquals("Push distributor registration failed: NETWORK.", MessageAlerts.status.value)
     }
