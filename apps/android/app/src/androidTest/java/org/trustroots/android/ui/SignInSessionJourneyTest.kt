@@ -102,11 +102,13 @@ class SignInSessionJourneyTest {
         }
         compose.onNodeWithText("Username or email").performScrollTo().performClick().performTextInput("  steady-heron  ")
         compose.onNodeWithText("Password").performScrollTo().performClick().performTextInput("wrong-fictional-password")
+        keyboardTestSupport.awaitShown(compose)
         compose.onNodeWithText("Sign in").performScrollTo()
         assertAboveIme("Sign in")
         pressImeBack()
         compose.onNodeWithText("steady-heron", substring = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Password").performScrollTo().performClick()
+        keyboardTestSupport.awaitShown(compose)
         compose.onNodeWithText("Build:", substring = true).performScrollTo()
         assertAboveIme("Build:", substring = true)
         compose.onNodeWithText("Join").assertIsDisplayed()
@@ -227,7 +229,7 @@ class SignInSessionJourneyTest {
         val decor = compose.activity.window.decorView
         val imeBounds = keyboardTestSupport.imeBoundsOnScreen()
         val viewTop = decor.locationOnScreenY()
-        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds"
+        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds ${keyboardTestSupport.windowDiagnostics}"
         if (imeBounds == null) return false
         val bounds = compose.onNodeWithText(text, substring = substring).getUnclippedBoundsInRoot()
         val top = with(compose.density) { bounds.top.toPx() }

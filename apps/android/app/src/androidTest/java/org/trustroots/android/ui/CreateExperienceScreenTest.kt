@@ -97,6 +97,7 @@ class CreateExperienceScreenTest {
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
         compose.onNodeWithText("Public experience (optional)").performScrollTo().performClick()
         compose.onNodeWithText("Public experience (optional)").performTextInput("A fictional account of a kind visit.")
+        keyboardTestSupport.awaitShown(compose)
         compose.onNodeWithText("Public experience (optional)").performScrollTo()
         assertAboveIme("Public experience (optional)")
         assertAboveIme("Save changes")
@@ -126,7 +127,7 @@ class CreateExperienceScreenTest {
         val decor = compose.activity.window.decorView
         val imeBounds = keyboardTestSupport.imeBoundsOnScreen()
         val viewTop = decor.locationOnScreenY()
-        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds"
+        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds ${keyboardTestSupport.windowDiagnostics}"
         if (imeBounds == null) return false
         val bounds = compose.onNodeWithText(text).getUnclippedBoundsInRoot()
         val top = with(compose.density) { bounds.top.toPx() }

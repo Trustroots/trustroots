@@ -92,6 +92,7 @@ class HostOfferScreenTest {
 
         compose.onNodeWithText("Maximum guests").performScrollTo().performClick()
         compose.onNodeWithText("Maximum guests").performTextReplacement("3")
+        keyboardTestSupport.awaitShown(compose)
         compose.onNodeWithText("Maximum guests").performScrollTo()
         assertAboveIme("Maximum guests")
         assertAboveIme("Save changes")
@@ -117,7 +118,7 @@ class HostOfferScreenTest {
         val decor = compose.activity.window.decorView
         val imeBounds = keyboardTestSupport.imeBoundsOnScreen()
         val viewTop = decor.locationOnScreenY()
-        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds"
+        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds ${keyboardTestSupport.windowDiagnostics}"
         if (imeBounds == null) return false
         val bounds = compose.onNodeWithText(text).getUnclippedBoundsInRoot()
         val top = with(compose.density) { bounds.top.toPx() }
