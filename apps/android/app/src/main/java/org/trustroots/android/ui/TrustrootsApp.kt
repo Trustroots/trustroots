@@ -339,7 +339,7 @@ private fun MemberShell(
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    val api = remember(session.member.username) {
+    val api = remember(session.member.username, apiBaseUrl.trim().trimEnd('/')) {
         MobileApiClient(apiBaseUrl, responseCache, session.member.username)
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
@@ -349,11 +349,6 @@ private fun MemberShell(
     val shellState by shellViewModel.state.collectAsState()
     LaunchedEffect(activeVisitID) {
         shellViewModel.onEvent(MemberShellEvent.ActiveVisitChanged(activeVisitID))
-    }
-    LaunchedEffect(messagesNavigationID) {
-        if (messagesNavigationID > 0) {
-            shellViewModel.onEvent(MemberShellEvent.RefreshUnread)
-        }
     }
     val shellLifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(shellLifecycleOwner, shellViewModel) {
@@ -410,6 +405,9 @@ private fun MemberShell(
         }
         val openConversation = {
             initialMessageSender = requested.senderId
+            if (destination == Destination.Messages) {
+                shellViewModel.onEvent(MemberShellEvent.RefreshUnread)
+            }
             messagesNavigationID++
             navigateTo(Destination.Messages)
         }
@@ -440,9 +438,15 @@ private fun MemberShell(
                     sessionCookie = session.cookieHeader,
                     memberLabel = session.member.displayName,
                     onNavigate = { item ->
+                        val activeDestination = destination
                         val action = {
-                            if (item == Destination.Messages) messagesNavigationID++
-                            if (item == Destination.Circles && item == destination) {
+                            if (item == Destination.Messages) {
+                                messagesNavigationID++
+                                if (activeDestination == Destination.Messages) {
+                                    shellViewModel.onEvent(MemberShellEvent.RefreshUnread)
+                                }
+                            }
+                            if (item == Destination.Circles && item == activeDestination) {
                                 reselectCircles()
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
