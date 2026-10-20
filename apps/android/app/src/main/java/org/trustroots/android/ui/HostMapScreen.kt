@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -117,6 +118,7 @@ internal fun HostMapScreen(
 ) {
     val context = LocalContext.current
     val resources = LocalResources.current
+    val languageLocale = LocalConfiguration.current.locales[0]
     val mapBackground = colorResource(R.color.trustroots_pale_green)
     val hostSearchError = stringResource(R.string.screen_host_search_error)
     val placeSearchError = stringResource(R.string.screen_place_search_error)
@@ -511,7 +513,7 @@ internal fun HostMapScreen(
                                 label = {
                                     Text(
                                         if (selectedLanguages.isEmpty()) spokenLanguagesLabel
-                                        else selectedLanguages.sorted().joinToString { languageName(it) },
+                                        else selectedLanguages.sorted().joinToString { languageName(it, languageLocale) },
                                     )
                                 },
                             )
@@ -523,7 +525,7 @@ internal fun HostMapScreen(
                                 mapFilterLanguages.forEach { code ->
                                     DropdownMenuItem(
                                         text = {
-                                            Text("${if (code in selectedLanguages) "✓ " else ""}${languageName(code)}")
+                                            Text("${if (code in selectedLanguages) "✓ " else ""}${languageName(code, languageLocale)}")
                                         },
                                         onClick = {
                                             selectedLanguages = if (code in selectedLanguages) {

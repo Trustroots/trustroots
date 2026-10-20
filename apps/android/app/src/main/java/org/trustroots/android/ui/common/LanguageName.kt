@@ -2,20 +2,25 @@ package org.trustroots.android.ui.common
 
 import java.util.Locale
 
-internal fun languageName(code: String): String {
-    val names = mapOf(
-        "eng" to "English", "ger" to "German", "deu" to "German", "fre" to "French",
-        "fra" to "French", "spa" to "Spanish", "por" to "Portuguese", "ita" to "Italian",
-        "dut" to "Dutch", "nld" to "Dutch", "rus" to "Russian", "cat" to "Catalan",
-        "gsw" to "Swiss German", "swe" to "Swedish", "nor" to "Norwegian", "dan" to "Danish",
-        "fin" to "Finnish", "pol" to "Polish", "ces" to "Czech", "cze" to "Czech",
-        "ukr" to "Ukrainian", "tur" to "Turkish", "ara" to "Arabic", "rum" to "Romanian",
-        "ron" to "Romanian", "jpn" to "Japanese", "kor" to "Korean", "zho" to "Chinese",
-        "chi" to "Chinese", "hin" to "Hindi", "heb" to "Hebrew", "ell" to "Greek",
-        "gre" to "Greek",
-    )
+private val legacyLanguageTags = mapOf(
+    "ger" to "de", "fre" to "fr", "dut" to "nl", "cze" to "cs", "rum" to "ro",
+    "chi" to "zh", "gre" to "el", "alb" to "sq", "arm" to "hy", "baq" to "eu",
+    "bur" to "my", "geo" to "ka", "ice" to "is", "mac" to "mk", "mao" to "mi",
+    "may" to "ms", "per" to "fa", "slo" to "sk", "tib" to "bo", "wel" to "cy",
+)
+
+private val iso6393LanguageTags by lazy {
+    Locale.getISOLanguages().mapNotNull { languageTag ->
+        val iso2Locale = Locale.forLanguageTag(languageTag)
+        runCatching { iso2Locale.isO3Language.lowercase(Locale.ROOT) to languageTag }
+            .getOrNull()
+    }.toMap()
+}
+
+internal fun languageName(code: String, displayLocale: Locale = Locale.getDefault()): String {
     val normalised = code.lowercase(Locale.ROOT)
-    val display = Locale.forLanguageTag(normalised).getDisplayLanguage(Locale.ENGLISH)
-    return names[normalised] ?: display.takeIf { it.isNotBlank() && !it.equals(normalised, true) }
+    val languageTag = legacyLanguageTags[normalised] ?: iso6393LanguageTags[normalised] ?: normalised
+    val display = Locale.forLanguageTag(languageTag).getDisplayLanguage(displayLocale)
+    return display.takeIf { it.isNotBlank() && !it.equals(languageTag, true) }
         ?: code.uppercase(Locale.ROOT)
 }
