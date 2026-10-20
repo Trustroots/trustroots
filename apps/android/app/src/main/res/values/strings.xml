@@ -3,6 +3,9 @@
     <string name="app_name">Trustroots</string>
     <string name="filter_circles">Filter circles</string>
     <string name="clear_circle_filter">Clear circle filter</string>
+    <string name="discover_circles">Discover circles</string>
+    <string name="circles_overview_description">Joining circles helps you find likeminded Trustroots members.</string>
+    <string name="back">Back</string>
     <string name="filter_conversations">Filter conversations</string>
     <string name="clear_conversation_filter">Clear conversation filter</string>
     <string name="member_search_hint">Name or username</string>

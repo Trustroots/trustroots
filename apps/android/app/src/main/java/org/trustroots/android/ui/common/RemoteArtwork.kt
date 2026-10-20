@@ -80,6 +80,7 @@ internal fun ArtworkHero(
     background: Color,
     blurBackground: Boolean,
     testTag: String,
+    showTitle: Boolean = true,
 ) {
     val bitmap = rememberArtworkBitmap(url, sessionCookie)
     Box(Modifier.fillMaxWidth().height(250.dp).background(background).testTag(testTag)) {
@@ -112,7 +113,9 @@ internal fun ArtworkHero(
                     Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
                 }
             }
-            Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+            if (showTitle) {
+                Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+            }
             Text(subtitle, color = colorResource(R.color.artwork_on_scrim), style = MaterialTheme.typography.bodyMedium)
         }
     }
