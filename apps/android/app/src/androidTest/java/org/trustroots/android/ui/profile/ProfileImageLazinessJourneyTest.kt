@@ -31,6 +31,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.testing.hasFocusedNonActivityRoot
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -100,6 +101,7 @@ class ProfileImageLazinessJourneyTest {
 
         compose.onNodeWithTag("profileAvatar").performClick()
         compose.onNodeWithContentDescription("Profile photo of Quiet Fox").assertIsDisplayed()
+        compose.waitUntil(5_000) { hasFocusedNonActivityRoot(compose.activity) }
         InstrumentationRegistry.getInstrumentation().uiAutomation
             .executeShellCommand("input keyevent KEYCODE_BACK").use { descriptor ->
                 FileInputStream(descriptor.fileDescriptor).use { it.readBytes() }
