@@ -2,9 +2,11 @@ package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
-import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
@@ -74,11 +76,12 @@ class MemberProfileRelationshipFallbackJourneyTest {
         compose.waitUntil(10_000) {
             relationshipFailureServed.get() &&
                 requiredPaths.all { path -> requests.any { it.startsWith(path) } } &&
-                compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithContentDescription("More profile actions").fetchSemanticsNodes().isNotEmpty()
         }
 
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
-        compose.onNodeWithText("Add contact").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.onNodeWithText("Add contact").assertIsDisplayed()
         assertEquals("A non-auth relationship error must not invalidate the session", 0, invalidationCount.get())
         assertTrue(requests.any { it.startsWith("GET /api/contact-by/member-two ") })
         assertTrue(requests.all { it.startsWith("GET ") })

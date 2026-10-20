@@ -45,4 +45,11 @@
     <string name="profile_photo_zoom_out">Zoom out</string>
     <string name="profile_photo_zoom_reset">Reset profile photo zoom</string>
     <string name="profile_photo_zoom_reset_short">Reset</string>
+    <string name="profile_send_message">Send a message</string>
+    <string name="profile_more_actions">More profile actions</string>
+    <string name="profile_edit_your_profile">Edit your profile</string>
+    <string name="profile_share_experience">Share your experience</string>
+    <string name="profile_add_contact">Add contact</string>
+    <string name="profile_remove_contact">Remove contact</string>
+    <string name="profile_delete_contact_request">Delete contact request</string>
 </resources>

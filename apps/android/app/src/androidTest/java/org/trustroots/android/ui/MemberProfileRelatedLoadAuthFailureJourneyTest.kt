@@ -3,7 +3,9 @@ package org.trustroots.android.ui
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.runtime.Composable
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -74,6 +76,7 @@ class MemberProfileRelatedLoadAuthFailureJourneyTest {
         assertEquals(1, invalidationCount.get())
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-two?types=host ") })
         assertTrue(requests.any { it.startsWith("GET /api/contact-by/member-two ") })
+        compose.onNodeWithContentDescription("More profile actions").performClick()
         assertTrue(
             "An unresolved relationship should not expose an Add contact action after the 401",
             compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isEmpty(),

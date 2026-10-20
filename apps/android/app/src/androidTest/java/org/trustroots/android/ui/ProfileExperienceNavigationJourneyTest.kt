@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -53,14 +54,13 @@ class ProfileExperienceNavigationJourneyTest {
 
         openExperienceForm()
         compose.onNodeWithContentDescription("Cancel").performClick()
+        openExperienceMenu()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
 
         openExperienceForm()
         compose.onNodeWithText("Experience with Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Save changes").performClick()
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Share your experience").fetchSemanticsNodes().isNotEmpty()
-        }
+        openExperienceMenu()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
 
         assertTrue(requests.any { it.line.startsWith("POST /api/experiences ") && it.body.contains("\"userTo\":\"member-two\"") })
@@ -88,9 +88,7 @@ class ProfileExperienceNavigationJourneyTest {
         compose.onNodeWithText("Experience with Quiet Fox").assertIsDisplayed()
 
         compose.onNodeWithText("Save changes").performClick()
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Share your experience").fetchSemanticsNodes().isNotEmpty()
-        }
+        openExperienceMenu()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
 
         val saves = requests.filter { it.line.startsWith("POST /api/experiences ") }
@@ -109,11 +107,20 @@ class ProfileExperienceNavigationJourneyTest {
     )
 
     private fun openExperienceForm() {
+        openExperienceMenu()
+        compose.onNodeWithText("Share your experience").performClick()
+        compose.onNodeWithText("Experience with Quiet Fox").assertIsDisplayed()
+    }
+
+    private fun openExperienceMenu() {
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("More profile actions").fetchSemanticsNodes().isNotEmpty()
+        }
+        if (compose.onAllNodesWithText("Share your experience").fetchSemanticsNodes().isNotEmpty()) return
+        compose.onNodeWithContentDescription("More profile actions").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Share your experience").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Share your experience").performClick()
-        compose.onNodeWithText("Experience with Quiet Fox").assertIsDisplayed()
     }
 
     private fun profileReply(request: String): HttpReply = when {

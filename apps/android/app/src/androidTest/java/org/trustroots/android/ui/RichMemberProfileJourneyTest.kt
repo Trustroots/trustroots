@@ -1,14 +1,27 @@
 package org.trustroots.android.ui
 
+import android.content.res.Configuration
+import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -18,15 +31,17 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.core.view.WindowCompat
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
@@ -41,6 +56,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -50,7 +66,7 @@ import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class RichMemberProfileJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     private val server = ServerSocket(0).apply { soTimeout = 500 }
     private val session = MemberSession(
@@ -173,6 +189,121 @@ class RichMemberProfileJourneyTest {
         assertEquals(1, compose.onAllNodesWithTag("profileHero").fetchSemanticsNodes().size)
         assertEquals(heroBounds, compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot)
         assertEquals(tabsBounds, compose.onNodeWithTag("profileSections").fetchSemanticsNode().boundsInRoot)
+    }
+
+    @Test fun profileActionsStayOnArtworkWithAccessibleTargetsAfterTopInset() {
+        startResponder(ROOT_MAYBE_OFFER, profileWithManyCircles())
+        showProfile(
+            "quiet-fox",
+            availableHeight = 360.dp,
+            contentPadding = PaddingValues(top = 24.dp, bottom = 80.dp),
+        )
+
+        waitForText("Quiet Fox")
+        val screenBounds = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val heroBounds = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
+        val actionScrim = compose.onNodeWithTag("profileActionsScrim").captureToImage().toPixelMap()
+        val statusInsetBackground = actionScrim[1, 1]
+        val statusIconContrast = 1.05f / (statusInsetBackground.luminance() + 0.05f)
+        val actionsBounds = compose.onNodeWithTag("profileActions").fetchSemanticsNode().boundsInRoot
+        val backBounds = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
+        val messageBounds = compose.onNodeWithTag("profileMessageAction").fetchSemanticsNode().boundsInRoot
+        val menuBounds = compose.onNodeWithTag("profileActionsMenuButton").fetchSemanticsNode().boundsInRoot
+        val avatarBounds = compose.onNodeWithTag("profileAvatar").fetchSemanticsNode().boundsInRoot
+
+        assertEquals("Artwork should continue to the top behind the system inset", screenBounds.top, heroBounds.top, 1f)
+        assertTrue("White status icons should contrast with the artwork-backed inset; got $statusIconContrast:1", statusIconContrast >= 3f)
+        assertTrue("Actions should be drawn over the artwork", actionsBounds.top >= heroBounds.top && actionsBounds.bottom <= heroBounds.bottom)
+        assertTrue("The primary action should remain within the screen width", messageBounds.right <= screenBounds.right)
+        assertTrue("Back should begin below the 24dp top inset", backBounds.top >= with(compose.density) { 24.dp.toPx() })
+        compose.onNodeWithTag("profileMessageAction").assertIsDisplayed()
+        for ((label, bounds) in listOf(
+            "Back" to backBounds,
+            "Send a message" to messageBounds,
+            "More actions" to menuBounds,
+            "Avatar" to avatarBounds,
+        )) {
+            val widthDp = with(compose.density) { (bounds.right - bounds.left).toDp() }
+            val heightDp = with(compose.density) { (bounds.bottom - bounds.top).toDp() }
+            assertTrue("$label target should be at least 48dp wide; got $widthDp", widthDp >= 48.dp)
+            assertTrue("$label target should be at least 48dp tall; got $heightDp", heightDp >= 48.dp)
+        }
+
+        compose.onNodeWithTag("profileActionsMenuButton").performClick()
+        compose.onNodeWithText("Share your experience").assertIsDisplayed()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Add contact").assertIsDisplayed()
+        pressBackFromNonActivityRoot(compose.activity)
+        compose.onNodeWithTag("profilePager").assertIsDisplayed()
+        compose.onNodeWithTag("profileActionsMenuButton").assertIsDisplayed()
+    }
+
+    @Test fun statusBarIconsStayWhiteOverArtworkAndRestoreLatestThemeOnExit() {
+        startResponder(ROOT_MAYBE_OFFER)
+        val activity = compose.activity
+        val lightConfiguration = Configuration(activity.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_NO
+        }
+        val darkConfiguration = Configuration(activity.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        }
+        val lightContext = activity.createConfigurationContext(lightConfiguration)
+        val darkContext = activity.createConfigurationContext(darkConfiguration)
+
+        compose.setContent {
+            var darkAppearance by remember { mutableStateOf(false) }
+            var showingProfile by remember { mutableStateOf(true) }
+            val currentContext = if (darkAppearance) darkContext else lightContext
+            CompositionLocalProvider(
+                LocalContext provides currentContext,
+                LocalConfiguration provides currentContext.resources.configuration,
+            ) {
+                TrustrootsTheme {
+                    Box(Modifier.fillMaxSize()) {
+                        if (showingProfile) {
+                            MemberProfileScreen(
+                                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                                session = session,
+                                username = "quiet-fox",
+                                onSessionInvalidated = {},
+                                onBack = { showingProfile = false },
+                            )
+                        } else {
+                            TextButton(onClick = { showingProfile = true }) { Text("Open profile") }
+                        }
+                        TextButton(
+                            onClick = { darkAppearance = !darkAppearance },
+                            modifier = Modifier.align(Alignment.BottomStart),
+                        ) {
+                            Text(if (darkAppearance) "Use light appearance" else "Use dark appearance")
+                        }
+                    }
+                }
+            }
+        }
+
+        val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)
+        waitForText("Quiet Fox")
+        assertTrue("Artwork header should use white status icons", !controller.isAppearanceLightStatusBars)
+
+        compose.onNodeWithText("Use dark appearance").performClick()
+        compose.waitForIdle()
+        assertTrue("Status icons should stay white while the artwork header is open", !controller.isAppearanceLightStatusBars)
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Open profile").assertIsDisplayed()
+        assertTrue("Exiting the profile in dark appearance should restore white icons", !controller.isAppearanceLightStatusBars)
+
+        compose.onNodeWithText("Open profile").performClick()
+        waitForText("Quiet Fox")
+        assertTrue("Artwork header should again use white status icons", !controller.isAppearanceLightStatusBars)
+        compose.onNodeWithText("Use light appearance").performClick()
+        compose.waitForIdle()
+        assertTrue("Status icons should stay white when appearance changes back to light", !controller.isAppearanceLightStatusBars)
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Open profile").assertIsDisplayed()
+        assertTrue("The latest light appearance should be restored", controller.isAppearanceLightStatusBars)
     }
 
     @Test fun compactProfileKeepsUsableScrollableSectionViewport() {
