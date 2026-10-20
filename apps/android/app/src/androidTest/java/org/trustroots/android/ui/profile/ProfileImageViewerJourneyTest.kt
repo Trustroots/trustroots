@@ -18,6 +18,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -221,6 +222,42 @@ class ProfileImageViewerJourneyTest {
         compose.onNodeWithContentDescription("Zoom in").performClick()
         compose.onNodeWithContentDescription("Zoom out").performClick()
         image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, fitScale))
+    }
+
+    @Test fun screenReaderActionsZoomAndResetThePhoto() {
+        val bitmap = Bitmap.createBitmap(2_000, 1_500, Bitmap.Config.ARGB_8888)
+        compose.setContent {
+            MaterialTheme {
+                ProfileImageViewer(
+                    bitmap = bitmap,
+                    isLoading = false,
+                    memberLabel = "Sample member",
+                    onClose = {},
+                )
+            }
+        }
+
+        val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
+        compose.waitUntil(2_000) { imageViewport(image) != IntSize.Zero }
+        val fitScale = image.fetchSemanticsNode().config[ProfileImageScaleKey]
+        assertTrue("The fixture must have room to zoom in", fitScale < 1f)
+
+        fun activate(label: String) {
+            val action = image.fetchSemanticsNode().config[SemanticsActions.CustomActions]
+                .single { it.label == label }
+            compose.runOnIdle { assertTrue(action.action()) }
+            compose.waitForIdle()
+        }
+
+        activate("Zoom in")
+        val zoomedScale = image.fetchSemanticsNode().config[ProfileImageScaleKey]
+        assertTrue(zoomedScale > fitScale && zoomedScale <= 1f)
+        activate("Zoom out")
+        assertEquals(fitScale, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
+        activate("Zoom in")
+        activate("Reset")
+        assertEquals(fitScale, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
+        assertEquals(0f to 0f, imageTranslation(image))
     }
 
     @Test fun pinchAndPanGesturesUpdateTheBoundedImageTransform() {
