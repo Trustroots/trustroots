@@ -16,12 +16,12 @@ class ApkUpdateAlertsTest {
             {"tag_name":"android-preview-21","body":"Build 100021.","draft":true,"prerelease":true,"assets":[{"name":"trustroots-android-0.1-21.apk","size":10}]}
         ]"""
 
-        val release = latestAndroidPreviewRelease(response, 100017)
+        val release = latestAndroidPreviewRelease(response, 100017) { "Android preview $it" }
 
         assertEquals(100020, release?.versionCode)
         assertEquals("Android preview 0.1-20", release?.versionName)
         assertEquals("https://github.com/Trustroots/trustroots/releases/tag/android-preview-20", release?.pageUrl)
-        assertNull(latestAndroidPreviewRelease(response, 100020))
+        assertNull(latestAndroidPreviewRelease(response, 100020) { "Android preview $it" })
     }
 
     @Test fun rejectsPreviewWithoutApkOrBuildCode() {
@@ -31,7 +31,7 @@ class ApkUpdateAlertsTest {
             {"tag_name":"android-preview-24","body":"Build 100024.","draft":false,"prerelease":false,"assets":[{"name":"trustroots-android-0.1-24.apk","size":10}]}
         ]"""
 
-        assertNull(latestAndroidPreviewRelease(response, 100021))
+        assertNull(latestAndroidPreviewRelease(response, 100021) { "Android preview $it" })
     }
 
     @Test fun rejectsMalformedReleaseEntriesAndFallsBackToGeneratedName() {
@@ -42,7 +42,7 @@ class ApkUpdateAlertsTest {
             {"tag_name":"android-preview-31","body":"Build 100031.","name":"   ","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-0.1-31.apk","size":10}]}
         ]"""
 
-        val release = latestAndroidPreviewRelease(response, 100029)
+        val release = latestAndroidPreviewRelease(response, 100029) { "Android preview $it" }
 
         assertEquals(
             AndroidPreviewRelease(

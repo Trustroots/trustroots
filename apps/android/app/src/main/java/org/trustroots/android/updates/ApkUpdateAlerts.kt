@@ -35,6 +35,7 @@ internal data class AndroidPreviewRelease(
 internal fun latestAndroidPreviewRelease(
     response: String,
     installedVersionCode: Int,
+    fallbackVersionName: (Int) -> String,
 ): AndroidPreviewRelease? {
     val releases = JSONArray(response)
     val tagPattern = Regex("^android-preview-[0-9]+(?:-v[0-9A-Za-z._-]+)?$")
@@ -56,7 +57,7 @@ internal fun latestAndroidPreviewRelease(
         if (!hasApk) return@mapNotNull null
         AndroidPreviewRelease(
             versionCode = versionCode,
-            versionName = release.optString("name").ifBlank { "Android preview $versionCode" },
+            versionName = release.optString("name").ifBlank { fallbackVersionName(versionCode) },
             pageUrl = "https://github.com/Trustroots/trustroots/releases/tag/$tag",
         )
     }.maxByOrNull { it.versionCode }
@@ -159,11 +160,11 @@ internal object ApkUpdateAlerts {
         },
     ): ApkUpdateCheckResult = checkForAndroidPreviewUpdate(
         isEnabled = { isEnabled(context, previewAlertsEnabled) },
-        fetchRelease = { fetchLatestRelease(releasesUrl) },
+        fetchRelease = { fetchLatestRelease(context, releasesUrl) },
         notify = { notifyOnce(context, it, previewAlertsEnabled, postNotification) },
     )
 
-    private fun fetchLatestRelease(releasesUrl: String): AndroidPreviewRelease? {
+    private fun fetchLatestRelease(context: Context, releasesUrl: String): AndroidPreviewRelease? {
         val connection = URL(releasesUrl).openConnection() as HttpURLConnection
         connection.connectTimeout = 10_000
         connection.readTimeout = 10_000
@@ -172,7 +173,9 @@ internal object ApkUpdateAlerts {
         return try {
             if (connection.responseCode !in 200..299) error("Release request failed")
             val response = connection.inputStream.bufferedReader().use { it.readText() }
-            latestAndroidPreviewRelease(response, BuildConfig.VERSION_CODE)
+            latestAndroidPreviewRelease(response, BuildConfig.VERSION_CODE) { versionCode ->
+                context.getString(R.string.android_preview_version, versionCode)
+            }
         } finally {
             connection.disconnect()
         }
@@ -198,7 +201,7 @@ internal object ApkUpdateAlerts {
                 )
             ) return
             manager.createNotificationChannel(
-                NotificationChannel(CHANNEL_ID, "APK updates", NotificationManager.IMPORTANCE_DEFAULT),
+                NotificationChannel(CHANNEL_ID, context.getString(R.string.apk_updates_channel), NotificationManager.IMPORTANCE_DEFAULT),
             )
             val openRelease = Intent(Intent.ACTION_VIEW, Uri.parse(release.pageUrl))
             val contentIntent = PendingIntent.getActivity(
@@ -209,8 +212,8 @@ internal object ApkUpdateAlerts {
             )
             val notification = Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_update_notification)
-                .setContentTitle("Trustroots update available")
-                .setContentText("${release.versionName} is ready to download.")
+                .setContentTitle(context.getString(R.string.apk_update_available_title))
+                .setContentText(context.getString(R.string.apk_update_available_text, release.versionName))
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true)
                 .build()

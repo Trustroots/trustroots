@@ -115,6 +115,8 @@ class MessageEndpointRegistrationTest {
         saveEndpoint = saveEndpoint,
         unregisterEndpoint = unregisterEndpoint,
         setStatus = setStatus,
+        registrationFailedMessage = "Could not register this distributor endpoint with Trustroots.",
+        registrationSucceededMessage = "Message alerts are ready.",
     )
 
     private fun session(username: String) = MemberSession(
