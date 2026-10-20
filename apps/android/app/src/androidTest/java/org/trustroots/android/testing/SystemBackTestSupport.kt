@@ -32,6 +32,10 @@ internal fun pressBackFromNonActivityRoot(activity: Activity) {
     instrumentation.waitForIdleSync()
 }
 
+/** Wait for WindowManager focus before sending a physical Back key to a dialog. */
+internal fun hasFocusedNonActivityRoot(activity: Activity): Boolean =
+    topNonActivityRoot(activity)?.hasWindowFocus() == true
+
 @Suppress("PrivateApi")
 private fun topNonActivityRoot(activity: Activity): View? {
     val manager = Class.forName("android.view.WindowManagerGlobal")
