@@ -82,10 +82,10 @@ import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.
 import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
-import { useAuth, type AuthUser } from './auth';
-import { useSettings } from './AppProviders';
-import ReactAppShell from './ReactAppShell';
-import { signout } from './shell-helpers';
+import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
+import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import ReactAppShell from '@/modules/core/client/react-app/ReactAppShell';
+import { signout } from '@/modules/core/client/react-app/shell-helpers';
 
 type RouteUser = AuthUser;
 type RouteContext = {
