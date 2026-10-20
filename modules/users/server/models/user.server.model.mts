@@ -264,7 +264,7 @@ const UserSchema = new Schema<
   extSitesServas: {
     type: String,
     trim: true,
-    validate: [
+    match: [
       /^(?:(?:household|address)\/[^\s?#\\]+)?$/,
       'Please provide a Servas household/ or address/ profile path.',
     ],

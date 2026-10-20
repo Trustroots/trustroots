@@ -76,6 +76,12 @@ describe('User Model Unit Tests:', function () {
   });
   afterEach(utils.clearDatabase);
   describe('Servas profile paths', function () {
+    it('allows asynchronous validation with an omitted or explicitly undefined path', async function () {
+      const member = new User(user3);
+      await member.validate();
+      member.extSitesServas = undefined;
+      await member.validate();
+    });
     for (const path of [
       '',
       'household/fictional-host',
