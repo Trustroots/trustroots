@@ -349,16 +349,16 @@ internal fun HostMapScreen(
                 val clusters = clusterOffers(offers, view)
                 clusters.forEach { cluster ->
                     val offer = cluster.first()
-                    val color = when {
-                        cluster.size > 1 -> 0xFF12B591.toInt()
-                        offer.type == "meet" -> 0xFF11B4DA.toInt()
-                        offer.status == "maybe" -> 0xFFF2AE43.toInt()
-                        else -> 0xFF58BA58.toInt()
+                    val colorResource = when {
+                        cluster.size > 1 -> R.color.map_marker_cluster
+                        offer.type == "meet" -> R.color.map_marker_meet
+                        offer.status == "maybe" -> R.color.map_marker_maybe
+                        else -> R.color.map_marker_host
                     }
                     val marker = Marker(view).apply {
                         position = GeoPoint(cluster.map { it.latitude }.average(), cluster.map { it.longitude }.average())
                         title = if (cluster.size > 1) resources.getString(R.string.screen_offers_count, cluster.size) else potentialHostLabel
-                        icon = mapMarkerIcon(view, color, if (cluster.size > 1) cluster.size.toString() else null)
+                        icon = mapMarkerIcon(view, colorResource, if (cluster.size > 1) cluster.size.toString() else null)
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         setOnMarkerClickListener { _, _ ->
                             if (cluster.size > 1) {
@@ -389,7 +389,7 @@ internal fun HostMapScreen(
                     val marker = Marker(view).apply {
                         position = GeoPoint(notes.map { it.latitude }.average(), notes.map { it.longitude }.average())
                         title = if (notes.size == 1) communityNoteLabel else resources.getString(R.string.screen_community_notes_count, notes.size)
-                        icon = mapMarkerIcon(view, 0xFF1565C0.toInt(), if (notes.size > 1) notes.size.toString() else null)
+                        icon = mapMarkerIcon(view, R.color.map_marker_community_note, if (notes.size > 1) notes.size.toString() else null)
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         setOnMarkerClickListener { _, _ ->
                             if (cluster.size > 1 && view.zoomLevelDouble < 14) {
@@ -616,19 +616,19 @@ internal fun clusterOffers(offers: List<MapOffer>, map: MapView): List<List<MapO
     }.values.flatMap { group -> if (group.size >= 3) listOf(group) else group.map(::listOf) }
 }
 
-private fun mapMarkerIcon(map: MapView, color: Int, count: String?): BitmapDrawable {
+private fun mapMarkerIcon(map: MapView, colorResource: Int, count: String?): BitmapDrawable {
     val density = map.resources.displayMetrics.density
     val size = (if (count == null) 34 else 50) * density
     val bitmap = Bitmap.createBitmap(size.toInt(), size.toInt(), Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     val centre = size / 2f
-    paint.color = android.graphics.Color.WHITE
+    paint.color = map.resources.getColor(R.color.map_marker_white, map.context.theme)
     canvas.drawCircle(centre, centre, centre - density, paint)
-    paint.color = color
+    paint.color = map.resources.getColor(colorResource, map.context.theme)
     canvas.drawCircle(centre, centre, centre - 4 * density, paint)
     if (count != null) {
-        paint.color = android.graphics.Color.WHITE
+        paint.color = map.resources.getColor(R.color.map_marker_white, map.context.theme)
         paint.textAlign = Paint.Align.CENTER
         paint.textSize = 17 * density
         paint.typeface = android.graphics.Typeface.DEFAULT_BOLD
