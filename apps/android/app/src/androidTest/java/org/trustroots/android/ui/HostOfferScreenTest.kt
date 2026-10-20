@@ -35,7 +35,7 @@ class HostOfferScreenTest {
     private lateinit var keyboardTestSupport: KeyboardTestSupport
 
     @Before fun configureEdgeToEdgeWindow() {
-        keyboardTestSupport = KeyboardTestSupport(InstrumentationRegistry.getInstrumentation().uiAutomation)
+        keyboardTestSupport = KeyboardTestSupport(InstrumentationRegistry.getInstrumentation().uiAutomation, compose.activity)
         compose.runOnUiThread {
             WindowCompat.setDecorFitsSystemWindows(compose.activity.window, false)
             compose.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
