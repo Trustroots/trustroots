@@ -3,6 +3,8 @@ package org.trustroots.android.ui.profile
 import android.text.Html
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -78,6 +82,9 @@ internal fun MemberProfileScreen(
     var confirmRemoveContact by remember(username) { mutableStateOf(false) }
     var removingContact by remember(username) { mutableStateOf(false) }
     var sharingExperience by remember(username) { mutableStateOf(false) }
+    var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
+    var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     BackHandler {
         when {
@@ -221,40 +228,55 @@ internal fun MemberProfileScreen(
             }
             else -> {
                 val member = requireNotNull(profile)
-                ProfileActionBar(
-                    isSelf = isSelf,
-                    onBack = onBack,
-                    onEditProfile = { editing = true },
-                    onMessage = {
-                        recipient = MessageMember(member.id, member.username, member.displayName)
-                    },
-                    onShareExperience = { sharingExperience = true },
-                    contactLabel = when {
-                        !relationshipResolved -> null
-                        relationship?.id.isNullOrBlank() -> "Add contact"
-                        relationship?.confirmed == true -> "Remove contact"
-                        else -> "Delete contact request"
-                    },
-                    onContactAction = {
-                        val current = relationship
-                        when {
-                            current?.id.isNullOrBlank() -> {
-                                member.id?.let { id ->
-                                    browserRoute = BrowserRoute(
-                                        title = "Add contact",
-                                        url = "https://www.trustroots.org/contact-add/$id",
-                                        sessionCookie = session.cookieHeader,
-                                    )
-                                }
-                            }
-                            else -> confirmRemoveContact = true
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    val compactHeader = maxHeight < 560.dp
+                    val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
+                    val compactHeaderMinimum = 52.dp + profileSectionBarHeight
+                    val heroHeight = if (compactHeader) {
+                        val availableHeroHeight = maxHeight - profileActionsHeight -
+                            contentPadding.calculateBottomPadding() - sectionContentTarget
+                        availableHeroHeight.coerceAtLeast(compactHeaderMinimum).coerceAtMost(250.dp.coerceAtLeast(compactHeaderMinimum))
+                    } else 250.dp
+                    Column(Modifier.fillMaxSize()) {
+                        Box(
+                            Modifier.fillMaxWidth().onSizeChanged { size ->
+                                val measuredHeight = with(density) { size.height.toDp() }
+                                if (profileActionsHeight != measuredHeight) profileActionsHeight = measuredHeight
+                            },
+                        ) {
+                            ProfileActionBar(
+                                isSelf = isSelf,
+                                onBack = onBack,
+                                onEditProfile = { editing = true },
+                                onMessage = {
+                                    recipient = MessageMember(member.id, member.username, member.displayName)
+                                },
+                                onShareExperience = { sharingExperience = true },
+                                contactLabel = when {
+                                    !relationshipResolved -> null
+                                    relationship?.id.isNullOrBlank() -> "Add contact"
+                                    relationship?.confirmed == true -> "Remove contact"
+                                    else -> "Delete contact request"
+                                },
+                                onContactAction = {
+                                    val current = relationship
+                                    when {
+                                        current?.id.isNullOrBlank() -> {
+                                            member.id?.let { id ->
+                                                browserRoute = BrowserRoute(
+                                                    title = "Add contact",
+                                                    url = "https://www.trustroots.org/contact-add/$id",
+                                                    sessionCookie = session.cookieHeader,
+                                                )
+                                            }
+                                        }
+                                        else -> confirmRemoveContact = true
+                                    }
+                                },
+                                topPadding = contentPadding.calculateTopPadding(),
+                                horizontalInset = contentPadding.horizontalInset(),
+                            )
                         }
-                    },
-                    topPadding = contentPadding.calculateTopPadding(),
-                    horizontalInset = contentPadding.horizontalInset(),
-                )
-                HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
-                    Column(Modifier.fillMaxSize().padding(bottom = contentPadding.calculateBottomPadding()).verticalScroll(rememberScrollState())) {
                         ArtworkHero(
                             url = member.id?.let { api.avatarURL(it, 512) },
                             sessionCookie = session.cookieHeader,
@@ -263,37 +285,53 @@ internal fun MemberProfileScreen(
                             background = MaterialTheme.colorScheme.primary,
                             blurBackground = true,
                             testTag = "profileHero",
-                        )
-                        ProfileSectionBar(
-                            selected = ProfileSection.entries[profilePager.currentPage],
-                            contactCount = contacts.size,
-                            onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
-                        )
-                        Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset())) {
-                            when (ProfileSection.entries[page]) {
-                                ProfileSection.About -> {
-                                    member.tagline?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium) }
-                                    member.location?.let { Text(it, modifier = Modifier.padding(vertical = 6.dp)) }
-                                    ProfileAboutSection(member = member, api = api)
-                                    HorizontalDivider(Modifier.padding(vertical = 16.dp))
-                                    ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
+                            heroHeight = heroHeight,
+                            compact = compactHeader,
+                            bottomContent = {
+                                Box(
+                                    Modifier.fillMaxWidth().onSizeChanged { size ->
+                                        val measuredHeight = with(density) { size.height.toDp() }
+                                        if (profileSectionBarHeight != measuredHeight) profileSectionBarHeight = measuredHeight
+                                    },
+                                ) {
+                                    ProfileSectionBar(
+                                        selected = ProfileSection.entries[profilePager.currentPage],
+                                        contactCount = contacts.size,
+                                        onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
+                                        overArtwork = true,
+                                    )
                                 }
-                                ProfileSection.Experiences -> ProfileOverviewSection(
-                                    references = references,
-                                    showAllReferences = showAllReferences,
-                                    onToggleReferences = { showAllReferences = !showAllReferences },
-                                    onOpenRelated = { relatedUsername = it },
-                                    api = api,
-                                    session = session,
-                                )
-                                ProfileSection.Contacts -> ProfileContactsSection(
-                                    contacts = contacts,
-                                    showAllContacts = showAllContacts,
-                                    onToggleContacts = { showAllContacts = !showAllContacts },
-                                    onOpenRelated = { relatedUsername = it },
-                                    api = api,
-                                    session = session,
-                                )
+                            },
+                        )
+                        HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
+                            Column(Modifier.fillMaxSize().padding(bottom = contentPadding.calculateBottomPadding()).verticalScroll(rememberScrollState())) {
+                                Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset())) {
+                                    when (ProfileSection.entries[page]) {
+                                        ProfileSection.About -> {
+                                            member.tagline?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), style = MaterialTheme.typography.titleMedium) }
+                                            member.location?.let { Text(it, modifier = Modifier.padding(vertical = 6.dp)) }
+                                            ProfileAboutSection(member = member, api = api)
+                                            HorizontalDivider(Modifier.padding(vertical = 16.dp))
+                                            ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
+                                        }
+                                        ProfileSection.Experiences -> ProfileOverviewSection(
+                                            references = references,
+                                            showAllReferences = showAllReferences,
+                                            onToggleReferences = { showAllReferences = !showAllReferences },
+                                            onOpenRelated = { relatedUsername = it },
+                                            api = api,
+                                            session = session,
+                                        )
+                                        ProfileSection.Contacts -> ProfileContactsSection(
+                                            contacts = contacts,
+                                            showAllContacts = showAllContacts,
+                                            onToggleContacts = { showAllContacts = !showAllContacts },
+                                            onOpenRelated = { relatedUsername = it },
+                                            api = api,
+                                            session = session,
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
