@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -159,7 +160,10 @@ class MemberContactRemovalJourneyTest {
     }
 
     private fun openActionMenu() {
-        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("More profile actions").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("More profile actions").assertIsDisplayed().performClick()
     }
 
     private fun openContactAction(label: String) {
