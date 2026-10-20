@@ -22,6 +22,7 @@ import {
 } from '../../support/helpers.mts';
 
 import { findOffersByUser, updateUserByUsername } from '../../support/db.mts';
+import { disableWebGL, routeRasterMapTiles } from '../../support/maps.mts';
 
 const berlin = SEEDED_MEMBERS[0];
 const portland = SEEDED_MEMBERS[1];
@@ -272,6 +273,41 @@ test.describe('confirmed member flows', () => {
       map.locator('.mapboxgl-canvas, .leaflet-pane').first(),
     ).toBeVisible();
   });
+
+  for (const webglAvailable of [true, false]) {
+    test(`profile hosting map loads raster tiles with WebGL ${webglAvailable ? 'available' : 'unavailable'}`, async ({
+      page,
+      context,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'profile.view-accommodation', [
+        'Approximate hosting location loads raster tiles independently of WebGL.',
+        'The location marker and zoom controls remain usable.',
+      ]);
+      if (!webglAvailable) await disableWebGL(page);
+      await routeRasterMapTiles(context, { includeMapbox: true });
+      await page.goto(`/profile/${portland.username}/accommodation`);
+      expect(
+        await page.evaluate(() =>
+          Boolean(document.createElement('canvas').getContext('webgl')),
+        ),
+      ).toBe(webglAvailable);
+      const map = page.locator('.offer-view .offer-location');
+      await expect(map).toBeVisible();
+      await expect(map.locator('.mapboxgl-canvas')).toHaveCount(0);
+      await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+      await expect(map.locator('.leaflet-overlay-pane path')).toBeVisible();
+      await map.locator('.leaflet-control-zoom-in').click();
+      await expect
+        .poll(() =>
+          map
+            .locator('.leaflet-tile-loaded')
+            .evaluateAll(tiles =>
+              tiles.some(tile => /\/12\//.test((tile as HTMLImageElement).src)),
+            ),
+        )
+        .toBe(true);
+    });
+  }
 
   test('profile actions link to messaging and experiences', async ({
     page,

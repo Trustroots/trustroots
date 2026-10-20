@@ -34,6 +34,7 @@ export default function OfferLocation({
         location: coordinates,
       }}
       height={height}
+      preferRaster
       location={coordinates}
       scrollZoom={false}
       width="100%"
