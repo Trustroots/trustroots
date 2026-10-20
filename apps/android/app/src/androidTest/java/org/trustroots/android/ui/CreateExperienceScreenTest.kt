@@ -1,15 +1,26 @@
 package org.trustroots.android.ui
 
+import android.content.res.Resources
+import android.view.WindowManager
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -20,8 +31,15 @@ import org.trustroots.android.api.MobileMember
 
 @RunWith(AndroidJUnit4::class)
 class CreateExperienceScreenTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
+
+    @Before fun configureEdgeToEdgeWindow() {
+        compose.runOnUiThread {
+            WindowCompat.setDecorFitsSystemWindows(compose.activity.window, false)
+            compose.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+    }
 
     @After fun closeServer() = server.close()
 
@@ -73,9 +91,49 @@ class CreateExperienceScreenTest {
             )
         }
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
+        compose.onNodeWithText("Public experience (optional)").performScrollTo().performClick()
+        compose.onNodeWithText("Public experience (optional)").performTextInput("A fictional account of a kind visit.")
+        compose.onNodeWithText("Public experience (optional)").performScrollTo()
+        assertAboveIme("Public experience (optional)")
+        assertAboveIme("Save changes")
+        compose.onNodeWithText("A fictional account of a kind visit.", substring = true).assertIsDisplayed()
+        pressImeBack()
+        compose.onNodeWithText("A fictional account of a kind visit.", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Discard", substring = true).assertDoesNotExist()
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(5_000) { created.get() }
         assertTrue(posted.get().contains("\"userTo\":\"member-two\""))
         assertTrue(posted.get().contains("\"met\":true"))
     }
+
+    private fun assertAboveIme(text: String) {
+        compose.waitUntil(5_000) {
+            isAboveIme(text)
+        }
+        compose.onNodeWithText(text).assertIsDisplayed()
+        assertTrue("$text should remain above the open keyboard", isAboveIme(text))
+    }
+
+    private fun isAboveIme(text: String): Boolean {
+        val imeBottom = ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+            ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+        if (imeBottom == 0) return false
+        val keyboardTop = Resources.getSystem().displayMetrics.heightPixels - imeBottom
+        val bounds = compose.onNodeWithText(text).getUnclippedBoundsInRoot()
+        val top = with(compose.density) { bounds.top.toPx() }
+        val bottom = with(compose.density) { bounds.bottom.toPx() }
+        val viewTop = compose.activity.window.decorView.locationOnScreenY()
+        return top + viewTop >= 0 && bottom + viewTop <= keyboardTop
+    }
+
+    private fun pressImeBack() {
+        InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand("input keyevent KEYCODE_BACK").close()
+        compose.waitUntil(5_000) {
+            ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom == 0
+        }
+    }
+
+    private fun android.view.View.locationOnScreenY(): Int = IntArray(2).let { getLocationOnScreen(it); it[1] }
 }

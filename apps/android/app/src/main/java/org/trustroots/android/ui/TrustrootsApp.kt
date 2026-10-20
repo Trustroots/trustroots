@@ -355,15 +355,13 @@ private fun SignInScreen(
             }
             Spacer(Modifier.height(20.dp))
             UsageAnalyticsSettings(analytics)
+            Text(
+                "Build: $buildDate",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
+                modifier = Modifier.padding(top = 12.dp),
+            )
         }
-        Text(
-            "Build: $buildDate",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp),
-        )
     }
 }
 

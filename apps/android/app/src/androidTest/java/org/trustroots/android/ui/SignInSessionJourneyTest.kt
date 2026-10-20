@@ -2,9 +2,12 @@ package org.trustroots.android.ui
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.content.res.Resources
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,8 +16,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import java.net.ServerSocket
 import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
@@ -54,6 +61,10 @@ class SignInSessionJourneyTest {
     private val signInAttempts = AtomicInteger()
 
     @Before fun clearStoredAccountAndAlerts() {
+        compose.runOnUiThread {
+            WindowCompat.setDecorFitsSystemWindows(compose.activity.window, false)
+            compose.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
         previousSessionPreferences = sessionPreferences.all
         previousAlertPreferences = alertPreferences.all
         previousDestination = MessageAlerts.destination.value
@@ -87,8 +98,22 @@ class SignInSessionJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Username or email").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Username or email").performTextInput("  steady-heron  ")
-        compose.onNodeWithText("Password").performTextInput("wrong-fictional-password")
+        compose.onNodeWithText("Username or email").performScrollTo().performClick().performTextInput("  steady-heron  ")
+        compose.onNodeWithText("Password").performScrollTo().performClick().performTextInput("wrong-fictional-password")
+        compose.onNodeWithText("Sign in").performScrollTo()
+        assertAboveIme("Sign in")
+        pressImeBack()
+        compose.onNodeWithText("steady-heron", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Password").performScrollTo().performClick()
+        compose.onNodeWithText("Build:", substring = true).performScrollTo()
+        assertAboveIme("Build:", substring = true)
+        compose.onNodeWithText("Join").assertIsDisplayed()
+        compose.onNodeWithText("Forgot password?").assertIsDisplayed()
+        val forgotBounds = compose.onNodeWithText("Forgot password?").getUnclippedBoundsInRoot()
+        val buildBounds = compose.onNodeWithText("Build:", substring = true).getUnclippedBoundsInRoot()
+        assertTrue("The build date must not cover the sign-in links", buildBounds.top >= forgotBounds.bottom)
+        compose.onNodeWithText("Sign in").performScrollTo()
+        assertAboveIme("Sign in")
         compose.onNodeWithText("Sign in").performScrollTo().assertIsEnabled().performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Those credentials were not accepted.").fetchSemanticsNodes().isNotEmpty()
@@ -183,6 +208,37 @@ class SignInSessionJourneyTest {
             }
         }
     }
+
+    private fun assertAboveIme(text: String, substring: Boolean = false) {
+        compose.waitUntil(5_000) {
+            isAboveIme(text, substring)
+        }
+        compose.onNodeWithText(text, substring = substring).assertIsDisplayed()
+        assertTrue("$text should remain above the open keyboard", isAboveIme(text, substring))
+    }
+
+    private fun isAboveIme(text: String, substring: Boolean): Boolean {
+        val imeBottom = ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+            ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+        if (imeBottom == 0) return false
+        val keyboardTop = Resources.getSystem().displayMetrics.heightPixels - imeBottom
+        val bounds = compose.onNodeWithText(text, substring = substring).getUnclippedBoundsInRoot()
+        val top = with(compose.density) { bounds.top.toPx() }
+        val bottom = with(compose.density) { bounds.bottom.toPx() }
+        val viewTop = compose.activity.window.decorView.locationOnScreenY()
+        return top + viewTop >= 0 && bottom + viewTop <= keyboardTop
+    }
+
+    private fun pressImeBack() {
+        InstrumentationRegistry.getInstrumentation().uiAutomation
+            .executeShellCommand("input keyevent KEYCODE_BACK").close()
+        compose.waitUntil(5_000) {
+            ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom == 0
+        }
+    }
+
+    private fun android.view.View.locationOnScreenY(): Int = IntArray(2).let { getLocationOnScreen(it); it[1] }
 
     private fun restorePreferences(preferences: SharedPreferences, values: Map<String, *>) {
         preferences.edit().clear().commit()

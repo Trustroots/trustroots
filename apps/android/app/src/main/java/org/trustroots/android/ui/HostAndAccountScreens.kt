@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -167,7 +168,7 @@ internal fun HostOfferScreen(
                     saving = false
                 }
             }
-    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
+    Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
         FormActionBar("Host", saving, !loading && !descriptionTooShort, cancel, save, horizontalInset = contentPadding.horizontalInset())
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("hostOfferScreen")) {
         Text(
@@ -286,7 +287,7 @@ internal fun CreateExperienceScreen(
                     saving = false
                 }
             }
-    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding())) {
+    Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
         FormActionBar("Experience with $memberLabel", saving, canSave, cancel, save, horizontalInset = contentPadding.horizontalInset())
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("createExperienceScreen")) {
         Text("What happened?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
