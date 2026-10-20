@@ -30,6 +30,7 @@ import org.osmdroid.views.MapView
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.hostmap.HostMapScreen
 
 @RunWith(AndroidJUnit4::class)
 class PlaceSearchControlsJourneyTest {
@@ -66,7 +67,7 @@ class PlaceSearchControlsJourneyTest {
             compose.onNodeWithText("Fictional Harbour, Somewhere").assertDoesNotExist()
             compose.onNodeWithContentDescription("Clear place search").assertDoesNotExist()
             compose.onNodeWithText("Hosting").assertIsDisplayed()
-            compose.onNodeWithText("1 offers · 0 Nostroots notes in this area").assertExists()
+            compose.onNodeWithText("1 offer · 0 Nostroots notes in this area").assertExists()
             assertEquals(offerRequestsBeforeClear, offerRequestCount(fixture))
             assertEquals("Clearing suggestions must preserve the current viewport", viewportBeforeClear, viewport())
         }
@@ -123,7 +124,7 @@ class PlaceSearchControlsJourneyTest {
                 compose.waitForIdle()
                 compose.onNodeWithContentDescription("Clear place search").assertDoesNotExist()
                 compose.onAllNodesWithText("Could not find that place.").assertCountEquals(0)
-                compose.onNodeWithText("1 offers · 0 Nostroots notes in this area").assertIsDisplayed()
+                compose.onNodeWithText("1 offer · 0 Nostroots notes in this area").assertIsDisplayed()
                 assertEquals("Clearing a submitted lookup must not start a map search", offerRequestsBeforeSearch, offerRequestCount(fixture))
                 assertEquals("Clearing a submitted lookup must preserve the current viewport", viewportBeforeSearch, viewport())
             } finally {
@@ -155,7 +156,7 @@ class PlaceSearchControlsJourneyTest {
     private fun waitForInitialResults(fixture: LocalTransportFixture) {
         compose.waitUntil(10_000) {
             offerRequestCount(fixture) > 0 &&
-                compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area")
+                compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()

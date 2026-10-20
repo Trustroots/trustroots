@@ -3,13 +3,13 @@ package org.trustroots.android.ui
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
@@ -31,6 +31,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapDetailAndCircleFilterJourneyTest {
@@ -115,19 +116,21 @@ class HostMapDetailAndCircleFilterJourneyTest {
 
     private fun showMap() {
         compose.setContent {
-            HostMapScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = session,
-                onSessionInvalidated = { invalidations.incrementAndGet() },
-                geocoderLookup = { _, _, _ -> emptyList<Address>() },
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = session,
+                    onSessionInvalidated = { invalidations.incrementAndGet() },
+                    geocoderLookup = { _, _, _ -> emptyList<Address>() },
+                )
+            }
         }
     }
 
     private fun waitForInitialOffers() {
         compose.waitUntil(15_000) {
             requests.any { it.startsWith("GET /api/offers?") } &&
-                compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area")
+                compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
     }

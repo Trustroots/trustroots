@@ -7,13 +7,13 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicInteger
@@ -23,14 +23,16 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.osmdroid.views.MapView
 import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
+import org.trustroots.android.ui.circles.CirclesScreen
+import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -143,13 +145,15 @@ class MapOfferAuxiliaryLoadFailureJourneyTest {
 
         compose.setContent {
             TrustrootsTheme {
-                HostMapScreen(
-                    api = MobileApiClient(local.baseURL),
-                    session = session,
-                    onSessionInvalidated = { invalidations.incrementAndGet() },
-                    geocoderLookup = { _, _, _ -> emptyList() },
-                    mapViewFactory = offlineMapViewFactory,
-                )
+                NativeTestAppFrame(Destination.Search) {
+                    SearchHubScreen(
+                        api = MobileApiClient(local.baseURL),
+                        session = session,
+                        onSessionInvalidated = { invalidations.incrementAndGet() },
+                        geocoderLookup = { _, _, _ -> emptyList() },
+                        mapViewFactory = offlineMapViewFactory,
+                    )
+                }
             }
         }
 
@@ -161,7 +165,11 @@ class MapOfferAuxiliaryLoadFailureJourneyTest {
             requireNotNull(mapViewReference.get()).controller.setCenter(GeoPoint(30.25, 12.5))
         }
         compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("openFilters").performTouchInput { click(center) }
+        compose.waitUntil(10_000) {
+            local.requests.any { it.method == "GET" && it.path == "/api/tribes?limit=150" }
         }
         compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
         compose.waitUntil(15_000) {
@@ -171,10 +179,6 @@ class MapOfferAuxiliaryLoadFailureJourneyTest {
 
         compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
         compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
-        compose.onNodeWithTag("openFilters").performTouchInput { click(center) }
-        compose.waitUntil(10_000) {
-            local.requests.any { it.method == "GET" && it.path == "/api/tribes?limit=150" }
-        }
         assertTrue(local.requests.any { it.path == "/api/offers/offer-one" })
         assertTrue(local.requests.any { it.path == "/api/users/quiet-fox" })
         assertTrue(local.requests.any { it.path == "/api/users/memberships" })

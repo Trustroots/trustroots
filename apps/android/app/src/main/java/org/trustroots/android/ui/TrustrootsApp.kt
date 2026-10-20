@@ -6,99 +6,85 @@ import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
-import androidx.compose.material3.Badge
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.TextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
-import androidx.compose.material3.BadgedBox
-import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.saveable.rememberSaveable
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import org.trustroots.android.BuildConfig
-import org.trustroots.android.R
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import kotlinx.serialization.Serializable
+import org.trustroots.android.BuildConfig
+import org.trustroots.android.R
 import org.trustroots.android.analytics.AndroidUsageAnalytics
 import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
-import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.notifications.MessageAlerts
-import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.circles.CirclesNavigationDisplay
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalLeaveGuard
+import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.MemberNavigationBar
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.session.AndroidAppSessionOperations
+import org.trustroots.android.ui.session.AppSessionEvent
+import org.trustroots.android.ui.session.AppSessionSource
+import org.trustroots.android.ui.session.AppSessionViewModel
 import org.trustroots.android.ui.common.UsageScreenTracking
+import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.contacts.ContactsScreen
+import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.menu.MenuNavigationDisplay
+import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
-import org.trustroots.android.ui.signin.SignInScreen
-import androidx.navigation3.runtime.NavEntryDecorator
-import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.runtime.entryProvider
-import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.ui.NavDisplay
-import kotlinx.serialization.Serializable
+import org.trustroots.android.ui.signin.SignInNavigation
+import org.trustroots.android.ui.startup.StartupScreen
 
 @Composable
 internal fun TrustrootsApp(
@@ -106,7 +92,6 @@ internal fun TrustrootsApp(
     reconcileAlerts: (Context, MemberSession) -> Unit = MessageAlerts::reconcile,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
-    val sessionExpiredMessage = stringResource(R.string.screen_session_expired)
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
@@ -114,6 +99,11 @@ internal fun TrustrootsApp(
     }
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
+    }
+    val signInGraphGeneration by signInStoreHolder.graphGeneration.collectAsState()
+    DisposableEffect(signInStoreHolder, apiBaseUrl) {
+        signInStoreHolder.activateBackend(apiBaseUrl)
+        onDispose { }
     }
     val shellGraphStore = remember(activity) {
         ViewModelProvider(activity).get(MemberShellViewModelStoreOwner::class.java)
@@ -128,16 +118,22 @@ internal fun TrustrootsApp(
     }
     val sessionStore = remember { SecureMobileSessionStore(context.applicationContext) }
     val responseCache = remember { SecureResponseCache(context.applicationContext) }
-    var session by remember { mutableStateOf<MemberSession?>(null) }
-    var starting by remember { mutableStateOf(true) }
-    var signedOutMessage by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(sessionStore) {
-        val startedAt = android.os.SystemClock.elapsedRealtime()
-        session = withContext(Dispatchers.IO) { sessionStore.load() }
-        val remaining = 700 - (android.os.SystemClock.elapsedRealtime() - startedAt)
-        if (remaining > 0) delay(remaining)
-        starting = false
+    val sessionViewModel = remember(activity, sessionStore, responseCache, signInStoreHolder, shellGraphStore) {
+        ViewModelProvider(
+            activity,
+            AppSessionViewModel.Factory(
+                AndroidAppSessionOperations(sessionStore, responseCache, signInStoreHolder, shellGraphStore),
+                initialBackendURL = apiBaseUrl,
+            ),
+        )[AppSessionViewModel::class.java]
     }
+    DisposableEffect(sessionViewModel, apiBaseUrl) {
+        sessionViewModel.onEvent(AppSessionEvent.BackendChanged(apiBaseUrl))
+        onDispose { }
+    }
+    val sessionState by sessionViewModel.state.collectAsState()
+    val session = sessionState.session
+    val starting = sessionState.isStarting
     val shellGraphOwner = remember(shellGraphStore, starting, session?.member?.username) {
         if (starting) null
         else session?.let { shellGraphStore.activateAccount(it.member.username) }
@@ -147,114 +143,61 @@ internal fun TrustrootsApp(
             }
     }
     if (starting) {
-        StartupScreen(session?.member?.displayName?.substringBefore(' '))
+        StartupScreen(sessionState.startupFirstName)
         return
     }
     if (session == null) {
-        val signInViewModel = remember(signInStoreHolder, apiBaseUrl, signedOutMessage) {
-            signInStoreHolder.getViewModel(apiBaseUrl, signedOutMessage)
-        }
-        SignInScreen(
-            analytics = analytics,
-            viewModel = signInViewModel,
-            browserContent = browserContent,
-            onSignedIn = {
-                sessionStore.save(it)
-                session = it
-                signedOutMessage = null
-                signInStoreHolder.clearDestination()
-            },
-        )
-    } else {
-        val activeSession = requireNotNull(session)
-        CompositionLocalProvider(LocalViewModelStoreOwner provides requireNotNull(shellGraphOwner)) {
-            key(activeSession.member.username) {
-                val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
-                val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator(),
-                )
-                NavDisplay(
-                    backStack = rootBackStack,
-                    entryDecorators = rootDecorators,
-                    entryProvider = entryProvider {
-                        entry<MemberShellVisit> {
-                            MemberShell(
-                                analytics = analytics,
-                                session = activeSession,
-                                responseCache = responseCache,
-                                apiBaseUrl = apiBaseUrl,
-                                reconcileAlerts = reconcileAlerts,
-                                browserContent = browserContent,
-                                onMemberUpdated = { member ->
-                                    session?.copy(member = member)?.let { updated ->
-                                        sessionStore.save(updated)
-                                        session = updated
-                                    }
-                                },
-                                onSignedOut = {
-                                    session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
-                                    sessionStore.clear()
-                                    signInStoreHolder.clearDestination()
-                                    shellGraphStore.clearAccount()
-                                    session = null
-                                },
-                                onSessionInvalidated = {
-                                    session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
-                                    sessionStore.clear()
-                                    signInStoreHolder.clearDestination()
-                                    shellGraphStore.clearAccount()
-                                    session = null
-                                    signedOutMessage = sessionExpiredMessage
-                                },
-                            )
-                        }
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-internal fun StartupScreen(firstName: String?) {
-    val buildDate = rememberBuildDate()
-    val brandName = stringResource(R.string.screen_brand_name)
-    val communityTagline = stringResource(R.string.screen_travellers_community)
-    val buildLabel = stringResource(R.string.screen_build_date, buildDate)
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer).safeDrawingPadding()) {
-        Column(
-            modifier = Modifier.align(Alignment.Center),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Image(
-                painter = painterResource(R.drawable.trustroots_logo),
-                contentDescription = brandName,
-                modifier = Modifier.size(180.dp),
+        key(signInGraphGeneration, apiBaseUrl.trim().trimEnd('/')) {
+            SignInNavigation(
+                analytics = analytics,
+                storeHolder = signInStoreHolder,
+                apiBaseUrl = apiBaseUrl,
+                initialMessage = sessionState.signedOutMessage,
+                browserContent = browserContent,
+                onSignedIn = {
+                    sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
+                },
             )
-            Text(communityTagline, style = MaterialTheme.typography.titleMedium)
-            if (!firstName.isNullOrBlank()) {
-                Text(
-                    stringResource(R.string.screen_welcome_name, firstName),
-                    style = MaterialTheme.typography.headlineSmall,
-                    modifier = Modifier.padding(top = 24.dp),
-                )
-            }
         }
-        Text(
-            buildLabel,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
-        )
-    }
-}
-
-@Composable
-internal fun rememberBuildDate(): String {
-    return remember {
-        SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT)
-            .format(Date(BuildConfig.BUILD_EPOCH_SECONDS * 1_000))
+    } else {
+        CompositionLocalProvider(
+            LocalViewModelStoreOwner provides requireNotNull(shellGraphOwner),
+        ) {
+          key(requireNotNull(session).member.username) {
+            val activeSession = requireNotNull(session)
+            val activeSessionSource = AppSessionSource.from(activeSession, apiBaseUrl)
+            val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
+            val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            )
+            NavDisplay(
+                backStack = rootBackStack,
+                entryDecorators = rootDecorators,
+                entryProvider = entryProvider {
+                    entry<MemberShellVisit> {
+                        MemberShell(
+                            analytics = analytics,
+                            session = activeSession,
+                            responseCache = responseCache,
+                            apiBaseUrl = apiBaseUrl,
+                            reconcileAlerts = reconcileAlerts,
+                            browserContent = browserContent,
+                            onMemberUpdated = { member ->
+                                sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
+                            },
+                            onSignedOut = {
+                                sessionViewModel.onEvent(AppSessionEvent.SignedOut(activeSessionSource))
+                            },
+                            onSessionInvalidated = {
+                                sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
+                            },
+                        )
+                    }
+                },
+            )
+          }
+        }
     }
 }
 
@@ -304,6 +247,7 @@ private fun MemberShell(
         ?: Destination.Circles
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
     var menuUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
+    var searchUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var resetActiveMenuVisit by remember { mutableStateOf<(() -> Unit)?>(null) }
     val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
     val activeVisitID = (tabBackStack.lastOrNull() as? MemberTabVisit)?.visitID ?: 0L
@@ -315,12 +259,13 @@ private fun MemberShell(
     val analyticsScreen = when {
         destination == Destination.Menu -> activeMenuScreen
         destination == Destination.Circles -> UsageScreen.Circles
-        destination == Destination.Search -> UsageScreen.Search
+        destination == Destination.Search -> searchUsageByVisit[activeVisitID] ?: UsageScreen.Search
         else -> UsageScreen.Messages
     }
     UsageScreenTracking(analytics, analyticsScreen)
-    var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchInitialTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchResetGeneration by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchResetVisitID by rememberSaveable { androidx.compose.runtime.mutableLongStateOf(-1L) }
     val api = remember(session.member.username, apiBaseUrl.trim().trimEnd('/')) {
         MobileApiClient(apiBaseUrl, responseCache, session.member.username)
     }
@@ -331,8 +276,8 @@ private fun MemberShell(
     LaunchedEffect(activeVisitID) {
         shellViewModel.onEvent(MemberShellEvent.ActiveVisitChanged(activeVisitID))
     }
-    val shellLifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(shellLifecycleOwner, shellViewModel) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, shellViewModel) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_START -> shellViewModel.onEvent(MemberShellEvent.LifecycleChanged(true))
@@ -342,12 +287,12 @@ private fun MemberShell(
         }
         shellViewModel.onEvent(
             MemberShellEvent.LifecycleChanged(
-                shellLifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED),
+                lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED),
             ),
         )
-        shellLifecycleOwner.lifecycle.addObserver(observer)
+        lifecycleOwner.lifecycle.addObserver(observer)
         onDispose {
-            shellLifecycleOwner.lifecycle.removeObserver(observer)
+            lifecycleOwner.lifecycle.removeObserver(observer)
             shellViewModel.onEvent(MemberShellEvent.LifecycleChanged(false))
         }
     }
@@ -378,7 +323,7 @@ private fun MemberShell(
             nextVisitID = replacementID + 1
         }
     }
-    val reselectMessages: () -> Unit = {
+    val reselectMessages = {
         val current = tabBackStack.lastOrNull() as? MemberTabVisit
         if (current?.destination == Destination.Messages) {
             val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
@@ -395,7 +340,7 @@ private fun MemberShell(
             return@LaunchedEffect
         }
         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
-        val openConversation: () -> Unit = {
+        val openConversation = {
             if (guardedMenuDeparture) {
                 resetActiveMenuVisit?.invoke()
             }
@@ -404,6 +349,7 @@ private fun MemberShell(
             nextVisitID = maxOf(nextVisitID, firstAvailableID)
             tabBackStack.add(MemberTabVisit(Destination.Messages, nextVisitID, requested.senderId))
             nextVisitID++
+            Unit
         }
         leaveGuard.value?.invoke(openConversation) ?: openConversation()
         MessageAlerts.clearDestination()
@@ -434,17 +380,18 @@ private fun MemberShell(
                     onNavigate = { item ->
                         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
                         val action: () -> Unit = {
-                            if (item == Destination.Menu && item == destination) {
-                                resetActiveMenuVisit?.invoke()
-                            } else if (item == Destination.Circles && item == destination) {
+                            if (item == Destination.Circles && item == destination) {
                                 reselectCircles()
                             } else if (item == Destination.Messages && item == destination) {
                                 reselectMessages()
-                            } else if (item == Destination.Messages) {
-                                navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
+                            } else if (item == Destination.Search && item == destination) {
+                                searchInitialTab = 0
+                                searchResetVisitID = activeVisitID
+                                searchResetGeneration++
+                            } else if (item == Destination.Menu && item == destination) {
+                                resetActiveMenuVisit?.invoke()
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
-                                searchNavigationID++
                                 navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
                             } else {
                                 navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
@@ -500,7 +447,6 @@ private fun MemberShell(
                                         contentPadding = contentPadding,
                                         openFindPeople = {
                                             searchInitialTab = 1
-                                            searchNavigationID++
                                             navigateTo(Destination.Search)
                                         },
                                         openCircles = {
@@ -508,20 +454,32 @@ private fun MemberShell(
                                         },
                                     )
                                     Destination.Circles -> {
-                                        CirclesScreen(
-                                            api,
-                                            session,
-                                            onSessionInvalidated,
+                                        CirclesNavigationDisplay(
+                                            initialVisitID = visit.visitID,
+                                            api = api,
+                                            session = session,
+                                            onSessionInvalidated = onSessionInvalidated,
                                             contentPadding = contentPadding,
                                         )
                                     }
-                                    Destination.Search -> key(searchNavigationID) {
+                                    Destination.Search -> {
                                         SearchHubScreen(
                                             api,
                                             session,
                                             onSessionInvalidated,
                                             initialTab = searchInitialTab,
                                             contentPadding = contentPadding,
+                                            resetGeneration = searchResetGeneration,
+                                            resetVisitID = searchResetVisitID,
+                                            ownerVisitID = visit.visitID,
+                                            isActiveTabVisit = visit.visitID == activeVisitID,
+                                            onCurrentUsageScreen = { visitID, screen ->
+                                                if (searchUsageByVisit[visitID] != screen) {
+                                                    searchUsageByVisit = searchUsageByVisit + (visitID to screen)
+                                                }
+                                            },
+                                            onBackAtRoot = handleNavigationBack,
+                                            browserContent = browserContent,
                                         )
                                     }
                                     Destination.Messages -> MessageInboxScreen(
@@ -538,75 +496,6 @@ private fun MemberShell(
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-internal fun MemberNavigationBar(
-    destination: Destination,
-    unreadMessageCount: Int,
-    avatarURL: java.net.URL?,
-    sessionCookie: String?,
-    memberLabel: String,
-    onNavigate: (Destination) -> Unit,
-) {
-    val unreadCountDescription = pluralStringResource(
-        R.plurals.screen_destination_unread_count,
-        unreadMessageCount,
-        unreadMessageCount,
-    )
-    NavigationBar(
-        modifier = Modifier.shadow(elevation = 8.dp),
-        containerColor = MaterialTheme.colorScheme.primary,
-        tonalElevation = 0.dp,
-    ) {
-        Destination.entries.forEach { item ->
-            NavigationBarItem(
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                    selectedTextColor = MaterialTheme.colorScheme.onPrimary,
-                    unselectedIconColor = MaterialTheme.colorScheme.onPrimary,
-                    unselectedTextColor = MaterialTheme.colorScheme.onPrimary,
-                    indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
-                ),
-                selected = destination == item,
-                label = { Text(stringResource(item.label)) },
-                onClick = { onNavigate(item) },
-                modifier = Modifier.testTag("navigation-${item.name.lowercase()}").semantics {
-                    if (item == Destination.Messages) {
-                        stateDescription = unreadCountDescription
-                    }
-                },
-                icon = {
-                    BadgedBox(badge = {
-                        if (item == Destination.Messages && unreadMessageCount > 0) Badge {
-                            Text(if (unreadMessageCount > 99) "99+" else unreadMessageCount.toString())
-                        }
-                    }) {
-                        when (item) {
-                            Destination.Menu -> RemoteArtwork(
-                                url = avatarURL,
-                                sessionCookie = sessionCookie,
-                                label = memberLabel,
-                                size = 24.dp,
-                            )
-                            Destination.Circles -> Icon(
-                                imageVector = Icons.Default.BubbleChart,
-                                contentDescription = null,
-                            )
-                            Destination.Search -> Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = null,
-                            )
-                            Destination.Messages -> Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Chat,
-                                contentDescription = null,
-                            )
-                        }
-                    }
-                },
-            )
         }
     }
 }

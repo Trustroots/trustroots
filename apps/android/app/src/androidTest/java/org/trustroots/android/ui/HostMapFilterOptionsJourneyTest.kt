@@ -22,6 +22,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.hostmap.HostMapScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapFilterOptionsJourneyTest {
@@ -90,7 +91,7 @@ class HostMapFilterOptionsJourneyTest {
         }
 
         compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Hosting").performClick()

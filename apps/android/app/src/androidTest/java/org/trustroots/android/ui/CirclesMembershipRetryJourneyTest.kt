@@ -1,11 +1,11 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.activity.ComponentActivity
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.net.Socket
@@ -19,6 +19,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 
 @RunWith(AndroidJUnit4::class)
 class CirclesMembershipRetryJourneyTest {
@@ -40,7 +41,7 @@ class CirclesMembershipRetryJourneyTest {
 
     @Test fun failedMembershipChangeCanBeRetriedAndPersistsInList() {
         responder = thread(isDaemon = true) {
-            repeat(4) { index ->
+            repeat(6) { _ ->
                 val socket = acceptOrStop() ?: return@thread
                 socket.use {
                     val input = socket.getInputStream().bufferedReader()
@@ -48,10 +49,11 @@ class CirclesMembershipRetryJourneyTest {
                     while (!input.readLine().isNullOrEmpty()) Unit
                     val isUpdate = request.contains("/api/users/memberships/circle-one")
                     if (isUpdate) membershipUpdates.incrementAndGet()
-                    val status = if (isUpdate && index == 2) "500 Internal Server Error" else "200 OK"
+                    val status = if (isUpdate && membershipUpdates.get() == 1) "500 Internal Server Error" else "200 OK"
                     val payload = when {
-                        isUpdate && index == 2 -> """{"message":"Local membership update failed."}"""
-                        request.contains("/api/tribes") -> """[{"_id":"circle-one","slug":"wanderers","label":"Wanderers","count":2,"description":"A local circle"}]"""
+                        isUpdate && membershipUpdates.get() == 1 -> """{"message":"Local membership update failed."}"""
+                        request.startsWith("GET /api/tribes/wanderers ") -> """{"_id":"circle-one","slug":"wanderers","label":"Wanderers","count":2,"description":"A local circle"}"""
+                        request.startsWith("GET /api/tribes?limit=150 ") -> """[{"_id":"circle-one","slug":"wanderers","label":"Wanderers","count":2,"description":"A local circle"}]"""
                         else -> "[]"
                     }
                     val bytes = payload.toByteArray()

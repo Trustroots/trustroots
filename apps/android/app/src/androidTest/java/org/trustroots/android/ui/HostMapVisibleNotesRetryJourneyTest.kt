@@ -34,6 +34,8 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.api.decodeOpenLocationCode
+import org.trustroots.android.ui.hostmap.HostMapNotesConnection
+import org.trustroots.android.ui.hostmap.HostMapScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapVisibleNotesRetryJourneyTest {
@@ -87,7 +89,10 @@ class HostMapVisibleNotesRetryJourneyTest {
                 session = session,
                 onSessionInvalidated = {},
                 geocoderLookup = { _, _, _ -> emptyList() },
-                notesClientFactory = { onNote, onError -> NostrootsNotesClient(onNote, onError, sockets) },
+                notesClientFactory = { onNote, onError ->
+                    val client = NostrootsNotesClient(onNote, onError, sockets)
+                    HostMapNotesConnection { client.close() }
+                },
                 mapViewFactory = offlineMapViewFactory,
             )
         }
@@ -151,12 +156,14 @@ class HostMapVisibleNotesRetryJourneyTest {
     }
 
     private fun awaitVisibleNotes(local: LocalTransportFixture, noteCount: Int, lookupCount: Int) {
+        val noteLabel = if (noteCount == 1) "Nostroots note" else "Nostroots notes"
+        val statistics = "0 offers · $noteCount $noteLabel in this area"
         compose.waitUntil(15_000) {
             local.requests.count { it.path.startsWith("/api/nostr/author-visibility?") } >= lookupCount &&
-                compose.onAllNodesWithText("0 offers · $noteCount Nostroots notes in this area")
+                compose.onAllNodesWithText(statistics)
                     .fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("0 offers · $noteCount Nostroots notes in this area").assertIsDisplayed()
+        compose.onNodeWithText(statistics).assertIsDisplayed()
     }
 
     private fun waitForMarkerCount(expected: Int) {

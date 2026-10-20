@@ -10,9 +10,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -23,20 +24,20 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.roundToInt
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.Assert.assertTrue
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 
 /** Checks that Circles titles collapse while scrollable content remains reachable. */
 @RunWith(AndroidJUnit4::class)
@@ -87,9 +88,15 @@ class CirclesCollapsingHeaderJourneyTest {
 
     @Test fun detailHeaderAndBackRemainAfterArtworkScrollsAway() {
         val description = "<p>${"Fictional circle detail text for scrolling. ".repeat(36)}</p>"
-        val circle = """[{"_id":"circle-one","slug":"fictional","label":"Fictional Circle","count":4,"image":false,"description":"$description"}]"""
+        val circle = """{"_id":"circle-one","slug":"fictional","label":"Fictional Circle","count":4,"image":false,"description":"$description"}"""
         LocalTransportFixture { request ->
-            LocalTransportFixture.Response(if (request.path.startsWith("/api/tribes")) circle else "[]")
+            LocalTransportFixture.Response(
+                when (request.path) {
+                    "/api/tribes?limit=150" -> """[{"_id":"circle-one","slug":"fictional","label":"Fictional Circle","count":4,"image":false}]"""
+                    "/api/tribes/fictional" -> circle
+                    else -> "[]"
+                },
+            )
         }.use { fixture ->
             compose.setContent {
                 NativeTestAppFrame(Destination.Circles) {
@@ -145,7 +152,13 @@ class CirclesCollapsingHeaderJourneyTest {
         val themeSurface = AtomicReference(Color.Unspecified)
 
         LocalTransportFixture { request ->
-            LocalTransportFixture.Response(if (request.path.startsWith("/api/tribes")) circles else "[]")
+            LocalTransportFixture.Response(
+                when (request.path) {
+                    "/api/tribes?limit=150" -> circles
+                    "/api/tribes/harbour" -> """{"_id":"circle-harbour","slug":"harbour","label":"$longLabel","count":3,"image":false,"description":"$longDescription"}"""
+                    else -> "[]"
+                },
+            )
         }.use { fixture ->
             compose.setContent {
                 CompositionLocalProvider(

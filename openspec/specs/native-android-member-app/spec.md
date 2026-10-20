@@ -152,24 +152,50 @@ to interrupt an in-flight save.
 
 ### Requirement: Screen-scoped Android member sources
 
-The Android member search, profile detail, profile editing, inbox, conversation
-and contacts screens SHALL each have a named package below `ui` with a separate
-screen entry-point file. Components and helpers shared across those screens
-SHALL live in `ui/common`. Source organisation changes SHALL preserve existing
-screen state, navigation callbacks, API behaviour and UI interactions.
+Android member screen entry points and screen-specific helpers SHALL be
+organised under named feature packages below `ui`, including the existing
+member search, profile detail, profile editing, inbox, conversation and
+contacts screens, and the integrated Circles, HostDetail, HostMap, HostOffer,
+Search, Account, Experience, Menu and Startup screens. Components and helpers
+shared across screen features SHALL live in `ui/common` where appropriate.
+`TrustrootsApp`, `Destination`, `MemberTabVisit`, `MemberShellVisit` and the
+`MemberShell` coordinator SHALL remain in the `ui` root. Source organisation
+changes SHALL preserve existing rendering, navigation and route state,
+ViewModel ownership and lifetime, callbacks, resources, API behaviour and UI
+interactions. All existing unit and Android journey tests and their assertions
+SHALL remain in place, with feature ViewModel tests located in their owning feature package and
+established Android journeys retaining their integration package. Already
+published serialisable route types SHALL retain their Java class names because
+Navigation 3 persists those names in Android SavedState, including the existing
+Menu page/browser keys and their enum values.
 
 #### Scenario: Maintaining one member screen
 
-- **WHEN** a contributor changes one of these Android member screens
-- **THEN** its entry point is in that screen's package
-- **AND** shared components are available through `ui/common`
+- **WHEN** a contributor changes an Android member screen included in this
+  source organisation
+- **THEN** its entry point and screen-specific helpers reside in the owning
+  feature package
+- **AND** shared UI components reside in `ui/common` where appropriate
+- **AND** production and test references use explicit imports for the new
+  package ownership
+- **AND** former files contain no forwarding screen functions or compatibility
+  aliases
 
 #### Scenario: Existing member journeys after source extraction
 
-- **WHEN** a member searches, opens a profile, edits their profile, reads an
-  inbox, opens a conversation or browses contacts after source extraction
-- **THEN** the existing interactions and Back callbacks remain unchanged
-- **AND** existing Android journey coverage remains in place
+- **WHEN** a member uses any Android screen included in this source organisation
+- **THEN** its existing rendering, navigation, state ownership, ViewModels,
+  resources, API behaviour and interactions remain unchanged
+- **AND** all existing unit and Android journey test methods, assertions and
+  counts remain in place
+
+#### Scenario: Restoring published Menu routes after source organisation
+
+- **GIVEN** Android SavedState contains a supported Menu page or browser route
+- **WHEN** Navigation 3 restores the stack after the source organisation
+- **THEN** the original `org.trustroots.android.ui` route class names resolve
+- **AND** legacy EditProfile and omitted support-link values remain supported
+- **AND** translated titles, URLs and session cookies are resolved at runtime
 
 ### Requirement: Consistent Android search and filter controls
 
@@ -334,6 +360,106 @@ and footer behaviour.
 - **THEN** the recent keyboard-aware scrolling, submission action, and footer
   placement remain usable
 
+### Requirement: Android app session lifecycle
+
+The Android app SHALL own secure-session restoration and signed-in/signed-out
+transitions in an Activity-scoped state owner. `TrustrootsApp` SHALL render
+navigation from that owner's state rather than owning session loading,
+persistence or sign-out/invalidation state itself. The session cookie SHALL
+remain runtime-only outside the existing encrypted `SecureMobileSessionStore`.
+
+#### Scenario: Initial restore
+
+- **WHEN** a new Activity-scoped session owner starts without an in-memory
+  result
+- **THEN** it reads `SecureMobileSessionStore` once on an IO dispatcher
+- **AND** an absent or unreadable stored session resolves to signed out
+- **AND** Startup is displayed for at least 700 ms measured from the start of
+  restoration, unless restoration itself takes longer
+- **AND** a valid stored session is used without an additional remote
+  validation request before the authenticated shell is shown
+
+#### Scenario: Activity recreation
+
+- **WHEN** the Activity is recreated while restoration is in progress or after
+  a session is loaded
+- **THEN** the Activity-scoped owner retains the in-flight operation or current
+  in-memory state
+- **AND** Compose recreation does not restart restoration or the minimum-delay
+  timer
+- **AND** the session cookie is not copied to Android saved state
+
+#### Scenario: Sign in and member update
+
+- **WHEN** sign-in succeeds or the authenticated member is updated
+- **THEN** the owner calls the existing secure-store save operation before
+  publishing the new in-memory session
+- **AND** save and state publication remain synchronous within the existing
+  main-thread callback, without an asynchronous gap that permits another
+  sign-in submission
+- **AND** a member update preserves the existing session cookie
+- **AND** successful sign-in clears signed-out feedback and sign-in browser
+  destination state
+- **AND** persistence retains the existing encrypted payload and
+  `SharedPreferences.apply()` semantics
+
+#### Scenario: Explicit sign out
+
+- **WHEN** the member signs out
+- **THEN** the app clears that member's response cache using the current
+  normalised backend URL and username
+- **AND** cache, store and owner cleanup remain synchronous in the existing
+  main-thread callback order
+- **AND** it clears the stored session, sign-in destination and authenticated
+  shell entry stores before publishing signed-out state
+- **AND** no session-expired message is shown for explicit sign-out
+
+#### Scenario: Authentication invalidation
+
+- **WHEN** an authenticated route reports that the session is invalid
+- **THEN** the app performs the same cache, store and navigation-owner cleanup
+  as explicit sign-out
+- **AND** it publishes the existing session-expired feedback for the sign-in
+  screen
+- **AND** a subsequent successful sign-in clears that feedback
+
+#### Scenario: Backend replacement
+
+- **WHEN** the active backend URL changes
+- **THEN** the sign-in navigation owner clears its destination as it does today
+- **AND** a signed-in session is not cleared or rewritten solely because the
+  backend changed
+- **AND** authenticated entry ViewModels receive the new API environment and
+  retain their existing request cancellation/reload behaviour
+
+#### Scenario: Stale authenticated callback
+
+- **WHEN** a member-update, sign-out or invalidation callback arrives from a
+  previously active account, cookie or backend
+- **THEN** the owner ignores it and retains the current session
+- **AND** it does not clear the current account cache, persisted session or
+  navigation stores
+- **AND** an invalidation callback received after sign-out does not publish
+  session-expired feedback
+
+#### Scenario: Activity owner is cleared
+
+- **WHEN** the Activity-scoped session ViewModel is finally cleared
+- **THEN** it cancels restoration and drops its in-memory session and feedback
+- **AND** it does not clear the persisted session or response cache
+- **AND** late callbacks cannot save a session or change runtime state after
+  the owner has been cleared
+- **AND** a later Activity owner can restore the still-persisted session
+
+#### Scenario: Credential and route boundary
+
+- **WHEN** the app saves or restores navigation and session state
+- **THEN** the cookie is present only in live `MemberSession` memory and the
+  existing encrypted session store
+- **AND** it is absent from Navigation 3 keys and Android saved-state bundles
+- **AND** the route graph remains responsible only for navigation identifiers
+  and non-secret UI state
+
 ### Requirement: Formatted Android circle descriptions
 
 Android circle details SHALL render the supported rich-text structure from the
@@ -413,10 +539,7 @@ history. Each visit SHALL have a unique entry identity, including repeated
 visits to the same destination. After the parent has loaded the live
 authenticated session, the active destination SHALL be restorable after
 activity recreation. Top-level tab keys SHALL be serialisable and contain no
-session credentials, cookies, account secrets or member-specific payloads.
-Persisted Navigation 3 route types SHALL retain their Java class names across
-source organisation so Android SavedState from an earlier app version remains
-resolvable. The
+session credentials, cookies, account secrets or member-specific payloads. The
 live authenticated parent SHALL remain the source of session and member data.
 
 #### Scenario: Member switches between top-level destinations
@@ -485,72 +608,28 @@ commit a pop or bypass the leave decision.
 - **THEN** the nested page or browser closes before the top-level history is
   popped
 
+#### Scenario: Browser history is traversed before its route closes
+
+- **WHEN** a member presses Back in an embedded browser with WebView history
+- **THEN** Back first traverses that browser history
+- **AND** a later Back closes the browser route and restores its exact source
+  entry
+
+#### Scenario: Profile contact request uses a safe browser route
+
+- **WHEN** a member opens the contact-request page from a profile
+- **THEN** its browser route keeps the source profile beneath it and records
+  only the purpose, public member ID and visit identity
+- **AND** its localised title, URL and current session cookie are supplied at
+  runtime
+- **AND** Back traverses WebView history before returning to the same profile
+
 #### Scenario: Member leaves a dirty form through top-level navigation
 
 - **WHEN** a member selects another top-level destination while a form has
   unsaved changes
 - **THEN** the existing leave guard asks whether to keep editing or discard
 - **AND** keeping edits leaves the form and top-level destination unchanged
-
-### Requirement: Navigation 3 owns Android member flows
-
-The authenticated Android app SHALL represent Inbox and Conversation, Profile
-and Contacts, profile editing and Experience creation, HostOffer and Account as
-serialisable Navigation 3 child entries beneath their existing top-level
-visit. Each entry SHALL own its mutable business state and asynchronous work
-through its Navigation 3 ViewModel store. Route keys SHALL contain only a
-stable public identifier and visit identity; runtime sessions, cookies, API
-responses, message content and editable form values SHALL remain outside route
-state. Back SHALL return to the exact originating member route, and shared
-leave guards SHALL run before a dirty form is removed.
-
-#### Scenario: Member opens a conversation from Inbox or an alert
-
-- **WHEN** a member opens a conversation from Inbox or a valid message alert
-- **THEN** Navigation 3 places Conversation above its Inbox route
-- **AND** Conversation reloads its recipient and messages from the authenticated API
-- **AND** Back returns to the same Inbox visit and then the previous shell visit
-
-#### Scenario: Member opens a profile from a member flow
-
-- **WHEN** a member opens a profile from Contacts, Inbox, Conversation or another Profile
-- **THEN** the profile is placed above the route that opened it
-- **AND** Back returns to that exact source with its list, filter and scroll state
-
-#### Scenario: Member edits a profile or creates an Experience
-
-- **WHEN** a member opens Edit Profile or Experience creation from a profile
-- **THEN** the form is a distinct entry above that profile
-- **AND** its ViewModel owns loading, edits, save state and retryable failures
-- **AND** a successful save returns to the same profile and refreshes its data
-
-#### Scenario: Member leaves a changed profile form
-
-- **WHEN** a member attempts Back, Cancel or top-level navigation with unsaved changes
-- **THEN** the shared keep-editing or discard decision runs before the route changes
-- **AND** keeping the form preserves all entered values
-
-#### Scenario: Member opens a Menu destination
-
-- **WHEN** a member opens Contacts, HostOffer, Account, Profile or Edit Profile from Menu
-- **THEN** the destination is a distinct Menu child entry
-- **AND** Back returns to the same Menu visit
-- **AND** selecting Menu again uses its established reset to the Menu root
-
-#### Scenario: Android restores a member-flow entry
-
-- **WHEN** Android recreates the activity while a member-flow entry is open
-- **THEN** the safe route history is restored beneath the live authenticated session
-- **AND** destination data reloads through the current API client
-- **AND** no session credential, private message or form payload is restored from a route key
-
-#### Scenario: Android restores a previously saved Menu route
-
-- **WHEN** Android restores a Menu route saved by an earlier app version
-- **THEN** the Menu page and browser route classes resolve using their stable
-  Java class names
-- **AND** organising their source file under `ui/menu` does not change the
-  persisted route identity
 
 ### Requirement: Navigation-scoped Android Circles state
 
@@ -613,6 +692,17 @@ its outstanding work.
   Back
 - **THEN** the selected detail is cleared
 - **AND** the current overview filter and loaded data remain available
+
+#### Scenario: Circle detail owns its visit and returns membership changes
+
+- **WHEN** a member opens a circle from a filtered, scrolled Circles overview
+  and changes membership in its detail route
+- **THEN** the detail entry loads canonical circle data by its public slug and
+  owns its membership request and result
+- **AND** Back restores the same overview visit, filter and scroll position
+  with the changed membership reflected without reloading the catalogue
+- **AND** Activity recreation restores the supported detail route from its
+  slug and visit identity
 
 ### Requirement: Collapsing Android message headers
 
@@ -839,6 +929,726 @@ behaviour. Header and content layout SHALL respect the supplied system insets.
 - **THEN** the artwork, actions, tabs, and content avoid duplicate or missing
   inset space
 - **AND** action touch targets remain accessible
+
+### Requirement: Entry-scoped Android contacts state
+
+The Android Contacts screen SHALL keep its loaded list, request status and
+retryable failure with the Navigation 3 entry that owns the Contacts page.
+Loading the signed-in member profile to obtain its ID and loading contacts
+SHALL be coordinated by an injectable screen ViewModel. The ViewModel SHALL
+ignore stale request completions, cancel work when its entry is removed, and
+deliver session invalidation once. ViewModel state and saved navigation state
+SHALL not contain session credentials.
+
+#### Scenario: Contacts load succeeds and the member returns from a profile
+
+- **WHEN** a member opens a contact profile and then presses Back
+- **THEN** the Contacts list and its state remain available
+- **AND** the successful contacts request is not repeated
+
+#### Scenario: Contacts load fails and can be retried
+
+- **WHEN** a profile or contacts request fails without invalidating the session
+- **THEN** the Contacts screen shows the existing failure text and a retry action
+- **AND** retry starts a fresh request and replaces any stale result
+
+#### Scenario: Contacts request invalidates the session
+
+- **WHEN** either Contacts request returns an authentication failure
+- **THEN** the existing session-invalidated callback runs once
+- **AND** the authenticated shell clears the Contacts entry state
+
+#### Scenario: Contacts entry is removed
+
+- **WHEN** the owning Navigation 3 entry is removed while a request is active
+- **THEN** its request is cancelled and its Contacts state is cleared
+
+### Requirement: Localised API and screen failure fallbacks
+
+The Android member application SHALL represent app-generated API and
+screen-specific fallback failures using stable identifiers and optional
+nonblank server-provided text. API and ViewModel layers SHALL remain independent
+of Android resources and SHALL NOT retain translated strings in failure state.
+Composable UI SHALL resolve fallback identifiers through the active Android
+string resources. A nonblank server-provided error message SHALL continue to
+take precedence and be displayed verbatim. Existing English default wording
+SHALL remain the default resource copy, not a fabricated API exception message
+retained for internal-test compatibility. API diagnostics MAY use
+machine-readable codes.
+
+#### Scenario: Server supplies an error message
+
+- **WHEN** an API request fails and the response contains a nonblank message
+- **THEN** the Android UI displays that server-provided message
+- **AND** it does not replace it with the local fallback resource
+
+#### Scenario: API response omits a rejection message
+
+- **WHEN** sign-in is rejected or another request receives an error response
+  without a nonblank message
+- **THEN** the API result carries the corresponding context-free failure
+  identifier
+- **AND** the UI displays the matching string resource for the current locale
+- **AND** the API failure carries no fabricated English fallback message
+
+#### Scenario: Successful sign-in response omits a member session
+
+- **WHEN** a successful sign-in response has no member session cookie
+- **THEN** the API result identifies the `MissingSession` fallback
+- **AND** the UI resolves its message using the active locale's resource
+
+#### Scenario: Error state is owned by an integrated ViewModel
+
+- **WHEN** `SignInViewModel`, `CirclesViewModel`, `MemberSearchViewModel`, or
+  `ContactsViewModel` retains a failure across a recomposition or configuration
+  change
+- **THEN** it retains the failure kind and optional nonblank server text
+- **AND** the UI resolves fallback copy from the currently active resources
+
+#### Scenario: Locale changes while an error is retained
+
+- **WHEN** the Android resource configuration changes while a fallback failure
+  remains in UI or ViewModel state
+- **THEN** the failure continues to carry its identifier and optional server
+  text
+- **AND** the UI displays the fallback in the newly active locale
+
+### Requirement: Localised unknown member label
+
+The Android API member models SHALL retain server-derived display names and
+usernames without embedding translated fallback copy. Compose presentation
+SHALL use the existing `profile_photo_default_member_label` string resource
+when neither a nonblank display name nor a username is available.
+
+#### Scenario: Member payload has no usable name
+
+- **WHEN** a member has a blank display name and no username
+- **THEN** the UI displays the default member label from the active Android
+  string resources
+- **AND** the API model remains independent of Android resources
+
+### Requirement: Navigation-scoped Android Host Offer state
+
+The Android Host offer editor SHALL keep its load, editable form, validation,
+save transaction and outcome state in a ViewModel scoped to its existing
+Navigation 3 menu entry. The ViewModel SHALL expose immutable UI state and
+explicit events and SHALL use an injectable repository. The repository SHALL
+load the member profile before the accommodation offer and SHALL normalise
+offer HTML into trimmed editable text outside the ViewModel. The ViewModel
+SHALL preserve the existing offer defaults, validation and save payload. It
+SHALL retain no session credential or translated fallback string in UI or
+saved state. API failures SHALL retain nonblank server text and failure kind
+until Compose resolves an XML fallback at render time. Removing the menu entry
+or signing out SHALL cancel its outstanding work and clear its state.
+
+#### Scenario: Member opens an existing Host offer
+
+- **WHEN** the Host offer entry loads the signed-in member's profile and
+  accommodation offer successfully
+- **THEN** the existing offer values are shown as editable plain text
+- **AND** HTML markup is decoded and trimmed before it reaches the form
+- **AND** the original complete offer is retained as the dirty-form baseline
+
+#### Scenario: Member starts with no Host offer
+
+- **WHEN** the profile and accommodation-offer reads succeed and no offer
+  exists
+- **THEN** availability defaults to `yes`, descriptions are empty, maximum
+  guests is `1`, show-only-in-my-circles is false, and the existing default
+  coordinates are used
+- **AND** the form is not treated as a failed load
+
+#### Scenario: Host offer load fails
+
+- **WHEN** either the profile read or offer read fails for a reason other than
+  authentication
+- **THEN** the form remains in a failed-load state and is not presented as a
+  new offer
+- **AND** Retry repeats the profile-then-offer sequence
+- **AND** a nonblank server message is shown when present; otherwise an API-kind
+  or Host-offer XML fallback is resolved at render time
+
+#### Scenario: Member edits and validates a Host offer
+
+- **WHEN** the member edits availability, descriptions, maximum guests or the
+  circle-only setting
+- **THEN** dirty state compares the current complete offer with the loaded or
+  last-saved baseline
+- **AND** hosting availability requires at least five trimmed description
+  characters while `no` availability does not
+- **AND** maximum guests remains constrained to the existing range of 1–20
+
+#### Scenario: Member saves a Host offer
+
+- **WHEN** the member saves a valid form
+- **THEN** exactly one immutable snapshot of all current fields is submitted
+- **AND** a successful response updates the offer ID and saved baseline from
+  that snapshot
+- **AND** translated success text is resolved from XML when displayed
+
+#### Scenario: Host offer save fails
+
+- **WHEN** saving fails for a reason other than authentication
+- **THEN** the form values and dirty baseline remain available for another
+  attempt
+- **AND** the error retains nonblank server text and API failure kind until
+  render-time XML fallback resolution
+
+#### Scenario: Member leaves a changed Host offer
+
+- **WHEN** the member uses Cancel, system or predictive Back, or top-level
+  navigation with unsaved changes
+- **THEN** the existing keep-editing or discard decision is shown
+- **AND** keeping edits preserves the Host entry and all entered values
+- **AND** an in-flight save blocks navigation until it completes
+
+#### Scenario: Activity is recreated during Host offer work
+
+- **WHEN** Android recreates the Activity while Host offer loading or saving is
+  in progress
+- **THEN** the entry-scoped ViewModel retains its form and transaction state
+- **AND** the same operation completes without a duplicate profile, offer or
+  save request
+
+#### Scenario: Host offer entry is removed
+
+- **WHEN** Navigation 3 removes the Host menu entry or the member signs out
+- **THEN** its ViewModel cancels outstanding work and clears its form state
+- **AND** a later Host entry starts fresh from the live authenticated session
+
+### Requirement: Account settings state is owned by its Menu visit
+
+The Android Account page SHALL expose account, password, message-alert and
+preview-update state from one ViewModel owned by its decorated
+`MenuPageVisit(MenuPage.Account, visitID)` entry. The ViewModel SHALL use
+immutable context-free state, explicit events and injectable account/platform
+settings boundaries. It SHALL preserve the existing account APIs, dirty-form
+guard, notification permission flow, preview-update behaviour, reset-password
+navigation and sign-out ordering. Android permission launchers, Activity-bound
+UnifiedPush selection and external URL launching SHALL remain in the UI
+adapter and SHALL communicate through identified, acknowledged effects.
+
+The Account entry MAY retain safe drafts while it remains on the Menu back
+stack and across Activity recreation. A recreated Activity SHALL NOT by itself
+repeat an account read or a completed platform side effect. A new Account visit
+SHALL create fresh state and load the account once. The ViewModel SHALL cancel
+its work and clear account-owned in-memory state when its entry is removed. It
+SHALL NOT persist a member session, cookie, `MobileApiClient`, password, email
+draft, account response, `Context`, `Activity` or platform object in route
+keys, saved state or persistent storage. Password inputs SHALL be cleared on
+successful password change and when the ViewModel is cleared. User-facing
+status labels SHALL be resolved from Android resources at the UI boundary.
+
+#### Scenario: Account visit loads once and survives Activity recreation
+
+- **WHEN** a member opens Account and Android recreates the Activity while the
+  Account visit remains on the Menu back stack
+- **THEN** the Account entry retains its safe form and status state
+- **AND** account details are not fetched a second time solely because the
+  Activity was recreated
+- **AND** no completed permission, external-link or sign-out effect is
+  dispatched again
+
+#### Scenario: Member saves account settings or changes password
+
+- **WHEN** a member submits changed email/newsletter settings or a valid
+  current/new/verification password form
+- **THEN** the Account ViewModel runs the existing API operation once and
+  publishes success or a context-free typed failure
+- **AND** obsolete or cancelled responses do not overwrite newer state
+- **AND** a successful password change clears all password inputs
+
+#### Scenario: Member leaves Account with a dirty form
+
+- **WHEN** the member uses toolbar Back, system Back or opens Reset Password
+  while account or password fields are dirty
+- **THEN** the existing discard guard is shown
+- **AND** confirming performs the selected navigation action while cancelling
+  keeps the Account visit and its current drafts
+- **AND** the guard prevents leaving while an account or password save is active
+
+#### Scenario: Member changes notification settings
+
+- **WHEN** the member enables message or preview-update notifications on a
+  device that requires runtime permission
+- **THEN** the ViewModel emits one identified permission effect and the Compose
+  Activity Result launcher requests permission
+- **AND** the permission outcome is delivered as an explicit event without the
+  ViewModel retaining an Activity
+- **AND** denial, retry, UnifiedPush selection and setting status retain their
+  existing user-visible semantics without replay after Activity recreation
+
+#### Scenario: Preview update is checked and opened
+
+- **WHEN** the member requests an update check or chooses an available release
+- **THEN** the Account ViewModel owns the check generation, cancellation and
+  typed result state
+- **AND** the UI opens the release URL at most once for the acknowledged effect
+- **AND** translated status labels are resolved from Android resources
+
+#### Scenario: Account request invalidates the session or member signs out
+
+- **WHEN** an account request reports authentication failure or the member
+  signs out
+- **THEN** the Account owner delivers one identified session-invalidated or
+  signed-out effect to the existing shell
+- **AND** sign-out preserves the existing message-alert disable then API
+  sign-out ordering
+- **AND** removing the authenticated shell clears the Account entry and
+  cancels its work
+
+#### Scenario: Account entry is removed or process state is restored
+
+- **WHEN** the Account visit is removed by Back, Menu reselection or shell
+  removal, or a process is restored without its in-memory ViewModel
+- **THEN** removed-entry work is cancelled and its password values are cleared
+- **AND** a new Account model fetches current server details instead of
+  restoring account responses, cookies or password drafts from saved state
+
+### Requirement: Navigation-scoped Android messaging state
+
+The Android Inbox and Conversation screens SHALL keep their business state in
+separate immutable-state ViewModels scoped to their own Navigation 3 route
+entries. Their API and draft operations SHALL be injectable for deterministic
+tests. The Inbox route SHALL remain below a Conversation route so returning
+from a conversation restores the same inbox visit. The ViewModels SHALL NOT
+place session cookies or session objects in UI state, route keys, saved state
+or persistent draft keys.
+
+The Conversation ViewModel SHALL resolve its recipient independently of the
+Inbox ViewModel using the authenticated existing mini-user endpoint and its
+stable member ID. Profile route keys SHALL carry the public username required
+by the existing profile loader. Inbox and Conversation state SHALL remain
+owned by their respective decorated entries.
+
+#### Scenario: Member temporarily leaves the Messages tab
+
+- **WHEN** a member switches to another top-level tab while a Messages visit
+  remains on the back stack
+- **THEN** the Inbox filter and loaded threads remain available
+- **AND** an open Conversation retains its messages, draft and send state
+- **AND** returning does not repeat successful loads solely because of the
+  temporary tab change
+
+#### Scenario: Member returns from a conversation
+
+- **WHEN** a member closes a Conversation route
+- **THEN** that Conversation ViewModel is cleared
+- **AND** the same Inbox route and filter become visible and refresh its thread
+  pages
+
+#### Scenario: Member reselects Messages
+
+- **WHEN** a member reselects the active Messages tab
+- **THEN** nested navigation returns to Inbox, clears its filter and reloads
+  inbox pages
+- **AND** no duplicate top-level tab visit is added
+
+#### Scenario: Member sends a message
+
+- **WHEN** a member sends a non-empty message or quick reply
+- **THEN** the existing API request and quick-reply payload are preserved
+- **AND** a successful response appears in the Conversation and clears its
+  account-scoped draft
+- **AND** a transport failure keeps the draft available for retry
+
+#### Scenario: Draft survives a route or process recreation
+
+- **WHEN** a member edits a Conversation draft and its route is recreated or
+  reopened
+- **THEN** the draft is restored from the existing account/counterpart draft
+  store
+- **AND** a successful send clears the stored draft
+
+#### Scenario: Conversation request becomes obsolete
+
+- **WHEN** a request is cancelled, superseded, or belongs to a removed route
+  or previous session
+- **THEN** its late result does not replace the current route state
+- **AND** removing the route cancels its outstanding work
+
+#### Scenario: Member session expires during messaging
+
+- **WHEN** an Inbox or Conversation request reports an authentication failure
+- **THEN** the route ViewModel emits one identified invalidation event
+- **AND** the existing parent callback is delivered once and the event is
+  acknowledged
+- **AND** a renewed live session can retry without reusing old request results
+
+#### Scenario: Activity is recreated in a message route
+
+- **WHEN** Android recreates the activity while Inbox or Conversation is
+  active
+- **THEN** the safe Navigation 3 route and entry-scoped state are restored
+  after the live session is available
+- **AND** no cookie or session object is restored from route or saved state
+
+#### Scenario: Alert opens a conversation without an Inbox row
+
+- **WHEN** an authenticated message alert opens a Conversation route whose
+  recipient is not present in the Inbox result
+- **THEN** the Conversation ViewModel resolves that recipient through the
+  existing authenticated mini-user endpoint using the route's stable member ID
+- **AND** it loads messages without depending on Inbox ViewModel state
+- **AND** Back returns through the preserved Inbox and prior shell origin
+
+#### Scenario: Profile route is restored
+
+- **WHEN** a member profile is opened from an Inbox or Conversation route and
+  Android restores that route
+- **THEN** its route key retains the public username required by the profile
+  loader
+- **AND** Back returns to the same source route and visit
+
+#### Scenario: Profile conversation returns to its exact profile visit
+
+- **WHEN** a member opens a conversation from a profile and Android recreates
+  the Activity while that conversation is active
+- **THEN** the conversation has its own entry-scoped state and restores using
+  its stable member ID and visit identity
+- **AND** Back restores the same profile entry, including its loaded data and
+  saveable pager and list position
+- **AND** repeated profile visits do not share conversation stores
+
+#### Scenario: Unread message badge updates
+
+- **WHEN** the authenticated shell performs its existing periodic inbox poll
+- **THEN** the unread-message badge continues to reflect the current account
+- **AND** route ViewModel state remains separate from shell badge polling
+
+#### Scenario: Message route state excludes credentials
+
+- **WHEN** Inbox, Conversation and profile message routes are serialised for
+  navigation restoration
+- **THEN** their route data contains only the destination identity and visit
+  identity required to restore each route
+- **AND** no session cookie, message content or draft is included in route data
+- **AND** drafts remain in the existing account/counterpart draft store
+
+### Requirement: Navigation-owned native profile forms
+
+The Android app SHALL represent profile editing and Experience creation as
+distinct Navigation 3 child entries owned by the active profile visit. The
+direct Menu Edit destination SHALL be an actual Menu entry. Each form entry
+SHALL own its immutable business state, API work and failure state through a
+ViewModel created from that entry's real Navigation 3 store. Route keys SHALL
+contain only stable public identifiers and visit IDs; they SHALL NOT contain
+session credentials, cookies, translated labels, full profiles, server
+responses or editable form contents.
+
+#### Scenario: Member edits a profile
+
+- **WHEN** a member opens Edit from their profile or the Menu
+- **THEN** the editor is a distinct entry beneath that origin
+- **AND** the canonical profile and current form are owned by the editor's
+  entry-scoped ViewModel
+- **AND** Back returns to the exact profile or Menu origin
+
+#### Scenario: Member creates an Experience
+
+- **WHEN** a member opens Experience creation from a profile
+- **THEN** the recipient profile remains on the Navigation 3 stack
+- **AND** the Experience form and request state belong to a distinct entry
+- **AND** success returns to the same profile and refreshes its references
+
+#### Scenario: Activity recreates while a form is open
+
+- **WHEN** Android recreates the Activity while Edit Profile or Experience is
+  open
+- **THEN** the active route and in-memory form ViewModel state remain available
+- **AND** no startup screen replaces the form
+- **AND** no cookie, session credential or form draft is added to route keys or
+  persistent storage
+
+Profile form handoff state SHALL be held by a ViewModel scoped to the actual
+enclosing decorated Navigation 3 entry owner, keyed by the parent profile
+visit ID. It SHALL retain the loaded profile snapshot and display name only
+while that route owner remains active, seed ordinary edit navigation without
+an additional profile request, and clear the values when the profile route is
+removed or the backend, account username or session cookie changes. Successful
+profile save and Experience creation SHALL return typed one-shot completions
+to the exact parent profile visit; repeated visits to the same username SHALL
+not share or consume one another's completion. These runtime values SHALL NOT
+be placed in route keys or saved state. After process death, Edit Profile SHALL
+safely reload the canonical profile by username when no fast handoff snapshot
+exists.
+
+#### Scenario: Process restores a form route without its ViewModel
+
+- **WHEN** Android restores a form route after process death and its ViewModel
+  no longer exists
+- **THEN** Edit Profile reloads the canonical profile and presents a clean
+  baseline
+- **AND** Experience creation starts with its existing default values
+- **AND** the app does not restore an unsaved draft or repeat a save request
+
+### Requirement: Profile form navigation protects unsaved changes
+
+The active Edit Profile or Experience form SHALL use the shared leave guard for
+toolbar Cancel, system/predictive Back and primary navigation. Keeping the form
+after a discard prompt SHALL retain its exact values. Confirming discard SHALL
+perform the pending navigation once. Saving SHALL block navigation and
+duplicate submission until it completes. Save failures SHALL keep the form
+open and expose localized errors resolved from typed failure metadata.
+
+#### Scenario: Member attempts to leave a dirty profile form
+
+- **WHEN** the member cancels, presses Back or changes top-level navigation
+  after editing fields
+- **THEN** one discard decision is shown before the route changes
+- **AND** keeping the form retains every entered value
+- **AND** confirming discard performs the requested route transition once
+
+#### Scenario: Member saves while navigation is requested
+
+- **WHEN** an Edit Profile or Experience save is in flight
+- **THEN** the form cannot be left and another save cannot be submitted
+- **AND** success updates the parent state and pops once
+- **AND** a non-authentication failure leaves the form available for retry
+
+#### Scenario: Form API reports an expired session
+
+- **WHEN** an Edit Profile or Experience request reports an authentication
+  failure
+- **THEN** its ViewModel emits one identified invalidation event
+- **AND** the shell handles that event once and clears account-owned entry
+  stores
+- **AND** a stale response after entry removal cannot invalidate a newer
+  session
+
+#### Scenario: Same-account session renewal preserves a form draft
+
+- **WHEN** the active form receives a rotated session cookie for the same
+  account and normalized backend
+- **THEN** it updates its repository to use the current runtime API/session
+- **AND** it retains the in-memory draft, cancels work started with the old
+  cookie, and permits a new explicit retry after the authentication latch is
+  renewed
+- **AND** replacing the API client for the same backend does not reload Edit
+  Profile or automatically repeat an Experience submission
+
+#### Scenario: Account or backend changes while a form is retained
+
+- **WHEN** a form entry receives a different account or normalized backend
+- **THEN** its in-flight work is cancelled and stale responses are ignored
+- **AND** the old form contents and authentication latch are cleared
+- **AND** Edit Profile reloads only when the current account matches the route
+  username; otherwise it remains empty until that entry is removed
+- **AND** an Experience creation is never automatically resubmitted
+
+#### Scenario: A member returns from Experience creation
+
+- **WHEN** a member successfully creates an Experience and returns to the
+  profile
+- **THEN** the same profile entry and selected section are restored
+- **AND** the profile's references reflect the newly created Experience
+
+### Requirement: Navigation-owned Android sign-in destinations
+
+The Android signed-out flow SHALL represent its form and browser destinations
+as Navigation 3 entries. The root `SignInVisit` SHALL own its sign-in
+ViewModel through the entry's ViewModel store. Sign-up and forgotten-password
+pages SHALL be children identified by a safe purpose enum and a unique visit
+identity. Their browser title and URL SHALL be derived from the purpose and
+localised Android resources. Route keys and restored navigation state SHALL
+NOT contain credentials, cookies, API responses or session objects.
+
+#### Scenario: Member opens sign-up or password reset
+
+- **WHEN** a signed-out member selects Join or Forgot password
+- **THEN** the corresponding browser route is pushed above the same SignIn
+  entry
+- **AND** Back first traverses available WebView history, then returns to the
+  existing form entry
+- **AND** the browser route records no cookie or credential
+
+#### Scenario: Activity recreates during sign-in
+
+- **WHEN** Android recreates the Activity while the sign-in request is active
+- **THEN** the same SignIn entry retains its in-memory form state and request
+- **AND** the authentication request is not submitted again automatically
+- **AND** no password, session or cookie is encoded in the navigation state
+
+#### Scenario: Sign-in entry is removed or backend changes
+
+- **WHEN** the sign-in destination is cleared after successful authentication
+  or the configured backend changes
+- **THEN** its ViewModel cancels outstanding work and clears credential fields
+- **AND** any late authentication result is ignored
+- **AND** a later signed-out visit starts with a fresh form
+
+#### Scenario: Sign-in copy follows the Android locale
+
+- **WHEN** a signed-out screen or its browser route is rendered under an
+  Android locale configuration
+- **THEN** its brand description, action labels, build label and browser titles
+  come from the matching Android string resources
+- **AND** the authentication URLs and API contract remain unchanged
+
+### Requirement: Navigation-scoped Android discovery state
+
+The Android HostMap and MemberSearch screens SHALL expose immutable UI state
+from separate screen ViewModels and SHALL send user and viewport actions as
+explicit events. Each ViewModel SHALL be obtained from the actual decorated
+Search `MemberTabVisit(Destination.Search, visitID)` Navigation 3 entry's
+ViewModel store through an injectable repository boundary. The nested Search
+stack SHALL retain this visit beneath Map/Members mode content and
+HostDetail/MemberProfile routes. The map state SHALL retain its filters, visible offers, place search
+state, camera coordinates/zoom and safe community-note values. Host offer,
+profile and membership detail data SHALL belong to their child route owners,
+not the map ViewModel or saved route key. The member-search state SHALL retain
+its query, submitted results and search status. These states SHALL remain
+available while the Search visit is retained off-screen and across Activity
+recreation. Neither ViewModel nor its saveable navigation state SHALL persist
+a session, cookie, API client or credential. Removing the authenticated Search
+root SHALL cancel its work and clear its account-owned state.
+
+#### Scenario: Member changes Search mode
+
+- **WHEN** a member switches from HostMap to MemberSearch or back within one
+  Search visit
+- **THEN** the visible screen uses its existing ViewModel state
+- **AND** the other mode retains its query or filters, results, camera and
+  active request state
+
+#### Scenario: Search mode Back follows the visit's initial mode
+
+- **WHEN** a Search visit begins on Map and the member switches to Members
+- **THEN** Back returns to that visit's Map mode
+- **WHEN** a Search visit begins on Members
+- **THEN** Back at its Members root delegates to the existing shell history
+  without inserting a synthetic route owner
+
+#### Scenario: Member temporarily leaves Search
+
+- **WHEN** a member navigates to another top-level tab while the Search visit
+  remains on the Navigation 3 back stack
+- **THEN** returning to Search restores its HostMap and MemberSearch state
+- **AND** successful data is not reloaded solely because Search was temporarily
+  off-screen
+
+#### Scenario: Activity recreates during discovery
+
+- **WHEN** Android recreates the Activity while a member uses Search
+- **THEN** the Search entry's ViewModels retain the member query/results,
+  map filters and camera position/zoom
+- **AND** any still-current request remains observed or safely restarts without
+  displaying an obsolete result
+- **AND** no cookie or session credential appears in restored state or route
+  keys
+
+#### Scenario: Member opens a host detail from the map
+
+- **WHEN** a member opens a host offer and its profile from a visible map
+  marker
+- **THEN** Navigation 3 pushes HostDetail and MemberProfile under the same
+  Search visit with only the stable offer/member identifiers in route keys
+- **AND** Back returns to the map with the same camera, filters and visible
+  offers
+- **AND** fetched host, profile and membership records are owned by their
+  detail entries rather than copied into the map ViewModel or route keys
+
+#### Scenario: Host detail overlays and retains the same map visit
+
+- **WHEN** a member opens HostDetail from a map marker
+- **THEN** HostDetail appears as a bottom-aligned surface above a dim scrim
+  while the same map scene remains composed beneath it
+- **AND** the scrim blocks map input, while the shell and its bottom
+  navigation remain in the same Activity window
+- **AND** Back, including a cancelled predictive Back gesture, leaves the
+  retained map visit and its camera, filters, results and community-note
+  source unchanged
+
+#### Scenario: Map resumes with an unchanged viewport
+
+- **WHEN** Activity recreation or return from Members/detail restores the same
+  measured bounds and map filters after a successful visible-area response
+- **THEN** the map reuses the retained offers without an identical duplicate
+  API request
+- **AND** a changed viewport/filter or explicit reset starts a fresh debounced
+  request
+
+#### Scenario: Member explicitly reselects Search
+
+- **WHEN** a member reselects the active Search tab
+- **THEN** Navigation 3 returns to the Search map root without adding a shell
+  history visit
+- **AND** the member query, results, searched/error state and in-flight request
+  are cleared
+- **AND** the map returns to its existing default camera and filters, clears
+  place text, suggestions and old results, and performs a fresh visible-area
+  search
+
+#### Scenario: Obsolete member or map request completes
+
+- **WHEN** a newer query, filter, viewport, place lookup, explicit reset or
+  entry removal supersedes an earlier request
+- **THEN** the earlier response does not replace current results, loading or
+  error state, move the map, or restore obsolete suggestions
+
+#### Scenario: Place suggestions or location lookup fails
+
+- **WHEN** a place query is too short, returns no match or fails
+- **THEN** the map retains its existing viewport and visible offers
+- **AND** a late response for a previous query does not change the camera or
+  show an obsolete error
+
+#### Scenario: Member searches a text place
+
+- **WHEN** a member types at least three trimmed characters in place search
+- **THEN** suggestions are requested after the existing 400 ms delay and show
+  no more than three value-type results
+- **AND** selecting a suggestion or submitting a place zooms to level 9 and
+  searches that viewport after measurement
+- **AND** the flow uses Android Geocoder without requesting device-location
+  permission or saving `Context`, `Address` or `Geocoder` objects in ViewModel
+  state
+
+#### Scenario: Member disables both map offer types
+
+- **WHEN** both Hosts and Meet are disabled
+- **THEN** the current map-search request is cancelled, visible offers are
+  cleared and loading stops without sending an empty-types API request
+
+#### Scenario: Discovery request reports an expired session
+
+- **WHEN** a member search, map search, host-context or circle-membership
+  request reports an authentication failure
+- **THEN** the ViewModel emits one identified session-invalidation event
+- **AND** the existing shell callback is delivered once and acknowledges the
+  event
+- **AND** the removed Search entry cancels outstanding work and closes its live
+  community-note source
+
+#### Scenario: A different account opens Search
+
+- **WHEN** a member signs out or their session expires and another account
+  opens Search
+- **THEN** the prior Search entry and ViewModels are cleared
+- **AND** the new account starts with default map state and an empty member
+  search
+
+#### Scenario: Member returns from a child discovery destination
+
+- **WHEN** a member opens a host or member profile from Search and returns with
+  Back
+- **THEN** the same Search visit restores the map camera, active filters,
+  results, member query and result list position that preceded the child
+  destination
+
+#### Scenario: Search map and community-note source become inactive
+
+- **WHEN** a member switches from Map to Members while Meet remains enabled
+- **THEN** the map-only live note source closes while Search stays on Members,
+  and existing safe notes remain with that Search entry
+- **AND** returning to Map opens one current source and continues filtering
+  received notes
+- **AND** opening HostDetail or a member profile as an overlay above the map
+  keeps the map scene and its live note source connected
+- **AND** disabling Meet closes the source and clears received and visible
+  notes, as before
+- **AND** removing the Search-root entry closes the source and clears its
+  ViewModel state
 
 ### Requirement: Authenticated shell state belongs to a root Navigation 3 visit
 

@@ -15,7 +15,8 @@
 - [x] 2.1 Add an injectable repository for avatar-id and unread-count lookups
       using the existing profile and inbox endpoints.
 - [x] 2.2 Add immutable shell UI state and explicit events for account/API
-      updates, lifecycle, active-tab visit changes, retry and event
+      updates, lifecycle, active-tab visit changes, explicit unread refresh,
+      retry and event
       acknowledgement.
 - [x] 2.3 Move avatar lookup and unread count/poll ownership out of Compose;
       keep unread polling independent of Messages screen composition.
@@ -33,7 +34,8 @@
 - [x] 3.1 Add `MemberShellViewModelTest` coverage for initial loads, unread
       counting, active-tab refresh, lifecycle pause/resume, request
       cancellation, stale completions, API recreation, account/backend
-      replacement, ordinary failures and one-shot authentication delivery.
+      replacement, ordinary failures, explicit refresh cancellation and
+      one-shot authentication delivery.
 - [x] 3.2 Add a real Activity journey verifying decorated root ownership,
       nested-tab retention across recreation, no duplicate successful lookups,
       shell-wide badge refresh without Messages, lifecycle polling and account
@@ -44,9 +46,22 @@
 
 ## 4. Validation and completion
 
-- [x] 4.1 Run focused Android unit and instrumentation tests, lint and debug
-      build after implementation.
-- [x] 4.2 Update `native-android-member-app`, validate the completed change and
-      archive it after the implementation is verified.
+- [x] 4.1 Run focused Android unit and instrumentation tests, lint, debug build
+      and repository checks after implementation.
+- [x] 4.2 Strictly validate this focused OpenSpec change.
+- [x] 4.3 Update `native-android-member-app` and archive this change during
+      integration closeout.
 
-Validation: full Android compilation, unit tests, lint and debug/test APK assembly passed. The 11 focused unit tests and 31 device journeys passed; the strengthened Activity-recreation/predictive-Back journey also passed independently. `pnpm check` passed (253 client suites, 1,907 client tests and four configuration tests).
+## Validation evidence
+
+- Android unit tests and lint: passed in the full Android build;
+  `MemberShellViewModelTest` covers 11 repository, lifecycle, stale-work,
+  failure and invalidation cases.
+- Android instrumentation: all 368 API 36 journeys passed, including the
+  shell-owned unread/lifecycle/recreation journey and root/child store cleanup
+  plus sign-out/new-account journeys.
+- Debug APK build: passed in the full Android build.
+- Repository `pnpm check`: passed. The final validation report also records
+  253 client suites / 1,907 client tests and four configuration tests.
+- Strict OpenSpec validation: passed; the living requirement is updated during
+  archive closeout.

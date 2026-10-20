@@ -75,8 +75,8 @@ references and perform two safe queries: fetch the current member's avatar
 identifier, and fetch the unread count. The production adapter calls the
 existing profile and inbox endpoints and reduces their results immediately;
 it never exposes message threads or a full profile to the ViewModel. Represent
-request failures using the existing HTTP status and error-message fields, and
-keep translated labels in the UI layer.
+request failures using typed API failure metadata and keep translated labels in
+the UI layer.
 
 Replace adapter references when Compose supplies a recreated API client, but
 do not treat a new object with the same `MobileApiClient.backendURL` and same

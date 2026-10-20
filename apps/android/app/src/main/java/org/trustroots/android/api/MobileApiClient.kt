@@ -529,6 +529,15 @@ class MobileApiClient(
             }
         }
 
+    suspend fun circle(session: MemberSession, slug: String): Result<TrustrootsCircle> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                parseCircle(JSONObject(jsonRequest(
+                    "/api/tribes/${encode(slug)}", "GET", sessionCookie = session.cookieHeader,
+                ).body))
+            }
+        }
+
     suspend fun circleMemberships(session: MemberSession): Result<Set<String>> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -815,6 +824,9 @@ internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer {
 
 internal fun parseCircles(values: JSONArray): List<TrustrootsCircle> =
     (0 until values.length()).mapNotNull { parseCircleOrNull(values.getJSONObject(it)) }
+
+internal fun parseCircle(value: JSONObject): TrustrootsCircle =
+    requireNotNull(parseCircleOrNull(value)) { "Circle response is missing its public identity." }
 
 private fun parseCircleOrNull(value: JSONObject): TrustrootsCircle? {
     val id = value.optionalText("_id") ?: value.optionalText("id") ?: return null

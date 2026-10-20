@@ -2,15 +2,14 @@ package org.trustroots.android.ui
 
 import android.content.Context
 import android.content.ContextWrapper
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.platform.LocalContext
-import java.io.File
 import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -20,27 +19,28 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLConnection
-import java.net.URLStreamHandler
 import java.io.InputStream
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
+import java.net.HttpURLConnection
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.net.URL
+import java.net.URLConnection
+import java.net.URLStreamHandler
 import java.security.MessageDigest
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -51,6 +51,7 @@ import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.hostmap.HostResultCard
 
 @RunWith(AndroidJUnit4::class)
 class ArtworkAndHostResultRemainingBranchesJourneyTest {

@@ -1,11 +1,11 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -21,6 +21,8 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.hostmap.HostMapScreen
+import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapJourneyTest {
@@ -55,7 +57,7 @@ class HostMapJourneyTest {
             }
         }
         compose.waitUntil(15_000) {
-            compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         compose.onNodeWithTag("mapStatistics").assertIsDisplayed()

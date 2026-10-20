@@ -5,12 +5,12 @@ import android.graphics.Point
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -25,6 +25,7 @@ import org.osmdroid.views.MapView
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapOfferClusterThresholdJourneyTest {
@@ -72,16 +73,18 @@ class HostMapOfferClusterThresholdJourneyTest {
         }
 
         compose.setContent {
-            HostMapScreen(
-                api = MobileApiClient(local.baseURL),
-                session = MemberSession(
-                    SESSION_COOKIE,
-                    MobileMember("steady-heron", "Steady Heron"),
-                ),
-                onSessionInvalidated = {},
-                geocoderLookup = { _, _, _ -> emptyList() },
-                mapViewFactory = offlineMapViewFactory,
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = MemberSession(
+                        SESSION_COOKIE,
+                        MobileMember("steady-heron", "Steady Heron"),
+                    ),
+                    onSessionInvalidated = {},
+                    geocoderLookup = { _, _, _ -> emptyList() },
+                    mapViewFactory = offlineMapViewFactory,
+                )
+            }
         }
 
         compose.waitUntil(15_000) {

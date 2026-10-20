@@ -29,21 +29,31 @@ class SignInJourneyActivity : ComponentActivity() {
                             ) {
                                 Text("Fake browser: ${route.title}")
                                 Text(route.url)
-                                Text("Runtime session: ${route.sessionCookie.orEmpty()}")
+                                Text("Runtime session: ${route.sessionCookie}")
                                 TextButton(onClick = onClose) { Text("Close fake browser") }
                             }
                         }
+                    } else if (intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA) != null) {
+                        { route, onClose, contentPadding ->
+                            org.trustroots.android.browser.DefaultBrowserContent(
+                                route.copy(url = requireNotNull(intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA))),
+                                onClose,
+                                contentPadding,
+                            )
+                        }
                     } else {
-                        if (intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA) != null) {
+                        val localBrowserBaseUrl = intent.getStringExtra(BROWSER_BASE_URL_EXTRA)
+                        if (localBrowserBaseUrl == null) {
+                            org.trustroots.android.browser.DefaultBrowserContent
+                        } else {
                             { route, onClose, contentPadding ->
-                                org.trustroots.android.browser.DefaultBrowserContent(
-                                    route.copy(url = requireNotNull(intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA))),
+                                val path = if (route.url.endsWith("/signup")) "/signup" else "/password/forgot"
+                                org.trustroots.android.browser.TrustrootsBrowser(
+                                    route.copy(url = localBrowserBaseUrl.trimEnd('/') + path),
                                     onClose,
                                     contentPadding,
                                 )
                             }
-                        } else {
-                            org.trustroots.android.browser.DefaultBrowserContent
                         }
                     },
                 )
@@ -55,5 +65,6 @@ class SignInJourneyActivity : ComponentActivity() {
         const val API_BASE_URL_EXTRA = "org.trustroots.android.test.API_BASE_URL"
         const val FAKE_BROWSER_EXTRA = "org.trustroots.android.test.FAKE_BROWSER"
         const val PROFILE_BROWSER_URL_EXTRA = "org.trustroots.android.test.PROFILE_BROWSER_URL"
+        const val BROWSER_BASE_URL_EXTRA = "org.trustroots.android.test.BROWSER_BASE_URL"
     }
 }

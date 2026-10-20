@@ -1,5 +1,7 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.semantics.Role
+
 import android.content.Context
 import android.location.Address
 import androidx.activity.ComponentActivity
@@ -8,13 +10,13 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,6 +32,8 @@ import org.osmdroid.views.MapView
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
+import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -83,13 +87,15 @@ class MapAndCircleTransportJourneysTest {
         }
 
         compose.setContent {
-            HostMapScreen(
-                api = MobileApiClient(local.baseURL),
-                session = session(),
-                onSessionInvalidated = { invalidations.incrementAndGet() },
-                geocoderLookup = { _, _, _ -> emptyList<Address>() },
-                mapViewFactory = offlineMapViewFactory,
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = session(),
+                    onSessionInvalidated = { invalidations.incrementAndGet() },
+                    geocoderLookup = { _, _, _ -> emptyList<Address>() },
+                    mapViewFactory = offlineMapViewFactory,
+                )
+            }
         }
 
         compose.onNodeWithTag("hostMapView").assertIsDisplayed()
@@ -98,10 +104,21 @@ class MapAndCircleTransportJourneysTest {
         }
         compose.waitUntil(15_000) {
             offersRequests.get() > 0 &&
-                compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area")
+                compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
 
+        val initialSearchCount = offersRequests.get()
+        val initialSuccessfulSearches = successfulOfferResponses.get()
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("Last active: 6 months").performClick()
+        compose.waitUntil(10_000) {
+            offersRequests.get() > initialSearchCount &&
+                successfulOfferResponses.get() > initialSuccessfulSearches &&
+                !hasDynamicText(MAP_LABELS) &&
+                compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area")
+                    .fetchSemanticsNodes().isNotEmpty()
+        }
         tapMapMarker()
         awaitDynamicError(local, MAP_LABELS) { request -> request.path == "/api/offers/offer-one" }
         assertTrue(detailRequests.get() > 0)
@@ -118,21 +135,14 @@ class MapAndCircleTransportJourneysTest {
         val previousSuccessfulSearches = successfulOfferResponses.get()
         val failedDetailRequestCount = detailRequests.get()
         allowRecovery.set(true)
-        compose.onNodeWithTag("openFilters").performClick()
-        compose.onNodeWithText("Last active: 6 months").performClick()
-        compose.waitUntil(10_000) {
-            offersRequests.get() > previousSearchCount &&
-                successfulOfferResponses.get() > previousSuccessfulSearches &&
-                !hasDynamicText(MAP_LABELS) &&
-                compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area")
-                    .fetchSemanticsNodes().isNotEmpty()
-        }
-        tapMapMarker()
+        compose.onNodeWithTag("hostDetailRetry").performClick()
         compose.waitUntil(10_000) {
             detailRequests.get() > failedDetailRequestCount &&
                 compose.onAllNodesWithText("A fictional spare room.")
                     .fetchSemanticsNodes().isNotEmpty()
         }
+        assertEquals(previousSearchCount, offersRequests.get())
+        assertEquals(previousSuccessfulSearches, successfulOfferResponses.get())
 
         compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
         assertEquals(0, invalidations.get())
@@ -148,7 +158,7 @@ class MapAndCircleTransportJourneysTest {
             pathMatches = { it.path.startsWith("/api/offers?") },
             method = "GET",
             cookie = SESSION_COOKIE,
-            minimumCount = previousSearchCount + 1,
+            minimumCount = previousSearchCount,
         )
     }
 
@@ -230,6 +240,8 @@ class MapAndCircleTransportJourneysTest {
             when {
                 request.method == "GET" && request.path == "/api/tribes?limit=150" ->
                     LocalTransportFixture.Response(CIRCLES)
+                request.method == "GET" && request.path == "/api/tribes/quiet-coast" ->
+                    LocalTransportFixture.Response(CIRCLE_DETAIL)
                 request.method == "GET" && request.path == "/api/users/memberships" ->
                     LocalTransportFixture.Response("[]")
                 request.method == "POST" && request.path == "/api/users/memberships/circle-one" -> {
@@ -307,7 +319,8 @@ class MapAndCircleTransportJourneysTest {
             ).fetchSemanticsNodes().isNotEmpty()
             val dynamicError = compose.onAllNodes(
                 SemanticsMatcher("non-empty text outside the screen's fixed labels") { node ->
-                    node.config.contains(SemanticsProperties.Text) &&
+                    (!node.config.contains(SemanticsProperties.Role) || node.config[SemanticsProperties.Role] != Role.Tab) &&
+                        node.config.contains(SemanticsProperties.Text) &&
                         node.config[SemanticsProperties.Text]
                             .any { it.text.isNotBlank() && it.text !in knownLabels }
                 },
@@ -318,7 +331,8 @@ class MapAndCircleTransportJourneysTest {
 
     private fun hasDynamicText(knownLabels: Set<String>): Boolean = compose.onAllNodes(
         SemanticsMatcher("non-empty text outside the screen's fixed labels") { node ->
-            node.config.contains(SemanticsProperties.Text) &&
+            (!node.config.contains(SemanticsProperties.Role) || node.config[SemanticsProperties.Role] != Role.Tab) &&
+                        node.config.contains(SemanticsProperties.Text) &&
                 node.config[SemanticsProperties.Text]
                     .any { it.text.isNotBlank() && it.text !in knownLabels }
         },
@@ -357,6 +371,8 @@ class MapAndCircleTransportJourneysTest {
             """{"_id":"offer-one","status":"yes","description":"A fictional spare room.","maxGuests":1,"user":{"username":"quiet-fox","displayName":"Quiet Fox"}}"""
         const val CIRCLES =
             """[{"_id":"circle-one","slug":"quiet-coast","label":"Quiet Coast","count":2,"image":false}]"""
+        const val CIRCLE_DETAIL =
+            """{"_id":"circle-one","slug":"quiet-coast","label":"Quiet Coast","count":2,"image":false}"""
         val CIRCLE_LABELS = setOf(
             "Discover circles",
             "Joining circles helps you find likeminded Trustroots members.",
@@ -378,7 +394,7 @@ class MapAndCircleTransportJourneysTest {
             "All circles",
             "Spoken languages",
             "Any language",
-            "1 offers · 0 Nostroots notes in this area",
+            "1 offer · 0 Nostroots notes in this area",
             "Searching this area…",
             "Potential host",
             "© OpenStreetMap contributors",

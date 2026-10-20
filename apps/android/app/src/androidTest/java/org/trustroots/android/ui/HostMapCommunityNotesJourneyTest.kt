@@ -1,7 +1,8 @@
 package org.trustroots.android.ui
 
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -9,14 +10,13 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
-import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import okhttp3.Protocol
 import okhttp3.Request
@@ -34,6 +34,8 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.NostrootsNotesClient
+import org.trustroots.android.ui.hostmap.HostMapNotesConnection
+import org.trustroots.android.ui.hostmap.HostMapScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapCommunityNotesJourneyTest {
@@ -108,7 +110,10 @@ class HostMapCommunityNotesJourneyTest {
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
                 geocoderLookup = { _, _, _ -> emptyList() },
-                notesClientFactory = { onNote, onError -> NostrootsNotesClient(onNote, onError, sockets) },
+                notesClientFactory = { onNote, onError ->
+                    val client = NostrootsNotesClient(onNote, onError, sockets)
+                    HostMapNotesConnection { client.close() }
+                },
             )
         }
 
@@ -136,7 +141,7 @@ class HostMapCommunityNotesJourneyTest {
 
         compose.waitUntil(15_000) {
             requests.any { it.startsWith("GET /api/nostr/author-visibility?") } &&
-                compose.onAllNodesWithText("0 offers · 1 Nostroots notes in this area")
+                compose.onAllNodesWithText("0 offers · 1 Nostroots note in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(requests.any { it.startsWith("GET /api/nostr/author-visibility?") })

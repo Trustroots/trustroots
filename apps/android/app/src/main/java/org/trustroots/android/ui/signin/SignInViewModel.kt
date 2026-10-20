@@ -5,8 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
@@ -15,13 +20,15 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.toUiFailure
 
 internal data class SignInUiState(
     val username: String = "",
     val password: String = "",
     val isLoading: Boolean = false,
-    val error: String? = null,
+    val error: UiFailure? = null,
     val pendingSuccess: SignInSuccess? = null,
 )
 
@@ -43,11 +50,13 @@ internal fun interface SignInAuthenticator {
 
 internal class SignInViewModel(
     apiBaseUrl: String,
-    initialMessage: String?,
+    initialMessage: UiFailure?,
     private val authenticator: SignInAuthenticator = SignInAuthenticator(MobileApiClient(apiBaseUrl)::signIn),
     scope: CoroutineScope? = null,
 ) : ViewModel() {
-    private val scope = scope ?: viewModelScope
+    private val parentScope = scope ?: viewModelScope
+    private val requestJob = SupervisorJob(parentScope.coroutineContext[Job])
+    private val requestScope = CoroutineScope(parentScope.coroutineContext + requestJob)
     private val mutableState = MutableStateFlow(SignInUiState(error = initialMessage))
     val state = mutableState.asStateFlow()
     private var nextSuccessID = 0L
@@ -73,7 +82,7 @@ internal class SignInViewModel(
         val username = current.username.trim()
         val password = current.password
         mutableState.update { it.copy(isLoading = true, error = null, pendingSuccess = null) }
-        scope.launch {
+        requestScope.launch {
             val result = try {
                 authenticator.signIn(username, password)
             } catch (error: CancellationException) {
@@ -91,7 +100,7 @@ internal class SignInViewModel(
                 },
                 onFailure = { error ->
                     mutableState.update {
-                        it.copy(isLoading = false, error = error.messageOr("Could not reach Trustroots."))
+                        it.copy(isLoading = false, error = error.toUiFailure(UiFailureFallback.REACH_TRUSTROOTS))
                     }
                 },
             )
@@ -99,38 +108,58 @@ internal class SignInViewModel(
     }
 
     override fun onCleared() {
+        requestJob.cancel()
         mutableState.value = SignInUiState()
         super.onCleared()
     }
 }
 
-/** Activity-retained owner whose child store exists only for one sign-in destination. */
+/** Activity-retained parent for the signed-out Navigation 3 destination graph. */
 internal class SignInDestinationStoreHolder : ViewModel(), ViewModelStoreOwner {
-    private var destinationStore = ViewModelStore()
-    override val viewModelStore: ViewModelStore get() = destinationStore
+    private var graphStore = ViewModelStore()
+    override val viewModelStore: ViewModelStore get() = graphStore
+    private val mutableGraphGeneration = MutableStateFlow(0L)
+    val graphGeneration = mutableGraphGeneration.asStateFlow()
+    private var backendIdentity: String? = null
 
-    fun getViewModel(apiBaseUrl: String, initialMessage: String?): SignInViewModel =
-        ViewModelProvider(this, SignInViewModelFactory(apiBaseUrl, initialMessage))
-            .get(SignInViewModel::class.java)
+    fun activateBackend(apiBaseUrl: String) {
+        val identity = apiBaseUrl.trim().trimEnd('/')
+        if (backendIdentity != null && backendIdentity != identity) clearDestination()
+        backendIdentity = identity
+    }
 
     fun clearDestination() {
-        destinationStore.clear()
-        destinationStore = ViewModelStore()
+        graphStore.clear()
+        graphStore = ViewModelStore()
+        mutableGraphGeneration.update { it + 1 }
     }
 
     override fun onCleared() {
-        destinationStore.clear()
+        graphStore.clear()
         super.onCleared()
     }
 }
 
-private class SignInViewModelFactory(
+@Composable
+internal fun rememberSignInViewModel(apiBaseUrl: String, initialMessage: UiFailure?): SignInViewModel {
+    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
+        "Sign-in screens must be hosted by their Navigation 3 entry."
+    }
+    return remember(owner) {
+        ViewModelProvider(owner, SignInViewModelFactory(apiBaseUrl, initialMessage))
+            .get(SignInViewModel::class.java)
+    }
+}
+
+internal class SignInViewModelFactory(
     private val apiBaseUrl: String,
-    private val initialMessage: String?,
+    private val initialMessage: UiFailure?,
+    private val authenticator: SignInAuthenticator = SignInAuthenticator(MobileApiClient(apiBaseUrl)::signIn),
+    private val scope: CoroutineScope? = null,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         require(modelClass.isAssignableFrom(SignInViewModel::class.java))
-        return SignInViewModel(apiBaseUrl, initialMessage) as T
+        return SignInViewModel(apiBaseUrl, initialMessage, authenticator, scope) as T
     }
 }
