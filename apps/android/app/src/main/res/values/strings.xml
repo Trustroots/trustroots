@@ -35,4 +35,21 @@
     <string name="form_message">Message</string>
     <string name="form_send_message">Send</string>
     <string name="form_sending_message">Sending…</string>
+    <string name="view_profile_photo">View %1$s profile photo</string>
+    <string name="profile_photo_description">Profile photo of %1$s</string>
+    <string name="profile_photo_default_member_label">Trustroots member</string>
+    <string name="close_profile_photo">Close profile photo</string>
+    <string name="profile_photo_loading">Loading profile photo…</string>
+    <string name="profile_photo_load_error">Could not load profile photo.</string>
+    <string name="profile_photo_zoom_in">Zoom in</string>
+    <string name="profile_photo_zoom_out">Zoom out</string>
+    <string name="profile_photo_zoom_reset">Reset profile photo zoom</string>
+    <string name="profile_photo_zoom_reset_short">Reset</string>
+    <string name="profile_send_message">Send a message</string>
+    <string name="profile_more_actions">More profile actions</string>
+    <string name="profile_edit_your_profile">Edit your profile</string>
+    <string name="profile_share_experience">Share your experience</string>
+    <string name="profile_add_contact">Add contact</string>
+    <string name="profile_remove_contact">Remove contact</string>
+    <string name="profile_delete_contact_request">Delete contact request</string>
 </resources>

@@ -580,3 +580,146 @@ Back action on conversation detail.
 - **THEN** the corresponding large app bar expands again
 - **AND** existing filter state, message position, drafts and navigation origin
   remain intact
+
+### Requirement: Stable native Android profile frame
+
+The Android member profile SHALL use one shared artwork header with section
+tabs. The artwork and scrim SHALL extend behind the profile action area to the
+top system inset, with controls remaining readable over the artwork. The
+action area SHALL keep Back on the left and, for another member's profile, a
+primary Send a message action on the right. Experience-sharing and contact
+actions SHALL be reachable from an accessible overflow menu. A member's own
+profile SHALL retain its edit action. Existing contact relationship states,
+add-contact routing, and remove confirmation SHALL be preserved. The header
+and tabs SHALL remain outside the `HorizontalPager`, which contains only
+scrollable section content. Tab selection and pager swipes SHALL stay
+synchronised. The avatar SHALL retain a minimum 48 dp touch target. On compact
+screens, the header SHALL use a horizontal avatar and text layout and preserve
+usable section space after system insets.
+
+#### Scenario: Member opens another member's profile
+
+- **WHEN** a member views another member's profile
+- **THEN** Back is available on the left and Send a message is the primary
+  action on the right
+- **AND** experience sharing and the applicable contact action are available
+  from an accessible overflow menu
+- **AND** the artwork continues behind the action area up to the top system
+  inset
+
+#### Scenario: Member scrolls a profile section
+
+- **WHEN** a member scrolls the About, Contacts or Experiences content
+- **THEN** the profile actions, artwork header and section tabs remain visible
+- **AND** only the current section content scrolls
+
+#### Scenario: Member swipes between profile sections
+
+- **WHEN** a member swipes the section pager
+- **THEN** the newly selected section is shown
+- **AND** its tab is selected while the shared header and tab row remain in one
+  place
+
+#### Scenario: Member sees section tabs over the profile artwork
+
+- **WHEN** a member views a loaded profile
+- **THEN** the section tabs are inside the artwork header
+- **AND** the profile background image and scrim continue behind the tabs
+- **AND** the tabs remain legible against the scrim
+
+#### Scenario: Member manages a contact relationship from the profile
+
+- **WHEN** the contact relationship is loading, absent, pending or confirmed
+- **THEN** the overflow menu reflects the existing applicable contact action
+- **AND** add-contact routing and removal confirmation retain their existing
+  behaviour
+
+#### Scenario: Member opens their own profile
+
+- **WHEN** a member views their own profile
+- **THEN** the edit action remains available
+- **AND** message, experience-sharing and contact actions for other members
+  are not presented
+
+#### Scenario: Member opens a profile in a compact viewport
+
+- **WHEN** the profile viewport is 360 dp tall with a 24 dp top inset and an
+  80 dp bottom inset
+- **THEN** the shared artwork header, action area and tabs leave at least
+  96 dp available for scrollable section content
+- **AND** the artwork reaches behind the action area and top inset
+
+#### Scenario: Member opens a profile in a shorter viewport
+
+- **WHEN** the profile viewport is 320 dp tall with a 24 dp top inset and an
+  80 dp bottom inset
+- **THEN** at least 48 dp remain available for scrollable section content
+- **AND** the avatar and action controls retain their minimum touch targets
+
+#### Scenario: Profile is loading or fails to load
+
+- **WHEN** the profile request is pending or fails
+- **THEN** the loading or error state remains available without a partial
+  interactive profile frame
+
+#### Scenario: Member opens and closes the profile photo viewer
+
+- **WHEN** a member opens a profile photo and then closes the viewer
+- **THEN** the existing image-viewer state and callbacks are preserved
+- **AND** the same profile and selected section remain visible
+
+### Requirement: Full-screen profile photo viewer
+
+The Android app SHALL let a member open a profile photo in a native, black,
+full-screen viewer. Only after opening, the viewer SHALL lazily request the
+largest existing avatar rendition (2048 pixels) through the existing
+session-aware artwork transport and cache, accepting renditions up to the
+server's existing 8 MiB avatar limit. It SHALL preserve the decoded
+image's aspect ratio without cropping. Its initial scale SHALL be the smaller
+of the scales needed to fit the decoded bitmap within the usable viewer bounds
+and `1.0`; therefore, small images are never enlarged. Pinch zoom SHALL range
+from this initial scale up to `1.0` decoded source image pixel per physical
+display pixel, calculated with display density accounted for. Panning SHALL
+remain within the image bounds, and returning to the minimum zoom SHALL restore
+the initial fit and centred position.
+
+The viewer SHALL account for system bars and display cut-outs, use a black
+background with white status and navigation bar icons in both light and dark
+system appearances, and restore the prior window appearance when closed. It
+SHALL expose an accessible image description and accessible zoom/reset
+actions, and provide a close control with at least a 48dp touch target. System Back and the close
+control SHALL close the viewer and return to the same profile and profile
+section. Image loading and decoding SHALL not block navigation or invalidate
+the member session.
+
+#### Scenario: Member opens a profile photo
+
+- **WHEN** a member activates the profile photo
+- **THEN** the viewer requests the 2048-pixel avatar rendition only after it is
+  opened, using the current profile session
+- **AND** the whole image is centred on black and initially fitted within the
+  usable bounds without upscaling based on the decoded bitmap's actual pixel
+  dimensions
+
+#### Scenario: Member zooms into a profile photo
+
+- **WHEN** a member pinches to zoom or uses an accessible zoom action
+- **THEN** the image can be enlarged up to one decoded source pixel per physical
+  display pixel
+- **AND** panning cannot reveal empty space beyond the image
+- **AND** returning to minimum zoom restores the initial fit
+
+#### Scenario: Member closes the viewer
+
+- **WHEN** a member activates the close control or Android system Back
+- **THEN** the viewer closes
+- **AND** the same profile and selected profile section are visible
+
+#### Scenario: Profile photo is loading or unavailable
+
+- **WHEN** the photo request is pending, fails, or cannot reach the server
+- **THEN** the viewer keeps an accessible close control available
+- **AND** presents a non-blocking loading or error state
+- **AND** the member can continue using the app without being signed out
+- **AND** previously cached imagery MAY be shown when available, but persistent
+  offline image availability is not promised

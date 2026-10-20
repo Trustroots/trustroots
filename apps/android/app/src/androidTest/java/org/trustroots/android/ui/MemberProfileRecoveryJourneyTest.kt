@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -115,17 +116,21 @@ class MemberProfileRecoveryJourneyTest {
         }
 
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Remove contact").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithContentDescription("More profile actions").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.waitUntil(10_000) { compose.onAllNodesWithText("Remove contact").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Remove contact").performClick()
         compose.onNodeWithText("Remove contact?").assertIsDisplayed()
         compose.onNodeWithText("You will no longer be contacts with this member.").assertIsDisplayed()
         compose.onNodeWithText("Confirm").performClick()
         compose.waitUntil(10_000) {
             requests.any { it.startsWith("DELETE /api/contact/contact-one ") } &&
-                compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isEmpty()
         }
 
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.onNodeWithText("Add contact").assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("DELETE /api/contact/contact-one ") })
         assertFalse(compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isNotEmpty())
         responder.join(1_000)

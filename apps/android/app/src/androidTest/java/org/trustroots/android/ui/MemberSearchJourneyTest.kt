@@ -1,11 +1,12 @@
 package org.trustroots.android.ui
 
 import android.graphics.Bitmap
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
@@ -26,6 +27,7 @@ import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.trustroots.android.api.MemberSession
@@ -35,7 +37,7 @@ import org.trustroots.android.ui.membersearch.MemberSearchScreen
 
 @RunWith(AndroidJUnit4::class)
 class MemberSearchJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
 
     @After fun closeServer() = server.close()
@@ -105,20 +107,22 @@ class MemberSearchJourneyTest {
         assertEquals(screen.left, profileHero.left, 1f)
         assertEquals(screen.right, profileHero.right, 1f)
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithContentDescription("Quiet Fox image").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithContentDescription("View Quiet Fox profile photo").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithContentDescription("Quiet Fox image").assertIsDisplayed()
+        compose.onNodeWithContentDescription("View Quiet Fox profile photo").assertIsDisplayed()
         compose.onNodeWithText("Send a message").assertIsDisplayed()
+        compose.onNodeWithContentDescription("More profile actions").performClick()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Add contact").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Add contact").assertIsDisplayed()
+        pressBackFromNonActivityRoot(compose.activity)
         assertTrue(compose.onAllNodesWithText("A thoughtful guest").fetchSemanticsNodes().isEmpty())
         compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Spare room").performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("profileSection-contacts").performScrollTo().performClick()
+        compose.onNodeWithTag("profileSection-contacts").assertIsDisplayed().performClick()
         compose.onNodeWithTag("profileContact-contact-one").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
         compose.onNodeWithText("A thoughtful guest").performScrollTo().assertIsDisplayed()

@@ -17,9 +17,14 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.trustroots.android.R
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
@@ -40,16 +45,54 @@ internal fun ProfileSectionBar(
     selected: ProfileSection,
     contactCount: Int,
     onSelect: (ProfileSection) -> Unit,
+    overArtwork: Boolean = false,
 ) {
-    TabRow(selectedTabIndex = selected.ordinal, containerColor = MaterialTheme.colorScheme.primaryContainer, modifier = Modifier.fillMaxWidth().testTag("profileSections")) {
+    val artworkForeground = colorResource(R.color.artwork_on_scrim)
+    val contentColor = if (overArtwork) artworkForeground else MaterialTheme.colorScheme.onPrimaryContainer
+    val containerColor = if (overArtwork) Color.Transparent else MaterialTheme.colorScheme.primaryContainer
+    val tabs: @Composable () -> Unit = {
         ProfileSection.entries.forEach { section ->
             Tab(
                 selected = section == selected,
                 onClick = { onSelect(section) },
-                modifier = Modifier.testTag("profileSection-${section.name.lowercase()}"),
-                text = { Text(if (section == ProfileSection.Contacts && contactCount > 0) "Contacts ($contactCount)" else section.label) },
+                modifier = Modifier.drawBehind {
+                    if (overArtwork && section == selected) {
+                        val strokeWidth = 2.dp.toPx()
+                        drawLine(
+                            color = artworkForeground,
+                            start = Offset(0f, size.height - strokeWidth / 2),
+                            end = Offset(size.width, size.height - strokeWidth / 2),
+                            strokeWidth = strokeWidth,
+                        )
+                    }
+                }.testTag("profileSection-${section.name.lowercase()}"),
+                text = {
+                    Text(
+                        if (section == ProfileSection.Contacts && contactCount > 0) "Contacts ($contactCount)" else section.label,
+                        color = contentColor,
+                        fontWeight = if (section == selected) FontWeight.SemiBold else FontWeight.Normal,
+                    )
+                },
             )
         }
+    }
+    if (overArtwork) {
+        TabRow(
+            selectedTabIndex = selected.ordinal,
+            containerColor = containerColor,
+            contentColor = contentColor,
+            indicator = {},
+            modifier = Modifier.fillMaxWidth().testTag("profileSections"),
+            tabs = { tabs() },
+        )
+    } else {
+        TabRow(
+            selectedTabIndex = selected.ordinal,
+            containerColor = containerColor,
+            contentColor = contentColor,
+            modifier = Modifier.fillMaxWidth().testTag("profileSections"),
+            tabs = { tabs() },
+        )
     }
 }
 
