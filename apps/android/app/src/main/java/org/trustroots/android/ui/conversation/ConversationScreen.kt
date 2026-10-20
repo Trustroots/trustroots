@@ -177,7 +177,7 @@ internal fun ConversationScreen(
                                 Text(Html.fromHtml(message.content, Html.FROM_HTML_MODE_COMPACT).toString().trim())
                                 message.createdAt?.let { created ->
                                     Text(
-                                        messageTime(created),
+                                        messageTime(context.resources, created),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
