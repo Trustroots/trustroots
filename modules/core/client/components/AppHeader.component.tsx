@@ -55,6 +55,12 @@ export default function AppHeader({
       <a
         className="btn btn-primary sr-only sr-only-focusable sr-helper"
         href="#tr-main"
+        onClick={event => {
+          // The document base URL points at '/', so native hash navigation
+          // would leave the current page. Move keyboard focus directly.
+          event.preventDefault();
+          document.getElementById('tr-main')?.focus();
+        }}
       >
         {t<string>('Skip to main content')}
       </a>

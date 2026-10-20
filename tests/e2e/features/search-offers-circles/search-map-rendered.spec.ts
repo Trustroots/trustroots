@@ -644,7 +644,10 @@ test.describe('rendered search map feature coverage', () => {
     await page.getByRole('button', { name: 'Search places' }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
     await searchInput.fill('Berlin');
-    await page.locator('.search-place .dropdown-menu a').dispatchEvent('click');
+    await page
+      .getByRole('list', { name: 'Place suggestions' })
+      .getByRole('button')
+      .click();
 
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();

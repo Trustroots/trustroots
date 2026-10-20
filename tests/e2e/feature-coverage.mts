@@ -1771,7 +1771,7 @@ const features = [
     },
     requiredScenarios: [
       'Search members page loads.',
-      'Map search links to an autofocused member search.',
+      'Map search links to a keyboard-accessible member search.',
       'Search matches public home locations and shows their context.',
       'Search returns seeded hosts.',
       'Search handles empty or no-result states.',
