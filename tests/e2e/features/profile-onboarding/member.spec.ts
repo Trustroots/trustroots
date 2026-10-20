@@ -251,6 +251,7 @@ test.describe('confirmed member flows', () => {
 
   test('another host accommodation page shows hosting details', async ({
     page,
+    context,
   }, testInfo) => {
     useElementScreenshot(testInfo, '.offer-view');
     annotateFeature(testInfo, 'profile.view-accommodation', [
@@ -258,6 +259,7 @@ test.describe('confirmed member flows', () => {
       'Hosting details from seeded offer/profile are visible.',
     ]);
 
+    await routeRasterMapTiles(context, { includeMapbox: true });
     await page.goto(`/profile/${portland.username}/accommodation`);
 
     await expect(page.getByText(SEEDED_OFFER.hostingStatus)).toBeVisible();
@@ -269,9 +271,9 @@ test.describe('confirmed member flows', () => {
     const box = await map.boundingBox();
     expectPresent(box);
     expect(box.height).toBe(220);
-    await expect(
-      map.locator('.mapboxgl-canvas, .leaflet-pane').first(),
-    ).toBeVisible();
+    await expect(map.locator('.mapboxgl-canvas')).toHaveCount(0);
+    await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+    await expect(map.locator('.leaflet-overlay-pane path')).toBeVisible();
   });
 
   for (const webglAvailable of [true, false]) {
