@@ -48,6 +48,7 @@ export interface UserDocument {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   updated?: Date;
   created?: Date;
   acquisitionStory?: string;

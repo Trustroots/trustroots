@@ -50,6 +50,7 @@ describe('Service: profile-response', function () {
   } = {
     _id: 'fictional-user-id',
     username: 'fictional-member',
+    extSitesServas: 'household/fictional-host',
     displayName: 'Fictional Member',
     firstName: 'Fictional',
     lastName: 'Member',
@@ -80,6 +81,7 @@ describe('Service: profile-response', function () {
       'additionalProvidersData.facebook.id',
     );
     esmService.profileQueryFields.should.containEql('avatarVersion');
+    esmService.profileQueryFields.should.containEql('extSitesServas');
     esmService.profileQueryFields.should.not.containEql('lastIpAddress');
     esmService.profileQueryFields.should.not.containEql('pushRegistration');
   });
@@ -125,6 +127,7 @@ describe('Service: profile-response', function () {
       extSitesBW: 'fictional-bw',
       extSitesCS: 'fictional-cs',
       extSitesWS: 'fictional-ws',
+      extSitesServas: 'household/fictional-host',
       nostrNpub: 'fictional-npub',
       avatarSource: 'gravatar',
       avatarUploaded: false,
@@ -148,6 +151,7 @@ describe('Service: profile-response', function () {
       extSitesBW: 'fictional-bw',
       extSitesCS: 'fictional-cs',
       extSitesWS: 'fictional-ws',
+      extSitesServas: 'household/fictional-host',
       nostrNpub: 'fictional-npub',
       avatarSource: 'gravatar',
       avatarUploaded: false,
@@ -160,6 +164,7 @@ describe('Service: profile-response', function () {
     const response = esmService.selectProfileResponse(profile, false);
 
     response.username.should.equal('fictional-member');
+    response.extSitesServas!.should.equal('household/fictional-host');
     response.avatarVersion!.should.equal('0123456789abcdef0123456789abcdef');
     const providerIdentities = response.additionalProvidersData!;
     providerIdentities.facebook!.id!.should.equal('fictional-facebook-id');

@@ -82,6 +82,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
         extSitesBW: draftUser.extSitesBW,
         extSitesCS: draftUser.extSitesCS,
         extSitesWS: draftUser.extSitesWS,
+        extSitesServas: draftUser.extSitesServas,
       });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
@@ -197,6 +198,12 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       `https://www.couchsurfing.com/people/${value}`,
                   },
                   {
+                    id: 'extSitesServas',
+                    label: 'servas.org/',
+                    field: 'extSitesServas',
+                    testUrl: (value: string) => `https://servas.org/${value}`,
+                  },
+                  {
                     id: 'extSitesWS',
                     label: 'warmshowers.org/user/',
                     field: 'extSitesWS',
@@ -212,7 +219,8 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                     | 'extSitesCouchers'
                     | 'extSitesBW'
                     | 'extSitesCS'
-                    | 'extSitesWS';
+                    | 'extSitesWS'
+                    | 'extSitesServas';
                   testUrl: (value: string) => string;
                 }>
               ).map(field => {

@@ -63,6 +63,7 @@ export interface PublicProfile<Id = string, Timestamp = string> {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   nostrNpub?: string;
   emailHash?: string;
   additionalProvidersData?: PublicProviderIdentities;
@@ -137,6 +138,7 @@ export interface UpdateProfileRequest {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   nostrNpub?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;

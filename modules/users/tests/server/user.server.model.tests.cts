@@ -75,6 +75,34 @@ describe('User Model Unit Tests:', function () {
     User.init().then(() => done(), done);
   });
   afterEach(utils.clearDatabase);
+  describe('Servas profile paths', function () {
+    for (const path of [
+      '',
+      'household/fictional-host',
+      'address/fictional-host',
+      ' address/fictional-host ',
+    ]) {
+      it(`accepts the supported path ${JSON.stringify(path)}`, function () {
+        const member = new User({ ...user3, extSitesServas: path });
+        should.not.exist(member.validateSync()?.errors.extSitesServas);
+        present(member.extSitesServas).should.equal(path.trim());
+      });
+    }
+    for (const path of [
+      'https://example.test/host',
+      'user/fictional-host',
+      'household/',
+      'address/host name',
+      'address/host?query=1',
+      'address/host#fragment',
+      'address/host\\other',
+    ]) {
+      it(`rejects the unsupported path ${JSON.stringify(path)}`, function () {
+        const member = new User({ ...user3, extSitesServas: path });
+        should.exist(member.validateSync()?.errors.extSitesServas);
+      });
+    }
+  });
   describe('Default profile image source', function () {
     it('defaults new accounts to no photo and allows explicit Gravatar selection', function () {
       const member = new User();

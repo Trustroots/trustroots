@@ -221,6 +221,18 @@ export default function ProfileViewBasics({
             <span className="social-profile-handle">Couchsurfing</span>
           </li>
         )}
+        {profile.extSitesServas && (
+          <li className="social-profile">
+            <i className="social-profile-icon icon-fw icon-lg icon-link"></i>
+            <a
+              rel="noopener"
+              className="social-profile-handle"
+              href={`https://servas.org/${profile.extSitesServas}`}
+            >
+              Servas
+            </a>
+          </li>
+        )}
         {/* WarmShowers */}
         {profile.extSitesWS && (
           <li className="social-profile">
@@ -290,7 +302,8 @@ export default function ProfileViewBasics({
         profile.extSitesCouchers ||
         profile.extSitesBW ||
         profile.extSitesCS ||
-        profile.extSitesWS) &&
+        profile.extSitesWS ||
+        profile.extSitesServas) &&
         renderSocialNetworks(profile)}
     </div>
   );

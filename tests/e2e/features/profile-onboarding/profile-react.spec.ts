@@ -208,3 +208,44 @@ test('profile descriptions disable links while dedicated network exceptions rema
     page.getByRole('link', { name: 'Couchsurfing', exact: true }),
   ).toHaveCount(0);
 });
+
+for (const path of ['household/fictional-host', 'address/fictional-host']) {
+  test(`member saves, views and clears a Servas profile link: ${path}`, async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+    ]);
+    const member = SEEDED_MEMBERS[0];
+    await signInViaApi(page, request, member);
+    await page.goto('/profile/edit/networks');
+    await page.getByLabel('servas.org/').fill(path);
+    await expect(
+      page
+        .locator('#extSitesServas')
+        .locator('..')
+        .getByRole('link', { name: 'Test', exact: true }),
+    ).toHaveAttribute('href', `https://servas.org/${path}`);
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText(
+      'Hospitality networks updated.',
+    );
+    await page.reload();
+    await expect(page.getByLabel('servas.org/')).toHaveValue(path);
+    await page.goto(`/profile/${member.username}`);
+    await expect(
+      page.getByRole('link', { name: 'Servas', exact: true }),
+    ).toHaveAttribute('href', `https://servas.org/${path}`);
+    await page.goto('/profile/edit/networks');
+    await page.getByLabel('servas.org/').fill('');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText(
+      'Hospitality networks updated.',
+    );
+    await page.goto(`/profile/${member.username}`);
+    await expect(
+      page.getByRole('link', { name: 'Servas', exact: true }),
+    ).toHaveCount(0);
+  });
+}

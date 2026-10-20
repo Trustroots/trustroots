@@ -40,6 +40,7 @@ export interface UserServerRecord {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   nostrNpub?: string;
   password?: string;
   salt?: string;

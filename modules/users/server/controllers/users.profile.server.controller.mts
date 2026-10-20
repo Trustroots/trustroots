@@ -1123,6 +1123,7 @@ function sanitizeProfile(
     delete profile.extSitesCS;
     delete profile.extSitesCouchers;
     delete profile.extSitesWS;
+    delete profile.extSitesServas;
     delete profile.nostrNpub;
   } else if (_.isObject(profile.additionalProvidersData)) {
     const providerIdentityFields = {

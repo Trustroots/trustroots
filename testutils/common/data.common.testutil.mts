@@ -32,6 +32,7 @@ export interface ServerUserFixture extends UserFixture {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   newsletter?: boolean;
   pushRegistration?: PushRegistrationFixture[];
 }
@@ -74,6 +75,7 @@ export interface GenerateUserOptions {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   locale?: string;
   newsletter?: boolean;
   public?: boolean;
@@ -228,6 +230,7 @@ export function generateUsers(
     extSitesBW,
     extSitesCS,
     extSitesWS,
+    extSitesServas,
     locale,
     newsletter,
     public: isPublic,
@@ -245,6 +248,7 @@ export function generateUsers(
           extSitesBW,
           extSitesCS,
           extSitesWS,
+          extSitesServas,
           locale,
           newsletter,
           public: isPublic,

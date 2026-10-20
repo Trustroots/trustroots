@@ -60,6 +60,7 @@ export const profileQueryFields = [
   'extSitesBW',
   'extSitesCS',
   'extSitesWS',
+  'extSitesServas',
   'nostrNpub',
   'emailHash',
   'additionalProvidersData.facebook.id',
@@ -102,6 +103,9 @@ export function selectProfileUpdateFields(
       : {}),
     ...(Object.hasOwn(body, 'extSitesWS')
       ? { extSitesWS: body.extSitesWS }
+      : {}),
+    ...(Object.hasOwn(body, 'extSitesServas')
+      ? { extSitesServas: body.extSitesServas }
       : {}),
     ...(Object.hasOwn(body, 'nostrNpub') ? { nostrNpub: body.nostrNpub } : {}),
     ...(Object.hasOwn(body, 'avatarSource')
@@ -167,6 +171,7 @@ export function selectProfileResponse<Id, Timestamp>(
     extSitesBW: profile.extSitesBW,
     extSitesCS: profile.extSitesCS,
     extSitesWS: profile.extSitesWS,
+    extSitesServas: profile.extSitesServas,
     nostrNpub: profile.nostrNpub,
     emailHash: profile.emailHash,
     additionalProvidersData: profile.additionalProvidersData
