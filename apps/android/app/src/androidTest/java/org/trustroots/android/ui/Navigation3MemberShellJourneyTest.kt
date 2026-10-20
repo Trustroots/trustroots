@@ -49,12 +49,16 @@ class Navigation3MemberShellJourneyTest {
     @Volatile private var circlesStatus = 200
     private val circleReads = AtomicInteger()
     private val membershipReads = AtomicInteger()
+    private val ownProfileReads = AtomicInteger()
     private val joinedHarbour = AtomicBoolean(false)
     private val fixture = LocalTransportFixture { request ->
         when {
-            request.path.startsWith("/api/users/steady-heron") -> LocalTransportFixture.Response(
-                """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
-            )
+            request.path.startsWith("/api/users/steady-heron") -> {
+                if (request.method == "GET") ownProfileReads.incrementAndGet()
+                LocalTransportFixture.Response(
+                    """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
+                )
+            }
             request.path.startsWith("/api/messages?") -> LocalTransportFixture.Response("[]")
             request.path == "/api/tribes?limit=150" -> {
                 circleReads.incrementAndGet()
@@ -90,6 +94,7 @@ class Navigation3MemberShellJourneyTest {
         circlesStatus = 200
         circleReads.set(0)
         membershipReads.set(0)
+        ownProfileReads.set(0)
         joinedHarbour.set(false)
         SecureMobileSessionStore(context).save(
             MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
@@ -111,6 +116,8 @@ class Navigation3MemberShellJourneyTest {
                 .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
         )
         waitForText("Discover circles")
+        compose.waitUntil(10_000) { ownProfileReads.get() == 1 && circleReads.get() == 1 }
+        assertEquals("Initial shell avatar plus Circles load complete before recreation", 1, ownProfileReads.get())
 
         compose.onNodeWithTag("navigation-messages").performClick()
         waitForText("No conversations yet.")
@@ -126,6 +133,8 @@ class Navigation3MemberShellJourneyTest {
         requireNotNull(scenario).recreate()
         waitForText("Discover circles")
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
+        compose.waitForIdle()
+        assertEquals("Recreation retains the successful shell profile lookup", 1, ownProfileReads.get())
 
         cancelPredictiveBack()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()

@@ -145,6 +145,7 @@ class MobileApiClient(
     private val cacheAccount: String? = null,
 ) {
     private val baseURL = secureApiBaseURL(baseURL)
+    internal val backendURL: String get() = baseURL
     private val mutableOfflineSavedAt = MutableStateFlow<Long?>(null)
     val offlineSavedAt = mutableOfflineSavedAt.asStateFlow()
 

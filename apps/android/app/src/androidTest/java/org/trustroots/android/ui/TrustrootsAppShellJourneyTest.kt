@@ -234,11 +234,6 @@ class TrustrootsAppShellJourneyTest {
         showApp()
 
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithTag("navigation-menu").performClick()
-        compose.onNodeWithText("View your profile").performScrollTo().performClick()
-        compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Your session expired or is no longer valid. Please sign in again.")
                 .fetchSemanticsNodes().isNotEmpty()
         }
@@ -246,7 +241,7 @@ class TrustrootsAppShellJourneyTest {
         compose.onNodeWithText("Your session expired or is no longer valid. Please sign in again.")
             .assertIsDisplayed()
         assertNull(SecureMobileSessionStore(context).load())
-        assertTrue(requests.count { it.startsWith("GET /api/users/steady-heron ") } >= 2)
+        assertTrue(requests.count { it.startsWith("GET /api/users/steady-heron ") } == 1)
     }
 
     private fun showApp() {
