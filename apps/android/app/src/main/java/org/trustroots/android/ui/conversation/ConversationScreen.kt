@@ -73,6 +73,11 @@ internal fun ConversationScreen(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     BackHandler(onBack = onBack)
+    val sendMessageError = stringResource(R.string.screen_send_message_error)
+    val loadConversationError = stringResource(R.string.screen_load_conversation_error)
+    val viewProfileLabel = stringResource(R.string.screen_view_profile)
+    val hostYesMessage = stringResource(R.string.screen_quick_reply_host_yes_html)
+    val hostNoMessage = stringResource(R.string.screen_quick_reply_host_no_html)
     val context = LocalContext.current
     val drafts = remember { MessageDraftStore(context) }
     val draftKey = member.username ?: member.id.orEmpty()
@@ -105,7 +110,7 @@ internal fun ConversationScreen(
                 error = null
             }.onFailure {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else error = it.messageOr("Could not send message.")
+                else error = it.messageOr(sendMessageError)
             }
             sending = false
         }
@@ -119,7 +124,7 @@ internal fun ConversationScreen(
         }.onFailure {
             messagesLoaded = true
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.messageOr("Could not load conversation.")
+            else error = it.messageOr(loadConversationError)
         }
     }
     Scaffold(
@@ -142,7 +147,7 @@ internal fun ConversationScreen(
                 actions = {
                     if (onOpenProfile != null) {
                         TextButton(onClick = onOpenProfile) {
-                            Text(stringResource(R.string.view_profile), maxLines = 1)
+                            Text(viewProfileLabel, maxLines = 1)
                         }
                     }
                 },
@@ -177,7 +182,7 @@ internal fun ConversationScreen(
                                 Text(Html.fromHtml(message.content, Html.FROM_HTML_MODE_COMPACT).toString().trim())
                                 message.createdAt?.let { created ->
                                     Text(
-                                        messageTime(created),
+                                        messageTime(context.resources, created),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -191,14 +196,10 @@ internal fun ConversationScreen(
             if (showQuickReply) {
                 QuickReplyBar(
                     onHostYes = {
-                        sendContent(
-                            """<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>""",
-                        )
+                        sendContent(hostYesMessage)
                     },
                     onHostNo = {
-                        sendContent(
-                            """<p data-hosting="no"><b><i>Sorry I can't host</i></b></p>""",
-                        )
+                        sendContent(hostNoMessage)
                     },
                     onWriteBack = { composerFocus.requestFocus() },
                     enabled = !sending && member.id != null,

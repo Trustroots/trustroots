@@ -59,6 +59,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -115,7 +117,31 @@ internal fun HostMapScreen(
     mapViewFactory: (Context) -> MapView = { MapView(it) },
 ) {
     val context = LocalContext.current
+    val resources = LocalResources.current
+    val languageLocale = LocalConfiguration.current.locales[0]
     val mapBackground = colorResource(R.color.trustroots_pale_green)
+    val hostSearchError = stringResource(R.string.screen_host_search_error)
+    val placeSearchError = stringResource(R.string.screen_place_search_error)
+    val loadHostError = stringResource(R.string.screen_load_host_error)
+    val potentialHostLabel = stringResource(R.string.screen_potential_host)
+    val communityNoteLabel = stringResource(R.string.screen_community_note)
+    val hideFiltersLabel = stringResource(R.string.screen_hide_filters)
+    val showFiltersLabel = stringResource(R.string.screen_show_filters)
+    val hostingLabel = stringResource(R.string.screen_hosting)
+    val meetLabel = stringResource(R.string.screen_meet)
+    val lastActiveOneMonth = stringResource(R.string.screen_last_active_one_month)
+    val lastActiveSixMonths = stringResource(R.string.screen_last_active_six_months)
+    val lastActiveAnyTime = stringResource(R.string.screen_last_active_any_time)
+    val allCirclesLabel = stringResource(R.string.screen_all_circles)
+    val oneCircleLabel = stringResource(R.string.screen_one_circle)
+    val spokenLanguagesLabel = stringResource(R.string.screen_spoken_languages)
+    val anyLanguageLabel = stringResource(R.string.screen_any_language)
+    val notesHeading = stringResource(R.string.screen_community_notes_via_nostroots)
+    val closeLabel = stringResource(R.string.screen_close)
+    val notesUnavailable = stringResource(R.string.screen_nostroots_notes_unavailable)
+    val searchingArea = stringResource(R.string.screen_searching_area)
+    val openStreetMapAttribution = stringResource(R.string.screen_openstreetmap_attribution)
+    val mapboxAttribution = stringResource(R.string.screen_mapbox_attribution)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     // MapView animations must resume on Android's UI looper after background lookups.
@@ -232,7 +258,7 @@ internal fun HostMapScreen(
             }.onFailure {
                 if (generation == searchGeneration.get()) {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.messageOr("Could not search hosts.")
+                    else error = it.messageOr(hostSearchError)
                 }
             }
             if (generation == searchGeneration.get()) loading = false
@@ -280,7 +306,7 @@ internal fun HostMapScreen(
             }
             if (revision != locationRevision) return@launch
             val location = result.getOrNull()
-            if (location == null) error = "Could not find that place."
+            if (location == null) error = placeSearchError
             else {
                 map.controller.setZoom(9.0)
                 map.controller.animateTo(GeoPoint(location.latitude, location.longitude))
@@ -325,16 +351,16 @@ internal fun HostMapScreen(
                 val clusters = clusterOffers(offers, view)
                 clusters.forEach { cluster ->
                     val offer = cluster.first()
-                    val color = when {
-                        cluster.size > 1 -> 0xFF12B591.toInt()
-                        offer.type == "meet" -> 0xFF11B4DA.toInt()
-                        offer.status == "maybe" -> 0xFFF2AE43.toInt()
-                        else -> 0xFF58BA58.toInt()
+                    val colorResource = when {
+                        cluster.size > 1 -> R.color.map_marker_cluster
+                        offer.type == "meet" -> R.color.map_marker_meet
+                        offer.status == "maybe" -> R.color.map_marker_maybe
+                        else -> R.color.map_marker_host
                     }
                     val marker = Marker(view).apply {
                         position = GeoPoint(cluster.map { it.latitude }.average(), cluster.map { it.longitude }.average())
-                        title = if (cluster.size > 1) "${cluster.size} offers" else "Potential host"
-                        icon = mapMarkerIcon(view, color, if (cluster.size > 1) cluster.size.toString() else null)
+                        title = if (cluster.size > 1) resources.getString(R.string.screen_offers_count, cluster.size) else potentialHostLabel
+                        icon = mapMarkerIcon(view, colorResource, if (cluster.size > 1) cluster.size.toString() else null)
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         setOnMarkerClickListener { _, _ ->
                             if (cluster.size > 1) {
@@ -345,7 +371,7 @@ internal fun HostMapScreen(
                                 scope.launch {
                                     api.hostOffer(session, offer.id).onSuccess { host = it }.onFailure {
                                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                                        else error = it.messageOr("Could not load host.")
+                                        else error = it.messageOr(loadHostError)
                                     }
                                 }
                             }
@@ -364,8 +390,8 @@ internal fun HostMapScreen(
                     if (notes.isEmpty()) return@forEach
                     val marker = Marker(view).apply {
                         position = GeoPoint(notes.map { it.latitude }.average(), notes.map { it.longitude }.average())
-                        title = if (notes.size == 1) "Community note" else "${notes.size} community notes"
-                        icon = mapMarkerIcon(view, 0xFF1565C0.toInt(), if (notes.size > 1) notes.size.toString() else null)
+                        title = if (notes.size == 1) communityNoteLabel else resources.getString(R.string.screen_community_notes_count, notes.size)
+                        icon = mapMarkerIcon(view, R.color.map_marker_community_note, if (notes.size > 1) notes.size.toString() else null)
                         setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                         setOnMarkerClickListener { _, _ ->
                             if (cluster.size > 1 && view.zoomLevelDouble < 14) {
@@ -409,7 +435,7 @@ internal fun HostMapScreen(
                     showFilters = !showFilters
                     if (showFilters && circles.isEmpty()) scope.launch { api.circles(session).onSuccess { circles = it } }
                 }, modifier = Modifier.testTag("openFilters")) {
-                    Icon(Icons.Default.FilterList, if (showFilters) "Hide filters" else "Show filters", tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Default.FilterList, if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             if (showSuggestions) suggestions.forEach { address ->
@@ -430,17 +456,17 @@ internal fun HostMapScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         MultiChoiceSegmentedButtonRow {
-                            SegmentedButton(checked = includeHosts, onCheckedChange = { includeHosts = it }, shape = SegmentedButtonDefaults.itemShape(0, 2), label = { Text("Hosting") })
-                            SegmentedButton(checked = includeMeet, onCheckedChange = { includeMeet = it }, shape = SegmentedButtonDefaults.itemShape(1, 2), label = { Text("Meet") })
+                            SegmentedButton(checked = includeHosts, onCheckedChange = { includeHosts = it }, shape = SegmentedButtonDefaults.itemShape(0, 2), label = { Text(hostingLabel) })
+                            SegmentedButton(checked = includeMeet, onCheckedChange = { includeMeet = it }, shape = SegmentedButtonDefaults.itemShape(1, 2), label = { Text(meetLabel) })
                         }
                         Spacer(Modifier.width(6.dp))
                         FilterChip(
                             selected = seenMonths != null,
                             onClick = { seenMonths = when (seenMonths) { 1 -> 6; 6 -> null; else -> 1 } },
                             label = { Text(when (seenMonths) {
-                                1 -> "Last active: 1 month"
-                                6 -> "Last active: 6 months"
-                                else -> "Last active: any time"
+                                1 -> lastActiveOneMonth
+                                6 -> lastActiveSixMonths
+                                else -> lastActiveAnyTime
                             }) },
                         )
                         Spacer(Modifier.width(6.dp))
@@ -452,16 +478,16 @@ internal fun HostMapScreen(
                                 label = {
                                     Text(
                                         when (selectedCircleIDs.size) {
-                                            0 -> "All circles"
-                                            1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: "1 circle"
-                                            else -> "${selectedCircleIDs.size} circles"
+                                            0 -> allCirclesLabel
+                                            1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: oneCircleLabel
+                                            else -> stringResource(R.string.screen_circles_count, selectedCircleIDs.size)
                                         },
                                     )
                                 },
                             )
                             DropdownMenu(expanded = circleMenuOpen, onDismissRequest = { circleMenuOpen = false }) {
                                 DropdownMenuItem(
-                                    text = { Text("All circles") },
+                                    text = { Text(allCirclesLabel) },
                                     onClick = { selectedCircleIDs = emptySet(); circleMenuOpen = false },
                                 )
                                 circles.forEach { circle ->
@@ -486,20 +512,20 @@ internal fun HostMapScreen(
                                 trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
                                 label = {
                                     Text(
-                                        if (selectedLanguages.isEmpty()) "Spoken languages"
-                                        else selectedLanguages.sorted().joinToString { languageName(it) },
+                                        if (selectedLanguages.isEmpty()) spokenLanguagesLabel
+                                        else selectedLanguages.sorted().joinToString { languageName(it, languageLocale) },
                                     )
                                 },
                             )
                             DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
                                 DropdownMenuItem(
-                                    text = { Text("Any language") },
+                                    text = { Text(anyLanguageLabel) },
                                     onClick = { selectedLanguages = emptySet(); languageMenuOpen = false },
                                 )
                                 mapFilterLanguages.forEach { code ->
                                     DropdownMenuItem(
                                         text = {
-                                            Text("${if (code in selectedLanguages) "✓ " else ""}${languageName(code)}")
+                                            Text("${if (code in selectedLanguages) "✓ " else ""}${languageName(code, languageLocale)}")
                                         },
                                         onClick = {
                                             selectedLanguages = if (code in selectedLanguages) {
@@ -542,24 +568,24 @@ internal fun HostMapScreen(
                 Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),
             ) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text("Community notes via Nostroots", style = MaterialTheme.typography.titleMedium)
-                    TextButton(onClick = { selectedNotes = emptyList() }) { Text("Close") }
+                    Text(notesHeading, style = MaterialTheme.typography.titleMedium)
+                    TextButton(onClick = { selectedNotes = emptyList() }) { Text(closeLabel) }
                 }
                 selectedNotes.take(5).forEach { note ->
                     Text(note.content, modifier = Modifier.padding(vertical = 6.dp), maxLines = 4)
-                    Text(messageTime(note.createdAt), style = MaterialTheme.typography.labelSmall)
+                    Text(messageTime(context.resources, note.createdAt), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
-        if (noteError && includeMeet) Text("Nostroots notes are temporarily unavailable.", color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
+        if (noteError && includeMeet) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
         Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (loading) "Searching this area…" else "${offers.size} offers · ${communityNotes.count { map.boundingBox.contains(GeoPoint(it.latitude, it.longitude)) }} Nostroots notes in this area",
+                if (loading) searchingArea else stringResource(R.string.screen_map_statistics, offers.size, communityNotes.count { map.boundingBox.contains(GeoPoint(it.latitude, it.longitude)) }),
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.weight(1f).testTag("mapStatistics"),
             )
             Text(
-                if (org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN.isBlank()) "© OpenStreetMap contributors" else "© Mapbox · © OpenStreetMap contributors",
+                if (org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN.isBlank()) openStreetMapAttribution else mapboxAttribution,
                 style = MaterialTheme.typography.labelSmall,
             )
         }
@@ -592,19 +618,19 @@ internal fun clusterOffers(offers: List<MapOffer>, map: MapView): List<List<MapO
     }.values.flatMap { group -> if (group.size >= 3) listOf(group) else group.map(::listOf) }
 }
 
-private fun mapMarkerIcon(map: MapView, color: Int, count: String?): BitmapDrawable {
+private fun mapMarkerIcon(map: MapView, colorResource: Int, count: String?): BitmapDrawable {
     val density = map.resources.displayMetrics.density
     val size = (if (count == null) 34 else 50) * density
     val bitmap = Bitmap.createBitmap(size.toInt(), size.toInt(), Bitmap.Config.ARGB_8888)
     val canvas = Canvas(bitmap)
     val paint = Paint(Paint.ANTI_ALIAS_FLAG)
     val centre = size / 2f
-    paint.color = android.graphics.Color.WHITE
+    paint.color = map.resources.getColor(R.color.map_marker_white, map.context.theme)
     canvas.drawCircle(centre, centre, centre - density, paint)
-    paint.color = color
+    paint.color = map.resources.getColor(colorResource, map.context.theme)
     canvas.drawCircle(centre, centre, centre - 4 * density, paint)
     if (count != null) {
-        paint.color = android.graphics.Color.WHITE
+        paint.color = map.resources.getColor(R.color.map_marker_white, map.context.theme)
         paint.textAlign = Paint.Align.CENTER
         paint.textSize = 17 * density
         paint.typeface = android.graphics.Typeface.DEFAULT_BOLD

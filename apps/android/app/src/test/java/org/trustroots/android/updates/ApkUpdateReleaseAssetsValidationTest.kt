@@ -13,7 +13,7 @@ class ApkUpdateReleaseAssetsValidationTest {
             {"tag_name":"android-preview-52","body":"Build 100052.","name":"Available preview 52","draft":false,"prerelease":true,"assets":"not-an-array"}
         ]"""
 
-        val release = latestAndroidPreviewRelease(response, installedVersionCode = 100050)
+        val release = latestAndroidPreviewRelease(response, installedVersionCode = 100050) { "Android preview $it" }
 
         assertEquals(
             AndroidPreviewRelease(
@@ -30,6 +30,6 @@ class ApkUpdateReleaseAssetsValidationTest {
             {"tag_name":"android-preview-56","body":"Build 100056.","name":"Null asset preview","draft":false,"prerelease":true,"assets":[null,null]}
         ]"""
 
-        assertNull(latestAndroidPreviewRelease(response, installedVersionCode = 100050))
+        assertNull(latestAndroidPreviewRelease(response, installedVersionCode = 100050) { "Android preview $it" })
     }
 }

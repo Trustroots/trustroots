@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="back">Back</string>
+    <string name="discard_changes_title">Discard changes?</string>
+    <string name="unsaved_changes_lost">Your unsaved changes will be lost.</string>
+    <string name="discard_changes">Discard changes</string>
+    <string name="keep_editing">Keep editing</string>
+    <string name="cancel">Cancel</string>
+    <string name="saving">Saving…</string>
+    <string name="save_changes">Save changes</string>
+    <string name="artwork_image_description">%1$s image</string>
+    <string name="message_time_just_now">Just now</string>
+    <plurals name="message_time_minutes_ago">
+        <item quantity="one">1 min ago</item>
+        <item quantity="other">%1$d min ago</item>
+    </plurals>
+    <plurals name="message_time_hours_ago">
+        <item quantity="one">1 hr ago</item>
+        <item quantity="other">%1$d hr ago</item>
+    </plurals>
+    <plurals name="message_time_days_ago">
+        <item quantity="one">1 day ago</item>
+        <item quantity="other">%1$d days ago</item>
+    </plurals>
+</resources>

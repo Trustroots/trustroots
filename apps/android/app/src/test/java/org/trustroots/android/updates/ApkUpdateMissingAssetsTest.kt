@@ -12,7 +12,7 @@ class ApkUpdateMissingAssetsTest {
         ]"""
         var notificationCount = 0
 
-        val parsedRelease = latestAndroidPreviewRelease(response, installedVersionCode = 100041)
+        val parsedRelease = latestAndroidPreviewRelease(response, installedVersionCode = 100041) { "Android preview $it" }
         val result = checkForAndroidPreviewUpdate(
             isEnabled = { true },
             fetchRelease = { parsedRelease },

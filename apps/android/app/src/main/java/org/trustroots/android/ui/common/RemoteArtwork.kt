@@ -80,7 +80,7 @@ internal fun RemoteArtwork(
         if (bitmap != null) {
             Image(
                 bitmap = requireNotNull(bitmap).asImageBitmap(),
-                contentDescription = "$label image",
+                contentDescription = stringResource(R.string.artwork_image_description, label),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.size(size),
             )
@@ -213,7 +213,7 @@ private fun ProfileAvatar(
             if (bitmap != null) {
                 Image(
                     bitmap = bitmap.asImageBitmap(),
-                    contentDescription = if (onClick == null) "$label image" else null,
+                    contentDescription = if (onClick == null) stringResource(R.string.artwork_image_description, label) else null,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.size(size),
                 )

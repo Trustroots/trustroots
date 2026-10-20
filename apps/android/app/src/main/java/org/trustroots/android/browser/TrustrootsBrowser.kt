@@ -1,5 +1,8 @@
 package org.trustroots.android.browser
 
+import org.trustroots.android.R
+import androidx.compose.ui.res.stringResource
+
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
@@ -67,7 +70,7 @@ fun TrustrootsBrowser(
     externalURL?.let { url ->
         AlertDialog(
             onDismissRequest = { externalURL = null },
-            title = { Text("Open external website?") },
+            title = { Text(stringResource(R.string.browser_external_website_title)) },
             text = { Text(runCatching { URI(url).host }.getOrNull() ?: url) },
             confirmButton = {
                 TextButton(
@@ -75,10 +78,10 @@ fun TrustrootsBrowser(
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                         externalURL = null
                     },
-                ) { Text("Open") }
+                ) { Text(stringResource(R.string.browser_open_external)) }
             },
             dismissButton = {
-                TextButton(onClick = { externalURL = null }) { Text("Cancel") }
+                TextButton(onClick = { externalURL = null }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }
@@ -93,7 +96,7 @@ fun TrustrootsBrowser(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
             }
             Text(route.title, style = MaterialTheme.typography.titleMedium)
         }

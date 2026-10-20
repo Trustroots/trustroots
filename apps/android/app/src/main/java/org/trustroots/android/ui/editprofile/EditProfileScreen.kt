@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
@@ -53,6 +54,10 @@ internal fun EditProfileScreen(
     onSaved: (MemberProfile) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val profileSaveError = stringResource(R.string.screen_profile_save_error)
+    val editProfileTitle = stringResource(R.string.screen_edit_profile)
+    val languagesLabel = stringResource(R.string.screen_languages)
+    val chooseLanguagesLabel = stringResource(R.string.screen_choose_languages)
     var name by remember(profile.username) { mutableStateOf(profile.displayName) }
     var tagline by remember(profile.username) { mutableStateOf(profile.tagline.orEmpty()) }
     var description by remember(profile.username) {
@@ -64,10 +69,11 @@ internal fun EditProfileScreen(
     var languageMenu by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    val languageLocale = LocalConfiguration.current.locales[0]
     val scope = rememberCoroutineScope()
-    val options = remember(languages) {
+    val options = remember(languages, languageLocale) {
         (listOf("eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr") + languages)
-            .distinct().sortedBy(::languageName)
+            .distinct().sortedBy { languageName(it, languageLocale) }
     }
     val initialDescription = remember(profile.username) { Html.fromHtml(profile.description.orEmpty(), Html.FROM_HTML_MODE_COMPACT).toString().trim() }
     val dirty = name != profile.displayName || tagline != profile.tagline.orEmpty() || description != initialDescription ||
@@ -81,13 +87,13 @@ internal fun EditProfileScreen(
                         .onSuccess(onSaved)
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr("Could not save profile.")
+                            else error = it.messageOr(profileSaveError)
                         }
                     saving = false
                 }
             }
     Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
-        FormActionBar("Edit profile", saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
+        FormActionBar(editProfileTitle, saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
         error?.let {
             Text(
                 it,
@@ -104,18 +110,18 @@ internal fun EditProfileScreen(
         TextField(tagline, { tagline = it }, enabled = !saving, label = { Text(stringResource(R.string.form_tagline)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
         TextField(living, { living = it }, enabled = !saving, label = { Text(stringResource(R.string.form_lives_in)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
         TextField(from, { from = it }, enabled = !saving, label = { Text(stringResource(R.string.form_from)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
-        Text("Languages", modifier = Modifier.padding(top = 12.dp))
+        Text(languagesLabel, modifier = Modifier.padding(top = 12.dp))
         Box {
             Surface(onClick = { languageMenu = true }, enabled = !saving, shape = MaterialTheme.shapes.small, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (languages.isEmpty()) "Choose languages" else languages.sortedBy(::languageName).joinToString { languageName(it) }, modifier = Modifier.weight(1f))
+                    Text(if (languages.isEmpty()) chooseLanguagesLabel else languages.sortedBy { languageName(it, languageLocale) }.joinToString { languageName(it, languageLocale) }, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.Edit, contentDescription = null)
                 }
             }
             DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
                 options.forEach { code ->
                     DropdownMenuItem(
-                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code)}") },
+                        text = { Text("${if (code in languages) "✓ " else ""}${languageName(code, languageLocale)}") },
                         onClick = { languages = if (code in languages) languages - code else languages + code },
                     )
                 }
