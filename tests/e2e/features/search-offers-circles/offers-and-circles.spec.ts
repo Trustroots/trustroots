@@ -22,6 +22,10 @@ import {
   updateUserByUsername,
   findUserByUsername,
 } from '../../support/db.mts';
+import {
+  prepareRasterSearchMap,
+  routeRasterMapTiles,
+} from '../../support/maps.mts';
 import type { Locator, Page } from '@playwright/test';
 
 const berlin = SEEDED_MEMBERS[0];
@@ -330,6 +334,113 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expect(latitude).toBeCloseTo(35, 1);
     expect(longitude).toBeCloseTo(-7, 1);
     expect(Math.abs(longitude + 7)).toBeGreaterThan(0.001);
+  });
+
+  for (const viewport of [
+    { name: 'desktop', width: 1280, height: 900 },
+    { name: 'mobile', width: 390, height: 844 },
+  ]) {
+    test(`hosting raster map stays aligned after tab changes and resizing on ${viewport.name}`, async ({
+      page,
+      context,
+    }, testInfo) => {
+      annotateFeature(testInfo, 'profile.edit-locations', [
+        'Hosting map tiles load after opening the Location tab.',
+        'The location marker stays centred after tab changes and resizing.',
+      ]);
+      await page.setViewportSize(viewport);
+      await prepareRasterSearchMap(page, context, { includeMapbox: true });
+      await page.goto('/offer/host');
+      const locationTab = page.getByRole('tab', { name: 'Location' });
+      await locationTab.click();
+      const map = page.locator('.offer-map .leaflet-container');
+      const overlay = page.locator('.offer-location-overlay');
+
+      async function expectAlignedMap() {
+        await expect(map).toBeVisible();
+        await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+        await expect
+          .poll(async () => {
+            const mapBox = await map.boundingBox();
+            const overlayBox = await overlay.boundingBox();
+            const markerBox = await map
+              .locator('.leaflet-overlay-pane path')
+              .boundingBox();
+            if (!mapBox || !overlayBox || !markerBox) return false;
+            return (
+              Math.abs(mapBox.height - overlayBox.height) < 1 &&
+              Math.abs(mapBox.y - overlayBox.y) < 1 &&
+              Math.abs(
+                markerBox.x +
+                  markerBox.width / 2 -
+                  (mapBox.x + mapBox.width / 2),
+              ) < 2 &&
+              Math.abs(
+                markerBox.y +
+                  markerBox.height / 2 -
+                  (mapBox.y + mapBox.height / 2),
+              ) < 2
+            );
+          })
+          .toBe(true);
+      }
+
+      await expectAlignedMap();
+      await page.getByRole('tab', { name: 'Availability' }).click();
+      await page.setViewportSize({
+        width: viewport.width - 30,
+        height: viewport.height - 60,
+      });
+      await locationTab.click();
+      await expectAlignedMap();
+    });
+  }
+
+  test('hosting map uses raster tiles even when WebGL is available', async ({
+    page,
+    context,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-locations', [
+      'Hosting location uses raster tiles without relying on WebGL rendering.',
+      'Hosting location can be chosen by dragging the raster map.',
+    ]);
+    await context.route('https://tile.openstreetmap.org/**', route =>
+      route.abort('failed'),
+    );
+    await context.route('https://api.mapbox.com/styles/v1/**', route =>
+      route.abort('failed'),
+    );
+    await routeRasterMapTiles(context, { includeMapbox: true });
+    await page.goto('/offer/host');
+    expect(
+      await page.evaluate(() =>
+        Boolean(document.createElement('canvas').getContext('webgl')),
+      ),
+    ).toBe(true);
+    await page.getByRole('tab', { name: 'Location' }).click();
+    const map = page.locator('.offer-map .leaflet-container');
+    await expect(map).toBeVisible();
+    await expect(page.locator('.offer-map .mapboxgl-canvas')).toHaveCount(0);
+    await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+    const marker = map.locator('.leaflet-overlay-pane path');
+    const box = await map.boundingBox();
+    expectPresent(box);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 80, box.y + box.height / 2, {
+      steps: 10,
+    });
+    await page.waitForTimeout(200);
+    await page.mouse.up();
+    await expect
+      .poll(async () => {
+        const markerBox = await marker.boundingBox();
+        expectPresent(markerBox);
+        return Math.abs(
+          markerBox.x + markerBox.width / 2 - (box.x + box.width / 2),
+        );
+      })
+      .toBeLessThan(2);
   });
 
   test('map search resolves bounding boxes, offers, and circle filters', async ({
