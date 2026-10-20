@@ -23,6 +23,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +63,14 @@ internal fun MemberSearchScreen(
     onSwitchToMap: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val shortQueryMessage = stringResource(R.string.screen_enter_at_least_three_characters)
+    val emptyResultsMessage = stringResource(R.string.screen_no_members_found)
+    val findMemberTitle = stringResource(R.string.screen_find_member)
+    val searchByNameHint = stringResource(R.string.screen_search_name_or_username)
+    val switchToMapLabel = stringResource(R.string.screen_switch_to_map_search)
+    val searchErrorMessage = stringResource(R.string.screen_search_members_error)
+    val uiLocale = LocalConfiguration.current.locales[0]
+    val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     var query by remember { mutableStateOf("") }
@@ -94,7 +103,7 @@ internal fun MemberSearchScreen(
             }
                 .onFailure {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else if (revision == queryRevision) error = it.messageOr("Could not search members.")
+                    else if (revision == queryRevision) error = it.messageOr(searchErrorMessage)
                 }
             loading = false
         }
@@ -117,10 +126,10 @@ internal fun MemberSearchScreen(
             modifier = Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp).testTag("memberSearchField"),
         )
         }
-        if (query.trim().isNotEmpty() && query.trim().length < 3) Text("Enter at least 3 characters.")
+        if (query.trim().isNotEmpty() && query.trim().length < 3) Text(shortQueryMessage)
         if (loading) CircularProgressIndicator()
         error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (searched && results.isEmpty()) Text("No members found. Try another name or username.")
+        if (searched && results.isEmpty()) Text(emptyResultsMessage)
         if (!searched && results.isEmpty() && !loading && error == null) {
             Column(
                 Modifier.weight(1f).fillMaxWidth().padding(24.dp),
@@ -128,14 +137,14 @@ internal fun MemberSearchScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(Icons.Default.People, null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                Text("Find a member", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                Text("Search name or username", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+                Text(findMemberTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
+                Text(searchByNameHint, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
                 if (onSwitchToMap != null) {
                     HorizontalDivider(Modifier.padding(vertical = 24.dp))
                     TextButton(onClick = onSwitchToMap) {
                         Icon(Icons.Default.Place, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text("Switch to map search")
+                        Text(switchToMapLabel)
                     }
                 }
             }
@@ -152,7 +161,7 @@ internal fun MemberSearchScreen(
                     Spacer(Modifier.width(12.dp))
                     Column {
                         Text(member.displayName, fontWeight = FontWeight.Bold)
-                        Text("@${member.username}")
+                        Text(String.format(uiLocale, usernameHandleFormat, member.username))
                         member.location?.let { Text(it) }
                     }
                 }

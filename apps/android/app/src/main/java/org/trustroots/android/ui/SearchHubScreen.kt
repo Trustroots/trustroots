@@ -25,22 +25,27 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
 
 @Composable
 internal fun SearchModeMenu(tab: Int, onSelect: (Int) -> Unit) {
+    val searchMode = stringResource(R.string.screen_search_mode)
+    val hostsMap = stringResource(R.string.screen_search_hosts_map)
+    val members = stringResource(R.string.screen_search_members)
     var expanded by remember { mutableStateOf(false) }
     Box {
         IconButton(onClick = { expanded = true }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (tab == 0) Icons.Default.Place else Icons.Default.PersonSearch, "Search mode")
+                Icon(if (tab == 0) Icons.Default.Place else Icons.Default.PersonSearch, searchMode)
                 Icon(Icons.Default.ArrowDropDown, null)
             }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            listOf("Hosts map", "Members").forEachIndexed { index, label ->
+            listOf(hostsMap, members).forEachIndexed { index, label ->
                 DropdownMenuItem(
                     text = { Text(label) },
                     leadingIcon = { Icon(if (index == 0) Icons.Default.Place else Icons.Default.PersonSearch, null) },

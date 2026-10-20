@@ -54,6 +54,7 @@ internal fun MessageInboxScreen(
     initialMemberID: String? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val messagesLoadError = stringResource(R.string.screen_messages_load_error)
     var threads by remember { mutableStateOf<List<MessageThread>>(emptyList()) }
     var selected by remember { mutableStateOf<MessageMember?>(null) }
     var selectedProfile by remember { mutableStateOf<String?>(null) }
@@ -84,7 +85,7 @@ internal fun MessageInboxScreen(
         do {
             val batch = api.inbox(session, page).getOrElse {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else if (collected.isEmpty()) error = it.messageOr("Could not load messages.")
+                else if (collected.isEmpty()) error = it.messageOr(messagesLoadError)
                 break
             }
             collected += batch
@@ -102,7 +103,7 @@ internal fun MessageInboxScreen(
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
             MemberLargeTopAppBar(
-                title = stringResource(R.string.messages_title),
+                title = stringResource(R.string.screen_messages_title),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,
             )
@@ -126,7 +127,7 @@ internal fun MessageInboxScreen(
                     )
                     if (loading) CircularProgressIndicator()
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                    if (loaded && threads.isEmpty() && error == null) Text("No conversations yet.")
+                    if (loaded && threads.isEmpty() && error == null) Text(stringResource(R.string.screen_no_conversations))
                 }
             }
             val filteredThreads = threads.filter {
@@ -158,7 +159,7 @@ internal fun MessageInboxScreen(
                         }
                     }
                     thread.otherMember.username?.let { username ->
-                        OutlinedButton(onClick = { selectedProfile = username }) { Text("Profile") }
+                        OutlinedButton(onClick = { selectedProfile = username }) { Text(stringResource(R.string.screen_profile)) }
                     }
                 }
                 HorizontalDivider()

@@ -53,6 +53,10 @@ internal fun EditProfileScreen(
     onSaved: (MemberProfile) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val profileSaveError = stringResource(R.string.screen_profile_save_error)
+    val editProfileTitle = stringResource(R.string.screen_edit_profile)
+    val languagesLabel = stringResource(R.string.screen_languages)
+    val chooseLanguagesLabel = stringResource(R.string.screen_choose_languages)
     var name by remember(profile.username) { mutableStateOf(profile.displayName) }
     var tagline by remember(profile.username) { mutableStateOf(profile.tagline.orEmpty()) }
     var description by remember(profile.username) {
@@ -81,13 +85,13 @@ internal fun EditProfileScreen(
                         .onSuccess(onSaved)
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr("Could not save profile.")
+                            else error = it.messageOr(profileSaveError)
                         }
                     saving = false
                 }
             }
     Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
-        FormActionBar("Edit profile", saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
+        FormActionBar(editProfileTitle, saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
         error?.let {
             Text(
                 it,
@@ -104,11 +108,11 @@ internal fun EditProfileScreen(
         TextField(tagline, { tagline = it }, enabled = !saving, label = { Text(stringResource(R.string.form_tagline)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
         TextField(living, { living = it }, enabled = !saving, label = { Text(stringResource(R.string.form_lives_in)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
         TextField(from, { from = it }, enabled = !saving, label = { Text(stringResource(R.string.form_from)) }, modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp))
-        Text("Languages", modifier = Modifier.padding(top = 12.dp))
+        Text(languagesLabel, modifier = Modifier.padding(top = 12.dp))
         Box {
             Surface(onClick = { languageMenu = true }, enabled = !saving, shape = MaterialTheme.shapes.small, border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline), modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(if (languages.isEmpty()) "Choose languages" else languages.sortedBy(::languageName).joinToString { languageName(it) }, modifier = Modifier.weight(1f))
+                    Text(if (languages.isEmpty()) chooseLanguagesLabel else languages.sortedBy(::languageName).joinToString { languageName(it) }, modifier = Modifier.weight(1f))
                     Icon(Icons.Default.Edit, contentDescription = null)
                 }
             }
