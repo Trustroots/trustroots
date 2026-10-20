@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,6 +23,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.junit.Assert.assertEquals
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
@@ -40,14 +44,33 @@ class Navigation3MemberShellJourneyTest {
     private var previousAlertStatus: String? = null
     private var previousAlertDestination: MessageDestination? = null
     private var scenario: ActivityScenario<SignInJourneyActivity>? = null
+    @Volatile private var circlesResponse = "[]"
+    @Volatile private var circlesStatus = 200
+    private val circleReads = AtomicInteger()
+    private val membershipReads = AtomicInteger()
+    private val joinedHarbour = AtomicBoolean(false)
     private val fixture = LocalTransportFixture { request ->
         when {
             request.path.startsWith("/api/users/steady-heron") -> LocalTransportFixture.Response(
                 """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
             )
             request.path.startsWith("/api/messages?") -> LocalTransportFixture.Response("[]")
-            request.path == "/api/tribes?limit=150" -> LocalTransportFixture.Response("[]")
-            request.path == "/api/users/memberships" -> LocalTransportFixture.Response("[]")
+            request.path == "/api/tribes?limit=150" -> {
+                circleReads.incrementAndGet()
+                val body = if (circlesStatus in 200..299) circlesResponse
+                else """{"message":"The circle catalogue is temporarily unavailable."}"""
+                LocalTransportFixture.Response(body, circlesStatus)
+            }
+            request.path == "/api/users/memberships/circle-harbour" -> {
+                joinedHarbour.set(request.method == "POST")
+                LocalTransportFixture.Response("{}")
+            }
+            request.path == "/api/users/memberships" -> {
+                membershipReads.incrementAndGet()
+                LocalTransportFixture.Response(
+                    if (joinedHarbour.get()) """[{"tribe":{"_id":"circle-harbour"}}]""" else "[]",
+                )
+            }
             request.path.startsWith("/api/offers?") -> LocalTransportFixture.Response("""{"features":[]}""")
             request.path.contains("/avatar?") -> LocalTransportFixture.Response("", 404)
             else -> LocalTransportFixture.Response("[]")
@@ -62,6 +85,11 @@ class Navigation3MemberShellJourneyTest {
         sessionPreferences.edit().clear().commit()
         alertPreferences.edit().clear().commit()
         MessageAlerts.clearDestination()
+        circlesResponse = "[]"
+        circlesStatus = 200
+        circleReads.set(0)
+        membershipReads.set(0)
+        joinedHarbour.set(false)
         SecureMobileSessionStore(context).save(
             MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
         )
@@ -106,6 +134,84 @@ class Navigation3MemberShellJourneyTest {
         completePredictiveBack()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
+    }
+
+    @Test fun circlesVisitRetainsAccountStateAndFreshVisitsResetAndReload() {
+        circlesResponse = """[
+            {"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","description":"<p>Quiet sea routes.</p>","count":4,"image":false},
+            {"_id":"circle-mountain","slug":"mountain-paths","label":"Mountain Circle","description":"<p>High mountain paths.</p>","count":7,"image":false}
+        ]"""
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Quiet Harbour")
+        compose.waitUntil(10_000) { circleReads.get() == 1 && membershipReads.get() == 1 }
+
+        compose.onNodeWithText("Filter circles").performTextReplacement("sea")
+        compose.onNodeWithText("Quiet Harbour").performClick()
+        compose.onNodeWithText("Join circle").performClick()
+        waitForText("Leave circle")
+        compose.waitUntil(5_000) { joinedHarbour.get() }
+        val initialCircleReads = circleReads.get()
+        val initialMembershipReads = membershipReads.get()
+
+        requireNotNull(scenario).recreate()
+        waitForText("Leave circle")
+        assertEquals(initialCircleReads, circleReads.get())
+        assertEquals(initialMembershipReads, membershipReads.get())
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Filter circles").assertIsDisplayed()
+        compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
+        compose.onNodeWithText("Mountain Circle").assertDoesNotExist()
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-circles").performClick()
+        waitForText("Mountain Circle")
+        compose.onNodeWithText("Filter circles").performTextReplacement("mountain")
+        compose.onNodeWithText("Mountain Circle").performClick()
+        waitForText("High mountain paths.")
+        pressBack()
+        compose.onNodeWithText("Mountain Circle").assertIsDisplayed()
+        compose.onNodeWithText("Quiet Harbour").assertDoesNotExist()
+
+        pressBack()
+        compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
+        pressBack()
+        compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
+        compose.onNodeWithText("Mountain Circle").assertDoesNotExist()
+        assertEquals(2, circleReads.get())
+        assertEquals(2, membershipReads.get())
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-circles").performClick()
+        waitForText("Mountain Circle")
+        compose.waitUntil(5_000) { circleReads.get() == 3 && membershipReads.get() == 3 }
+        compose.onNodeWithText("Filter circles").performTextReplacement("sea")
+        compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").performClick()
+        waitForText("Mountain Circle")
+        compose.waitUntil(5_000) { circleReads.get() == 4 && membershipReads.get() == 4 }
+        compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
+        compose.onNodeWithText("Mountain Circle").assertIsDisplayed()
+    }
+
+    @Test fun failedCircleCatalogueLoadCanBeRetriedFromTheScreen() {
+        circlesResponse = """[{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","description":"A coastal circle.","count":4,"image":false}]"""
+        circlesStatus = 503
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("The circle catalogue is temporarily unavailable.")
+        circlesStatus = 200
+        compose.onNodeWithText("Retry").assertIsDisplayed().performClick()
+        compose.waitUntil(10_000) { circleReads.get() >= 2 }
+        waitForText("Quiet Harbour")
+        assertEquals(2, circleReads.get())
+        assertEquals(2, membershipReads.get())
     }
 
     @Test fun topLevelNavigationWaitsForDirtyProfileLeaveDecision() {
@@ -161,6 +267,10 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun pressBack() {
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun restorePreferences(preferences: android.content.SharedPreferences, values: Map<String, *>) {
