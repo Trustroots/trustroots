@@ -16,8 +16,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -39,11 +37,13 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
+import org.trustroots.android.testing.KeyboardTestSupport
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class SignInSessionJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    private lateinit var keyboardTestSupport: KeyboardTestSupport
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val server = ServerSocket(0)
     private val sessionPreferences by lazy {
@@ -61,6 +61,7 @@ class SignInSessionJourneyTest {
     private val signInAttempts = AtomicInteger()
 
     @Before fun clearStoredAccountAndAlerts() {
+        keyboardTestSupport = KeyboardTestSupport(InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.runOnUiThread {
             WindowCompat.setDecorFitsSystemWindows(compose.activity.window, false)
             compose.activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
@@ -76,6 +77,7 @@ class SignInSessionJourneyTest {
     }
 
     @After fun restoreSavedStateAndCloseServer() {
+        keyboardTestSupport.close()
         server.close()
         responder?.join(1_000)
         restorePreferences(sessionPreferences, previousSessionPreferences)
@@ -223,26 +225,21 @@ class SignInSessionJourneyTest {
 
     private fun isAboveIme(text: String, substring: Boolean): Boolean {
         val decor = compose.activity.window.decorView
-        val imeBottom = ViewCompat.getRootWindowInsets(decor)
-            ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+        val imeBounds = keyboardTestSupport.imeBoundsOnScreen()
         val viewTop = decor.locationOnScreenY()
-        val keyboardTop = viewTop + decor.height - imeBottom
-        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBottom=$imeBottom keyboardTop=$keyboardTop"
-        if (imeBottom == 0) return false
+        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBounds=$imeBounds"
+        if (imeBounds == null) return false
         val bounds = compose.onNodeWithText(text, substring = substring).getUnclippedBoundsInRoot()
         val top = with(compose.density) { bounds.top.toPx() }
         val bottom = with(compose.density) { bounds.bottom.toPx() }
         imeGeometry += " fieldTop=${top + viewTop} fieldBottom=${bottom + viewTop}"
-        return top + viewTop >= 0 && bottom + viewTop <= keyboardTop
+        return top + viewTop >= 0 && bottom + viewTop <= imeBounds.top
     }
 
     private fun pressImeBack() {
         InstrumentationRegistry.getInstrumentation().uiAutomation
             .executeShellCommand("input keyevent KEYCODE_BACK").close()
-        compose.waitUntil(5_000) {
-            ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
-                ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom == 0
-        }
+        compose.waitUntil(5_000) { keyboardTestSupport.imeBoundsOnScreen() == null }
     }
 
     private fun android.view.View.locationOnScreenY(): Int = IntArray(2).let { getLocationOnScreen(it); it[1] }
