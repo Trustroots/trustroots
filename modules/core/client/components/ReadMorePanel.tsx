@@ -25,15 +25,9 @@ export default function ReadMorePanel({ content, id }: ReadMorePanelProps) {
 
   return (
     <div className="panel-more-wrap">
-      <button
-        className="panel-more-wrap"
-        id={id}
-        type="button"
-        aria-label={t<string>('Read more…')}
-        onClick={() => setShowMore(true)}
-      >
+      <div className="panel-more-wrap" id={id}>
         {`${plainText(content).substr(0, LIMIT)} …`}
-      </button>
+      </div>
       <button
         aria-controls={id}
         aria-expanded="false"
