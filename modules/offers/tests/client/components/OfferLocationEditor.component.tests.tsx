@@ -14,7 +14,6 @@ type MockMapProps = {
   height: number | string;
   preferRaster: boolean;
   fallbackMarker?: { location: [number, number] };
-  onClick: (event: { lngLat?: [number, number] }) => void;
   onLocationChange: (location: [number, number]) => void;
 };
 
@@ -72,7 +71,6 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
     height,
     preferRaster,
     fallbackMarker,
-    onClick,
     onLocationChange,
   }: MockMapProps) {
     return (
@@ -102,20 +100,14 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
         >
           Drag map east
         </button>
-        <button
-          type="button"
-          onClick={() => onClick({ lngLat: [2.35, 48.85] })}
-        >
+        <button type="button" onClick={() => onLocationChange([48.85, 2.35])}>
           Click map
         </button>
         <button
           type="button"
-          onClick={() => onClick({ lngLat: [9.14055555556, 48.6908333333] })}
+          onClick={() => onLocationChange([48.6908333333, 9.14055555556])}
         >
           Click initial centre
-        </button>
-        <button type="button" onClick={() => onClick({})}>
-          Empty map click
         </button>
         {fallbackMarker && (
           <span>Marker at {fallbackMarker.location.join(',')}</span>
@@ -191,7 +183,9 @@ describe('OfferLocationEditor', () => {
     );
 
     expect(
-      screen.getByText(/Zoom in and drag the map below to place the marker/),
+      screen.getByText(
+        /Zoom in, then click or drag the map below to place the marker/,
+      ),
     ).toBeInTheDocument();
     expect(screen.getByTestId('offer-map')).toBeInTheDocument();
     expect(screen.getByTestId('location-overlay')).toBeInTheDocument();
@@ -261,7 +255,7 @@ describe('OfferLocationEditor', () => {
     expect(onLocationChange).toHaveBeenCalledWith([48.5, 2.5]);
   });
 
-  it('ignores incomplete place and map results', () => {
+  it('ignores incomplete place results', () => {
     const onLocationChange = jest.fn<
       ReturnType<LocationChange>,
       Parameters<LocationChange>
@@ -275,7 +269,6 @@ describe('OfferLocationEditor', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Invalid place' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Empty map click' }));
     expect(onLocationChange).not.toHaveBeenCalled();
   });
 });

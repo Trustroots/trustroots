@@ -145,7 +145,10 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   const { rerender } = render(
     <LeafletMap location={[50.12, 19.89]} zoom={11} onLocationChange={first} />,
   );
-  const move = mockMap.on.mock.calls.find(([name]) => name === 'dragend')?.[1];
+  const start = mockMap.on.mock.calls.find(
+    ([name]) => name === 'dragstart',
+  )?.[1];
+  const move = mockMap.on.mock.calls.find(([name]) => name === 'moveend')?.[1];
   rerender(
     <LeafletMap
       location={[50.12, 19.89]}
@@ -155,10 +158,13 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   );
   mockMap.getCenter.mockReturnValue({ lat: 51, lng: 20 });
   mockMap.getZoom.mockReturnValue(15);
-  if (!move) {
+  if (!move || !start) {
     throw new Error('Expected Leaflet to register a move listener');
   }
   move!({} as L.LeafletMouseEvent);
+  expect(latest).not.toHaveBeenCalled();
+  start({} as L.LeafletMouseEvent);
+  move({} as L.LeafletMouseEvent);
   expect(latest).toHaveBeenCalledWith([51, 20]);
   expect(first).not.toHaveBeenCalled();
   mockMap.setView.mockClear();
@@ -168,6 +174,7 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   expect(mockMap.setView).not.toHaveBeenCalled();
   rerender(<LeafletMap location={[52, 21]} zoom={11} />);
   expect(mockMap.setView).toHaveBeenCalledWith([52, 21], 15);
+  start({} as L.LeafletMouseEvent);
   expect(() => move!({} as L.LeafletMouseEvent)).not.toThrow();
 });
 

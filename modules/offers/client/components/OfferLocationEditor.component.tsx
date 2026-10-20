@@ -25,7 +25,6 @@ interface OfferMapProps {
   height: number | string;
   location: [number, number];
   onLocationChange?: (location: [number, number]) => void;
-  onClick?: (event: { lngLat?: [number, number] }) => void;
   preferRaster: boolean;
   scrollZoom: boolean;
   width: string;
@@ -78,7 +77,8 @@ export default function OfferLocationEditor({
       <div className="panel-body">
         <p className="lead" id="offerLocation">
           <strong>
-            Zoom in and drag the map below to place the marker over your home.
+            Zoom in, then click or drag the map below to place the marker over
+            your home.
           </strong>
           <br />
           The location is publicly shown, randomised by a couple hundred metres.
@@ -108,11 +108,6 @@ export default function OfferLocationEditor({
           preferRaster
           location={mapLocation}
           onLocationChange={handleMapLocationChange}
-          onClick={event => {
-            if (event?.lngLat) {
-              handleMapLocationChange([event.lngLat[1], event.lngLat[0]]);
-            }
-          }}
           scrollZoom
           width="100%"
           zoom={
