@@ -26,6 +26,7 @@ interface OfferMapProps {
   location: [number, number];
   onLocationChange?: (location: [number, number]) => void;
   onClick?: (event: { lngLat?: [number, number] }) => void;
+  preferRaster: boolean;
   scrollZoom: boolean;
   width: string;
   zoom: number;
@@ -102,6 +103,9 @@ export default function OfferLocationEditor({
               : undefined
           }
           height="100%"
+          // Some Chromium configurations initialise WebGL but fail to draw
+          // vector map detail. Raster tiles keep location selection usable.
+          preferRaster
           location={mapLocation}
           onLocationChange={handleMapLocationChange}
           onClick={event => {

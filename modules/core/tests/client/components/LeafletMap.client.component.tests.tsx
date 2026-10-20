@@ -6,11 +6,12 @@ import L from 'leaflet';
 
 import LeafletMap from '@/modules/core/client/components/Map/LeafletMap';
 
-type MoveListener = () => void;
+type MoveListener = (event: L.LeafletMouseEvent) => void;
 const mockMap = {
   on: jest.fn<void, [event: string, listener: MoveListener]>(),
   getCenter: jest.fn(),
   getZoom: jest.fn(),
+  invalidateSize: jest.fn(),
   remove: jest.fn(),
   setView: jest.fn(),
 };
@@ -38,6 +39,27 @@ beforeEach(() => {
 });
 
 describe('<LeafletMap />', () => {
+  it('refreshes tiles when a hidden tab becomes visible and stops observing on unmount', () => {
+    const original = global.ResizeObserver;
+    let resize!: () => void;
+    const observe = jest.fn();
+    const disconnect = jest.fn();
+    global.ResizeObserver = jest.fn(callback => {
+      resize = () => callback([], {} as ResizeObserver);
+      return { observe, disconnect, unobserve: jest.fn() };
+    });
+    try {
+      const { container, unmount } = render(<LeafletMap location={[35, -7]} />);
+      expect(observe).toHaveBeenCalledWith(container.firstChild);
+      resize();
+      expect(mockMap.invalidateSize).toHaveBeenCalledWith({ animate: false });
+      unmount();
+      expect(disconnect).toHaveBeenCalledTimes(1);
+    } finally {
+      global.ResizeObserver = original;
+    }
+  });
+
   it('renders raster tiles and the supplied marker', () => {
     const { container } = render(
       <LeafletMap
@@ -136,7 +158,7 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   if (!move) {
     throw new Error('Expected Leaflet to register a move listener');
   }
-  move!();
+  move!({} as L.LeafletMouseEvent);
   expect(latest).toHaveBeenCalledWith([51, 20]);
   expect(first).not.toHaveBeenCalled();
   mockMap.setView.mockClear();
@@ -146,5 +168,19 @@ it('reports the panned centre to the latest listener without resetting zoom', ()
   expect(mockMap.setView).not.toHaveBeenCalled();
   rerender(<LeafletMap location={[52, 21]} zoom={11} />);
   expect(mockMap.setView).toHaveBeenCalledWith([52, 21], 15);
-  expect(() => move!()).not.toThrow();
+  expect(() => move!({} as L.LeafletMouseEvent)).not.toThrow();
+});
+
+it('chooses a clicked location and accepts clicks without a callback', () => {
+  const onLocationChange = jest.fn();
+  const { rerender } = render(
+    <LeafletMap location={[35, -7]} onLocationChange={onLocationChange} />,
+  );
+  const click = mockMap.on.mock.calls.find(([name]) => name === 'click')?.[1];
+  if (!click) throw new Error('Expected a map click listener');
+  const event = { latlng: { lat: 36, lng: -8 } } as L.LeafletMouseEvent;
+  click(event);
+  expect(onLocationChange).toHaveBeenCalledWith([36, -8]);
+  rerender(<LeafletMap location={[35, -7]} />);
+  expect(() => click(event)).not.toThrow();
 });

@@ -11,6 +11,8 @@ type LocationChange = React.ComponentProps<
 >['onLocationChange'];
 type MockMapProps = {
   children?: React.ReactNode;
+  height: number | string;
+  preferRaster: boolean;
   fallbackMarker?: { location: [number, number] };
   onClick: (event: { lngLat?: [number, number] }) => void;
   onLocationChange: (location: [number, number]) => void;
@@ -67,12 +69,18 @@ jest.mock(
 jest.mock('@/modules/core/client/components/Map/index', () => {
   function MockMap({
     children,
+    height,
+    preferRaster,
     fallbackMarker,
     onClick,
     onLocationChange,
   }: MockMapProps) {
     return (
-      <div data-testid="offer-map">
+      <div
+        data-testid="offer-map"
+        data-height={height}
+        data-renderer={preferRaster ? 'raster' : 'webgl'}
+      >
         <button
           type="button"
           onClick={() => onLocationChange([48.6908333333, 9.14055555556])}
@@ -131,6 +139,14 @@ describe('OfferLocationEditor', () => {
     );
 
     expect(screen.getByTestId('offer-map')).toBeInTheDocument();
+    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+      'data-renderer',
+      'raster',
+    );
+    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+      'data-height',
+      '100%',
+    );
     expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
     expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
   });

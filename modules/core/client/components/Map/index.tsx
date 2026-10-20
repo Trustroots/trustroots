@@ -17,12 +17,14 @@ type MapProps = React.ComponentProps<typeof ReactMapGL> & {
   fallbackMarker?: { color: string; location: [number, number] };
   location?: [number, number];
   onLocationChange?: (location: [number, number]) => void;
+  preferRaster?: boolean;
   showMapStyles?: boolean;
 };
 export default function Map(props: MapProps) {
   const {
     children,
     fallbackMarker,
+    preferRaster = false,
     onLocationChange,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
     zoom = 6,
@@ -70,7 +72,7 @@ export default function Map(props: MapProps) {
     props.showMapStyles &&
     (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
 
-  if (!isWebGLSupported()) {
+  if (preferRaster || !isWebGLSupported()) {
     return (
       <LeafletMap
         ariaHidden={props['aria-hidden']}

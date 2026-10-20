@@ -107,6 +107,21 @@ describe('<Map />', () => {
       }),
     );
   });
+
+  it('can prefer raster tiles even when WebGL is supported', () => {
+    mockIsWebGLSupported.mockReturnValue(true);
+    render(
+      <Map
+        location={[35, -7]}
+        fallbackMarker={{ color: '#11b4da', location: [35, -7] }}
+        preferRaster
+      />,
+    );
+    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
+    expect(mockLeafletMap).toHaveBeenCalledWith(
+      expect.objectContaining({ location: [35, -7] }),
+    );
+  });
 });
 
 function latestReactMapProps(): MapProps {

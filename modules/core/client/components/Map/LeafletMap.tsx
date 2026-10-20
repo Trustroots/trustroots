@@ -51,14 +51,25 @@ export default function LeafletMap({
     L.tileLayer(tiles.url, tiles.options).addTo(map);
 
     mapRef.current = map;
+    // Tabs can initialise the map while hidden. Recalculate tile positions
+    // when the editor becomes visible or its responsive container changes.
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => map.invalidateSize({ animate: false }));
+    resizeObserver?.observe(containerRef.current as HTMLDivElement);
     map.on('dragend', () => {
       if (locationChangeRef.current) {
         const centre = map.getCenter();
         locationChangeRef.current([centre.lat, centre.lng]);
       }
     });
+    map.on('click', (event: L.LeafletMouseEvent) => {
+      locationChangeRef.current?.([event.latlng.lat, event.latlng.lng]);
+    });
 
     return () => {
+      resizeObserver?.disconnect();
       map.remove();
       mapRef.current = null;
     };
