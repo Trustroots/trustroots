@@ -1,6 +1,5 @@
 package org.trustroots.android.ui
 
-import android.content.res.Resources
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -11,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowCompat
@@ -97,23 +97,30 @@ class HostOfferScreenTest {
         compose.onNodeWithText("Discard", substring = true).assertDoesNotExist()
     }
 
+    private var imeGeometry = "No keyboard geometry recorded"
+
     private fun assertAboveIme(text: String) {
-        compose.waitUntil(5_000) {
-            isAboveIme(text)
+        try {
+            compose.waitUntil(5_000) { isAboveIme(text) }
+        } catch (error: ComposeTimeoutException) {
+            throw AssertionError("$text should remain above the open keyboard: $imeGeometry", error)
         }
         compose.onNodeWithText(text).assertIsDisplayed()
         assertTrue("$text should remain above the open keyboard", isAboveIme(text))
     }
 
     private fun isAboveIme(text: String): Boolean {
-        val imeBottom = ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+        val decor = compose.activity.window.decorView
+        val imeBottom = ViewCompat.getRootWindowInsets(decor)
             ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+        val viewTop = decor.locationOnScreenY()
+        val keyboardTop = viewTop + decor.height - imeBottom
+        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBottom=$imeBottom keyboardTop=$keyboardTop"
         if (imeBottom == 0) return false
-        val keyboardTop = Resources.getSystem().displayMetrics.heightPixels - imeBottom
         val bounds = compose.onNodeWithText(text).getUnclippedBoundsInRoot()
         val top = with(compose.density) { bounds.top.toPx() }
         val bottom = with(compose.density) { bounds.bottom.toPx() }
-        val viewTop = compose.activity.window.decorView.locationOnScreenY()
+        imeGeometry += " fieldTop=${top + viewTop} fieldBottom=${bottom + viewTop}"
         return top + viewTop >= 0 && bottom + viewTop <= keyboardTop
     }
 

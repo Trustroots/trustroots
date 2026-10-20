@@ -2,12 +2,12 @@ package org.trustroots.android.ui
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.content.res.Resources
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -209,23 +209,30 @@ class SignInSessionJourneyTest {
         }
     }
 
+    private var imeGeometry = "No keyboard geometry recorded"
+
     private fun assertAboveIme(text: String, substring: Boolean = false) {
-        compose.waitUntil(5_000) {
-            isAboveIme(text, substring)
+        try {
+            compose.waitUntil(5_000) { isAboveIme(text, substring) }
+        } catch (error: ComposeTimeoutException) {
+            throw AssertionError("$text should remain above the open keyboard: $imeGeometry", error)
         }
         compose.onNodeWithText(text, substring = substring).assertIsDisplayed()
         assertTrue("$text should remain above the open keyboard", isAboveIme(text, substring))
     }
 
     private fun isAboveIme(text: String, substring: Boolean): Boolean {
-        val imeBottom = ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+        val decor = compose.activity.window.decorView
+        val imeBottom = ViewCompat.getRootWindowInsets(decor)
             ?.getInsets(WindowInsetsCompat.Type.ime())?.bottom ?: 0
+        val viewTop = decor.locationOnScreenY()
+        val keyboardTop = viewTop + decor.height - imeBottom
+        imeGeometry = "windowTop=$viewTop windowHeight=${decor.height} imeBottom=$imeBottom keyboardTop=$keyboardTop"
         if (imeBottom == 0) return false
-        val keyboardTop = Resources.getSystem().displayMetrics.heightPixels - imeBottom
         val bounds = compose.onNodeWithText(text, substring = substring).getUnclippedBoundsInRoot()
         val top = with(compose.density) { bounds.top.toPx() }
         val bottom = with(compose.density) { bounds.bottom.toPx() }
-        val viewTop = compose.activity.window.decorView.locationOnScreenY()
+        imeGeometry += " fieldTop=${top + viewTop} fieldBottom=${bottom + viewTop}"
         return top + viewTop >= 0 && bottom + viewTop <= keyboardTop
     }
 
