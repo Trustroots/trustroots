@@ -1,15 +1,28 @@
-const assert = require('assert');
-const request = require('supertest');
-const mongoose = require('mongoose');
-const express = require('../../../../config/lib/express.mjs');
-const utils = require('../../../../testutils/server/data.server.testutil');
+import type {
+  Credentials,
+  TestExpressApp,
+  TestAgent,
+  TribeRecord,
+  TribeModel,
+} from '../../../../testutils/server/model-contracts.mts';
 
-const Tribe = mongoose.model('Tribe');
+const assert: typeof import('assert') = require('assert');
+const request: typeof import('supertest') = require('supertest');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('../../../../config/lib/express.mjs');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+
+const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
+type CircleResponse = Omit<TribeRecord, 'created' | 'modified'> & {
+  _id: string;
+  created?: string;
+  modified?: string;
+};
 
 describe('Admin circle routes', () => {
-  let app;
-  let agent;
-  let credentials;
+  let app: TestExpressApp;
+  let agent: TestAgent;
+  let credentials: Credentials;
 
   before(async () => {
     app = await express.init(mongoose.connection);
@@ -27,7 +40,7 @@ describe('Admin circle routes', () => {
 
   it('creates and edits JSON metadata with blank optional fields', async () => {
     await utils.signIn(credentials, agent);
-    const { body: created } = await agent
+    const { body: created }: { body: CircleResponse } = await agent
       .post('/api/admin/circles')
       .send({
         label: 'Example walkers',
@@ -41,13 +54,13 @@ describe('Admin circle routes', () => {
     assert.strictEqual(created.image, false);
     assert.strictEqual(created.public, false);
     await agent.get(`/api/admin/circles/${created._id}`).expect(200);
-    const { body: catalogue } = await agent
+    const { body: catalogue }: { body: CircleResponse[] } = await agent
       .get('/api/admin/circles')
       .expect(200);
     assert(
       catalogue.some(circle => String(circle._id) === String(created._id)),
     );
-    const { body: updated } = await agent
+    const { body: updated }: { body: CircleResponse } = await agent
       .put(`/api/admin/circles/${created._id}`)
       .send({
         label: 'Example walkers renamed',
@@ -64,7 +77,7 @@ describe('Admin circle routes', () => {
     assert.strictEqual(updated.color, 'e74c3c');
     assert.strictEqual(updated.attribution, 'Example artist');
     assert.strictEqual(updated.description, 'An updated circle.');
-    const { body: cleared } = await agent
+    const { body: cleared }: { body: CircleResponse } = await agent
       .put(`/api/admin/circles/${created._id}`)
       .send({
         label: 'Example walkers renamed',
@@ -78,6 +91,7 @@ describe('Admin circle routes', () => {
     assert.strictEqual(cleared.attribution, undefined);
     assert.strictEqual(cleared.attribution_url, undefined);
     const stored = await Tribe.findById(created._id);
+    assert(stored);
     assert.strictEqual(stored.attribution, undefined);
     assert.strictEqual(stored.attribution_url, undefined);
     assert.strictEqual(stored.description, updated.description);
@@ -93,7 +107,7 @@ describe('Admin circle routes', () => {
         description: 'x'.repeat(4001),
       })
       .expect(400);
-    const { body: bright } = await agent
+    const { body: bright }: { body: CircleResponse } = await agent
       .post('/api/admin/circles')
       .send({
         label: 'Bright circle',

@@ -1,39 +1,70 @@
-const assert = require('assert');
-const mongoose = require('mongoose');
-const realFs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const realSharp = require('sharp');
+const assert: typeof import('assert') = require('assert');
+const mongoose: typeof import('mongoose') = require('mongoose');
+const realFs: typeof import('node:fs') = require('node:fs');
+const os: typeof import('node:os') = require('node:os');
+const path: typeof import('node:path') = require('node:path');
+const realSharp: typeof import('sharp') = require('sharp');
 const urlslugs =
   require('../../../../config/lib/mongoose-url-slugs.mjs').default;
-const sinon = require('sinon');
-const proxyquire = require('../../../../testutils/server/mock-module');
+const sinon: typeof import('sinon') = require('sinon');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 
-function response() {
-  const res = { statusCode: 200 };
-  res.status = code => {
-    res.statusCode = code;
-    return res;
+type Stub = import('sinon').SinonStub;
+type CircleFields = Partial<
+  import('../../../../testutils/server/model-contracts.mts').TribeRecord
+> & { _id: string };
+type Circle = CircleFields & {
+  save: Stub;
+  validate: Stub;
+  toJSON(): CircleFields;
+};
+type ResponseBody = Partial<CircleFields> & { message?: string };
+interface MockResponse {
+  statusCode: number;
+  body: ResponseBody;
+  status(code: number): MockResponse;
+  json(body: unknown): MockResponse;
+  send(body: unknown): MockResponse;
+}
+type FileSystem = Record<
+  'mkdir' | 'chmod' | 'open' | 'rename' | 'rm' | 'stat',
+  Stub
+>;
+type Query = Record<'select' | 'sort' | 'exec', Stub>;
+type TribeStub = Stub & Record<'find' | 'findById' | 'findByIdAndDelete', Stub>;
+type Controller =
+  typeof import('../../server/controllers/admin.circles.server.controller.mjs').default;
+
+function response(): MockResponse {
+  return {
+    statusCode: 200,
+    body: {},
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body) {
+      this.body = body as ResponseBody;
+      return this;
+    },
+    send(body) {
+      return this.json(body);
+    },
   };
-  res.json = res.send = body => {
-    res.body = body;
-    return res;
-  };
-  return res;
 }
 
 describe('Admin circles controller', () => {
-  let controller;
-  let Tribe;
-  let fs;
-  let sharp;
-  let image;
-  let lockHandle;
-  let uploadFile;
-  let circle;
-  let query;
-  let config;
-  let res;
+  let controller: Controller;
+  let Tribe: TribeStub;
+  let fs: FileSystem;
+  let sharp: Stub;
+  let image: Record<'rotate' | 'jpeg' | 'webp' | 'resize' | 'toFile', Stub>;
+  let lockHandle: Record<'writeFile' | 'close', Stub>;
+  let uploadFile: Stub;
+  let circle: Circle;
+  let query: Query;
+  let config: { circleImagesDir: string };
+  let res: MockResponse;
   const failure = new Error('Storage unavailable');
   const missing = Object.assign(new Error('Missing'), { code: 'ENOENT' });
 
@@ -42,14 +73,27 @@ describe('Admin circles controller', () => {
   });
 
   beforeEach(() => {
-    circle = { _id: 'circle-1', slug: 'walkers', image: false, public: false };
-    circle.save = sinon.stub().resolves(circle);
-    circle.validate = sinon.stub().resolves();
-    circle.toJSON = () => ({ ...circle });
-    Tribe = sinon.stub().callsFake(data => {
-      Object.assign(circle, data);
-      return circle;
-    });
+    circle = {
+      _id: 'circle-1',
+      slug: 'walkers',
+      image: false,
+      public: false,
+      save: sinon.stub(),
+      validate: sinon.stub().resolves(),
+      toJSON: () => ({ ...circle }),
+    };
+    circle.save.resolves(circle);
+    Tribe = Object.assign(
+      sinon.stub().callsFake((data: Partial<CircleFields>) => {
+        Object.assign(circle, data);
+        return circle;
+      }),
+      {
+        find: sinon.stub(),
+        findById: sinon.stub(),
+        findByIdAndDelete: sinon.stub(),
+      },
+    );
     query = {
       select: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
@@ -80,7 +124,7 @@ describe('Admin circles controller', () => {
     sharp = sinon.stub().returns(image);
     uploadFile = sinon.stub();
     config = { circleImagesDir: '/circle-images' };
-    controller = proxyquire(
+    controller = proxyquire<Controller>(
       require.resolve('../../server/controllers/admin.circles.server.controller.mjs'),
       {
         mongoose: { model: () => Tribe },
@@ -88,7 +132,7 @@ describe('Admin circles controller', () => {
         sharp,
         '../../../../config/config': config,
         '../../../core/server/services/error.server.service': {
-          getErrorMessage: err => err.message,
+          getErrorMessage: (err: Error) => err.message,
         },
         '../../../core/server/services/file-upload.service': { uploadFile },
       },
@@ -110,7 +154,7 @@ describe('Admin circles controller', () => {
     sinon.assert.calledWith(Tribe.findById, 'circle-1');
   });
 
-  for (const method of ['get', 'update']) {
+  for (const method of ['get', 'update'] as const) {
     it(`${method} returns 404 for an absent circle`, async () => {
       query.exec.resolves(null);
       await controller[method]({ params: { circle: 'missing' } }, res);
@@ -119,7 +163,7 @@ describe('Admin circles controller', () => {
     });
   }
 
-  for (const method of ['list', 'get', 'update']) {
+  for (const method of ['list', 'get', 'update'] as const) {
     it(`${method} reports database errors`, async () => {
       query.exec.rejects(failure);
       await controller[method]({ params: { circle: 'circle-1' } }, res);
@@ -173,7 +217,7 @@ describe('Admin circles controller', () => {
     assert(res.body.modified instanceof Date);
   });
 
-  for (const method of ['create', 'update']) {
+  for (const method of ['create', 'update'] as const) {
     it(`${method} generates canonical and responsive images and removes the upload`, async () => {
       await controller[method](
         {
@@ -235,8 +279,10 @@ describe('Admin circles controller', () => {
       path.join(os.tmpdir(), 'circle-images-'),
     );
     config.circleImagesDir = directory;
-    for (const name of Object.keys(fs)) {
-      fs[name].callsFake(realFs.promises[name].bind(realFs.promises));
+    for (const name of Object.keys(fs) as Array<keyof FileSystem>) {
+      fs[name].callsFake((...args: unknown[]) =>
+        Reflect.apply(realFs.promises[name], realFs.promises, args),
+      );
     }
     sharp.callsFake(realSharp);
     const upload = path.join(directory, 'upload.png');
@@ -279,11 +325,15 @@ describe('Admin circles controller', () => {
     const Probe =
       mongoose.models.AdminCircleCollisionProbe ||
       mongoose.model('AdminCircleCollisionProbe', schema);
+    const available = Probe.find();
+    const occupied = Probe.find();
+    sinon.stub(available, 'exec').resolves([]);
+    sinon.stub(occupied, 'exec').resolves([{ get: () => 'walkers' }]);
     const find = sinon.stub(Probe, 'find');
-    find.onFirstCall().returns({ exec: async () => [] });
+    find.onFirstCall().returns(available);
     // A competing create commits after initial validation. A second validation
     // would silently choose walkers-2, after publishing this upload at walkers.
-    find.returns({ exec: async () => [{ get: () => 'walkers' }] });
+    find.returns(occupied);
     const duplicate = Object.assign(new Error('Duplicate slug'), {
       code: 11000,
     });
@@ -536,7 +586,7 @@ describe('Admin circles controller', () => {
   });
 
   it('publishes generated images when no previous files exist', async () => {
-    fs.rename.callsFake(async (_from, to) => {
+    fs.rename.callsFake(async (_from: string, to: string) => {
       if (String(to).includes('previous-')) throw missing;
     });
     await controller.create(
@@ -555,7 +605,7 @@ describe('Admin circles controller', () => {
   });
 
   it('restores previous files when publication fails', async () => {
-    fs.rename.callsFake(async (from, to) => {
+    fs.rename.callsFake(async (from: string, to: string) => {
       if (
         String(from).endsWith('/variants') &&
         to === '/circle-images/walkers'
@@ -580,7 +630,7 @@ describe('Admin circles controller', () => {
   });
 
   it('restores a moved canonical image when variant backup fails', async () => {
-    fs.rename.callsFake(async (_from, to) => {
+    fs.rename.callsFake(async (_from: string, to: string) => {
       if (String(to).endsWith('previous-variants')) throw failure;
     });
     await controller.create(
@@ -600,7 +650,7 @@ describe('Admin circles controller', () => {
   });
 
   it('discards a failed publication when the circle has no previous files', async () => {
-    fs.rename.callsFake(async (from, to) => {
+    fs.rename.callsFake(async (from: string, to: string) => {
       if (String(to).includes('previous-')) throw missing;
       if (
         String(from).endsWith('/variants') &&
