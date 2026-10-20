@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
@@ -121,11 +122,11 @@ internal fun ProfileOverviewSection(
                     RemoteArtwork(
                         reference.author.id?.let { api.avatarURL(it, 64) },
                         session.cookieHeader,
-                        reference.author.label,
+                        reference.author.localizedLabel(),
                         36.dp,
                     )
                     TextButton(onClick = { reference.author.username?.let(onOpenRelated) }) {
-                        Text(reference.author.label)
+                        Text(reference.author.localizedLabel())
                     }
                 }
                 reference.feedback?.let {
@@ -232,10 +233,10 @@ internal fun ProfileContactsSection(
             RemoteArtwork(
                 contact.user.id?.let { api.avatarURL(it, 64) },
                 session.cookieHeader,
-                contact.user.label,
+                contact.user.localizedLabel(),
                 36.dp,
             )
-            Text(contact.user.label, modifier = Modifier.padding(start = 10.dp))
+            Text(contact.user.localizedLabel(), modifier = Modifier.padding(start = 10.dp))
         }
     }
     if (contacts.size > 6) {

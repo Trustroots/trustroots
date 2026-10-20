@@ -1,0 +1,371 @@
+package org.trustroots.android.ui.conversation
+
+import android.content.Context
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.withContext
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RuntimeEnvironment
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
+import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.api.MobileMember
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], manifest = Config.NONE)
+class MessageConversationViewModelTest {
+    @Test
+    fun resolvesRecipientWithoutAnInboxAndLoadsMessagesAndSavedDraft() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "A fictional saved draft",
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        assertEquals(listOf("member-owl"), repository.memberLookups)
+        assertEquals(listOf("member-owl"), repository.messageLookups)
+        assertEquals("steady-owl", repository.loadedDraftKey)
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        assertEquals(member, model.state.value.member)
+        assertTrue(model.state.value.showQuickReply)
+    }
+
+    @Test
+    fun missingRecipientCanRetryWithoutReadingInboxState() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.failure(MobileApiException(404, "Fictional member unavailable.")),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        )
+        val model = MessageConversationViewModel("missing-member", repository, session(), scope)
+        assertTrue(model.state.value.loadFailed)
+        assertNull(model.state.value.member)
+        assertEquals("Fictional member unavailable.", model.state.value.failure?.serverMessage)
+
+        repository.memberResult = Result.success(member)
+        model.onEvent(MessageConversationEvent.Retry)
+
+        assertEquals(listOf("missing-member", "missing-member"), repository.memberLookups)
+        assertEquals(listOf("missing-member"), repository.messageLookups)
+        assertTrue(model.state.value.messagesLoaded)
+        assertFalse(model.state.value.loadFailed)
+    }
+
+    @Test
+    fun draftPersistsAndSuccessfulSendClearsTheSameAccountCounterpartKey() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.DraftChanged("  A new fictional note  "))
+        assertEquals("  A new fictional note  ", repository.savedDraft)
+        assertEquals("  A new fictional note  ", model.state.value.draft)
+        model.onEvent(MessageConversationEvent.Send("  A new fictional note  "))
+
+        assertEquals("A new fictional note", repository.sentContent)
+        assertEquals("steady-heron" to "steady-owl", repository.clearedDraftKey)
+        assertEquals("", model.state.value.draft)
+        assertEquals("sent-message", model.state.value.messages.first().id)
+        assertFalse(model.state.value.showQuickReply)
+        assertFalse(model.state.value.isSending)
+    }
+
+    @Test
+    fun quickReplyUsesTheUiSuppliedLocalizedPayload() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        val localizedPayload = "<p>A fictional quick reply.</p>"
+
+        model.onEvent(MessageConversationEvent.QuickReply(localizedPayload))
+
+        assertEquals(localizedPayload, repository.sentContent)
+    }
+
+    @Test
+    fun failedSendKeepsDraftAndAuthenticationInvalidationIsAcknowledgedOnce() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+            sendResult = Result.failure(MobileApiException(401, "Fictional session expired.")),
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.DraftChanged("Keep this fictional note"))
+        model.onEvent(MessageConversationEvent.Send("Keep this fictional note"))
+
+        val pending = requireNotNull(model.state.value.pendingSessionInvalidation)
+        assertEquals("Keep this fictional note", model.state.value.draft)
+        model.onEvent(MessageConversationEvent.SessionInvalidationDelivered(pending.id + 1))
+        assertEquals(pending, model.state.value.pendingSessionInvalidation)
+        model.onEvent(MessageConversationEvent.SessionInvalidationDelivered(pending.id))
+        assertNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(MessageConversationEvent.Retry)
+        assertEquals(1, repository.memberLookups.size)
+    }
+
+    @Test
+    fun renewingCredentialsReloadsAndDoesNotExposeCookieInState() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.SessionChanged(session("connect.sid=renewed-fictional-session")))
+
+        assertEquals(2, repository.memberLookups.size)
+        assertEquals(2, repository.messageLookups.size)
+        assertFalse(model.state.value.toString().contains("renewed-fictional-session"))
+    }
+
+    @Test
+    fun clearingConversationEntryCancelsItsLoadAndClearsEntryState() = withScope { scope ->
+        val waiting = CompletableDeferred<Result<MessageMember>>()
+        val cancelled = CompletableDeferred<Unit>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(emptyList()), initialDraft = "",
+        )
+        repository.memberHandler = {
+            try {
+                waiting.await()
+            } finally {
+                cancelled.complete(Unit)
+            }
+        }
+        val store = ViewModelStore()
+        val model = ViewModelProvider(
+            StoreOwner(store),
+            MessageConversationViewModelFactoryForTest("member-owl", repository, session(), scope),
+        )[MessageConversationViewModel::class.java]
+        assertTrue(model.state.value.isLoading)
+
+        store.clear()
+
+        assertTrue("Clearing the Navigation 3 entry cancels its load", cancelled.isCompleted)
+        assertEquals(MessageConversationUiState(isLoading = false), model.state.value)
+        waiting.complete(Result.success(member))
+        assertEquals(MessageConversationUiState(isLoading = false), model.state.value)
+    }
+
+    @Test
+    fun clearingConversationEntryCancelsItsSendAndClearsDraftAndMessages() = withScope { scope ->
+        val sendStarted = CompletableDeferred<Unit>()
+        val sendCancelled = CompletableDeferred<Unit>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
+        )
+        repository.sendHandler = { _, _ ->
+            sendStarted.complete(Unit)
+            try {
+                CompletableDeferred<Result<DirectMessage>>().await()
+            } finally {
+                sendCancelled.complete(Unit)
+            }
+        }
+        val store = ViewModelStore()
+        val model = ViewModelProvider(
+            StoreOwner(store),
+            MessageConversationViewModelFactoryForTest("member-owl", repository, session(), scope),
+        )[MessageConversationViewModel::class.java]
+        model.onEvent(MessageConversationEvent.DraftChanged("A fictional unsent note"))
+        model.onEvent(MessageConversationEvent.Send("A fictional unsent note"))
+        assertTrue(sendStarted.isCompleted)
+        assertTrue(model.state.value.isSending)
+
+        store.clear()
+
+        assertTrue("Clearing the Navigation 3 entry cancels its send", sendCancelled.isCompleted)
+        assertEquals(MessageConversationUiState(isLoading = false), model.state.value)
+        assertEquals("A fictional unsent note", repository.savedDraft)
+        assertNull(repository.clearedDraftKey)
+    }
+
+    @Test
+    fun lateSendFromPreviousCredentialsCannotClearTheRetainedDraftOrReplaceMessages() = withScope { scope ->
+        val lateSend = CompletableDeferred<Result<DirectMessage>>()
+        var sendCalls = 0
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
+        )
+        repository.sendHandler = { _, _ ->
+            sendCalls++
+            if (sendCalls == 1) withContext(NonCancellable) { lateSend.await() }
+            else Result.success(sent)
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.DraftChanged("Keep this fictional note"))
+        model.onEvent(MessageConversationEvent.Send("Keep this fictional note"))
+        assertTrue(model.state.value.isSending)
+
+        model.onEvent(MessageConversationEvent.SessionChanged(session("connect.sid=renewed-fictional-session")))
+        assertEquals("Keep this fictional note", model.state.value.draft)
+        assertFalse(model.state.value.isSending)
+        lateSend.complete(Result.success(DirectMessage("stale-send", "Stale fictional note", member)))
+
+        assertEquals(listOf(incoming), model.state.value.messages)
+        assertEquals("Keep this fictional note", model.state.value.draft)
+        assertNull(repository.clearedDraftKey)
+    }
+
+    @Test
+    fun lateSendFromPreviousBackendCannotChangeTheCurrentConversation() = withScope { scope ->
+        val lateSend = CompletableDeferred<Result<DirectMessage>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "", currentApi = MobileApiClient("https://first.example.test"),
+        )
+        repository.sendHandler = { _, _ -> withContext(NonCancellable) { lateSend.await() } }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.DraftChanged("A draft for the current backend"))
+        model.onEvent(MessageConversationEvent.Send("A draft for the current backend"))
+
+        val replacementApi = MobileApiClient("https://second.example.test")
+        model.updateApi(replacementApi)
+        assertSame(replacementApi, repository.currentApi)
+        assertEquals("A draft for the current backend", model.state.value.draft)
+        lateSend.complete(Result.success(DirectMessage("old-backend-send", "Stale note", member)))
+
+        assertEquals(listOf(incoming), model.state.value.messages)
+        assertEquals("A draft for the current backend", model.state.value.draft)
+        assertNull(repository.clearedDraftKey)
+    }
+
+    @Test
+    fun sameNormalizedBackendReplacesTheApiWithoutReloadingButDifferentBackendReloads() = withScope { scope ->
+        val originalApi = MobileApiClient("https://messages.example.test")
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "", currentApi = originalApi,
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        val sameBackendApi = MobileApiClient("https://messages.example.test/")
+
+        model.updateApi(sameBackendApi)
+
+        assertSame(sameBackendApi, repository.currentApi)
+        assertEquals(listOf("member-owl"), repository.memberLookups)
+        assertEquals(listOf("member-owl"), repository.messageLookups)
+
+        val otherBackendApi = MobileApiClient("https://other-messages.example.test")
+        model.updateApi(otherBackendApi)
+
+        assertSame(otherBackendApi, repository.currentApi)
+        assertEquals(listOf("member-owl", "member-owl"), repository.memberLookups)
+        assertEquals(listOf("member-owl", "member-owl"), repository.messageLookups)
+    }
+
+    @Test
+    fun mobileRepositoryComparesNormalizedBackendIdentity() {
+        val context = RuntimeEnvironment.getApplication() as Context
+        val repository = MobileApiMessageConversationRepository(
+            MobileApiClient("https://messages.example.test/"), session(), context,
+        )
+
+        assertFalse(repository.updateApi(MobileApiClient("https://messages.example.test")))
+        assertTrue(repository.updateApi(MobileApiClient("https://other-messages.example.test")))
+    }
+
+    private class FakeConversationRepository(
+        var memberResult: Result<MessageMember>,
+        private val messagesResult: Result<List<DirectMessage>>,
+        private val initialDraft: String,
+        private val sendResult: Result<DirectMessage> = Result.success(sent),
+        var currentApi: MobileApiClient? = null,
+    ) : MessageConversationRepository {
+        val memberLookups = mutableListOf<String>()
+        val messageLookups = mutableListOf<String>()
+        var loadedDraftKey: String? = null
+        var savedDraftValue: String? = null
+        val savedDraft get() = savedDraftValue ?: initialDraft
+        var clearedDraftKey: Pair<String, String>? = null
+        var sentContent: String? = null
+        var memberHandler: suspend (String) -> Result<MessageMember> = { memberResult }
+        var messagesHandler: suspend (String) -> Result<List<DirectMessage>> = { messagesResult }
+        var sendHandler: suspend (String, String) -> Result<DirectMessage> = { _, _ -> sendResult }
+
+        override fun updateApi(api: MobileApiClient): Boolean {
+            val changed = currentApi?.backendURL?.let { it != api.backendURL } ?: false
+            currentApi = api
+            return changed
+        }
+
+        override suspend fun member(memberID: String): Result<MessageMember> {
+            memberLookups += memberID
+            return memberHandler(memberID)
+        }
+
+        override suspend fun messages(memberID: String): Result<List<DirectMessage>> {
+            messageLookups += memberID
+            return messagesHandler(memberID)
+        }
+
+        override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
+            sentContent = content
+            return sendHandler(memberID, content)
+        }
+
+        override fun loadDraft(selfUsername: String, otherKey: String): String {
+            loadedDraftKey = otherKey
+            return savedDraft
+        }
+
+        override fun saveDraft(selfUsername: String, otherKey: String, value: String) {
+            savedDraftValue = value
+        }
+
+        override fun clearDraft(selfUsername: String, otherKey: String) {
+            clearedDraftKey = selfUsername to otherKey
+            savedDraftValue = ""
+        }
+    }
+
+    private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class MessageConversationViewModelFactoryForTest(
+        private val memberID: String,
+        private val repository: MessageConversationRepository,
+        private val session: MemberSession,
+        private val scope: CoroutineScope,
+    ) : androidx.lifecycle.ViewModelProvider.Factory {
+        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+            require(modelClass.isAssignableFrom(MessageConversationViewModel::class.java))
+            @Suppress("UNCHECKED_CAST")
+            return MessageConversationViewModel(memberID, repository, session, scope) as T
+        }
+    }
+
+    private fun withScope(block: (CoroutineScope) -> Unit) {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try { block(scope) } finally { scope.cancel() }
+    }
+
+    private fun session(cookie: String = "connect.sid=fictional-session") =
+        MemberSession(cookie, MobileMember("steady-heron", "Steady Heron"))
+
+    private companion object {
+        val member = MessageMember("member-owl", "steady-owl", "Steady Owl")
+        val incoming = DirectMessage("incoming-message", "A fictional incoming note", member)
+        val sent = DirectMessage("sent-message", "A fictional sent note", MessageMember("self", "steady-heron", "Steady Heron"))
+    }
+}

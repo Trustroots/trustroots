@@ -106,11 +106,15 @@ import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
-import org.trustroots.android.ui.contacts.ContactsScreen
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.SharedNavigationLink
+import org.trustroots.android.ui.common.SharedNavigationLinks
+import org.trustroots.android.ui.common.UsageScreenTracking
+import org.trustroots.android.ui.menu.MenuNavigationDisplay
+import org.trustroots.android.ui.menu.supportLinkLabelResource
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
 import org.trustroots.android.ui.signin.SignInScreen
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -295,7 +299,11 @@ internal enum class Destination(@StringRes val label: Int) {
 
 /** A unique safe visit to a top-level destination; credentials stay in TrustrootsApp. */
 @Serializable
-internal data class MemberTabVisit(val destination: Destination, val visitID: Long) : NavKey
+internal data class MemberTabVisit(
+    val destination: Destination,
+    val visitID: Long,
+    val requestedMessageMemberID: String? = null,
+) : NavKey
 
 /** Actual decorated owner for authenticated shell state; the username is a safe resource key. */
 @Serializable
@@ -336,7 +344,6 @@ private fun MemberShell(
         else -> UsageScreen.Messages
     }
     UsageScreenTracking(analytics, analyticsScreen)
-    var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     val api = remember(session.member.username, apiBaseUrl.trim().trimEnd('/')) {
@@ -344,7 +351,6 @@ private fun MemberShell(
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
-    var initialMessageSender by remember { mutableStateOf<String?>(null) }
     val shellViewModel = rememberMemberShellViewModel(api, session)
     val shellState by shellViewModel.state.collectAsState()
     LaunchedEffect(activeVisitID) {
@@ -375,9 +381,9 @@ private fun MemberShell(
         onSessionInvalidated()
         shellViewModel.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
     }
-    val navigateTo: (Destination) -> Unit = { next ->
+    fun navigateTo(next: Destination, resetMenuBeforeLeaving: Boolean = false) {
         if (next != destination) {
-            if (destination == Destination.Menu && leaveGuard.value != null) {
+            if (resetMenuBeforeLeaving) {
                 resetActiveMenuVisit?.invoke()
             }
             val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
@@ -397,19 +403,32 @@ private fun MemberShell(
             nextVisitID = replacementID + 1
         }
     }
+    val reselectMessages: () -> Unit = {
+        val current = tabBackStack.lastOrNull() as? MemberTabVisit
+        if (current?.destination == Destination.Messages) {
+            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
+                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
+            val replacementID = maxOf(nextVisitID, firstAvailableID)
+            tabBackStack[tabBackStack.lastIndex] = MemberTabVisit(Destination.Messages, replacementID)
+            nextVisitID = replacementID + 1
+        }
+    }
     LaunchedEffect(session.member.username, alertDestination) {
         val requested = alertDestination ?: return@LaunchedEffect
         if (requested.account != session.member.username) {
             MessageAlerts.clearDestination()
             return@LaunchedEffect
         }
-        val openConversation = {
-            initialMessageSender = requested.senderId
-            if (destination == Destination.Messages) {
-                shellViewModel.onEvent(MemberShellEvent.RefreshUnread)
+        val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
+        val openConversation: () -> Unit = {
+            if (guardedMenuDeparture) {
+                resetActiveMenuVisit?.invoke()
             }
-            messagesNavigationID++
-            navigateTo(Destination.Messages)
+            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
+                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
+            nextVisitID = maxOf(nextVisitID, firstAvailableID)
+            tabBackStack.add(MemberTabVisit(Destination.Messages, nextVisitID, requested.senderId))
+            nextVisitID++
         }
         leaveGuard.value?.invoke(openConversation) ?: openConversation()
         MessageAlerts.clearDestination()
@@ -438,22 +457,22 @@ private fun MemberShell(
                     sessionCookie = session.cookieHeader,
                     memberLabel = session.member.displayName,
                     onNavigate = { item ->
-                        val activeDestination = destination
-                        val action = {
-                            if (item == Destination.Messages) {
-                                messagesNavigationID++
-                                if (activeDestination == Destination.Messages) {
-                                    shellViewModel.onEvent(MemberShellEvent.RefreshUnread)
-                                }
-                            }
-                            if (item == Destination.Circles && item == activeDestination) {
+                        val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
+                        val action: () -> Unit = {
+                            if (item == Destination.Menu && item == destination) {
+                                resetActiveMenuVisit?.invoke()
+                            } else if (item == Destination.Circles && item == destination) {
                                 reselectCircles()
+                            } else if (item == Destination.Messages && item == destination) {
+                                reselectMessages()
+                            } else if (item == Destination.Messages) {
+                                navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
                                 searchNavigationID++
-                                navigateTo(item)
+                                navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
                             } else {
-                                navigateTo(item)
+                                navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
                             }
                         }
                         leaveGuard.value?.invoke(action) ?: action()
@@ -530,15 +549,14 @@ private fun MemberShell(
                                             contentPadding = contentPadding,
                                         )
                                     }
-                                    Destination.Messages -> key(messagesNavigationID) {
-                                        MessageInboxScreen(
-                                            api,
-                                            session,
-                                            onSessionInvalidated,
-                                            initialMessageSender,
-                                            contentPadding = contentPadding,
-                                        )
-                                    }
+                                    Destination.Messages -> MessageInboxScreen(
+                                        api = api,
+                                        session = session,
+                                        onSessionInvalidated = onSessionInvalidated,
+                                        initialMemberID = visit.requestedMessageMemberID,
+                                        initialVisitID = visit.visitID,
+                                        contentPadding = contentPadding,
+                                    )
                                 }
                             }
                         },

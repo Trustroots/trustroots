@@ -1,10 +1,12 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.account.AccountSettingsScreen
+
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -14,6 +16,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
@@ -25,6 +28,8 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.common.SharedNavigationLink
+import org.trustroots.android.ui.menu.MenuScreen
 
 @RunWith(AndroidJUnit4::class)
 class MenuAndAccountCoverageJourneyTest {
@@ -88,35 +93,40 @@ class MenuAndAccountCoverageJourneyTest {
     @Test fun accountSettingsShowsMemberDetailsAndRoutesItsActions() {
         accountResponder = thread(isDaemon = true) {
             try {
-                val socket = try {
-                    server.accept()
-                } catch (error: SocketTimeoutException) {
-                    throw AssertionError("Timed out waiting for account settings request", error)
-                } catch (error: SocketException) {
-                    if (server.isClosed) return@thread else throw error
-                }
-                activeSocket.set(socket)
-                socket.use {
-                    socket.soTimeout = 5_000
-                    val input = socket.getInputStream().bufferedReader()
-                    val requestLine = input.readLine() ?: throw EOFException("Missing account settings request")
-                    while (true) {
-                        val header = input.readLine() ?: throw EOFException("Incomplete account settings headers")
-                        if (header.isEmpty()) break
+                repeat(2) { requestIndex ->
+                    val socket = try {
+                        server.accept()
+                    } catch (error: SocketTimeoutException) {
+                        if (requestIndex == 0) throw AssertionError("Timed out waiting for account settings request", error)
+                        return@repeat
+                    } catch (error: SocketException) {
+                        if (server.isClosed) return@thread else throw error
                     }
-                    check(requestLine == "GET /api/users/quiet-fox HTTP/1.1") {
-                        "Unexpected account settings request: $requestLine"
-                    }
-                    val body =
-                        """{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet-fox@example.test","newsletter":false}"""
-                            .toByteArray(Charsets.UTF_8)
-                    socket.getOutputStream().apply {
-                        write(
-                            "HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n"
-                                .toByteArray(Charsets.US_ASCII),
-                        )
-                        write(body)
-                        flush()
+                    activeSocket.set(socket)
+                    socket.use {
+                        socket.soTimeout = 5_000
+                        val input = socket.getInputStream().bufferedReader()
+                        val requestLine = input.readLine() ?: throw EOFException("Missing account settings request")
+                        while (true) {
+                            val header = input.readLine() ?: throw EOFException("Incomplete account settings headers")
+                            if (header.isEmpty()) break
+                        }
+                        check(
+                            if (requestIndex == 0) requestLine == "GET /api/users/quiet-fox HTTP/1.1"
+                            else requestLine == "POST /api/auth/signout HTTP/1.1",
+                        ) { "Unexpected account settings request: $requestLine" }
+                        val body = if (requestIndex == 0) {
+                            """{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet-fox@example.test","newsletter":false}"""
+                        } else "{}"
+                        val bytes = body.toByteArray(Charsets.UTF_8)
+                        socket.getOutputStream().apply {
+                            write(
+                                "HTTP/1.1 200 OK\r\nContent-Type: application/json; charset=utf-8\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n"
+                                    .toByteArray(Charsets.US_ASCII),
+                            )
+                            write(bytes)
+                            flush()
+                        }
                     }
                 }
             } catch (error: IOException) {
@@ -129,15 +139,16 @@ class MenuAndAccountCoverageJourneyTest {
         }
         var backCount = 0
         var resetCount = 0
-        var signOutCount = 0
+        val signOutCount = AtomicInteger()
         compose.setContent {
             AccountSettingsScreen(
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = session,
                 onBack = { backCount++ },
                 onResetPassword = { resetCount++ },
-                onSignedOut = { signOutCount++ },
+                onSignedOut = { signOutCount.incrementAndGet() },
                 onSessionInvalidated = {},
+                disableMessageAlerts = { _, _ -> },
             )
         }
 
@@ -151,10 +162,12 @@ class MenuAndAccountCoverageJourneyTest {
 
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Forgot your password?").performScrollTo().performClick()
+        compose.waitUntil(5_000) { resetCount == 1 }
         compose.onNodeWithText("Sign out").performScrollTo().performClick()
         assertEquals(1, backCount)
         assertEquals(1, resetCount)
-        assertEquals(1, signOutCount)
+        compose.waitUntil(5_000) { signOutCount.get() == 1 }
+        assertEquals(1, signOutCount.get())
         accountResponder?.join(1_000)
         assertTrue("The account fixture should finish its response", accountResponder?.isAlive != true)
         assertEquals(null, responderFailure.get())

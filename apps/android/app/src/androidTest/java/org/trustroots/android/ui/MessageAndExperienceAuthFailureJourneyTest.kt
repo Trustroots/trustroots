@@ -1,17 +1,18 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -20,7 +21,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.semantics.Role
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicInteger
@@ -32,11 +32,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.experience.CreateExperienceScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class MessageAndExperienceAuthFailureJourneyTest {
@@ -75,6 +74,10 @@ class MessageAndExperienceAuthFailureJourneyTest {
         val draft = "A fictional reply awaiting a valid session."
         val apiFixture = LocalTransportFixture { request ->
             when {
+                request.method == "GET" && request.path == "/api/users/mini/$recipientID" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"$recipientID","username":"$recipient","displayName":"Fictional Recipient"}""",
+                    )
                 request.method == "GET" && request.path == "/api/messages/$recipientID?limit=100" ->
                     LocalTransportFixture.Response("[]")
                 request.method == "POST" && request.path == "/api/messages" ->
@@ -87,18 +90,15 @@ class MessageAndExperienceAuthFailureJourneyTest {
         }.also { fixture = it }
 
         compose.setContent {
-            TrustrootsTheme {
-                ConversationScreen(
-                    api = MobileApiClient(apiFixture.baseURL),
-                    session = MemberSession(
-                        "connect.sid=fictional-message-session",
-                        MobileMember(author, "Fictional Author"),
-                    ),
-                    member = MessageMember(recipientID, recipient, "Fictional Recipient"),
-                    onSessionInvalidated = { invalidations.incrementAndGet() },
-                    onBack = {},
-                )
-            }
+            ConversationRouteTestHarness(
+                api = MobileApiClient(apiFixture.baseURL),
+                session = MemberSession(
+                    "connect.sid=fictional-message-session",
+                    MobileMember(author, "Fictional Author"),
+                ),
+                memberID = recipientID,
+                onSessionInvalidated = { invalidations.incrementAndGet() },
+            )
         }
 
         compose.waitUntil(10_000) {

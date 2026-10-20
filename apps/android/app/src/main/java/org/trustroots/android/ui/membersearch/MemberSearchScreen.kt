@@ -42,8 +42,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.R
+import org.trustroots.android.api.MemberProfile
+import org.trustroots.android.ui.common.memberLocationLabel
 import org.trustroots.android.ui.common.SubmittedSearchField
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
@@ -162,7 +163,7 @@ internal fun MemberSearchScreen(
                     Column {
                         Text(member.displayName, fontWeight = FontWeight.Bold)
                         Text(String.format(uiLocale, usernameHandleFormat, member.username))
-                        member.location?.let { Text(it) }
+                        memberLocationLabel(member.locationLiving, member.locationFrom)?.let { Text(it) }
                     }
                 }
                 HorizontalDivider()

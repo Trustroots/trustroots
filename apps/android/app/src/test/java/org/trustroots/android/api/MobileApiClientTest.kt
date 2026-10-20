@@ -10,6 +10,7 @@ import org.json.JSONArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -28,10 +29,38 @@ class MobileApiClientTest {
     fun selectsOtherConversationMemberAndParsesMessages() {
         val threads = parseThreads(JSONArray("""[{"_id":"thread-one","message":{"excerpt":"Hello"},"read":false,"userFrom":{"_id":"mine","username":"quiet-fox"},"userTo":{"_id":"other","username":"steady-heron","displayName":"Steady Heron"}}]"""), "quiet-fox")
         assertEquals("other", threads.single().otherMember.id)
-        assertEquals("Steady Heron", threads.single().otherMember.label)
+        assertEquals("Steady Heron", threads.single().otherMember.displayName)
         assertFalse(threads.single().read)
         val messages = parseMessages(JSONArray("""[{"_id":"message-one","content":"Hello","userFrom":{"username":"quiet-fox"}}]"""))
         assertEquals("Hello", messages.single().content)
+    }
+
+    @Test
+    fun resolvesConversationRecipientThroughAuthenticatedMiniUserEndpoint() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"_id":"member-owl","username":"steady-owl","displayName":"Steady Owl"}""",
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).messageMember(session, "member-owl") }
+        }
+
+        assertEquals(MessageMember("member-owl", "steady-owl", "Steady Owl"), result.getOrThrow())
+        assertEquals("GET /api/users/mini/member-owl HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Cookie: connect.sid=session-value", ignoreCase = true) })
+    }
+
+    @Test
+    fun resolvesConversationRecipientWhenMiniUserHasNoUsername() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, _) = withApiResponse(
+            status = 200,
+            responseBody = """{"_id":"member-owl","displayName":"A fictional traveller"}""",
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).messageMember(session, "member-owl") }
+        }
+
+        assertEquals(MessageMember("member-owl", null, "A fictional traveller"), result.getOrThrow())
     }
 
     @Test
@@ -55,7 +84,7 @@ class MobileApiClientTest {
         assertEquals(38.7, offers.single().latitude, 0.0001)
         assertEquals("maybe", offers.single().status)
         val host = parseHostOffer(JSONObject("""{"_id":"offer-one","status":"yes","description":"A spare room","maxGuests":2,"user":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}"""))
-        assertEquals("Quiet Fox", host.user.label)
+        assertEquals("Quiet Fox", host.user.displayName)
         assertEquals(2, host.maxGuests)
     }
 
@@ -119,7 +148,7 @@ class MobileApiClientTest {
     fun parsesContactsAndPublicReferences() {
         val contacts = parseContacts(JSONArray("""[{"_id":"contact-one","user":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"}}]"""))
         val references = parseReferences(JSONArray("""[{"_id":"reference-one","userFrom":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"},"feedbackPublic":"A thoughtful guest","response":{"feedbackPublic":"Thank you"}}]"""))
-        assertEquals("Calm Lynx", contacts.single().user.label)
+        assertEquals("Calm Lynx", contacts.single().user.displayName)
         assertEquals("A thoughtful guest", references.single().feedback)
         assertEquals("Thank you", references.single().response)
         val relationship = parseContactRelationship(
@@ -161,7 +190,8 @@ class MobileApiClientTest {
 
         assertEquals("member-fallback", member.id)
         assertEquals("quiet-fox", member.displayName)
-        assertEquals("From North Ridge", member.location)
+        assertEquals("North Ridge", member.location)
+        assertEquals("North Ridge", member.locationFrom)
         assertEquals(emptyList<String>(), member.languages)
         assertEquals(listOf("circle-fallback"), member.circles.map { it.id })
         assertEquals(0, member.circles.single().count)
@@ -316,7 +346,46 @@ class MobileApiClientTest {
     }
 
     @Test
-    fun reportsAuthenticationStatusAndFallbackMessageFromMalformedErrorBody() {
+    fun reportsSignInRejectionKindWithoutInventingFallbackMessage() {
+        val (result, _) = withApiResponse(
+            status = 401,
+            responseBody = "not JSON",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).signIn("quiet-fox", "fictional password") } }
+
+        val error = result.exceptionOrNull() as MobileApiException
+        assertEquals(ApiFailureKind.SIGN_IN_REJECTED, error.failureKind)
+        assertNull(error.serverMessage)
+        assertNull(error.message)
+    }
+
+    @Test
+    fun preservesSignInServerMessageWithSignInFailureKind() {
+        val (result, _) = withApiResponse(
+            status = 401,
+            responseBody = """{"message":"A fictional sign-in response."}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).signIn("quiet-fox", "fictional password") } }
+
+        val error = result.exceptionOrNull() as MobileApiException
+        assertEquals(ApiFailureKind.SIGN_IN_REJECTED, error.failureKind)
+        assertEquals("A fictional sign-in response.", error.serverMessage)
+        assertEquals("A fictional sign-in response.", error.message)
+    }
+
+    @Test
+    fun reportsMissingSessionAsContextFreeFailure() {
+        val (result, _) = withApiResponse(
+            status = 200,
+            responseBody = """{"username":"quiet-fox","displayName":"Quiet Fox"}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).signIn("quiet-fox", "fictional password") } }
+
+        val error = result.exceptionOrNull() as MobileApiException
+        assertEquals(ApiFailureKind.MISSING_SESSION, error.failureKind)
+        assertNull(error.serverMessage)
+        assertNull(error.message)
+    }
+
+    @Test
+    fun reportsAuthenticationStatusAndContextFreeFailureKindFromMalformedErrorBody() {
         val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
         val (result, request) = withApiResponse(status = 401, responseBody = "not JSON") { baseURL ->
             runBlocking { MobileApiClient(baseURL).accountDetails(session) }
@@ -324,14 +393,16 @@ class MobileApiClientTest {
 
         val error = result.exceptionOrNull() as MobileApiException
         assertTrue(error.isAuthenticationFailure)
-        assertEquals("The request was not accepted.", error.message)
+        assertNull(error.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, error.failureKind)
+        assertNull(error.message)
         assertEquals("GET /api/users/quiet-fox HTTP/1.1", request.line)
         assertTrue(request.headers.any { it.equals("Cookie: connect.sid=session-value", ignoreCase = true) })
         assertFalse(request.headers.any { it.startsWith("X-Trustroots-Request:", ignoreCase = true) })
     }
 
     @Test
-    fun preservesServerErrorMessagesAndFallsBackForBlankMessages() {
+    fun preservesServerErrorMessagesAndUsesKindForBlankMessages() {
         val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
         val (specificResult, _) = withApiResponse(
             status = 403,
@@ -345,9 +416,12 @@ class MobileApiClientTest {
         val specificError = specificResult.exceptionOrNull() as MobileApiException
         val blankError = blankResult.exceptionOrNull() as MobileApiException
         assertEquals(403, specificError.statusCode)
-        assertEquals("This fictional account cannot access the page.", specificError.message)
+        assertEquals("This fictional account cannot access the page.", specificError.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, specificError.failureKind)
         assertEquals(503, blankError.statusCode)
-        assertEquals("The request was not accepted.", blankError.message)
+        assertNull(blankError.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, blankError.failureKind)
+        assertNull(blankError.message)
     }
 
     @Test
@@ -411,7 +485,11 @@ class MobileApiClientTest {
             responseHeaders = listOf("Set-Cookie: _passenger_route=route-value; Path=/; Secure"),
         ) { baseURL -> runBlocking { MobileApiClient(baseURL).signIn("quiet-fox", "fictional password") } }
 
-        assertTrue(result.exceptionOrNull()?.message?.contains("did not return a member session") == true)
+        val failure = result.exceptionOrNull() as? MobileApiException
+        assertNotNull(failure)
+        assertEquals(ApiFailureKind.MISSING_SESSION, failure?.failureKind)
+        assertNull(failure?.serverMessage)
+        assertNull(failure?.message)
         assertEquals("POST /api/auth/signin HTTP/1.1", request.line)
     }
 

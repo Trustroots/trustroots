@@ -26,6 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
@@ -55,6 +56,7 @@ class MemberShellViewModelTest {
             activityStore.clear()
         }
     }
+
 
     @Test
     fun loadsAvatarAndRefreshesUnreadOnActiveVisitChangesAndResume() = withScope { scope ->
@@ -149,15 +151,15 @@ class MemberShellViewModelTest {
     fun ordinaryFailureIsTypedAndRetriedOnNextActiveVisit() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             unreadHandler = { call ->
-                if (call == 1) Result.failure(MobileApiException(503, "Temporary outage"))
+                if (call == 1) Result.failure(MobileApiException(503, "Temporary outage", ApiFailureKind.REQUEST_REJECTED))
                 else Result.success(3)
             }
         }
         val model = MemberShellViewModel(repository, scope)
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
         model.onEvent(MemberShellEvent.ActiveVisitChanged(1))
-        assertEquals("Temporary outage", model.state.value.failure?.message)
-        assertEquals(503, model.state.value.failure?.statusCode)
+        assertEquals("Temporary outage", model.state.value.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, model.state.value.failure?.apiFailureKind)
 
         model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
         assertEquals(3, model.state.value.unreadMessageCount)
@@ -433,12 +435,12 @@ class MemberShellViewModelTest {
         override suspend fun unreadCount(): Result<Int> = unreadHandler(++unreadCalls)
     }
 
-    private class TestStoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
-
     class StoreMarker : androidx.lifecycle.ViewModel() {
         var cleared = false
         override fun onCleared() { cleared = true }
     }
+
+    private class TestStoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
 
     private class ShellApiServer : AutoCloseable {
         private val server = ServerSocket(0)

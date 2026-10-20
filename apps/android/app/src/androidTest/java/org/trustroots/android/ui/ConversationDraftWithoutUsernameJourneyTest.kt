@@ -17,11 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.ui.theme.TrustrootsTheme
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class ConversationDraftWithoutUsernameJourneyTest {
@@ -52,6 +49,10 @@ class ConversationDraftWithoutUsernameJourneyTest {
 
         val apiFixture = LocalTransportFixture { request ->
             when {
+                request.method == "GET" && request.path == "/api/users/mini/$memberID" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"$memberID","displayName":"Fictional Member"}""",
+                    )
                 request.method == "GET" && request.path == "/api/messages/$memberID?limit=100" ->
                     LocalTransportFixture.Response("[]")
                 request.method == "GET" && request.path.contains("/avatar?") ->
@@ -66,15 +67,12 @@ class ConversationDraftWithoutUsernameJourneyTest {
         )
 
         compose.setContent {
-            TrustrootsTheme {
-                ConversationScreen(
-                    api = MobileApiClient(apiFixture.baseURL),
-                    session = session,
-                    member = MessageMember(memberID, null, "Fictional Member"),
-                    onSessionInvalidated = { invalidations.incrementAndGet() },
-                    onBack = {},
-                )
-            }
+            ConversationRouteTestHarness(
+                api = MobileApiClient(apiFixture.baseURL),
+                session = session,
+                memberID = memberID,
+                onSessionInvalidated = { invalidations.incrementAndGet() },
+            )
         }
 
         compose.waitUntil(10_000) {

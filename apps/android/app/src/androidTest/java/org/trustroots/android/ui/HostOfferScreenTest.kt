@@ -2,24 +2,24 @@ package org.trustroots.android.ui
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.compose.ui.unit.dp
 import java.net.ServerSocket
 import kotlin.concurrent.thread
 import org.junit.After
-import org.junit.Before
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,6 +28,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.testing.KeyboardTestSupport
 import org.trustroots.android.testing.foregroundActivityTask
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostOfferScreenTest {

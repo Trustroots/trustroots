@@ -213,15 +213,21 @@ class ProfileImageViewerJourneyTest {
         }
 
         val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
-        val fitScale = image.fetchSemanticsNode().config[ProfileImageScaleKey]
-        image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, fitScale))
+        compose.waitUntil(2_000) { imageViewport(image) != IntSize.Zero }
+        val viewport = imageViewport(image)
+        val expectedFitScale = minOf(
+            1f,
+            viewport.width.toFloat() / bitmap.width,
+            viewport.height.toFloat() / bitmap.height,
+        )
+        assertEquals(expectedFitScale, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
         repeat(12) { compose.onNodeWithContentDescription("Zoom in").performClick() }
         image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, 1f))
         compose.onNodeWithContentDescription("Reset profile photo zoom").performClick()
-        image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, fitScale))
+        image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, expectedFitScale))
         compose.onNodeWithContentDescription("Zoom in").performClick()
         compose.onNodeWithContentDescription("Zoom out").performClick()
-        image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, fitScale))
+        image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, expectedFitScale))
     }
 
     @Test fun screenReaderActionsZoomAndResetThePhoto() {

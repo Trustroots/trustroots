@@ -3,7 +3,10 @@ package org.trustroots.android.ui
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable as KotlinSerializable
 
-/** Safe route identity for a page in one Profile/menu tab visit. */
+/**
+ * Persisted route types keep their original package names because Navigation 3
+ * stores each NavKey's Java class name in Android saved state.
+ */
 @KotlinSerializable
 internal data class MenuPageVisit(val page: MenuPage, val visitID: Long) : NavKey
 
@@ -19,6 +22,7 @@ internal data class MenuBrowserVisit(
 internal enum class MenuPage {
     Menu,
     Profile,
+    /** Retained only to restore saved stacks created before Edit Profile became a child route. */
     EditProfile,
     Contacts,
     Host,

@@ -1,25 +1,27 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.account.AccountSettingsScreen
+
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
-import androidx.core.view.WindowCompat
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.swipeDown
+import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
@@ -28,10 +30,10 @@ import java.net.SocketException
 import java.net.SocketTimeoutException
 import kotlin.concurrent.thread
 import org.junit.After
-import org.junit.Before
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,6 +41,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.contacts.ContactsScreen
+import org.trustroots.android.ui.menu.MenuScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 /** Exercises collapsing headers and preserves screenshots from the pre-change layout. */
@@ -77,6 +80,7 @@ class RemainingHeadersBaselineJourneyTest {
                     session = session,
                     onSessionInvalidated = {},
                     onBack = { backPressed = true },
+                    onOpenProfile = {},
                     contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
                 )
             }

@@ -413,7 +413,10 @@ history. Each visit SHALL have a unique entry identity, including repeated
 visits to the same destination. After the parent has loaded the live
 authenticated session, the active destination SHALL be restorable after
 activity recreation. Top-level tab keys SHALL be serialisable and contain no
-session credentials, cookies, account secrets or member-specific payloads. The
+session credentials, cookies, account secrets or member-specific payloads.
+Persisted Navigation 3 route types SHALL retain their Java class names across
+source organisation so Android SavedState from an earlier app version remains
+resolvable. The
 live authenticated parent SHALL remain the source of session and member data.
 
 #### Scenario: Member switches between top-level destinations
@@ -488,6 +491,66 @@ commit a pop or bypass the leave decision.
   unsaved changes
 - **THEN** the existing leave guard asks whether to keep editing or discard
 - **AND** keeping edits leaves the form and top-level destination unchanged
+
+### Requirement: Navigation 3 owns Android member flows
+
+The authenticated Android app SHALL represent Inbox and Conversation, Profile
+and Contacts, profile editing and Experience creation, HostOffer and Account as
+serialisable Navigation 3 child entries beneath their existing top-level
+visit. Each entry SHALL own its mutable business state and asynchronous work
+through its Navigation 3 ViewModel store. Route keys SHALL contain only a
+stable public identifier and visit identity; runtime sessions, cookies, API
+responses, message content and editable form values SHALL remain outside route
+state. Back SHALL return to the exact originating member route, and shared
+leave guards SHALL run before a dirty form is removed.
+
+#### Scenario: Member opens a conversation from Inbox or an alert
+
+- **WHEN** a member opens a conversation from Inbox or a valid message alert
+- **THEN** Navigation 3 places Conversation above its Inbox route
+- **AND** Conversation reloads its recipient and messages from the authenticated API
+- **AND** Back returns to the same Inbox visit and then the previous shell visit
+
+#### Scenario: Member opens a profile from a member flow
+
+- **WHEN** a member opens a profile from Contacts, Inbox, Conversation or another Profile
+- **THEN** the profile is placed above the route that opened it
+- **AND** Back returns to that exact source with its list, filter and scroll state
+
+#### Scenario: Member edits a profile or creates an Experience
+
+- **WHEN** a member opens Edit Profile or Experience creation from a profile
+- **THEN** the form is a distinct entry above that profile
+- **AND** its ViewModel owns loading, edits, save state and retryable failures
+- **AND** a successful save returns to the same profile and refreshes its data
+
+#### Scenario: Member leaves a changed profile form
+
+- **WHEN** a member attempts Back, Cancel or top-level navigation with unsaved changes
+- **THEN** the shared keep-editing or discard decision runs before the route changes
+- **AND** keeping the form preserves all entered values
+
+#### Scenario: Member opens a Menu destination
+
+- **WHEN** a member opens Contacts, HostOffer, Account, Profile or Edit Profile from Menu
+- **THEN** the destination is a distinct Menu child entry
+- **AND** Back returns to the same Menu visit
+- **AND** selecting Menu again uses its established reset to the Menu root
+
+#### Scenario: Android restores a member-flow entry
+
+- **WHEN** Android recreates the activity while a member-flow entry is open
+- **THEN** the safe route history is restored beneath the live authenticated session
+- **AND** destination data reloads through the current API client
+- **AND** no session credential, private message or form payload is restored from a route key
+
+#### Scenario: Android restores a previously saved Menu route
+
+- **WHEN** Android restores a Menu route saved by an earlier app version
+- **THEN** the Menu page and browser route classes resolve using their stable
+  Java class names
+- **AND** organising their source file under `ui/menu` does not change the
+  persisted route identity
 
 ### Requirement: Navigation-scoped Android Circles state
 

@@ -1,13 +1,14 @@
 package org.trustroots.android.ui
 
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
+import org.trustroots.android.ui.account.AccountSettingsScreen
+
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -17,16 +18,17 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.json.JSONObject
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostAndAccountTransportJourneysTest {
@@ -50,34 +52,38 @@ class HostAndAccountTransportJourneysTest {
             }
         }
         this.fixture = fixture
-        val screenGeneration = mutableIntStateOf(0)
         compose.setContent {
-            key(screenGeneration.intValue) {
-                HostOfferScreen(
-                    api = MobileApiClient(fixture.baseURL),
-                    session = testSession,
-                    onSessionInvalidated = { invalidations.incrementAndGet() },
-                    onBack = {},
-                )
-            }
+            FormRecoveryNav3Harness(
+                api = MobileApiClient(fixture.baseURL),
+                session = testSession,
+                onSessionInvalidated = { invalidations.incrementAndGet() },
+            )
         }
 
+        compose.onNodeWithText("Open hosting settings").performClick()
+        compose.waitForIdle()
         compose.waitUntil(10_000) {
             val texts = visibleTexts()
             fixture.requests.any { it.path == "/api/offers-by/member-one?types=host" } &&
-                "Hosting description" in texts &&
+                compose.onAllNodesWithText("Retry").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithText("Save changes").fetchSemanticsNodes().isNotEmpty() &&
                 texts.any { it.isNotBlank() && it !in HOST_LABELS }
         }
         val failedLoadRequests = fixture.requests.toList()
+        val failedLoadTexts = visibleTexts()
+        val loadError = failedLoadTexts.first { it.isNotBlank() && it !in HOST_LABELS }
         assertTrue(failedLoadRequests.any { it.method == "GET" && it.path == "/api/users/steady-heron" })
         val failedOfferLookups = failedLoadRequests.filter { it.path == "/api/offers-by/member-one?types=host" }
         assertTrue(failedOfferLookups.isNotEmpty())
         assertTrue(failedOfferLookups.all { it.method == "GET" && it.cookie == "connect.sid=fictional-session" })
-        compose.onNodeWithText("Hosting description").assertIsDisplayed()
+        compose.onNodeWithText(loadError).assertIsDisplayed()
+        compose.onNodeWithText("Retry").assertIsDisplayed()
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
         assertEquals(0, invalidations.get())
 
         allowRecovery.set(true)
-        compose.runOnUiThread { screenGeneration.intValue++ }
+        compose.onNodeWithText("Return to form launcher").performClick()
+        compose.onNodeWithText("Open hosting settings").performClick()
         compose.waitUntil(10_000) {
             fixture.requests.size > failedLoadRequests.size &&
                 compose.onAllNodesWithText("A recovered fictional hosting offer.").fetchSemanticsNodes().isNotEmpty()

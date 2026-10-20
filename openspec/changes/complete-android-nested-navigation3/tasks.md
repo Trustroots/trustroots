@@ -58,3 +58,7 @@
       tab resets and activity recreation.
 - [ ] 5.6 Update `native-android-member-app` living requirements and archive
       this change after implementation and validation are complete.
+
+- [ ] Preserve existing persisted Navigation 3 route Java class names when
+      organising their source files, with a SavedState serializer round-trip
+      regression for the legacy Menu page and browser keys.

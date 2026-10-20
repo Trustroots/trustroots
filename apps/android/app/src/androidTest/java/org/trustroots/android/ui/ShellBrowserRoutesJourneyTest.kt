@@ -164,7 +164,8 @@ class ShellBrowserRoutesJourneyTest {
         pressSystemBack()
         compose.onNodeWithTag("offlineBrowserSurface").assertDoesNotExist()
         compose.onNodeWithTag("accountSettingsScreen").assertIsDisplayed()
-        compose.onNodeWithText("Email address").assertIsDisplayed()
+        compose.onNodeWithText("Forgot your password?").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("Email address").fetchSemanticsNodes().isNotEmpty())
         compose.onNodeWithText("Contact and support").assertDoesNotExist()
         compose.onNodeWithText("Discover circles").assertDoesNotExist()
 

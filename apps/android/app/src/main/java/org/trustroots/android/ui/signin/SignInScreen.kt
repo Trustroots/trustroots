@@ -46,8 +46,8 @@ import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.ui.UsageScreenTracking
-import org.trustroots.android.ui.UsageAnalyticsSettings
+import org.trustroots.android.ui.common.UsageAnalyticsSettings
+import org.trustroots.android.ui.common.UsageScreenTracking
 import org.trustroots.android.ui.rememberBuildDate
 
 @Composable

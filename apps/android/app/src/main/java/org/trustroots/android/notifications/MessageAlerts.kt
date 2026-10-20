@@ -31,6 +31,9 @@ import org.unifiedpush.android.connector.data.PushMessage
 
 data class MessageDestination(val account: String, val senderId: String)
 
+/** Resource identity and safe formatting values for Account UI status copy. */
+data class MessageAlertStatusMetadata(val resourceId: Int, val formatArgs: List<String> = emptyList())
+
 internal suspend fun handleMessageEndpointRegistration(
     account: String,
     endpointUrl: String,
@@ -43,11 +46,15 @@ internal suspend fun handleMessageEndpointRegistration(
     setStatus: (String) -> Unit,
     registrationFailedMessage: String,
     registrationSucceededMessage: String,
+    setStatusMetadata: (MessageAlertStatusMetadata) -> Unit = {},
+    registrationFailedMetadata: MessageAlertStatusMetadata? = null,
+    registrationSucceededMetadata: MessageAlertStatusMetadata? = null,
 ) {
     val session = loadSession() ?: return
     if (session.member.username != account) return
     if (!registerEndpoint(session, endpointUrl, publicKey, authKey)) {
         setStatus(registrationFailedMessage)
+        registrationFailedMetadata?.let(setStatusMetadata)
         return
     }
     val oldEndpoint = saveEndpoint(endpointUrl)
@@ -55,6 +62,7 @@ internal suspend fun handleMessageEndpointRegistration(
         unregisterEndpoint(session, oldEndpoint)
     }
     setStatus(registrationSucceededMessage)
+    registrationSucceededMetadata?.let(setStatusMetadata)
 }
 
 object MessageAlerts {
@@ -62,6 +70,7 @@ object MessageAlerts {
     const val SENDER_EXTRA = "org.trustroots.android.message.sender"
     val destination = MutableStateFlow<MessageDestination?>(null)
     val status = MutableStateFlow<String?>(null)
+    val statusMetadata = MutableStateFlow<MessageAlertStatusMetadata?>(null)
     private const val CHANNEL = "messages"
     private const val PREFS = "message-alerts"
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -83,7 +92,25 @@ object MessageAlerts {
     fun clearDestination() { destination.value = null }
 
     fun enable(activity: Activity, session: MemberSession, onResult: (String) -> Unit) {
-        enable(
+        enableWithStatus(
+            activity = activity,
+            session = session,
+            onResult = { result -> onResult(activity.getString(result.resourceId, *result.formatArgs.toTypedArray())) },
+            apiBaseUrl = BuildConfig.API_BASE_URL,
+            hasDistributors = { UnifiedPush.getDistributors(activity).isNotEmpty() },
+            chooseDistributor = { onSelected -> UnifiedPush.tryUseCurrentOrDefaultDistributor(activity, onSelected) },
+            registerDistributor = { key ->
+                UnifiedPush.register(
+                    activity,
+                    messageForDistributor = activity.getString(R.string.message_alerts_push_name),
+                    vapid = key,
+                )
+            },
+        )
+    }
+
+    fun enableWithStatus(activity: Activity, session: MemberSession, onResult: (MessageAlertStatusMetadata) -> Unit) {
+        enableWithStatus(
             activity = activity,
             session = session,
             onResult = onResult,
@@ -108,27 +135,46 @@ object MessageAlerts {
         hasDistributors: () -> Boolean,
         chooseDistributor: ((Boolean) -> Unit) -> Unit,
         registerDistributor: (String) -> Unit,
+    ) = enableWithStatus(
+        activity = activity,
+        session = session,
+        onResult = { result -> onResult(activity.getString(result.resourceId, *result.formatArgs.toTypedArray())) },
+        apiBaseUrl = apiBaseUrl,
+        hasDistributors = hasDistributors,
+        chooseDistributor = chooseDistributor,
+        registerDistributor = registerDistributor,
+    )
+
+    internal fun enableWithStatus(
+        activity: Activity,
+        session: MemberSession,
+        onResult: (MessageAlertStatusMetadata) -> Unit,
+        apiBaseUrl: String,
+        hasDistributors: () -> Boolean,
+        chooseDistributor: ((Boolean) -> Unit) -> Unit,
+        registerDistributor: (String) -> Unit,
     ) {
         scope.launch {
             val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull()
             activity.runOnUiThread {
                 if (key.isNullOrBlank()) {
-                    onResult(activity.getString(R.string.message_alerts_not_configured))
+                    onResult(MessageAlertStatusMetadata(R.string.message_alerts_not_configured))
                     return@runOnUiThread
                 }
                 if (!hasDistributors()) {
-                    onResult(activity.getString(R.string.message_alerts_install_distributor))
+                    onResult(MessageAlertStatusMetadata(R.string.message_alerts_install_distributor))
                     return@runOnUiThread
                 }
                 chooseDistributor { selected ->
                     if (!selected) {
-                        onResult(activity.getString(R.string.message_alerts_choose_distributor))
+                        onResult(MessageAlertStatusMetadata(R.string.message_alerts_choose_distributor))
                     } else {
                         preferences(activity).edit().putString("account", session.member.username)
                             .putBoolean("enabled", true).apply()
                         registerDistributor(key)
                         status.value = null
-                        onResult(activity.getString(R.string.message_alerts_waiting_registration))
+                        statusMetadata.value = null
+                        onResult(MessageAlertStatusMetadata(R.string.message_alerts_waiting_registration))
                     }
                 }
             }
@@ -160,6 +206,7 @@ object MessageAlerts {
     ): Job? {
         if (!isEnabled(context, session.member.username)) {
             status.value = null
+            statusMetadata.value = null
             return null
         }
         return scope.launch {
@@ -183,6 +230,7 @@ object MessageAlerts {
         val oldEndpoint = endpoint(context)
         preferences(context).edit().clear().apply()
         status.value = null
+        statusMetadata.value = null
         unregisterDistributor()
         if (oldEndpoint != null) {
             MobileApiClient(apiBaseUrl).unregisterMessagePush(session, oldEndpoint)
@@ -203,6 +251,7 @@ object MessageAlerts {
         if (!isEnabled(context, account)) return
         val keys = newEndpoint.pubKeySet ?: run {
             status.value = context.getString(R.string.message_alerts_missing_encryption_keys)
+            statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_missing_encryption_keys)
             return
         }
         scope.launch {
@@ -225,6 +274,9 @@ object MessageAlerts {
                 setStatus = { status.value = it },
                 registrationFailedMessage = context.getString(R.string.message_alerts_registration_failed),
                 registrationSucceededMessage = context.getString(R.string.message_alerts_ready),
+                setStatusMetadata = { statusMetadata.value = it },
+                registrationFailedMetadata = MessageAlertStatusMetadata(R.string.message_alerts_registration_failed),
+                registrationSucceededMetadata = MessageAlertStatusMetadata(R.string.message_alerts_ready),
             )
         }
     }
@@ -247,6 +299,7 @@ object MessageAlerts {
         val oldEndpoint = endpoint(context)
         preferences(context).edit().clear().apply()
         status.value = context.getString(R.string.message_alerts_distributor_stopped)
+        statusMetadata.value = MessageAlertStatusMetadata(R.string.message_alerts_distributor_stopped)
         return oldEndpoint?.let {
             scope.launch {
                 val session = loadSession() ?: return@launch
@@ -291,6 +344,10 @@ class MessagePushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) = MessageAlerts.show(this, message)
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
         MessageAlerts.status.value = getString(R.string.message_alerts_registration_error, reason.name)
+        MessageAlerts.statusMetadata.value = MessageAlertStatusMetadata(
+            R.string.message_alerts_registration_error,
+            listOf(reason.name),
+        )
     }
     override fun onUnregistered(instance: String) = MessageAlerts.onDistributorUnregistered(this)
 }

@@ -13,6 +13,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.ui.account.ApkUpdateSettings
 
 @RunWith(AndroidJUnit4::class)
 class ApkUpdateSettingsJourneyTest {

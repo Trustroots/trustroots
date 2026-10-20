@@ -68,6 +68,7 @@ class MemberJourneysContactAndSearchNavigationJourneyTest {
                     session = session(),
                     onSessionInvalidated = {},
                     onBack = {},
+                    onOpenProfile = {},
                 )
             }
         }

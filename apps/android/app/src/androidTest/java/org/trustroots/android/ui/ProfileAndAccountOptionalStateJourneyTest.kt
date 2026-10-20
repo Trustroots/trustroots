@@ -1,5 +1,7 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.account.AccountSettingsScreen
+
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onAllNodesWithText

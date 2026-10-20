@@ -29,11 +29,22 @@ class SignInJourneyActivity : ComponentActivity() {
                             ) {
                                 Text("Fake browser: ${route.title}")
                                 Text(route.url)
+                                Text("Runtime session: ${route.sessionCookie.orEmpty()}")
                                 TextButton(onClick = onClose) { Text("Close fake browser") }
                             }
                         }
                     } else {
-                        org.trustroots.android.browser.DefaultBrowserContent
+                        if (intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA) != null) {
+                            { route, onClose, contentPadding ->
+                                org.trustroots.android.browser.DefaultBrowserContent(
+                                    route.copy(url = requireNotNull(intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA))),
+                                    onClose,
+                                    contentPadding,
+                                )
+                            }
+                        } else {
+                            org.trustroots.android.browser.DefaultBrowserContent
+                        }
                     },
                 )
             }
@@ -43,5 +54,6 @@ class SignInJourneyActivity : ComponentActivity() {
     companion object {
         const val API_BASE_URL_EXTRA = "org.trustroots.android.test.API_BASE_URL"
         const val FAKE_BROWSER_EXTRA = "org.trustroots.android.test.FAKE_BROWSER"
+        const val PROFILE_BROWSER_URL_EXTRA = "org.trustroots.android.test.PROFILE_BROWSER_URL"
     }
 }

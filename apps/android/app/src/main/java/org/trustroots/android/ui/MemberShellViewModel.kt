@@ -1,5 +1,7 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.common.isAuthenticationFailure
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -17,10 +19,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
-import org.trustroots.android.ui.common.isAuthenticationFailure
 
 internal interface MemberShellRepository {
     /** Replaces runtime request dependencies; true means the account or backend changed. */
@@ -52,8 +54,8 @@ internal class MobileApiMemberShellRepository(
 internal data class MemberShellInvalidation(val id: Long)
 
 internal data class MemberShellFailure(
-    val message: String?,
-    val statusCode: Int?,
+    val serverMessage: String?,
+    val apiFailureKind: ApiFailureKind?,
 )
 
 internal data class MemberShellUiState(
@@ -217,8 +219,8 @@ internal class MemberShellViewModel(
             mutableState.update {
                 it.copy(
                     failure = MemberShellFailure(
-                        message = apiError?.message?.takeIf(String::isNotBlank),
-                        statusCode = apiError?.statusCode,
+                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        apiFailureKind = apiError?.failureKind,
                     ),
                 )
             }

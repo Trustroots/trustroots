@@ -6,8 +6,10 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +26,7 @@ class MessageAlertNavigationTest {
     @After fun closeServer() = server.close()
 
     @Test fun alertOpensMatchingConversation() {
+        val recipientLookups = AtomicInteger()
         thread(isDaemon = true) {
             repeat(4) {
                 val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
@@ -31,10 +34,14 @@ class MessageAlertNavigationTest {
                     val input = socket.getInputStream().bufferedReader()
                     val request = input.readLine().orEmpty()
                     while (!input.readLine().isNullOrEmpty()) Unit
-                    val payload = if (request.contains("/api/messages/member-one?")) {
-                        "[]"
-                    } else {
-                        """[{"_id":"thread-one","userFrom":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"},"userTo":{"_id":"mine","username":"steady-heron","displayName":"Steady Heron"},"read":false}]"""
+                    val payload = when {
+                        request.contains("/api/messages?page=1&limit=50") -> "[]"
+                        request.contains("/api/users/mini/member-one") -> {
+                            recipientLookups.incrementAndGet()
+                            """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}"""
+                        }
+                        request.contains("/api/messages/member-one?") -> "[]"
+                        else -> """[{"_id":"thread-one","userFrom":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"},"userTo":{"_id":"mine","username":"steady-heron","displayName":"Steady Heron"},"read":false}]"""
                     }
                     val bytes = payload.toByteArray()
                     socket.getOutputStream().write(
@@ -56,5 +63,6 @@ class MessageAlertNavigationTest {
             compose.onAllNodesWithTag("messageComposer").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("messageComposer").assertIsDisplayed()
+        assertEquals("The alert route resolves its recipient when the Inbox is empty", 1, recipientLookups.get())
     }
 }

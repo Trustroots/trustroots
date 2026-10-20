@@ -1,19 +1,22 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.account.AccountSettingsScreen
+
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -36,6 +39,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -47,6 +51,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
         MobileMember("steady-heron", "Steady Heron"),
     )
     private val requests = CopyOnWriteArrayList<CapturedRequest>()
+    private val localFixtures = mutableListOf<LocalTransportFixture>()
     private val activeSocket = AtomicReference<Socket?>()
     private var responder: Thread? = null
 
@@ -54,6 +59,7 @@ class AccountLoadAndPasswordFailureJourneyTest {
         server.close()
         activeSocket.getAndSet(null)?.close()
         responder?.join(2_000)
+        localFixtures.forEach { runCatching { it.close() } }
     }
 
     @Test fun hostingLoadFailuresSeparateTemporaryErrorsFromExpiredSessions() {
@@ -93,6 +99,8 @@ class AccountLoadAndPasswordFailureJourneyTest {
 
         waitForText("Hosting details are temporarily unavailable.")
         compose.onNodeWithText("Hosting details are temporarily unavailable.").assertIsDisplayed()
+        compose.onNodeWithText("Retry").assertIsDisplayed()
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
         assertTrue(requests.any { it.path == "/api/users/steady-heron" })
         assertTrue(requests.any { it.path == "/api/offers-by/member-one?types=host" })
         assertFalse(invalidated.get())
@@ -101,11 +109,13 @@ class AccountLoadAndPasswordFailureJourneyTest {
         }
         waitForText("The member profile is temporarily unavailable.")
         compose.onNodeWithText("The member profile is temporarily unavailable.").assertIsDisplayed()
+        compose.onNodeWithText("Retry").assertIsDisplayed()
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
         assertFalse(invalidated.get())
         compose.runOnIdle {
             activeSession.value = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox"))
         }
-        waitForInvalidatedLoading(invalidated)
+        waitForInvalidatedWithoutLoading(invalidated)
         assertTrue(requests.any { it.path == "/api/users/quiet-fox" })
     }
 
@@ -144,9 +154,112 @@ class AccountLoadAndPasswordFailureJourneyTest {
         compose.runOnIdle {
             activeSession.value = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox"))
         }
-        waitForInvalidatedLoading(invalidated)
+        waitForInvalidatedWithoutLoading(invalidated)
         assertTrue(requests.any { it.method == "GET" && it.path == "/api/users/steady-heron" })
         assertTrue(requests.any { it.method == "GET" && it.path == "/api/users/quiet-fox" })
+    }
+
+    @Test fun hostOfferRetriesWithRefreshedCookieOnlyAfterUserRequestsIt() {
+        val activeSession = mutableStateOf(session)
+        val invalidated = AtomicBoolean(false)
+        val hostApi = api()
+        startResponder { request ->
+            when {
+                request.method == "GET" && request.path == "/api/users/steady-heron" -> FixtureResponse(
+                    200,
+                    """{"_id":"member-one","username":"steady-heron","displayName":"Steady Heron"}""",
+                )
+                request.method == "GET" && request.path == "/api/offers-by/member-one?types=host" &&
+                    request.cookie == session.cookieHeader -> FixtureResponse(
+                    503,
+                    """{"message":"Hosting details are temporarily unavailable."}""",
+                )
+                request.method == "GET" && request.path == "/api/offers-by/member-one?types=host" -> FixtureResponse(
+                    200,
+                    """[{"_id":"offer-fresh","status":"yes","description":"A fresh fictional room","maxGuests":2}]""",
+                )
+                else -> FixtureResponse(404, "")
+            }
+        }
+        compose.setContent {
+            TrustrootsTheme {
+                HostOfferScreen(
+                    api = hostApi,
+                    session = activeSession.value,
+                    onSessionInvalidated = { invalidated.set(true) },
+                    onBack = {},
+                )
+            }
+        }
+
+        waitForText("Hosting details are temporarily unavailable.")
+        assertEquals(2, requests.size)
+        compose.runOnIdle {
+            activeSession.value = MemberSession(
+                "connect.sid=refreshed-fictional-session",
+                MobileMember("steady-heron", "Steady Heron"),
+            )
+        }
+        compose.onNodeWithText("Retry").assertIsDisplayed()
+        assertEquals("Refreshing credentials must not automatically replay the failed load", 2, requests.size)
+
+        compose.onNodeWithText("Retry").performClick()
+        waitForText("A fresh fictional room")
+        assertFalse(invalidated.get())
+        val profileRequests = requests.filter { it.path == "/api/users/steady-heron" }
+        val offerRequests = requests.filter { it.path == "/api/offers-by/member-one?types=host" }
+        assertEquals(listOf(session.cookieHeader, "connect.sid=refreshed-fictional-session"), profileRequests.map { it.cookie })
+        assertEquals(listOf(session.cookieHeader, "connect.sid=refreshed-fictional-session"), offerRequests.map { it.cookie })
+        compose.onNodeWithText("Save changes").assertIsEnabled()
+    }
+
+    @Test fun hostOfferReloadsFromANewBackendAndClearsTheOldFailure() {
+        val firstBackend = LocalTransportFixture { request ->
+            when (request.path) {
+                "/api/users/steady-heron" -> LocalTransportFixture.Response(
+                    """{"_id":"member-one","username":"steady-heron","displayName":"Steady Heron"}""",
+                )
+                "/api/offers-by/member-one?types=host" ->
+                    LocalTransportFixture.Response("""{"message":"First backend is unavailable."}""", 503)
+                else -> LocalTransportFixture.Response("[]", 404)
+            }
+        }.also(localFixtures::add)
+        val secondBackend = LocalTransportFixture { request ->
+            when (request.path) {
+                "/api/users/steady-heron" -> LocalTransportFixture.Response(
+                    """{"_id":"member-one","username":"steady-heron","displayName":"Steady Heron"}""",
+                )
+                "/api/offers-by/member-one?types=host" -> LocalTransportFixture.Response(
+                    """[{"_id":"backend-offer","status":"yes","description":"A recovered backend room","maxGuests":2}]""",
+                )
+                else -> LocalTransportFixture.Response("[]", 404)
+            }
+        }.also(localFixtures::add)
+        val activeApi = mutableStateOf(MobileApiClient(firstBackend.baseURL))
+        val invalidated = AtomicBoolean(false)
+        compose.setContent {
+            TrustrootsTheme {
+                HostOfferScreen(
+                    api = activeApi.value,
+                    session = session,
+                    onSessionInvalidated = { invalidated.set(true) },
+                    onBack = {},
+                )
+            }
+        }
+
+        waitForText("First backend is unavailable.")
+        assertEquals(2, firstBackend.requests.size)
+        compose.runOnIdle { activeApi.value = MobileApiClient(secondBackend.baseURL) }
+        waitForText("A recovered backend room")
+
+        assertEquals("The old backend failure should not survive a backend switch", 2, firstBackend.requests.size)
+        assertTrue(secondBackend.requests.any { it.path == "/api/users/steady-heron" })
+        assertTrue(secondBackend.requests.any { it.path == "/api/offers-by/member-one?types=host" })
+        assertTrue(firstBackend.requests.all { it.cookie == session.cookieHeader })
+        assertTrue(secondBackend.requests.all { it.cookie == session.cookieHeader })
+        assertFalse(invalidated.get())
+        compose.onNodeWithText("Save changes").assertIsEnabled()
     }
 
     @Test fun passwordFailureCanBeRetriedAndPreservesEnteredFields() {
@@ -219,15 +332,12 @@ class AccountLoadAndPasswordFailureJourneyTest {
         }
     }
 
-    private fun waitForInvalidatedLoading(invalidated: AtomicBoolean) {
-        compose.waitUntil(10_000) {
-            invalidated.get() && compose.onAllNodes(
-                hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate),
-            ).fetchSemanticsNodes().isNotEmpty()
-        }
+    private fun waitForInvalidatedWithoutLoading(invalidated: AtomicBoolean) {
+        compose.waitUntil(10_000) { invalidated.get() }
         compose.waitForIdle()
         assertEquals(
-            1,
+            "Loading must finish when the expired session is reported",
+            0,
             compose.onAllNodes(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).fetchSemanticsNodes().size,
         )
     }
@@ -250,17 +360,21 @@ class AccountLoadAndPasswordFailureJourneyTest {
                             val input = socket.getInputStream()
                             val requestLine = readLine(input).orEmpty()
                             var contentLength = 0
+                            var cookie: String? = null
                             while (true) {
                                 val header = readLine(input) ?: break
                                 if (header.isEmpty()) break
                                 if (header.startsWith("Content-Length:", ignoreCase = true)) {
                                     contentLength = header.substringAfter(':').trim().toInt()
+                                } else if (header.startsWith("Cookie:", ignoreCase = true)) {
+                                    cookie = header.substringAfter(':').trim()
                                 }
                             }
                             val request = CapturedRequest(
                                 method = requestLine.substringBefore(' '),
                                 path = requestLine.substringAfter(' ').substringBefore(' '),
                                 body = String(readBody(input, contentLength), Charsets.UTF_8),
+                                cookie = cookie,
                             )
                             requests += request
                             val response = replyFor(request)
@@ -316,6 +430,6 @@ class AccountLoadAndPasswordFailureJourneyTest {
         return body
     }
 
-    private data class CapturedRequest(val method: String, val path: String, val body: String)
+    private data class CapturedRequest(val method: String, val path: String, val body: String, val cookie: String?)
     private data class FixtureResponse(val status: Int, val body: String)
 }

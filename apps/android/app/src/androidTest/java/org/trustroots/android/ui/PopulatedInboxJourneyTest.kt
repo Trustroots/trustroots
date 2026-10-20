@@ -9,9 +9,11 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.net.Socket
@@ -99,6 +101,8 @@ class PopulatedInboxJourneyTest {
         startResponder { request ->
             when {
                 request.startsWith("GET /api/messages?") -> "200 OK" to inboxPayload()
+                request.startsWith("GET /api/users/mini/member-fox ") -> "200 OK" to
+                    """{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"}"""
                 request.startsWith("GET /api/messages/member-fox?") -> "200 OK" to
                     """[{"_id":"message-one","content":"A fictional note from the neighbour.","created":"${Instant.parse("2025-02-03T04:05:06Z")}","userFrom":{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"}}]"""
                 request.contains("/avatar?") -> "404 Not Found" to ""
@@ -135,6 +139,8 @@ class PopulatedInboxJourneyTest {
         startResponder { request ->
             when {
                 request.startsWith("GET /api/messages?") -> "200 OK" to inboxPayload()
+                request.startsWith("GET /api/users/mini/member-fox ") -> "200 OK" to
+                    """{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"}"""
                 request.startsWith("GET /api/messages/member-fox?") -> "200 OK" to
                     """[{"_id":"message-one","content":"A fictional note from the neighbour.","created":"${Instant.parse("2025-02-03T04:05:06Z")}","userFrom":{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"}}]"""
                 request.contains("/avatar?") -> "404 Not Found" to ""
@@ -150,7 +156,13 @@ class PopulatedInboxJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithTag("message-thread-thread-fox").performTouchInput {
+        val rootBounds = compose.onRoot().fetchSemanticsNode().boundsInRoot
+        val row = compose.onNodeWithTag("message-thread-thread-fox")
+        val rowBounds = row.fetchSemanticsNode().boundsInRoot
+        val edgeTolerance = with(compose.density) { 1.dp.toPx() }
+        assertTrue("Inbox row should start at the list's full-width edge", rowBounds.left <= rootBounds.left + edgeTolerance)
+        assertTrue("Inbox row should extend to the list's full-width edge", rowBounds.right >= rootBounds.right - edgeTolerance)
+        row.performTouchInput {
             click(Offset(width - 4f, height / 2f))
         }
 
