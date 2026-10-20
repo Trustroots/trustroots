@@ -8,7 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import android.text.Html
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -61,7 +60,6 @@ import kotlinx.coroutines.Job
 import org.trustroots.android.api.AccountDetails
 import org.trustroots.android.R
 import org.trustroots.android.api.ExperienceCreate
-import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.BuildConfig
@@ -79,9 +77,6 @@ import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.resolveFailureMessage
 
-private const val defaultHostLatitude = 48.6908333333
-private const val defaultHostLongitude = 9.14055555556
-
 @Composable
 internal fun HostOfferScreen(
     api: MobileApiClient,
@@ -90,7 +85,13 @@ internal fun HostOfferScreen(
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    val hostOfferSaved = stringResource(R.string.screen_host_offer_saved)
+    val viewModel = rememberHostOfferViewModel(api, session)
+    val state by viewModel.state.collectAsState()
+    LaunchedEffect(viewModel, state.pendingSessionInvalidation?.id) {
+        val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
+        onSessionInvalidated()
+        viewModel.onEvent(HostOfferEvent.SessionInvalidationDelivered(pending.id))
+    }
     val hostTitle = stringResource(R.string.screen_host)
     val hostDescriptionPrompt = stringResource(R.string.screen_host_description_prompt)
     val availabilityLabel = stringResource(R.string.screen_availability)
@@ -99,95 +100,11 @@ internal fun HostOfferScreen(
     val noLabel = stringResource(R.string.screen_no)
     val showOnlyMyCircles = stringResource(R.string.screen_show_only_my_circles)
     val longerHostingDescription = stringResource(R.string.screen_longer_hosting_description)
-    var loading by remember { mutableStateOf(true) }
-    var saving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<UiFailure?>(null) }
-    var savedMessage by remember { mutableStateOf<String?>(null) }
-    var offerId by remember { mutableStateOf<String?>(null) }
-    var status by remember { mutableStateOf("yes") }
-    var description by remember { mutableStateOf("") }
-    var noOfferDescription by remember { mutableStateOf("") }
-    var maxGuests by remember { mutableIntStateOf(1) }
-    var showOnlyInMyCircles by remember { mutableStateOf(false) }
-    var latitude by remember { mutableStateOf(defaultHostLatitude) }
-    var longitude by remember { mutableStateOf(defaultHostLongitude) }
-    val scope = rememberCoroutineScope()
-    var original by remember { mutableStateOf<HostOfferUpdate?>(null) }
-    val currentOffer = HostOfferUpdate(offerId, status, description, noOfferDescription, maxGuests, showOnlyInMyCircles, latitude, longitude)
-    LaunchedEffect(session.member.username) {
-        loading = true
-        error = null
-        api.profile(session, session.member.username).onSuccess { profile ->
-            val memberID = profile.id
-            if (memberID == null) {
-                error = UiFailure(fallback = UiFailureFallback.HOST_OFFER_LOAD)
-                loading = false
-                return@onSuccess
-            }
-            api.accommodationOffer(session, memberID).onSuccess { offer ->
-                if (offer != null) {
-                    offerId = offer.id
-                    status = offer.status ?: "yes"
-                    description = Html.fromHtml(offer.description.orEmpty(), Html.FROM_HTML_MODE_COMPACT)
-                        .toString().trim()
-                    noOfferDescription = Html.fromHtml(
-                        offer.noOfferDescription.orEmpty(),
-                        Html.FROM_HTML_MODE_COMPACT,
-                    ).toString().trim()
-                    maxGuests = offer.maxGuests ?: 1
-                    showOnlyInMyCircles = offer.showOnlyInMyCircles
-                    latitude = offer.latitude ?: defaultHostLatitude
-                    longitude = offer.longitude ?: defaultHostLongitude
-                }
-                original = HostOfferUpdate(offerId, status, description, noOfferDescription, maxGuests, showOnlyInMyCircles, latitude, longitude)
-                loading = false
-            }.onFailure {
-                if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else {
-                    error = it.toUiFailure(UiFailureFallback.HOST_OFFER_LOAD)
-                    loading = false
-                }
-            }
-        }.onFailure {
-            if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else {
-                error = it.toUiFailure(UiFailureFallback.HOST_OFFER_LOAD)
-                loading = false
-            }
-        }
-    }
-    val descriptionTooShort = status != "no" && description.trim().length < 5
-    val cancel = rememberFormCancel(!loading && original != null && currentOffer != original, saving, onBack)
-    val save: () -> Unit = {
-                scope.launch {
-                    saving = true
-                    error = null
-                    savedMessage = null
-                    api.saveHostOffer(
-                        session,
-                        HostOfferUpdate(
-                            id = offerId,
-                            status = status,
-                            description = description,
-                            noOfferDescription = noOfferDescription,
-                            maxGuests = maxGuests,
-                            showOnlyInMyCircles = showOnlyInMyCircles,
-                            latitude = latitude,
-                            longitude = longitude,
-                        ),
-                    ).onSuccess { saved ->
-                        offerId = saved.id
-                        original = currentOffer.copy(id = saved.id)
-                        savedMessage = hostOfferSaved
-                    }.onFailure {
-                        if (it.isAuthenticationFailure()) onSessionInvalidated()
-                        else error = it.toUiFailure(UiFailureFallback.HOST_OFFER_SAVE)
-                    }
-                    saving = false
-                }
-            }
+    val form = state.form
+    val cancel = rememberFormCancel(state.isDirty, state.isSaving, onBack)
+    val save = { viewModel.onEvent(HostOfferEvent.Save) }
     Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
-        FormActionBar(hostTitle, saving, !loading && !descriptionTooShort, cancel, save, horizontalInset = contentPadding.horizontalInset())
+        FormActionBar(hostTitle, state.isSaving, state.canSave, cancel, save, horizontalInset = contentPadding.horizontalInset())
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("hostOfferScreen")) {
         Text(
             hostDescriptionPrompt,
@@ -195,59 +112,67 @@ internal fun HostOfferScreen(
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
         )
         when {
-            loading -> CircularProgressIndicator()
+            state.isLoading -> CircularProgressIndicator()
+            state.original == null -> {
+                state.failure?.let {
+                    Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+                }
+                if (state.failure != null) {
+                    TextButton(onClick = { viewModel.onEvent(HostOfferEvent.RetryLoad) }) {
+                        Text(stringResource(R.string.retry))
+                    }
+                }
+            }
             else -> {
         Text(availabilityLabel, style = MaterialTheme.typography.titleMedium)
         Row(Modifier.padding(vertical = 8.dp)) {
             listOf("yes" to yesLabel, "maybe" to maybeLabel, "no" to noLabel).forEach { (value, label) ->
                 FilterChip(
-                    enabled = !saving,
-                    selected = status == value,
-                    onClick = { status = value },
+                    enabled = !state.isSaving,
+                    selected = form.status == value,
+                    onClick = { viewModel.onEvent(HostOfferEvent.StatusChanged(value)) },
                     label = { Text(label) },
                     modifier = Modifier.padding(end = 8.dp),
                 )
             }
         }
-        if (status != "no") {
+        if (form.status != "no") {
             TextField(
-                description,
-                { description = it },
-                enabled = !saving, label = { Text(stringResource(R.string.form_hosting_description)) },
+                form.description,
+                { viewModel.onEvent(HostOfferEvent.DescriptionChanged(it)) },
+                enabled = !state.isSaving, label = { Text(stringResource(R.string.form_hosting_description)) },
                 minLines = 4,
                 maxLines = 10,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
             TextField(
-                maxGuests.toString(),
-                {
-                    maxGuests = it.filter(Char::isDigit).toIntOrNull()?.coerceIn(1, 20) ?: maxGuests
-                },
-                enabled = !saving, label = { Text(stringResource(R.string.form_maximum_guests)) },
+                form.maxGuests.toString(),
+                { viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged(it)) },
+                enabled = !state.isSaving, label = { Text(stringResource(R.string.form_maximum_guests)) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
         } else {
             TextField(
-                noOfferDescription,
-                { noOfferDescription = it },
-                enabled = !saving, label = { Text(stringResource(R.string.form_not_hosting_reason)) },
+                form.noOfferDescription,
+                { viewModel.onEvent(HostOfferEvent.NoOfferDescriptionChanged(it)) },
+                enabled = !state.isSaving, label = { Text(stringResource(R.string.form_not_hosting_reason)) },
                 minLines = 3,
                 maxLines = 8,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            Checkbox(enabled = !saving, checked = showOnlyInMyCircles, onCheckedChange = { showOnlyInMyCircles = it })
+            Checkbox(enabled = !state.isSaving, checked = form.showOnlyInMyCircles, onCheckedChange = { viewModel.onEvent(HostOfferEvent.ShowOnlyInMyCirclesChanged(it)) })
             Text(showOnlyMyCircles)
         }
-        error?.let {
+        state.failure?.let {
             Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
         }
-        savedMessage?.let {
-            Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
+        if (state.saveSucceeded) {
+            Text(stringResource(R.string.screen_host_offer_saved), color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
         }
-        if (descriptionTooShort) {
+        if (state.descriptionTooShort) {
             Text(
                 longerHostingDescription,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -255,7 +180,7 @@ internal fun HostOfferScreen(
             )
         }
 
-        if (saving) CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
+        if (state.isSaving) CircularProgressIndicator(modifier = Modifier.padding(top = 12.dp))
             }
         }
     }
