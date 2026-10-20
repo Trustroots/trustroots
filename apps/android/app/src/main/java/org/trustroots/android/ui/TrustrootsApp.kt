@@ -79,12 +79,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.saveable.rememberSaveable
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -113,13 +110,12 @@ import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.RemoteArtwork
-import org.trustroots.android.ui.profile.MemberProfileScreen
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
 import org.trustroots.android.ui.signin.SignInScreen
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
@@ -269,15 +265,6 @@ internal enum class Destination(@StringRes val label: Int) {
 @Serializable
 internal data class MemberTabVisit(val destination: Destination, val visitID: Long) : NavKey
 
-private enum class MenuPage {
-    Menu,
-    Profile,
-    EditProfile,
-    Contacts,
-    Host,
-    Account,
-}
-
 @Composable
 private fun MemberShell(
     analytics: UsageAnalytics,
@@ -297,18 +284,17 @@ private fun MemberShell(
     val destination = (tabBackStack.lastOrNull() as? MemberTabVisit)?.destination
         ?: Destination.Circles
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
-    var menuPage by remember { mutableStateOf(MenuPage.Menu) }
-    var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
+    var menuUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
+    var resetActiveMenuVisit by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
+    val activeVisitID = (tabBackStack.lastOrNull() as? MemberTabVisit)?.visitID ?: 0L
+    val activeMenuScreen = if (menuUsageByVisit.containsKey(activeVisitID)) {
+        menuUsageByVisit[activeVisitID]
+    } else {
+        UsageScreen.Menu
+    }
     val analyticsScreen = when {
-        browserRoute != null -> null
-        destination == Destination.Menu -> when (menuPage) {
-            MenuPage.Menu -> UsageScreen.Menu
-            MenuPage.Profile -> UsageScreen.Profile
-            MenuPage.EditProfile -> UsageScreen.EditProfile
-            MenuPage.Contacts -> UsageScreen.Contacts
-            MenuPage.Host -> UsageScreen.Host
-            MenuPage.Account -> UsageScreen.Account
-        }
+        destination == Destination.Menu -> activeMenuScreen
         destination == Destination.Circles -> UsageScreen.Circles
         destination == Destination.Search -> UsageScreen.Search
         else -> UsageScreen.Messages
@@ -328,14 +314,15 @@ private fun MemberShell(
     LaunchedEffect(api) { api.profile(session, session.member.username).onSuccess { ownAvatarID = it.id } }
     val navigateTo: (Destination) -> Unit = { next ->
         if (next != destination) {
+            if (destination == Destination.Menu && leaveGuard.value != null) {
+                resetActiveMenuVisit?.invoke()
+            }
             val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
                 .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
             nextVisitID = maxOf(nextVisitID, firstAvailableID)
             tabBackStack.add(MemberTabVisit(next, nextVisitID))
             nextVisitID++
         }
-        menuPage = MenuPage.Menu
-        browserRoute = null
     }
     val reselectCircles = {
         val current = tabBackStack.lastOrNull() as? MemberTabVisit
@@ -347,7 +334,6 @@ private fun MemberShell(
             nextVisitID = replacementID + 1
         }
     }
-    val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
     LaunchedEffect(session.member.username, alertDestination) {
         val requested = alertDestination ?: return@LaunchedEffect
         if (requested.account != session.member.username) {
@@ -368,21 +354,13 @@ private fun MemberShell(
     val handleNavigationBack: () -> Unit = {
         val leave = {
             when {
-                browserRoute != null -> browserRoute = null
-                destination == Destination.Menu && menuPage != MenuPage.Menu -> menuPage = MenuPage.Menu
                 tabBackStack.size > 1 -> {
                     tabBackStack.removeLastOrNull()
-                    menuPage = MenuPage.Menu
                 }
             }
         }
         leaveGuard.value?.invoke(leave) ?: leave()
     }
-    BackHandler(
-        enabled = browserRoute != null ||
-            (destination == Destination.Menu && menuPage != MenuPage.Menu),
-        onBack = handleNavigationBack,
-    )
     LaunchedEffect(session, destination, messagesNavigationID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
@@ -435,111 +413,50 @@ private fun MemberShell(
                     )
                 }
                 Box(Modifier.fillMaxWidth().weight(1f)) {
-                    val browser = browserRoute
-                    if (browser != null) {
-                        browserContent(browser, { browserRoute = null }, contentPadding)
-                    } else {
-                        val entryDecorators: List<NavEntryDecorator<NavKey>> = listOf(
-                            rememberSaveableStateHolderNavEntryDecorator(),
-                            rememberViewModelStoreNavEntryDecorator(),
-                        )
-                        NavDisplay(
-                            backStack = tabBackStack,
-                            onBack = handleNavigationBack,
-                            entryDecorators = entryDecorators,
-                            entryProvider = entryProvider {
-                                entry<MemberTabVisit> { visit ->
-                                    when (visit.destination) {
-                                    Destination.Menu -> when (menuPage) {
-                                        MenuPage.Menu -> MenuScreen(
-                                            session = session,
-                                            openProfile = { menuPage = MenuPage.Profile },
-                                            openEditProfile = { menuPage = MenuPage.EditProfile },
-                                            openHost = { menuPage = MenuPage.Host },
-                                            openNostroots = {
-                                                browserRoute = BrowserRoute(
-                                                    title = nostrootsTitle,
-                                                    url = "https://nos.trustroots.org/",
-                                                    sessionCookie = session.cookieHeader,
-                                                )
-                                            },
-                                            openContacts = { menuPage = MenuPage.Contacts },
-                                            openFindPeople = {
-                                                searchInitialTab = 1
-                                                searchNavigationID++
-                                                navigateTo(Destination.Search)
-                                            },
-                                            openCircles = {
-                                                navigateTo(Destination.Circles)
-                                            },
-                                            openAccount = { menuPage = MenuPage.Account },
-                                            openBrowser = { browserRoute = it },
+                    val entryDecorators: List<NavEntryDecorator<NavKey>> = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator(),
+                    )
+                    NavDisplay(
+                        backStack = tabBackStack,
+                        onBack = handleNavigationBack,
+                        entryDecorators = entryDecorators,
+                        entryProvider = entryProvider {
+                            entry<MemberTabVisit> { visit ->
+                                when (visit.destination) {
+                                    Destination.Menu -> MenuNavigationDisplay(
+                                        initialVisitID = visit.visitID,
+                                        session = session,
+                                        api = api,
+                                        onSessionInvalidated = onSessionInvalidated,
+                                        onMemberUpdated = onMemberUpdated,
+                                        onSignedOut = onSignedOut,
+                                        onCurrentUsageScreen = { visitID, screen ->
+                                            menuUsageByVisit = menuUsageByVisit + (visitID to screen)
+                                        },
+                                        isActiveTabVisit = visit.visitID == activeVisitID,
+                                        onResetAvailable = { visitID, reset ->
+                                            if (visitID == activeVisitID) resetActiveMenuVisit = reset
+                                        },
+                                        browserContent = browserContent,
+                                        contentPadding = contentPadding,
+                                        openFindPeople = {
+                                            searchInitialTab = 1
+                                            searchNavigationID++
+                                            navigateTo(Destination.Search)
+                                        },
+                                        openCircles = {
+                                            navigateTo(Destination.Circles)
+                                        },
+                                    )
+                                    Destination.Circles -> {
+                                        CirclesScreen(
+                                            api,
+                                            session,
+                                            onSessionInvalidated,
                                             contentPadding = contentPadding,
-                                        )
-                                        MenuPage.Profile -> MemberProfileScreen(
-                                            api = api,
-                                            session = session,
-                                            username = session.member.username,
-                                            onSessionInvalidated = onSessionInvalidated,
-                                            onBack = { menuPage = MenuPage.Menu },
-                                            onOwnProfileSaved = { updated ->
-                                                onMemberUpdated(MobileMember(updated.username, updated.displayName))
-                                            },
-                                            contentPadding = contentPadding,
-                                        )
-                                        MenuPage.EditProfile -> MemberProfileScreen(
-                                            api = api,
-                                            session = session,
-                                            username = session.member.username,
-                                            onSessionInvalidated = onSessionInvalidated,
-                                            startInEditMode = true,
-                                            onBack = { menuPage = MenuPage.Menu },
-                                            onOwnProfileSaved = { updated ->
-                                                onMemberUpdated(MobileMember(updated.username, updated.displayName))
-                                            },
-                                            contentPadding = contentPadding,
-                                        )
-                                        MenuPage.Contacts -> ContactsScreen(
-                                            api = api,
-                                            session = session,
-                                            onSessionInvalidated = onSessionInvalidated,
-                                            onBack = { menuPage = MenuPage.Menu },
-                                            contentPadding = contentPadding,
-                                        )
-                                        MenuPage.Host -> HostOfferScreen(
-                                            api = api,
-                                            session = session,
-                                            onSessionInvalidated = onSessionInvalidated,
-                                            onBack = { menuPage = MenuPage.Menu },
-                                            contentPadding = contentPadding,
-                                        )
-                                        MenuPage.Account -> AccountSettingsScreen(
-                                            api = api,
-                                            session = session,
-                                            onSessionInvalidated = onSessionInvalidated,
-                                            onBack = { menuPage = MenuPage.Menu },
-                                            contentPadding = contentPadding,
-                                            onResetPassword = {
-                                                browserRoute = BrowserRoute(
-                                                    title = resetPasswordTitle,
-                                                    url = "https://www.trustroots.org/password/forgot",
-                                                )
-                                            },
-                                            onSignedOut = {
-                                                CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                                                    MessageAlerts.disable(context, session)
-                                                    api.signOut(session)
-                                                    withContext(Dispatchers.Main) { onSignedOut() }
-                                                }
-                                            },
                                         )
                                     }
-                                    Destination.Circles -> CirclesScreen(
-                                        api,
-                                        session,
-                                        onSessionInvalidated,
-                                        contentPadding = contentPadding,
-                                    )
                                     Destination.Search -> key(searchNavigationID) {
                                         SearchHubScreen(
                                             api,
@@ -558,11 +475,10 @@ private fun MemberShell(
                                             contentPadding = contentPadding,
                                         )
                                     }
-                                    }
                                 }
-                            },
-                        )
-                    }
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -649,7 +565,7 @@ internal fun MenuScreen(
     openFindPeople: () -> Unit,
     openCircles: () -> Unit,
     openAccount: () -> Unit,
-    openBrowser: (BrowserRoute) -> Unit,
+    openBrowser: (SharedNavigationLink) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val buildDate = rememberBuildDate()
@@ -718,14 +634,14 @@ internal fun MenuScreen(
         MenuLink(account, Icons.Default.Settings, openAccount)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
-            SharedNavigationLinks.INFO_AND_SUPPORT_HEADING,
+            stringResource(R.string.screen_info_and_support),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
         SharedNavigationLinks.INFO_AND_SUPPORT.forEach { link ->
-            MenuLink(link.label, infoAndSupportIcon(link.id)) {
-                openBrowser(BrowserRoute(link.label, link.url))
+            MenuLink(stringResource(supportLinkLabelResource(link.id)), infoAndSupportIcon(link.id)) {
+                openBrowser(link)
             }
         }
         Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 24.dp))

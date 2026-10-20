@@ -67,6 +67,7 @@ import org.trustroots.android.ui.CreateExperienceScreen
 import org.trustroots.android.ui.common.ArtworkBitmapState
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.NativeBackButton
+import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.messageOr
@@ -120,6 +121,13 @@ internal fun MemberProfileScreen(
         enabled = profile != null && error == null && !editing && !sharingExperience &&
             relatedUsername == null && recipient == null && browserRoute == null,
     )
+    val leaveGuard = LocalLeaveGuard.current
+    val leaveEditMode = {
+        if (startInEditMode) onBack() else editing = false
+    }
+    val leaveEditModeWithGuard = {
+        leaveGuard?.value?.invoke(leaveEditMode) ?: leaveEditMode()
+    }
     BackHandler {
         when {
             showingProfileImage -> showingProfileImage = false
@@ -128,14 +136,14 @@ internal fun MemberProfileScreen(
             recipient != null -> recipient = null
             relatedUsername != null -> relatedUsername = null
             sharingExperience -> sharingExperience = false
-            editing -> editing = false
+            editing -> leaveEditModeWithGuard()
             else -> onBack()
         }
     }
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
-            onCancel = { editing = false },
+            onCancel = leaveEditMode,
             onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
             contentPadding = contentPadding,
         )
