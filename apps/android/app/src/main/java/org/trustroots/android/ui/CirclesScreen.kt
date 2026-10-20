@@ -1,7 +1,6 @@
 package org.trustroots.android.ui
 
 import androidx.activity.compose.BackHandler
-import android.text.Html
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Box
@@ -121,7 +120,7 @@ internal fun CirclesScreen(
             }
             Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset()).padding(contentPadding.bottomInset())) {
             circle.description?.let {
-                Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), modifier = Modifier.padding(vertical = 16.dp))
+                Text(circleDescription(it), modifier = Modifier.padding(vertical = 16.dp))
             }
             Button(onClick = { toggle(circle) }, enabled = updating == null) {
                 Text(if (circle.id in memberships) "Leave circle" else "Join circle")
@@ -147,7 +146,7 @@ internal fun CirclesScreen(
         val visibleCircles = remember(circles, filter) {
             circles.filter { circle ->
                 val description = circle.description?.let {
-                    Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString()
+                    circleDescriptionText(it)
                 }.orEmpty()
                 "${circle.label} $description".contains(filter.trim(), ignoreCase = true)
             }.sortedWith(compareByDescending<TrustrootsCircle> { it.count }.thenBy { it.label })
