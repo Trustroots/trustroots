@@ -31,8 +31,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.trustroots.android.R
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
@@ -44,11 +46,13 @@ import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.ui.CreateExperienceScreen
+import org.trustroots.android.ui.common.ArtworkBitmapState
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.conversation.ConversationScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
 
@@ -85,9 +89,16 @@ internal fun MemberProfileScreen(
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
+    var showingProfileImage by remember(username) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val profileImageState = rememberArtworkBitmapState(
+        url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048) } else null,
+        sessionCookie = if (showingProfileImage) session.cookieHeader else null,
+        maxDownloadBytes = 8 * 1024 * 1024,
+    )
     BackHandler {
         when {
+            showingProfileImage -> showingProfileImage = false
             confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
             browserRoute != null -> browserRoute = null
             recipient != null -> recipient = null
@@ -302,6 +313,11 @@ internal fun MemberProfileScreen(
                                     )
                                 }
                             },
+                            onProfileImageClick = if (member.id != null) {
+                                { showingProfileImage = true }
+                            } else {
+                                null
+                            },
                         )
                         HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
                             Column(Modifier.fillMaxSize().padding(bottom = contentPadding.calculateBottomPadding()).verticalScroll(rememberScrollState())) {
@@ -338,5 +354,13 @@ internal fun MemberProfileScreen(
                 }
             }
         }
+    }
+    if (showingProfileImage) {
+        ProfileImageViewer(
+            bitmap = (profileImageState as? ArtworkBitmapState.Loaded)?.bitmap,
+            isLoading = profileImageState is ArtworkBitmapState.Loading,
+            memberLabel = profile?.displayName ?: stringResource(R.string.profile_photo_default_member_label),
+            onClose = { showingProfileImage = false },
+        )
     }
 }
