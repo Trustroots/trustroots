@@ -1,9 +1,12 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package org.trustroots.android.ui.inbox
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -14,9 +17,12 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.res.stringResource
 import org.trustroots.android.R
 import org.trustroots.android.ui.common.LiveFilterField
+import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +31,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,6 +62,7 @@ internal fun MessageInboxScreen(
     var error by remember { mutableStateOf<String?>(null) }
     var loaded by remember { mutableStateOf(false) }
     var reload by remember { mutableStateOf(0) }
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     selectedProfile?.let { username ->
         MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selectedProfile = null }, contentPadding = contentPadding)
         return
@@ -89,25 +97,38 @@ internal fun MessageInboxScreen(
         loaded = true
         loading = false
     }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
-            .padding(20.dp),
-    ) {
-        Column (Modifier.padding(contentPadding.horizontalInset())) {
-            Text("Messages", style = MaterialTheme.typography.headlineMedium)
-            LiveFilterField(
-                value = filter,
-                onValueChange = { filter = it },
-                label = stringResource(R.string.filter_conversations),
-                clearLabel = stringResource(R.string.clear_conversation_filter),
+    Scaffold(
+        modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        topBar = {
+            MemberLargeTopAppBar(
+                title = stringResource(R.string.messages_title),
+                scrollBehavior = scrollBehavior,
+                contentPadding = contentPadding,
             )
-            if (loading) CircularProgressIndicator()
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-            if (loaded && threads.isEmpty() && error == null) Text("No conversations yet.")
-        }
-        LazyColumn(Modifier.fillMaxWidth()) {
+        },
+    ) { appBarPadding ->
+        LazyColumn(
+            Modifier.fillMaxSize().padding(top = appBarPadding.calculateTopPadding()),
+            contentPadding = PaddingValues(bottom = contentPadding.calculateBottomPadding() + 20.dp),
+        ) {
+            item(key = "message-inbox-controls") {
+                Column(
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 20.dp)
+                        .padding(contentPadding.horizontalInset()),
+                ) {
+                    LiveFilterField(
+                        value = filter,
+                        onValueChange = { filter = it },
+                        label = stringResource(R.string.filter_conversations),
+                        clearLabel = stringResource(R.string.clear_conversation_filter),
+                    )
+                    if (loading) CircularProgressIndicator()
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    if (loaded && threads.isEmpty() && error == null) Text("No conversations yet.")
+                }
+            }
             val filteredThreads = threads.filter {
                 val text = "${it.otherMember.label} ${it.otherMember.username.orEmpty()} ${it.excerpt}"
                 text.contains(filter.trim(), ignoreCase = true)
