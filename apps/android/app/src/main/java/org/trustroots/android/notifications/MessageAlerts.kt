@@ -41,18 +41,20 @@ internal suspend fun handleMessageEndpointRegistration(
     saveEndpoint: (String) -> String?,
     unregisterEndpoint: suspend (MemberSession, String) -> Unit,
     setStatus: (String) -> Unit,
+    registrationFailedMessage: String,
+    registrationSucceededMessage: String,
 ) {
     val session = loadSession() ?: return
     if (session.member.username != account) return
     if (!registerEndpoint(session, endpointUrl, publicKey, authKey)) {
-        setStatus("Could not register this distributor endpoint with Trustroots.")
+        setStatus(registrationFailedMessage)
         return
     }
     val oldEndpoint = saveEndpoint(endpointUrl)
     if (oldEndpoint != null && oldEndpoint != endpointUrl) {
         unregisterEndpoint(session, oldEndpoint)
     }
-    setStatus("Message alerts are ready.")
+    setStatus(registrationSucceededMessage)
 }
 
 object MessageAlerts {
@@ -89,7 +91,11 @@ object MessageAlerts {
             hasDistributors = { UnifiedPush.getDistributors(activity).isNotEmpty() },
             chooseDistributor = { onSelected -> UnifiedPush.tryUseCurrentOrDefaultDistributor(activity, onSelected) },
             registerDistributor = { key ->
-                UnifiedPush.register(activity, messageForDistributor = "Trustroots messages", vapid = key)
+                UnifiedPush.register(
+                    activity,
+                    messageForDistributor = activity.getString(R.string.message_alerts_push_name),
+                    vapid = key,
+                )
             },
         )
     }
@@ -107,22 +113,22 @@ object MessageAlerts {
             val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull()
             activity.runOnUiThread {
                 if (key.isNullOrBlank()) {
-                    onResult("Message alerts are not configured on this server.")
+                    onResult(activity.getString(R.string.message_alerts_not_configured))
                     return@runOnUiThread
                 }
                 if (!hasDistributors()) {
-                    onResult("Install a UnifiedPush distributor such as ntfy, then try again.")
+                    onResult(activity.getString(R.string.message_alerts_install_distributor))
                     return@runOnUiThread
                 }
                 chooseDistributor { selected ->
                     if (!selected) {
-                        onResult("Choose a UnifiedPush distributor to enable message alerts.")
+                        onResult(activity.getString(R.string.message_alerts_choose_distributor))
                     } else {
                         preferences(activity).edit().putString("account", session.member.username)
                             .putBoolean("enabled", true).apply()
                         registerDistributor(key)
                         status.value = null
-                        onResult("Waiting for your distributor to register message alerts.")
+                        onResult(activity.getString(R.string.message_alerts_waiting_registration))
                     }
                 }
             }
@@ -136,7 +142,11 @@ object MessageAlerts {
             apiBaseUrl = BuildConfig.API_BASE_URL,
             hasSavedDistributor = { UnifiedPush.getSavedDistributor(context) != null },
             registerDistributor = { key ->
-                UnifiedPush.register(context, messageForDistributor = "Trustroots messages", vapid = key)
+                UnifiedPush.register(
+                    context,
+                    messageForDistributor = context.getString(R.string.message_alerts_push_name),
+                    vapid = key,
+                )
             },
         )
     }
@@ -192,7 +202,7 @@ object MessageAlerts {
         val account = preferences(context).getString("account", null) ?: return
         if (!isEnabled(context, account)) return
         val keys = newEndpoint.pubKeySet ?: run {
-            status.value = "This distributor did not provide Web Push encryption keys."
+            status.value = context.getString(R.string.message_alerts_missing_encryption_keys)
             return
         }
         scope.launch {
@@ -213,6 +223,8 @@ object MessageAlerts {
                 },
                 unregisterEndpoint = { session, oldUrl -> api.unregisterMessagePush(session, oldUrl) },
                 setStatus = { status.value = it },
+                registrationFailedMessage = context.getString(R.string.message_alerts_registration_failed),
+                registrationSucceededMessage = context.getString(R.string.message_alerts_ready),
             )
         }
     }
@@ -234,7 +246,7 @@ object MessageAlerts {
         if (!isEnabled(context, account)) return null
         val oldEndpoint = endpoint(context)
         preferences(context).edit().clear().apply()
-        status.value = "Your push distributor stopped message alerts. Choose one again to resume."
+        status.value = context.getString(R.string.message_alerts_distributor_stopped)
         return oldEndpoint?.let {
             scope.launch {
                 val session = loadSession() ?: return@launch
@@ -255,7 +267,7 @@ object MessageAlerts {
         ) return
         val notifications = context.getSystemService(NotificationManager::class.java)
         notifications.createNotificationChannel(NotificationChannel(
-            CHANNEL, "Messages", NotificationManager.IMPORTANCE_DEFAULT,
+            CHANNEL, context.getString(R.string.message_alerts_channel), NotificationManager.IMPORTANCE_DEFAULT,
         ))
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(ACCOUNT_EXTRA, session.member.username)
@@ -266,8 +278,8 @@ object MessageAlerts {
         )
         notifications.notify(senderId.hashCode(), Notification.Builder(context, CHANNEL)
             .setSmallIcon(R.drawable.trustroots_launcher)
-            .setContentTitle("Unread message")
-            .setContentText("You have an unread Trustroots conversation.")
+            .setContentTitle(context.getString(R.string.message_alerts_notification_title))
+            .setContentText(context.getString(R.string.message_alerts_notification_text))
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build())
@@ -278,7 +290,7 @@ class MessagePushService : PushService() {
     override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) = MessageAlerts.onEndpoint(this, endpoint)
     override fun onMessage(message: PushMessage, instance: String) = MessageAlerts.show(this, message)
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
-        MessageAlerts.status.value = "Push distributor registration failed: ${reason.name}."
+        MessageAlerts.status.value = getString(R.string.message_alerts_registration_error, reason.name)
     }
     override fun onUnregistered(instance: String) = MessageAlerts.onDistributorUnregistered(this)
 }

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="browser_external_website_title">Open external website?</string>
+    <string name="browser_open_external">Open</string>
+    <string name="message_alerts_registration_failed">Could not register this distributor endpoint with Trustroots.</string>
+    <string name="message_alerts_ready">Message alerts are ready.</string>
+    <string name="message_alerts_not_configured">Message alerts are not configured on this server.</string>
+    <string name="message_alerts_install_distributor">Install a UnifiedPush distributor such as ntfy, then try again.</string>
+    <string name="message_alerts_choose_distributor">Choose a UnifiedPush distributor to enable message alerts.</string>
+    <string name="message_alerts_waiting_registration">Waiting for your distributor to register message alerts.</string>
+    <string name="message_alerts_missing_encryption_keys">This distributor did not provide Web Push encryption keys.</string>
+    <string name="message_alerts_distributor_stopped">Your push distributor stopped message alerts. Choose one again to resume.</string>
+    <string name="message_alerts_registration_error">Push distributor registration failed: %1$s.</string>
+    <string name="message_alerts_push_name">Trustroots messages</string>
+    <string name="message_alerts_channel">Messages</string>
+    <string name="message_alerts_notification_title">Unread message</string>
+    <string name="message_alerts_notification_text">You have an unread Trustroots conversation.</string>
+    <string name="apk_updates_channel">APK updates</string>
+    <string name="apk_update_available_title">Trustroots update available</string>
+    <string name="apk_update_available_text">%1$s is ready to download.</string>
+    <string name="android_preview_version">Android preview %1$d</string>
+</resources>
