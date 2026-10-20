@@ -101,11 +101,16 @@ describe('navigation menu helpers', () => {
     );
 
     expect(container.firstChild).toHaveClass('active', 'nav-extra');
-    expect(screen.getByRole('link', { name: 'Search' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Search hosts' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(container.firstChild).not.toHaveAttribute('aria-label');
+    expect(screen.getByRole('link', { name: 'Search hosts' })).toHaveAttribute(
       'href',
       '/search',
     );
-    expect(screen.getByRole('link', { name: 'Search' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Search hosts' })).toHaveAttribute(
       'target',
       '_blank',
     );

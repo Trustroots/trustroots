@@ -122,7 +122,6 @@ export default function StepNavigation({
         <div className="container">
           <ul
             className="nav navbar-nav nav-justified"
-            role="toolbar"
             aria-label="Offer actions"
           >
             {showBackButton && (

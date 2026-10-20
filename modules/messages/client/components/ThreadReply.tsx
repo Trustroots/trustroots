@@ -176,6 +176,9 @@ export default function ThreadReply({
       style={{ height: composerHeight ?? undefined }}
       onSubmit={event => send(event)}
     >
+      {/* A focusable separator is the ARIA window-splitter pattern; the
+          keyboard handler below changes its announced value. */}
+      {/* eslint-disable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
       <div
         className="message-reply-resize-handle"
         role="separator"
@@ -198,6 +201,7 @@ export default function ThreadReply({
         }}
         onKeyDown={resizeWithKeyboard}
       />
+      {/* eslint-enable jsx-a11y/no-noninteractive-element-interactions, jsx-a11y/no-noninteractive-tabindex */}
       <div
         id="message-reply-writing-area"
         className="row message-reply-editor-row"

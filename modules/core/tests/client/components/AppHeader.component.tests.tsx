@@ -1,6 +1,6 @@
 import React from 'react';
 import { act } from 'react-dom/test-utils';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -40,6 +40,34 @@ afterEach(() => {
 });
 
 describe('<AppHeader />', () => {
+  it.each([false, true])(
+    'skips navigation without leaving the current page (main present: %s)',
+    hasMain => {
+      window.history.pushState({}, '', '/search/members');
+      render(
+        <>
+          <AppHeader onSignout={jest.fn()} />
+          {hasMain && (
+            <main id="tr-main" tabIndex={-1}>
+              Member search
+            </main>
+          )}
+        </>,
+      );
+      const event = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+      });
+      fireEvent(
+        screen.getByRole('link', { name: 'Skip to main content' }),
+        event,
+      );
+      expect(event.defaultPrevented).toBe(true);
+      expect(window.location.pathname).toBe('/search/members');
+      if (hasMain) expect(screen.getByRole('main')).toHaveFocus();
+    },
+  );
+
   it('renders logged-out navigation with the current path', () => {
     window.history.pushState({}, '', '/signup');
 

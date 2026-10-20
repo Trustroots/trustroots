@@ -44,11 +44,13 @@ export default function NostrootsActionModal({
     <div
       className="nostroots-modal-backdrop"
       data-testid="modal-backdrop"
-      onClick={onClose}
+      role="presentation"
+      onClick={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div
         className="nostroots-modal"
-        onClick={(e: React.MouseEvent<HTMLDivElement>) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-labelledby="nostroots-modal-title"

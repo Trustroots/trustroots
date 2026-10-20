@@ -84,15 +84,22 @@ describe('<ReadMorePanel />', () => {
     expect(container.querySelector('.panel-more-wrap')).toBeNull();
   });
 
-  it('expands full content when the collapsed preview is clicked', () => {
+  it('keeps the preview readable separately from the expansion button', () => {
     const content = longContent('C', 2008);
     const { container } = render(
       <ReadMorePanel content={content} id="preview-click" />,
     );
 
     const preview = container.querySelector('#preview-click');
-    expect(preview).not.toBeNull();
-    fireEvent.click(preview as HTMLElement);
+    expect(preview?.tagName).toBe('DIV');
+    expect(preview).toHaveTextContent(`${'C'.repeat(2000)} …`);
+    expect(preview).not.toHaveAttribute('aria-label');
+    expect(preview).not.toHaveAttribute('aria-hidden');
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+    const expandButton = screen.getByRole('button', { name: 'Read more…' });
+    expect(expandButton).toHaveAttribute('aria-controls', 'preview-click');
+    expect(expandButton).not.toContainElement(preview as HTMLElement);
+    fireEvent.click(expandButton);
 
     expect(screen.queryByText('Read more…')).not.toBeInTheDocument();
     expect(container.querySelector('.panel-more-wrap')).toBeNull();

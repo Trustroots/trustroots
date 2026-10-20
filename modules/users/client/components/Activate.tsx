@@ -13,7 +13,7 @@ export default function Activate() {
       role="alertdialog"
       aria-labelledby="activate-profile-message"
     >
-      <div className="col-xs-12 text-center" role="document" tabIndex={0}>
+      <div className="col-xs-12 text-center" role="document">
         <h2>{t("Don't panic!")}</h2>
         <p className="lead" id="activate-profile-message">
           <em>

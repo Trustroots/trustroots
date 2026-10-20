@@ -969,12 +969,15 @@ export default class AdminUser extends Component<
                                 {formatRoleLabel(role)}
                               </a>
                             ) : (
+                              // Keyboard focus exposes the role description tooltip.
+                              /* eslint-disable jsx-a11y/no-noninteractive-tabindex */
                               <span
                                 tabIndex={0}
                                 aria-describedby={`member-role-${role}-description`}
                               >
                                 {formatRoleLabel(role)}
                               </span>
+                              /* eslint-enable jsx-a11y/no-noninteractive-tabindex */
                             )}
                           </Tooltip>
                           <span

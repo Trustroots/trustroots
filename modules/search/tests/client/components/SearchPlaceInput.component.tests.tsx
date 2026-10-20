@@ -105,7 +105,7 @@ describe('SearchPlaceInput', () => {
     });
 
     expect(
-      await screen.findByRole('option', { name: 'Paris, France' }),
+      await screen.findByRole('button', { name: 'Paris, France' }),
     ).toBeInTheDocument();
   });
 
@@ -131,7 +131,7 @@ describe('SearchPlaceInput', () => {
     renderInput('Par');
 
     fireEvent.click(
-      await screen.findByRole('option', { name: 'Paris, France' }),
+      await screen.findByRole('button', { name: 'Paris, France' }),
     );
 
     expect(locationApi.locatePlace).toHaveBeenCalledWith(feature);
@@ -150,7 +150,7 @@ describe('SearchPlaceInput', () => {
 
     renderInput('Unk');
     fireEvent.click(
-      await screen.findByRole('option', { name: 'Unknown place' }),
+      await screen.findByRole('button', { name: 'Unknown place' }),
     );
 
     expect(onPlaceSearch).not.toHaveBeenCalled();
@@ -211,14 +211,14 @@ describe('SearchPlaceInput', () => {
     renderInput('Ber');
 
     expect(
-      await screen.findByRole('option', { name: 'Berlin, Germany' }),
+      await screen.findByRole('button', { name: 'Berlin, Germany' }),
     ).toBeInTheDocument();
 
     fireEvent.mouseDown(document.body);
 
     await waitFor(() => {
       expect(
-        screen.queryByRole('option', { name: 'Berlin, Germany' }),
+        screen.queryByRole('button', { name: 'Berlin, Germany' }),
       ).not.toBeInTheDocument();
     });
   });
@@ -231,19 +231,19 @@ describe('SearchPlaceInput', () => {
     renderInput('Osl');
 
     const input = screen.getByLabelText('Search places');
-    await screen.findByRole('option', { name: 'Oslo, Norway' });
+    await screen.findByRole('button', { name: 'Oslo, Norway' });
 
     fireEvent.mouseDown(document.body);
     await waitFor(() => {
       expect(
-        screen.queryByRole('option', { name: 'Oslo, Norway' }),
+        screen.queryByRole('button', { name: 'Oslo, Norway' }),
       ).not.toBeInTheDocument();
     });
 
     fireEvent.focus(input);
 
     expect(
-      await screen.findByRole('option', { name: 'Oslo, Norway' }),
+      await screen.findByRole('button', { name: 'Oslo, Norway' }),
     ).toBeInTheDocument();
   });
 
@@ -255,6 +255,8 @@ describe('SearchPlaceInput', () => {
     fireEvent.keyDown(input, { key: 'Escape' });
     fireEvent.mouseDown(input);
 
-    expect(screen.queryByRole('option')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('list', { name: 'Place suggestions' }),
+    ).not.toBeInTheDocument();
   });
 });

@@ -26,7 +26,7 @@ describe('<SearchUsers />', () => {
     render(<SearchUsers />);
 
     const input = screen.getByRole('textbox', { name: 'Search members' });
-    expect(input).toHaveFocus();
+    expect(input).not.toHaveFocus();
     expect(input).toHaveAttribute('maxlength', '120');
     const searchButton = screen.getByRole('button', {
       name: 'Search members',

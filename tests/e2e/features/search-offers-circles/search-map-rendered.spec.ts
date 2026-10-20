@@ -644,7 +644,10 @@ test.describe('rendered search map feature coverage', () => {
     await page.getByRole('button', { name: 'Search places' }).click();
     const searchInput = page.getByRole('textbox', { name: 'Search places' });
     await searchInput.fill('Berlin');
-    await page.locator('.search-place .dropdown-menu a').dispatchEvent('click');
+    await page
+      .getByRole('list', { name: 'Place suggestions' })
+      .getByRole('button')
+      .click();
 
     const map = page.locator('[data-testid="leaflet-search-map"]');
     await expect(map).toBeVisible();
@@ -996,20 +999,32 @@ test.describe('rendered search map feature coverage', () => {
     await page.goto('/search');
     await waitForSearchMap(page);
     const sidebar = page.locator('.search-sidebar-container');
-    await sidebar.getByRole('tab', { name: 'Results' }).click();
+    const resultsTab = sidebar.getByRole('tab', { name: 'Results' });
+    await resultsTab.focus();
+    await page.keyboard.press('Enter');
+    const resultList = sidebar.getByRole('list', {
+      name: 'Visible search results',
+    });
+    await expect(resultList).toBeVisible();
+    await expect(sidebar.getByRole('status')).toContainText(
+      'Offers in this map area:',
+    );
 
-    const visibleHost = sidebar.getByRole('button', {
+    const visibleHost = resultList.getByRole('button', {
       name: /open hosting offer from berlin host/i,
     });
     await expect(visibleHost).toBeVisible();
-    await visibleHost.click();
+    await visibleHost.focus();
+    await page.keyboard.press('Enter');
 
     await expect(
       sidebar.locator('.search-result').getByText(/berlin host/i),
     ).toBeVisible();
     await expect(page).toHaveURL(/offer=665100000000000000000001/);
-    await sidebar.getByRole('button', { name: 'Back to results' }).click();
+    await sidebar.getByRole('button', { name: 'Back to results' }).focus();
+    await page.keyboard.press('Enter');
     await expect(visibleHost).toBeVisible();
+    await expect(visibleHost).toBeFocused();
   });
 
   test('offer deep-link uses fixture offer data in the sidebar', async ({
@@ -1061,9 +1076,11 @@ test.describe('rendered search map feature coverage', () => {
     const input = page.getByRole('textbox', { name: 'Search places' });
     await input.fill('Test Harbour');
     await page
-      .getByRole('option', { name: 'Test Harbour', exact: true })
+      .getByRole('button', { name: 'Test Harbour', exact: true })
       .click();
-    await expect(page.getByRole('listbox')).toBeHidden();
+    await expect(
+      page.getByRole('list', { name: 'Place suggestions' }),
+    ).toBeHidden();
     // Reading the live zoom avoids waiting for debounced localStorage, which
     // would hide a reset occurring immediately after selecting the result.
     await expect.poll(() => readMapZoom(page)).toBeGreaterThan(7);

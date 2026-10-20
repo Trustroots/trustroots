@@ -56,7 +56,7 @@ export default function NavigationLoggedIn({
     <div className="container">
       <div className="navbar-header">
         <Navbar.Brand as="div">
-          <a href="/" className="hidden-xs" aria-hidden="true">
+          <a href="/" className="hidden-xs">
             <img
               className="hidden-xs hidden-sm"
               src="/img/logo/horizontal-white.svg"
@@ -207,7 +207,10 @@ export default function NavigationLoggedIn({
           align="end"
           title={
             <>
-              <Avatar user={user} link={false} size={24} />
+              <span className="sr-only">{t<string>('Profile menu')}</span>
+              <span aria-hidden="true">
+                <Avatar user={user} link={false} size={24} />
+              </span>
               <span className="visible-xs-inline" aria-hidden="true">
                 <Icon icon="user" fixedWidth size="lg" />
                 {user.displayName}

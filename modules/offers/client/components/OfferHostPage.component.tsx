@@ -244,12 +244,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       >
                         {HOST_STATUSES.map(status => (
                           <label
-                            aria-checked={offer.status === status}
                             className={`btn btn-lg btn-offer-hosting btn-offer-hosting-${status}${
                               offer.status === status ? ' active' : ''
                             }`}
                             key={status}
-                            role="radio"
                           >
                             <input
                               checked={offer.status === status}
@@ -257,7 +255,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                               onChange={() =>
                                 setOffer(current => ({ ...current, status }))
                               }
-                              style={{ display: 'none' }}
+                              className="sr-only"
                               type="radio"
                               value={status}
                             />

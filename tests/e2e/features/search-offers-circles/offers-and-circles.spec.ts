@@ -197,7 +197,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page
       .getByLabel('Search places', { exact: true })
       .fill('Example town');
-    await page.getByRole('option', { name: 'Example town' }).click();
+    await page.getByRole('button', { name: 'Example town' }).click();
     const savedMeet = page.waitForResponse(
       response =>
         response.url().endsWith('/api/offers') &&
@@ -249,7 +249,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page
       .getByLabel('Search places', { exact: true })
       .fill('Example town');
-    await page.getByRole('option', { name: 'Example town' }).click();
+    await page.getByRole('button', { name: 'Example town' }).click();
     await expect(finish).toBeEnabled();
 
     const saved = page.waitForResponse(
@@ -300,7 +300,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await page
       .getByLabel('Search places', { exact: true })
       .fill('Example town');
-    await page.getByRole('option', { name: 'Example town' }).click();
+    await page.getByRole('button', { name: 'Example town' }).click();
     const map = page
       .locator('.offer-map .mapboxgl-canvas, .offer-map .leaflet-container')
       .first();
@@ -763,12 +763,12 @@ test.describe.serial('search offers and circles feature coverage', () => {
   });
 });
 
-test('member search is reachable, focused and explains location matches', async ({
+test('member search is reachable by keyboard and explains location matches', async ({
   page,
   request,
 }, testInfo) => {
   annotateFeature(testInfo, 'search.members', [
-    'Map search links to an autofocused member search.',
+    'Map search links to a keyboard-accessible member search.',
     'Search matches public home locations and shows their context.',
   ]);
   const original = await findUserByUsername(berlin.username);
@@ -783,6 +783,10 @@ test('member search is reachable, focused and explains location matches', async 
       .getByRole('link', { name: 'Find members by name or location' })
       .click();
     const input = page.getByRole('textbox', { name: 'Search members' });
+    await expect(input).not.toBeFocused();
+    await page.getByRole('link', { name: 'Skip to main content' }).focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
     await expect(input).toBeFocused();
     await input.fill('Exampleville');
     await page
@@ -809,6 +813,9 @@ test('member search is reachable, focused and explains location matches', async 
     await page.goto('/search');
     await page.getByRole('link', { name: 'Members', exact: true }).click();
     await expect(page).toHaveURL(/\/search\/members$/);
+    await page.getByRole('link', { name: 'Skip to main content' }).focus();
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('Tab');
     await expect(
       page.getByRole('textbox', { name: 'Search members' }),
     ).toBeFocused();

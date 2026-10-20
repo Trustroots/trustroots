@@ -517,7 +517,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
             className="search-message search-message-solid"
             role="alertdialog"
           >
-            <div role="document" tabIndex={0}>
+            <div role="document">
               <h4 id="activate-profile-message">
                 Sorry, you need to first activate your profile before you can
                 browse others.
