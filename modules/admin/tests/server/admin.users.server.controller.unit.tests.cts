@@ -1007,6 +1007,37 @@ describe('Admin users controller unit tests', () => {
       present(updated.roles, 'user roles').should.containEql('welcome-team');
     });
 
+    it('retries a stale role update without applying the change twice', async () => {
+      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      const updateOne = sinon.stub(User, 'updateOne').callThrough();
+      updateOne.onFirstCall().resolves({
+        acknowledged: true,
+        matchedCount: 0,
+        modifiedCount: 0,
+        upsertedCount: 0,
+        upsertedId: null,
+      });
+
+      const res = mockResponse();
+      await adminUsers.changeRole(
+        {
+          body: { id: String(target._id), role: 'welcome-team' },
+          user: admin,
+        },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      sinon.assert.calledTwice(updateOne);
+      const updated = await User.findById(target._id).exec();
+      assertPresent(updated, 'updated user');
+      present(updated.roles, 'user roles').should.deepEqual([
+        'user',
+        'welcome-team',
+      ]);
+      present(updated.authVersion, 'user auth version').should.equal(1);
+    });
+
     it('updates a legacy account whose roles field is absent', async () => {
       const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
       await User.collection.updateOne(
