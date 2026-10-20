@@ -105,9 +105,9 @@ class MemberSearchJourneyTest {
         assertEquals(screen.left, profileHero.left, 1f)
         assertEquals(screen.right, profileHero.right, 1f)
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithContentDescription("Quiet Fox image").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithContentDescription("View Quiet Fox profile photo").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithContentDescription("Quiet Fox image").assertIsDisplayed()
+        compose.onNodeWithContentDescription("View Quiet Fox profile photo").assertIsDisplayed()
         compose.onNodeWithText("Send a message").assertIsDisplayed()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
         compose.waitUntil(10_000) {
