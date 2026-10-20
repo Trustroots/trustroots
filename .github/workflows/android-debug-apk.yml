@@ -202,6 +202,12 @@ jobs:
           {
             echo 'Preparing and recording emulator readiness before instrumentation.'
             adb wait-for-device
+            echo 'Recording the emulator keyboard configuration and original software-keyboard policy.'
+            adb shell am get-config
+            adb shell settings get secure show_ime_with_hard_keyboard
+            # These journeys verify a visible software keyboard even if the emulator advertises a keyboard.
+            adb shell settings put secure show_ime_with_hard_keyboard 1
+            adb shell settings get secure show_ime_with_hard_keyboard
             adb shell wm dismiss-keyguard
             adb shell input keyevent 82
             adb shell input keyevent 3
