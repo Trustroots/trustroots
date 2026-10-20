@@ -209,7 +209,7 @@ export default function NavigationLoggedIn({
           align="end"
           title={
             <>
-              <span className="sr-only">{t<string>('Profile menu')}</span>
+              <span className="sr-only">{t('Profile menu')}</span>
               <span aria-hidden="true">
                 <Avatar user={user} link={false} size={24} />
               </span>
