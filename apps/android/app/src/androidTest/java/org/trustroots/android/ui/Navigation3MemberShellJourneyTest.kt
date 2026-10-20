@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -234,10 +235,90 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithText("Discard changes").performClick()
         waitForText("Search places")
         compose.onNodeWithTag("navigation-search").assertIsSelected()
+        pressSystemBack()
+        waitForText("View your profile")
+        compose.onNodeWithText("A new anonymous line").assertDoesNotExist()
+    }
+
+    @Test fun menuChildRouteRestoresAfterActivityRecreationAndReturnsThroughItsOrigins() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Contacts").performScrollTo().performClick()
+        waitForText("People you connect with on Trustroots will appear here.")
+
+        requireNotNull(scenario).recreate()
+        waitForText("People you connect with on Trustroots will appear here.")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("View your profile").assertExists()
+
+        pressSystemBack()
+        compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+        pressSystemBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
+    }
+
+    @Test fun nestedSystemBackWaitsForDirtyEditProfileDecision() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Edit profile").performScrollTo().performClick()
+        waitForText("Tagline")
+        compose.onNodeWithText("Tagline").performTextReplacement("A fictional route change")
+        compose.waitForIdle()
+
+        pressSystemBack()
+        compose.onNodeWithText("Discard changes?").assertIsDisplayed()
+        compose.onNodeWithText("Keep editing").performClick()
+        compose.onNodeWithText("A fictional route change").assertIsDisplayed()
+
+        pressSystemBack()
+        compose.onNodeWithText("Discard changes").performClick()
+        waitForText("View your profile")
+        pressSystemBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+    }
+
+    @Test fun nestedPredictiveBackCancelsWithoutPoppingAndThenReturnsToMenuOrigin() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Contacts").performScrollTo().performClick()
+        waitForText("People you connect with on Trustroots will appear here.")
+
+        requirePredictiveBackSupport()
+        cancelPredictiveBack()
+        compose.onNodeWithText("Contacts").assertIsDisplayed()
+        completePredictiveBack()
+        compose.onNodeWithText("View your profile").assertExists()
+        compose.onNodeWithTag("navigation-menu").assertIsSelected()
+
+        completePredictiveBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
     }
 
     private fun requirePredictiveBackSupport() {
         assumeTrue("Predictive back event dispatch requires Android 14+", Build.VERSION.SDK_INT >= 34)
+    }
+
+    private fun pressSystemBack() {
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
     }
 
     private fun cancelPredictiveBack() {

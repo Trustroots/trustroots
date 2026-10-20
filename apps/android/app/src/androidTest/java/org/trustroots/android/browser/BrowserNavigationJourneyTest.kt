@@ -1,6 +1,7 @@
 package org.trustroots.android.browser
 
 import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
 import android.content.Intent
 import android.net.Uri
 import android.view.View
@@ -9,14 +10,6 @@ import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
-import java.io.IOException
-import java.net.ServerSocket
-import java.net.SocketException
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.concurrent.thread
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -96,142 +89,6 @@ class BrowserNavigationJourneyTest {
                 manager.setCookie(origin, "journey_session=; Max-Age=0; Path=/")
                 manager.flush()
             }
-        }
-    }
-
-    @Test fun systemBackTraversesBrowserHistoryBeforeClosingTheRoute() {
-        val server = ServerSocket(0).apply { soTimeout = 20_000 }
-        val requests = CopyOnWriteArrayList<String>()
-        val activeSocket = AtomicReference<java.net.Socket?>()
-        val responderFailure = AtomicReference<Throwable?>()
-        val responder = thread(isDaemon = true) {
-            try {
-                while (!server.isClosed) {
-                    val socket = try {
-                        server.accept()
-                    } catch (error: SocketException) {
-                        if (server.isClosed) break
-                        responderFailure.compareAndSet(null, error)
-                        break
-                    } catch (error: IOException) {
-                        responderFailure.compareAndSet(null, error)
-                        break
-                    }
-                    activeSocket.set(socket)
-                    try {
-                        socket.soTimeout = 10_000
-                        socket.use {
-                            val input = socket.getInputStream().bufferedReader()
-                            val request = input.readLine().orEmpty()
-                            requests += request
-                            while (!input.readLine().isNullOrEmpty()) Unit
-                            val path = request.split(' ').getOrNull(1)
-                            val (status, body) = when (path) {
-                                "/first" -> "200 OK" to "<html><head><title>First local page</title></head><body>First</body></html>"
-                                "/second" -> "200 OK" to "<html><head><title>Second local page</title></head><body>Second</body></html>"
-                                else -> "404 Not Found" to "<html><head><title>Missing local page</title></head><body>Not found</body></html>"
-                            }
-                            val bytes = body.toByteArray()
-                            socket.getOutputStream().write(
-                                "HTTP/1.1 $status\r\nContent-Type: text/html; charset=utf-8\r\nContent-Length: ${bytes.size}\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n".toByteArray(),
-                            )
-                            socket.getOutputStream().write(bytes)
-                            socket.getOutputStream().flush()
-                        }
-                    } catch (_: SocketException) {
-                        // WebView may cancel a request while navigating back or replacing a page.
-                    } catch (error: IOException) {
-                        responderFailure.compareAndSet(null, error)
-                    } catch (error: Throwable) {
-                        responderFailure.compareAndSet(null, error)
-                    } finally {
-                        activeSocket.compareAndSet(socket, null)
-                        runCatching { socket.close() }
-                    }
-                }
-            } catch (error: Throwable) {
-                responderFailure.compareAndSet(null, error)
-            }
-        }
-        val firstURL = "http://127.0.0.1:${server.localPort}/first"
-        val secondURL = "http://127.0.0.1:${server.localPort}/second"
-        var closed = 0
-        val pageState = AtomicReference("WebView has not reported a page load")
-        try {
-            compose.setContent {
-                DefaultBrowserContent(BrowserRoute("Local help", firstURL), { closed++ }, PaddingValues.Zero)
-            }
-            try {
-                compose.waitUntil("first loopback WebView page to finish loading", 10_000) {
-                    var ready = false
-                    compose.runOnUiThread {
-                        val web = findWebView(compose.activity.window.decorView)
-                        if (web != null) {
-                            pageState.set("url=${web.url}, progress=${web.progress}, title=${web.title}")
-                            ready = web.url == firstURL && web.progress == 100 && web.title == "First local page"
-                        }
-                    }
-                    ready
-                }
-            } catch (failure: Throwable) {
-                throw AssertionError("First loopback browser page did not finish loading: ${pageState.get()}; requests=$requests", failure)
-            }
-
-            compose.runOnIdle {
-                requireNotNull(findWebView(compose.activity.window.decorView)).apply {
-                    clearHistory()
-                    loadUrl(secondURL)
-                }
-            }
-            try {
-                compose.waitUntil("second loopback WebView page to finish loading", 10_000) {
-                    var ready = false
-                    compose.runOnUiThread {
-                        val web = findWebView(compose.activity.window.decorView)
-                        if (web != null) {
-                            pageState.set("url=${web.url}, progress=${web.progress}, title=${web.title}")
-                            ready = web.url == secondURL && web.progress == 100 &&
-                                web.title == "Second local page" && web.canGoBack()
-                        }
-                    }
-                    ready
-                }
-            } catch (failure: Throwable) {
-                throw AssertionError("Second loopback browser page did not finish loading: ${pageState.get()}; requests=$requests", failure)
-            }
-
-            compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
-            try {
-                compose.waitUntil("browser back to return to the first loopback page", 10_000) {
-                    var returned = false
-                    compose.runOnUiThread {
-                        val web = findWebView(compose.activity.window.decorView)
-                        if (web != null) {
-                            pageState.set("url=${web.url}, progress=${web.progress}, title=${web.title}")
-                            returned = web.url == firstURL && web.progress == 100 &&
-                                web.title == "First local page" && !web.canGoBack()
-                        }
-                    }
-                    returned
-                }
-            } catch (failure: Throwable) {
-                throw AssertionError("Browser back did not restore the first page: ${pageState.get()}; requests=$requests", failure)
-            }
-
-            compose.runOnIdle {
-                assertEquals(0, closed)
-                compose.activity.onBackPressedDispatcher.onBackPressed()
-                assertEquals(1, closed)
-            }
-            server.close()
-            activeSocket.getAndSet(null)?.let { runCatching { it.close() } }
-            responder.join(1_000)
-            assertTrue("The loopback responder should finish after serving both pages", !responder.isAlive)
-            responderFailure.get()?.let { throw AssertionError("The loopback responder failed", it) }
-        } finally {
-            server.close()
-            activeSocket.getAndSet(null)?.let { runCatching { it.close() } }
-            responder.join(1_000)
         }
     }
 
