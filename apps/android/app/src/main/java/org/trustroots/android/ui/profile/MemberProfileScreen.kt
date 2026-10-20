@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
@@ -80,6 +81,8 @@ internal fun MemberProfileScreen(
     onBack: () -> Unit,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
+    val context = LocalContext.current
+    val profileLoadError = stringResource(R.string.profile_load_error)
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
     var hosting by remember(username) { mutableStateOf<AccommodationOffer?>(null) }
     var hostingLoaded by remember(username) { mutableStateOf(false) }
@@ -169,15 +172,18 @@ internal fun MemberProfileScreen(
             onDismissRequest = { if (!removingContact) confirmRemoveContact = false },
             title = {
                 Text(
-                    if (existing?.confirmed == true) "Remove contact?" else "Delete contact request?",
+                    stringResource(
+                        if (existing?.confirmed == true) R.string.profile_remove_contact_confirm_title
+                        else R.string.profile_delete_contact_request_confirm_title,
+                    ),
                 )
             },
             text = {
                 Text(
                     if (existing?.confirmed == true) {
-                        "You will no longer be contacts with this member."
+                        stringResource(R.string.profile_remove_contact_confirm_message)
                     } else {
-                        "This cancels the pending contact request."
+                        stringResource(R.string.profile_delete_contact_request_confirm_message)
                     },
                 )
             },
@@ -199,11 +205,11 @@ internal fun MemberProfileScreen(
                             removingContact = false
                         }
                     },
-                ) { Text(if (removingContact) "Removing…" else "Confirm") }
+                ) { Text(if (removingContact) stringResource(R.string.profile_removing_contact) else stringResource(R.string.profile_confirm)) }
             },
             dismissButton = {
                 TextButton(enabled = !removingContact, onClick = { confirmRemoveContact = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.profile_cancel))
                 }
             },
         )
@@ -238,7 +244,7 @@ internal fun MemberProfileScreen(
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.messageOr("Could not load profile.")
+            else error = it.messageOr(profileLoadError)
         }
     }
     val isSelf = profile?.username == session.member.username

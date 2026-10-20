@@ -22,6 +22,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
@@ -34,10 +36,10 @@ import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.languageName
 
-internal enum class ProfileSection(val label: String) {
-    About("About"),
-    Contacts("Contacts"),
-    Experiences("Experiences"),
+internal enum class ProfileSection(val label: Int) {
+    About(R.string.profile_section_about),
+    Contacts(R.string.profile_section_contacts),
+    Experiences(R.string.profile_section_experiences),
 }
 
 @Composable
@@ -68,7 +70,11 @@ internal fun ProfileSectionBar(
                 }.testTag("profileSection-${section.name.lowercase()}"),
                 text = {
                     Text(
-                        if (section == ProfileSection.Contacts && contactCount > 0) "Contacts ($contactCount)" else section.label,
+                        if (section == ProfileSection.Contacts && contactCount > 0) {
+                            stringResource(R.string.profile_section_contacts_count, contactCount)
+                        } else {
+                            stringResource(section.label)
+                        },
                         color = contentColor,
                         fontWeight = if (section == selected) FontWeight.SemiBold else FontWeight.Normal,
                     )
@@ -105,9 +111,9 @@ internal fun ProfileOverviewSection(
     api: MobileApiClient,
     session: MemberSession,
 ) {
-    if (references.isEmpty()) Text("No experiences shared yet.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    if (references.isEmpty()) Text(stringResource(R.string.profile_no_experiences), color = MaterialTheme.colorScheme.onSurfaceVariant)
     if (references.isNotEmpty()) {
-        Text("Experiences", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        Text(stringResource(R.string.profile_section_experiences), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         (if (showAllReferences) references else references.take(6)).forEach { reference ->
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -125,13 +131,13 @@ internal fun ProfileOverviewSection(
                     Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
                 }
                 reference.response?.let {
-                    Text("Response: ${Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()}")
+                    Text(stringResource(R.string.profile_response_prefix, Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim()))
                 }
             }
         }
         if (references.size > 6) {
             TextButton(onClick = onToggleReferences) {
-                Text(if (showAllReferences) "Show fewer" else "More experiences (${references.size - 6})")
+                Text(if (showAllReferences) stringResource(R.string.profile_show_fewer) else stringResource(R.string.profile_more_experiences, references.size - 6))
             }
         }
     }
@@ -142,17 +148,17 @@ internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
     member.description?.let {
         Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
     } ?: Text(
-        "No about text yet.",
+        stringResource(R.string.profile_no_about),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
     if (member.languages.isNotEmpty()) {
         Text(
-            "Languages: ${member.languages.joinToString { languageName(it) }}",
+            stringResource(R.string.profile_languages_prefix, member.languages.joinToString { languageName(it) }),
             modifier = Modifier.padding(top = 16.dp),
         )
     }
     if (member.circles.isNotEmpty()) {
-        Text("Circles", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
+        Text(stringResource(R.string.profile_circles_heading), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         member.circles.forEach { circle ->
             Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
                 RemoteArtwork(
@@ -174,9 +180,9 @@ internal fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: 
         return
     }
     val status = when (hosting?.status) {
-        "yes" -> "Hosting travellers"
-        "maybe" -> "Maybe hosting"
-        else -> "Not hosting currently"
+        "yes" -> stringResource(R.string.profile_hosting_yes)
+        "maybe" -> stringResource(R.string.profile_hosting_maybe)
+        else -> stringResource(R.string.profile_hosting_no)
     }
     Text(status, fontWeight = FontWeight.Bold)
     hosting?.let { offer ->
@@ -190,7 +196,7 @@ internal fun ProfileHostingSection(hosting: AccommodationOffer?, hostingLoaded: 
         }
         if (offer.status == "yes" || offer.status == "maybe") {
             offer.maxGuests?.let {
-                Text(if (it == 1) "Space for 1 guest" else "Space for up to $it guests")
+                Text(pluralStringResource(R.plurals.profile_hosting_guest_space, it, it))
             }
         }
     }
@@ -207,7 +213,7 @@ internal fun ProfileContactsSection(
 ) {
     if (contacts.isEmpty()) {
         Text(
-            "People you connect with on Trustroots will appear here.",
+            stringResource(R.string.profile_contacts_empty),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         return
@@ -232,7 +238,7 @@ internal fun ProfileContactsSection(
     }
     if (contacts.size > 6) {
         TextButton(onClick = onToggleContacts) {
-            Text(if (showAllContacts) "Show fewer" else "More contacts (${contacts.size - 6})")
+            Text(if (showAllContacts) stringResource(R.string.profile_show_fewer) else stringResource(R.string.profile_more_contacts, contacts.size - 6))
         }
     }
 }

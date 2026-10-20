@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_section_about">About</string>
+    <string name="profile_section_contacts">Contacts</string>
+    <string name="profile_section_experiences">Experiences</string>
+    <string name="profile_section_contacts_count">Contacts (%1$d)</string>
+    <string name="profile_no_experiences">No experiences shared yet.</string>
+    <string name="profile_response_prefix">Response: %1$s</string>
+    <string name="profile_show_fewer">Show fewer</string>
+    <string name="profile_more_experiences">More experiences (%1$d)</string>
+    <string name="profile_no_about">No about text yet.</string>
+    <string name="profile_languages_prefix">Languages: %1$s</string>
+    <string name="profile_circles_heading">Circles</string>
+    <string name="profile_hosting_yes">Hosting travellers</string>
+    <string name="profile_hosting_maybe">Maybe hosting</string>
+    <string name="profile_hosting_no">Not hosting currently</string>
+    <plurals name="profile_hosting_guest_space">
+        <item quantity="one">Space for 1 guest</item>
+        <item quantity="other">Space for up to %1$d guests</item>
+    </plurals>
+    <string name="profile_contacts_empty">People you connect with on Trustroots will appear here.</string>
+    <string name="profile_more_contacts">More contacts (%1$d)</string>
+    <string name="profile_remove_contact_confirm_title">Remove contact?</string>
+    <string name="profile_delete_contact_request_confirm_title">Delete contact request?</string>
+    <string name="profile_remove_contact_confirm_message">You will no longer be contacts with this member.</string>
+    <string name="profile_delete_contact_request_confirm_message">This cancels the pending contact request.</string>
+    <string name="profile_removing_contact">Removing…</string>
+    <string name="profile_confirm">Confirm</string>
+    <string name="profile_cancel">Cancel</string>
+    <string name="profile_load_error">Could not load profile.</string>
+</resources>

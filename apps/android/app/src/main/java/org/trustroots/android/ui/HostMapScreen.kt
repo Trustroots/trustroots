@@ -547,7 +547,7 @@ internal fun HostMapScreen(
                 }
                 selectedNotes.take(5).forEach { note ->
                     Text(note.content, modifier = Modifier.padding(vertical = 6.dp), maxLines = 4)
-                    Text(messageTime(note.createdAt), style = MaterialTheme.typography.labelSmall)
+                    Text(messageTime(context.resources, note.createdAt), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }

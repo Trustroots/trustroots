@@ -24,6 +24,8 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.res.stringResource
+import org.trustroots.android.R
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -34,7 +36,7 @@ internal val LocalLeaveGuard = compositionLocalOf<MutableState<LeaveGuard?>?> { 
 @Composable
 internal fun NativeBackButton(onBack: () -> Unit, modifier: Modifier = Modifier, tint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
     IconButton(onClick = onBack, modifier = modifier) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = tint)
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = tint)
     }
 }
 
@@ -66,14 +68,14 @@ internal fun rememberFormLeave(dirty: Boolean, saving: Boolean, onCancel: () -> 
     if (pending != null) {
         AlertDialog(
             onDismissRequest = { pending = null },
-            title = { Text("Discard changes?") },
-            text = { Text("Your unsaved changes will be lost.") },
+            title = { Text(stringResource(R.string.discard_changes_title)) },
+            text = { Text(stringResource(R.string.unsaved_changes_lost)) },
             confirmButton = {
                 TextButton(onClick = { val action = pending; pending = null; action?.invoke() }) {
-                    Text("Discard changes")
+                    Text(stringResource(R.string.discard_changes))
                 }
             },
-            dismissButton = { TextButton(onClick = { pending = null }) { Text("Keep editing") } },
+            dismissButton = { TextButton(onClick = { pending = null }) { Text(stringResource(R.string.keep_editing)) } },
         )
     }
     return guard
@@ -91,11 +93,11 @@ internal fun FormActionBar(
     Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
         Row(Modifier.fillMaxWidth().padding(horizontalInset).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onCancel, enabled = !saving) {
-                Icon(Icons.Default.Close, contentDescription = "Cancel")
+                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
             }
             Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
             TextButton(onClick = onSave, enabled = canSave && !saving) {
-                Text(if (saving) "Saving…" else "Save changes")
+                Text(if (saving) stringResource(R.string.saving) else stringResource(R.string.save_changes))
             }
         }
     }
