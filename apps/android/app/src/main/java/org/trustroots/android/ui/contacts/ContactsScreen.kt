@@ -17,12 +17,14 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ProfileContact
+import org.trustroots.android.R
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.isAuthenticationFailure
@@ -44,6 +47,11 @@ internal fun ContactsScreen(
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val contactsLoadError = stringResource(R.string.screen_contacts_load_error)
+    val contactsTitle = stringResource(R.string.screen_contacts_title)
+    val contactsEmpty = stringResource(R.string.screen_contacts_empty)
+    val uiLocale = LocalConfiguration.current.locales[0]
+    val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     var contacts by remember { mutableStateOf<List<ProfileContact>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -58,7 +66,7 @@ internal fun ContactsScreen(
         api.profile(session, session.member.username).onSuccess { member ->
             val memberID = member.id
             if (memberID == null) {
-                error = "Could not load contacts."
+                error = contactsLoadError
                 loading = false
                 return@onSuccess
             }
@@ -68,14 +76,14 @@ internal fun ContactsScreen(
             }.onFailure {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else {
-                    error = it.messageOr("Could not load contacts.")
+                    error = it.messageOr(contactsLoadError)
                     loading = false
                 }
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
-                error = it.messageOr("Could not load contacts.")
+                error = it.messageOr(contactsLoadError)
                 loading = false
             }
         }
@@ -87,7 +95,7 @@ internal fun ContactsScreen(
             .padding(20.dp),
     ) {
         NativeBackButton(onBack)
-        Text("Contacts", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(contactsTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             error != null -> Text(
@@ -96,7 +104,7 @@ internal fun ContactsScreen(
                 modifier = Modifier.padding(top = 16.dp),
             )
             contacts.isEmpty() -> Text(
-                "People you connect with on Trustroots will appear here.",
+                contactsEmpty,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 16.dp),
             )
@@ -122,7 +130,7 @@ internal fun ContactsScreen(
                         Spacer(Modifier.width(12.dp))
                         Column {
                             Text(contact.user.displayName, fontWeight = FontWeight.Bold)
-                            username?.let { Text("@$it") }
+                            username?.let { Text(String.format(uiLocale, usernameHandleFormat, it)) }
                         }
                     }
                     HorizontalDivider()

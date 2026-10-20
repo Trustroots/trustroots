@@ -81,6 +81,17 @@ internal fun HostOfferScreen(
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val hostOfferLoadError = stringResource(R.string.screen_host_offer_load_error)
+    val hostOfferSaveError = stringResource(R.string.screen_host_offer_save_error)
+    val hostOfferSaved = stringResource(R.string.screen_host_offer_saved)
+    val hostTitle = stringResource(R.string.screen_host)
+    val hostDescriptionPrompt = stringResource(R.string.screen_host_description_prompt)
+    val availabilityLabel = stringResource(R.string.screen_availability)
+    val yesLabel = stringResource(R.string.screen_yes)
+    val maybeLabel = stringResource(R.string.screen_maybe)
+    val noLabel = stringResource(R.string.screen_no)
+    val showOnlyMyCircles = stringResource(R.string.screen_show_only_my_circles)
+    val longerHostingDescription = stringResource(R.string.screen_longer_hosting_description)
     var loading by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -102,7 +113,7 @@ internal fun HostOfferScreen(
         api.profile(session, session.member.username).onSuccess { profile ->
             val memberID = profile.id
             if (memberID == null) {
-                error = "Could not load hosting offer."
+                error = hostOfferLoadError
                 loading = false
                 return@onSuccess
             }
@@ -126,14 +137,14 @@ internal fun HostOfferScreen(
             }.onFailure {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else {
-                    error = it.messageOr("Could not load hosting offer.")
+                    error = it.messageOr(hostOfferLoadError)
                     loading = false
                 }
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
-                error = it.messageOr("Could not load hosting offer.")
+                error = it.messageOr(hostOfferLoadError)
                 loading = false
             }
         }
@@ -160,28 +171,28 @@ internal fun HostOfferScreen(
                     ).onSuccess { saved ->
                         offerId = saved.id
                         original = currentOffer.copy(id = saved.id)
-                        savedMessage = "Hosting offer saved."
+                        savedMessage = hostOfferSaved
                     }.onFailure {
                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                        else error = it.messageOr("Could not save hosting offer.")
+                        else error = it.messageOr(hostOfferSaveError)
                     }
                     saving = false
                 }
             }
     Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
-        FormActionBar("Host", saving, !loading && !descriptionTooShort, cancel, save, horizontalInset = contentPadding.horizontalInset())
+        FormActionBar(hostTitle, saving, !loading && !descriptionTooShort, cancel, save, horizontalInset = contentPadding.horizontalInset())
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("hostOfferScreen")) {
         Text(
-            "Tell travellers whether you can host.",
+            hostDescriptionPrompt,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
         )
         when {
             loading -> CircularProgressIndicator()
             else -> {
-        Text("Availability", style = MaterialTheme.typography.titleMedium)
+        Text(availabilityLabel, style = MaterialTheme.typography.titleMedium)
         Row(Modifier.padding(vertical = 8.dp)) {
-            listOf("yes" to "Yes", "maybe" to "Maybe", "no" to "No").forEach { (value, label) ->
+            listOf("yes" to yesLabel, "maybe" to maybeLabel, "no" to noLabel).forEach { (value, label) ->
                 FilterChip(
                     enabled = !saving,
                     selected = status == value,
@@ -221,7 +232,7 @@ internal fun HostOfferScreen(
         }
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
             Checkbox(enabled = !saving, checked = showOnlyInMyCircles, onCheckedChange = { showOnlyInMyCircles = it })
-            Text("Show only to members in my circles")
+            Text(showOnlyMyCircles)
         }
         error?.let {
             Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
@@ -231,7 +242,7 @@ internal fun HostOfferScreen(
         }
         if (descriptionTooShort) {
             Text(
-                "Write a longer hosting description first.",
+                longerHostingDescription,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 8.dp),
             )
@@ -255,6 +266,16 @@ internal fun CreateExperienceScreen(
     onCreated: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
+    val experienceShareError = stringResource(R.string.screen_experience_share_error)
+    val experienceTitle = stringResource(R.string.screen_experience_with, memberLabel)
+    val whatHappenedLabel = stringResource(R.string.screen_what_happened)
+    val metInPersonLabel = stringResource(R.string.screen_met_in_person)
+    val hostedThemLabel = stringResource(R.string.screen_hosted_them)
+    val wasTheirGuestLabel = stringResource(R.string.screen_was_their_guest)
+    val recommendThemLabel = stringResource(R.string.screen_recommend_them)
+    val yesLabel = stringResource(R.string.screen_yes)
+    val notSureLabel = stringResource(R.string.screen_not_sure)
+    val noLabel = stringResource(R.string.screen_no)
     var met by remember { mutableStateOf(true) }
     var hosted by remember { mutableStateOf(false) }
     var wasGuest by remember { mutableStateOf(false) }
@@ -282,30 +303,30 @@ internal fun CreateExperienceScreen(
                     ).onSuccess { onCreated() }
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr("Could not share experience.")
+                            else error = it.messageOr(experienceShareError)
                         }
                     saving = false
                 }
             }
     Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
-        FormActionBar("Experience with $memberLabel", saving, canSave, cancel, save, horizontalInset = contentPadding.horizontalInset())
+        FormActionBar(experienceTitle, saving, canSave, cancel, save, horizontalInset = contentPadding.horizontalInset())
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("createExperienceScreen")) {
-        Text("What happened?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        Text(whatHappenedLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(enabled = !saving, checked = met, onCheckedChange = { met = it })
-            Text("We met in person")
+            Text(metInPersonLabel)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(enabled = !saving, checked = hosted, onCheckedChange = { hosted = it })
-            Text("I hosted them")
+            Text(hostedThemLabel)
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(enabled = !saving, checked = wasGuest, onCheckedChange = { wasGuest = it })
-            Text("I was their guest")
+            Text(wasTheirGuestLabel)
         }
-        Text("Would you recommend them?", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+        Text(recommendThemLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
         Row {
-            listOf("yes" to "Yes", "unknown" to "Not sure", "no" to "No").forEach { (value, label) ->
+            listOf("yes" to yesLabel, "unknown" to notSureLabel, "no" to noLabel).forEach { (value, label) ->
                 FilterChip(
                     enabled = !saving,
                     selected = recommendation == value,
@@ -350,6 +371,35 @@ internal fun AccountSettingsScreen(
         updateContext.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
     },
 ) {
+    val couldNotChooseDistributor = stringResource(R.string.screen_could_not_choose_push_distributor)
+    val allowMessageNotifications = stringResource(R.string.screen_allow_message_notifications)
+    val latestAndroidPreview = stringResource(R.string.screen_latest_android_preview)
+    val uiLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val updateAvailableFormat = stringResource(R.string.screen_update_available)
+    val updateCheckError = stringResource(R.string.screen_update_check_error)
+    val allowUpdateNotifications = stringResource(R.string.screen_allow_update_notifications)
+    val updateAlertsOff = stringResource(R.string.screen_update_alerts_off)
+    val accountLoadError = stringResource(R.string.screen_account_load_error)
+    val accountSaveError = stringResource(R.string.screen_account_save_error)
+    val passwordChangeError = stringResource(R.string.screen_password_change_error)
+    val accountTitle = stringResource(R.string.screen_account_title)
+    val signedInAs = stringResource(R.string.screen_signed_in_as, session.member.displayName, session.member.username)
+    val emailLabel = stringResource(R.string.screen_email)
+    val newsletterLabel = stringResource(R.string.screen_newsletter)
+    val emailConfirmationPending = stringResource(R.string.screen_email_confirmation_pending)
+    val accountSaved = stringResource(R.string.screen_account_saved)
+    val saveEmailSettings = stringResource(R.string.screen_save_email_settings)
+    val changePasswordLabel = stringResource(R.string.screen_change_password)
+    val passwordChanged = stringResource(R.string.screen_password_changed)
+    val forgotYourPassword = stringResource(R.string.screen_forgot_your_password)
+    val messageAlertsTitle = stringResource(R.string.screen_message_alerts)
+    val messageAlertsDescription = stringResource(R.string.screen_message_alerts_description)
+    val messageAlertsOff = stringResource(R.string.screen_message_alerts_off)
+    val turnOffMessageAlerts = stringResource(R.string.screen_turn_off_message_alerts)
+    val turnOnMessageAlerts = stringResource(R.string.screen_turn_on_message_alerts)
+    val signOutLabel = stringResource(R.string.screen_sign_out)
+    val savingLabel = stringResource(R.string.saving)
+    val changingLabel = stringResource(R.string.screen_changing_password)
     val context = LocalContext.current
     var messageAlertsEnabled by remember(session.member.username) {
         mutableStateOf(MessageAlerts.isEnabled(context, session.member.username))
@@ -367,7 +417,7 @@ internal fun AccountSettingsScreen(
     val scope = rememberCoroutineScope()
     val startMessageAlerts: () -> Unit = {
         val activity = context as? Activity
-        if (activity == null) messageAlertStatus = "Could not choose a push distributor."
+        if (activity == null) messageAlertStatus = couldNotChooseDistributor
         else enableMessageAlerts(activity, session) {
             messageAlertStatus = it
             messageAlertsEnabled = MessageAlerts.isEnabled(context, session.member.username)
@@ -375,7 +425,7 @@ internal fun AccountSettingsScreen(
     }
     val messagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         if (granted) startMessageAlerts()
-        else messageAlertStatus = "Allow notifications in Android settings to receive message alerts."
+        else messageAlertStatus = allowMessageNotifications
     }
     val checkForUpdates: () -> Unit = {
         updateCheckJob?.cancel()
@@ -387,15 +437,15 @@ internal fun AccountSettingsScreen(
                 if (generation == updateCheckGeneration) {
                     when (result) {
                         ApkUpdateCheckResult.UpToDate -> {
-                            updateStatus = "You have the latest Android preview."
+                            updateStatus = latestAndroidPreview
                             updateReleaseUrl = null
                         }
                         is ApkUpdateCheckResult.NewVersion -> {
-                            updateStatus = "${result.release.versionName} is available."
+                            updateStatus = String.format(uiLocale, updateAvailableFormat, result.release.versionName)
                             updateReleaseUrl = result.release.pageUrl
                         }
                         ApkUpdateCheckResult.Unavailable -> {
-                            updateStatus = "Could not check for updates. Try again later."
+                            updateStatus = updateCheckError
                             updateReleaseUrl = null
                         }
                     }
@@ -416,7 +466,7 @@ internal fun AccountSettingsScreen(
             updateAlertsEnabled = true
             checkForUpdates()
         } else {
-            updateStatus = "Allow Trustroots notifications in Android settings to receive update alerts."
+            updateStatus = allowUpdateNotifications
         }
     }
     var details by remember { mutableStateOf<AccountDetails?>(null) }
@@ -440,7 +490,7 @@ internal fun AccountSettingsScreen(
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
-                error = it.messageOr("Could not load account.")
+                error = it.messageOr(accountLoadError)
                 loading = false
             }
         }
@@ -460,7 +510,7 @@ internal fun AccountSettingsScreen(
             .testTag("accountSettingsScreen"),
     ) {
         NativeBackButton({ leave(onBack) })
-        Text("Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(accountTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         UsageAnalyticsSettings()
         Text(
             "Signed in as ${session.member.displayName} (@${session.member.username}).",
@@ -482,7 +532,7 @@ internal fun AccountSettingsScreen(
                         checkingUpdates = false
                         setUpdateAlertsEnabled(context, false)
                         updateAlertsEnabled = false
-                        updateStatus = "Update alerts are off."
+                        updateStatus = updateAlertsOff
                         updateReleaseUrl = null
                     } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -501,7 +551,7 @@ internal fun AccountSettingsScreen(
         when {
             loading -> CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             else -> {
-        Text("Email", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 20.dp))
+        Text(emailLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 20.dp))
         TextField(
             email,
             { email = it },
@@ -512,11 +562,11 @@ internal fun AccountSettingsScreen(
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = newsletter, onCheckedChange = { newsletter = it })
-            Text("Community newsletter")
+            Text(newsletterLabel)
         }
         details?.emailTemporary?.let {
             Text(
-                "Email confirmation is pending for $it.",
+                String.format(uiLocale, emailConfirmationPending, it),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp),
             )
@@ -529,19 +579,19 @@ internal fun AccountSettingsScreen(
                     message = null
                     api.updateAccount(session, email, newsletter).onSuccess {
                         details = it
-                        message = "Account saved."
+                        message = accountSaved
                     }.onFailure {
                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                        else error = it.messageOr("Could not save account.")
+                        else error = it.messageOr(accountSaveError)
                     }
                     savingAccount = false
                 }
             },
             enabled = !savingAccount && email.isNotBlank(),
             modifier = Modifier.padding(top = 8.dp),
-        ) { Text(if (savingAccount) "Saving…" else "Save email settings") }
+        ) { Text(if (savingAccount) savingLabel else saveEmailSettings) }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
-        Text("Change password", style = MaterialTheme.typography.titleMedium)
+        Text(changePasswordLabel, style = MaterialTheme.typography.titleMedium)
         TextField(
             currentPassword,
             { currentPassword = it },
@@ -577,11 +627,11 @@ internal fun AccountSettingsScreen(
                             currentPassword = ""
                             newPassword = ""
                             verifyPassword = ""
-                            message = "Password changed."
+                            message = passwordChanged
                         }
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr("Could not change password.")
+                            else error = it.messageOr(passwordChangeError)
                         }
                     changingPassword = false
                 }
@@ -591,24 +641,24 @@ internal fun AccountSettingsScreen(
                 newPassword.isNotBlank() &&
                 newPassword == verifyPassword,
             modifier = Modifier.padding(top = 8.dp),
-        ) { Text(if (changingPassword) "Changing…" else "Change password") }
-        TextButton(onClick = { leave(onResetPassword) }) { Text("Forgot your password?") }
+        ) { Text(if (changingPassword) changingLabel else changePasswordLabel) }
+        TextButton(onClick = { leave(onResetPassword) }) { Text(forgotYourPassword) }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
-        Text("Message alerts", style = MaterialTheme.typography.titleMedium)
-        Text("Receive an alert for an unread conversation after ten minutes. This requires an installed UnifiedPush distributor, such as ntfy.")
+        Text(messageAlertsTitle, style = MaterialTheme.typography.titleMedium)
+        Text(messageAlertsDescription)
         Button(onClick = {
             if (messageAlertsEnabled) {
                 scope.launch {
                     disableMessageAlerts(context, session)
                     messageAlertsEnabled = false
-                    messageAlertStatus = "Message alerts are off."
+                    messageAlertStatus = messageAlertsOff
                 }
             } else if (Build.VERSION.SDK_INT >= 33 &&
                 context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
             ) {
                 messagePermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             } else startMessageAlerts()
-        }) { Text(if (messageAlertsEnabled) "Turn off message alerts" else "Turn on message alerts") }
+        }) { Text(if (messageAlertsEnabled) turnOffMessageAlerts else turnOnMessageAlerts) }
         (distributorStatus ?: messageAlertStatus)?.let { Text(it) }
         message?.let {
             Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
@@ -617,7 +667,7 @@ internal fun AccountSettingsScreen(
             Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
         }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
-        Button(onClick = { leave(onSignedOut) }) { Text("Sign out") }
+        Button(onClick = { leave(onSignedOut) }) { Text(signOutLabel) }
         Spacer(Modifier.height(24.dp))
             }
         }
@@ -634,22 +684,22 @@ internal fun ApkUpdateSettings(
     onCheck: () -> Unit,
     onOpenRelease: (String) -> Unit,
 ) {
-    Text("APK updates", style = MaterialTheme.typography.titleMedium)
+    Text(stringResource(R.string.screen_apk_updates), style = MaterialTheme.typography.titleMedium)
     Text(
-        "Receive an alert when a new signed Android preview is available on GitHub.",
+        stringResource(R.string.screen_apk_updates_description),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 6.dp),
     )
     Button(onClick = onToggle, modifier = Modifier.padding(top = 12.dp)) {
-        Text(if (enabled) "Turn off update alerts" else "Turn on update alerts")
+        Text(stringResource(if (enabled) R.string.screen_turn_off_update_alerts else R.string.screen_turn_on_update_alerts))
     }
     if (enabled) {
         TextButton(onClick = onCheck, enabled = !checking) {
-            Text(if (checking) "Checking for updates…" else "Check for updates now")
+            Text(stringResource(if (checking) R.string.screen_checking_updates else R.string.screen_check_updates_now))
         }
     }
     status?.let { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     releaseUrl?.let { url ->
-        TextButton(onClick = { onOpenRelease(url) }) { Text("Open release page") }
+        TextButton(onClick = { onOpenRelease(url) }) { Text(stringResource(R.string.screen_open_release_page)) }
     }
 }

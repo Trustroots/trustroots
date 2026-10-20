@@ -158,7 +158,7 @@ private fun CircleOverviewScreen(
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
             CirclesLargeTopAppBar(
-                title = stringResource(R.string.discover_circles),
+                title = stringResource(R.string.screen_discover_circles),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,
             )
@@ -171,7 +171,7 @@ private fun CircleOverviewScreen(
             item(key = "circle-overview-intro") {
                 Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp).padding(contentPadding.horizontalInset())) {
                     Text(
-                        stringResource(R.string.circles_overview_description),
+                        stringResource(R.string.screen_circles_description),
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                     LiveFilterField(
@@ -204,17 +204,17 @@ private fun CircleOverviewScreen(
                     Spacer(Modifier.width(10.dp))
                     Column(Modifier.weight(1f)) {
                         Text(circle.label, fontWeight = FontWeight.Bold)
-                        Text("${circle.count} members")
+                        Text(stringResource(R.string.screen_circle_member_count, circle.count))
                     }
                     if (circle.id in memberships) {
                         OutlinedButton(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
                             Icon(Icons.Default.Check, contentDescription = null)
-                            Text("Joined")
+                            Text(stringResource(R.string.screen_joined))
                         }
                     } else {
                         Button(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
                             Icon(Icons.Default.Add, contentDescription = null)
-                            Text("Join")
+                            Text(stringResource(R.string.screen_join))
                         }
                     }
                 }
@@ -258,7 +258,7 @@ private fun CircleDetailScreen(
                     url = if (circle.image) api.circleHeroURL(circle.slug) else null,
                     sessionCookie = null,
                     label = circle.label,
-                    subtitle = "${circle.count} members",
+                    subtitle = stringResource(R.string.screen_circle_member_count, circle.count),
                     background = circleColor(circle.color, MaterialTheme.colorScheme.secondary),
                     blurBackground = false,
                     testTag = "circleHero",
@@ -275,7 +275,7 @@ private fun CircleDetailScreen(
                         Text(circleDescription(it), modifier = Modifier.padding(vertical = 16.dp))
                     }
                     Button(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
-                        Text(if (circle.id in memberships) "Leave circle" else "Join circle")
+                        Text(stringResource(if (circle.id in memberships) R.string.screen_leave_circle else R.string.screen_join_circle))
                     }
                     error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     if (canRetryLoad) {

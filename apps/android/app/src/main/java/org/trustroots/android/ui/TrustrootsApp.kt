@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.content.Context
 import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
+import androidx.annotation.StringRes
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -69,6 +70,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -122,6 +125,7 @@ internal fun TrustrootsApp(
     reconcileAlerts: (Context, MemberSession) -> Unit = MessageAlerts::reconcile,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
+    val sessionExpiredMessage = stringResource(R.string.screen_session_expired)
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
@@ -194,8 +198,7 @@ internal fun TrustrootsApp(
                 sessionStore.clear()
                 signInStoreHolder.clearDestination()
                 session = null
-                signedOutMessage =
-                    "Your session expired or is no longer valid. Please sign in again."
+                signedOutMessage = sessionExpiredMessage
             },
         )
     }
@@ -204,6 +207,9 @@ internal fun TrustrootsApp(
 @Composable
 internal fun StartupScreen(firstName: String?) {
     val buildDate = rememberBuildDate()
+    val brandName = stringResource(R.string.screen_brand_name)
+    val communityTagline = stringResource(R.string.screen_travellers_community)
+    val buildLabel = stringResource(R.string.screen_build_date, buildDate)
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.primaryContainer).safeDrawingPadding()) {
         Column(
             modifier = Modifier.align(Alignment.Center),
@@ -211,20 +217,20 @@ internal fun StartupScreen(firstName: String?) {
         ) {
             Image(
                 painter = painterResource(R.drawable.trustroots_logo),
-                contentDescription = "Trustroots",
+                contentDescription = brandName,
                 modifier = Modifier.size(180.dp),
             )
-            Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
+            Text(communityTagline, style = MaterialTheme.typography.titleMedium)
             if (!firstName.isNullOrBlank()) {
                 Text(
-                    "Hi $firstName",
+                    stringResource(R.string.screen_welcome_name, firstName),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.padding(top = 24.dp),
                 )
             }
         }
         Text(
-            "Build: $buildDate",
+            buildLabel,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp),
@@ -247,11 +253,11 @@ private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (
 }
 
 @Serializable
-internal enum class Destination(val label: String) {
-    Circles("Circles"),
-    Search("Search"),
-    Messages("Messages"),
-    Menu("Profile"),
+internal enum class Destination(@StringRes val label: Int) {
+    Circles(R.string.screen_destination_circles),
+    Search(R.string.screen_destination_search),
+    Messages(R.string.screen_destination_messages),
+    Menu(R.string.screen_destination_profile),
 }
 
 /** A unique safe visit to a top-level destination; credentials stay in TrustrootsApp. */
@@ -280,6 +286,8 @@ private fun MemberShell(
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
 ) {
     val context = LocalContext.current
+    val nostrootsTitle = stringResource(R.string.screen_nostroots)
+    val resetPasswordTitle = stringResource(R.string.screen_reset_password)
     val tabBackStack = rememberNavBackStack(MemberTabVisit(Destination.Circles, 0))
     val destination = (tabBackStack.lastOrNull() as? MemberTabVisit)?.destination
         ?: Destination.Circles
@@ -409,8 +417,10 @@ private fun MemberShell(
             Column(Modifier.fillMaxSize()) {
                 offlineSavedAt?.let { savedAt ->
                     Text(
-                        "Offline · Showing saved data from " +
+                        stringResource(
+                            R.string.screen_offline_saved_data,
                             SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ROOT).format(Date(savedAt)),
+                        ),
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -443,7 +453,7 @@ private fun MemberShell(
                                             openHost = { menuPage = MenuPage.Host },
                                             openNostroots = {
                                                 browserRoute = BrowserRoute(
-                                                    title = "Nostroots",
+                                                    title = nostrootsTitle,
                                                     url = "https://nos.trustroots.org/",
                                                     sessionCookie = session.cookieHeader,
                                                 )
@@ -506,7 +516,7 @@ private fun MemberShell(
                                             contentPadding = contentPadding,
                                             onResetPassword = {
                                                 browserRoute = BrowserRoute(
-                                                    title = "Reset password",
+                                                    title = resetPasswordTitle,
                                                     url = "https://www.trustroots.org/password/forgot",
                                                 )
                                             },
@@ -563,6 +573,11 @@ internal fun MemberNavigationBar(
     memberLabel: String,
     onNavigate: (Destination) -> Unit,
 ) {
+    val unreadCountDescription = pluralStringResource(
+        R.plurals.screen_destination_unread_count,
+        unreadMessageCount,
+        unreadMessageCount,
+    )
     NavigationBar(
         modifier = Modifier.shadow(elevation = 8.dp),
         containerColor = MaterialTheme.colorScheme.primary,
@@ -578,15 +593,11 @@ internal fun MemberNavigationBar(
                     indicatorColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.16f),
                 ),
                 selected = destination == item,
-                label = { Text(item.label) },
+                label = { Text(stringResource(item.label)) },
                 onClick = { onNavigate(item) },
                 modifier = Modifier.testTag("navigation-${item.name.lowercase()}").semantics {
                     if (item == Destination.Messages) {
-                        stateDescription = when (unreadMessageCount) {
-                            0 -> "No unread conversations"
-                            1 -> "1 unread conversation"
-                            else -> "$unreadMessageCount unread conversations"
-                        }
+                        stateDescription = unreadCountDescription
                     }
                 },
                 icon = {
@@ -637,6 +648,18 @@ internal fun MenuScreen(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val buildDate = rememberBuildDate()
+    val viewYourProfile = stringResource(R.string.screen_view_your_profile)
+    val editProfile = stringResource(R.string.screen_edit_profile)
+    val host = stringResource(R.string.screen_host)
+    val nostroots = stringResource(R.string.screen_nostroots)
+    val contacts = stringResource(R.string.screen_contacts)
+    val findPeople = stringResource(R.string.screen_find_people)
+    val circles = stringResource(R.string.screen_destination_circles)
+    val account = stringResource(R.string.screen_account)
+    val brandName = stringResource(R.string.screen_brand_name)
+    val communityTagline = stringResource(R.string.screen_travellers_community)
+    val apiLabel = stringResource(R.string.screen_api_url, BuildConfig.API_BASE_URL)
+    val buildLabel = stringResource(R.string.screen_build_date, buildDate)
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -661,19 +684,19 @@ internal fun MenuScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Text(
-                "View your profile",
+                viewYourProfile,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(top = 4.dp),
             )
         }
         Spacer(Modifier.height(12.dp))
-        MenuLink("Edit profile", Icons.Default.Edit, openEditProfile)
-        MenuLink("Host", Icons.Default.Home, openHost)
-        MenuLink("Nostroots", Icons.Default.Public, openNostroots)
-        MenuLink("Contacts", Icons.Default.People, openContacts)
-        MenuLink("Find people", Icons.Default.PersonSearch, openFindPeople)
-        MenuLink("Circles", Icons.Default.Groups, openCircles)
-        MenuLink("Account", Icons.Default.Settings, openAccount)
+        MenuLink(editProfile, Icons.Default.Edit, openEditProfile)
+        MenuLink(host, Icons.Default.Home, openHost)
+        MenuLink(nostroots, Icons.Default.Public, openNostroots)
+        MenuLink(contacts, Icons.Default.People, openContacts)
+        MenuLink(findPeople, Icons.Default.PersonSearch, openFindPeople)
+        MenuLink(circles, Icons.Default.Groups, openCircles)
+        MenuLink(account, Icons.Default.Settings, openAccount)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             SharedNavigationLinks.INFO_AND_SUPPORT_HEADING,
@@ -696,18 +719,18 @@ internal fun MenuScreen(
         ) {
             Image(
                 painter = painterResource(R.drawable.trustroots_logo),
-                contentDescription = "Trustroots",
+                contentDescription = brandName,
                 modifier = Modifier.size(72.dp),
             )
-            Text("Travellers’ community", color = MaterialTheme.colorScheme.primary)
+            Text(communityTagline, color = MaterialTheme.colorScheme.primary)
             Text(
-                "API: ${BuildConfig.API_BASE_URL}",
+                apiLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp),
             )
             Text(
-                "Build: $buildDate",
+                buildLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

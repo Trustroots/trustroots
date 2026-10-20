@@ -10,6 +10,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import org.trustroots.android.R
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
@@ -20,6 +22,9 @@ internal fun QuickReplyBar(
     onWriteBack: () -> Unit,
     enabled: Boolean,
 ) {
+    val yesReply = stringResource(R.string.screen_quick_reply_host_yes)
+    val noReply = stringResource(R.string.screen_quick_reply_host_no)
+    val writeBack = stringResource(R.string.screen_quick_reply_write_back)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -27,8 +32,8 @@ internal fun QuickReplyBar(
             .testTag("quickReply"),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Button(onClick = onHostYes, enabled = enabled) { Text("Yes, I can host!") }
-        Button(onClick = onHostNo, enabled = enabled) { Text("Sorry I can't host") }
-        TextButton(onClick = onWriteBack, enabled = enabled) { Text("Write back") }
+        Button(onClick = onHostYes, enabled = enabled) { Text(yesReply) }
+        Button(onClick = onHostNo, enabled = enabled) { Text(noReply) }
+        TextButton(onClick = onWriteBack, enabled = enabled) { Text(writeBack) }
     }
 }
