@@ -50,6 +50,132 @@ Member profiles opened from map results, messages, contacts or profile links
 must be children of that source flow, never global destinations that discard
 their origin.
 
+### Profile route family and entry ownership
+
+`MemberProfileScreen` currently multiplexes several actual screens through
+local nullable selectors: related profile, conversation, edit profile,
+experience form and browser. Replace these selectors with child Navigation 3
+entries in the stack that owns the profile visit. The profile overview remains
+the underlying entry; a push adds one independently decorated destination and
+Back pops only that child. Each entry uses the saveable-state and
+ViewModel-store decorators, including repeated visits to the same username or
+recipient, so Conversation, Profile, Edit and Experience ViewModels have the
+same lifetime as the visible route that owns them.
+
+Use serialisable keys with unique visit identity and only the resource ID
+needed to reload the destination:
+
+| Entry                                           | Safe route data                                                          | Runtime data source                                                                                                                                                                              |
+| ----------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `MemberProfileVisit(username)`                  | Public username and visit ID                                             | Existing `GET /api/users/:username`; profile overview loads its own profile, hosting, contacts, references and contact relationship.                                                             |
+| `RelatedProfileVisit(username)`                 | Public username and visit ID                                             | Same profile loader; pushed from contact/reference/experience links.                                                                                                                             |
+| `ConversationVisit(memberID)`                   | Stable public member ID and visit ID                                     | Conversation route owner resolves recipient identity through the existing authenticated mini-user lookup, then loads messages; it does not read the profile or inbox payload from another entry. |
+| `EditProfileVisit(username)`                    | Own-profile username and visit ID                                        | Edit route loads canonical own-profile values with the existing profile API and saves through `PUT /api/users`.                                                                                  |
+| `ExperienceFormVisit(memberID)`                 | Stable public member ID and visit ID                                     | Experience route resolves the recipient label through the existing mini-user lookup and submits through `POST /api/experiences`.                                                                 |
+| `ProfileBrowserVisit(destination, resourceID?)` | Stable browser destination enum, optional public member ID, and visit ID | Derive translated title and URL from the support-link registry or contact-add destination; obtain the session cookie at runtime.                                                                 |
+
+The profile entry owns the existing reads through `MobileApiClient`: profile
+`GET /api/users/:username`, hosting `GET /api/offers-by/:memberID?types=host`,
+contacts `GET /api/contacts/:memberID`, references
+`GET /api/experiences?userTo=:memberID`, and relationship state
+`GET /api/contact-by/:memberID`. Contact removal remains
+`DELETE /api/contact/:contactID`; adding a contact opens the keyed embedded
+browser for `/contact-add/:memberID`. Edit saves remain `PUT /api/users` with
+the existing `ProfileUpdate`; experience submission keeps the existing
+`POST /api/experiences` payload; messaging retains the existing message
+repository contract. Every request receives the current live session from the
+authenticated parent or entry repository, never from a route key.
+
+The `MemberProfileVisit` key already used by message, search and map flows
+contains a username; retain that public identifier when opening a profile from
+Contacts or another profile. Search/map roots, Contacts, Messages and each
+profile visit own their own child stack. Thus a profile opened from Contacts
+is a child of that Contacts entry; one opened from member search or a map host
+result is a child of that Search visit; one opened from Messages is a child of
+the message source route; and related profiles or conversations are children
+of the profile visit that launched them. Popping a child restores the exact
+source route, including its filter, scroll, pager position and loaded state.
+Never push a profile onto the shell-global stack or replace the source route.
+
+The menu's existing direct Edit Profile destination and Edit from the own
+profile action both use `EditProfileVisit` under their current owning stack.
+The edit entry fetches its own canonical profile from the username key rather
+than serialising `MemberProfile`, HTML, form fields or cookies into the key.
+The current description normalisation remains
+`Html.fromHtml(description, FROM_HTML_MODE_COMPACT).toString().trim()`; compare
+the editable plain-text description with that same normalised baseline when
+computing dirty state. The Edit ViewModel owns the original snapshot and form
+fields, retains them across Activity recreation, recalculates dirty state
+against the snapshot, and owns the save operation. A process-death restore
+replays only the safe username key, reloads the canonical profile, and starts
+from that clean baseline, matching the current form's non-persistent draft
+behaviour. A discard-confirmation dialog and its pending navigation action
+are transient and are never restored as route data.
+
+Only the active Edit entry supplies the leave guard. Toolbar Cancel, toolbar
+Back, system Back, predictive Back, tab navigation and any push/pop leaving
+that entry all request the same guarded transition. Saving blocks departure;
+discard confirmation keeps the exact current entry if cancelled and pops once
+if confirmed. A successful save informs the shell of the updated display name,
+pops the Edit entry, and refreshes the still-retained profile entry from the
+server rather than passing a profile payload through a route key. The direct
+menu edit path applies the same save and return behaviour to its menu origin.
+
+Keep `ProfileImageViewer` as a transient modal overlay: it does not own a
+separate route ViewModel or URL key, and its close action consumes Back before
+the profile stack. Contact confirmations, quick menus and other dialogs also
+consume Back while visible. The existing expanding artwork, pinned profile
+action row, tabs outside the profile pager, fixed shell tabs and supplied
+system insets remain owned by their current shell/profile layouts when
+navigation is extracted.
+
+### Profile navigation implementation slices
+
+Implement this route family in small source-family changes rather than one
+cutover. The first slice is Contacts → profile inside the existing
+`MenuNavigationDisplay` stack. Keep `MenuPageVisit(MenuPage.Contacts, visitID)`
+as the actual Contacts screen entry and give it an entry-scoped
+`ContactsViewModel` for the loaded list, loading/error state and refresh event.
+Remove `selectedUsername` and nested `MemberProfileScreen` composition from
+`ContactsScreen`; it emits `onOpenProfile(username)` for rows with a public
+username and otherwise preserves the current non-clickable row. The Menu child
+stack pushes a real `MenuMemberProfileVisit(username, visitID)` entry whose
+content is `MemberProfileScreen`, with its own saveable-state and ViewModel
+decorators. This is the actual profile destination, not a wrapper route or a
+separate global profile store. Popping it reveals the retained Contacts entry
+and same loaded list without another request. Menu reselection clears the
+whole child stack back to Menu, removing both owners; entering Contacts again
+creates a new Contacts entry and reloads its list. Derive `UsageScreen.Profile`
+when the profile route is current, and derive the underlying menu page's usage
+again after it is popped.
+
+Screen-level tests such as `ContactsScreenTest` and
+`ContactsFailureJourneyTest` continue to test the Contacts UI and service
+results directly, supplying an explicit no-op profile callback when profile
+opening is outside the case. The Contacts row case in
+`MemberJourneysContactAndSearchNavigationJourneyTest` asserts that a public
+username is emitted through `onOpenProfile`; it does not mount a profile as a
+local fallback. `TrustrootsMemberShellJourneysTest.contactsOpenAMemberProfileAndBackReturnsToTheContactList`
+remains the genuine shell/Navigation 3 route journey and is extended to cover
+Activity recreation while the profile is open and Menu reselection while the
+profile route is active. Add a focused `MenuNavigationDisplay` route test for
+the `UsageScreen.Profile` → underlying `UsageScreen.Contacts` derivation and
+for the list reload after Menu reselection. Keep the empty-list, failed-load,
+authentication-failure and username-missing assertions in their current
+focused tests.
+
+Keep remaining profile-related flows for subsequent small changes: (1) Search
+member results and map/host results push profile entries on the Search visit;
+(2) the profile's related-profile links push a second profile entry; (3)
+conversation navigation from a profile pushes a Conversation entry; (4) own-
+profile edit actions and direct Menu Edit use Edit entries; (5) experience
+forms use Experience entries; and (6) add-contact uses a stable-ID browser
+entry. Each change removes only the corresponding old selector, keeps the
+source route below it, and adds route-origin and Back coverage before moving
+to the next family. The existing complete-navigation requirements remain the
+overall target, while production changes and validation land as these
+independent slices.
+
 ### Back, guards and reselection
 
 Provide one shell Back dispatcher that asks the active route to consume Back

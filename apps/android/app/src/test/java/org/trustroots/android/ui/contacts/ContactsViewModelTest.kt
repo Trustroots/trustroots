@@ -111,6 +111,8 @@ class ContactsViewModelTest {
         viewModel.onEvent(ContactsEvent.Retry)
 
         assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertTrue(viewModel.state.value.isSessionInvalidated)
+        assertTrue(viewModel.state.value.contacts.isEmpty())
         assertEquals(1, repository.profileUsernames.size)
         assertTrue(repository.contactMemberIDs.isEmpty())
         assertFalse(viewModel.state.value.isLoading)

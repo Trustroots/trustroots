@@ -31,4 +31,11 @@ class MenuNavigationRouteTest {
         val fields = (0 until descriptor.elementsCount).map(descriptor::getElementName)
         assertEquals(listOf("destination", "visitID", "supportLinkID"), fields)
     }
+
+    @Test fun contactsProfileRouteKeyContainsOnlyUsernameAndVisitIdentity() {
+        val descriptor = MenuMemberProfileVisit.serializer().descriptor
+        val fields = (0 until descriptor.elementsCount).map(descriptor::getElementName)
+
+        assertEquals(listOf("username", "visitID"), fields)
+    }
 }

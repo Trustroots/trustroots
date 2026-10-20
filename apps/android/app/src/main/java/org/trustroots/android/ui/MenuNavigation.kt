@@ -7,6 +7,10 @@ import kotlinx.serialization.Serializable as KotlinSerializable
 @KotlinSerializable
 internal data class MenuPageVisit(val page: MenuPage, val visitID: Long) : NavKey
 
+/** A Contacts-origin profile visit with only its public username in route state. */
+@KotlinSerializable
+internal data class MenuMemberProfileVisit(val username: String, val visitID: Long) : NavKey
+
 /** Browser keys contain a stable link identifier, never a translated title or session cookie. */
 @KotlinSerializable
 internal data class MenuBrowserVisit(

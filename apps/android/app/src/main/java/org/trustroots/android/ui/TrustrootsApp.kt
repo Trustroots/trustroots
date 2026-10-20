@@ -425,6 +425,8 @@ private fun MemberShell(
                                 searchInitialTab = 0
                                 searchResetVisitID = activeVisitID
                                 searchResetGeneration++
+                            } else if (item == Destination.Menu && item == destination) {
+                                resetActiveMenuVisit?.invoke()
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
                                 navigateTo(item)

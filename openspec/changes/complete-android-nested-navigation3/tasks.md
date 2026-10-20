@@ -38,10 +38,33 @@
       and retain inbox state when a conversation closes.
 - [x] 4.2 Route message alerts to a Messages tab visit and requested
       conversation while preserving the prior top-level origin history.
-- [ ] 4.3 Model member-profile related profiles, conversations and experience
-      forms as child routes, preserving the opening profile route.
-- [ ] 4.4 Cover profiles opened from messages, contacts, map, search and profile
-      actions, with Back returning to the exact source route.
+- [x] 4.3 First profile slice: keep Contacts as the actual Menu child entry,
+      move its loaded list/loading/error/refresh state to that entry's
+      ContactsViewModel, and expose an explicit `onOpenProfile(username)`.
+- [x] 4.4 Push a real decorated `MenuMemberProfileVisit(username, visitID)`
+      from Contacts; preserve the Contacts entry/list under it, derive
+      `UsageScreen.Profile`, and restore Contacts usage after Back.
+- [x] 4.5 Cover Contacts row callback behaviour and real Menu→Contacts→profile
+      toolbar/system Back, Activity recreation, and Menu reselection clearing
+      both the profile and Contacts owners; retain existing Contacts failure,
+      empty-list and no-username coverage.
+- [ ] 4.6 Route member-search and map/host-result profile openings on their
+      existing Search stack in a separate slice; preserve the source state and
+      test each exact origin/Back path.
+- [ ] 4.7 Replace related-profile selection with a decorated child profile
+      entry and preserve the opening profile visit.
+- [ ] 4.8 Replace profile conversation selection with a decorated Conversation
+      entry and preserve the source profile route.
+- [ ] 4.9 Move own-profile and direct Menu editing into decorated Edit entries;
+      own each form's canonical load, HTML normalisation, dirty guard and save,
+      and define safe process-restoration behaviour.
+- [ ] 4.10 Move experience creation into a decorated Experience entry and
+      preserve its recipient and opening profile route.
+- [ ] 4.11 Move profile contact-add browser selection into a decorated browser
+      entry keyed by stable destination/member ID; derive title/URL and supply
+      cookies only at runtime.
+- [ ] 4.12 Retain image viewing and confirmations as transient presentation
+      state, consuming Back before the active Navigation 3 route is popped.
 
 ## 5. State, restoration and cleanup
 

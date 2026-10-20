@@ -1,10 +1,10 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ApplicationProvider
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
@@ -33,11 +34,10 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
-import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class TrustrootsMemberShellJourneysTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val compose = createEmptyComposeRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val server = ServerSocket(0)
@@ -56,6 +56,7 @@ class TrustrootsMemberShellJourneysTest {
     private lateinit var previousAlertPreferences: Map<String, *>
     private var previousDestination: MessageDestination? = null
     private var previousStatus: String? = null
+    private var scenario: ActivityScenario<SignInJourneyActivity>? = null
     private var responder: Thread? = null
 
     @Before fun prepareIsolatedShell() {
@@ -71,6 +72,7 @@ class TrustrootsMemberShellJourneysTest {
     }
 
     @After fun restoreStateAndStopResponder() {
+        scenario?.close()
         server.close()
         responder?.join(1_000)
         restorePreferences(sessionPreferences, previousSessionPreferences)
@@ -89,6 +91,19 @@ class TrustrootsMemberShellJourneysTest {
         compose.onNodeWithText("Quiet Fox").performClick()
         waitForText("A welcoming place to pause.")
 
+        requireNotNull(scenario).recreate()
+        waitForText("A welcoming place to pause.")
+        assertEquals(1, requests.count { it.path == "/api/contacts/member-self" })
+
+        compose.onNodeWithTag("navigation-menu").performClick()
+        waitForText("View your profile")
+        compose.onNodeWithText("A welcoming place to pause.").assertDoesNotExist()
+        compose.onNodeWithText("Contacts").performScrollTo().performClick()
+        waitForText("Quiet Fox")
+        assertEquals(2, requests.count { it.path == "/api/contacts/member-self" })
+        compose.onNodeWithText("Quiet Fox").performClick()
+        waitForText("A welcoming place to pause.")
+
         compose.onNodeWithText("A welcoming place to pause.").assertIsDisplayed()
         compose.onNodeWithText("Send a message").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
@@ -103,7 +118,7 @@ class TrustrootsMemberShellJourneysTest {
 
         compose.onNodeWithText("Quiet Fox").performClick()
         waitForText("A welcoming place to pause.")
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        pressSystemBack()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A welcoming place to pause.").fetchSemanticsNodes().isEmpty() &&
                 compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
@@ -165,14 +180,14 @@ class TrustrootsMemberShellJourneysTest {
 
     private fun showShell() {
         SecureMobileSessionStore(context).save(session)
-        compose.setContent {
-            TrustrootsTheme {
-                TrustrootsApp(
-                    apiBaseUrl = "http://127.0.0.1:${server.localPort}",
-                    reconcileAlerts = { _, _ -> },
-                )
-            }
-        }
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, "http://127.0.0.1:${server.localPort}"),
+        )
+    }
+
+    private fun pressSystemBack() {
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun waitForText(text: String) {

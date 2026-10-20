@@ -46,7 +46,7 @@ class ContactsScreenTest {
         val api = MobileApiClient("http://127.0.0.1:${server.localPort}")
         val session = MemberSession("connect.sid=test", MobileMember("river-otter", "River Otter"))
         compose.setContent {
-            ContactsScreen(api = api, session = session, onSessionInvalidated = {}, onBack = {})
+            ContactsScreen(api = api, session = session, onSessionInvalidated = {}, onBack = {}, onOpenProfile = {})
         }
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText("People you connect with on Trustroots will appear here.")

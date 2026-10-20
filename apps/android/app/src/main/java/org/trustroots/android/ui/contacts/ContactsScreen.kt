@@ -26,9 +26,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -46,7 +43,6 @@ import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.resolveFailureMessage
-import org.trustroots.android.ui.profile.MemberProfileScreen
 
 @Composable
 internal fun ContactsScreen(
@@ -54,6 +50,7 @@ internal fun ContactsScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onBack: () -> Unit,
+    onOpenProfile: (String) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
     viewModel: ContactsViewModel? = null,
 ) {
@@ -63,24 +60,11 @@ internal fun ContactsScreen(
     val contactsEmpty = stringResource(R.string.screen_contacts_empty)
     val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     val uiLocale = LocalConfiguration.current.locales[0]
-    var selectedUsername by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(model, state.pendingSessionInvalidation?.id) {
         val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
         onSessionInvalidated()
         model.onEvent(ContactsEvent.SessionInvalidationDelivered(pending.id))
-    }
-
-    selectedUsername?.let { username ->
-        MemberProfileScreen(
-            api,
-            session,
-            username,
-            onSessionInvalidated,
-            onBack = { selectedUsername = null },
-            contentPadding = contentPadding,
-        )
-        return
     }
 
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -105,6 +89,7 @@ internal fun ContactsScreen(
             ) {
                 CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             }
+            state.isSessionInvalidated -> Unit
             state.failure != null -> Box(
                 Modifier.fillMaxSize()
                     .padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding)
@@ -157,7 +142,7 @@ internal fun ContactsScreen(
                     val username = contact.user.username
                     Row(
                         modifier = Modifier.fillMaxWidth()
-                            .then(if (username != null) Modifier.clickable { selectedUsername = username } else Modifier)
+                            .then(if (username != null) Modifier.clickable { onOpenProfile(username) } else Modifier)
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

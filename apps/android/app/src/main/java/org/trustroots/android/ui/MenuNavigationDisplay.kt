@@ -57,14 +57,17 @@ internal fun MenuNavigationDisplay(
     SideEffect {
         onCurrentUsageScreen(
             initialVisitID,
-            when ((currentMenuRoute as? MenuPageVisit)?.page) {
-                MenuPage.Menu -> org.trustroots.android.analytics.UsageScreen.Menu
-                MenuPage.Profile -> org.trustroots.android.analytics.UsageScreen.Profile
-                MenuPage.EditProfile -> org.trustroots.android.analytics.UsageScreen.EditProfile
-                MenuPage.Contacts -> org.trustroots.android.analytics.UsageScreen.Contacts
-                MenuPage.Host -> org.trustroots.android.analytics.UsageScreen.Host
-                MenuPage.Account -> org.trustroots.android.analytics.UsageScreen.Account
-                null -> null
+            when (currentMenuRoute) {
+                is MenuMemberProfileVisit -> org.trustroots.android.analytics.UsageScreen.Profile
+                is MenuPageVisit -> when (currentMenuRoute.page) {
+                    MenuPage.Menu -> org.trustroots.android.analytics.UsageScreen.Menu
+                    MenuPage.Profile -> org.trustroots.android.analytics.UsageScreen.Profile
+                    MenuPage.EditProfile -> org.trustroots.android.analytics.UsageScreen.EditProfile
+                    MenuPage.Contacts -> org.trustroots.android.analytics.UsageScreen.Contacts
+                    MenuPage.Host -> org.trustroots.android.analytics.UsageScreen.Host
+                    MenuPage.Account -> org.trustroots.android.analytics.UsageScreen.Account
+                }
+                else -> null
             },
         )
         if (isActiveTabVisit) onResetAvailable(initialVisitID, resetToMenuRoot)
@@ -79,6 +82,9 @@ internal fun MenuNavigationDisplay(
     }
     val pushPage: (MenuPage) -> Unit = { page ->
         menuBackStack.add(MenuPageVisit(page, allocateVisitID()))
+    }
+    val pushMemberProfile: (String) -> Unit = { username ->
+        menuBackStack.add(MenuMemberProfileVisit(username, allocateVisitID()))
     }
     val pushBrowser: (MenuBrowserVisit) -> Unit = { route ->
         menuBackStack.add(route)
@@ -146,7 +152,8 @@ internal fun MenuNavigationDisplay(
                         api = api,
                         session = session,
                         onSessionInvalidated = onSessionInvalidated,
-                        onBack = popRoute,
+                        onBack = popRouteFromNavigation,
+                        onOpenProfile = pushMemberProfile,
                         contentPadding = contentPadding,
                     )
                     MenuPage.Host -> HostOfferScreen(
@@ -170,6 +177,17 @@ internal fun MenuNavigationDisplay(
                         onSignedOut = onSignedOut,
                     )
                 }
+            }
+            entry<MenuMemberProfileVisit> { route ->
+                MemberProfileScreen(
+                    api = api,
+                    session = session,
+                    username = route.username,
+                    onSessionInvalidated = onSessionInvalidated,
+                    onBack = popRouteFromNavigation,
+                    contentPadding = contentPadding,
+                    browserContent = browserContent,
+                )
             }
             entry<MenuBrowserVisit> { route ->
                 val browserRoute = remember(route, session.cookieHeader, context) {

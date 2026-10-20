@@ -61,6 +61,7 @@ internal data class ContactsUiState(
     val contacts: List<ProfileContact> = emptyList(),
     val isLoading: Boolean = false,
     val hasAttemptedLoad: Boolean = false,
+    val isSessionInvalidated: Boolean = false,
     val failure: ContactsFailure? = null,
     val pendingSessionInvalidation: ContactsSessionInvalidation? = null,
 )
@@ -163,7 +164,11 @@ internal class ContactsViewModel(
         if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         mutableState.update {
-            it.copy(pendingSessionInvalidation = ContactsSessionInvalidation(++nextInvalidationID))
+            it.copy(
+                isSessionInvalidated = true,
+                contacts = emptyList(),
+                pendingSessionInvalidation = ContactsSessionInvalidation(++nextInvalidationID),
+            )
         }
     }
 

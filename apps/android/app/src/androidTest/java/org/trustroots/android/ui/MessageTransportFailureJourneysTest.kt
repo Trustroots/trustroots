@@ -74,6 +74,7 @@ class MessageTransportFailureJourneysTest {
                     member = MessageMember("fictional-contact", "fictional-contact", "Fictional Contact"),
                     onSessionInvalidated = { invalidations++ },
                     onBack = {},
+                    onOpenProfile = {},
                 )
             }
         }
@@ -103,6 +104,7 @@ class MessageTransportFailureJourneysTest {
                     session = session(),
                     onSessionInvalidated = { invalidations++ },
                     onBack = {},
+                    onOpenProfile = {},
                 )
             }
         }

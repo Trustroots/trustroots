@@ -77,6 +77,7 @@ class RemainingHeadersBaselineJourneyTest {
                     session = session,
                     onSessionInvalidated = {},
                     onBack = { backPressed = true },
+                    onOpenProfile = {},
                     contentPadding = WindowInsets.safeDrawing.asPaddingValues(),
                 )
             }

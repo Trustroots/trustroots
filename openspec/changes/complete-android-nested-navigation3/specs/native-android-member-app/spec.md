@@ -42,6 +42,54 @@ content.
   requested conversation above its Inbox route
 - **AND** Back returns to Inbox before following the prior top-level origin
 
+#### Scenario: Member follows actions from a profile
+
+- **WHEN** a member opens a related profile, conversation, edit form,
+  experience form or embedded browser from a profile
+- **THEN** that destination has its own decorated Navigation 3 entry above the
+  profile visit
+- **AND** successive Back actions return to the exact profile and then its
+  original Contacts, Search, map, Messages or menu route
+- **AND** route keys contain only the public username or member ID required to
+  reload the destination
+
+#### Scenario: Member opens a profile from Contacts, Search or a map result
+
+- **WHEN** a member opens a profile from Contacts, member Search or a map host
+  result
+- **THEN** the source route remains below the profile on its own flow stack
+- **AND** Back restores its previous loaded state, filters, scroll and selection
+
+#### Scenario: Member opens a profile from Contacts in the Menu flow
+
+- **WHEN** a member opens a contact profile from the Contacts page
+- **THEN** Contacts remains an actual Menu child entry below a distinct
+  username-keyed profile entry
+- **AND** Back or Activity recreation restores the same loaded Contacts list
+- **AND** reselecting Menu returns to the Menu root and clears the Contacts
+  and profile entries
+- **AND** profile usage analytics is active only while the profile entry is
+  current, then returns to Contacts usage after Back
+
+#### Scenario: Member edits their profile from a profile route
+
+- **WHEN** a member opens Edit Profile from their own profile, edits a field,
+  and tries to leave
+- **THEN** toolbar, system and predictive Back all use the edit entry's same
+  discard guard
+- **AND** cancelling discard leaves the profile and edit entries unchanged
+- **AND** confirming discard pops only Edit Profile
+- **AND** a saved update refreshes the retained profile from the API
+
+#### Scenario: Member restores an edit route after process recreation
+
+- **WHEN** Android restores an Edit Profile entry after process death
+- **THEN** it reloads the canonical own profile using the route username
+- **AND** it normalises HTML description with the existing plain-text
+  conversion before calculating dirty state
+- **AND** no profile payload, form contents or session cookie is restored from
+  the route key
+
 #### Scenario: Member backs out of an embedded browser
 
 - **WHEN** a member presses Back while a browser route has WebView history
