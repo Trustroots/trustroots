@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package org.trustroots.android.ui
 
 import android.Manifest
@@ -13,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -28,9 +31,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
@@ -42,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -64,11 +70,11 @@ import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.rememberFormCancel
 import org.trustroots.android.ui.common.rememberFormLeave
 import org.trustroots.android.ui.common.FormActionBar
 import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.MemberLargeTopAppBar
 
 private const val defaultHostLatitude = 48.6908333333
 private const val defaultHostLongitude = 9.14055555556
@@ -501,19 +507,30 @@ internal fun AccountSettingsScreen(
         savingAccount || changingPassword,
         onBack,
     )
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())
-            .padding(20.dp)
-            .testTag("accountSettingsScreen"),
-    ) {
-        NativeBackButton({ leave(onBack) })
-        Text(accountTitle, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    Scaffold(
+        modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        topBar = {
+            MemberLargeTopAppBar(
+                title = accountTitle,
+                scrollBehavior = scrollBehavior,
+                contentPadding = contentPadding,
+                onBack = { leave(onBack) },
+            )
+        },
+    ) { appBarPadding ->
+        Column(
+            Modifier.fillMaxSize()
+                .padding(top = appBarPadding.calculateTopPadding())
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 20.dp)
+                .padding(contentPadding.horizontalInset())
+                .testTag("accountSettingsScreen"),
+        ) {
         UsageAnalyticsSettings()
         Text(
-            "Signed in as ${session.member.displayName} (@${session.member.username}).",
+            signedInAs,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
         )
@@ -668,9 +685,10 @@ internal fun AccountSettingsScreen(
         }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
         Button(onClick = { leave(onSignedOut) }) { Text(signOutLabel) }
-        Spacer(Modifier.height(24.dp))
+        Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 24.dp))
             }
         }
+    }
     }
 }
 
