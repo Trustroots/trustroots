@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.assertIsDisplayed
@@ -38,6 +39,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.testing.pressBackFromNonActivityRoot
+import org.trustroots.android.testing.foregroundActivityTask
+import org.trustroots.android.testing.activityFocusDiagnostics
 
 @RunWith(AndroidJUnit4::class)
 class BrowserSessionAndDismissalJourneyTest {
@@ -127,7 +130,17 @@ class BrowserSessionAndDismissalJourneyTest {
         assertTrue(openedIntents.isEmpty())
         compose.runOnIdle { assertEquals(0, closeCount.get()) }
 
-        compose.waitUntil(5_000) { compose.runOnIdle { compose.activity.hasWindowFocus() } }
+        val uiAutomation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        foregroundActivityTask(compose, compose.activity, uiAutomation)
+        try {
+            compose.waitUntil(5_000) { compose.runOnIdle { compose.activity.hasWindowFocus() } }
+        } catch (error: ComposeTimeoutException) {
+            throw AssertionError(
+                "Activity must retain window focus before physical Back: " +
+                    activityFocusDiagnostics(compose.activity, uiAutomation),
+                error,
+            )
+        }
         val backCommand = InstrumentationRegistry.getInstrumentation().uiAutomation
             .executeShellCommand("input keyevent KEYCODE_BACK")
         ParcelFileDescriptor.AutoCloseInputStream(backCommand).use { it.readBytes() }

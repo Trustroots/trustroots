@@ -38,6 +38,7 @@ import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
 import org.trustroots.android.testing.KeyboardTestSupport
+import org.trustroots.android.testing.foregroundActivityTask
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -100,6 +101,7 @@ class SignInSessionJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Username or email").fetchSemanticsNodes().isNotEmpty()
         }
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithText("Username or email").performScrollTo().performClick().performTextInput("  steady-heron  ")
         compose.onNodeWithText("Password").performScrollTo().performClick().performTextInput("wrong-fictional-password")
         keyboardTestSupport.awaitShown(compose)
@@ -107,6 +109,7 @@ class SignInSessionJourneyTest {
         assertAboveIme("Sign in")
         pressImeBack()
         compose.onNodeWithText("steady-heron", substring = true).performScrollTo().assertIsDisplayed()
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithText("Password").performScrollTo().performClick()
         keyboardTestSupport.awaitShown(compose)
         compose.onNodeWithText("Build:", substring = true).performScrollTo()
