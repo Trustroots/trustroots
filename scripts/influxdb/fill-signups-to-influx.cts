@@ -24,7 +24,9 @@ import type {
  */
 const async = require('async') as SignupAsync;
 const mongoose = require('mongoose') as LegacyMongoose;
-const argv = require('yargs').argv as { dry?: unknown };
+const argv = require('yargs/yargs')(process.argv.slice(2)).parseSync() as {
+  dry?: unknown;
+};
 const mongooseHelper =
   require('./../../config/lib/mongoose.mjs') as ConnectionHelper;
 const statService =
