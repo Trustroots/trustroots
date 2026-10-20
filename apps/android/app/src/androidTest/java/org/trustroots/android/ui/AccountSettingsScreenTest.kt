@@ -11,6 +11,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
+import java.net.SocketException
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.concurrent.thread
 import org.junit.Assert.assertFalse
@@ -84,6 +85,7 @@ class AccountSettingsScreenTest {
 
         compose.onNodeWithText("Forgot your password?").performScrollTo().performClick()
         compose.onNodeWithText("Discard changes").performClick()
+        compose.waitUntil(5_000) { resetPassword.get() }
         assertTrue(resetPassword.get())
     }
 
@@ -102,6 +104,7 @@ class AccountSettingsScreenTest {
 
         compose.onNodeWithText("Sign out").performScrollTo().performClick()
         compose.onNodeWithText("Discard changes").performClick()
+        compose.waitUntil(5_000) { signedOut.get() }
         assertTrue(signedOut.get())
     }
 
@@ -120,23 +123,32 @@ class AccountSettingsScreenTest {
 
         compose.onNodeWithText("Forgot your password?").performScrollTo().performClick()
         compose.onNodeWithText("Discard changes?").assertDoesNotExist()
+        compose.waitUntil(5_000) { resetPassword.get() }
         assertTrue(resetPassword.get())
     }
 
     private fun showAccountSettings(onResetPassword: () -> Unit, onSignedOut: () -> Unit) {
         val responder = thread(isDaemon = true) {
-            server.accept().use { socket ->
-                val input = socket.getInputStream().bufferedReader()
-                input.readLine()
-                while (!input.readLine().isNullOrEmpty()) Unit
-                val body =
-                    """{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet-fox@example.test","newsletter":false}"""
-                        .toByteArray()
-                socket.getOutputStream().write(
-                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray(),
-                )
-                socket.getOutputStream().write(body)
-                socket.getOutputStream().flush()
+            repeat(2) { index ->
+                val socket = try { server.accept() } catch (_: SocketException) { return@thread }
+                socket.use {
+                    val input = socket.getInputStream().bufferedReader()
+                    val request = input.readLine().orEmpty()
+                    while (!input.readLine().isNullOrEmpty()) Unit
+                    assertTrue(
+                        if (index == 0) request == "GET /api/users/quiet-fox HTTP/1.1"
+                        else request == "POST /api/auth/signout HTTP/1.1",
+                    )
+                    val payload = if (index == 0) {
+                        """{"username":"quiet-fox","displayName":"Quiet Fox","email":"quiet-fox@example.test","newsletter":false}"""
+                    } else "{}"
+                    val body = payload.toByteArray()
+                    socket.getOutputStream().write(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                    )
+                    socket.getOutputStream().write(body)
+                    socket.getOutputStream().flush()
+                }
             }
         }
         compose.setContent {
@@ -147,6 +159,7 @@ class AccountSettingsScreenTest {
                 onBack = {},
                 onResetPassword = onResetPassword,
                 onSignedOut = onSignedOut,
+                disableMessageAlerts = { _, _ -> },
             )
         }
         compose.waitUntil(5_000) {

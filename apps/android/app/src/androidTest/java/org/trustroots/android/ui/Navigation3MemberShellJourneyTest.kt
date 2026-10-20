@@ -35,6 +35,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageDestination
 
 @RunWith(AndroidJUnit4::class)
@@ -47,12 +48,15 @@ class Navigation3MemberShellJourneyTest {
     private lateinit var previousSessionPreferences: Map<String, *>
     private lateinit var previousAlertPreferences: Map<String, *>
     private var previousAlertStatus: String? = null
+    private var previousAlertStatusMetadata: MessageAlertStatusMetadata? = null
     private var previousAlertDestination: MessageDestination? = null
     private var scenario: ActivityScenario<SignInJourneyActivity>? = null
     @Volatile private var circlesResponse = "[]"
     @Volatile private var circlesStatus = 200
     private val circleReads = AtomicInteger()
     private val membershipReads = AtomicInteger()
+    private val accountReads = AtomicInteger()
+    private val accountWrites = AtomicInteger()
     private val joinedHarbour = AtomicBoolean(false)
     @Volatile private var expireMemberSearch = false
     private val fixture = LocalTransportFixture { request ->
@@ -64,9 +68,18 @@ class Navigation3MemberShellJourneyTest {
                     """[{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox","location":"Harbour"}]""",
                 )
             }
-            request.path.startsWith("/api/users/steady-heron") -> LocalTransportFixture.Response(
-                """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
-            )
+            request.path.startsWith("/api/users/steady-heron") -> {
+                accountReads.incrementAndGet()
+                LocalTransportFixture.Response(
+                    """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","email":"member@example.test","newsletter":false}""",
+                )
+            }
+            request.path == "/api/users" && request.method == "PUT" -> {
+                accountWrites.incrementAndGet()
+                LocalTransportFixture.Response(
+                    """{"username":"steady-heron","displayName":"Steady Heron","email":"draft@example.test","newsletter":false}""",
+                )
+            }
             request.path.startsWith("/api/messages?") -> LocalTransportFixture.Response("[]")
             request.path == "/api/tribes?limit=150" -> {
                 circleReads.incrementAndGet()
@@ -94,6 +107,7 @@ class Navigation3MemberShellJourneyTest {
         previousSessionPreferences = sessionPreferences.all
         previousAlertPreferences = alertPreferences.all
         previousAlertStatus = MessageAlerts.status.value
+        previousAlertStatusMetadata = MessageAlerts.statusMetadata.value
         previousAlertDestination = MessageAlerts.destination.value
         sessionPreferences.edit().clear().commit()
         alertPreferences.edit().clear().commit()
@@ -102,6 +116,8 @@ class Navigation3MemberShellJourneyTest {
         circlesStatus = 200
         circleReads.set(0)
         membershipReads.set(0)
+        accountReads.set(0)
+        accountWrites.set(0)
         joinedHarbour.set(false)
         expireMemberSearch = false
         SecureMobileSessionStore(context).save(
@@ -116,6 +132,7 @@ class Navigation3MemberShellJourneyTest {
         restorePreferences(alertPreferences, previousAlertPreferences)
         MessageAlerts.destination.value = previousAlertDestination
         MessageAlerts.status.value = previousAlertStatus
+        MessageAlerts.statusMetadata.value = previousAlertStatusMetadata
     }
 
     @Test fun repeatedTabVisitsRestoreAcrossActivityRecreationAndPredictiveBack() {
@@ -210,6 +227,35 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(5_000) { circleReads.get() == 4 && membershipReads.get() == 4 }
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
         compose.onNodeWithText("Mountain Circle").assertIsDisplayed()
+    }
+
+    @Test fun accountEntryRetainsDraftAcrossActivityRecreationWithoutRepeatingLoad() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        // The shell separately resolves its own profile/avatar from this same
+        // endpoint before Account is opened, so record the stable baseline.
+        compose.waitUntil(5_000) { accountReads.get() >= 1 }
+        assertEquals("The shell should resolve the signed-in member once", 1, accountReads.get())
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Account").performScrollTo().performClick()
+        waitForText("member@example.test")
+        compose.waitUntil(5_000) { accountReads.get() >= 2 }
+        assertEquals("Opening one Account entry should make one additional account request", 2, accountReads.get())
+
+        compose.onNodeWithText("Email address").performScrollTo().performTextReplacement("draft@example.test")
+        requireNotNull(scenario).recreate()
+        waitForText("draft@example.test")
+        // Recreating the Activity repeats the shell avatar request, while the
+        // retained Account model keeps its draft and does not reload details.
+        compose.waitUntil(5_000) { accountReads.get() >= 3 }
+        assertEquals("Only the recreated shell should add a profile read", 3, accountReads.get())
+
+        compose.onNodeWithText("Save email settings").performScrollTo().performClick()
+        waitForText("Account saved.")
+        assertEquals(1, accountWrites.get())
     }
 
     @Test fun failedCircleCatalogueLoadCanBeRetriedFromTheScreen() {

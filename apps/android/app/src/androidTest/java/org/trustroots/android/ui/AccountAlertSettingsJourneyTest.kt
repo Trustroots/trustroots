@@ -31,6 +31,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -44,6 +45,7 @@ class AccountAlertSettingsJourneyTest {
     private var responder: Thread? = null
     private var previousPreferences: Map<String, *> = emptyMap<String, Any>()
     private var previousStatus: String? = null
+    private var previousStatusMetadata: MessageAlertStatusMetadata? = null
     private val preferences
         get() = InstrumentationRegistry.getInstrumentation().targetContext
             .getSharedPreferences("message-alerts", Context.MODE_PRIVATE)
@@ -51,8 +53,10 @@ class AccountAlertSettingsJourneyTest {
     @Before fun isolateMessageAlertState() {
         previousPreferences = preferences.all
         previousStatus = MessageAlerts.status.value
+        previousStatusMetadata = MessageAlerts.statusMetadata.value
         preferences.edit().clear().commit()
         MessageAlerts.status.value = null
+        MessageAlerts.statusMetadata.value = null
     }
 
     @After fun cleanUp() {
@@ -61,6 +65,7 @@ class AccountAlertSettingsJourneyTest {
         responder?.join(2_000)
         restorePreferences(preferences, previousPreferences)
         MessageAlerts.status.value = previousStatus
+        MessageAlerts.statusMetadata.value = previousStatusMetadata
     }
 
     @Test fun showsPendingEmailConfirmationAddress() {
@@ -91,6 +96,7 @@ class AccountAlertSettingsJourneyTest {
     @Test fun togglesMessageAlertsThroughInjectedOfflineCallbacks() {
         preferences.edit().clear().commit()
         MessageAlerts.status.value = null
+        MessageAlerts.statusMetadata.value = null
         val enableCalls = AtomicInteger()
         val disableCalls = AtomicInteger()
         respondToAccountRequest(
@@ -111,7 +117,7 @@ class AccountAlertSettingsJourneyTest {
                             .putString("account", activeSession.member.username)
                             .putBoolean("enabled", true)
                             .apply()
-                        onResult("Message alerts are ready.")
+                        onResult(MessageAlertStatusMetadata(org.trustroots.android.R.string.message_alerts_ready))
                     },
                     disableMessageAlerts = { _, _ ->
                         disableCalls.incrementAndGet()

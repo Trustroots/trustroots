@@ -40,6 +40,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -56,12 +57,15 @@ class AccountPermissionFallbackJourneyTest {
     private var responder: Thread? = null
     private var previousAlertPreferences: Map<String, *> = emptyMap<String, Any>()
     private var previousAlertStatus: String? = null
+    private var previousAlertStatusMetadata: MessageAlertStatusMetadata? = null
 
     @Before fun isolateAlertState() {
         previousAlertPreferences = alertPreferences.all
         previousAlertStatus = MessageAlerts.status.value
+        previousAlertStatusMetadata = MessageAlerts.statusMetadata.value
         alertPreferences.edit().clear().commit()
         MessageAlerts.status.value = null
+        MessageAlerts.statusMetadata.value = null
     }
 
     @After fun restoreAlertStateAndStopApi() {
@@ -70,6 +74,7 @@ class AccountPermissionFallbackJourneyTest {
         responder?.join(2_000)
         restorePreferences(alertPreferences, previousAlertPreferences)
         MessageAlerts.status.value = previousAlertStatus
+        MessageAlerts.statusMetadata.value = previousAlertStatusMetadata
     }
 
     @Test fun reportsPermissionDenialWithoutCallingEnableCallback() {

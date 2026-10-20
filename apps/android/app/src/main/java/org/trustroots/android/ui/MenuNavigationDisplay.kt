@@ -22,15 +22,9 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
-import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.contacts.ContactsScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 internal fun MenuNavigationDisplay(
@@ -173,13 +167,7 @@ internal fun MenuNavigationDisplay(
                                 MenuBrowserVisit(MenuBrowserDestination.ResetPassword, allocateVisitID()),
                             )
                         },
-                        onSignedOut = {
-                            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                                MessageAlerts.disable(context, session)
-                                api.signOut(session)
-                                withContext(Dispatchers.Main) { onSignedOut() }
-                            }
-                        },
+                        onSignedOut = onSignedOut,
                     )
                 }
             }

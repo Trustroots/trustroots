@@ -52,6 +52,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.updates.AndroidPreviewRelease
 import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.ui.theme.TrustrootsTheme
@@ -72,12 +73,15 @@ class AccountPreviewUpdateAlertsJourneyTest {
     private var pendingUpdateCheck: CompletableDeferred<ApkUpdateCheckResult>? = null
     private var previousMessagePreferences: Map<String, *> = emptyMap<String, Any>()
     private var previousMessageStatus: String? = null
+    private var previousMessageStatusMetadata: MessageAlertStatusMetadata? = null
 
     @Before fun isolateAccountState() {
         previousMessagePreferences = messagePreferences.all
         previousMessageStatus = MessageAlerts.status.value
+        previousMessageStatusMetadata = MessageAlerts.statusMetadata.value
         messagePreferences.edit().clear().commit()
         MessageAlerts.status.value = null
+        MessageAlerts.statusMetadata.value = null
     }
 
     @After fun restoreAccountState() {
@@ -91,6 +95,7 @@ class AccountPreviewUpdateAlertsJourneyTest {
         } finally {
             restorePreferences(messagePreferences, previousMessagePreferences)
             MessageAlerts.status.value = previousMessageStatus
+            MessageAlerts.statusMetadata.value = previousMessageStatusMetadata
         }
     }
 
@@ -150,6 +155,7 @@ class AccountPreviewUpdateAlertsJourneyTest {
         waitForText("Offline preview 88 is available.")
         waitForText("Check for updates now")
         compose.onNodeWithText("Open release page").performScrollTo().performClick()
+        compose.waitUntil(5_000) { openedRelease.get() != null }
         assertEquals(release.pageUrl, openedRelease.get())
 
         compose.onNodeWithText("Check for updates now").performScrollTo().performClick()
