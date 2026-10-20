@@ -280,7 +280,11 @@ internal enum class Destination(@StringRes val label: Int) {
 
 /** A unique safe visit to a top-level destination; credentials stay in TrustrootsApp. */
 @Serializable
-internal data class MemberTabVisit(val destination: Destination, val visitID: Long) : NavKey
+internal data class MemberTabVisit(
+    val destination: Destination,
+    val visitID: Long,
+    val requestedMessageMemberID: String? = null,
+) : NavKey
 
 @Composable
 private fun MemberShell(
@@ -318,7 +322,6 @@ private fun MemberShell(
     }
     UsageScreenTracking(analytics, analyticsScreen)
     var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchInitialTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchResetGeneration by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchResetVisitID by rememberSaveable { androidx.compose.runtime.mutableLongStateOf(-1L) }
@@ -327,7 +330,6 @@ private fun MemberShell(
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
-    var initialMessageSender by remember { mutableStateOf<String?>(null) }
     var ownAvatarID by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(api) { api.profile(session, session.member.username).onSuccess { ownAvatarID = it.id } }
     val navigateTo: (Destination) -> Unit = { next ->
@@ -352,6 +354,16 @@ private fun MemberShell(
             nextVisitID = replacementID + 1
         }
     }
+    val reselectMessages = {
+        val current = tabBackStack.lastOrNull() as? MemberTabVisit
+        if (current?.destination == Destination.Messages) {
+            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
+                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
+            val replacementID = maxOf(nextVisitID, firstAvailableID)
+            tabBackStack[tabBackStack.lastIndex] = MemberTabVisit(Destination.Messages, replacementID)
+            nextVisitID = replacementID + 1
+        }
+    }
     LaunchedEffect(session.member.username, alertDestination) {
         val requested = alertDestination ?: return@LaunchedEffect
         if (requested.account != session.member.username) {
@@ -359,9 +371,15 @@ private fun MemberShell(
             return@LaunchedEffect
         }
         val openConversation = {
-            initialMessageSender = requested.senderId
-            messagesNavigationID++
-            navigateTo(Destination.Messages)
+            if (destination == Destination.Menu && leaveGuard.value != null) {
+                resetActiveMenuVisit?.invoke()
+            }
+            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
+                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
+            nextVisitID = maxOf(nextVisitID, firstAvailableID)
+            tabBackStack.add(MemberTabVisit(Destination.Messages, nextVisitID, requested.senderId))
+            nextVisitID++
+            Unit
         }
         leaveGuard.value?.invoke(openConversation) ?: openConversation()
         MessageAlerts.clearDestination()
@@ -379,7 +397,7 @@ private fun MemberShell(
         }
         leaveGuard.value?.invoke(leave) ?: leave()
     }
-    LaunchedEffect(session, destination, messagesNavigationID) {
+    LaunchedEffect(session, activeVisitID) {
         while (true) {
             api.inbox(session).onSuccess { threads ->
                 unreadMessageCount = threads.count { !it.read }
@@ -399,9 +417,10 @@ private fun MemberShell(
                     memberLabel = session.member.displayName,
                     onNavigate = { item ->
                         val action: () -> Unit = {
-                            if (item == Destination.Messages) messagesNavigationID++
                             if (item == Destination.Circles && item == destination) {
                                 reselectCircles()
+                            } else if (item == Destination.Messages && item == destination) {
+                                reselectMessages()
                             } else if (item == Destination.Search && item == destination) {
                                 searchInitialTab = 0
                                 searchResetVisitID = activeVisitID
@@ -489,15 +508,14 @@ private fun MemberShell(
                                             ownerVisitID = visit.visitID,
                                         )
                                     }
-                                    Destination.Messages -> key(messagesNavigationID) {
-                                        MessageInboxScreen(
-                                            api,
-                                            session,
-                                            onSessionInvalidated,
-                                            initialMessageSender,
-                                            contentPadding = contentPadding,
-                                        )
-                                    }
+                                    Destination.Messages -> MessageInboxScreen(
+                                        api = api,
+                                        session = session,
+                                        onSessionInvalidated = onSessionInvalidated,
+                                        initialMemberID = visit.requestedMessageMemberID,
+                                        initialVisitID = visit.visitID,
+                                        contentPadding = contentPadding,
+                                    )
                                 }
                             }
                         },

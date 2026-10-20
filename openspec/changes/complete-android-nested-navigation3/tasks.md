@@ -13,9 +13,9 @@
 
 ## 2. Menu, browser and circles routes
 
-- [ ] 2.1 Migrate Profile menu, own profile, edit profile, contacts, host offer
+- [x] 2.1 Migrate Profile menu, own profile, edit profile, contacts, host offer
       and Account menu pages into typed routes.
-- [ ] 2.2 Represent Nostroots and support browser pages as child routes; preserve
+- [x] 2.2 Represent Nostroots and support browser pages as child routes; preserve
       WebView history and runtime-only authentication cookies.
 - [ ] 2.3 Migrate circle overview/detail to `CirclesOverview → CircleDetail`
       while preserving overview filters and return position.
@@ -34,9 +34,9 @@
 
 ## 4. Messages and profile routes
 
-- [ ] 4.1 Model `Inbox → Conversation → MemberProfile` as a nested route chain
+- [x] 4.1 Model `Inbox → Conversation → MemberProfile` as a nested route chain
       and retain inbox state when a conversation closes.
-- [ ] 4.2 Route message alerts to a Messages tab visit and requested
+- [x] 4.2 Route message alerts to a Messages tab visit and requested
       conversation while preserving the prior top-level origin history.
 - [ ] 4.3 Model member-profile related profiles, conversations and experience
       forms as child routes, preserving the opening profile route.
