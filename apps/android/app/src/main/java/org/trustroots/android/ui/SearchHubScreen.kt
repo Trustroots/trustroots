@@ -20,9 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,6 +32,8 @@ import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
+import org.trustroots.android.ui.membersearch.MemberSearchEvent
+import org.trustroots.android.ui.membersearch.rememberMemberSearchViewModel
 
 @Composable
 internal fun SearchModeMenu(tab: Int, onSelect: (Int) -> Unit) {
@@ -63,24 +67,43 @@ internal fun SearchHubScreen(
     onSessionInvalidated: () -> Unit,
     initialTab: Int = 0,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    resetGeneration: Int = 0,
+    resetVisitID: Long = -1L,
+    ownerVisitID: Long = -1L,
 ) {
-    var tab by remember(initialTab) { mutableIntStateOf(initialTab) }
+    val memberSearchViewModel = rememberMemberSearchViewModel(api, session)
+    val entryInitialTab = rememberSaveable { initialTab }
+    var tab by rememberSaveable { mutableIntStateOf(entryInitialTab) }
+    var mapResetGeneration by rememberSaveable { mutableIntStateOf(0) }
+    var appliedResetGeneration by rememberSaveable { mutableIntStateOf(0) }
     var profileOpen by remember { mutableStateOf(false) }
-    BackHandler(enabled = tab == 1 && initialTab == 0 && !profileOpen) { tab = 0 }
+    LaunchedEffect(memberSearchViewModel, resetGeneration, resetVisitID, ownerVisitID) {
+        if (resetGeneration > appliedResetGeneration && resetVisitID == ownerVisitID) {
+            appliedResetGeneration = resetGeneration
+            memberSearchViewModel.onEvent(MemberSearchEvent.Reset(resetGeneration))
+            tab = 0
+            profileOpen = false
+            mapResetGeneration = resetGeneration
+        }
+    }
+    BackHandler(enabled = tab == 1 && entryInitialTab == 0 && !profileOpen) { tab = 0 }
     val selectMode: (Int) -> Unit = { profileOpen = false; tab = it }
     when (tab) {
-        0 -> HostMapScreen(
-            api, session, onSessionInvalidated,
-            contentPadding = contentPadding,
-            onProfileOpenChange = { profileOpen = it },
-            searchMode = { SearchModeMenu(tab, selectMode) },
-        )
+        0 -> androidx.compose.runtime.key(mapResetGeneration) {
+            HostMapScreen(
+                api, session, onSessionInvalidated,
+                contentPadding = contentPadding,
+                onProfileOpenChange = { profileOpen = it },
+                searchMode = { SearchModeMenu(tab, selectMode) },
+            )
+        }
         else -> MemberSearchScreen(
             api, session, onSessionInvalidated,
             contentPadding = contentPadding,
             onProfileOpenChange = { profileOpen = it },
             searchMode = { SearchModeMenu(tab, selectMode) },
             onSwitchToMap = { selectMode(0) },
+            viewModel = memberSearchViewModel,
         )
     }
 }

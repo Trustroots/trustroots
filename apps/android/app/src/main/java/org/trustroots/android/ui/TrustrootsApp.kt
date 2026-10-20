@@ -90,6 +90,7 @@ import org.trustroots.android.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import org.trustroots.android.analytics.AndroidUsageAnalytics
@@ -135,6 +136,9 @@ internal fun TrustrootsApp(
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
     }
+    val shellStoreHolder = remember(activity) {
+        ViewModelProvider(activity).get(MemberShellViewModelStoreOwner::class.java)
+    }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, analytics) {
         val observer = LifecycleEventObserver { _, event ->
@@ -154,6 +158,14 @@ internal fun TrustrootsApp(
         val remaining = 700 - (android.os.SystemClock.elapsedRealtime() - startedAt)
         if (remaining > 0) delay(remaining)
         starting = false
+    }
+    val shellStoreOwner = remember(shellStoreHolder, starting, session?.member?.username) {
+        if (starting) null
+        else session?.let { shellStoreHolder.activateAccount(it.member.username) }
+            ?: run {
+                shellStoreHolder.clearAccount()
+                null
+            }
     }
     if (starting) {
         StartupScreen(session?.member?.displayName?.substringBefore(' '))
@@ -175,33 +187,37 @@ internal fun TrustrootsApp(
             },
         )
     } else {
-        MemberShell(
-            analytics = analytics,
-            session = requireNotNull(session),
-            responseCache = responseCache,
-            apiBaseUrl = apiBaseUrl,
-            reconcileAlerts = reconcileAlerts,
-            browserContent = browserContent,
-            onMemberUpdated = { member ->
-                session?.copy(member = member)?.let { updated ->
-                    sessionStore.save(updated)
-                    session = updated
-                }
-            },
-            onSignedOut = {
-                session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
-                sessionStore.clear()
-                signInStoreHolder.clearDestination()
-                session = null
-            },
-            onSessionInvalidated = {
-                session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
-                sessionStore.clear()
-                signInStoreHolder.clearDestination()
-                session = null
-                signedOutMessage = sessionExpiredMessage
-            },
-        )
+        CompositionLocalProvider(LocalViewModelStoreOwner provides requireNotNull(shellStoreOwner)) {
+            key(requireNotNull(session).member.username) {
+                MemberShell(
+                    analytics = analytics,
+                    session = requireNotNull(session),
+                    responseCache = responseCache,
+                    apiBaseUrl = apiBaseUrl,
+                    reconcileAlerts = reconcileAlerts,
+                    browserContent = browserContent,
+                    onMemberUpdated = { member ->
+                        session?.copy(member = member)?.let { updated ->
+                            sessionStore.save(updated)
+                            session = updated
+                        }
+                    },
+                    onSignedOut = {
+                        session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
+                        sessionStore.clear()
+                        signInStoreHolder.clearDestination()
+                        session = null
+                    },
+                    onSessionInvalidated = {
+                        session?.let { responseCache.clear(apiBaseUrl.trim().trimEnd('/'), it.member.username) }
+                        sessionStore.clear()
+                        signInStoreHolder.clearDestination()
+                        session = null
+                        signedOutMessage = sessionExpiredMessage
+                    },
+                )
+            }
+        }
     }
 }
 
@@ -302,8 +318,9 @@ private fun MemberShell(
     UsageScreenTracking(analytics, analyticsScreen)
     var unreadMessageCount by remember { androidx.compose.runtime.mutableIntStateOf(0) }
     var messagesNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    var searchNavigationID by remember { androidx.compose.runtime.mutableIntStateOf(0) }
-    var searchInitialTab by remember { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchInitialTab by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchResetGeneration by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+    var searchResetVisitID by rememberSaveable { androidx.compose.runtime.mutableLongStateOf(-1L) }
     val api = remember(session.member.username) {
         MobileApiClient(apiBaseUrl, responseCache, session.member.username)
     }
@@ -380,13 +397,16 @@ private fun MemberShell(
                     sessionCookie = session.cookieHeader,
                     memberLabel = session.member.displayName,
                     onNavigate = { item ->
-                        val action = {
+                        val action: () -> Unit = {
                             if (item == Destination.Messages) messagesNavigationID++
                             if (item == Destination.Circles && item == destination) {
                                 reselectCircles()
+                            } else if (item == Destination.Search && item == destination) {
+                                searchInitialTab = 0
+                                searchResetVisitID = activeVisitID
+                                searchResetGeneration++
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
-                                searchNavigationID++
                                 navigateTo(item)
                             } else {
                                 navigateTo(item)
@@ -442,7 +462,6 @@ private fun MemberShell(
                                         contentPadding = contentPadding,
                                         openFindPeople = {
                                             searchInitialTab = 1
-                                            searchNavigationID++
                                             navigateTo(Destination.Search)
                                         },
                                         openCircles = {
@@ -457,13 +476,16 @@ private fun MemberShell(
                                             contentPadding = contentPadding,
                                         )
                                     }
-                                    Destination.Search -> key(searchNavigationID) {
+                                    Destination.Search -> {
                                         SearchHubScreen(
                                             api,
                                             session,
                                             onSessionInvalidated,
                                             initialTab = searchInitialTab,
                                             contentPadding = contentPadding,
+                                            resetGeneration = searchResetGeneration,
+                                            resetVisitID = searchResetVisitID,
+                                            ownerVisitID = visit.visitID,
                                         )
                                     }
                                     Destination.Messages -> key(messagesNavigationID) {

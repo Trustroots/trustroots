@@ -171,6 +171,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     implementation("androidx.work:work-runtime-ktx:2.11.2")

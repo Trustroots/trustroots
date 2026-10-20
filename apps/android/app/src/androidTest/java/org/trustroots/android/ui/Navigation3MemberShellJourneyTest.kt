@@ -5,8 +5,12 @@ import android.content.Intent
 import android.os.Build
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -50,8 +54,16 @@ class Navigation3MemberShellJourneyTest {
     private val circleReads = AtomicInteger()
     private val membershipReads = AtomicInteger()
     private val joinedHarbour = AtomicBoolean(false)
+    @Volatile private var expireMemberSearch = false
     private val fixture = LocalTransportFixture { request ->
         when {
+            request.path.startsWith("/api/users?search=") -> if (expireMemberSearch) {
+                LocalTransportFixture.Response("""{"message":"Session expired."}""", 401)
+            } else {
+                LocalTransportFixture.Response(
+                    """[{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox","location":"Harbour"}]""",
+                )
+            }
             request.path.startsWith("/api/users/steady-heron") -> LocalTransportFixture.Response(
                 """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
             )
@@ -91,6 +103,7 @@ class Navigation3MemberShellJourneyTest {
         circleReads.set(0)
         membershipReads.set(0)
         joinedHarbour.set(false)
+        expireMemberSearch = false
         SecureMobileSessionStore(context).save(
             MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
         )
@@ -312,6 +325,115 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
     }
 
+    @Test fun memberSearchStateSurvivesModeTabAndActivityChangesAndResetsOnReselection() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        selectMembersMode()
+
+        compose.onNodeWithTag("memberSearchField").performTextReplacement("quiet")
+        compose.onNodeWithContentDescription("Search members").performClick()
+        waitForText("Quiet Fox")
+        assertMemberSearchText("quiet")
+        assertEquals(1, fixture.requests.count { it.path.startsWith("/api/users?search=") })
+
+        requireNotNull(scenario).recreate()
+        waitForText("Quiet Fox")
+        assertMemberSearchText("quiet")
+        assertEquals(1, fixture.requests.count { it.path.startsWith("/api/users?search=") })
+
+        compose.onNodeWithContentDescription("Search mode").performClick()
+        compose.onNodeWithText("Hosts map").performClick()
+        waitForText("Search places")
+        selectMembersMode()
+        waitForText("Quiet Fox")
+        assertMemberSearchText("quiet")
+
+        compose.onNodeWithTag("navigation-circles").performClick()
+        waitForText("Discover circles")
+        pressBack()
+        waitForText("Quiet Fox")
+        assertMemberSearchText("quiet")
+
+        compose.onNodeWithTag("navigation-circles").performClick()
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        selectMembersMode()
+        waitForText("Find a member")
+        assertMemberSearchText("")
+        pressBack()
+        waitForText("Search places")
+        pressBack()
+        waitForText("Discover circles")
+        pressBack()
+        waitForText("Quiet Fox")
+        assertMemberSearchText("quiet")
+
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        selectMembersMode()
+        assertMemberSearchText("")
+        waitForText("Find a member")
+        compose.onNodeWithTag("memberSearchField").performTextReplacement("after reset")
+        requireNotNull(scenario).recreate()
+        waitForText("Find a member")
+        assertMemberSearchText("after reset")
+        assertEquals(1, fixture.requests.count { it.path.startsWith("/api/users?search=") })
+    }
+
+    @Test fun expiredMemberSearchClearsTheSearchEntryForANewAccount() {
+        expireMemberSearch = true
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        selectMembersMode()
+        compose.onNodeWithTag("memberSearchField").performTextReplacement("expired query")
+        compose.onNodeWithContentDescription("Search members").performClick()
+        waitForText("Your session expired or is no longer valid. Please sign in again.")
+        assertEquals(1, fixture.requests.count { it.path.startsWith("/api/users?search=") })
+
+        SecureMobileSessionStore(context).save(
+            MemberSession("connect.sid=second-fictional-session", MobileMember("amber-owl", "Amber Owl")),
+        )
+        requireNotNull(scenario).recreate()
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        selectMembersMode()
+        waitForText("Find a member")
+        assertMemberSearchText("")
+    }
+
+    private fun selectMembersMode() {
+        compose.onNodeWithContentDescription("Search mode").performClick()
+        compose.onNodeWithText("Members").performClick()
+        compose.onNodeWithTag("memberSearchField").assertIsDisplayed()
+    }
+
+    private fun assertMemberSearchText(expected: String) {
+        compose.onNodeWithTag("memberSearchField").assert(
+            SemanticsMatcher.expectValue(
+                SemanticsProperties.EditableText,
+                AnnotatedString(expected),
+            ),
+        )
+    }
+
+    private fun pressBack() {
+        compose.waitForIdle()
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+    }
+
     private fun requirePredictiveBackSupport() {
         assumeTrue("Predictive back event dispatch requires Android 14+", Build.VERSION.SDK_INT >= 34)
     }
@@ -348,10 +470,6 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
-    }
-
-    private fun pressBack() {
-        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun restorePreferences(preferences: android.content.SharedPreferences, values: Map<String, *>) {

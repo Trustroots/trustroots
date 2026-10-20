@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.membersearch
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,34 +24,32 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import org.trustroots.android.api.MemberProfile
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.trustroots.android.R
-import org.trustroots.android.ui.common.SubmittedSearchField
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.SubmittedSearchField
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
 import org.trustroots.android.ui.profile.MemberProfileScreen
 
 @Composable
@@ -62,96 +61,120 @@ internal fun MemberSearchScreen(
     searchMode: (@Composable () -> Unit)? = null,
     onSwitchToMap: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    viewModel: MemberSearchViewModel? = null,
 ) {
-    val shortQueryMessage = stringResource(R.string.screen_enter_at_least_three_characters)
-    val emptyResultsMessage = stringResource(R.string.screen_no_members_found)
-    val findMemberTitle = stringResource(R.string.screen_find_member)
-    val searchByNameHint = stringResource(R.string.screen_search_name_or_username)
-    val switchToMapLabel = stringResource(R.string.screen_switch_to_map_search)
-    val searchErrorMessage = stringResource(R.string.screen_search_members_error)
+    val model = viewModel ?: rememberMemberSearchViewModel(api, session)
+    val state by model.state.collectAsState()
     val uiLocale = LocalConfiguration.current.locales[0]
     val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
-    var query by remember { mutableStateOf("") }
-    var queryRevision by remember { mutableIntStateOf(0) }
-    var results by remember { mutableStateOf<List<MemberProfile>>(emptyList()) }
     var selected by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(selected) { onProfileOpenChange(selected != null) }
-    var loading by remember { mutableStateOf(false) }
-    var searched by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
-    val scope = rememberCoroutineScope()
-    val updateQuery: (String) -> Unit = {
-        queryRevision++
-        query = it
-        searched = false
-        error = null
-        results = emptyList()
+    val scrollState = remember { ScrollState(state.resultScrollOffset) }
+    LaunchedEffect(scrollState, model) {
+        snapshotFlow { scrollState.value }
+            .distinctUntilChanged()
+            .collect { model.onEvent(MemberSearchEvent.ResultsScrolled(it)) }
     }
-    val search: () -> Unit = search@{
-        if (query.trim().length < 3 || loading) return@search
-        val revision = queryRevision
-        val submittedQuery = query
-        keyboard?.hide()
-        focusManager.clearFocus()
-        loading = true
-        error = null
-        scope.launch {
-            api.searchMembers(session, submittedQuery).onSuccess {
-                if (revision == queryRevision) { results = it; searched = true }
-            }
-                .onFailure {
-                    if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else if (revision == queryRevision) error = it.messageOr(searchErrorMessage)
-                }
-            loading = false
-        }
+    LaunchedEffect(scrollState, state.resultScrollOffset) {
+        if (scrollState.value != state.resultScrollOffset) scrollState.scrollTo(state.resultScrollOffset)
     }
+    LaunchedEffect(model, state.pendingSessionInvalidation?.id) {
+        val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
+        onSessionInvalidated()
+        model.onEvent(MemberSearchEvent.SessionInvalidationDelivered(pending.id))
+    }
+    val failureMessage = state.failure?.serverMessage?.takeIf(String::isNotBlank)
+        ?: if (state.failure != null) stringResource(R.string.screen_search_members_error) else null
     selected?.let { username ->
-        MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selected = null }, contentPadding = contentPadding)
+        MemberProfileScreen(
+            api,
+            session,
+            username,
+            onSessionInvalidated,
+            onBack = { selected = null },
+            contentPadding = contentPadding,
+        )
         return
     }
-    Column(Modifier.fillMaxSize().padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding())) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
+    ) {
         Surface(color = MaterialTheme.colorScheme.surface, modifier = Modifier.fillMaxWidth()) {
-        SubmittedSearchField(
-            value = query,
-            onValueChange = updateQuery,
-            label = stringResource(R.string.member_search_hint),
-            clearLabel = stringResource(R.string.clear_member_search),
-            searchLabel = stringResource(R.string.search_members),
-            searchMode = searchMode,
-            onSearch = search,
-            searchEnabled = query.trim().length >= 3 && !loading,
-            modifier = Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp).testTag("memberSearchField"),
-        )
+            SubmittedSearchField(
+                value = state.query,
+                onValueChange = { model.onEvent(MemberSearchEvent.QueryChanged(it)) },
+                label = stringResource(R.string.member_search_hint),
+                clearLabel = stringResource(R.string.clear_member_search),
+                searchLabel = stringResource(R.string.search_members),
+                searchMode = searchMode,
+                onSearch = {
+                    keyboard?.hide()
+                    focusManager.clearFocus()
+                    model.onEvent(MemberSearchEvent.Submit)
+                },
+                searchEnabled = state.query.trim().length >= 3 && !state.isLoading,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(contentPadding.horizontalInset())
+                    .padding(8.dp)
+                    .testTag("memberSearchField"),
+            )
         }
-        if (query.trim().isNotEmpty() && query.trim().length < 3) Text(shortQueryMessage)
-        if (loading) CircularProgressIndicator()
-        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-        if (searched && results.isEmpty()) Text(emptyResultsMessage)
-        if (!searched && results.isEmpty() && !loading && error == null) {
+        if (state.query.trim().isNotEmpty() && state.query.trim().length < 3) {
+            Text(stringResource(R.string.screen_enter_at_least_three_characters))
+        }
+        if (state.isLoading) CircularProgressIndicator()
+        failureMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (state.hasSearched && state.results.isEmpty()) {
+            Text(stringResource(R.string.screen_no_members_found))
+        }
+        if (!state.hasSearched && state.results.isEmpty() && !state.isLoading && state.failure == null) {
             Column(
                 Modifier.weight(1f).fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Icon(Icons.Default.People, null, modifier = Modifier.size(72.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f))
-                Text(findMemberTitle, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.padding(top = 16.dp))
-                Text(searchByNameHint, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
+                Icon(
+                    Icons.Default.People,
+                    null,
+                    modifier = Modifier.size(72.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                )
+                Text(
+                    stringResource(R.string.screen_find_member),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(top = 16.dp),
+                )
+                Text(
+                    stringResource(R.string.screen_search_name_or_username),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
                 if (onSwitchToMap != null) {
                     HorizontalDivider(Modifier.padding(vertical = 24.dp))
                     TextButton(onClick = onSwitchToMap) {
                         Icon(Icons.Default.Place, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
-                        Text(switchToMapLabel)
+                        Text(stringResource(R.string.screen_switch_to_map_search))
                     }
                 }
             }
         }
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-            results.forEach { member ->
-                Row(Modifier.fillMaxWidth().clickable { selected = member.username }.padding(vertical = 12.dp).padding(horizontal = 20.dp).padding(contentPadding.horizontalInset())) {
+        Column(Modifier.fillMaxWidth().verticalScroll(scrollState)) {
+            state.results.forEach { member ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable { selected = member.username }
+                        .padding(vertical = 12.dp)
+                        .padding(horizontal = 20.dp)
+                        .padding(contentPadding.horizontalInset()),
+                ) {
                     RemoteArtwork(
                         url = member.id?.let { api.avatarURL(it, 64) },
                         sessionCookie = session.cookieHeader,
