@@ -9,6 +9,12 @@ on:
       - 'apps/android/**'
       - '.github/workflows/android-debug-apk.yml'
   workflow_dispatch:
+    inputs:
+      ime-runtime-probe:
+        description: Run only the three API 36 IME geometry reproduction journeys
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: android-debug-apk-${{ github.event.pull_request.number || github.ref }}
@@ -47,6 +53,7 @@ jobs:
       artifact-url: ${{ steps.apk.outputs.artifact-url }}
     if: >
       (github.event.action != 'labeled' || github.event.label.name == 'build-apk') &&
+      (github.event_name != 'workflow_dispatch' || inputs.ime-runtime-probe != true) &&
       (github.event_name != 'pull_request' ||
        contains(github.event.pull_request.labels.*.name, 'build-apk') ||
        needs.changes.outputs.android == 'true')
@@ -86,7 +93,9 @@ jobs:
     name: Android journeys and coverage
     timeout-minutes: 30
     needs: changes
-    if: github.event_name != 'pull_request' || needs.changes.outputs.android == 'true'
+    if: >
+      (github.event_name != 'pull_request' || needs.changes.outputs.android == 'true') &&
+      (github.event_name != 'workflow_dispatch' || inputs.ime-runtime-probe != true)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -155,6 +164,42 @@ jobs:
             apps/android/app/build/outputs/androidTest-results/
             apps/android/app/build/outputs/code_coverage/debugAndroidTest/connected/api32/
             apps/android/app/build/reports/coverage/
+
+  ime-runtime-probe:
+    name: API 36 IME runtime probe
+    if: github.event_name == 'workflow_dispatch' && inputs.ime-runtime-probe == true
+    timeout-minutes: 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+      - name: Install Android build SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Run only the three IME geometry reproduction journeys
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 36
+          arch: x86_64
+          disable-animations: true
+          enable-hw-keyboard: false
+          emulator-build: 15507667
+          profile: pixel_6
+          script: >-
+            bash apps/android/gradlew -p apps/android
+            -PtrustrootsApiUrl=http://127.0.0.1:38081 connectedDebugAndroidTest
+            -Pandroid.testInstrumentationRunnerArguments.class=org.trustroots.android.ui.HostOfferScreenTest,org.trustroots.android.ui.CreateExperienceScreenTest,org.trustroots.android.ui.SignInSessionJourneyTest
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: android-ime-runtime-probe-results
+          retention-days: 7
+          path: |
+            apps/android/app/build/reports/androidTests/
+            apps/android/app/build/outputs/androidTest-results/
 
   link-pr-apk:
     name: Link APK from PR
