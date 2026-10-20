@@ -50,4 +50,11 @@
     <color name="host_card_on_secondary_container">#123E33</color>
     <color name="host_card_surface_variant">#E1EAE6</color>
     <color name="host_card_on_surface_variant">#4E625A</color>
+
+    <color name="map_marker_cluster">#12B591</color>
+    <color name="map_marker_meet">#11B4DA</color>
+    <color name="map_marker_maybe">#F2AE43</color>
+    <color name="map_marker_host">#58BA58</color>
+    <color name="map_marker_community_note">#1565C0</color>
+    <color name="map_marker_white">#FFFFFF</color>
 </resources>
