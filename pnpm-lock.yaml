@@ -124,8 +124,8 @@ importers:
         specifier: 4.18.1
         version: 4.18.1
       mapbox-gl:
-        specifier: 1.13.2
-        version: 1.13.2
+        specifier: 3.33.0
+        version: 3.33.0
       medium-editor:
         specifier: 5.23.3
         version: 5.23.3
@@ -299,8 +299,8 @@ importers:
         specifier: 4.17.26
         version: 4.17.26
       '@types/mapbox-gl':
-        specifier: 2.7.21
-        version: 2.7.21
+        specifier: 3.5.0
+        version: 3.5.0
       '@types/medium-editor':
         specifier: 5.0.8
         version: 5.0.8
@@ -2452,6 +2452,10 @@ packages:
 
   '@types/mapbox-gl@2.7.21':
     resolution: {integrity: sha512-Dx9MuF2kKgT/N22LsMUB4b3acFZh9clVqz9zv1fomoiPoBrJolwYxpWA/9LPO/2N0xWbKi4V+pkjTaFkkx/4wA==}
+
+  '@types/mapbox-gl@3.5.0':
+    resolution: {integrity: sha512-3wVAUTC6q1UKatLP9YxFBnGJWi3neJUF9OKeyRdUf/BsYjZAP35xmZkL4zogVJbO3vdExuSVYCAkzUXjpjdhOg==}
+    deprecated: This is a stub types definition. mapbox-gl provides its own type definitions, so you do not need this installed.
 
   '@types/medium-editor@5.0.8':
     resolution: {integrity: sha512-8zj+0E1nirrZ8lW6PbKru11z0klAxShLyO2SikbCz4CV1DbdN0gB9hNq99cJS1giEozUEtfhUQ0SDz+VgzeATQ==}
@@ -4877,6 +4881,9 @@ packages:
   mapbox-gl@1.13.2:
     resolution: {integrity: sha512-CPjtWygL+f7naL+sGHoC2JQR0DG7u+9ik6WdkjjVmz2uy0kBC2l+aKfdi3ZzUR7VKSQJ6Mc/CeCN+6iVNah+ww==}
     engines: {node: '>=6.4.0'}
+
+  mapbox-gl@3.33.0:
+    resolution: {integrity: sha512-2HpIrVedccHedolZyMVG/7FXdpgmsLTENgEDsX71x3/gKDGfYMf1FCRY0prntknkn/JXcraUKXlBTv7vkr0EXg==}
 
   matchmediaquery@0.3.1:
     resolution: {integrity: sha512-Hlk20WQHRIm9EE9luN1kjRjYXAQToHOIAHPJn9buxBwuhfTHoKUcX+lXBbxc85DVQfXYbEQ4HcwQdd128E3qHQ==}
@@ -8658,6 +8665,10 @@ snapshots:
     dependencies:
       '@types/geojson': 7946.0.16
 
+  '@types/mapbox-gl@3.5.0':
+    dependencies:
+      mapbox-gl: 3.33.0
+
   '@types/medium-editor@5.0.8': {}
 
   '@types/methods@1.1.4': {}
@@ -11589,6 +11600,8 @@ snapshots:
       supercluster: 7.1.5
       tinyqueue: 2.0.3
       vt-pbf: 3.1.3
+
+  mapbox-gl@3.33.0: {}
 
   matchmediaquery@0.3.1:
     dependencies:
