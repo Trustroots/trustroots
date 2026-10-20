@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -50,6 +51,7 @@ internal fun ProfileActionBar(
     onContactAction: () -> Unit,
     topPadding: Dp,
     horizontalInset: PaddingValues,
+    compactTitle: String? = null,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Row(
@@ -66,7 +68,18 @@ internal fun ProfileActionBar(
             modifier = Modifier.size(48.dp),
             tint = colorResource(R.color.artwork_on_scrim),
         )
-        Spacer(Modifier.weight(1f))
+        if (compactTitle == null) {
+            Spacer(Modifier.weight(1f))
+        } else {
+            Text(
+                compactTitle,
+                modifier = Modifier.weight(1f).testTag("profileCompactTitle"),
+                color = colorResource(R.color.artwork_on_scrim),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         if (isSelf) {
             TextButton(
                 onClick = onEditProfile,
