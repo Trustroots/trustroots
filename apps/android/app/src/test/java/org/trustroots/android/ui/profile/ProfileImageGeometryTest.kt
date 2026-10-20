@@ -1,9 +1,25 @@
 package org.trustroots.android.ui.profile
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class ProfileImageGeometryTest {
+    @Test
+    fun `image and viewport dimensions must be positive`() {
+        for (invalidSize in listOf(0, -1)) {
+            for (dimension in 0..3) {
+                val dimensions = intArrayOf(2400, 1600, 1200, 800)
+                dimensions[dimension] = invalidSize
+                assertThrows(IllegalArgumentException::class.java) {
+                    ProfileImageGeometry.initialScale(
+                        dimensions[0], dimensions[1], dimensions[2], dimensions[3],
+                    )
+                }
+            }
+        }
+    }
+
     @Test
     fun `small decoded image is never enlarged`() {
         assertEquals(
