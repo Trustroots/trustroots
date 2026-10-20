@@ -9,13 +9,15 @@ import { fileURLToPath } from 'node:url';
 function check(t: TestContext, source: string): SpawnSyncReturns<string> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'internal-links-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const routes = path.join(root, 'modules/core/client/react-app');
+  const routes = path.join(root, 'layers/shell/client');
+  const shell = path.join(root, 'modules/core/client/react-app');
   fs.mkdirSync(routes, { recursive: true });
+  fs.mkdirSync(shell, { recursive: true });
   fs.writeFileSync(
     path.join(routes, 'routes.tsx'),
     `
     import Account from './Account';
-    import Faq from './Faq';
+    import Faq from '@/modules/pages/client/Faq';
     const routes = {
       '/profile/edit/account': () => <Account />,
       '/faq': () => <Faq />,
@@ -31,10 +33,12 @@ function check(t: TestContext, source: string): SpawnSyncReturns<string> {
     `export default () => <div id="nested" />;`,
   );
   fs.writeFileSync(
-    path.join(routes, 'ReactAppShell.tsx'),
+    path.join(shell, 'ReactAppShell.tsx'),
     `export default () => <main id="tr-main" />;`,
   );
-  fs.writeFileSync(path.join(routes, 'Faq.tsx'), source);
+  const pages = path.join(root, 'modules/pages/client');
+  fs.mkdirSync(pages, { recursive: true });
+  fs.writeFileSync(path.join(pages, 'Faq.tsx'), source);
   return spawnSync(
     process.execPath,
     [

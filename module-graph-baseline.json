@@ -2,19 +2,7 @@
   "imports": {
     "admin": ["core", "messages", "search", "support", "tribes", "users"],
     "contacts": ["core", "users"],
-    "core": [
-      "admin",
-      "contacts",
-      "experiences",
-      "messages",
-      "offers",
-      "pages",
-      "search",
-      "statistics",
-      "support",
-      "tribes",
-      "users"
-    ],
+    "core": ["messages", "support", "tribes", "users"],
     "experiences": ["core", "support", "users"],
     "messages": ["core", "references-thread", "stats", "support", "users"],
     "offers": ["core", "search", "tribes", "users"],

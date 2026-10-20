@@ -106,7 +106,10 @@ const legacyConfig = {
   },
   overrides: [
     {
-      files: ['modules/*/client/**/*.{js,ts,tsx}'],
+      files: [
+        'modules/*/client/**/*.{js,ts,tsx}',
+        'layers/shell/**/*.{js,ts,tsx}',
+      ],
       extends: ['plugin:jsx-a11y/recommended'],
       rules: {
         // Custom editors manage focus themselves; native autoFocus stays banned.
@@ -200,6 +203,7 @@ const legacyConfig = {
     {
       files: [
         'config/client/**',
+        'layers/shell/**',
         'modules/admin/client/**',
         'modules/**/client/components/**',
         'modules/**/client/react-app/**',
@@ -284,6 +288,7 @@ const legacyConfig = {
         'scripts/**/*.{mts,cts}',
         'tests/e2e/**/*.{ts,mts}',
         'playwright.config.cts',
+        'layers/shell/**/*.{ts,tsx}',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',

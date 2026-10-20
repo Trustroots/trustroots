@@ -25,6 +25,8 @@
     "config/vite/load-module-styles.ts",
     "config/vite/load-styles.ts",
     "config/vite/react-main.tsx",
+    "layers/shell/**/*.ts",
+    "layers/shell/**/*.tsx",
     "modules/*/client/**/*.ts",
     "modules/*/client/**/*.tsx"
   ],

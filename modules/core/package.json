@@ -13,14 +13,7 @@
     "test:server": "node ../../scripts/test-module.cts server core"
   },
   "dependencies": {
-    "@trustroots/admin": "workspace:*",
-    "@trustroots/contacts": "workspace:*",
-    "@trustroots/experiences": "workspace:*",
     "@trustroots/messages": "workspace:*",
-    "@trustroots/offers": "workspace:*",
-    "@trustroots/pages": "workspace:*",
-    "@trustroots/search": "workspace:*",
-    "@trustroots/statistics": "workspace:*",
     "@trustroots/support": "workspace:*",
     "@trustroots/tribes": "workspace:*",
     "@trustroots/users": "workspace:*"
