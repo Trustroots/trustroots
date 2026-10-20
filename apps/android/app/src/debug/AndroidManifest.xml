@@ -4,5 +4,8 @@
         <activity
             android:name="org.trustroots.android.ui.SignInJourneyActivity"
             android:exported="false" />
+        <activity
+            android:name="org.trustroots.android.browser.BrowserHistoryJourneyActivity"
+            android:exported="false" />
     </application>
 </manifest>

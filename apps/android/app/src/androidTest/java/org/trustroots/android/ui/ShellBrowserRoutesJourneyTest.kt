@@ -1,20 +1,10 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
-import androidx.activity.ComponentActivity
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -38,19 +28,18 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import androidx.test.core.app.ActivityScenario
 import org.trustroots.android.analytics.AndroidUsageAnalytics
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
-import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
-import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class ShellBrowserRoutesJourneyTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val compose = createEmptyComposeRule()
 
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val server = ServerSocket(0).apply { soTimeout = 500 }
@@ -71,6 +60,7 @@ class ShellBrowserRoutesJourneyTest {
     private var previousDestination: MessageDestination? = null
     private var previousStatus: String? = null
     private var responder: Thread? = null
+    private var scenario: ActivityScenario<SignInJourneyActivity>? = null
     @Volatile private var activeSocket: Socket? = null
 
     @Before fun isolateAppState() {
@@ -90,7 +80,7 @@ class ShellBrowserRoutesJourneyTest {
 
     @After fun restoreStateAndStopFixture() {
         try {
-            compose.activityRule.scenario.close()
+            scenario?.close()
         } finally {
             runCatching { activeSocket?.close() }
             runCatching { server.close() }
@@ -157,6 +147,10 @@ class ShellBrowserRoutesJourneyTest {
         compose.onNodeWithText("Contact and support").performClick()
         assertBrowserRoute("Contact and support", "https://www.trustroots.org/support")
 
+        requireNotNull(scenario).recreate()
+        waitForText("Fake browser: Contact and support")
+        assertBrowserRoute("Contact and support", "https://www.trustroots.org/support")
+
         pressSystemBack()
         assertMenuOrigin()
 
@@ -182,7 +176,8 @@ class ShellBrowserRoutesJourneyTest {
     }
 
     private fun pressSystemBack() {
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
     }
 
     private fun assertMenuOrigin() {
@@ -194,17 +189,11 @@ class ShellBrowserRoutesJourneyTest {
     }
 
     private fun showApp() {
-        compose.setContent {
-            TrustrootsTheme {
-                TrustrootsApp(
-                    apiBaseUrl = apiBaseUrl,
-                    reconcileAlerts = { _, _ -> },
-                    browserContent = { route, onClose, contentPadding ->
-                        OfflineBrowserSurface(route, onClose, contentPadding)
-                    },
-                )
-            }
-        }
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, apiBaseUrl)
+                .putExtra(SignInJourneyActivity.FAKE_BROWSER_EXTRA, true),
+        )
     }
 
     private fun assertBrowserRoute(title: String, url: String) {
@@ -312,24 +301,5 @@ class ShellBrowserRoutesJourneyTest {
             }
         }
         editor.commit()
-    }
-}
-
-@Composable
-private fun OfflineBrowserSurface(
-    route: BrowserRoute,
-    onClose: () -> Unit,
-    contentPadding: PaddingValues,
-) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(contentPadding)
-            .padding(20.dp)
-            .testTag("offlineBrowserSurface"),
-    ) {
-        Text("Fake browser: ${route.title}")
-        Text(route.url)
-        TextButton(onClick = onClose) { Text("Close fake browser") }
     }
 }

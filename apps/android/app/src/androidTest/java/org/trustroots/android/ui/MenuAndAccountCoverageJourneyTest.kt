@@ -25,7 +25,6 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.browser.BrowserRoute
 
 @RunWith(AndroidJUnit4::class)
 class MenuAndAccountCoverageJourneyTest {
@@ -39,7 +38,7 @@ class MenuAndAccountCoverageJourneyTest {
 
     @Test fun menuActionsOpenTheirDestinationsAndSupportLinks() {
         val destinations = mutableListOf<String>()
-        val browserRoutes = mutableListOf<BrowserRoute>()
+        val browserRoutes = mutableListOf<SharedNavigationLink>()
         compose.setContent {
             MenuScreen(
                 session = session,
@@ -70,7 +69,7 @@ class MenuAndAccountCoverageJourneyTest {
             destinations,
         )
         assertEquals(
-            listOf(BrowserRoute("FAQ", "https://www.trustroots.org/faq")),
+            listOf(SharedNavigationLink("faq", "FAQ", "https://www.trustroots.org/faq")),
             browserRoutes,
         )
     }

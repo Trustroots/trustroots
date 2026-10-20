@@ -33,6 +33,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -52,6 +55,11 @@ internal val DefaultBrowserContent: @Composable (BrowserRoute, () -> Unit, Paddi
 
 private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
 
+internal class BrowserEntryStateViewModel : ViewModel() {
+    var savedBrowserState: android.os.Bundle? = null
+    var savedRouteURL: String? = null
+}
+
 @Composable
 @SuppressLint("SetJavaScriptEnabled")
 fun TrustrootsBrowser(
@@ -62,6 +70,10 @@ fun TrustrootsBrowser(
     val context = LocalContext.current
     var webView by remember { mutableStateOf<WebView?>(null) }
     var externalURL by remember { mutableStateOf<String?>(null) }
+    val viewModelStoreOwner = requireNotNull(LocalViewModelStoreOwner.current)
+    val browserEntryState = remember(viewModelStoreOwner) {
+        ViewModelProvider(viewModelStoreOwner)[BrowserEntryStateViewModel::class.java]
+    }
 
     BackHandler {
         if (webView?.canGoBack() == true) webView?.goBack() else onClose()
@@ -119,6 +131,8 @@ fun TrustrootsBrowser(
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, url: String?) {
                             applyEmbeddedBrowserStyleAfterLoad(view, url)
+                            browserEntryState.savedRouteURL = route.url
+                            browserEntryState.savedBrowserState = android.os.Bundle().also { view.saveState(it) }
                         }
                         override fun shouldOverrideUrlLoading(
                             view: WebView,
@@ -137,11 +151,27 @@ fun TrustrootsBrowser(
                     }
                     installEmbeddedBrowserStyle(this)
                     applyBrowserSessionCookie(route.url, route.sessionCookie)
-                    loadUrl(route.url)
+                    val restored = if (browserEntryState.savedRouteURL == route.url) {
+                        browserEntryState.savedBrowserState?.let { restoreState(it) }
+                    } else {
+                        null
+                    }
+                    if (restored == null) {
+                        browserEntryState.savedBrowserState = null
+                        browserEntryState.savedRouteURL = route.url
+                        loadUrl(route.url)
+                    }
                     webView = this
                 }
             },
             modifier = Modifier.fillMaxSize(),
+            onRelease = { released ->
+                browserEntryState.savedRouteURL = route.url
+                browserEntryState.savedBrowserState = android.os.Bundle().also { released.saveState(it) }
+                released.stopLoading()
+                released.destroy()
+                if (webView === released) webView = null
+            },
         )
     }
 }
