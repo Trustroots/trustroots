@@ -37,6 +37,9 @@
     <color name="artwork_on_scrim">#FFFFFF</color>
     <color name="artwork_light_content">#FFFFFF</color>
     <color name="artwork_dark_content">#000000</color>
+    <color name="profile_image_viewer_background">#000000</color>
+    <color name="profile_image_viewer_controls_background">#CC000000</color>
+    <color name="profile_image_viewer_content">#FFFFFF</color>
 
     <color name="host_card_surface">#FFFFFF</color>
     <color name="host_card_on_surface">#18221D</color>
