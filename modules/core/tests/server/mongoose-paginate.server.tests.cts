@@ -1,6 +1,6 @@
 const should: typeof import('should') = require('should');
 const mongoose: typeof import('mongoose') = require('mongoose');
-const mongoosePaginate = require('../../../../config/lib/mongoose-paginate.mjs');
+const mongoosePaginate: typeof import('../../../../config/lib/mongoose-paginate.mts') = require('../../../../config/lib/mongoose-paginate.mjs');
 
 interface PaginatedRecord {
   name?: string;
@@ -8,14 +8,8 @@ interface PaginatedRecord {
   _id: import('mongoose').Types.ObjectId;
   id?: string;
 }
-interface PageResult {
-  docs: PaginatedRecord[];
-  total: number;
-  limit: number;
-  offset?: number;
-  page?: number;
-  pages?: number;
-}
+type PageResult =
+  import('../../../../config/lib/mongoose-paginate.mts').PaginateResult<PaginatedRecord>;
 type PageCallback = (error: unknown, result?: PageResult) => void;
 type PaginatedModel = import('mongoose').Model<PaginatedRecord> & {
   paginate(

@@ -33,7 +33,7 @@ type FileSystem = Record<
 type Query = Record<'select' | 'sort' | 'exec', Stub>;
 type TribeStub = Stub & Record<'find' | 'findById' | 'findByIdAndDelete', Stub>;
 type Controller =
-  typeof import('../../server/controllers/admin.circles.server.controller.mjs').default;
+  typeof import('../../server/controllers/admin.circles.server.controller.mts').default;
 
 function response(): MockResponse {
   return {
@@ -125,7 +125,7 @@ describe('Admin circles controller', () => {
     uploadFile = sinon.stub();
     config = { circleImagesDir: '/circle-images' };
     controller = proxyquire<Controller>(
-      require.resolve('../../server/controllers/admin.circles.server.controller.mjs'),
+      require.resolve('../../server/controllers/admin.circles.server.controller.mts'),
       {
         mongoose: { model: () => Tribe },
         'node:fs': { promises: fs },
