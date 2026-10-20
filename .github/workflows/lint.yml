@@ -143,3 +143,5 @@ jobs:
         run: |
           pnpm run lint:modules:test
           pnpm run lint:modules
+          pnpm run lint:packages:test
+          pnpm run lint:packages

@@ -1,3 +1,6 @@
+packages:
+  - 'modules/*'
+
 overrides:
   'node-forge': '1.4.0'
   'websocket-driver': '0.7.5'

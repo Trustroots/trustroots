@@ -48,7 +48,8 @@ RUN pnpm run build
 # The builder needs the full toolchain, but the published image only needs
 # runtime dependencies. Prune after the build so Vite and other build tools
 # remain available while assets are generated.
-RUN pnpm prune --prod --ignore-scripts
+# CI mode allows pnpm to recreate node_modules without an interactive prompt.
+RUN CI=true pnpm prune --prod --ignore-scripts
 
 # ------------------------------------------------------------------------------
 # Create the production container

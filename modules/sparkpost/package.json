@@ -1,0 +1,15 @@
+{
+  "name": "@trustroots/sparkpost",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {},
+  "scripts": {
+    "lint": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx .",
+    "test:server": "node ../../scripts/test-module.cts server sparkpost"
+  },
+  "dependencies": {
+    "@trustroots/core": "workspace:*",
+    "@trustroots/stats": "workspace:*"
+  }
+}

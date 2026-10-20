@@ -1,0 +1,21 @@
+{
+  "name": "@trustroots/tribes",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client/*": "./client/*"
+  },
+  "scripts": {
+    "lint": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx .",
+    "test:client": "node ../../scripts/test-module.cts client tribes",
+    "test:server": "node ../../scripts/test-module.cts server tribes"
+  },
+  "dependencies": {
+    "@trustroots/contacts": "workspace:*",
+    "@trustroots/core": "workspace:*",
+    "@trustroots/experiences": "workspace:*",
+    "@trustroots/search": "workspace:*",
+    "@trustroots/users": "workspace:*"
+  }
+}

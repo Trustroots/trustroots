@@ -439,6 +439,9 @@ importers:
       tiny-warning:
         specifier: 1.0.3
         version: 1.0.3
+      turbo:
+        specifier: 2.10.12
+        version: 2.10.12
       typescript:
         specifier: 6.0.3
         version: 6.0.3
@@ -451,6 +454,281 @@ importers:
       yargs:
         specifier: 18.2.0
         version: 18.2.0
+
+  modules/admin:
+    dependencies:
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
+      '@trustroots/references-thread':
+        specifier: workspace:*
+        version: link:../references-thread
+      '@trustroots/search':
+        specifier: workspace:*
+        version: link:../search
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/contacts:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/core:
+    dependencies:
+      '@trustroots/admin':
+        specifier: workspace:*
+        version: link:../admin
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
+      '@trustroots/pages':
+        specifier: workspace:*
+        version: link:../pages
+      '@trustroots/search':
+        specifier: workspace:*
+        version: link:../search
+      '@trustroots/statistics':
+        specifier: workspace:*
+        version: link:../statistics
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/experiences:
+    dependencies:
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/messages:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/references-thread':
+        specifier: workspace:*
+        version: link:../references-thread
+      '@trustroots/stats':
+        specifier: workspace:*
+        version: link:../stats
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/offers:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/search':
+        specifier: workspace:*
+        version: link:../search
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/pages:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/references-thread:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@trustroots/stats':
+        specifier: workspace:*
+        version: link:../stats
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/search:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/sparkpost:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/stats':
+        specifier: workspace:*
+        version: link:../stats
+
+  modules/statistics:
+    dependencies:
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
+      '@trustroots/references-thread':
+        specifier: workspace:*
+        version: link:../references-thread
+      '@trustroots/stats':
+        specifier: workspace:*
+        version: link:../stats
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/stats: {}
+
+  modules/support:
+    dependencies:
+      '@trustroots/admin':
+        specifier: workspace:*
+        version: link:../admin
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/stats':
+        specifier: workspace:*
+        version: link:../stats
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/tribes:
+    dependencies:
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/search':
+        specifier: workspace:*
+        version: link:../search
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
+  modules/users:
+    dependencies:
+      '@trustroots/admin':
+        specifier: workspace:*
+        version: link:../admin
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
+      '@trustroots/core':
+        specifier: workspace:*
+        version: link:../core
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
+      '@trustroots/references-thread':
+        specifier: workspace:*
+        version: link:../references-thread
+      '@trustroots/search':
+        specifier: workspace:*
+        version: link:../search
+      '@trustroots/stats':
+        specifier: workspace:*
+        version: link:../stats
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
 
 packages:
 
@@ -2090,6 +2368,36 @@ packages:
 
   '@tokenizer/token@0.3.0':
     resolution: {integrity: sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A==}
+
+  '@turbo/darwin-64@2.10.12':
+    resolution: {integrity: sha512-9nKgKoF6ZOUsM+or0OtNf+TTJSfGvDNP7ZFv/ZGWVwOSCkumyctQiTeHwB4UNljHTnC41AqylgbunLDHoccNrA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@turbo/darwin-arm64@2.10.12':
+    resolution: {integrity: sha512-H4Elb1jqTZVeIC9bbcNwjSzemZ6RegoTOVHeuV5Osirt2Z8UguTyisMEkvZjPVZgMeN9J4ERZBFad40tFnkb7w==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@turbo/linux-64@2.10.12':
+    resolution: {integrity: sha512-lr7KIotukvjZwEXiFSYAeOH3BWzjFVBbSzTbv0fuGFsNukYyH0+g1hB5ecqnJkgkYU+KHEMG1edOhnjiKON1wQ==}
+    cpu: [x64]
+    os: [android, linux]
+
+  '@turbo/linux-arm64@2.10.12':
+    resolution: {integrity: sha512-f0pZDTtvzB5SuNwuXBaKbZHUCMCukgc8nMlHEuvLmj91Fzec+MEbr3cAvGNor5htEDqZnO6Lxt9N/GPI/77oGA==}
+    cpu: [arm64]
+    os: [android, linux]
+
+  '@turbo/windows-64@2.10.12':
+    resolution: {integrity: sha512-SDOueJRjS/QcykWf2KCRtTLmIl5YMKsLbXkXQGhDwcTXvKXZiS5ih5lBl/gkwZIpYFjqA/rAlfMzlAFcVHNe0g==}
+    cpu: [x64]
+    os: [win32]
+
+  '@turbo/windows-arm64@2.10.12':
+    resolution: {integrity: sha512-0i0mVUa4kKk+/B3RwEwPMf9CB+T7ul56hn5FFHNA4VUNTOoLBEd6aNf3FaKfCatDNZ6cicCEf6if9QUTVyzzcA==}
+    cpu: [arm64]
+    os: [win32]
 
   '@tybys/wasm-util@0.10.4':
     resolution: {integrity: sha512-W3c4gRigFS0T/Ma4qIYF3GDAc5AQdHb1yL5znJT1Zv1YaD9Kitx656wBjvr19qbiosmZT8lWDM5BEMynUqX65A==}
@@ -5902,6 +6210,10 @@ packages:
   tslib@2.8.1:
     resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
 
+  turbo@2.10.12:
+    resolution: {integrity: sha512-AswgMPnpOoaVZHrrSBejETzEbuIA69OVGwfkHwfrY0A23VjWXBANzgq9+OymWOHAIArB7D1+1z498WY8fGg1Jw==}
+    hasBin: true
+
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -8253,6 +8565,24 @@ snapshots:
       - supports-color
 
   '@tokenizer/token@0.3.0': {}
+
+  '@turbo/darwin-64@2.10.12':
+    optional: true
+
+  '@turbo/darwin-arm64@2.10.12':
+    optional: true
+
+  '@turbo/linux-64@2.10.12':
+    optional: true
+
+  '@turbo/linux-arm64@2.10.12':
+    optional: true
+
+  '@turbo/windows-64@2.10.12':
+    optional: true
+
+  '@turbo/windows-arm64@2.10.12':
+    optional: true
 
   '@tybys/wasm-util@0.10.4':
     dependencies:
@@ -12777,6 +13107,15 @@ snapshots:
   tslib@1.14.1: {}
 
   tslib@2.8.1: {}
+
+  turbo@2.10.12:
+    optionalDependencies:
+      '@turbo/darwin-64': 2.10.12
+      '@turbo/darwin-arm64': 2.10.12
+      '@turbo/linux-64': 2.10.12
+      '@turbo/linux-arm64': 2.10.12
+      '@turbo/windows-64': 2.10.12
+      '@turbo/windows-arm64': 2.10.12
 
   type-check@0.4.0:
     dependencies:

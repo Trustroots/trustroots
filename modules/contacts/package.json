@@ -1,0 +1,18 @@
+{
+  "name": "@trustroots/contacts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client/*": "./client/*"
+  },
+  "scripts": {
+    "lint": "eslint --ext .js,.mjs,.mts,.cjs,.cts,.ts,.tsx .",
+    "test:client": "node ../../scripts/test-module.cts client contacts",
+    "test:server": "node ../../scripts/test-module.cts server contacts"
+  },
+  "dependencies": {
+    "@trustroots/core": "workspace:*",
+    "@trustroots/users": "workspace:*"
+  }
+}
