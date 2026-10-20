@@ -15,6 +15,11 @@ on:
         required: false
         type: boolean
         default: false
+      ime-emulator-build:
+        description: Emulator binary build to use for the IME probe
+        required: false
+        type: string
+        default: '15507667'
 
 concurrency:
   group: android-debug-apk-${{ github.event.pull_request.number || github.ref }}
@@ -168,7 +173,9 @@ jobs:
   ime-runtime-probe:
     name: API 36 IME runtime probe
     if: github.event_name == 'workflow_dispatch' && inputs.ime-runtime-probe == true
-    timeout-minutes: 20
+    # Emulator startup, a cold Gradle build, and three device journeys exceeded
+    # the previous 20-minute cap before the last journey could finish.
+    timeout-minutes: 40
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -186,12 +193,31 @@ jobs:
           arch: x86_64
           disable-animations: true
           enable-hw-keyboard: false
-          emulator-build: 15507667
+          emulator-build: ${{ inputs.ime-emulator-build || '15507667' }}
           profile: pixel_6
-          script: >-
-            bash apps/android/gradlew -p apps/android
-            -PtrustrootsApiUrl=http://127.0.0.1:38081 connectedDebugAndroidTest
-            -Pandroid.testInstrumentationRunnerArguments.class=org.trustroots.android.ui.HostOfferScreenTest,org.trustroots.android.ui.CreateExperienceScreenTest,org.trustroots.android.ui.SignInSessionJourneyTest
+          script: |
+            set -euo pipefail
+            probe_dir=apps/android/app/build/reports/ime-runtime-probe
+            mkdir -p "$probe_dir"
+
+            {
+              echo 'Preparing and recording emulator readiness before instrumentation.'
+              adb wait-for-device
+              adb shell wm dismiss-keyguard
+              adb shell input keyevent 82
+              adb shell input keyevent 3
+              adb shell settings put system screen_off_timeout 1800000
+              adb shell settings put global stay_on_while_plugged_in 3
+              adb shell dumpsys power | grep -E 'mWakefulness=|Display Power' || true
+              adb shell dumpsys window policy | grep -E 'mShowingLockscreen|mKeyguardShowing|mKeyguardOccluded' || true
+              adb shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp' || true
+              adb shell settings get secure default_input_method
+            } 2>&1 | tee "$probe_dir/emulator-preflight.txt"
+
+            bash apps/android/gradlew -p apps/android \
+              -PtrustrootsApiUrl=http://127.0.0.1:38081 connectedDebugAndroidTest \
+              -Pandroid.testInstrumentationRunnerArguments.class=org.trustroots.android.ui.HostOfferScreenTest,org.trustroots.android.ui.CreateExperienceScreenTest,org.trustroots.android.ui.SignInSessionJourneyTest \
+              2>&1 | tee "$probe_dir/connected-android-test.log"
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
@@ -200,6 +226,7 @@ jobs:
           path: |
             apps/android/app/build/reports/androidTests/
             apps/android/app/build/outputs/androidTest-results/
+            apps/android/app/build/reports/ime-runtime-probe/
 
   link-pr-apk:
     name: Link APK from PR
