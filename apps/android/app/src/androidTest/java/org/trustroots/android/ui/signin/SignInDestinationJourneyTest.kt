@@ -233,7 +233,7 @@ class SignInDestinationJourneyTest {
         waitForSignIn()
 
         compose.onNodeWithText("Your session expired or is no longer valid. Please sign in again.")
-            .assertIsDisplayed()
+            .performScrollTo().assertIsDisplayed()
         assertEditableText("signin-username", "")
         assertEditableText("signin-password", "")
         assertEquals(1, requests.count { it.line.startsWith("POST /api/auth/signin ") })

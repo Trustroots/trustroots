@@ -404,3 +404,179 @@ targets, and the active light or dark theme.
   right-to-left layouts
 - **AND** title and navigation controls remain accessible and usable in light
   and dark themes
+
+### Requirement: Navigation 3 owns Android top-level member navigation
+
+The authenticated Android member shell SHALL use Navigation 3 to own and
+render its Circles, Search, Messages and Profile top-level navigation
+history. Each visit SHALL have a unique entry identity, including repeated
+visits to the same destination. After the parent has loaded the live
+authenticated session, the active destination SHALL be restorable after
+activity recreation. Top-level tab keys SHALL be serialisable and contain no
+session credentials, cookies, account secrets or member-specific payloads. The
+live authenticated parent SHALL remain the source of session and member data.
+
+#### Scenario: Member switches between top-level destinations
+
+- **WHEN** a member selects a different top-level destination
+- **THEN** Navigation 3 records a new uniquely identified visit after the
+  current one
+- **AND** Back returns to the previous destination in the member's navigation
+  history
+
+#### Scenario: Member revisits a prior destination
+
+- **WHEN** a member navigates Circles → Messages → Circles
+- **THEN** the stack retains three distinct destination visits
+- **AND** Back returns to Messages and then to the original Circles visit
+
+#### Scenario: Member reselects the current destination
+
+- **WHEN** a member selects the currently active top-level destination
+- **THEN** the established destination reset behaviour runs
+- **AND** no duplicate destination is added to navigation history
+
+#### Scenario: Member opens a destination from a message alert
+
+- **WHEN** an alert requests a conversation for the currently signed-in
+  account
+- **THEN** the member shell selects Messages and opens the requested
+  conversation through its existing screen navigation state
+- **AND** Back follows the existing origin history after leaving the
+  conversation
+
+#### Scenario: Member cancels predictive Back
+
+- **WHEN** a member starts and cancels a predictive Back gesture at the
+  top-level shell
+- **THEN** the current destination and its navigation history remain intact
+
+#### Scenario: Member completes predictive Back
+
+- **WHEN** a member completes a predictive Back gesture at the top-level shell
+- **THEN** exactly the current destination visit is removed
+- **AND** its previous destination becomes active
+
+#### Scenario: Activity is recreated in an authenticated destination
+
+- **WHEN** Android recreates the activity while the member is using a
+  top-level destination
+- **THEN** after the parent restores the live session, saved navigation state
+  restores the active safe destination and its distinct visit history
+- **AND** authentication is still obtained from the live session store
+- **AND** no session credential or member-specific secret is restored from a
+  navigation key
+
+### Requirement: Navigation 3 preserves native leave and nested Back behaviour
+
+Top-level Navigation 3 Back handling SHALL preserve existing menu-page,
+embedded-browser and nested-screen Back behaviour. A dirty editable form SHALL
+be offered the existing keep-editing or discard decision before a top-level
+navigation action or Back pop commits. Cancelling predictive Back SHALL NOT
+commit a pop or bypass the leave decision.
+
+#### Scenario: Member backs out of a nested menu page
+
+- **WHEN** a member presses Back while a menu subpage or embedded browser is
+  open
+- **THEN** the nested page or browser closes before the top-level history is
+  popped
+
+#### Scenario: Member leaves a dirty form through top-level navigation
+
+- **WHEN** a member selects another top-level destination while a form has
+  unsaved changes
+- **THEN** the existing leave guard asks whether to keep editing or discard
+- **AND** keeping edits leaves the form and top-level destination unchanged
+
+### Requirement: Navigation-scoped Android Circles state
+
+The Android Circles screen SHALL keep catalogue, membership, filter and
+selected-detail state in a ViewModel scoped to its Navigation 3 entry. The
+ViewModel SHALL use immutable UI state and explicit user events, and its data
+operations SHALL be injectable for deterministic tests. It SHALL NOT place
+session cookies in UI state, saved state or navigation keys. Removing the
+navigation entry or signing out SHALL clear its account-scoped state and cancel
+its outstanding work.
+
+#### Scenario: Member temporarily leaves Circles
+
+- **WHEN** a member navigates to another tab while the Circles entry remains
+  on the back stack
+- **THEN** returning to Circles restores its loaded catalogue, membership
+  state, filter and selected detail
+- **AND** it does not repeat successful initial reads solely because of the
+  temporary departure
+
+#### Scenario: Member explicitly reselects Circles
+
+- **WHEN** a member reselects the active Circles tab
+- **THEN** the screen returns to the overview with an empty filter
+- **AND** clears transient errors and membership-update state
+- **AND** reloads the catalogue and memberships
+
+#### Scenario: Circles entry is removed
+
+- **WHEN** Navigation 3 removes a Circles entry from the back stack
+- **THEN** its ViewModel is cleared and outstanding requests are cancelled
+- **AND** a later Circles entry starts with fresh state
+
+#### Scenario: Circle catalogue load fails and is retried
+
+- **WHEN** loading circles or memberships fails for a reason other than an
+  expired session
+- **THEN** the screen shows the existing error and a Retry action
+- **AND** Retry reloads both data sources without losing the current filter or
+  selected detail
+- **AND** a failed catalogue is not presented as a successful empty catalogue
+
+#### Scenario: Member session expires during a Circles request
+
+- **WHEN** a catalogue, membership or membership-update request reports an
+  authentication failure
+- **THEN** the ViewModel emits one identified invalidation event
+- **AND** the existing parent session callback is delivered once and the event
+  is acknowledged
+
+#### Scenario: An obsolete Circles request completes
+
+- **WHEN** a request is cancelled, superseded by a retry, or belongs to a
+  previous account scope
+- **THEN** its result does not overwrite the current screen state
+
+#### Scenario: Member opens circle detail and presses Back
+
+- **WHEN** a member opens a circle from a filtered overview and returns with
+  Back
+- **THEN** the selected detail is cleared
+- **AND** the current overview filter and loaded data remain available
+
+### Requirement: Collapsing Android message headers
+
+The Android Messages overview and conversation detail SHALL use consistent
+Material 3 large app bars that collapse to a single title row as their content
+scrolls. Both states SHALL use the established Material title typography. The
+app bars SHALL respect the screen's supplied insets and expose an accessible
+Back action on conversation detail.
+
+#### Scenario: Member scrolls the Messages overview
+
+- **WHEN** a member scrolls the conversation list
+- **THEN** the Messages title collapses to one app-bar row
+- **AND** the conversation filter remains a live local filter while visible
+- **AND** conversation rows retain their full-row open action and Profile action
+
+#### Scenario: Member scrolls a conversation
+
+- **WHEN** a member scrolls the message history
+- **THEN** the participant title collapses to one app-bar row
+- **AND** the Back and available View profile actions remain accessible
+- **AND** the quick replies and message composer remain usable above the IME
+
+#### Scenario: Member returns to the top of message content
+
+- **WHEN** a member scrolls the overview or conversation content back toward its
+  start
+- **THEN** the corresponding large app bar expands again
+- **AND** existing filter state, message position, drafts and navigation origin
+  remain intact
