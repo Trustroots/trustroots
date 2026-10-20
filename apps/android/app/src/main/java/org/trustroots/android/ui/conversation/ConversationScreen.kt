@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageDraftStore
 import org.trustroots.android.api.MessageMember
@@ -58,7 +59,10 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.messageTime
 import org.trustroots.android.ui.common.horizontalInset
 
@@ -73,8 +77,6 @@ internal fun ConversationScreen(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     BackHandler(onBack = onBack)
-    val sendMessageError = stringResource(R.string.screen_send_message_error)
-    val loadConversationError = stringResource(R.string.screen_load_conversation_error)
     val viewProfileLabel = stringResource(R.string.screen_view_profile)
     val hostYesMessage = stringResource(R.string.screen_quick_reply_host_yes_html)
     val hostNoMessage = stringResource(R.string.screen_quick_reply_host_no_html)
@@ -85,7 +87,7 @@ internal fun ConversationScreen(
     var draft by remember(member.id) {
         mutableStateOf(drafts.load(session.member.username, draftKey))
     }
-    var error by remember(member.id) { mutableStateOf<String?>(null) }
+    var error by remember(member.id) { mutableStateOf<UiFailure?>(null) }
     var sending by remember { mutableStateOf(false) }
     var messagesLoaded by remember(member.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -110,7 +112,7 @@ internal fun ConversationScreen(
                 error = null
             }.onFailure {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else error = it.messageOr(sendMessageError)
+                else error = it.toUiFailure(UiFailureFallback.SEND_MESSAGE)
             }
             sending = false
         }
@@ -124,7 +126,7 @@ internal fun ConversationScreen(
         }.onFailure {
             messagesLoaded = true
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.messageOr(loadConversationError)
+            else error = it.toUiFailure(UiFailureFallback.LOAD_CONVERSATION)
         }
     }
     Scaffold(
@@ -132,7 +134,7 @@ internal fun ConversationScreen(
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
             MemberLargeTopAppBar(
-                title = member.label,
+                title = member.localizedLabel(),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,
                 onBack = onBack,
@@ -140,7 +142,7 @@ internal fun ConversationScreen(
                     RemoteArtwork(
                         url = member.id?.let { api.avatarURL(it, 64) },
                         sessionCookie = session.cookieHeader,
-                        label = member.label,
+                        label = member.localizedLabel(),
                         size = 36.dp,
                     )
                 },
@@ -161,7 +163,7 @@ internal fun ConversationScreen(
                 .padding(horizontal = 20.dp)
                 .padding(bottom = contentPadding.calculateBottomPadding() + 20.dp),
         ) {
-            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            error?.let { Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error) }
             Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
                 messages.asReversed().forEach { message ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (message.sender.username == session.member.username) Arrangement.End else Arrangement.Start) {
@@ -169,7 +171,7 @@ internal fun ConversationScreen(
                             RemoteArtwork(
                                 url = member.id?.let { api.avatarURL(it, 64) },
                                 sessionCookie = session.cookieHeader,
-                                label = member.label,
+                                label = member.localizedLabel(),
                                 size = 30.dp,
                             )
                         }

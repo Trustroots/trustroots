@@ -42,7 +42,10 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.profile.MemberProfileScreen
 
 @Composable
@@ -58,7 +61,6 @@ internal fun ContactsScreen(
     val state by model.state.collectAsState()
     val contactsTitle = stringResource(R.string.screen_contacts_title)
     val contactsEmpty = stringResource(R.string.screen_contacts_empty)
-    val contactsLoadError = stringResource(R.string.screen_contacts_load_error)
     val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     val uiLocale = LocalConfiguration.current.locales[0]
     var selectedUsername by remember { mutableStateOf<String?>(null) }
@@ -111,7 +113,13 @@ internal fun ContactsScreen(
                 Column(Modifier.padding(top = 16.dp)) {
                     val failure = requireNotNull(state.failure)
                     Text(
-                        failure.serverMessage?.takeIf(String::isNotBlank) ?: contactsLoadError,
+                        resolveFailureMessage(
+                            UiFailure(
+                                serverMessage = failure.serverMessage,
+                                apiKind = failure.apiKind,
+                                fallback = UiFailureFallback.LOAD_CONTACTS,
+                            ),
+                        ),
                         color = MaterialTheme.colorScheme.error,
                     )
                     TextButton(

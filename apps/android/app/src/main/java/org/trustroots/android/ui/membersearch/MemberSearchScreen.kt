@@ -50,6 +50,9 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.SubmittedSearchField
 import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.profile.MemberProfileScreen
 
 @Composable
@@ -85,8 +88,13 @@ internal fun MemberSearchScreen(
         onSessionInvalidated()
         model.onEvent(MemberSearchEvent.SessionInvalidationDelivered(pending.id))
     }
-    val failureMessage = state.failure?.serverMessage?.takeIf(String::isNotBlank)
-        ?: if (state.failure != null) stringResource(R.string.screen_search_members_error) else null
+    val failure = state.failure?.let {
+        UiFailure(
+            serverMessage = it.serverMessage,
+            apiKind = it.apiKind,
+            fallback = UiFailureFallback.SEARCH_MEMBERS,
+        )
+    }
     selected?.let { username ->
         MemberProfileScreen(
             api,
@@ -128,11 +136,11 @@ internal fun MemberSearchScreen(
             Text(stringResource(R.string.screen_enter_at_least_three_characters))
         }
         if (state.isLoading) CircularProgressIndicator()
-        failureMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        failure?.let { Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error) }
         if (state.hasSearched && state.results.isEmpty()) {
             Text(stringResource(R.string.screen_no_members_found))
         }
-        if (!state.hasSearched && state.results.isEmpty() && !state.isLoading && state.failure == null) {
+        if (!state.hasSearched && state.results.isEmpty() && !state.isLoading && failure == null) {
             Column(
                 Modifier.weight(1f).fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,

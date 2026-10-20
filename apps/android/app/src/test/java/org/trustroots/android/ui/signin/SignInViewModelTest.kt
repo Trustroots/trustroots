@@ -13,6 +13,8 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 
@@ -21,18 +23,18 @@ class SignInViewModelTest {
     fun initialMessageAndCredentialEventsUpdateImmutableState() {
         val viewModel = SignInViewModel(
             apiBaseUrl = "https://api.example.test",
-            initialMessage = "Please sign in again.",
+            initialMessage = UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED),
             authenticator = SignInAuthenticator { _, _ -> error("Sign-in should not run") },
             scope = testScope(),
         )
 
-        assertEquals(SignInUiState(error = "Please sign in again."), viewModel.state.value)
+        assertEquals(SignInUiState(error = UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED)), viewModel.state.value)
         viewModel.onEvent(SignInEvent.UsernameChanged("  anonymous-heron  "))
         viewModel.onEvent(SignInEvent.PasswordChanged("fictional-password"))
 
         assertEquals("  anonymous-heron  ", viewModel.state.value.username)
         assertEquals("fictional-password", viewModel.state.value.password)
-        assertEquals("Please sign in again.", viewModel.state.value.error)
+        assertEquals(UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED), viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoading)
     }
 
@@ -72,7 +74,7 @@ class SignInViewModelTest {
     }
 
     @Test
-    fun failedSubmissionKeepsCredentialsEditableAndShowsApiMessage() {
+    fun failedSubmissionKeepsCredentialsEditableAndStoresFallbackIdentity() {
         val scope = testScope()
         try {
             val viewModel = SignInViewModel(
@@ -89,11 +91,46 @@ class SignInViewModelTest {
             viewModel.onEvent(SignInEvent.Submit)
 
             assertFalse(viewModel.state.value.isLoading)
-            assertEquals("Those credentials were not accepted.", viewModel.state.value.error)
+            assertEquals(UiFailure(fallback = UiFailureFallback.REACH_TRUSTROOTS), viewModel.state.value.error)
             assertEquals("anonymous-heron", viewModel.state.value.username)
             assertEquals("fictional-wrong-password", viewModel.state.value.password)
             viewModel.onEvent(SignInEvent.PasswordChanged("fictional-corrected-password"))
             assertEquals("fictional-corrected-password", viewModel.state.value.password)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun failedSignInRetainsDynamicServerTextAndApiKind() {
+        val scope = testScope()
+        try {
+            val viewModel = SignInViewModel(
+                apiBaseUrl = "https://api.example.test",
+                initialMessage = null,
+                authenticator = SignInAuthenticator { _, _ ->
+                    Result.failure(
+                        org.trustroots.android.api.MobileApiException(
+                            statusCode = 401,
+                            serverMessage = "A fictional sign-in response.",
+                            failureKind = org.trustroots.android.api.ApiFailureKind.SIGN_IN_REJECTED,
+                        ),
+                    )
+                },
+                scope = scope,
+            )
+            viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+            viewModel.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+            viewModel.onEvent(SignInEvent.Submit)
+
+            assertEquals(
+                UiFailure(
+                    serverMessage = "A fictional sign-in response.",
+                    apiKind = org.trustroots.android.api.ApiFailureKind.SIGN_IN_REJECTED,
+                    fallback = UiFailureFallback.REACH_TRUSTROOTS,
+                ),
+                viewModel.state.value.error,
+            )
         } finally {
             scope.cancel()
         }
@@ -107,11 +144,11 @@ class SignInViewModelTest {
         first.onEvent(SignInEvent.PasswordChanged("fictional-password"))
 
         holder.clearDestination()
-        val next = holder.getViewModel("https://api.example.test", "Your session has expired.")
+        val next = holder.getViewModel("https://api.example.test", UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED))
 
         assertTrue(first !== next)
         assertEquals(SignInUiState(), first.state.value)
-        assertEquals(SignInUiState(error = "Your session has expired."), next.state.value)
+        assertEquals(SignInUiState(error = UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED)), next.state.value)
     }
 
     @Test

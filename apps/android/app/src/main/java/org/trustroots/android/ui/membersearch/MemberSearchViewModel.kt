@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.ApiFailureKind
+import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.common.isAuthenticationFailure
 
 internal fun interface MemberSearchRepository {
@@ -41,6 +43,7 @@ internal enum class MemberSearchFailureKind {
 internal data class MemberSearchFailure(
     val kind: MemberSearchFailureKind,
     val serverMessage: String?,
+    val apiKind: ApiFailureKind? = null,
 )
 
 internal data class MemberSearchSessionInvalidation(val id: Long)
@@ -147,7 +150,11 @@ internal class MemberSearchViewModel(
                     mutableState.update {
                         it.copy(
                             isLoading = false,
-                            failure = MemberSearchFailure(MemberSearchFailureKind.SEARCH, error.message),
+                            failure = MemberSearchFailure(
+                                kind = MemberSearchFailureKind.SEARCH,
+                                serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+                                apiKind = (error as? MobileApiException)?.failureKind,
+                            ),
                         )
                     }
                 },

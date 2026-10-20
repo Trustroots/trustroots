@@ -70,7 +70,10 @@ import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.conversation.ConversationScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
@@ -88,11 +91,10 @@ internal fun MemberProfileScreen(
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
     val context = LocalContext.current
-    val profileLoadError = stringResource(R.string.profile_load_error)
     var profile by remember(username) { mutableStateOf<MemberProfile?>(null) }
     var hosting by remember(username) { mutableStateOf<AccommodationOffer?>(null) }
     var hostingLoaded by remember(username) { mutableStateOf(false) }
-    var error by remember(username) { mutableStateOf<String?>(null) }
+    var error by remember(username) { mutableStateOf<UiFailure?>(null) }
     var recipient by remember(username) { mutableStateOf<MessageMember?>(null) }
     var relatedUsername by remember(username) { mutableStateOf<String?>(null) }
     var contacts by remember(username) { mutableStateOf<List<ProfileContact>>(emptyList()) }
@@ -257,7 +259,7 @@ internal fun MemberProfileScreen(
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else error = it.messageOr(profileLoadError)
+            else error = it.toUiFailure(UiFailureFallback.LOAD_PROFILE)
         }
     }
     val isSelf = profile?.username == session.member.username
@@ -267,7 +269,7 @@ internal fun MemberProfileScreen(
             error != null -> {
                 NativeBackButton(onBack)
                 Text(
-                    requireNotNull(error),
+                    resolveFailureMessage(requireNotNull(error)),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(20.dp),
                 )

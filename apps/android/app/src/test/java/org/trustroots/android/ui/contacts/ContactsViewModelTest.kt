@@ -22,6 +22,7 @@ import org.robolectric.annotation.Config
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.ProfileContact
 
 @RunWith(RobolectricTestRunner::class)
@@ -60,7 +61,9 @@ class ContactsViewModelTest {
             else Result.success(listOf(contact("quiet-fox"), contact("amber-owl")))
         }
         val viewModel = ContactsViewModel("steady-heron", repository, scope)
-        assertEquals("Fictional contacts service is unavailable.", viewModel.state.value.failure?.serverMessage)
+        assertNull(viewModel.state.value.failure?.serverMessage)
+        assertNull(viewModel.state.value.failure?.apiKind)
+        assertEquals(IOException::class.java.name, viewModel.state.value.failure?.throwableType)
         assertEquals(ContactsFailureReason.CONTACTS, viewModel.state.value.failure?.reason)
 
         viewModel.onEvent(ContactsEvent.Retry)
@@ -69,6 +72,32 @@ class ContactsViewModelTest {
         assertEquals(listOf(contact("quiet-fox"), contact("amber-owl")), viewModel.state.value.contacts)
         assertNull(viewModel.state.value.failure)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun storesOnlyNonblankApiServerMessageAndFailureKind() = withScope { scope ->
+        val repository = FakeContactsRepository()
+        repository.contactsHandler = {
+            Result.failure(
+                MobileApiException(
+                    statusCode = 503,
+                    serverMessage = "A fictional contacts response.",
+                    failureKind = ApiFailureKind.REQUEST_REJECTED,
+                ),
+            )
+        }
+        val viewModel = ContactsViewModel("steady-heron", repository, scope)
+
+        assertEquals("A fictional contacts response.", viewModel.state.value.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, viewModel.state.value.failure?.apiKind)
+
+        repository.contactsHandler = {
+            Result.failure(MobileApiException(503, serverMessage = " \t", failureKind = ApiFailureKind.REQUEST_REJECTED))
+        }
+        viewModel.onEvent(ContactsEvent.Retry)
+
+        assertNull(viewModel.state.value.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, viewModel.state.value.failure?.apiKind)
     }
 
     @Test

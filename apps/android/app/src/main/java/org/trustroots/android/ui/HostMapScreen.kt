@@ -92,7 +92,10 @@ import org.trustroots.android.api.CommunityNote
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.languageName
 import org.trustroots.android.ui.common.messageTime
 import org.trustroots.android.ui.profile.MemberProfileScreen
@@ -120,9 +123,6 @@ internal fun HostMapScreen(
     val resources = LocalResources.current
     val languageLocale = LocalConfiguration.current.locales[0]
     val mapBackground = colorResource(R.color.trustroots_pale_green)
-    val hostSearchError = stringResource(R.string.screen_host_search_error)
-    val placeSearchError = stringResource(R.string.screen_place_search_error)
-    val loadHostError = stringResource(R.string.screen_load_host_error)
     val potentialHostLabel = stringResource(R.string.screen_potential_host)
     val communityNoteLabel = stringResource(R.string.screen_community_note)
     val hideFiltersLabel = stringResource(R.string.screen_hide_filters)
@@ -156,7 +156,7 @@ internal fun HostMapScreen(
     var profileUsername by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(profileUsername) { onProfileOpenChange(profileUsername != null) }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiFailure?>(null) }
     var locationQuery by remember { mutableStateOf("") }
     var locationRevision by remember { mutableIntStateOf(0) }
     var includeHosts by remember { mutableStateOf(true) }
@@ -258,7 +258,7 @@ internal fun HostMapScreen(
             }.onFailure {
                 if (generation == searchGeneration.get()) {
                     if (it.isAuthenticationFailure()) onSessionInvalidated()
-                    else error = it.messageOr(hostSearchError)
+                    else error = it.toUiFailure(UiFailureFallback.HOST_SEARCH)
                 }
             }
             if (generation == searchGeneration.get()) loading = false
@@ -306,7 +306,7 @@ internal fun HostMapScreen(
             }
             if (revision != locationRevision) return@launch
             val location = result.getOrNull()
-            if (location == null) error = placeSearchError
+            if (location == null) error = UiFailure(fallback = UiFailureFallback.PLACE_SEARCH)
             else {
                 map.controller.setZoom(9.0)
                 map.controller.animateTo(GeoPoint(location.latitude, location.longitude))
@@ -371,7 +371,7 @@ internal fun HostMapScreen(
                                 scope.launch {
                                     api.hostOffer(session, offer.id).onSuccess { host = it }.onFailure {
                                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                                        else error = it.messageOr(loadHostError)
+                                        else error = it.toUiFailure(UiFailureFallback.LOAD_HOST)
                                     }
                                 }
                             }
@@ -543,7 +543,7 @@ internal fun HostMapScreen(
         }
         error?.let {
             Text(
-                it, color = MaterialTheme.colorScheme.error,
+                resolveFailureMessage(it), color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.align(Alignment.Center).background(MaterialTheme.colorScheme.surface).padding(12.dp),
             )
         }

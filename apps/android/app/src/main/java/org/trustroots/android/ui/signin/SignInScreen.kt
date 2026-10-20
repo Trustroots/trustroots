@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.browser.BrowserRoute
@@ -123,7 +124,7 @@ internal fun SignInScreen(
             )
             state.error?.let {
                 Text(
-                    it,
+                    resolveFailureMessage(it),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),

@@ -22,6 +22,7 @@ import org.robolectric.annotation.Config
 import org.trustroots.android.ui.MemberShellViewModelStoreOwner
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.api.ApiFailureKind
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
@@ -63,7 +64,7 @@ class MemberSearchViewModelTest {
         repository.searchHandler = { Result.failure(IOException("A temporary failure.")) }
         viewModel.onEvent(MemberSearchEvent.Submit)
         assertEquals(
-            MemberSearchFailure(MemberSearchFailureKind.SEARCH, "A temporary failure."),
+            MemberSearchFailure(MemberSearchFailureKind.SEARCH, null),
             viewModel.state.value.failure,
         )
 
@@ -82,7 +83,7 @@ class MemberSearchViewModelTest {
         val viewModel = MemberSearchViewModel(repository, scope)
         viewModel.onEvent(MemberSearchEvent.QueryChanged("quiet"))
         viewModel.onEvent(MemberSearchEvent.Submit)
-        assertEquals("A temporary failure.", viewModel.state.value.failure?.serverMessage)
+        assertNull(viewModel.state.value.failure?.serverMessage)
 
         viewModel.onEvent(MemberSearchEvent.Submit)
 
@@ -90,6 +91,33 @@ class MemberSearchViewModelTest {
         assertEquals(listOf(member("quiet-fox", "Quiet Fox")), viewModel.state.value.results)
         assertNull(viewModel.state.value.failure)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun storesOnlyNonblankApiServerMessageAndFailureKind() = withScope { scope ->
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = {
+            Result.failure(
+                MobileApiException(
+                    statusCode = 503,
+                    serverMessage = "A fictional response message.",
+                    failureKind = ApiFailureKind.REQUEST_REJECTED,
+                ),
+            )
+        }
+        val viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("quiet"))
+        viewModel.onEvent(MemberSearchEvent.Submit)
+
+        assertEquals("A fictional response message.", viewModel.state.value.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, viewModel.state.value.failure?.apiKind)
+
+        repository.searchHandler = {
+            Result.failure(MobileApiException(503, serverMessage = "  \t", failureKind = ApiFailureKind.REQUEST_REJECTED))
+        }
+        viewModel.onEvent(MemberSearchEvent.Submit)
+        assertNull(viewModel.state.value.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, viewModel.state.value.failure?.apiKind)
     }
 
     @Test

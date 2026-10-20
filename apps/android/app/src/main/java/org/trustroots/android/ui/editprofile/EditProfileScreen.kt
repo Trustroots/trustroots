@@ -41,7 +41,10 @@ import org.trustroots.android.ui.common.FormActionBar
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.languageName
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.rememberFormCancel
 
 @Composable
@@ -54,7 +57,6 @@ internal fun EditProfileScreen(
     onSaved: (MemberProfile) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    val profileSaveError = stringResource(R.string.screen_profile_save_error)
     val editProfileTitle = stringResource(R.string.screen_edit_profile)
     val languagesLabel = stringResource(R.string.screen_languages)
     val chooseLanguagesLabel = stringResource(R.string.screen_choose_languages)
@@ -68,7 +70,7 @@ internal fun EditProfileScreen(
     var languages by remember(profile.username) { mutableStateOf(profile.languages.toSet()) }
     var languageMenu by remember { mutableStateOf(false) }
     var saving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiFailure?>(null) }
     val languageLocale = LocalConfiguration.current.locales[0]
     val scope = rememberCoroutineScope()
     val options = remember(languages, languageLocale) {
@@ -87,7 +89,7 @@ internal fun EditProfileScreen(
                         .onSuccess(onSaved)
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr(profileSaveError)
+                            else error = it.toUiFailure(UiFailureFallback.SAVE_PROFILE)
                         }
                     saving = false
                 }
@@ -96,7 +98,7 @@ internal fun EditProfileScreen(
         FormActionBar(editProfileTitle, saving, name.isNotBlank(), cancel, save, horizontalInset = contentPadding.horizontalInset())
         error?.let {
             Text(
-                it,
+                resolveFailureMessage(it),
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier
                     .fillMaxWidth()

@@ -63,7 +63,7 @@ class CirclesViewModelTest {
         repository.updateResult = Result.failure(IOException("The circle could not be left."))
         viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
         assertEquals(setOf("circle-one"), viewModel.state.value.memberships)
-        assertEquals("The circle could not be left.", viewModel.state.value.failure?.serverMessage)
+        assertNull(viewModel.state.value.failure?.serverMessage)
         assertEquals(CirclesFailureKind.MEMBERSHIP_UPDATE, viewModel.state.value.failure?.kind)
         assertNull(viewModel.state.value.updatingCircleID)
 
@@ -82,7 +82,7 @@ class CirclesViewModelTest {
         }
         val viewModel = CirclesViewModel(repository, scope = scope)
 
-        assertEquals("The circle catalogue is unavailable.", viewModel.state.value.failure?.serverMessage)
+        assertNull(viewModel.state.value.failure?.serverMessage)
         assertEquals(CirclesFailureKind.CIRCLES_LOAD, viewModel.state.value.failure?.kind)
         assertTrue(viewModel.state.value.canRetryLoad)
         assertFalse(viewModel.state.value.isLoading)
@@ -93,6 +93,29 @@ class CirclesViewModelTest {
         assertEquals(listOf("circle-one"), viewModel.state.value.circles.map { it.id })
         assertNull(viewModel.state.value.failure)
         assertFalse(viewModel.state.value.canRetryLoad)
+    }
+
+    @Test
+    fun apiFailureRetainsOnlyNonblankServerTextAndContextFreeKind() = withScope { scope ->
+        val repository = FakeCircleRepository().apply {
+            circlesHandler = {
+                Result.failure(
+                    MobileApiException(
+                        statusCode = 503,
+                        serverMessage = "  ",
+                        failureKind = org.trustroots.android.api.ApiFailureKind.REQUEST_REJECTED,
+                    ),
+                )
+            }
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        assertNull(viewModel.state.value.failure?.serverMessage)
+        assertEquals(
+            org.trustroots.android.api.ApiFailureKind.REQUEST_REJECTED,
+            viewModel.state.value.failure?.apiFailureKind,
+        )
+        assertEquals(CirclesFailureKind.CIRCLES_LOAD, viewModel.state.value.failure?.kind)
     }
 
     @Test

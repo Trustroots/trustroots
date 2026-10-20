@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
@@ -58,6 +59,7 @@ internal enum class CirclesFailureKind {
 internal data class CirclesFailure(
     val kind: CirclesFailureKind,
     val serverMessage: String?,
+    val apiFailureKind: ApiFailureKind?,
 )
 
 internal data class CirclesUiState(
@@ -222,7 +224,12 @@ internal class CirclesViewModel(
         } else {
             mutableState.update {
                 it.copy(
-                    failure = CirclesFailure(kind, error.message),
+                    failure = CirclesFailure(
+                        kind = kind,
+                        serverMessage = (error as? org.trustroots.android.api.MobileApiException)
+                            ?.serverMessage?.takeIf(String::isNotBlank),
+                        apiFailureKind = (error as? org.trustroots.android.api.MobileApiException)?.failureKind,
+                    ),
                     canRetryLoad = retryLoad,
                 )
             }

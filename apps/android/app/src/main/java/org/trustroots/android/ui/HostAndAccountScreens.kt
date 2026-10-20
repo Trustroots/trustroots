@@ -73,8 +73,11 @@ import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberFormCancel
 import org.trustroots.android.ui.common.rememberFormLeave
 import org.trustroots.android.ui.common.FormActionBar
-import org.trustroots.android.ui.common.messageOr
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 
 private const val defaultHostLatitude = 48.6908333333
 private const val defaultHostLongitude = 9.14055555556
@@ -87,8 +90,6 @@ internal fun HostOfferScreen(
     onBack: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    val hostOfferLoadError = stringResource(R.string.screen_host_offer_load_error)
-    val hostOfferSaveError = stringResource(R.string.screen_host_offer_save_error)
     val hostOfferSaved = stringResource(R.string.screen_host_offer_saved)
     val hostTitle = stringResource(R.string.screen_host)
     val hostDescriptionPrompt = stringResource(R.string.screen_host_description_prompt)
@@ -100,7 +101,7 @@ internal fun HostOfferScreen(
     val longerHostingDescription = stringResource(R.string.screen_longer_hosting_description)
     var loading by remember { mutableStateOf(true) }
     var saving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiFailure?>(null) }
     var savedMessage by remember { mutableStateOf<String?>(null) }
     var offerId by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("yes") }
@@ -119,7 +120,7 @@ internal fun HostOfferScreen(
         api.profile(session, session.member.username).onSuccess { profile ->
             val memberID = profile.id
             if (memberID == null) {
-                error = hostOfferLoadError
+                error = UiFailure(fallback = UiFailureFallback.HOST_OFFER_LOAD)
                 loading = false
                 return@onSuccess
             }
@@ -143,14 +144,14 @@ internal fun HostOfferScreen(
             }.onFailure {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
                 else {
-                    error = it.messageOr(hostOfferLoadError)
+                    error = it.toUiFailure(UiFailureFallback.HOST_OFFER_LOAD)
                     loading = false
                 }
             }
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
-                error = it.messageOr(hostOfferLoadError)
+                error = it.toUiFailure(UiFailureFallback.HOST_OFFER_LOAD)
                 loading = false
             }
         }
@@ -180,7 +181,7 @@ internal fun HostOfferScreen(
                         savedMessage = hostOfferSaved
                     }.onFailure {
                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                        else error = it.messageOr(hostOfferSaveError)
+                        else error = it.toUiFailure(UiFailureFallback.HOST_OFFER_SAVE)
                     }
                     saving = false
                 }
@@ -241,7 +242,7 @@ internal fun HostOfferScreen(
             Text(showOnlyMyCircles)
         }
         error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+            Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
         }
         savedMessage?.let {
             Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 8.dp))
@@ -272,7 +273,6 @@ internal fun CreateExperienceScreen(
     onCreated: () -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    val experienceShareError = stringResource(R.string.screen_experience_share_error)
     val experienceTitle = stringResource(R.string.screen_experience_with, memberLabel)
     val whatHappenedLabel = stringResource(R.string.screen_what_happened)
     val metInPersonLabel = stringResource(R.string.screen_met_in_person)
@@ -288,7 +288,7 @@ internal fun CreateExperienceScreen(
     var recommendation by remember { mutableStateOf("yes") }
     var feedback by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiFailure?>(null) }
     val scope = rememberCoroutineScope()
     val canSave = met || hosted || wasGuest
     val cancel = rememberFormCancel(!met || hosted || wasGuest || recommendation != "yes" || feedback.isNotEmpty(), saving, onBack)
@@ -309,7 +309,7 @@ internal fun CreateExperienceScreen(
                     ).onSuccess { onCreated() }
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr(experienceShareError)
+                            else error = it.toUiFailure(UiFailureFallback.SHARE_EXPERIENCE)
                         }
                     saving = false
                 }
@@ -351,7 +351,7 @@ internal fun CreateExperienceScreen(
             modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         )
         error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+            Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
         }
 
     }
@@ -385,9 +385,6 @@ internal fun AccountSettingsScreen(
     val updateCheckError = stringResource(R.string.screen_update_check_error)
     val allowUpdateNotifications = stringResource(R.string.screen_allow_update_notifications)
     val updateAlertsOff = stringResource(R.string.screen_update_alerts_off)
-    val accountLoadError = stringResource(R.string.screen_account_load_error)
-    val accountSaveError = stringResource(R.string.screen_account_save_error)
-    val passwordChangeError = stringResource(R.string.screen_password_change_error)
     val accountTitle = stringResource(R.string.screen_account_title)
     val signedInAs = stringResource(R.string.screen_signed_in_as, session.member.displayName, session.member.username)
     val emailLabel = stringResource(R.string.screen_email)
@@ -485,7 +482,7 @@ internal fun AccountSettingsScreen(
     var savingAccount by remember { mutableStateOf(false) }
     var changingPassword by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiFailure?>(null) }
     LaunchedEffect(session.member.username) {
         loading = true
         api.accountDetails(session).onSuccess {
@@ -496,7 +493,7 @@ internal fun AccountSettingsScreen(
         }.onFailure {
             if (it.isAuthenticationFailure()) onSessionInvalidated()
             else {
-                error = it.messageOr(accountLoadError)
+                error = it.toUiFailure(UiFailureFallback.ACCOUNT_LOAD)
                 loading = false
             }
         }
@@ -599,7 +596,7 @@ internal fun AccountSettingsScreen(
                         message = accountSaved
                     }.onFailure {
                         if (it.isAuthenticationFailure()) onSessionInvalidated()
-                        else error = it.messageOr(accountSaveError)
+                        else error = it.toUiFailure(UiFailureFallback.ACCOUNT_SAVE)
                     }
                     savingAccount = false
                 }
@@ -648,7 +645,7 @@ internal fun AccountSettingsScreen(
                         }
                         .onFailure {
                             if (it.isAuthenticationFailure()) onSessionInvalidated()
-                            else error = it.messageOr(passwordChangeError)
+                            else error = it.toUiFailure(UiFailureFallback.PASSWORD_CHANGE)
                         }
                     changingPassword = false
                 }
@@ -681,7 +678,7 @@ internal fun AccountSettingsScreen(
             Text(it, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(top = 10.dp))
         }
         error?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
+            Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 10.dp))
         }
         HorizontalDivider(Modifier.padding(vertical = 20.dp))
         Button(onClick = { leave(onSignedOut) }) { Text(signOutLabel) }

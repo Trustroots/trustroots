@@ -44,6 +44,10 @@
     <string name="screen_welcome_name">Hi %1$s</string>
     <string name="screen_build_date">Build: %1$s</string>
     <string name="screen_session_expired">Your session expired or is no longer valid. Please sign in again.</string>
+    <string name="api_sign_in_rejected">Sign-in was not accepted.</string>
+    <string name="api_missing_session">Trustroots did not return a member session.</string>
+    <string name="api_request_rejected">The request was not accepted.</string>
+    <string name="screen_sign_in_session_expired">Your session expired or is no longer valid. Please sign in again.</string>
     <string name="screen_could_not_reach_trustroots">Could not reach Trustroots.</string>
     <string name="screen_sign_in_description">Sharing, hosting and getting people together.</string>
     <string name="screen_sign_in">Sign in</string>

@@ -112,6 +112,8 @@ import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.signin.SignInScreen
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -127,7 +129,6 @@ internal fun TrustrootsApp(
     reconcileAlerts: (Context, MemberSession) -> Unit = MessageAlerts::reconcile,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
-    val sessionExpiredMessage = stringResource(R.string.screen_session_expired)
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
@@ -151,7 +152,7 @@ internal fun TrustrootsApp(
     val responseCache = remember { SecureResponseCache(context.applicationContext) }
     var session by remember { mutableStateOf<MemberSession?>(null) }
     var starting by remember { mutableStateOf(true) }
-    var signedOutMessage by remember { mutableStateOf<String?>(null) }
+    var signedOutMessage by remember { mutableStateOf<UiFailure?>(null) }
     LaunchedEffect(sessionStore) {
         val startedAt = android.os.SystemClock.elapsedRealtime()
         session = withContext(Dispatchers.IO) { sessionStore.load() }
@@ -213,7 +214,7 @@ internal fun TrustrootsApp(
                         sessionStore.clear()
                         signInStoreHolder.clearDestination()
                         session = null
-                        signedOutMessage = sessionExpiredMessage
+                        signedOutMessage = UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED)
                     },
                 )
             }

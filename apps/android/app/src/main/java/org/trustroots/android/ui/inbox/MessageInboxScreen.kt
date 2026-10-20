@@ -21,6 +21,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.res.stringResource
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import androidx.compose.material3.Text
@@ -42,7 +43,10 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.conversation.ConversationScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
 
@@ -54,16 +58,16 @@ internal fun MessageInboxScreen(
     initialMemberID: String? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    val messagesLoadError = stringResource(R.string.screen_messages_load_error)
     var threads by remember { mutableStateOf<List<MessageThread>>(emptyList()) }
     var selected by remember { mutableStateOf<MessageMember?>(null) }
     var selectedProfile by remember { mutableStateOf<String?>(null) }
     var filter by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<UiFailure?>(null) }
     var loaded by remember { mutableStateOf(false) }
     var reload by remember { mutableStateOf(0) }
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val failureMessage = error?.let { resolveFailureMessage(it) }
     selectedProfile?.let { username ->
         MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selectedProfile = null }, contentPadding = contentPadding)
         return
@@ -77,6 +81,11 @@ internal fun MessageInboxScreen(
         )
         return
     }
+    val memberLabels = threads.associate { thread -> thread.id to thread.otherMember.localizedLabel() }
+    val filteredThreads = threads.filter { thread ->
+        val text = "${memberLabels[thread.id].orEmpty()} ${thread.otherMember.username.orEmpty()} ${thread.excerpt}"
+        text.contains(filter.trim(), ignoreCase = true)
+    }
     LaunchedEffect(reload) {
         loading = true
         error = null
@@ -85,7 +94,7 @@ internal fun MessageInboxScreen(
         do {
             val batch = api.inbox(session, page).getOrElse {
                 if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else if (collected.isEmpty()) error = it.messageOr(messagesLoadError)
+                else if (collected.isEmpty()) error = it.toUiFailure(UiFailureFallback.LOAD_MESSAGES)
                 break
             }
             collected += batch
@@ -126,13 +135,9 @@ internal fun MessageInboxScreen(
                         clearLabel = stringResource(R.string.clear_conversation_filter),
                     )
                     if (loading) CircularProgressIndicator()
-                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                    failureMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     if (loaded && threads.isEmpty() && error == null) Text(stringResource(R.string.screen_no_conversations))
                 }
-            }
-            val filteredThreads = threads.filter {
-                val text = "${it.otherMember.label} ${it.otherMember.username.orEmpty()} ${it.excerpt}"
-                text.contains(filter.trim(), ignoreCase = true)
             }
             items(filteredThreads, key = { it.id }) { thread ->
                 Row(
@@ -149,11 +154,11 @@ internal fun MessageInboxScreen(
                             RemoteArtwork(
                                 url = thread.otherMember.id?.let { api.avatarURL(it, 64) },
                                 sessionCookie = session.cookieHeader,
-                                label = thread.otherMember.label,
+                                label = memberLabels[thread.id].orEmpty(),
                                 size = 44.dp,
                             )
                             Column(Modifier.padding(start = 10.dp)) {
-                                Text(thread.otherMember.label, fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
+                                Text(memberLabels[thread.id].orEmpty(), fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
                                 Text(thread.excerpt, maxLines = 2)
                             }
                         }

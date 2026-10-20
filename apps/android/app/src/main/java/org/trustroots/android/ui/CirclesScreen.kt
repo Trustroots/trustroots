@@ -49,6 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
@@ -76,14 +79,17 @@ internal fun CirclesScreen(
     }
     SideEffect { viewModel.updateSession(session) }
     val state by viewModel.state.collectAsState()
-    val failureMessage = when (val failure = state.failure) {
-        null -> null
-        else -> failure.serverMessage ?: stringResource(
-            when (failure.kind) {
-                CirclesFailureKind.CIRCLES_LOAD -> R.string.screen_circles_load_error
-                CirclesFailureKind.MEMBERSHIPS_LOAD -> R.string.screen_circle_memberships_load_error
-                CirclesFailureKind.MEMBERSHIP_UPDATE -> R.string.screen_circle_membership_update_error
-            },
+    val failureMessage = state.failure?.let { failure ->
+        resolveFailureMessage(
+            UiFailure(
+                serverMessage = failure.serverMessage,
+                apiKind = failure.apiFailureKind,
+                fallback = when (failure.kind) {
+                    CirclesFailureKind.CIRCLES_LOAD -> UiFailureFallback.CIRCLES_LOAD
+                    CirclesFailureKind.MEMBERSHIPS_LOAD -> UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD
+                    CirclesFailureKind.MEMBERSHIP_UPDATE -> UiFailureFallback.CIRCLE_MEMBERSHIP_UPDATE
+                },
+            ),
         )
     }
     val overviewScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()

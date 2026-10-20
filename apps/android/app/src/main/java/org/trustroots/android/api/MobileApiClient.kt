@@ -52,9 +52,7 @@ data class ProfileUpdate(
     val languages: List<String>,
 )
 
-data class MessageMember(val id: String?, val username: String?, val displayName: String) {
-    val label: String get() = displayName.ifBlank { username ?: "Trustroots member" }
-}
+data class MessageMember(val id: String?, val username: String?, val displayName: String)
 
 data class MessageThread(
     val id: String,
@@ -131,10 +129,13 @@ data class TrustrootsCircle(
     val color: String?,
 )
 
+enum class ApiFailureKind { SIGN_IN_REJECTED, MISSING_SESSION, REQUEST_REJECTED }
+
 class MobileApiException(
     val statusCode: Int,
-    override val message: String,
-) : Exception(message) {
+    val serverMessage: String? = null,
+    val failureKind: ApiFailureKind? = null,
+) : Exception(serverMessage?.takeIf(String::isNotBlank)) {
     val isAuthenticationFailure: Boolean
         get() = statusCode == HttpURLConnection.HTTP_UNAUTHORIZED
 }
@@ -169,12 +170,13 @@ class MobileApiClient(
                         path = "/api/auth/signin",
                         method = "POST",
                         body = request,
-                        rejectedMessage = "Sign-in was not accepted.",
+                        failureKind = ApiFailureKind.SIGN_IN_REJECTED,
                     )
                 MemberSession(
-                    cookieHeader = requireNotNull(response.sessionCookie) {
-                        "Trustroots did not return a member session."
-                    },
+                    cookieHeader = response.sessionCookie ?: throw MobileApiException(
+                        statusCode = HttpURLConnection.HTTP_OK,
+                        failureKind = ApiFailureKind.MISSING_SESSION,
+                    ),
                     member = mobileMemberFrom(JSONObject(response.body)),
                 )
             }
@@ -553,7 +555,7 @@ class MobileApiClient(
         body: String? = null,
         sessionCookie: String? = null,
         requestHeaders: Map<String, String> = emptyMap(),
-        rejectedMessage: String = "The request was not accepted.",
+        failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -584,7 +586,8 @@ class MobileApiClient(
                     .orEmpty()
                 throw MobileApiException(
                     statusCode = connection.responseCode,
-                    message = message.ifBlank { rejectedMessage },
+                    serverMessage = message.takeIf(String::isNotBlank),
+                    failureKind = failureKind,
                 )
             }
             if (method == "GET" && sessionCookie != null && cacheAccount != null) {

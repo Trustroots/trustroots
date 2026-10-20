@@ -2,35 +2,47 @@ package org.trustroots.android.ui
 
 import java.io.IOException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
-import org.trustroots.android.ui.common.messageOr
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.toUiFailure
 
 class FailureMessageTest {
     @Test
-    fun preservesApiFailureMessage() {
-        val error = MobileApiException(503, "The service is unavailable.")
+    fun retainsOnlyNonblankServerTextAndApiFailureKind() {
+        val serverError = MobileApiException(
+            statusCode = 503,
+            serverMessage = "A fictional service message.",
+            failureKind = ApiFailureKind.REQUEST_REJECTED,
+        ).toUiFailure(UiFailureFallback.LOAD_CONTACTS)
+        val blankServerError = MobileApiException(
+            statusCode = 503,
+            serverMessage = "  \t",
+            failureKind = ApiFailureKind.REQUEST_REJECTED,
+        ).toUiFailure(UiFailureFallback.LOAD_CONTACTS)
 
-        assertEquals("The service is unavailable.", error.messageOr("Fallback"))
+        assertEquals("A fictional service message.", serverError.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, serverError.apiKind)
+        assertNull(blankServerError.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, blankServerError.apiKind)
     }
 
     @Test
-    fun preservesIoFailureMessage() {
-        val error = IOException("Connection closed.")
+    fun unknownExceptionKeepsScreenFallbackIdentityAndDoesNotExposePlatformText() {
+        val failure = IOException("English transport diagnostic").toUiFailure(UiFailureFallback.LOAD_CONTACTS)
 
-        assertEquals("Connection closed.", error.messageOr("Fallback"))
+        assertEquals(UiFailure(fallback = UiFailureFallback.LOAD_CONTACTS), failure)
     }
 
     @Test
-    fun usesSpecificFallbackWhenMessageIsNull() {
-        val error = IOException(null as String?)
+    fun fallbackStateDoesNotStoreResolvedLocaleText() {
+        val failure = IOException("An old translated message").toUiFailure(UiFailureFallback.REACH_TRUSTROOTS)
 
-        assertEquals("Could not load circles.", error.messageOr("Could not load circles."))
-    }
-
-    @Test
-    fun preservesEmptyAndWhitespaceMessagesExactly() {
-        assertEquals("", IOException("").messageOr("Fallback"))
-        assertEquals("  \t ", IOException("  \t ").messageOr("Fallback"))
+        assertNull(failure.serverMessage)
+        assertNull(failure.apiKind)
+        assertEquals(UiFailureFallback.REACH_TRUSTROOTS, failure.fallback)
     }
 }
