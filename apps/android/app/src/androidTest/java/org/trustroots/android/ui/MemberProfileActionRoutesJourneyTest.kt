@@ -10,6 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -90,7 +91,7 @@ class MemberProfileActionRoutesJourneyTest {
             }
         }
 
-        compose.onNodeWithContentDescription("More profile actions").performClick()
+        openActionMenu()
         waitForText("Add contact")
         compose.onNodeWithText("Add contact").performClick()
         waitForText("Fixture browser: Add contact")
@@ -99,7 +100,7 @@ class MemberProfileActionRoutesJourneyTest {
         compose.onNodeWithText("URL: https://www.trustroots.org/contact-add/member-two").assertIsDisplayed()
         compose.onNodeWithText("Cookie: ${session.cookieHeader}").assertIsDisplayed()
         compose.onNodeWithText("Close fixture browser").performClick()
-        compose.onNodeWithContentDescription("More profile actions").performClick()
+        openActionMenu()
         waitForText("Add contact")
 
         compose.onNodeWithText("Add contact").assertIsDisplayed()
@@ -127,6 +128,13 @@ class MemberProfileActionRoutesJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun openActionMenu() {
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("More profile actions").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("More profile actions").assertIsDisplayed().performClick()
     }
 
     private fun startFixture() {
