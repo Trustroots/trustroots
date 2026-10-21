@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.os.SystemClock
 import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedDispatcher
 import androidx.compose.ui.test.assertIsDisplayed
@@ -13,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -48,13 +50,21 @@ class Navigation3MemberShellJourneyTest {
     @Volatile private var circlesStatus = 200
     private val circleReads = AtomicInteger()
     private val membershipReads = AtomicInteger()
+    private val ownProfileReads = AtomicInteger()
+    private val messageReads = AtomicInteger()
     private val joinedHarbour = AtomicBoolean(false)
     private val fixture = LocalTransportFixture { request ->
         when {
-            request.path.startsWith("/api/users/steady-heron") -> LocalTransportFixture.Response(
-                """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
-            )
-            request.path.startsWith("/api/messages?") -> LocalTransportFixture.Response("[]")
+            request.path.startsWith("/api/users/steady-heron") -> {
+                if (request.method == "GET") ownProfileReads.incrementAndGet()
+                LocalTransportFixture.Response(
+                    """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
+                )
+            }
+            request.path.startsWith("/api/messages?") -> {
+                messageReads.incrementAndGet()
+                LocalTransportFixture.Response("[]")
+            }
             request.path == "/api/tribes?limit=150" -> {
                 circleReads.incrementAndGet()
                 val body = if (circlesStatus in 200..299) circlesResponse
@@ -89,6 +99,8 @@ class Navigation3MemberShellJourneyTest {
         circlesStatus = 200
         circleReads.set(0)
         membershipReads.set(0)
+        ownProfileReads.set(0)
+        messageReads.set(0)
         joinedHarbour.set(false)
         SecureMobileSessionStore(context).save(
             MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
@@ -110,9 +122,15 @@ class Navigation3MemberShellJourneyTest {
                 .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
         )
         waitForText("Discover circles")
+        compose.waitUntil(10_000) { ownProfileReads.get() == 1 && circleReads.get() == 1 }
+        waitForStableMessageReads(1)
+        assertEquals("Initial shell avatar plus Circles load complete before recreation", 1, ownProfileReads.get())
 
         compose.onNodeWithTag("navigation-messages").performClick()
         waitForText("No conversations yet.")
+        waitForStableMessageReads(3) // one shell badge poll and one inbox load
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForStableMessageReads(5) // one reselect badge poll and one refreshed inbox load
         compose.onNodeWithTag("navigation-circles").performClick()
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
@@ -125,6 +143,8 @@ class Navigation3MemberShellJourneyTest {
         requireNotNull(scenario).recreate()
         waitForText("Discover circles")
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
+        compose.waitForIdle()
+        assertEquals("Recreation retains the successful shell profile lookup", 1, ownProfileReads.get())
 
         cancelPredictiveBack()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
@@ -234,10 +254,90 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithText("Discard changes").performClick()
         waitForText("Search places")
         compose.onNodeWithTag("navigation-search").assertIsSelected()
+        pressSystemBack()
+        waitForText("View your profile")
+        compose.onNodeWithText("A new anonymous line").assertDoesNotExist()
+    }
+
+    @Test fun menuChildRouteRestoresAfterActivityRecreationAndReturnsThroughItsOrigins() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Contacts").performScrollTo().performClick()
+        waitForText("People you connect with on Trustroots will appear here.")
+
+        requireNotNull(scenario).recreate()
+        waitForText("People you connect with on Trustroots will appear here.")
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("View your profile").assertExists()
+
+        pressSystemBack()
+        compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+        pressSystemBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
+    }
+
+    @Test fun nestedSystemBackWaitsForDirtyEditProfileDecision() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Edit profile").performScrollTo().performClick()
+        waitForText("Tagline")
+        compose.onNodeWithText("Tagline").performTextReplacement("A fictional route change")
+        compose.waitForIdle()
+
+        pressSystemBack()
+        compose.onNodeWithText("Discard changes?").assertIsDisplayed()
+        compose.onNodeWithText("Keep editing").performClick()
+        compose.onNodeWithText("A fictional route change").assertIsDisplayed()
+
+        pressSystemBack()
+        compose.onNodeWithText("Discard changes").performClick()
+        waitForText("View your profile")
+        pressSystemBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+    }
+
+    @Test fun nestedPredictiveBackCancelsWithoutPoppingAndThenReturnsToMenuOrigin() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Contacts").performScrollTo().performClick()
+        waitForText("People you connect with on Trustroots will appear here.")
+
+        requirePredictiveBackSupport()
+        cancelPredictiveBack()
+        compose.onNodeWithText("Contacts").assertIsDisplayed()
+        completePredictiveBack()
+        compose.onNodeWithText("View your profile").assertExists()
+        compose.onNodeWithTag("navigation-menu").assertIsSelected()
+
+        completePredictiveBack()
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
     }
 
     private fun requirePredictiveBackSupport() {
         assumeTrue("Predictive back event dispatch requires Android 14+", Build.VERSION.SDK_INT >= 34)
+    }
+
+    private fun pressSystemBack() {
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
     }
 
     private fun cancelPredictiveBack() {
@@ -267,6 +367,21 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun waitForStableMessageReads(expected: Int) {
+        var stableSince = 0L
+        compose.waitUntil(10_000) {
+            if (messageReads.get() != expected) {
+                stableSince = 0L
+                false
+            } else {
+                val now = SystemClock.elapsedRealtime()
+                if (stableSince == 0L) stableSince = now
+                now - stableSince >= 400
+            }
+        }
+        assertEquals("Expected one shell badge poll plus any inbox load", expected, messageReads.get())
     }
 
     private fun pressBack() {

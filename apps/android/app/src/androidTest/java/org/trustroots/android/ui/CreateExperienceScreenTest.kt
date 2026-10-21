@@ -27,6 +27,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.testing.KeyboardTestSupport
+import org.trustroots.android.testing.foregroundActivityTask
 
 @RunWith(AndroidJUnit4::class)
 class CreateExperienceScreenTest {
@@ -95,6 +96,7 @@ class CreateExperienceScreenTest {
             )
         }
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithText("Public experience (optional)").performScrollTo().performClick()
         compose.onNodeWithText("Public experience (optional)").performTextInput("A fictional account of a kind visit.")
         keyboardTestSupport.awaitShown(compose)

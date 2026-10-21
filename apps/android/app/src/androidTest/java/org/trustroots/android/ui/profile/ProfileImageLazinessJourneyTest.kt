@@ -2,6 +2,7 @@ package org.trustroots.android.ui.profile
 
 import android.graphics.Bitmap
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -32,6 +33,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.testing.hasFocusedNonActivityRoot
+import org.trustroots.android.testing.foregroundActivityTask
+import org.trustroots.android.testing.activityFocusDiagnostics
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -86,6 +89,7 @@ class ProfileImageLazinessJourneyTest {
 
         compose.onNodeWithTag("profileSection-contacts").performClick()
         compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithTag("profileAvatar").performClick()
         compose.waitUntil(10_000) {
             requests.any { it.path == "/api/users/member-main/avatar?size=2048" } &&
@@ -99,9 +103,18 @@ class ProfileImageLazinessJourneyTest {
         assertTrue(compose.onAllNodesWithTag("profileImageViewer").fetchSemanticsNodes().isEmpty())
         compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
 
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithTag("profileAvatar").performClick()
         compose.onNodeWithContentDescription("Profile photo of Quiet Fox").assertIsDisplayed()
-        compose.waitUntil(5_000) { hasFocusedNonActivityRoot(compose.activity) }
+        try {
+            compose.waitUntil(5_000) { hasFocusedNonActivityRoot(compose.activity) }
+        } catch (error: ComposeTimeoutException) {
+            throw AssertionError(
+                "Profile photo dialog must receive real window focus before physical Back: " +
+                    activityFocusDiagnostics(compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation),
+                error,
+            )
+        }
         InstrumentationRegistry.getInstrumentation().uiAutomation
             .executeShellCommand("input keyevent KEYCODE_BACK").use { descriptor ->
                 FileInputStream(descriptor.fileDescriptor).use { it.readBytes() }

@@ -27,6 +27,8 @@ import java.net.SocketException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -205,6 +207,9 @@ class SignInDestinationJourneyTest {
 
     @Test
     fun expiredSessionAfterSuccessfulSignInOpensFreshFormWithExpiryMessage() {
+        val expireOwnProfile = AtomicBoolean(false)
+        val successfulOwnProfileReads = AtomicInteger()
+        val expiredOwnProfileReads = AtomicInteger()
         startResponder { request ->
             when {
                 request.line.startsWith("POST /api/auth/signin ") -> Response(
@@ -212,8 +217,18 @@ class SignInDestinationJourneyTest {
                     """{"username":"anonymous-heron","displayName":"Anonymous Heron"}""",
                     "Set-Cookie: connect.sid=fictional-session; Path=/; HttpOnly\r\n",
                 )
-                request.line.startsWith("GET /api/users/anonymous-heron ") ->
-                    Response("401 Unauthorized", """{"message":"Session expired."}""")
+                request.line.startsWith("GET /api/users/anonymous-heron ") -> {
+                    if (expireOwnProfile.get()) {
+                        expiredOwnProfileReads.incrementAndGet()
+                        Response("401 Unauthorized", """{"message":"Session expired."}""")
+                    } else {
+                        successfulOwnProfileReads.incrementAndGet()
+                        Response(
+                            "200 OK",
+                            """{"_id":"member-self","username":"anonymous-heron","displayName":"Anonymous Heron"}""",
+                        )
+                    }
+                }
                 request.line.startsWith("GET /api/messages?") -> Response("200 OK", "[]")
                 request.line == "GET /api/tribes?limit=150 HTTP/1.1" -> Response("200 OK", "[]")
                 request.line == "GET /api/users/memberships HTTP/1.1" -> Response("200 OK", "[]")
@@ -227,10 +242,18 @@ class SignInDestinationJourneyTest {
         compose.onNodeWithTag("signin-password").performTextInput("fictional-password")
         compose.onNodeWithText("Sign in").performScrollTo().performClick()
         waitForText("Discover circles")
+        compose.waitUntil(5_000) { successfulOwnProfileReads.get() >= 1 }
 
         compose.onNodeWithTag("navigation-menu").performClick()
-        compose.onNodeWithText("View your profile").performScrollTo().performClick()
+        compose.onNodeWithText("View your profile").performScrollTo()
+        expireOwnProfile.set(true)
+        compose.onNodeWithText("View your profile").performClick()
         waitForSignIn()
+        assertEquals(
+            "Only the explicit profile visit should receive the expiry response",
+            1,
+            expiredOwnProfileReads.get(),
+        )
 
         compose.onNodeWithText("Your session expired or is no longer valid. Please sign in again.")
             .performScrollTo().assertIsDisplayed()

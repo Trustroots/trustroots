@@ -27,6 +27,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.testing.KeyboardTestSupport
+import org.trustroots.android.testing.foregroundActivityTask
 
 @RunWith(AndroidJUnit4::class)
 class HostOfferScreenTest {
@@ -90,6 +91,7 @@ class HostOfferScreenTest {
         val minimumGap = with(compose.density) { 12.dp.toPx() }
         org.junit.Assert.assertTrue("Adjacent hosting fields should have a consistent gap", guestsTop - descriptionBottom >= minimumGap)
 
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithText("Maximum guests").performScrollTo().performClick()
         compose.onNodeWithText("Maximum guests").performTextReplacement("3")
         keyboardTestSupport.awaitShown(compose)

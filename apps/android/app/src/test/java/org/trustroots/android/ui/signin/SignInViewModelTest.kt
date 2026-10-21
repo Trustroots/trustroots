@@ -18,6 +18,33 @@ import org.trustroots.android.api.MobileMember
 
 class SignInViewModelTest {
     @Test
+    fun blankCredentialsDoNotStartAuthenticationAndKeepTheFormReady() {
+        var calls = 0
+        val viewModel = SignInViewModel(
+            apiBaseUrl = "https://api.example.test",
+            initialMessage = null,
+            authenticator = SignInAuthenticator { _, _ ->
+                calls++
+                error("Blank credentials must not be submitted")
+            },
+            scope = testScope(),
+        )
+
+        viewModel.onEvent(SignInEvent.Submit)
+        viewModel.onEvent(SignInEvent.UsernameChanged("   "))
+        viewModel.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+        viewModel.onEvent(SignInEvent.Submit)
+        viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+        viewModel.onEvent(SignInEvent.PasswordChanged("  "))
+        viewModel.onEvent(SignInEvent.Submit)
+
+        assertEquals(0, calls)
+        assertFalse(viewModel.state.value.isLoading)
+        assertNull(viewModel.state.value.pendingSuccess)
+        assertNull(viewModel.state.value.error)
+    }
+
+    @Test
     fun initialMessageAndCredentialEventsUpdateImmutableState() {
         val viewModel = SignInViewModel(
             apiBaseUrl = "https://api.example.test",
@@ -65,6 +92,10 @@ class SignInViewModelTest {
         assertNotNull(success)
         assertEquals(session, success?.session)
         assertFalse(viewModel.state.value.isLoading)
+        viewModel.onEvent(SignInEvent.Submit)
+        assertEquals("A pending session must be acknowledged before another sign-in can start", 1, submitted.size)
+        viewModel.onEvent(SignInEvent.SuccessDelivered(requireNotNull(success).id + 1))
+        assertEquals(success, viewModel.state.value.pendingSuccess)
         viewModel.onEvent(SignInEvent.SuccessDelivered(requireNotNull(success).id))
         assertNull(viewModel.state.value.pendingSuccess)
         assertEquals("anonymous-heron", viewModel.state.value.username.trim())
@@ -94,6 +125,29 @@ class SignInViewModelTest {
             assertEquals("fictional-wrong-password", viewModel.state.value.password)
             viewModel.onEvent(SignInEvent.PasswordChanged("fictional-corrected-password"))
             assertEquals("fictional-corrected-password", viewModel.state.value.password)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun unexpectedAuthenticatorFailureUsesTheSafeFallbackMessage() {
+        val scope = testScope()
+        try {
+            val viewModel = SignInViewModel(
+                apiBaseUrl = "https://api.example.test",
+                initialMessage = null,
+                authenticator = SignInAuthenticator { _, _ -> throw IllegalStateException() },
+                scope = scope,
+            )
+            viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+            viewModel.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+
+            viewModel.onEvent(SignInEvent.Submit)
+
+            assertFalse(viewModel.state.value.isLoading)
+            assertEquals("Could not reach Trustroots.", viewModel.state.value.error)
+            assertNull(viewModel.state.value.pendingSuccess)
         } finally {
             scope.cancel()
         }

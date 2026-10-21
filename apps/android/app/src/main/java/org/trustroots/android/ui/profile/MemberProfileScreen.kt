@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -31,11 +32,15 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -62,6 +67,7 @@ import org.trustroots.android.ui.CreateExperienceScreen
 import org.trustroots.android.ui.common.ArtworkBitmapState
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.NativeBackButton
+import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.messageOr
@@ -115,6 +121,13 @@ internal fun MemberProfileScreen(
         enabled = profile != null && error == null && !editing && !sharingExperience &&
             relatedUsername == null && recipient == null && browserRoute == null,
     )
+    val leaveGuard = LocalLeaveGuard.current
+    val leaveEditMode = {
+        if (startInEditMode) onBack() else editing = false
+    }
+    val leaveEditModeWithGuard = {
+        leaveGuard?.value?.invoke(leaveEditMode) ?: leaveEditMode()
+    }
     BackHandler {
         when {
             showingProfileImage -> showingProfileImage = false
@@ -123,14 +136,14 @@ internal fun MemberProfileScreen(
             recipient != null -> recipient = null
             relatedUsername != null -> relatedUsername = null
             sharingExperience -> sharingExperience = false
-            editing -> editing = false
+            editing -> leaveEditModeWithGuard()
             else -> onBack()
         }
     }
     if (editing && profile != null) {
         EditProfileScreen(
             api, session, requireNotNull(profile), onSessionInvalidated,
-            onCancel = { editing = false },
+            onCancel = leaveEditMode,
             onSaved = { updated -> profile = updated; editing = false; onOwnProfileSaved(updated) },
             contentPadding = contentPadding,
         )
@@ -264,15 +277,38 @@ internal fun MemberProfileScreen(
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
-                    val compactHeroMinimum = 52.dp + profileSectionBarHeight
-                    val heroHeight = if (compactHeader) {
-                        val availableHeroHeight = maxHeight - profileActionsHeight -
-                            contentPadding.calculateBottomPadding() - sectionContentTarget
-                        availableHeroHeight.coerceAtLeast(compactHeroMinimum).coerceAtMost(250.dp.coerceAtLeast(compactHeroMinimum))
-                    } else 250.dp
-                    val headerHeight = profileActionsHeight + heroHeight
+                    val compactHeaderHeight = profileActionsHeight + profileSectionBarHeight
+                    val expandedHeaderHeight = if (compactHeader) {
+                        (maxHeight - contentPadding.calculateBottomPadding() - sectionContentTarget)
+                            .coerceAtLeast(compactHeaderHeight)
+                            .coerceAtMost(profileActionsHeight + 250.dp)
+                    } else profileActionsHeight + 250.dp
+                    val maxCollapsePx = with(LocalDensity.current) { (expandedHeaderHeight - compactHeaderHeight).toPx() }
+                    val collapseOffset = remember(username) { mutableFloatStateOf(0f) }
+                    val collapseConnection = remember(maxCollapsePx) {
+                        object : NestedScrollConnection {
+                            private fun consume(deltaY: Float): Float {
+                                val before = collapseOffset.floatValue.coerceIn(0f, maxCollapsePx)
+                                val after = (before - deltaY).coerceIn(0f, maxCollapsePx)
+                                collapseOffset.floatValue = after
+                                return before - after
+                            }
+
+                            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
+                                Offset(0f, consume(available.y))
+
+                            override fun onPostScroll(
+                                consumed: Offset,
+                                available: Offset,
+                                source: NestedScrollSource,
+                            ): Offset = Offset(0f, consume(available.y))
+                        }
+                    }
+                    val collapsedDp = with(LocalDensity.current) { collapseOffset.floatValue.coerceIn(0f, maxCollapsePx).toDp() }
+                    val headerHeight = (expandedHeaderHeight - collapsedDp).coerceAtLeast(compactHeaderHeight)
+                    val compactProfileHeader = headerHeight <= compactHeaderHeight + 1.dp
                     val addContactLabel = stringResource(R.string.profile_add_contact)
-                    Column(Modifier.fillMaxSize()) {
+                    Column(Modifier.fillMaxSize().nestedScroll(collapseConnection)) {
                         Box(Modifier.fillMaxWidth().height(headerHeight)) {
                             ArtworkHero(
                                 url = member.id?.let { api.avatarURL(it, 512) },
@@ -283,7 +319,8 @@ internal fun MemberProfileScreen(
                                 blurBackground = true,
                                 testTag = "profileHero",
                                 heroHeight = headerHeight,
-                                compact = compactHeader,
+                                compact = compactProfileHeader,
+                                showCompactIdentity = false,
                                 bottomContent = {
                                     Box(
                                         Modifier.fillMaxWidth().onSizeChanged { size ->
@@ -346,6 +383,7 @@ internal fun MemberProfileScreen(
                                     },
                                     topPadding = contentPadding.calculateTopPadding(),
                                     horizontalInset = contentPadding.horizontalInset(),
+                                    compactTitle = member.displayName.takeIf { compactProfileHeader },
                                 )
                             }
                         }
