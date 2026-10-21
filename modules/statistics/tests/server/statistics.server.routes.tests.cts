@@ -26,10 +26,15 @@ type PublicStatistics = {
   newsletter: { count: number; percentage: number };
   experiences: Record<string, unknown>;
   messageInteractions: Record<string, unknown>;
+  recentActivity: {
+    signups: { past24Hours: number; past7Days: number };
+    threads: { past24Hours: number; past7Days: number };
+    messages: { past24Hours: number; past7Days: number };
+  };
 };
 function assertStats(stats: PublicStatistics) {
   stats.total.should.equal(4);
-  stats.connections.should.have.lengthOf(6);
+  stats.connections.should.have.lengthOf(7);
   stats.connections.map(connection => {
     connection.count.should.equal(2);
     connection.percentage.should.equal(50);
@@ -65,6 +70,11 @@ function assertStats(stats: PublicStatistics) {
       positive: 1,
       negative: 1,
     },
+  });
+  stats.recentActivity.should.deepEqual({
+    signups: { past24Hours: 5, past7Days: 5 },
+    threads: { past24Hours: 2, past7Days: 2 },
+    messages: { past24Hours: 0, past7Days: 0 },
   });
 }
 
@@ -127,6 +137,9 @@ describe('Statistics CRUD tests', () => {
       },
     });
     const _users = [..._usersPublic1, ..._usersPublic2, ..._usersPrivate];
+    _users.forEach(user => {
+      user.created = new Date();
+    });
 
     // Save database contents just once because we're not modifying anything between tests
     before(async () => {

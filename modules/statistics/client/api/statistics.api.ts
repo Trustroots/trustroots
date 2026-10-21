@@ -23,6 +23,11 @@ export interface StatisticsResponse {
     total?: number;
   };
   newsletter?: { count?: number; percentage?: number };
+  recentActivity?: {
+    messages?: { past24Hours?: number; past7Days?: number };
+    signups?: { past24Hours?: number; past7Days?: number };
+    threads?: { past24Hours?: number; past7Days?: number };
+  };
   total?: number;
 }
 
