@@ -20,43 +20,68 @@ export default function AdminHeader() {
     }
   }, []);
 
-  const pages = [
-    { path: 'circles', label: 'Circles' },
-    { path: 'support', label: 'Support inbox' },
-    { path: 'hackerspaces', label: 'Hackerspaces' },
+  const groups = [
     {
-      path: 'messages',
-      label: 'Messages',
+      id: 'support',
+      label: 'Member support',
+      pages: [
+        { path: 'support', label: 'Support inbox' },
+        { path: 'staff-blockers', label: 'Staff blockers' },
+        { path: 'location-corrections', label: 'Location corrections' },
+      ],
     },
     {
-      path: 'threads',
-      label: 'Threads',
+      id: 'circles',
+      label: 'Circles',
+      pages: [
+        { path: 'circles', label: 'Circles' },
+        { path: 'hackerspaces', label: 'Hackerspaces' },
+      ],
     },
     {
-      path: 'reference-threads',
-      label: 'Reference threads',
+      id: 'conversations',
+      label: 'Conversations',
+      pages: [
+        { path: 'messages', label: 'Messages' },
+        { path: 'threads', label: 'Threads' },
+      ],
     },
     {
-      path: 'experience-changes',
-      label: 'Experience changes',
+      id: 'experiences',
+      label: 'Experiences',
+      pages: [
+        { path: 'reference-threads', label: 'Reference threads' },
+        { path: 'experience-changes', label: 'Experience changes' },
+      ],
     },
     {
-      path: 'acquisition-stories',
-      label: 'Acquisition stories',
+      id: 'outreach',
+      label: 'Outreach',
+      pages: [
+        { path: 'acquisition-stories', label: 'Acquisition stories' },
+        { path: 'newsletter', label: 'Newsletter' },
+      ],
     },
     {
-      path: 'staff-blockers',
-      label: 'Staff blockers',
+      id: 'audit',
+      label: 'Audit',
+      pages: [{ path: 'audit-log', label: 'Audit log' }],
     },
-    {
-      path: 'location-corrections',
-      label: 'Location corrections',
-    },
-    {
-      path: 'newsletter',
-      label: 'Newsletter',
-    },
-  ];
+  ]
+    .map(group => ({
+      ...group,
+      pages: group.pages.filter(
+        page =>
+          isAdmin ||
+          (['support', 'experience-changes'].includes(page.path) &&
+            isSupport) ||
+          (page.path === 'staff-blockers' && (isWelcomeTeam || isSupport)) ||
+          page.path === 'acquisition-stories' ||
+          ((isWelcomeTeam || isSupport) &&
+            page.path === 'location-corrections'),
+      ),
+    }))
+    .filter(group => group.pages.length > 0);
 
   const renderTab = ({ path, label }: { path: string; label: string }) => (
     <li
@@ -94,22 +119,24 @@ export default function AdminHeader() {
             {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
           </a>
         </div>
-        <ul className="nav navbar-nav">
-          {pages
-            .filter(
-              page =>
-                isAdmin ||
-                (['support', 'experience-changes'].includes(page.path) &&
-                  isSupport) ||
-                (page.path === 'staff-blockers' &&
-                  (isWelcomeTeam || isSupport)) ||
-                page.path === 'acquisition-stories' ||
-                ((isWelcomeTeam || isSupport) &&
-                  page.path === 'location-corrections'),
-            )
-            .map(page => renderTab(page))}
-          {isAdmin && renderTab({ path: 'audit-log', label: 'Audit log' })}
-        </ul>
+        <div className="admin-nav-groups">
+          {groups.map(group => (
+            <div className="admin-nav-group" key={group.id}>
+              <h2
+                className="admin-nav-group__label"
+                id={`admin-nav-${group.id}`}
+              >
+                {group.label}
+              </h2>
+              <ul
+                className="nav navbar-nav"
+                aria-labelledby={`admin-nav-${group.id}`}
+              >
+                {group.pages.map(renderTab)}
+              </ul>
+            </div>
+          ))}
+        </div>
       </div>
     </nav>
   );

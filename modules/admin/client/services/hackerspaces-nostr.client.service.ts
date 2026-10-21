@@ -57,7 +57,39 @@ export function getSpaceApiIdentifier(endpoint: string) {
   return `spaceapi:${endpoint}`;
 }
 
+export function isExcludedHackerspaceAddress(address: string[] = []) {
+  const country =
+    typeof address[4] === 'string' ? address[4].trim().toLowerCase() : '';
+  if (country && ['ru', 'rus', 'il', 'isr'].includes(country)) return true;
+  return address.some(part =>
+    /(?:^|[,;\n])\s*(?:russia|russian federation|israel|россия|российская федерация|ישראל)\s*\.?\s*(?=$|[,;\n])/iu.test(
+      part,
+    ),
+  );
+}
+
+export function buildSpaceApiDeletionEvent(event: AddressablePlaceEvent) {
+  const identifier = event.tags.find(tag => tag[0] === 'd')?.[1];
+  if (!identifier?.startsWith('spaceapi:'))
+    throw new Error('Only SpaceAPI place events can be deleted here.');
+  return {
+    kind: 5,
+    created_at: Math.max(Math.floor(Date.now() / 1000), event.created_at),
+    tags: [
+      ['e', event.id],
+      ['a', `33000:${event.pubkey}:${identifier}`],
+      ['k', '33000'],
+    ],
+    content: '',
+  };
+}
+
 export function buildSpaceApiPlaceEvent(space: SpaceApiPlace) {
+  if (
+    isExcludedHackerspaceAddress([space.address]) ||
+    isExcludedHackerspaceAddress(space.addressParts || [])
+  )
+    throw new Error('This country is excluded from hackerspace publication.');
   if (space.open === 'closed')
     throw new Error(
       'Closed hackerspaces cannot be published as active places.',

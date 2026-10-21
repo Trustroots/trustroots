@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
 
@@ -21,6 +21,27 @@ afterEach(() => {
 });
 
 describe('<AdminHeader />', () => {
+  it('groups administrator links by task', () => {
+    render(<AdminHeader />);
+
+    for (const [name, labels] of [
+      [
+        'Member support',
+        ['Support inbox', 'Staff blockers', 'Location corrections'],
+      ],
+      ['Circles', ['Circles', 'Hackerspaces']],
+      ['Conversations', ['Messages', 'Threads']],
+      ['Experiences', ['Reference threads', 'Experience changes']],
+      ['Outreach', ['Acquisition stories', 'Newsletter']],
+      ['Audit', ['Audit log']],
+    ] as const) {
+      const group = within(screen.getByRole('list', { name }));
+      expect(group.getAllByRole('link').map(link => link.textContent)).toEqual(
+        labels,
+      );
+    }
+  });
+
   it('shows support navigation without administrator tools', () => {
     window.user = { roles: ['support-team'] };
     render(<AdminHeader />);

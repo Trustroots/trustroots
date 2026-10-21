@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 
 import AdminHeader from './AdminHeader.component';
+import {
+  displayNostrKey,
+  fetchSigningIdentity,
+  type SigningIdentity,
+} from '../services/hackerspaces-signer.client.service';
 import axios, {
   getErrorResponse,
 } from '@/modules/core/client/api/http-client.js';
@@ -11,6 +16,8 @@ import {
 import {
   buildInactiveSpaceApiPlaceEvent,
   buildSpaceApiPlaceEvent,
+  buildSpaceApiDeletionEvent,
+  isExcludedHackerspaceAddress,
   getSpaceApiIdentifier,
   type AddressablePlaceEvent,
   type SpaceApiPlace,
@@ -32,6 +39,7 @@ type Space = {
   fetchedAt: string;
   spaceType: string;
   action: 'new' | 'updated' | 'retained' | 'inactive' | 'excluded';
+  excludedCountry?: boolean;
   existing?: NostrEvent;
 };
 declare global {
@@ -51,10 +59,83 @@ const isInactive = (event: NostrEvent) =>
     tag => tag[0] === 'meta' && tag[1] === 'status' && tag[2] === 'inactive',
   );
 
+const previewAction = (space: Space) =>
+  space.excludedCountry
+    ? 'Country excluded; skip publication and request deletion of existing events'
+    : space.action === 'new'
+      ? 'Addition'
+      : space.action === 'updated'
+        ? 'Update'
+        : space.action === 'retained'
+          ? 'Temporarily invalid; keep last-known listing'
+          : space.action === 'excluded'
+            ? 'Closed; skip publication'
+            : 'Closed or removed; mark inactive';
+
+const columns = [
+  {
+    key: 'name',
+    label: 'Space',
+    value: (space: Space) => space.name || space.endpoint,
+  },
+  {
+    key: 'address',
+    label: 'Location',
+    value: (space: Space) => space.address || 'No address',
+  },
+  { key: 'action', label: 'Preview action', value: previewAction },
+  {
+    key: 'website',
+    label: 'Website',
+    value: (space: Space) =>
+      /^https?:\/\//i.test(space.website) ? space.website : '',
+  },
+] as const;
+type SortColumn = (typeof columns)[number]['key'];
+
 export default function AdminHackerspaces() {
   const [spaces, setSpaces] = useState<Space[]>([]);
+  const [deletions, setDeletions] = useState<NostrEvent[]>([]);
+  const [sort, setSort] = useState<{ key: SortColumn; ascending: boolean }>({
+    key: 'name',
+    ascending: true,
+  });
+  const sortColumn = columns.find(column => column.key === sort.key)!;
+  const sortedSpaces = [...spaces].sort(
+    (a, b) =>
+      String(sortColumn.value(a)).localeCompare(
+        String(sortColumn.value(b)),
+        'en',
+        {
+          sensitivity: 'base',
+          numeric: true,
+        },
+      ) * (sort.ascending ? 1 : -1),
+  );
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const [signer, setSigner] = useState<SigningIdentity | null>(null);
+  async function connectSigner() {
+    setSigner(null);
+    if (!window.nostr?.getPublicKey || !window.nostr?.signEvent) {
+      setStatus('A NIP-07 signer is required.');
+      return;
+    }
+    setBusy(true);
+    try {
+      const identity = await fetchSigningIdentity(
+        await window.nostr.getPublicKey(),
+      );
+      setSigner(identity);
+      setStatus(
+        'Signing key connected. Review its identity before approving changes.',
+      );
+    } catch {
+      setStatus('Could not connect to the relay or signer.');
+    } finally {
+      setBusy(false);
+    }
+  }
   const [relayResults, setRelayResults] = useState<
     {
       url: string;
@@ -67,6 +148,7 @@ export default function AdminHackerspaces() {
   async function preview() {
     setBusy(true);
     setSpaces([]);
+    setDeletions([]);
     setRelayResults([]);
     setStatus('Fetching the SpaceAPI Collector and published place events…');
     let fetched = false;
@@ -84,17 +166,42 @@ export default function AdminHackerspaces() {
           )
           .map(event => [sourceId(event)!, event]),
       );
+      const excluded = new Set(
+        (data as Space[])
+          .filter(
+            space =>
+              isExcludedHackerspaceAddress(space.addressParts) ||
+              isExcludedHackerspaceAddress([space.address]),
+          )
+          .map(space => getSpaceApiIdentifier(space.endpoint)),
+      );
+      const deletionEvents = events.filter(
+        event =>
+          sourceId(event)?.startsWith('spaceapi:') &&
+          (excluded.has(sourceId(event)!) ||
+            event.tags.some(
+              tag =>
+                tag[0] === 'address' &&
+                isExcludedHackerspaceAddress(tag.slice(1)),
+            )),
+      );
+      deletionEvents.forEach(event => excluded.add(sourceId(event)!));
+      setDeletions(deletionEvents);
       const listed = new Set<string>();
       const current = (data as Space[]).map(space => {
         const id = getSpaceApiIdentifier(space.endpoint);
         listed.add(id);
         const event = existing.get(id);
+        const excludedCountry = excluded.has(id);
         return {
           ...space,
-          eligible: space.eligible && space.open !== 'closed',
+          eligible:
+            !excludedCountry && space.eligible && space.open !== 'closed',
+          excludedCountry,
           existing: event,
-          action:
-            space.open === 'closed'
+          action: excludedCountry
+            ? ('excluded' as const)
+            : space.open === 'closed'
               ? event && !isInactive(event)
                 ? ('inactive' as const)
                 : ('excluded' as const)
@@ -106,7 +213,10 @@ export default function AdminHackerspaces() {
         };
       });
       const removed = [...existing.entries()]
-        .filter(([id, event]) => !listed.has(id) && !isInactive(event))
+        .filter(
+          ([id, event]) =>
+            !listed.has(id) && !isInactive(event) && !excluded.has(id),
+        )
         .map<Space>(([id, event]) => ({
           endpoint: id.slice('spaceapi:'.length),
           valid: true,
@@ -135,7 +245,7 @@ export default function AdminHackerspaces() {
         } temporarily invalid or coordinate-less entries retained, ${
           [...current, ...removed].filter(space => space.action === 'inactive')
             .length
-        } removals to mark inactive. Source records are not human-verified.`,
+        } removals to mark inactive. ${deletionEvents.length} country-excluded events to request deletion for. Source records are not human-verified.`,
       );
     } catch (error) {
       const response = getErrorResponse(error);
@@ -181,13 +291,28 @@ export default function AdminHackerspaces() {
         space,
         event: buildInactiveSpaceApiPlaceEvent(space.existing!),
       })),
+      ...deletions.map(event => ({
+        space: {
+          name: event.tags.find(tag => tag[0] === 'name')?.[1] || event.id,
+        },
+        event: buildSpaceApiDeletionEvent(event),
+        author: event.pubkey,
+      })),
     ];
     setBusy(true);
     let published = 0;
     let failed = 0;
+    let wrongAuthor = 0;
     let relays: HackerPlaceRelayConnection[] = [];
     try {
-      await window.nostr.getPublicKey();
+      const publicKey = await window.nostr.getPublicKey();
+      if (publicKey !== signer!.publicKey) {
+        setSigner(null);
+        setStatus(
+          'The signing key changed. Reconnect and review its identity before publishing.',
+        );
+        return;
+      }
       relays = await nostrService.connectHackerPlaceRelays();
       const outcomes = relays.map(({ url, relay }) => ({
         url,
@@ -205,7 +330,19 @@ export default function AdminHackerspaces() {
           }`,
         );
         try {
+          if ('author' in job && job.author !== publicKey) {
+            wrongAuthor += 1;
+            failed += 1;
+            continue;
+          }
           const signed = await window.nostr.signEvent(job.event);
+          if (signed.pubkey !== signer!.publicKey) {
+            setSigner(null);
+            setStatus(
+              'The signing key changed. Reconnect and review its identity before publishing.',
+            );
+            return;
+          }
           const accepted = await Promise.all(
             relays.map(async ({ relay }, index) => {
               try {
@@ -230,7 +367,11 @@ export default function AdminHackerspaces() {
         }
       }
       setStatus(
-        `Published ${published} place events; ${failed} failed. Events are SpaceAPI-reported and not human-verified.`,
+        `Published ${published} place events; ${failed} failed. Events are SpaceAPI-reported and not human-verified.${
+          wrongAuthor
+            ? ` ${wrongAuthor} deletion requests require the original author key.`
+            : ''
+        }`,
       );
     } catch {
       setStatus('Could not connect to the relay or signer.');
@@ -239,13 +380,13 @@ export default function AdminHackerspaces() {
       setBusy(false);
     }
   }
-  const toPublish = spaces.some(
-    space => space.eligible || space.action === 'inactive',
-  );
+  const toPublish =
+    deletions.length > 0 ||
+    spaces.some(space => space.eligible || space.action === 'inactive');
   return (
     <>
       <AdminHeader />
-      <main className="container">
+      <main className="container admin-hackerspaces-page">
         <h2>Hackerspaces</h2>
         <p>
           Preview the SpaceAPI Collector against published place events, then
@@ -255,12 +396,53 @@ export default function AdminHackerspaces() {
           relay.trustroots.org and relay.nomadwiki.org.
         </p>
         <p>
+          Listings identified as being in Russia or Israel are excluded from
+          publication. Approved changes include kind 5 deletion requests for
+          existing excluded listings, signed by their original author. Relays
+          may retain copies despite a deletion request.
+        </p>
+        <section
+          className="admin-hackerspaces-signer"
+          aria-label="Signing identity"
+        >
+          <h3>Signing identity</h3>
+          <button
+            type="button"
+            className="btn btn-default"
+            disabled={busy}
+            onClick={connectSigner}
+          >
+            Connect or refresh signer
+          </button>
+          {signer ? (
+            <>
+              <p>All approved events will be signed with this key:</p>
+              <p>
+                <strong>npub:</strong> <code>{signer.npub}</code>
+              </p>
+              <p>
+                <strong>NIP-05:</strong>{' '}
+                {signer.nip05
+                  ? `${signer.nip05} (matches this key)`
+                  : signer.lookupFailed
+                    ? 'Trustroots identity lookup failed. Refresh the signer to retry.'
+                    : 'No matching public Trustroots account'}
+              </p>
+            </>
+          ) : (
+            <p>
+              No signing key connected. Connect your browser signer to see which
+              key will sign these changes.
+            </p>
+          )}
+        </section>
+        <p>
           <button className="btn btn-default" disabled={busy} onClick={preview}>
             Fetch preview
           </button>{' '}
           <button
             className="btn btn-primary"
-            disabled={busy || !toPublish}
+            disabled={busy || !toPublish || !signer}
             onClick={publish}
           >
             Sign and publish approved changes
@@ -281,19 +463,69 @@ export default function AdminHackerspaces() {
             ))}
           </ul>
         )}
+        {deletions.length > 0 && (
+          <section aria-label="Proposed deletion requests">
+            <h3>Proposed deletion requests</h3>
+            <ul>
+              {deletions.map(event => (
+                <li key={event.id}>
+                  {event.tags.find(tag => tag[0] === 'name')?.[1] || event.id}
+                  {' — author: '}
+                  <code>{displayNostrKey(event.pubkey)}</code>
+                  {' — '}
+                  {signer
+                    ? signer.publicKey === event.pubkey
+                      ? 'Matches connected signer'
+                      : 'Different author: switch to this key to delete'
+                    : 'Connect signer to check ownership'}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         {spaces.length > 0 && (
           <div className="table-responsive">
             <table className="table table-striped">
               <thead>
                 <tr>
-                  <th>Space</th>
-                  <th>Location</th>
-                  <th>Preview action</th>
-                  <th>Website</th>
+                  {columns.map(column => (
+                    <th
+                      key={column.key}
+                      scope="col"
+                      aria-sort={
+                        sort.key === column.key
+                          ? sort.ascending
+                            ? 'ascending'
+                            : 'descending'
+                          : 'none'
+                      }
+                    >
+                      <button
+                        type="button"
+                        className="admin-hackerspaces-sort"
+                        onClick={() =>
+                          setSort({
+                            key: column.key,
+                            ascending:
+                              sort.key === column.key ? !sort.ascending : true,
+                          })
+                        }
+                      >
+                        {column.label}
+                        <span aria-hidden="true">
+                          {sort.key === column.key
+                            ? sort.ascending
+                              ? ' ↑'
+                              : ' ↓'
+                            : ' ↕'}
+                        </span>
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
-                {spaces.map(space => (
+                {sortedSpaces.map(space => (
                   <tr key={space.endpoint}>
                     <td>{space.name || space.endpoint}</td>
                     <td>
@@ -304,17 +536,7 @@ export default function AdminHackerspaces() {
                         </div>
                       )}
                     </td>
-                    <td>
-                      {space.action === 'new'
-                        ? 'Addition'
-                        : space.action === 'updated'
-                          ? 'Update'
-                          : space.action === 'retained'
-                            ? 'Temporarily invalid; keep last-known listing'
-                            : space.action === 'excluded'
-                              ? 'Closed; skip publication'
-                              : 'Closed or removed; mark inactive'}
-                    </td>
+                    <td>{previewAction(space)}</td>
                     <td>
                       {space.website && /^https?:\/\//i.test(space.website) && (
                         <a

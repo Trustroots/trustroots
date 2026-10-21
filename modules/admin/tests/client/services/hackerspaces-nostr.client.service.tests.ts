@@ -1,5 +1,7 @@
 import {
   buildInactiveSpaceApiPlaceEvent,
+  buildSpaceApiDeletionEvent,
+  isExcludedHackerspaceAddress,
   buildSpaceApiPlaceEvent,
   geohash,
   getSpaceApiIdentifier,
@@ -23,6 +25,85 @@ const space: SpaceApiPlace = {
 };
 
 describe('NIP-41 SpaceAPI place events', () => {
+  it.each([
+    'RU',
+    'rus',
+    'IL',
+    'isr',
+    'Russia',
+    'Russian Federation',
+    'Israel',
+    'Россия',
+    'ישראל',
+  ])('excludes country %s from new publication', country => {
+    const addressParts: SpaceApiPlace['addressParts'] = [
+      '',
+      '',
+      '',
+      '',
+      country,
+    ];
+    expect(isExcludedHackerspaceAddress(addressParts)).toBe(true);
+    expect(() => buildSpaceApiPlaceEvent({ ...space, addressParts })).toThrow(
+      /country is excluded/,
+    );
+  });
+
+  it('recognises legacy addresses without matching parts of unrelated words', () => {
+    expect(isExcludedHackerspaceAddress(['Example Street, Russia'])).toBe(true);
+    expect(isExcludedHackerspaceAddress(['Example Street, Israel'])).toBe(true);
+    expect(
+      isExcludedHackerspaceAddress(['Example Street', '', '', '', 'GB']),
+    ).toBe(false);
+    expect(isExcludedHackerspaceAddress(['Israelson Street'])).toBe(false);
+    expect(
+      isExcludedHackerspaceAddress(['Israel Street, Example City, GB']),
+    ).toBe(false);
+    expect(isExcludedHackerspaceAddress([])).toBe(false);
+    expect(isExcludedHackerspaceAddress()).toBe(false);
+    expect(
+      isExcludedHackerspaceAddress([
+        '',
+        '',
+        '',
+        '',
+        123,
+      ] as unknown as string[]),
+    ).toBe(false);
+    expect(() =>
+      buildSpaceApiPlaceEvent({ ...space, address: 'Example Street, Israel' }),
+    ).toThrow(/country is excluded/);
+  });
+
+  it('requests deletion of the event and older addressable versions', () => {
+    const signed = {
+      ...buildSpaceApiPlaceEvent(space),
+      id: 'fictional-event',
+      pubkey: 'fictional-author',
+      sig: 'fictional-signature',
+    };
+    expect(buildSpaceApiDeletionEvent(signed)).toMatchObject({
+      kind: 5,
+      content: '',
+      tags: [
+        ['e', signed.id],
+        [
+          'a',
+          `33000:${signed.pubkey}:${getSpaceApiIdentifier(space.endpoint)}`,
+        ],
+        ['k', '33000'],
+      ],
+    });
+    expect(
+      buildSpaceApiDeletionEvent({ ...signed, created_at: 0 }).created_at,
+    ).toBeGreaterThan(0);
+    expect(() => buildSpaceApiDeletionEvent({ ...signed, tags: [] })).toThrow(
+      /Only SpaceAPI/,
+    );
+    expect(() =>
+      buildSpaceApiDeletionEvent({ ...signed, tags: [['d', 'unrelated']] }),
+    ).toThrow(/Only SpaceAPI/);
+  });
   it('refuses to build an active event for a closed space', () => {
     expect(() => buildSpaceApiPlaceEvent({ ...space, open: 'closed' })).toThrow(
       /Closed hackerspaces/,

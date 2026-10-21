@@ -1,8 +1,23 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
+import { fetchSigningIdentity } from '@/modules/admin/client/services/hackerspaces-signer.client.service';
+
+jest.mock(
+  '@/modules/admin/client/services/hackerspaces-signer.client.service',
+  () => ({
+    displayNostrKey: (key: string) => `npub:${key}`,
+    fetchSigningIdentity: jest.fn(),
+  }),
+);
 
 jest.mock(
   '@/modules/admin/client/components/AdminHeader.component',
@@ -57,10 +72,19 @@ const event = (endpoint: string, tags: string[][] = []) => ({
 });
 const fetchPreview = () =>
   fireEvent.click(screen.getByRole('button', { name: 'Fetch preview' }));
-const publishChanges = () =>
+const connectSigner = async () => {
+  const button = screen.getByRole('button', {
+    name: 'Connect or refresh signer',
+  });
+  fireEvent.click(button);
+  await waitFor(() => expect(button).toBeEnabled());
+};
+const publishChanges = async () => {
+  await connectSigner();
   fireEvent.click(
     screen.getByRole('button', { name: 'Sign and publish approved changes' }),
   );
+};
 
 describe('administrator place import', () => {
   const publish = jest.fn();
@@ -97,10 +121,144 @@ describe('administrator place import', () => {
       sig: 'fictional-signature',
     }));
     getPublicKey.mockResolvedValue('fictional-key');
+    jest.mocked(fetchSigningIdentity).mockImplementation(async publicKey => ({
+      publicKey,
+      npub: `npub:${publicKey}`,
+    }));
     window.nostr = { getPublicKey, signEvent };
   });
   afterEach(() => {
     delete window.nostr;
+  });
+
+  it('sorts every preview column in both directions without changing publication', async () => {
+    http.get.mockResolvedValue({
+      data: [
+        {
+          ...space('https://z.example.test'),
+          name: 'Z Workshop',
+          address: 'Z Road',
+          website: 'https://z.example.test',
+          eligible: false,
+        },
+        {
+          ...space('https://a.example.test'),
+          name: 'A Workshop',
+          address: 'A Road',
+          website: 'https://a.example.test',
+        },
+      ],
+    });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText('A Workshop');
+    const names = () =>
+      screen
+        .getAllByRole('row')
+        .slice(1)
+        .map(row => within(row).getAllByRole('cell')[0].textContent);
+    expect(names()).toEqual(['A Workshop', 'Z Workshop']);
+    for (const column of ['Space', 'Location', 'Preview action', 'Website']) {
+      if (column !== 'Space')
+        fireEvent.click(screen.getByRole('button', { name: column }));
+      expect(names()).toEqual(['A Workshop', 'Z Workshop']);
+      expect(
+        screen.getByRole('columnheader', { name: column }),
+      ).toHaveAttribute('aria-sort', 'ascending');
+      fireEvent.click(screen.getByRole('button', { name: column }));
+      expect(names()).toEqual(['Z Workshop', 'A Workshop']);
+      expect(
+        screen.getByRole('columnheader', { name: column }),
+      ).toHaveAttribute('aria-sort', 'descending');
+    }
+    await publishChanges();
+    await waitFor(() => expect(publish).toHaveBeenCalledTimes(1));
+    expect(signEvent.mock.calls[0][0]).toMatchObject({ kind: 33000 });
+  });
+
+  it('excludes new country listings and deletes discovered events only with their original key', async () => {
+    http.get.mockResolvedValue({
+      data: [
+        {
+          ...space('https://excluded.example.test'),
+          addressParts: ['', '', '', '', 'RU'],
+        },
+        {
+          ...space('https://new-excluded.example.test'),
+          address: 'Example Road, Israel',
+        },
+      ],
+    });
+    service.fetchHackerPlaceEvents.mockResolvedValue([
+      {
+        ...event('https://excluded.example.test'),
+        id: 'own-listing',
+        pubkey: 'fictional-key',
+      },
+      { ...event('https://excluded.example.test'), id: 'another-author' },
+      {
+        ...event('https://removed-excluded.example.test', [
+          ['address', '', '', '', '', 'IL'],
+          ['name', 'Removed excluded workshop'],
+        ]),
+        pubkey: 'fictional-key',
+      },
+    ]);
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/3 country-excluded events/);
+    expect(
+      screen.getByRole('region', { name: 'Proposed deletion requests' }),
+    ).toHaveTextContent('Removed excluded workshop');
+    await publishChanges();
+    await screen.findByText(
+      /1 deletion requests require the original author key/,
+    );
+    expect(signEvent).toHaveBeenCalledTimes(2);
+    expect(publish).toHaveBeenCalledTimes(2);
+    expect(publishNomadwiki).toHaveBeenCalledTimes(2);
+    for (const [unsigned] of signEvent.mock.calls) {
+      expect(unsigned).toMatchObject({ kind: 5, content: '' });
+      expect(unsigned.tags).toContainEqual(['k', '33000']);
+    }
+  });
+
+  it('sorts malformed numeric names without failing the preview', async () => {
+    http.get.mockResolvedValue({
+      data: [
+        { ...space('https://numeric.example.test'), name: 123 },
+        { ...space('https://other.example.test'), name: 'Other workshop' },
+      ],
+    });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/2 additions/);
+    const rows = screen.getAllByRole('row').slice(1);
+    expect(within(rows[0]).getAllByRole('cell')[0]).toHaveTextContent('123');
+    fireEvent.click(screen.getByRole('button', { name: 'Space' }));
+    expect(
+      within(screen.getAllByRole('row')[1]).getAllByRole('cell')[0],
+    ).toHaveTextContent('Other workshop');
+  });
+
+  it('sorts missing addresses and unsafe website values as their displayed fallback', async () => {
+    http.get.mockResolvedValue({
+      data: [
+        {
+          ...space('https://first.example.test'),
+          address: '',
+          website: 'javascript:invalid',
+        },
+        { ...space('https://second.example.test'), address: '', website: '' },
+      ],
+    });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText(/2 additions/);
+    fireEvent.click(screen.getByRole('button', { name: 'Location' }));
+    expect(screen.getAllByRole('cell', { name: /No address/ })).toHaveLength(2);
+    fireEvent.click(screen.getByRole('button', { name: 'Website' }));
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('previews additions, updates, retained endpoints and directory removals', async () => {
@@ -156,7 +314,7 @@ describe('administrator place import', () => {
     expect(
       screen.getAllByRole('link', { name: 'https://workshop.example.test' }),
     ).toHaveLength(1);
-    publishChanges();
+    await publishChanges();
     await screen.findByText(/Published 4 place events; 0 failed/);
     expect(signEvent).toHaveBeenCalledTimes(4);
     expect(publish).toHaveBeenCalledWith(
@@ -210,7 +368,7 @@ describe('administrator place import', () => {
     expect(
       screen.getByRole('cell', { name: 'Closed or removed; mark inactive' }),
     ).toBeVisible();
-    publishChanges();
+    await publishChanges();
     await screen.findByText(/Published 1 place events; 0 failed/);
     expect(signEvent).toHaveBeenCalledTimes(1);
     expect(signEvent.mock.calls[0][0]).toMatchObject({
@@ -311,10 +469,11 @@ describe('administrator place import', () => {
     render(<AdminHackerspaces />);
     fetchPreview();
     await screen.findByText(/1 removals/);
+    await connectSigner();
     expect(
       screen.getByRole('button', { name: /Sign and publish/ }),
     ).toBeEnabled();
-    publishChanges();
+    await publishChanges();
     await screen.findByText(/Published 1 place events; 0 failed/);
     expect(signEvent.mock.calls[0][0]).toMatchObject({
       tags: expect.arrayContaining([['meta', 'status', 'inactive']]),
@@ -328,6 +487,7 @@ describe('administrator place import', () => {
     render(<AdminHackerspaces />);
     fetchPreview();
     await screen.findByText(/1 additions, 0 updates/);
+    await connectSigner();
     expect(
       screen.getByRole('button', { name: /Sign and publish/ }),
     ).toBeEnabled();
@@ -340,13 +500,83 @@ describe('administrator place import', () => {
       render(<AdminHackerspaces />);
       fetchPreview();
       await screen.findByText('Example Workshop');
-      publishChanges();
+      await publishChanges();
       expect(
         await screen.findByText('A NIP-07 signer is required.'),
       ).toBeVisible();
       expect(service.connectHackerPlaceRelays).not.toHaveBeenCalled();
     },
   );
+
+  it('shows the matching Trustroots NIP-05 identity before signing', async () => {
+    jest.mocked(fetchSigningIdentity).mockResolvedValue({
+      publicKey: 'fictional-key',
+      npub: 'npub:fictional-key',
+      nip05: 'workshop@trustroots.org',
+    });
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText('Example Workshop');
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeDisabled();
+    await connectSigner();
+    expect(screen.getByText('npub:fictional-key')).toBeVisible();
+    expect(
+      screen.getByText('workshop@trustroots.org (matches this key)'),
+    ).toBeVisible();
+    expect(signEvent).not.toHaveBeenCalled();
+    expect(
+      screen.getByRole('button', { name: /Sign and publish/ }),
+    ).toBeEnabled();
+  });
+
+  it('distinguishes a failed identity lookup', async () => {
+    jest.mocked(fetchSigningIdentity).mockResolvedValue({
+      publicKey: 'fictional-key',
+      npub: 'npub:fictional-key',
+      lookupFailed: true,
+    });
+    render(<AdminHackerspaces />);
+    await connectSigner();
+    expect(screen.getByText(/Trustroots identity lookup failed/)).toBeVisible();
+  });
+
+  it.each(['before signing', 'during signing'])(
+    'stops when the key changes %s',
+    async when => {
+      render(<AdminHackerspaces />);
+      fetchPreview();
+      await screen.findByText('Example Workshop');
+      await connectSigner();
+      if (when === 'before signing')
+        getPublicKey.mockResolvedValue('different-key');
+      else
+        signEvent.mockResolvedValue({
+          pubkey: 'different-key',
+          id: 'different-event',
+          sig: '',
+        });
+      fireEvent.click(screen.getByRole('button', { name: /Sign and publish/ }));
+      await screen.findByText(/The signing key changed/);
+      expect(publish).not.toHaveBeenCalled();
+      expect(publishNomadwiki).not.toHaveBeenCalled();
+      expect(
+        screen.getByRole('button', { name: /Sign and publish/ }),
+      ).toBeDisabled();
+    },
+  );
+
+  it('reports an extension disconnected after connecting', async () => {
+    render(<AdminHackerspaces />);
+    fetchPreview();
+    await screen.findByText('Example Workshop');
+    await connectSigner();
+    delete window.nostr;
+    fireEvent.click(screen.getByRole('button', { name: /Sign and publish/ }));
+    await screen.findByText('A NIP-07 signer is required.');
+    expect(publish).not.toHaveBeenCalled();
+  });
 
   it.each(['signer', 'relay'])(
     'reports a failed initial %s connection',
@@ -360,7 +590,7 @@ describe('administrator place import', () => {
       render(<AdminHackerspaces />);
       fetchPreview();
       await screen.findByText('Example Workshop');
-      publishChanges();
+      await publishChanges();
       await screen.findByText('Could not connect to the relay or signer.');
       expect(publish).not.toHaveBeenCalled();
     },
@@ -380,7 +610,7 @@ describe('administrator place import', () => {
     render(<AdminHackerspaces />);
     fetchPreview();
     await screen.findByText(/3 additions/);
-    publishChanges();
+    await publishChanges();
     await screen.findByText(/Published 1 place events; 2 failed/);
     expect(signEvent).toHaveBeenCalledTimes(3);
     expect(publish).toHaveBeenCalledTimes(2);
@@ -407,7 +637,7 @@ describe('administrator place import', () => {
     ).toBeDisabled();
     finishFetch({ data: [space()] });
     await screen.findByText('Example Workshop');
-    publishChanges();
+    await publishChanges();
     await screen.findByText(/Signing and publishing 1 of 1/);
     expect(
       screen.getByRole('button', { name: /Sign and publish/ }),
@@ -435,7 +665,7 @@ describe('administrator place import', () => {
       render(<AdminHackerspaces />);
       fetchPreview();
       await screen.findByText('Example Workshop');
-      publishChanges();
+      await publishChanges();
       await screen.findByText(/Published 1 place events; 0 failed/);
       expect(
         screen.getByText('wss://relay.trustroots.org: 1 published; 0 failed'),
@@ -458,7 +688,7 @@ describe('administrator place import', () => {
     render(<AdminHackerspaces />);
     fetchPreview();
     await screen.findByText('Example Workshop');
-    publishChanges();
+    await publishChanges();
     await screen.findByText('Could not connect to the relay or signer.');
     expect(signEvent).not.toHaveBeenCalled();
     expect(screen.getAllByText(/connection unavailable/)).toHaveLength(2);
