@@ -1,7 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import config from './../config.mts';
-import async from 'async';
 import path from 'path';
 import log from './logger.mjs';
 import mongoose from 'mongoose';
@@ -83,67 +82,52 @@ function connect(
   mongoose.set('debug', Boolean((config.db as DatabaseConfiguration).debug));
   // Preserve Mongoose 5's query filtering semantics for existing queries.
   mongoose.set('strictQuery', false);
-  async.waterfall(
-    [
-      // Connect
-      function (done: Done) {
-        mongoose
-          .connect(
-            (config.db as DatabaseConfiguration).uri,
-            mongoConnectionOptions,
-          )
-          .then(
-            function () {
-              done();
-            },
-            function (err) {
-              log('error', 'Could not connect to MongoDB!', {
-                error: err,
-              });
-              done(err);
-            },
-          );
-      },
-      // Confirm compatibility with MongoDB version
-      function (done: Done) {
-        // If the config says we do not need to check compatibility, skip this
-        if (!(config.db as DatabaseConfiguration).checkCompatibility) {
-          return done();
-        }
-        const engines = dependency6.engines as { mongodb: string };
-        mongoose.connection
-          .db!.admin()
-          .buildInfo()
-          .then(function (info) {
-            log('info', 'MongoDB', {
-              version: info.version,
-            });
-            if (
-              semver.valid(info.version) &&
-              !semver.satisfies(info.version, engines.mongodb)
-            ) {
-              log('error', 'MongoDB version incompatibility!', {
-                version: info.version,
-                compatibleVersion: engines.mongodb,
-              });
-              process.exit(1);
-            }
-            done();
-          }, done);
-      },
-      // Load models
-      (done: Done) => {
-        this.loadModels(function () {
-          done();
-        });
-      },
-    ],
-    function () {
-      if (callback) {
-        callback(mongoose.connection);
+
+  const connectAndLoadModels = async () => {
+    try {
+      await mongoose.connect(
+        (config.db as DatabaseConfiguration).uri,
+        mongoConnectionOptions,
+      );
+    } catch (err) {
+      log('error', 'Could not connect to MongoDB!', {
+        error: err,
+      });
+      return;
+    }
+
+    // Confirm compatibility with MongoDB version
+    if ((config.db as DatabaseConfiguration).checkCompatibility) {
+      const engines = dependency6.engines as { mongodb: string };
+      let info;
+      try {
+        info = await mongoose.connection.db!.admin().buildInfo();
+      } catch {
+        return;
       }
-    },
-  );
+      log('info', 'MongoDB', {
+        version: info.version,
+      });
+      if (
+        semver.valid(info.version) &&
+        !semver.satisfies(info.version, engines.mongodb)
+      ) {
+        log('error', 'MongoDB version incompatibility!', {
+          version: info.version,
+          compatibleVersion: engines.mongodb,
+        });
+        process.exit(1);
+      }
+    }
+
+    await this.loadModels();
+  };
+
+  void connectAndLoadModels().then(() => {
+    if (callback) {
+      callback(mongoose.connection);
+    }
+  });
 }
 function disconnect(callback?: Done) {
   mongoose.disconnect().then(

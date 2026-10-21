@@ -1,6 +1,5 @@
 import emailService from './../../../core/server/services/email.server.service.mjs';
 import config from './../../../../config/config.mts';
-import async from 'async';
 import moment from 'moment';
 import log from './../../../../config/lib/logger.mjs';
 import mongoose, { type Types } from 'mongoose';
@@ -29,23 +28,6 @@ interface OfferModel {
 }
 
 type Done = (error?: Error | null) => void;
-type WaterfallDone<Result extends unknown[] = []> = {
-  (error?: Error | null): void;
-  (error: Error | null | undefined, ...results: Result): void;
-};
-type WaterfallTask = (...args: never[]) => void;
-type AsyncCallbacks = {
-  waterfall(
-    tasks: WaterfallTask[],
-    callback: (error?: Error | null, ...results: unknown[]) => void,
-  ): void;
-  eachSeries<Item>(
-    items: Item[],
-    iteratee: (item: Item, callback: Done) => void,
-    callback: Done,
-  ): void;
-};
-const asyncCallbacks = async as unknown as AsyncCallbacks;
 
 /**
  * Task that checks for hosting offers that are set to "no" and were modified
@@ -61,76 +43,60 @@ const asyncCallbacks = async as unknown as AsyncCallbacks;
 const Offer = mongoose.model<OfferServerRecord>(
   'Offer',
 ) as unknown as OfferModel;
+async function sendReactivationReminders(): Promise<void> {
+  // Find "no" hosting offers
+  // Ignore only offers modified within past X days
+  // Has to be a JS Date object, not a Moment object
+  const updatedTimeAgo = moment()
+    .subtract(moment.duration(config.limits.timeToReactivateHosts))
+    .toDate();
+  const offers = await Offer.find({
+    type: 'host',
+    status: 'no',
+    updated: {
+      $lt: updatedTimeAgo,
+    },
+    // Only offers we didn't notify yet
+    reactivateReminderSent: {
+      $exists: false,
+    },
+  })
+    .populate('user', 'public email firstName displayName')
+    .exec();
+
+  // Send emails
+  for (const offer of offers) {
+    await new Promise<void>(function (resolve, reject) {
+      emailService.sendReactivateHosts(
+        offer.user as ReactivationUser,
+        function (err: Error | null | undefined) {
+          if (err) return reject(err);
+          resolve();
+        },
+      );
+    });
+    // Mark reactivation mail sent
+    await Offer.findByIdAndUpdate(offer._id, {
+      $set: {
+        reactivateReminderSent: new Date(),
+      },
+    });
+  }
+}
+
 function run(_job: unknown, agendaDone: Done): void {
-  asyncCallbacks.waterfall(
-    [
-      // Find "no" hosting offers
-      function (done: WaterfallDone<[ReactivationOffer[]]>) {
-        // Ignore only offers modified within past X days
-        // Has to be a JS Date object, not a Moment object
-        const updatedTimeAgo = moment()
-          .subtract(moment.duration(config.limits.timeToReactivateHosts))
-          .toDate();
-        Offer.find({
-          type: 'host',
-          status: 'no',
-          updated: {
-            $lt: updatedTimeAgo,
-          },
-          // Only offers we didn't notify yet
-          reactivateReminderSent: {
-            $exists: false,
-          },
-        })
-          .populate('user', 'public email firstName displayName')
-          .exec()
-          .then(function (offers) {
-            done(null, offers);
-          }, done);
-      },
-      // Send emails
-      function (offers: ReactivationOffer[], done: WaterfallDone) {
-        // No users to send emails to
-        if (!offers.length) {
-          return done();
-        }
-        asyncCallbacks.eachSeries(
-          offers,
-          function (offer, callback) {
-            emailService.sendReactivateHosts(
-              offer.user as ReactivationUser,
-              function (err: Error | null | undefined) {
-                if (err) {
-                  return callback(err);
-                } else {
-                  // Mark reactivation mail sent
-                  Offer.findByIdAndUpdate(offer._id, {
-                    $set: {
-                      reactivateReminderSent: new Date(),
-                    },
-                  }).then(function () {
-                    callback();
-                  }, callback);
-                }
-              },
-            );
-          },
-          function (err) {
-            done(err);
-          },
-        );
-      },
-    ],
-    function (err) {
-      if (err) {
-        // Preserve the original raw Error metadata passed through this logger boundary.
-        log(
-          'error',
-          'Failure in reactivate hosts background job.',
-          err as unknown as Record<string, unknown>,
-        );
-      }
-      return agendaDone(err);
+  sendReactivationReminders().then(
+    function () {
+      agendaDone();
+    },
+    function (err: Error) {
+      // Preserve the original raw Error metadata passed through this logger boundary.
+      log(
+        'error',
+        'Failure in reactivate hosts background job.',
+        err as unknown as Record<string, unknown>,
+      );
+      agendaDone(err);
     },
   );
 }

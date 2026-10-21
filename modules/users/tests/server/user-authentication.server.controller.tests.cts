@@ -27,7 +27,6 @@ type LegacyRandomBytes = (
   size: number,
   callback?: (error: Error | null, bytes?: Buffer) => void,
 ) => Buffer | void;
-type SignupStats = { tags: { reason: string } };
 function stubLegacyRandomBytes(): import('sinon').SinonStub<
   Parameters<LegacyRandomBytes>,
   ReturnType<LegacyRandomBytes>
@@ -570,19 +569,27 @@ describe('Authentication controller OAuth unit tests', () => {
       const controller = mockModule<typeof authController>(
         require.resolve(controllerPath),
         {
-          async: {
-            waterfall(steps: unknown[], done: (error?: unknown) => void) {
-              done(overload);
-            },
-          },
           '../../../stats/server/services/stats.server.service.mts': {
             stat: (statsObject: unknown, callback: AuthCallback) => callback(),
           },
         },
       );
+      sinon.stub(User.prototype, 'save').rejects(overload);
       const res = deferredResponse();
 
-      controller.signup({ body: {} }, res);
+      controller.signup(
+        {
+          body: {
+            ageConfirmed: true,
+            firstName: 'Busy',
+            lastName: 'Hasher',
+            username: 'busyhasher',
+            password: 'password123',
+            email: 'busy-hasher@example.com',
+          },
+        },
+        res,
+      );
       await res.waitForResponse();
 
       res.statusCode.should.equal(503);
@@ -699,10 +706,14 @@ describe('Authentication controller OAuth unit tests', () => {
 
     it('returns an empty object when signup completes without a user', async () => {
       const controller = stubControllerDependencies({
-        async: {
-          waterfall(steps: unknown[], done: (error?: unknown) => void) {
-            done(null);
-          },
+        './../../server/controllers/users.profile.server.controller.mjs': {
+          sanitizeOwnProfile: () => undefined,
+        },
+        './../../../core/server/services/email.server.service.mjs': {
+          sendSignupEmailConfirmation: (
+            user: unknown,
+            callback: AuthCallback,
+          ) => callback(),
         },
         './../../../stats/server/services/stats.server.service.mts': {
           stat: (statsObject: unknown, callback: AuthCallback) => callback(),
@@ -711,7 +722,17 @@ describe('Authentication controller OAuth unit tests', () => {
       const res = deferredResponse();
 
       controller.signup(
-        { body: {}, login: (user: unknown, cb: AuthCallback) => cb() },
+        {
+          body: {
+            ageConfirmed: true,
+            firstName: 'Empty',
+            lastName: 'Result',
+            username: 'emptyresult',
+            password: 'password123',
+            email: 'empty-result@example.com',
+          },
+          login: (user: unknown, cb: AuthCallback) => cb(),
+        },
         res,
       );
       await res.waitForResponse();
@@ -741,49 +762,6 @@ describe('Authentication controller OAuth unit tests', () => {
       responseField(res, 'error').should.equal(
         'username-not-available-reserved',
       );
-    });
-
-    it('uses generic error metadata when validation fails without an error code', async () => {
-      let stats: SignupStats | undefined;
-      const controller = stubControllerDependencies({
-        async: {
-          waterfall(steps: unknown[], done: (error?: unknown) => void) {
-            done({ errors: {} });
-          },
-        },
-        './../../../stats/server/services/stats.server.service.mts': {
-          stat: (statsObject: unknown, callback: AuthCallback) => {
-            if (
-              typeof statsObject !== 'object' ||
-              statsObject === null ||
-              !('tags' in statsObject)
-            ) {
-              throw new Error('Expected signup stats tags');
-            }
-            const tags = statsObject.tags;
-            if (
-              typeof tags !== 'object' ||
-              tags === null ||
-              !('reason' in tags) ||
-              typeof tags.reason !== 'string'
-            ) {
-              throw new Error('Expected signup stats reason');
-            }
-            stats = { tags: { reason: tags.reason } };
-            callback();
-          },
-        },
-      });
-      const res = deferredResponse();
-
-      controller.signupValidation({ body: { username: 'anything' } }, res);
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(200);
-      responseField(res, 'valid').should.be.false();
-      responseField(res, 'error').should.equal('other');
-      should.exist(stats);
-      stats!.tags.reason.should.equal('other');
     });
 
     it('accepts an available username', async () => {

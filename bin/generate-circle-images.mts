@@ -6,12 +6,12 @@
  *
  * Production images are kept at `public/uploads-circle`.
  */
-import { queue } from 'async';
 import config from './../config/config.mts';
 import fs from 'fs';
 import { globSync } from 'node:fs';
 import path from 'path';
 import sharp from 'sharp';
+import { forEachWithConcurrency } from './../modules/core/server/services/task-queue.server.service.mts';
 interface ImageTask {
   extension: 'webp' | 'jpg';
   file: string;
@@ -19,8 +19,6 @@ interface ImageTask {
   size: [number, number];
   slug: string;
 }
-
-type QueueCallback = (error?: Error | null) => void;
 
 (async () => {
   sharp.simd(false);
@@ -44,15 +42,14 @@ type QueueCallback = (error?: Error | null) => void;
     `Ensuring ${files.length} circle images have all sizes and formats generated...`,
   );
 
-  // Create a task queue that processes a few images at most at a time
-  const imageQueue = queue<ImageTask>(async (task, callback: QueueCallback) => {
+  const processImage = async (task: ImageTask) => {
     const { extension, file, outputFolder, size, slug } = task;
     const sizeSlug = size.join('x');
     const targetFile = path.join(outputFolder, `${sizeSlug}.${extension}`);
 
     // File exists, all good
     if (fs.existsSync(targetFile)) {
-      return callback();
+      return;
     }
     let image = await sharp(file);
     image = await image.resize({
@@ -77,8 +74,9 @@ type QueueCallback = (error?: Error | null) => void;
       slug,
     ];
     console.log(output.join('\t'));
-    callback();
-  }, 4);
+  };
+
+  const tasks: ImageTask[] = [];
 
   // Loop files and process them
   files.forEach(file => {
@@ -93,7 +91,7 @@ type QueueCallback = (error?: Error | null) => void;
     // Loop sizes and fileformats
     circleImagesSizes.forEach(size => {
       extensions.forEach(extension => {
-        imageQueue.push({
+        tasks.push({
           extension,
           file,
           outputFolder,
@@ -103,4 +101,9 @@ type QueueCallback = (error?: Error | null) => void;
       });
     });
   });
+
+  // Process a few images at most at a time; a failed image doesn't stop the others
+  await forEachWithConcurrency(tasks, 4, task =>
+    processImage(task).catch(() => {}),
+  );
 })();

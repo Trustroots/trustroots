@@ -1,7 +1,6 @@
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
 import { readFileSync } from 'node:fs';
 import _ from 'lodash';
-import async from 'async';
 import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
@@ -312,77 +311,53 @@ function update(
   if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
-  async.waterfall(
-    [
-      // Validate
-      function (done: (error?: Error | null) => void) {
-        // User can modify only their own offers
-        // Missing required fields
-        if (!body.location) {
-          return res.status(400).send({
-            message: 'Missing offer location.',
-          });
-        }
-        if (isDefaultMapLocation(body.location)) {
-          return res.status(400).send({
-            message: 'Choose a location for your offer.',
-          });
-        }
 
-        // Attempting to change offer type yelds error
-        if (body.type && body.type !== offer.type) {
-          return res.status(400).send({
-            message: 'You cannot update offer type.',
-          });
-        }
-        done();
-      },
-      // Create offer object and modify it
-      function (
-        done: (error: Error | null, result?: OfferEndpointDocument) => void,
-      ) {
-        const validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
-        if (validUntil === undefined) {
-          delete body.validUntil;
-        } else {
-          body.validUntil = validUntil;
-        }
+  // User can modify only their own offers
+  // Missing required fields
+  if (!body.location) {
+    return res.status(400).send({
+      message: 'Missing offer location.',
+    });
+  }
+  if (isDefaultMapLocation(body.location)) {
+    return res.status(400).send({
+      message: 'Choose a location for your offer.',
+    });
+  }
 
-        // Pick only fields user is allowed to modify
-        // Extend offer in request (picked by `offerById` middleware earlier)
-        const updatedOffer = _.extend(offer, prepareOfferUpdateInput(body));
+  // Attempting to change offer type yelds error
+  if (body.type && body.type !== offer.type) {
+    return res.status(400).send({
+      message: 'You cannot update offer type.',
+    });
+  }
 
-        // Update timestamp
-        updatedOffer.updated = new Date();
+  // Create offer object and modify it
+  const validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
+  if (validUntil === undefined) {
+    delete body.validUntil;
+  } else {
+    body.validUntil = validUntil;
+  }
 
-        // Reset reactivate reminders
-        // Setting this to undefined will remove the field
-        updatedOffer.set('reactivateReminderSent', undefined);
-        done(null, updatedOffer);
-      },
-      // Save offer
-      function (
-        updatedOffer: OfferEndpointDocument,
-        done: (error?: Error | null) => void,
-      ) {
-        updatedOffer.save().then(
-          function () {
-            done();
-          },
-          function (err: Error) {
-            done(err);
-          },
-        );
-      },
-      // Done!
-      function () {
-        return res.json(prepareOfferMutationResponse('Offer updated.'));
-      },
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      }
+  // Pick only fields user is allowed to modify
+  // Extend offer in request (picked by `offerById` middleware earlier)
+  const updatedOffer = _.extend(offer, prepareOfferUpdateInput(body));
+
+  // Update timestamp
+  updatedOffer.updated = new Date();
+
+  // Reset reactivate reminders
+  // Setting this to undefined will remove the field
+  updatedOffer.set('reactivateReminderSent', undefined);
+
+  // Save offer
+  updatedOffer.save().then(
+    function () {
+      res.json(prepareOfferMutationResponse('Offer updated.'));
+    },
+    function (err: Error) {
+      errorService.sendBadRequest(res, err);
     },
   );
 }
@@ -744,55 +719,39 @@ function listOffersByUser(req: OfferRequest, res: OfferResponse) {
  * Return an offer
  */
 function getOffer(req: OfferRequest, res: OfferResponse) {
-  async.waterfall(
-    [
-      function (
-        done: (error?: Error | null, result?: OfferReadDocument) => void,
-      ) {
-        // Don't proceed if offer doesn't have user
-        const loadedOffer = req.offer as OfferReadDocument | null | undefined;
-        if (!loadedOffer || !loadedOffer.user || !loadedOffer.location) {
-          return errorService.sendNotFound(res);
-        }
-        done(null, loadedOffer);
-      },
-      // Populate `tribe` fields from objects at `offer.user.member` array
-      function (
-        offer: OfferReadDocument,
-        done: (error?: Error | null, result?: OfferReadDocument) => void,
-      ) {
-        // Nothing to populate
-        const offerUser = offer.user as PopulatedOfferUser;
-        if (!offerUser.member || offerUser.member.length === 0) {
-          return done(null, offer);
-        }
-        User.populate(offer.user, tribes.tribePopulateOptions()).then(
-          function (user) {
-            // Overwrite old `offer.user` with new `user` object
-            // containing populated `member.tribe` to `offer`
-            offer.user = user;
-            done(null, offer);
-          },
-          function (error: unknown) {
-            done(error as Error);
-          },
-        );
-      },
-      function (offer: OfferReadDocument) {
-        // Sanitize offer before returning it
-        res.json(sanitizeOffer(offer, req.user ?? undefined));
-      },
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        // Something's wrong and we weren't prepared for itx
-        log('error', 'Failed to load offer. #g34gss', {
-          error: err,
-        });
-        return res.status(400).send({
-          message: errorService.getErrorMessageByKey('default'),
-        });
-      }
+  // Don't proceed if offer doesn't have user
+  const offer = req.offer as OfferReadDocument | null | undefined;
+  if (!offer || !offer.user || !offer.location) {
+    return errorService.sendNotFound(res);
+  }
+
+  // Sanitize offer before returning it
+  const respond = () => {
+    res.json(sanitizeOffer(offer, req.user ?? undefined));
+  };
+
+  // Nothing to populate
+  const offerUser = offer.user as PopulatedOfferUser;
+  if (!offerUser.member || offerUser.member.length === 0) {
+    return respond();
+  }
+
+  // Populate `tribe` fields from objects at `offer.user.member` array
+  User.populate(offer.user, tribes.tribePopulateOptions()).then(
+    function (user) {
+      // Overwrite old `offer.user` with new `user` object
+      // containing populated `member.tribe` to `offer`
+      offer.user = user;
+      respond();
+    },
+    function (err: unknown) {
+      // Something's wrong and we weren't prepared for itx
+      log('error', 'Failed to load offer. #g34gss', {
+        error: err,
+      });
+      res.status(400).send({
+        message: errorService.getErrorMessageByKey('default'),
+      });
     },
   );
 }

@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
-import async from 'async';
 import basicAuth from 'basic-auth';
 import speakingurl from 'speakingurl';
 import log from './../../../../config/lib/logger.mjs';
@@ -57,10 +56,22 @@ service.receiveBatch = function (req, res) {
     });
   }
 
-  async.map(req.body, service.processAndSendMetrics, function () {
+  const events: SparkpostEvent[] = req.body;
+  void Promise.all(
+    events.map(
+      event =>
+        new Promise<void>((resolve, reject) => {
+          service.processAndSendMetrics(event, err =>
+            err ? reject(err) : resolve(),
+          );
+        }),
+    ),
+  )
     // @TODO what should happen when writing to stats api errors?
-    res.status(200).end();
-  });
+    .catch(() => {})
+    .then(() => {
+      res.status(200).end();
+    });
 };
 
 /**

@@ -19,13 +19,6 @@ type StoreConstructor = new (options: {
   autoload: boolean;
 }) => MailStore;
 const _ = require('lodash') as typeof import('lodash');
-const async = require('async') as {
-  timesSeries(
-    count: number,
-    worker: (index: number, done: Done) => void,
-    done: Done,
-  ): void;
-};
 const shortid = require('shortid') as { generate(): string };
 
 // nedb is a local disk backed mongo alternative for simple local scripts
@@ -131,6 +124,19 @@ const sendOneGroup = function (i: number, eachCb: Done) {
     });
 };
 
-async.timesSeries(totalRuns, sendOneGroup, err => {
-  console.log(new Date(), 'FINISH', err);
-});
+const sendAllGroups = async function () {
+  for (let i = 0; i < totalRuns; i++) {
+    await new Promise<void>((resolve, reject) => {
+      sendOneGroup(i, err => (err ? reject(err) : resolve()));
+    });
+  }
+};
+
+sendAllGroups().then(
+  () => {
+    console.log(new Date(), 'FINISH', null);
+  },
+  err => {
+    console.log(new Date(), 'FINISH', err);
+  },
+);

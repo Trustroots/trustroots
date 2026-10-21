@@ -19,9 +19,6 @@ interface StreamMailer {
     sendMail(email: RenderedEmail, callback: Result<{ message: Buffer }>): void;
   };
 }
-interface TemplateAsync {
-  waterfall(tasks: Array<(callback: Done) => void>, callback: Done): void;
-}
 /**
  * Generate eml files out of all Trustroots email templates,
  * so that you can open them for inspection with email clients.
@@ -40,7 +37,6 @@ const fs = require('node:fs') as typeof import('node:fs');
 const removeLocalPath =
   require('../modules/core/server/services/file-removal.server.service.mjs')
     .removeLocalPath as (filename: string) => Promise<void>;
-const async = require('async') as TemplateAsync;
 const nodemailer = require('nodemailer') as StreamMailer;
 const config = require('./../config/config.mts') as { supportEmail: string };
 const emailService =
@@ -58,7 +54,7 @@ const transport = nodemailer.createTransport({
 });
 
 // Initialize script
-writeEmails();
+void writeEmails();
 
 function writeEml(
   templateName: TemplateName,
@@ -101,39 +97,44 @@ function writeEml(
   });
 }
 
-function writeEmails() {
+async function writeEmails() {
   console.log('---');
   console.log('Generating eml files out of emails.');
   console.log('Storing them to "' + tempFolder + '"');
 
   // Send emails
-  async.waterfall(
-    [
-      ensureTempDir,
-      emptyTempDir,
+  const steps = [
+    ensureTempDir,
+    emptyTempDir,
 
-      // Generate emails:
-      generateMessagesUnread,
-      generateConfirmContact,
-      generateResetPassword,
-      generateResetPasswordConfirm,
-      generateChangeEmailConfirmation,
-      generateSignupEmailConfirmation,
-      generateSupportRequest,
-      generateSignupEmailReminder,
-      generateReactivateHosts,
-    ],
-    function (err) {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      console.log();
-      console.log('Done!');
-      console.log('See files from ' + tempFolder);
-      process.exit(0);
-    },
-  );
+    // Generate emails:
+    generateMessagesUnread,
+    generateConfirmContact,
+    generateResetPassword,
+    generateResetPasswordConfirm,
+    generateChangeEmailConfirmation,
+    generateSignupEmailConfirmation,
+    generateSupportRequest,
+    generateSignupEmailReminder,
+    generateReactivateHosts,
+  ];
+  try {
+    for (const step of steps) {
+      await new Promise<void>(function (resolve, reject) {
+        step(function (err) {
+          if (err) return reject(err);
+          resolve();
+        });
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    return;
+  }
+  console.log();
+  console.log('Done!');
+  console.log('See files from ' + tempFolder);
+  process.exit(0);
 }
 
 function generateParams(params: TemplateParams): TemplateParams {

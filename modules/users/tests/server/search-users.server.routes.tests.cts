@@ -1,20 +1,4 @@
 const request: typeof import('supertest') = require('supertest');
-interface AsyncTestApi {
-  eachOfSeries<T>(
-    items: T[],
-    iteratee: (
-      item: T,
-      index: number,
-      callback: (error?: Error | null) => void,
-    ) => void,
-    callback: (error?: Error | null) => void,
-  ): void;
-  waterfall(
-    tasks: Array<(...args: never[]) => void>,
-    callback: (error?: Error | null, result?: unknown) => void,
-  ): void;
-}
-const async = require('async') as AsyncTestApi;
 const _: typeof import('lodash') = require('lodash');
 const sinon: typeof import('sinon') = require('sinon');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -34,19 +18,6 @@ type NewSearchUser = Partial<SearchUserRecord>;
 type SearchResponseUser = Pick<SearchUserRecord, 'username'> &
   Partial<SearchUserRecord>;
 type SearchResponse = SearchResponseUser[];
-type UserCreationCallback = (
-  error: Error | null | undefined,
-  users: SearchUserDocument[],
-) => void;
-type SearchCallback = (
-  error: Error | null | undefined,
-  result?: SearchResponse,
-) => void;
-type CreateCallback = (
-  error: Error | null | undefined,
-  users: SearchUserDocument[],
-) => void;
-type FinishedCallback = (error?: Error | null) => void;
 describe('Search users: GET /users?search=string', function () {
   let agent: import('supertest').Agent;
   const limit = 9;
@@ -70,51 +41,38 @@ describe('Search users: GET /users?search=string', function () {
   after(function () {
     sinon.restore();
   });
-  function createUsers(
+  async function createUsers(
     users: NewSearchUser[],
-    callback: UserCreationCallback,
-  ): void {
+  ): Promise<SearchUserDocument[]> {
     const createdUsers: SearchUserDocument[] = [];
-    async.eachOfSeries(
-      users,
-      function (
-        user: NewSearchUser,
-        index: number,
-        cb: (error?: Error | null) => void,
-      ) {
-        const createdUser = new User({
-          username: user.username || 'user' + index,
-          firstName: user.firstName || 'firstName' + index,
-          lastName: user.lastName || 'lastName' + index,
-          get email() {
-            return this.username + '@example.com';
-          },
-          get displayName() {
-            return this.firstName + ' ' + this.lastName;
-          },
-          get emailTemporary() {
-            return this.email;
-          },
-          emailToken: 'initial email token',
-          password: user.password || '******password',
-          provider: 'local',
-          public: _.has(user, 'public') ? user.public : true,
-          gender: 'non-binary',
-          locationFrom: user.locationFrom || 'Wonderland',
-          locationLiving: user.locationLiving || 'Sampleton',
-          tagline: user.tagline || '',
-          roles: user.roles || ['user'],
-        });
-        createdUsers.push(createdUser);
-        createdUser
-          .save()
-          .then(() => cb())
-          .catch(cb);
-      },
-      function (err: Error | null | undefined) {
-        callback(err, createdUsers);
-      },
-    );
+    for (const [index, user] of users.entries()) {
+      const createdUser = new User({
+        username: user.username || 'user' + index,
+        firstName: user.firstName || 'firstName' + index,
+        lastName: user.lastName || 'lastName' + index,
+        get email() {
+          return this.username + '@example.com';
+        },
+        get displayName() {
+          return this.firstName + ' ' + this.lastName;
+        },
+        get emailTemporary() {
+          return this.email;
+        },
+        emailToken: 'initial email token',
+        password: user.password || '******password',
+        provider: 'local',
+        public: _.has(user, 'public') ? user.public : true,
+        gender: 'non-binary',
+        locationFrom: user.locationFrom || 'Wonderland',
+        locationLiving: user.locationLiving || 'Sampleton',
+        tagline: user.tagline || '',
+        roles: user.roles || ['user'],
+      });
+      createdUsers.push(createdUser);
+      await createdUser.save();
+    }
+    return createdUsers;
   }
   context('not logged in', function () {
     it('Forbidden 403', function (done) {
@@ -124,19 +82,14 @@ describe('Search users: GET /users?search=string', function () {
   context('logged in', function () {
     let loggedUser: SearchUserDocument;
     // create logged user
-    beforeEach(function (done) {
-      createUsers(
-        [
-          {
-            username: 'loggedUser',
-            password: 'somepassword',
-          },
-        ],
-        function (err, users) {
-          loggedUser = users[0];
-          done(err);
+    beforeEach(async function () {
+      const users = await createUsers([
+        {
+          username: 'loggedUser',
+          password: 'somepassword',
         },
-      );
+      ]);
+      loggedUser = users[0];
     });
     // sign in
     beforeEach(function (done) {
@@ -186,377 +139,241 @@ describe('Search users: GET /users?search=string', function () {
           })
           .catch(done);
       });
-      it('excludes members blocked in either direction from location results', function (done) {
-        createUsers(
-          [
-            { username: 'blockedbyviewer', locationLiving: 'Exampleville' },
-            { username: 'blockingviewer', locationLiving: 'Exampleville' },
-            { username: 'visiblemember', locationLiving: 'Exampleville' },
-          ],
-          function (err, members) {
-            if (err) return done(err);
-            Promise.all([
-              User.updateOne(
-                { _id: loggedUser._id },
-                { $set: { blocked: [members[0]._id] } },
-              ),
-              User.updateOne(
-                { _id: members[1]._id },
-                { $set: { blocked: [loggedUser._id] } },
-              ),
-            ])
-              .then(() => {
-                agent
-                  .get('/api/users?search=Exampleville')
-                  .expect(200)
-                  .end(function (error, response) {
-                    if (error) return done(error);
-                    (response.body as SearchResponse)
-                      .map(member => member.username)
-                      .should.eql(['visiblemember']);
-                    done();
-                  });
-              })
-              .catch(done);
+      it('excludes members blocked in either direction from location results', async function () {
+        const members = await createUsers([
+          { username: 'blockedbyviewer', locationLiving: 'Exampleville' },
+          { username: 'blockingviewer', locationLiving: 'Exampleville' },
+          { username: 'visiblemember', locationLiving: 'Exampleville' },
+        ]);
+        await Promise.all([
+          User.updateOne(
+            { _id: loggedUser._id },
+            { $set: { blocked: [members[0]._id] } },
+          ),
+          User.updateOne(
+            { _id: members[1]._id },
+            { $set: { blocked: [loggedUser._id] } },
+          ),
+        ]);
+        const response = await agent
+          .get('/api/users?search=Exampleville')
+          .expect(200);
+        (response.body as SearchResponse)
+          .map(member => member.username)
+          .should.eql(['visiblemember']);
+      });
+      it('finds public locations and taglines, ranking names higher', async function () {
+        await createUsers([
+          { username: 'riverside' },
+          { username: 'locationmatch', locationLiving: 'Riverside' },
+          { username: 'originmatch', locationFrom: 'Riverside' },
+          {
+            username: 'taglinematch',
+            tagline: 'Riverside pottery enthusiast',
           },
-        );
-      });
-      it('finds public locations and taglines, ranking names higher', function (done) {
-        createUsers(
-          [
-            { username: 'riverside' },
-            { username: 'locationmatch', locationLiving: 'Riverside' },
-            { username: 'originmatch', locationFrom: 'Riverside' },
-            {
-              username: 'taglinematch',
-              tagline: 'Riverside pottery enthusiast',
-            },
-            {
-              username: 'privatematch',
-              locationLiving: 'Riverside',
-              public: false,
-            },
-            {
-              username: 'suspendedmatch',
-              locationLiving: 'Riverside',
-              roles: ['suspended'],
-            },
-            {
-              username: 'shadowmatch',
-              locationLiving: 'Riverside',
-              roles: ['shadowban'],
-            },
-          ],
-          function (err) {
-            if (err) return done(err);
-            agent
-              .get('/api/users?search=Riverside')
-              .expect(200)
-              .end(function (error, response) {
-                if (error) return done(error);
-                (response.body as SearchResponse)
-                  .map(member => member.username)
-                  .should.eql([
-                    'riverside',
-                    'locationmatch',
-                    'originmatch',
-                    'taglinematch',
-                  ]);
-                (response.body as SearchResponse)[3]!.tagline!.should.eql(
-                  'Riverside pottery enthusiast',
-                );
-                done();
-              });
+          {
+            username: 'privatematch',
+            locationLiving: 'Riverside',
+            public: false,
           },
+          {
+            username: 'suspendedmatch',
+            locationLiving: 'Riverside',
+            roles: ['suspended'],
+          },
+          {
+            username: 'shadowmatch',
+            locationLiving: 'Riverside',
+            roles: ['shadowban'],
+          },
+        ]);
+        const response = await agent
+          .get('/api/users?search=Riverside')
+          .expect(200);
+        (response.body as SearchResponse)
+          .map(member => member.username)
+          .should.eql([
+            'riverside',
+            'locationmatch',
+            'originmatch',
+            'taglinematch',
+          ]);
+        (response.body as SearchResponse)[3]!.tagline!.should.eql(
+          'Riverside pottery enthusiast',
         );
       });
-      it('[a username matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'asdf',
-                  },
-                  {
-                    username: 'asdfg',
-                  },
-                  {
-                    username: 'asdia',
-                  },
-                  {
-                    username: 'hasdfg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=asdia')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(1);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('[a username matched] return array of users', async function () {
+        // create some users
+        await createUsers([
+          {
+            username: 'asdf',
+          },
+          {
+            username: 'asdfg',
+          },
+          {
+            username: 'asdia',
+          },
+          {
+            username: 'hasdfg',
+          },
+        ]);
+        // search
+        const response = await agent.get('/api/users?search=asdia').expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(1);
       });
-      it('[some given names matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    firstName: 'qwer',
-                  },
-                  {
-                    firstName: 'qwera',
-                  },
-                  {
-                    firstName: 'qwery',
-                  },
-                  {
-                    firstName: 'qwer',
-                  },
-                  {
-                    firstName: 'qwe',
-                  },
-                  {
-                    firstName: 'sqwero',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=qwer')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(2);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('[some given names matched] return array of users', async function () {
+        // create some users
+        await createUsers([
+          {
+            firstName: 'qwer',
+          },
+          {
+            firstName: 'qwera',
+          },
+          {
+            firstName: 'qwery',
+          },
+          {
+            firstName: 'qwer',
+          },
+          {
+            firstName: 'qwe',
+          },
+          {
+            firstName: 'sqwero',
+          },
+        ]);
+        // search
+        const response = await agent.get('/api/users?search=qwer').expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(2);
       });
-      it('[some family names matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    lastName: 'zxcvbna',
-                  },
-                  {
-                    lastName: 'zxcvbnrya',
-                  },
-                  {
-                    lastName: 'zxcvb',
-                  },
-                  {
-                    lastName: 'zxcvbny',
-                  },
-                  {
-                    lastName: 'zxcvb',
-                  },
-                  {
-                    lastName: 'zxcvba',
-                  },
-                  {
-                    lastName: 'zxcvz',
-                  },
-                  {
-                    lastName: 'asdia',
-                  },
-                  {
-                    lastName: 'hasdfg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=zxcvb')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(2);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('[some family names matched] return array of users', async function () {
+        // create some users
+        await createUsers([
+          {
+            lastName: 'zxcvbna',
+          },
+          {
+            lastName: 'zxcvbnrya',
+          },
+          {
+            lastName: 'zxcvb',
+          },
+          {
+            lastName: 'zxcvbny',
+          },
+          {
+            lastName: 'zxcvb',
+          },
+          {
+            lastName: 'zxcvba',
+          },
+          {
+            lastName: 'zxcvz',
+          },
+          {
+            lastName: 'asdia',
+          },
+          {
+            lastName: 'hasdfg',
+          },
+        ]);
+        // search
+        const response = await agent.get('/api/users?search=zxcvb').expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(2);
       });
-      it('[full names matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    firstName: 'jacob',
-                    lastName: 'alia',
-                  },
-                  {
-                    firstName: 'jacob',
-                    lastName: 'alib',
-                  },
-                  {
-                    firstName: 'jAcob',
-                    lastName: 'alic',
-                  },
-                  {
-                    firstName: 'jaCob',
-                    lastName: 'alid',
-                  },
-                  {
-                    firstName: 'jacob',
-                    lastName: 'aliE',
-                  },
-                  {
-                    firstName: 'jacob',
-                    lastName: 'alIA',
-                  },
-                  {
-                    firstName: 'jaco',
-                    lastName: 'alg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=jacob+aLia')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(6);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('[full names matched] return array of users', async function () {
+        // create some users
+        await createUsers([
+          {
+            firstName: 'jacob',
+            lastName: 'alia',
+          },
+          {
+            firstName: 'jacob',
+            lastName: 'alib',
+          },
+          {
+            firstName: 'jAcob',
+            lastName: 'alic',
+          },
+          {
+            firstName: 'jaCob',
+            lastName: 'alid',
+          },
+          {
+            firstName: 'jacob',
+            lastName: 'aliE',
+          },
+          {
+            firstName: 'jacob',
+            lastName: 'alIA',
+          },
+          {
+            firstName: 'jaco',
+            lastName: 'alg',
+          },
+        ]);
+        // search
+        const response = await agent
+          .get('/api/users?search=jacob+aLia')
+          .expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(6);
       });
-      it('[none matched] return empty array', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    lastName: 'zxcvbna',
-                  },
-                  {
-                    username: 'zxcvba',
-                  },
-                  {
-                    firstName: 'xcvz',
-                  },
-                  {
-                    lastName: 'asdia',
-                  },
-                  {
-                    username: 'hasdfg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=aeiou')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(0);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('[none matched] return empty array', async function () {
+        // create some users
+        await createUsers([
+          {
+            lastName: 'zxcvbna',
+          },
+          {
+            username: 'zxcvba',
+          },
+          {
+            firstName: 'xcvz',
+          },
+          {
+            lastName: 'asdia',
+          },
+          {
+            username: 'hasdfg',
+          },
+        ]);
+        // search
+        const response = await agent.get('/api/users?search=aeiou').expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(0);
       });
-      it('the user data should have only fields from searchProfile, and score', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'aaa',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=aaa')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(1);
-              // _id is not specified in userSearchProfileFields, but gets included anyways
-              // that's just how mongo works
-              const expectedFields = userHandler.userSearchProfileFields
-                .split(' ')
-                .concat(['_id']);
-              const actualFields = _.keys(foundUsers[0]);
-              const unexpectedFields = _.difference(
-                actualFields,
-                expectedFields,
-              );
-              should(unexpectedFields).eql(['score']);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('the user data should have only fields from searchProfile, and score', async function () {
+        // create some users
+        await createUsers([
+          {
+            username: 'aaa',
+          },
+        ]);
+        // search
+        const response = await agent.get('/api/users?search=aaa').expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(1);
+        // _id is not specified in userSearchProfileFields, but gets included anyways
+        // that's just how mongo works
+        const expectedFields = userHandler.userSearchProfileFields
+          .split(' ')
+          .concat(['_id']);
+        const actualFields = _.keys(foundUsers[0]);
+        const unexpectedFields = _.difference(actualFields, expectedFields);
+        should(unexpectedFields).eql(['score']);
       });
       context('limit the amount of results and pagination', function () {
         // create some users
@@ -598,10 +415,8 @@ describe('Search users: GET /users?search=string', function () {
             lastName: 'aaaaaa',
           },
         ];
-        beforeEach(function (done) {
-          createUsers(testUsers, function (err) {
-            done(err);
-          });
+        beforeEach(async function () {
+          await createUsers(testUsers);
         });
         // TCs with different or missing page and limit parameters
         const pageTests = [
@@ -636,121 +451,74 @@ describe('Search users: GET /users?search=string', function () {
               test.expected +
               ', when param is ' +
               test.params,
-            function (done) {
-              async.waterfall(
-                [
-                  // search
-                  function (cb: SearchCallback) {
-                    agent
-                      .get('/api/users?search=aaaaaa' + test.params)
-                      .expect(200)
-                      .end(function (err, response) {
-                        cb(err, response.body as SearchResponse);
-                      });
-                  },
-                  // check that we found the users
-                  function (foundUsers: SearchResponse, cb: FinishedCallback) {
-                    should(foundUsers).length(test.expected);
-                    cb();
-                  },
-                ],
-                done,
-              );
+            async function () {
+              // search
+              const response = await agent
+                .get('/api/users?search=aaaaaa' + test.params)
+                .expect(200);
+              // check that we found the users
+              should(response.body as SearchResponse).length(test.expected);
             },
           );
         });
       });
-      it('search is case insensitive', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'abcdef',
-                  },
-                  {
-                    firstName: 'abCdef',
-                  },
-                  {
-                    lastName: 'ABCdEF',
-                  },
-                  {
-                    username: 'aabc',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=abcdEf')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(3);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('search is case insensitive', async function () {
+        // create some users
+        await createUsers([
+          {
+            username: 'abcdef',
+          },
+          {
+            firstName: 'abCdef',
+          },
+          {
+            lastName: 'ABCdEF',
+          },
+          {
+            username: 'aabc',
+          },
+        ]);
+        // search
+        const response = await agent
+          .get('/api/users?search=abcdEf')
+          .expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(3);
       });
-      it('return only public users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'aabcdef',
-                    public: true,
-                  },
-                  {
-                    firstName: 'aAabCd',
-                    public: false,
-                  },
-                  {
-                    lastName: 'aaABCc',
-                    public: false,
-                  },
-                  {
-                    lastName: 'aaABCc',
-                    public: true,
-                  },
-                  // this one is not matched
-                  {
-                    firstName: 'aabCDef',
-                    lastName: 'aAbcdef',
-                    public: true,
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=aabcdef')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(2);
-              cb();
-            },
-          ],
-          done,
-        );
+      it('return only public users', async function () {
+        // create some users
+        await createUsers([
+          {
+            username: 'aabcdef',
+            public: true,
+          },
+          {
+            firstName: 'aAabCd',
+            public: false,
+          },
+          {
+            lastName: 'aaABCc',
+            public: false,
+          },
+          {
+            lastName: 'aaABCc',
+            public: true,
+          },
+          // this one is not matched
+          {
+            firstName: 'aabCDef',
+            lastName: 'aAbcdef',
+            public: true,
+          },
+        ]);
+        // search
+        const response = await agent
+          .get('/api/users?search=aabcdef')
+          .expect(200);
+        const foundUsers = response.body as SearchResponse;
+        // check that we found the users
+        should(foundUsers).length(2);
       });
     });
     context('invalid request', function () {

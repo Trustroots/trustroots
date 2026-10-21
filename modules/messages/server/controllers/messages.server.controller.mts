@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import async from 'async';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
@@ -203,24 +202,6 @@ interface ControllerResponse {
 
 type ControllerNext = (error?: unknown) => void;
 type ErrorCallback = (error: Error | null) => void;
-type WaterfallDone<Result extends unknown[] = []> = {
-  (error?: Error | null | undefined): void;
-  (error: Error | null | undefined, ...results: Result): void;
-};
-type WaterfallTask = (...args: never[]) => void;
-type WaterfallCallback = (error?: unknown, ...results: unknown[]) => void;
-type AsyncCallbacks = {
-  mapSeries<Item, Result>(
-    items: Item[],
-    iteratee: (
-      item: Item,
-      callback: (error?: Error | null, result?: Result) => void,
-    ) => void,
-    callback: (error?: Error | null, results?: Result[]) => void,
-  ): void;
-  waterfall(tasks: WaterfallTask[], callback?: WaterfallCallback): void;
-};
-const asyncCallbacks = async as unknown as AsyncCallbacks;
 
 interface MessagesController {
   inbox(req: ControllerRequest, res: ControllerResponse): unknown;
@@ -346,39 +327,27 @@ service.sanitizeMessages = sanitizeMessages;
  * @param {Object} Thread
  * @return {Object} Thread with possibly mutated `thread.userFrom` / `thread.userTo`
  */
-function fillDeletedProfiles(
-  threads: ClientThreadSummary[] | null | undefined,
-  callback: (error?: Error | null, result?: ClientThreadSummary[]) => void,
-): void {
-  if (!threads || !threads.length) {
-    return callback(null, []);
-  }
-  asyncCallbacks.mapSeries(
-    threads,
-    function (
-      thread: ClientThreadSummary,
-      done: (error?: Error | null, result?: ClientThreadSummary) => void,
-    ) {
-      if (thread.userTo && thread.userFrom) {
-        return done(null, thread);
-      }
+async function fillDeletedProfiles(
+  threads: ClientThreadSummary[],
+): Promise<ClientThreadSummary[]> {
+  for (const thread of threads) {
+    if (thread.userTo && thread.userFrom) {
+      continue;
+    }
 
-      // Check which field is `null` — only one of them can
-      const field = !thread.userTo ? 'userTo' : 'userFrom';
-      Thread.findById(thread._id, field).then(
-        newThread => {
-          if (newThread) {
-            thread[field] = {
-              _id: newThread[field] as Types.ObjectId,
-            };
-          }
-          done(null, thread);
-        },
-        () => done(null, thread),
-      );
-    },
-    callback,
-  );
+    // Check which field is `null` — only one of them can
+    const field = !thread.userTo ? 'userTo' : 'userFrom';
+    const newThread = await Thread.findById(thread._id, field).then(
+      found => found,
+      () => null,
+    );
+    if (newThread) {
+      thread[field] = {
+        _id: newThread[field] as Types.ObjectId,
+      };
+    }
+  }
+  return threads;
 }
 
 /**
@@ -391,46 +360,38 @@ function fillDeletedProfiles(
 function sanitizeThreads(
   threads: ThreadEndpointDocument[] | null | undefined,
   authenticatedUserId: Types.ObjectId,
-  callback: (error?: Error | null, result?: ClientThreadSummary[]) => void,
-): void {
+): ClientThreadSummary[] {
   if (!threads || !threads.length) {
-    return callback(null, []);
+    return [];
   }
-  asyncCallbacks.mapSeries(
-    threads,
-    function (
-      thread: ThreadEndpointDocument,
-      done: (error?: Error | null, result?: ClientThreadSummary) => void,
-    ) {
-      // Threads need just excerpt
-      const plainThread = thread.toObject();
+  return threads.map(function (thread) {
+    // Threads need just excerpt
+    const plainThread = thread.toObject();
 
-      // Clean message content from html + clean all whitespace + shorten
-      let excerpt;
-      if (plainThread.message) {
-        const messageContent = (
-          plainThread.message as Pick<MessageEndpointRecord, 'content'>
-        ).content;
-        excerpt = messageContent
-          ? textService.plainText(messageContent, true).substring(0, 100)
-          : '…';
-      } else {
-        // Ensure this works even if messages couldn't be found for some reason
-        excerpt = '…';
-      }
-      // If latest message in the thread was from current user, show
-      // it as read - sender obviously read his/her own message
-      if (
-        plainThread.userFrom &&
-        plainThread.userFrom._id &&
-        plainThread.userFrom._id.toString() === authenticatedUserId.toString()
-      ) {
-        plainThread.read = true;
-      }
-      done(null, prepareThreadSummary(plainThread, excerpt));
-    },
-    callback,
-  );
+    // Clean message content from html + clean all whitespace + shorten
+    let excerpt;
+    if (plainThread.message) {
+      const messageContent = (
+        plainThread.message as Pick<MessageEndpointRecord, 'content'>
+      ).content;
+      excerpt = messageContent
+        ? textService.plainText(messageContent, true).substring(0, 100)
+        : '…';
+    } else {
+      // Ensure this works even if messages couldn't be found for some reason
+      excerpt = '…';
+    }
+    // If latest message in the thread was from current user, show
+    // it as read - sender obviously read his/her own message
+    if (
+      plainThread.userFrom &&
+      plainThread.userFrom._id &&
+      plainThread.userFrom._id.toString() === authenticatedUserId.toString()
+    ) {
+      plainThread.read = true;
+    }
+    return prepareThreadSummary(plainThread, excerpt);
+  });
 }
 
 /**
@@ -488,17 +449,16 @@ service.inbox = function (req, res) {
         );
 
         // Sanitize and return threads
-        sanitizeThreads(data.docs, user._id, function (err, threads) {
-          // If user is deleted, the object from `User` collection is gone.
-          // `Thread.paginate()` attempts to populate it but failing to do so,
-          // leaves `userFrom` or `userTo` as `null` instead of just keeping
-          // the original document `_id` which would still be useful at the frontend.
-          // Until we refactor our code not to use `mongoose-paginate`, this helper
-          // will backfill the IDs. Cumbersome and not optimal, but there are not that
-          // many deleted profiles that this would be a significant issue.
-          fillDeletedProfiles(threads, function (err, threads) {
-            res.json(threads!);
-          });
+        const threads = sanitizeThreads(data.docs, user._id);
+        // If user is deleted, the object from `User` collection is gone.
+        // `Thread.paginate()` attempts to populate it but failing to do so,
+        // leaves `userFrom` or `userTo` as `null` instead of just keeping
+        // the original document `_id` which would still be useful at the frontend.
+        // Until we refactor our code not to use `mongoose-paginate`, this helper
+        // will backfill the IDs. Cumbersome and not optimal, but there are not that
+        // many deleted profiles that this would be a significant issue.
+        void fillDeletedProfiles(threads).then(filledThreads => {
+          res.json(filledThreads);
         });
       }
     },
@@ -585,237 +545,181 @@ service.send = async function (req, res) {
       message: 'You are writing too many messages.',
     });
   }
-  asyncCallbacks.waterfall(
-    [
-      // Check that receiving user is legitimate:
-      // - Has to be confirmed their email (hence be public)
-      // - Not suspended profile
-      function (done: WaterfallDone) {
-        // Only admins can send messages to banned users. For others they stay hidden.
-        const publicityLimit = user.roles.includes('admin')
-          ? {}
-          : {
-              public: true,
-              roles: {
-                $nin: ['suspended', 'shadowban'],
-              },
-            };
-        User.findOne({
-          _id: body.userTo,
-          ...publicityLimit,
-        })
-          .exec()
-          .then(
-            function (receiver) {
-              // If we were unable to find the receiver, return the error and stop here
-              if (!receiver) {
-                return res.status(404).send({
-                  message: 'Member you are writing to does not exist.',
-                });
-              }
-              done();
-            },
-            function () {
-              return res.status(404).send({
-                message: 'Member you are writing to does not exist.',
-              });
-            },
-          );
-      },
-      // Check if this is first message to this thread (=does the thread object exist?)
-      function (done: WaterfallDone<[ThreadEndpointDocument | null]>) {
-        Thread.findOne({
-          // User id's can be either way around in thread handle, so we gotta test for both situations
+  // Check that receiving user is legitimate:
+  // - Has to be confirmed their email (hence be public)
+  // - Not suspended profile
+  // Only admins can send messages to banned users. For others they stay hidden.
+  const publicityLimit = user.roles.includes('admin')
+    ? {}
+    : {
+        public: true,
+        roles: {
+          $nin: ['suspended', 'shadowban'],
+        },
+      };
+  const receiver = await User.findOne({
+    _id: body.userTo,
+    ...publicityLimit,
+  })
+    .exec()
+    .catch(() => null);
+
+  // If we were unable to find the receiver, return the error and stop here
+  if (!receiver) {
+    return res.status(404).send({
+      message: 'Member you are writing to does not exist.',
+    });
+  }
+
+  try {
+    // Check if this is first message to this thread (=does the thread object exist?)
+    const thread = await Thread.findOne({
+      // User id's can be either way around in thread handle, so we gotta test for both situations
+      $or: [
+        {
+          userTo: user._id,
+          userFrom: body.userTo,
+        },
+        {
+          userTo: body.userTo,
+          userFrom: user._id,
+        },
+      ],
+    });
+
+    // Check sender's profile isn't empty If it was first message
+    // If the sending user has an empty profile, reject the message
+    if (!thread) {
+      const sender = await User.findById(user._id, 'description').exec();
+      const plainText = textService.plainText as (
+        value: string,
+        keepNewLines?: boolean,
+      ) => string;
+      const descriptionLength = sender?.description
+        ? plainText(sender.description).length
+        : 0;
+
+      // If the sender has too empty description, return an error
+      if (descriptionLength < config.profileMinimumLength) {
+        return res.status(400).send({
+          error: 'empty-profile',
+          limit: config.profileMinimumLength,
+          message:
+            descriptionLength === 0
+              ? 'Please fill out your profile description before you send messages.'
+              : 'Please write longer profile description before you send messages.',
+        });
+      }
+    }
+
+    // Save message
+    const newMessage = new Message(
+      prepareNewMessageFields(
+        {
+          userTo: body.userTo as string,
+          content: textService.html(body.content as string),
+          read: false,
+        },
+        user._id,
+      ),
+    );
+    // Mongoose casts a supplied User document to its ObjectId reference.
+    newMessage.userFrom = user as unknown as Types.ObjectId;
+    // "Ghost-send" behavior: restricted senders can still see own messages,
+    // but they are hidden from recipients.
+    newMessage.read = senderIsRestricted;
+    newMessage.shadowHidden = senderIsRestricted;
+    newMessage.notified = false;
+
+    const message = await newMessage.save();
+
+    // Create/upgrade Thread handle between these two users
+    // Don't update recipient thread/inbox delivery state for shadow-hidden messages.
+    if (!message.shadowHidden) {
+      const threadHandle = new Thread();
+      threadHandle.updated = Date.now() as unknown as Date;
+      threadHandle.userFrom = message.userFrom;
+      threadHandle.userTo = message.userTo;
+      threadHandle.message = message as unknown as Types.ObjectId;
+      threadHandle.read = false;
+
+      // Convert the Model instance to a simple object using Model's 'toObject' function
+      // to prevent weirdness like infinite looping...
+      const upsertData = threadHandle.toObject() as Omit<
+        ThreadEndpointRecord,
+        '_id'
+      > & { _id?: Types.ObjectId };
+
+      // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
+      delete upsertData._id;
+
+      // Do the upsert, which works like this: If no Thread document exists with
+      // _id = thread.id, then create a new doc using upsertData.
+      // Otherwise, update the existing doc with upsertData
+      // @link http://stackoverflow.com/a/7855281
+      await Thread.updateOne(
+        {
+          // User id's can be either way around in old thread handle, so we gotta test for both situations
           $or: [
             {
-              userTo: user._id,
-              userFrom: body.userTo,
+              userTo: upsertData.userTo,
+              userFrom: upsertData.userFrom,
             },
             {
-              userTo: body.userTo,
-              userFrom: user._id,
+              userTo: upsertData.userFrom,
+              userFrom: upsertData.userTo,
             },
           ],
-        }).then(function (thread) {
-          done(null, thread);
-        }, done);
-      },
-      // Check sender's profile isn't empty If it was first message
-      // If the sending user has an empty profile, reject the message
-      function (thread: ThreadEndpointDocument | null, done: WaterfallDone) {
-        // If this was first message to the thread
-        if (!thread) {
-          User.findById(user._id, 'description')
-            .exec()
-            .then(
-              function (sender) {
-                const plainText = textService.plainText as (
-                  value: string,
-                  keepNewLines?: boolean,
-                ) => string;
-                const descriptionLength = sender?.description
-                  ? plainText(sender.description).length
-                  : 0;
+        },
+        upsertData,
+        {
+          upsert: true,
+        },
+      );
+    }
 
-                // If the sender has too empty description, return an error
-                if (descriptionLength < config.profileMinimumLength) {
-                  return res.status(400).send({
-                    error: 'empty-profile',
-                    limit: config.profileMinimumLength,
-                    message:
-                      descriptionLength === 0
-                        ? 'Please fill out your profile description before you send messages.'
-                        : 'Please write longer profile description before you send messages.',
-                  });
-                }
+    // Here we send some metrics to Stats API to measure how many messages
+    // are sent, what type of messages, etc.
+    messageToStatsService.save(message, function () {
+      // do nothing
+    });
 
-                // Continue
-                done();
-              },
-              function (err) {
-                done(err);
-              },
-            );
-        } else {
-          // It wasn't first message to this thread
-          done();
-        }
-      },
-      // Save message
-      function (done: WaterfallDone<[MessageEndpointDocument]>) {
-        const message = new Message(
-          prepareNewMessageFields(
-            {
-              userTo: body.userTo as string,
-              content: textService.html(body.content as string),
-              read: false,
-            },
-            user._id,
-          ),
-        );
-        // Mongoose casts a supplied User document to its ObjectId reference.
-        message.userFrom = user as unknown as Types.ObjectId;
-        // "Ghost-send" behavior: restricted senders can still see own messages,
-        // but they are hidden from recipients.
-        message.read = senderIsRestricted;
-        message.shadowHidden = senderIsRestricted;
-        message.notified = false;
-
-        message.save().then(saved => done(null, saved), done);
-      },
-      // Create/upgrade Thread handle between these two users
-      function (
-        message: MessageEndpointDocument,
-        done: WaterfallDone<[MessageEndpointDocument]>,
-      ) {
-        // Don't update recipient thread/inbox delivery state for shadow-hidden messages.
-        if (message.shadowHidden) {
-          return done(null, message);
-        }
-        const thread = new Thread();
-        thread.updated = Date.now() as unknown as Date;
-        thread.userFrom = message.userFrom;
-        thread.userTo = message.userTo;
-        thread.message = message as unknown as Types.ObjectId;
-        thread.read = false;
-
-        // Convert the Model instance to a simple object using Model's 'toObject' function
-        // to prevent weirdness like infinite looping...
-        const upsertData = thread.toObject() as Omit<
-          ThreadEndpointRecord,
-          '_id'
-        > & { _id?: Types.ObjectId };
-
-        // Delete the _id property, otherwise Mongo will return a "Mod on _id not allowed" error
-        delete upsertData._id;
-
-        // Do the upsert, which works like this: If no Thread document exists with
-        // _id = thread.id, then create a new doc using upsertData.
-        // Otherwise, update the existing doc with upsertData
-        // @link http://stackoverflow.com/a/7855281
-        Thread.updateOne(
-          {
-            // User id's can be either way around in old thread handle, so we gotta test for both situations
-            $or: [
-              {
-                userTo: upsertData.userTo,
-                userFrom: upsertData.userFrom,
-              },
-              {
-                userTo: upsertData.userFrom,
-                userFrom: upsertData.userTo,
-              },
-            ],
-          },
-          upsertData,
-          {
-            upsert: true,
-          },
-        ).then(
-          () => done(null, message),
-          (err: Error) => done(err, message),
-        );
-      },
-      // Here we send some metrics to Stats API to measure how many messages
-      // are sent, what type of messages, etc.
-      function (
-        message: MessageEndpointDocument,
-        done: WaterfallDone<[MessageEndpointDocument]>,
-      ) {
-        messageToStatsService.save(message, function () {
+    // Here we create or update the related MessageStat document in mongodb
+    // It serves to count the user's reply rate and reply time
+    // Messages hidden from their recipient must not lower reply rates or
+    // contribute reply-time data.
+    if (!message.shadowHidden) {
+      messageStatService.updateMessageStat(
+        message as MessageRecord & {
+          content: string;
+          created: Date;
+          userFrom: Types.ObjectId;
+          userTo: Types.ObjectId;
+        },
+        function () {
           // do nothing
-        });
-        return done(null, message);
-      },
-      // Here we create or update the related MessageStat document in mongodb
-      // It serves to count the user's reply rate and reply time
-      function (
-        message: MessageEndpointDocument,
-        done: WaterfallDone<[MessageEndpointDocument]>,
-      ) {
-        // Messages hidden from their recipient must not lower reply rates or
-        // contribute reply-time data.
-        if (!message.shadowHidden) {
-          messageStatService.updateMessageStat(
-            message as MessageRecord & {
-              content: string;
-              created: Date;
-              userFrom: Types.ObjectId;
-              userTo: Types.ObjectId;
-            },
-            function () {
-              // do nothing
-            },
-          );
-        }
-        return done(null, message);
-      },
-      // We'll need some info about related users, populate some fields
-      function (message: MessageEndpointDocument, done: WaterfallDone) {
-        message
-          .populate([userMiniService.miniUserPopulate('userFrom userTo')])
-          .then(populated => {
-            // Turn to object to be able to delete fields
-            const messageObject = populated.toObject();
+        },
+      );
+    }
 
-            // Finally return the approved message fields.
-            return res.json(prepareMessageForClient(messageObject));
-          })
-          .catch(done);
-      },
-    ],
-    function (err?: unknown) {
-      /* istanbul ignore else */
-      if (err) {
-        log(
-          'error',
-          'Message failed to send. #sa239',
-          err as Record<string, unknown>,
-        );
-        return errorService.sendBadRequest(res, err);
-      }
-    },
-  );
+    // We'll need some info about related users, populate some fields
+    const populated = await message.populate([
+      userMiniService.miniUserPopulate('userFrom userTo'),
+    ]);
+
+    // Turn to object to be able to delete fields
+    const messageObject = populated.toObject();
+
+    // Finally return the approved message fields.
+    return res.json(prepareMessageForClient(messageObject));
+  } catch (err) {
+    log(
+      'error',
+      'Message failed to send. #sa239',
+      err as Record<string, unknown>,
+    );
+    return errorService.sendBadRequest(res, err);
+  }
 };
 
 /**
@@ -847,69 +751,54 @@ service.threadByUser = function (req, res, next, userId) {
   // TODO do we want to allow to see the messages from suspended or banned users
   // in order to make them "read"?
 
-  asyncCallbacks.waterfall(
-    [
-      // Find messages
-      function (done: WaterfallDone<[PopulatedMessageEndpointDocument[]]>) {
-        const query = req.query!;
-        Message.paginate(
-          excludeBlockedUsers(
-            {
-              $or: [
-                {
-                  userFrom: user._id,
-                  userTo: userId,
-                },
-                {
-                  userTo: user._id,
-                  userFrom: userId,
-                  shadowHidden: {
-                    $ne: true,
-                  },
-                },
-              ],
-            },
-            user,
-          ),
+  // Find messages
+  const query = req.query!;
+  Message.paginate(
+    excludeBlockedUsers(
+      {
+        $or: [
           {
-            page: query.page || 1,
-            limit: query.limit || 20,
-            sort: '-created',
-            select: messageFields,
-            populate: userMiniService.miniUserPopulate('userFrom userTo'),
+            userFrom: user._id,
+            userTo: userId,
           },
-          function (err, data) {
-            if (err) {
-              return done(err);
-            }
-            if (!data || !data.docs) {
-              return done(new Error('Failed to load messages.'));
-            }
-
-            // Pass pagination data to construct link header
-            if (data.docs.length > 0) {
-              paginationService.setLinkHeader(
-                { query },
-                res as PaginatedResponse,
-                data.pages,
-              );
-            }
-            done(err, data.docs);
+          {
+            userTo: user._id,
+            userFrom: userId,
+            shadowHidden: {
+              $ne: true,
+            },
           },
-        );
+        ],
       },
-      function (
-        messages: PopulatedMessageEndpointDocument[],
-        done: WaterfallDone,
-      ) {
-        req.messages = messages;
-        done();
-      },
-    ],
-    function (err) {
+      user,
+    ),
+    {
+      page: query.page || 1,
+      limit: query.limit || 20,
+      sort: '-created',
+      select: messageFields,
+      populate: userMiniService.miniUserPopulate('userFrom userTo'),
+    },
+    function (err, data) {
       if (err) {
         return errorService.sendBadRequest(res, err);
       }
+      if (!data || !data.docs) {
+        return errorService.sendBadRequest(
+          res,
+          new Error('Failed to load messages.'),
+        );
+      }
+
+      // Pass pagination data to construct link header
+      if (data.docs.length > 0) {
+        paginationService.setLinkHeader(
+          { query },
+          res as PaginatedResponse,
+          data.pages,
+        );
+      }
+      req.messages = data.docs;
       next();
     },
   );
@@ -1003,151 +892,127 @@ service.sync = function (req, res) {
     messages: [],
     users: [],
   };
-  asyncCallbacks.waterfall(
-    [
-      // Find messages
-      function (done: WaterfallDone<[string[]]>) {
-        const queryParams = req.query!;
-        // Validate and construct date filters
-        let dateFrom;
-        let dateTo;
-        const queryDate = {};
-        if (_.has(req, 'query.dateFrom')) {
-          dateFrom = moment(
-            queryParams.dateFrom as Parameters<typeof moment>[0],
-          );
+  // Find messages
+  const queryParams = req.query!;
+  // Validate and construct date filters
+  let dateFrom;
+  let dateTo;
+  const queryDate = {};
+  if (_.has(req, 'query.dateFrom')) {
+    dateFrom = moment(queryParams.dateFrom as Parameters<typeof moment>[0]);
 
-          // Validate `dateFrom`
-          if (!dateFrom.isValid()) {
-            return res.status(400).send({
-              message: 'Invalid `dateFrom`.',
-            });
-          }
+    // Validate `dateFrom`
+    if (!dateFrom.isValid()) {
+      return res.status(400).send({
+        message: 'Invalid `dateFrom`.',
+      });
+    }
 
-          // Append dateFrom to date query
-          _.set(queryDate, 'created.$gt', dateFrom.toDate());
-        }
-        if (_.has(req, 'query.dateTo')) {
-          dateTo = moment(queryParams.dateTo as Parameters<typeof moment>[0]);
-          // Validate `dateTo`
-          if (!dateTo.isValid()) {
-            return res.status(400).send({
-              message: 'Invalid `dateTo`.',
-            });
-          }
+    // Append dateFrom to date query
+    _.set(queryDate, 'created.$gt', dateFrom.toDate());
+  }
+  if (_.has(req, 'query.dateTo')) {
+    dateTo = moment(queryParams.dateTo as Parameters<typeof moment>[0]);
+    // Validate `dateTo`
+    if (!dateTo.isValid()) {
+      return res.status(400).send({
+        message: 'Invalid `dateTo`.',
+      });
+    }
 
-          // Append dateTo to date query
-          _.set(queryDate, 'created.$lt', dateTo.toDate());
-        }
+    // Append dateTo to date query
+    _.set(queryDate, 'created.$lt', dateTo.toDate());
+  }
 
-        // Validate correct order of dates
-        if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
-          return res.status(400).send({
-            message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
-          });
-        }
+  // Validate correct order of dates
+  if (dateFrom && dateTo && dateFrom.isAfter(dateTo)) {
+    return res.status(400).send({
+      message: 'Invalid dates: `dateFrom` cannot be later than `dateTo`',
+    });
+  }
 
-        // Construct final Mongo query
-        let messageQuery: Record<string, unknown>;
+  // Construct final Mongo query
+  let messageQuery: Record<string, unknown>;
 
-        // This is always part of the query
-        const queryUsers = excludeBlockedUsers(
-          {
-            $or: [
-              {
-                userFrom: user._id,
-              },
-              {
-                userTo: user._id,
-                shadowHidden: {
-                  $ne: true,
-                },
-              },
-            ],
+  // This is always part of the query
+  const queryUsers = excludeBlockedUsers(
+    {
+      $or: [
+        {
+          userFrom: user._id,
+        },
+        {
+          userTo: user._id,
+          shadowHidden: {
+            $ne: true,
           },
-          user,
-        );
+        },
+      ],
+    },
+    user,
+  );
 
-        // Filter only by user or also by date?
-        if (_.has(queryDate, 'created')) {
-          // Construct query with date limits
-          messageQuery = {
-            $and: [queryUsers, queryDate],
-          };
-        } else {
-          // Construct query without date limit
-          messageQuery = queryUsers;
-        }
+  // Filter only by user or also by date?
+  if (_.has(queryDate, 'created')) {
+    // Construct query with date limits
+    messageQuery = {
+      $and: [queryUsers, queryDate],
+    };
+  } else {
+    // Construct query without date limit
+    messageQuery = queryUsers;
+  }
 
-        // Run the query
-        Message.find(messageQuery)
-          .sort({
-            created: -1,
-          })
-          .select(messageFields)
-          .exec()
-          .then(
-            function (messages) {
-              // Sanitize messages
-              messages = sanitizeMessages(messages);
-
-              // Collect user ids
-              let userIds: string[] = [];
-
-              // Re-group messages by users
-              data.messages = _.groupBy(messages, function (row) {
-                // Collect user id
-                userIds.push(row.userTo.toString());
-                userIds.push(row.userFrom.toString());
-
-                // Determines key of the group
-                if (row.userTo === user._id) {
-                  return row.userFrom;
-                }
-                return row.userTo;
-              });
-
-              // Ensure we have only one of each user ids
-              userIds = _.uniq(userIds);
-              done(null, userIds);
-            },
-            function (err) {
-              done(err);
-            },
-          );
-      },
-      // Collect users
-      function (userIds: string[], done: WaterfallDone) {
-        // Get objects for users based on above user ids
-        User.find({
-          _id: {
-            $in: userIds,
-          },
+  const collectData = async () => {
+    // Run the query
+    const messages = sanitizeMessages(
+      await Message.find(messageQuery)
+        .sort({
+          created: -1,
         })
-          .select(userMiniService.userMiniProfileFields)
-          .exec()
-          .then(
-            function (users) {
-              data.users = users;
-              done();
-            },
-            function (err) {
-              done(err);
-            },
-          );
-      },
-      // Return the package
-      function () {
-        return res.json(data);
-      },
-    ],
-    function (err) {
-      /* istanbul ignore else */
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
+        .select(messageFields)
+        .exec(),
+    );
+
+    // Collect user ids
+    let userIds: string[] = [];
+
+    // Re-group messages by users
+    data.messages = _.groupBy(messages, function (row) {
+      // Collect user id
+      userIds.push(row.userTo.toString());
+      userIds.push(row.userFrom.toString());
+
+      // Determines key of the group
+      if (row.userTo === user._id) {
+        return row.userFrom;
       }
+      return row.userTo;
+    });
+
+    // Ensure we have only one of each user ids
+    userIds = _.uniq(userIds);
+
+    // Collect users
+    // Get objects for users based on above user ids
+    data.users = await User.find({
+      _id: {
+        $in: userIds,
+      },
+    })
+      .select(userMiniService.userMiniProfileFields)
+      .exec();
+  };
+
+  void collectData().then(
+    () => {
+      // Return the package
+      res.json(data);
+    },
+    (err: Error) => {
+      res.status(400).send({
+        message: errorService.getErrorMessage(err),
+      });
     },
   );
 };

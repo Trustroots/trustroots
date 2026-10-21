@@ -12,7 +12,6 @@ import type {
 
 const _ = require('lodash');
 const should = require('should');
-const async = require('async');
 const request = require('supertest');
 const moment = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -548,34 +547,17 @@ describe('Message CRUD tests', function () {
 
         // Now loop 25 messages in...
         // "Older" messages will have smaller numbers
-        // @link https://github.com/caolan/async#whilsttest-fn-callback
         let count = 0;
-        async.whilst(
-          function (
-            testCallback: (error: Error | null, truth?: boolean) => void,
-          ) {
-            testCallback(null, count < 25);
-          },
-          function (callback: (error: Error | null, result?: number) => void) {
+        (async () => {
+          while (count < 25) {
             count++;
             const newMessage = message;
             newMessage.content = 'Message content ' + count;
-            agent
-              .post('/api/messages')
-              .send(newMessage)
-              .expect(200)
-              .end(function (messageSaveErr) {
-                // Handle message save error
-                if (messageSaveErr) return done(messageSaveErr);
-
-                // This message was saved okay, continue to the next one...
-                callback(null, count);
-              });
-          },
+            await agent.post('/api/messages').send(newMessage).expect(200);
+          }
+        })().then(
           // All messages sent, continue.
-          function (err: Error | null) {
-            if (err) return done(err);
-
+          function () {
             // Get a list of messages
             agent
               .get('/api/messages/' + userToId)
@@ -643,6 +625,7 @@ describe('Message CRUD tests', function () {
                 }
               });
           },
+          done,
         );
       });
   });

@@ -614,8 +614,8 @@ describe('Avatar processing failure handling', () => {
     const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        async: {
-          queue: () => ({
+        './../../../core/server/services/task-queue.server.service.mts': {
+          createTaskQueue: () => ({
             length: () => pending.length,
             push: (job: AvatarJob) => pending.push(job),
           }),
