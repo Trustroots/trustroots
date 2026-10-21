@@ -39,3 +39,7 @@ modules/core/server/views/email-templates-text/
 .github/**/*.md
 # Nunjucks tags inside attributes; not parseable by Prettier 3
 modules/core/server/views/react-layout.server.view.html
+
+# Generated docs assets
+docs/assets/js/
+docs/assets/downloads/

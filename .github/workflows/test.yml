@@ -6,6 +6,9 @@ on:
     types: [opened, synchronize, reopened]
   push:
     branches: [main]
+  workflow_run:
+    workflows: [Android preview release]
+    types: [completed]
   workflow_dispatch:
     inputs:
       run_client:
@@ -155,6 +158,7 @@ jobs:
   client:
     needs: changes
     if: >
+      github.event_name != 'workflow_run' &&
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       (github.event_name != 'workflow_dispatch' || inputs.run_client)
     runs-on: ubuntu-latest
@@ -235,6 +239,7 @@ jobs:
   server:
     needs: changes
     if: >
+      github.event_name != 'workflow_run' &&
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       (github.event_name != 'workflow_dispatch' || inputs.run_server)
     runs-on: ubuntu-latest
@@ -327,6 +332,7 @@ jobs:
   build-e2e-assets:
     needs: changes
     if: >
+      github.event_name != 'workflow_run' &&
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       (github.event_name != 'workflow_dispatch' || inputs.run_e2e)
     runs-on: ubuntu-latest
@@ -356,6 +362,7 @@ jobs:
   e2e-groups:
     needs: [changes, build-dev-image, build-e2e-assets]
     if: >
+      github.event_name != 'workflow_run' &&
       always() && !cancelled() && needs.changes.outputs.run-code != 'false' &&
       needs.build-e2e-assets.result == 'success' &&
       (
@@ -458,6 +465,7 @@ jobs:
   e2e:
     needs: [changes, build-e2e-assets, e2e-groups]
     if: >
+      github.event_name != 'workflow_run' &&
       always() && !cancelled() &&
       (needs.e2e-groups.result != 'skipped' || needs.build-e2e-assets.result == 'failure')
     runs-on: ubuntu-latest
@@ -628,7 +636,12 @@ jobs:
         run: node scripts/coverage/check-coverage.cts --require-full
 
   pages:
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    if: >
+      github.event_name != 'pull_request' && github.ref == 'refs/heads/main' &&
+      (github.event_name != 'workflow_run' ||
+       (github.event.workflow_run.head_branch == 'main' &&
+        github.event.workflow_run.head_repository.full_name == github.repository &&
+        (github.event.workflow_run.conclusion == 'success' || github.event.workflow_run.conclusion == 'failure')))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -655,7 +668,9 @@ jobs:
       - name: Refresh Android download versions
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/ci/android-release-metadata.mts
+        run: |
+          node scripts/ci/build-docs-scripts.mts
+          node scripts/ci/android-release-metadata.mts
       - name: Build docs site
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
         with:
@@ -772,7 +787,9 @@ jobs:
       - name: Refresh Android download versions
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/ci/android-release-metadata.mts
+        run: |
+          node scripts/ci/build-docs-scripts.mts
+          node scripts/ci/android-release-metadata.mts
       - name: Build docs site
         uses: actions/jekyll-build-pages@44a6e6beabd48582f863aeeb6cb2151cc1716697 # v1.0.13
         with:

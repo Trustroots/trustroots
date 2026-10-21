@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { stripTypeScriptTypes } from 'node:module';
 import { test } from 'node:test';
 import { runInNewContext } from 'node:vm';
 import { setImmediate } from 'node:timers/promises';
@@ -8,11 +9,13 @@ import {
   selectPreview,
   zapstoreRelease,
   publisher,
-} from '../../docs/assets/js/android-release-metadata.mjs';
+} from '../../docs/src/android-release-metadata.mts';
 
-const source = readFileSync(
-  new URL('../../docs/assets/js/latest-apk.js', import.meta.url),
-  'utf8',
+const source = stripTypeScriptTypes(
+  readFileSync(
+    new URL('../../docs/src/latest-apk.mts', import.meta.url),
+    'utf8',
+  ),
 ).replace(/^import[\s\S]*?;\n/, '');
 const releasesUrl = 'https://github.com/Trustroots/trustroots/releases';
 const apkUrl = `${releasesUrl}/download/android-preview-100001/trustroots-android-preview.apk`;
@@ -168,7 +171,7 @@ test('both published pages load the shared release lookup', () => {
     );
     assert.match(
       page,
-      /<script src="\/assets\/js\/latest-apk\.js" type="module"><\/script>/,
+      /<script src="\/assets\/js\/latest-apk\.mjs" type="module"><\/script>/,
     );
   }
 });

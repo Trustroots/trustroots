@@ -95,7 +95,7 @@
     "test:coverage:server:parallel": "NODE_OPTIONS='--import ./scripts/coverage/native-esm.mts' nyc --nycrc-path .nycrc-server pnpm run test:server:parallel",
     "test:server": "NODE_ENV=test node ./scripts/test-server.cts",
     "test": "pnpm run check-environment && pnpm run lint && pnpm run test:client && pnpm run test:server",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json && tsc --noEmit -p tsconfig.contracts.json && tsc --noEmit -p tsconfig.contract-diagnostics.json && tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.fixtures.json && tsc --noEmit -p tsconfig.scripts.json && tsc --noEmit -p tsconfig.test-harness.json && tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p tsconfig.server-tests.json && tsc --noEmit -p tsconfig.config.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json && tsc --noEmit -p tsconfig.contracts.json && tsc --noEmit -p tsconfig.contract-diagnostics.json && tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.fixtures.json && tsc --noEmit -p tsconfig.scripts.json && tsc --noEmit -p tsconfig.test-harness.json && tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p tsconfig.server-tests.json && tsc --noEmit -p tsconfig.config.json && tsc --noEmit -p tsconfig.docs.json",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.mts",
     "ensure-circle-discovery-indexes": "node ./bin/db-maintenance/ensure-circle-discovery-indexes.mts",
     "prepare": "husky install",
@@ -106,7 +106,9 @@
     "test:vite:rtl": "node --test config/vite/rtl-stylesheet.test.mts config/vite/dev-server-scripts.test.mts config/client/import-resolution.test.mjs",
     "test:vite:production": "NODE_ENV=production TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/vite/smoke-shell.cts",
     "test:vite:development": "NODE_ENV=development TRUSTROOTS_SKIP_LOCAL_CONFIG=true node ./scripts/vite/smoke-shell.cts",
-    "test:config": "node --test config/config.test.mts"
+    "test:config": "node --test config/config.test.mts",
+    "build:docs": "node scripts/ci/build-docs-scripts.mts",
+    "test:docs": "pnpm run build:docs && node --test scripts/ci/latest-apk.test.mts scripts/ci/zapstore-publisher.test.mts && playwright test --config scripts/ci/docs-playwright.config.mts"
   },
   "dependencies": {
     "@tanstack/react-query": "5.104.3",
