@@ -16,11 +16,18 @@ internal data class UiFailure(
 internal enum class UiFailureFallback {
     REACH_TRUSTROOTS,
     SESSION_EXPIRED,
+    CIRCLES_LOAD,
+    CIRCLE_MEMBERSHIPS_LOAD,
+    CIRCLE_MEMBERSHIP_UPDATE,
     SEND_MESSAGE,
     LOAD_CONVERSATION,
     LOAD_CONTACTS,
     LOAD_MESSAGES,
     SAVE_PROFILE,
+    SEARCH_MEMBERS,
+    HOST_SEARCH,
+    PLACE_SEARCH,
+    LOAD_HOST,
     HOST_OFFER_LOAD,
     HOST_OFFER_SAVE,
     SHARE_EXPERIENCE,
@@ -55,11 +62,18 @@ private val UiFailureFallback.resource: Int
     get() = when (this) {
         UiFailureFallback.REACH_TRUSTROOTS -> R.string.screen_could_not_reach_trustroots
         UiFailureFallback.SESSION_EXPIRED -> R.string.screen_sign_in_session_expired
+        UiFailureFallback.CIRCLES_LOAD -> R.string.screen_circles_load_error
+        UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD -> R.string.screen_circle_memberships_load_error
+        UiFailureFallback.CIRCLE_MEMBERSHIP_UPDATE -> R.string.screen_circle_membership_update_error
         UiFailureFallback.SEND_MESSAGE -> R.string.screen_send_message_error
         UiFailureFallback.LOAD_CONVERSATION -> R.string.screen_load_conversation_error
         UiFailureFallback.LOAD_CONTACTS -> R.string.screen_contacts_load_error
         UiFailureFallback.LOAD_MESSAGES -> R.string.screen_messages_load_error
         UiFailureFallback.SAVE_PROFILE -> R.string.screen_profile_save_error
+        UiFailureFallback.SEARCH_MEMBERS -> R.string.screen_search_members_error
+        UiFailureFallback.HOST_SEARCH -> R.string.screen_host_search_error
+        UiFailureFallback.PLACE_SEARCH -> R.string.screen_place_search_error
+        UiFailureFallback.LOAD_HOST -> R.string.screen_load_host_error
         UiFailureFallback.HOST_OFFER_LOAD -> R.string.screen_host_offer_load_error
         UiFailureFallback.HOST_OFFER_SAVE -> R.string.screen_host_offer_save_error
         UiFailureFallback.SHARE_EXPERIENCE -> R.string.screen_experience_share_error
@@ -68,6 +82,3 @@ private val UiFailureFallback.resource: Int
         UiFailureFallback.PASSWORD_CHANGE -> R.string.screen_password_change_error
         UiFailureFallback.LOAD_PROFILE -> R.string.profile_load_error
     }
-
-/** Compatibility for screen families that have not yet adopted typed failures. */
-internal fun Throwable.messageOr(fallback: String): String = message ?: fallback

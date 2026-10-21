@@ -22,6 +22,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 import org.trustroots.android.ui.hostoffer.HostOfferScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
 
@@ -75,6 +76,7 @@ class AuthenticatedWriteAndOfferFailureJourneysTest {
         val fixture = LocalTransportFixture { request ->
             when (request.method to request.path) {
                 "GET" to "/api/tribes?limit=150" -> LocalTransportFixture.Response(CIRCLES)
+                "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response(CIRCLE_DETAIL)
                 "GET" to "/api/users/memberships" -> LocalTransportFixture.Response("[]")
                 "POST" to "/api/users/memberships/circle-harbour" ->
                     LocalTransportFixture.Response("""{"message":"Session expired."}""", status = 401)
@@ -105,6 +107,8 @@ class AuthenticatedWriteAndOfferFailureJourneysTest {
         assertEquals(
             listOf(
                 "GET" to "/api/tribes?limit=150",
+                "GET" to "/api/users/memberships",
+                "GET" to "/api/tribes/quiet-harbour",
                 "GET" to "/api/users/memberships",
                 "POST" to "/api/users/memberships/circle-harbour",
             ),
@@ -163,5 +167,6 @@ class AuthenticatedWriteAndOfferFailureJourneysTest {
         const val PROFILE = """{"_id":"member-one","username":"steady-heron","displayName":"Steady Heron"}"""
         const val RELATED_PROFILE = """{"_id":"member-two","username":"quiet-fox","displayName":"Quiet Fox"}"""
         const val CIRCLES = """[{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","count":4,"description":"A fictional circle for coastal travellers.","image":false}]"""
+        const val CIRCLE_DETAIL = """{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","count":4,"description":"A fictional circle for coastal travellers.","image":false}"""
     }
 }

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.printToLog
 import androidx.compose.ui.test.swipeUp
@@ -217,6 +218,7 @@ class TrustrootsAppShellJourneyTest {
         val requests = CopyOnWriteArrayList<String>()
         startResponder(requests) { path ->
             when {
+                path == "/api/auth/signin" -> "200 OK" to """{"username":"steady-heron","displayName":"Steady Heron"}"""
                 path.startsWith("/api/users/steady-heron") ->
                     "200 OK" to """{"_id":"member-safe-id","username":"steady-heron","displayName":"Steady Heron"}"""
                 path.startsWith("/api/messages?") ->
@@ -241,10 +243,7 @@ class TrustrootsAppShellJourneyTest {
         assertEquals(1, requests.count { it.startsWith("GET /api/users/steady-heron ") })
         assertEquals(1, requests.count { it.startsWith("GET /api/tribes?limit=150") })
 
-        SecureMobileSessionStore(context).save(
-            MemberSession("connect.sid=renewed-fictional-session", MobileMember("steady-heron", "Steady Heron")),
-        )
-        requireNotNull(scenario).recreate()
+        signInAs("steady-heron", requests)
 
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
@@ -260,6 +259,7 @@ class TrustrootsAppShellJourneyTest {
         val requests = CopyOnWriteArrayList<String>()
         startResponder(requests) { path ->
             when {
+                path == "/api/auth/signin" -> "200 OK" to """{"username":"quiet-fox","displayName":"Quiet Fox"}"""
                 path.startsWith("/api/users/steady-heron") ->
                     "200 OK" to """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","email":"steady@example.test","newsletter":false}"""
                 path.startsWith("/api/users/quiet-fox") ->
@@ -312,10 +312,7 @@ class TrustrootsAppShellJourneyTest {
         assertTrue(requests.any { it.startsWith("POST /api/auth/signout ") })
         val previousAccountRequests = requests.count { it.startsWith("GET /api/users/steady-heron ") }
 
-        SecureMobileSessionStore(context).save(
-            MemberSession("connect.sid=next-fictional-session", MobileMember("quiet-fox", "Quiet Fox")),
-        )
-        requireNotNull(scenario).recreate()
+        signInAs("quiet-fox", requests)
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
                 requests.any { it.startsWith("GET /api/users/quiet-fox ") }
@@ -376,14 +373,31 @@ class TrustrootsAppShellJourneyTest {
                         payload(path)
                     }
                     val bytes = body.toByteArray()
+                    val sessionCookie = if (request.startsWith("POST /api/auth/signin ")) {
+                        "Set-Cookie: connect.sid=renewed-fictional-session; Path=/; HttpOnly\r\n"
+                    } else ""
                     socket.getOutputStream().write(
-                        "HTTP/1.1 $status\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                        "HTTP/1.1 $status\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n$sessionCookie\r\n".toByteArray(),
                     )
                     socket.getOutputStream().write(bytes)
                     socket.getOutputStream().flush()
                 }
             }
         }
+    }
+
+    private fun signInAs(username: String, requests: List<String>) {
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("signin-username").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("signin-username").performTextReplacement(username)
+        compose.onNodeWithTag("signin-password").performTextReplacement("fictional-renewal-password")
+        compose.onNodeWithText("Sign in").performScrollTo().performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(1, requests.count { it.startsWith("POST /api/auth/signin ") })
+        assertEquals("connect.sid=renewed-fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
     }
 
     private fun restorePreferences(preferences: SharedPreferences, values: Map<String, *>) {

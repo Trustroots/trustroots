@@ -1,31 +1,33 @@
 package org.trustroots.android.ui
 
-import androidx.activity.ComponentActivity
 import android.graphics.Bitmap
-import androidx.test.platform.app.InstrumentationRegistry
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.net.ServerSocket
+import androidx.test.platform.app.InstrumentationRegistry
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.net.ServerSocket
+import java.net.SocketException
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.Assert.assertTrue
-import org.junit.Assert.assertEquals
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 
 @RunWith(AndroidJUnit4::class)
 class CirclesJourneyTest {
@@ -38,12 +40,18 @@ class CirclesJourneyTest {
         val circleArt = File(InstrumentationRegistry.getInstrumentation().targetContext.cacheDir, "circle-artwork")
         circleArt.deleteRecursively()
         val responder = thread {
-            repeat(5) {
-                server.accept().use { socket ->
+            repeat(8) {
+                val socket = try {
+                    server.accept()
+                } catch (error: SocketException) {
+                    if (server.isClosed) return@thread else throw error
+                }
+                socket.use {
                     val input = socket.getInputStream().bufferedReader()
                     val request = input.readLine()
                     while (!input.readLine().isNullOrEmpty()) Unit
                     val payload = when {
+                        request.startsWith("GET /api/tribes/wanderers ") -> """{"_id":"circle-one","slug":"wanderers","label":"Wanderers","count":12,"image":true,"description":"Meet fellow travellers"}"""
                         request.contains("/api/tribes") -> """[{"_id":"circle-two","slug":"quiet","label":"Quiet Circle","count":3},{"_id":"circle-one","slug":"wanderers","label":"Wanderers","count":12,"image":true,"description":"Meet fellow travellers"}]"""
                         request.contains("/api/users/memberships/") -> "{}"
                         else -> "[]"

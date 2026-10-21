@@ -13,7 +13,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -39,7 +37,6 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
@@ -57,6 +54,7 @@ import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
+import org.trustroots.android.ui.common.LabelledCheckbox
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
@@ -234,10 +232,11 @@ internal fun AccountSettingsScreen(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = state.newsletter, onCheckedChange = { viewModel.onEvent(AccountEvent.NewsletterChanged(it)) })
-                    Text(newsletterLabel)
-                }
+                LabelledCheckbox(
+                    label = newsletterLabel,
+                    checked = state.newsletter,
+                    onCheckedChange = { viewModel.onEvent(AccountEvent.NewsletterChanged(it)) },
+                )
                 state.details?.emailTemporary?.let {
                     Text(
                         String.format(uiLocale, emailConfirmationPending, it),

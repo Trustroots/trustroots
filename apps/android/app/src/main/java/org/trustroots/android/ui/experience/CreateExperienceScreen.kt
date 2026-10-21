@@ -3,15 +3,14 @@
 package org.trustroots.android.ui.experience
 
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
@@ -20,7 +19,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -28,11 +26,12 @@ import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.rememberFormCancel
+import org.trustroots.android.ui.common.LabelledCheckbox
 import org.trustroots.android.ui.common.FormActionBar
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
+import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.common.rememberFormCancel
 import org.trustroots.android.ui.common.resolveFailureMessage
 
 @Composable
@@ -74,18 +73,24 @@ internal fun CreateExperienceScreen(
         FormActionBar(experienceTitle, state.isSaving, state.canSave, cancel, { viewModel.onEvent(CreateExperienceEvent.Submit) }, horizontalInset = contentPadding.horizontalInset())
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("createExperienceScreen")) {
         Text(whatHappenedLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(enabled = !state.isSaving, checked = state.met, onCheckedChange = { viewModel.onEvent(CreateExperienceEvent.MetChanged(it)) })
-            Text(metInPersonLabel)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(enabled = !state.isSaving, checked = state.hosted, onCheckedChange = { viewModel.onEvent(CreateExperienceEvent.HostedChanged(it)) })
-            Text(hostedThemLabel)
-        }
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(enabled = !state.isSaving, checked = state.wasGuest, onCheckedChange = { viewModel.onEvent(CreateExperienceEvent.WasGuestChanged(it)) })
-            Text(wasTheirGuestLabel)
-        }
+        LabelledCheckbox(
+            label = metInPersonLabel,
+            checked = state.met,
+            enabled = !state.isSaving,
+            onCheckedChange = { viewModel.onEvent(CreateExperienceEvent.MetChanged(it)) },
+        )
+        LabelledCheckbox(
+            label = hostedThemLabel,
+            checked = state.hosted,
+            enabled = !state.isSaving,
+            onCheckedChange = { viewModel.onEvent(CreateExperienceEvent.HostedChanged(it)) },
+        )
+        LabelledCheckbox(
+            label = wasTheirGuestLabel,
+            checked = state.wasGuest,
+            enabled = !state.isSaving,
+            onCheckedChange = { viewModel.onEvent(CreateExperienceEvent.WasGuestChanged(it)) },
+        )
         Text(recommendThemLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
         Row {
             listOf("yes" to yesLabel, "unknown" to notSureLabel, "no" to noLabel).forEach { (value, label) ->

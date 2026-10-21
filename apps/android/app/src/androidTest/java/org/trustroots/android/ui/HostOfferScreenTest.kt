@@ -7,6 +7,8 @@ import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -118,6 +120,8 @@ class HostOfferScreenTest {
         compose.onNodeWithText("Host").assertIsDisplayed()
         compose.onNodeWithText("quiet sleeping corner", substring = true).assertIsDisplayed()
         compose.onNodeWithText("Save changes").assertIsDisplayed()
+        compose.onNodeWithText("Show only to members in my circles").performScrollTo().assertIsOff().performClick().assertIsOn()
+        compose.onNodeWithText("Show only to members in my circles").performClick().assertIsOff()
 
         val descriptionBottom = compose.onNodeWithText("Hosting description").fetchSemanticsNode().boundsInRoot.bottom
         val guestsTop = compose.onNodeWithText("Maximum guests").fetchSemanticsNode().boundsInRoot.top

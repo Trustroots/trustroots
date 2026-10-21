@@ -5,6 +5,7 @@ import android.graphics.Point
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,7 +14,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.click
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
@@ -36,6 +36,8 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.NostrootsNotesClient
 import org.trustroots.android.api.decodeOpenLocationCode
+import org.trustroots.android.ui.hostmap.HostMapNotesConnection
+import org.trustroots.android.ui.hostmap.HostMapScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapHighZoomCommunityNotesJourneyTest {
@@ -73,7 +75,10 @@ class HostMapHighZoomCommunityNotesJourneyTest {
                 session = MemberSession(SESSION_COOKIE, MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
                 geocoderLookup = { _, _, _ -> emptyList() },
-                notesClientFactory = { onNote, onError -> NostrootsNotesClient(onNote, onError, sockets) },
+                notesClientFactory = { onNote, onError ->
+                    val client = NostrootsNotesClient(onNote, onError, sockets)
+                    HostMapNotesConnection { client.close() }
+                },
                 mapViewFactory = offlineMapViewFactory,
             )
         }
@@ -207,7 +212,10 @@ class HostMapHighZoomCommunityNotesJourneyTest {
                 session = MemberSession(SESSION_COOKIE, MobileMember("steady-heron", "Steady Heron")),
                 onSessionInvalidated = {},
                 geocoderLookup = { _, _, _ -> emptyList() },
-                notesClientFactory = { onNote, onError -> NostrootsNotesClient(onNote, onError, sockets) },
+                notesClientFactory = { onNote, onError ->
+                    val client = NostrootsNotesClient(onNote, onError, sockets)
+                    HostMapNotesConnection { client.close() }
+                },
                 mapViewFactory = offlineMapViewFactory,
             )
         }

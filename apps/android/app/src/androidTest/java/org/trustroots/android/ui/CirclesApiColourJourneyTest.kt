@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 import org.trustroots.android.ui.common.ArtworkHero
 
 @RunWith(AndroidJUnit4::class)
@@ -49,6 +50,9 @@ class CirclesApiColourJourneyTest {
             when (request.path) {
                 "/api/tribes?limit=150" -> LocalTransportFixture.Response(
                     """[{"_id":"circle-harbour","slug":"harbour","label":"Fictional Harbour Circle","count":12,"created":"2025-01-01T00:00:00.000Z","modified":"2025-01-02T00:00:00.000Z","public":true,"image":false,"color":"$color"}]""",
+                )
+                "/api/tribes/harbour" -> LocalTransportFixture.Response(
+                    """{"_id":"circle-harbour","slug":"harbour","label":"Fictional Harbour Circle","count":12,"created":"2025-01-01T00:00:00.000Z","modified":"2025-01-02T00:00:00.000Z","public":true,"image":false,"color":"$color"}""",
                 )
                 "/api/users/memberships" -> LocalTransportFixture.Response("[]")
                 else -> error("Unexpected circle fixture request: ${request.method} ${request.path}")

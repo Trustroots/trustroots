@@ -14,15 +14,18 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.printToLog
+import androidx.compose.ui.test.swipeDown
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -186,6 +189,7 @@ class TrustrootsMemberShellJourneysTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Reference Author").fetchSemanticsNodes().isNotEmpty()
         }
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").assertIsSelected()
         compose.onNodeWithText("Reference Author").assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
@@ -450,6 +454,15 @@ class TrustrootsMemberShellJourneysTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    private fun revealProfileTabsIfClipped() {
+        val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
+        val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
+        if (tabs == null || tabs.boundsInRoot.bottom > heroBottom + 1f) {
+            compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        }
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
     }
 
     private fun awaitWebView(url: String, canGoBack: Boolean) {

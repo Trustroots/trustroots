@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,12 +25,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -42,36 +37,28 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.analytics.UsageAnalytics
-import org.trustroots.android.analytics.UsageScreen
-import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
-import org.trustroots.android.ui.common.UsageScreenTracking
-import org.trustroots.android.ui.rememberBuildDate
+import org.trustroots.android.ui.common.rememberBuildDate
 
 @Composable
 internal fun SignInScreen(
     analytics: UsageAnalytics,
     viewModel: SignInViewModel,
     onSignedIn: (MemberSession) -> Unit,
-    browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
+    onSignUp: () -> Unit,
+    onForgotPassword: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
-    var browserRoute by remember { mutableStateOf<BrowserRoute?>(null) }
     val buildDate = rememberBuildDate()
     val pendingSuccess = state.pendingSuccess
 
-    LaunchedEffect(pendingSuccess?.id) {
+    androidx.compose.runtime.LaunchedEffect(pendingSuccess?.id) {
         val success = pendingSuccess ?: return@LaunchedEffect
         viewModel.onEvent(SignInEvent.SuccessDelivered(success.id))
         onSignedIn(success.session)
-    }
-
-    UsageScreenTracking(analytics, if (browserRoute == null) UsageScreen.SignIn else null)
-    browserRoute?.let { route ->
-        browserContent(route, { browserRoute = null }, PaddingValues.Zero)
-        return
     }
 
     Box(
@@ -91,12 +78,12 @@ internal fun SignInScreen(
         ) {
             Image(
                 painter = painterResource(R.drawable.trustroots_logo),
-                contentDescription = "Trustroots",
+                contentDescription = stringResource(R.string.screen_brand_name),
                 modifier = Modifier.size(156.dp),
             )
-            Text("Travellers’ community", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.screen_travellers_community), style = MaterialTheme.typography.titleMedium)
             Text(
-                "Sharing, hosting and getting people together.",
+                stringResource(R.string.screen_sign_in_description),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -123,7 +110,7 @@ internal fun SignInScreen(
             )
             state.error?.let {
                 Text(
-                    it,
+                    resolveFailureMessage(it),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
@@ -142,7 +129,7 @@ internal fun SignInScreen(
                         strokeWidth = 2.dp,
                     )
                 } else {
-                    Text("Sign in")
+                    Text(stringResource(R.string.screen_sign_in))
                 }
             }
             Row(
@@ -150,26 +137,16 @@ internal fun SignInScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 TextButton(
-                    onClick = {
-                        browserRoute = BrowserRoute(
-                            title = "Join Trustroots",
-                            url = "https://www.trustroots.org/signup",
-                        )
-                    },
-                ) { Text("Join") }
+                    onClick = onSignUp,
+                ) { Text(stringResource(R.string.screen_join)) }
                 TextButton(
-                    onClick = {
-                        browserRoute = BrowserRoute(
-                            title = "Reset password",
-                            url = "https://www.trustroots.org/password/forgot",
-                        )
-                    },
-                ) { Text("Forgot password?") }
+                    onClick = onForgotPassword,
+                ) { Text(stringResource(R.string.screen_forgot_password)) }
             }
             Spacer(Modifier.height(20.dp))
             UsageAnalyticsSettings(analytics)
             Text(
-                "Build: $buildDate",
+                stringResource(R.string.screen_build_date, buildDate),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.62f),
                 modifier = Modifier.padding(top = 12.dp),

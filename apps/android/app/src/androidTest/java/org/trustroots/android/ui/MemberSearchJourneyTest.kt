@@ -1,40 +1,49 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.hasText
+
+import androidx.compose.ui.test.hasTestTag
+
+import androidx.compose.ui.test.hasAnyAncestor
+
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.onAllNodesWithContentDescription
-import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.assertIsNotEnabled
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import java.net.ServerSocket
 import java.io.ByteArrayOutputStream
+import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.trustroots.android.testing.pressBackFromNonActivityRoot
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.R
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
+import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
 class MemberSearchJourneyTest {
@@ -52,12 +61,12 @@ class MemberSearchJourneyTest {
                     val request = input.readLine()
                     while (!input.readLine().isNullOrEmpty()) Unit
                     val payload = when {
-                        request.contains("/api/users?") -> """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}]"""
+                        request.contains("/api/users?") -> """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","locationFrom":"Imaginary Coast"}]"""
                         request.contains("/api/offers-by/") -> """[{"status":"yes","description":"<p>Spare <strong>room</strong></p>","maxGuests":2}]"""
                         request.contains("/api/contact-by/") -> null
                         request.contains("/api/contacts/") -> """[{"_id":"contact-one","user":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"}}]"""
                         request.contains("/api/experiences?") -> """[{"_id":"reference-one","userFrom":{"_id":"member-two","username":"calm-lynx","displayName":"Calm Lynx"},"feedbackPublic":"A thoughtful guest","recommend":"yes"}]"""
-                        else -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"Travelling slowly","description":"<p>Hosting <strong>travellers</strong></p>","languages":["eng","por"]}"""
+                        else -> """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"Travelling slowly","description":"<p>Hosting <strong>travellers</strong></p>","locationFrom":"Imaginary Coast","languages":["eng","por"]}"""
                     }
                     val bytes = if (request.contains("/avatar?")) {
                         ByteArrayOutputStream().also { output ->
@@ -96,11 +105,14 @@ class MemberSearchJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithText("From Imaginary Coast").assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Travelling slowly").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Travelling slowly").assertIsDisplayed()
+        compose.onNode(hasText("From Imaginary Coast").and(hasAnyAncestor(hasTestTag("profilePager"))))
+            .performScrollTo().assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Members").fetchSemanticsNodes().isEmpty())
         assertTrue(compose.onAllNodesWithText("Hosts map").fetchSemanticsNodes().isEmpty())
         val profileHero = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
@@ -123,6 +135,7 @@ class MemberSearchJourneyTest {
         compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Spare room").performScrollTo().assertIsDisplayed()
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-contacts").assertIsDisplayed().performClick()
         compose.onNodeWithTag("profileContact-contact-one").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
@@ -130,6 +143,15 @@ class MemberSearchJourneyTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
         responder.join(1_000)
+    }
+
+    private fun revealProfileTabsIfClipped() {
+        val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
+        val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
+        if (tabs == null || tabs.boundsInRoot.bottom > heroBottom + 1f) {
+            compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        }
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
     }
 
     @Test fun requiresThreeCharactersAndShowsEmptySearchResults() {

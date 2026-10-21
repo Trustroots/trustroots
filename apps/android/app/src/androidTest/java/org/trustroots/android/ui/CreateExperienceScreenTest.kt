@@ -4,6 +4,8 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -97,6 +99,7 @@ class CreateExperienceScreenTest {
             )
         }
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
+        compose.onNodeWithText("We met in person").assertIsOn().performClick().assertIsOff().performClick().assertIsOn()
         foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithText("Public experience (optional)").performScrollTo().performClick()
         compose.onNodeWithText("Public experience (optional)").performTextInput("A fictional account of a kind visit.")

@@ -184,7 +184,7 @@ internal fun ArtworkHero(
                         imageDescription = profileImageDescription,
                     )
                     if (showTitle) {
-                        Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = expandedTitleStyle)
+                        Text(label, color = colorResource(R.color.artwork_on_scrim), style = expandedTitleStyle)
                     }
                     Text(subtitle, color = colorResource(R.color.artwork_on_scrim), style = MaterialTheme.typography.bodyMedium)
                 }

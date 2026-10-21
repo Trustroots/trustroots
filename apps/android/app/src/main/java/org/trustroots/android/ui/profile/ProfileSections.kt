@@ -70,7 +70,7 @@ internal fun ProfileSectionBar(
                 text = {
                     Text(
                         if (section == ProfileSection.Contacts && contactCount > 0) {
-                            stringResource(R.string.profile_section_contacts_count, contactCount)
+                            pluralStringResource(R.plurals.profile_section_contacts_count, contactCount, contactCount)
                         } else {
                             stringResource(section.label)
                         },
@@ -126,7 +126,7 @@ internal fun ProfileOverviewSection(
         }
         if (references.size > 6) {
             TextButton(onClick = onToggleReferences) {
-                Text(if (showAllReferences) stringResource(R.string.profile_show_fewer) else stringResource(R.string.profile_more_experiences, references.size - 6))
+                Text(if (showAllReferences) stringResource(R.string.profile_show_fewer) else pluralStringResource(R.plurals.profile_more_experiences, references.size - 6, references.size - 6))
             }
         }
     }
@@ -228,7 +228,7 @@ internal fun ProfileContactsSection(
     }
     if (contacts.size > 6) {
         TextButton(onClick = onToggleContacts) {
-            Text(if (showAllContacts) stringResource(R.string.profile_show_fewer) else stringResource(R.string.profile_more_contacts, contacts.size - 6))
+            Text(if (showAllContacts) stringResource(R.string.profile_show_fewer) else pluralStringResource(R.plurals.profile_more_contacts, contacts.size - 6, contacts.size - 6))
         }
     }
 }

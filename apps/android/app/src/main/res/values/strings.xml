@@ -11,6 +11,7 @@
     <string name="member_search_hint">Name or username</string>
     <string name="search_members">Search members</string>
     <string name="clear_member_search">Clear member search</string>
+    <string name="screen_contacts_retry">Try again</string>
     <string name="search_places">Search places</string>
     <string name="clear_place_search">Clear place search</string>
     <string name="form_name">Name</string>
@@ -48,5 +49,4 @@
     <string name="profile_add_contact">Add contact</string>
     <string name="profile_remove_contact">Remove contact</string>
     <string name="profile_delete_contact_request">Delete contact request</string>
-    <string name="screen_contacts_retry">Try again</string>
 </resources>

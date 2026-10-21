@@ -1,16 +1,16 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
-import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.activity.ComponentActivity
 import java.io.IOException
 import java.net.ServerSocket
 import java.net.Socket
@@ -28,6 +28,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.contacts.ContactsScreen
+import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
 class MemberJourneysContactAndSearchNavigationJourneyTest {
@@ -80,6 +81,43 @@ class MemberJourneysContactAndSearchNavigationJourneyTest {
         contactName.assertIsDisplayed().assertHasNoClickAction()
         assertTrue(requests.any { it == "GET /api/contacts/member-self HTTP/1.1" })
         assertTrue(requests.none { it == "GET /api/users/member-two HTTP/1.1" })
+    }
+
+    @Test fun contactWithUsernameEmitsProfileRouteRequestWithoutComposingProfileLocally() {
+        startResponder { path ->
+            when {
+                path == "/api/users/steady-heron" -> json(
+                    "200 OK",
+                    """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
+                )
+                path == "/api/contacts/member-self" -> json(
+                    "200 OK",
+                    """[{"_id":"contact-one","user":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}]""",
+                )
+                else -> json("404 Not Found", "{}")
+            }
+        }
+        val requestedUsername = AtomicReference<String?>()
+        compose.setContent {
+            NativeTestAppFrame(Destination.Menu) {
+                ContactsScreen(
+                    api = api(),
+                    session = session(),
+                    onSessionInvalidated = {},
+                    onBack = {},
+                    onOpenProfile = requestedUsername::set,
+                )
+            }
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Quiet Fox").performClick()
+        compose.waitUntil(5_000) { requestedUsername.get() == "quiet-fox" }
+
+        assertTrue(compose.onAllNodesWithText("A welcoming place to pause.").fetchSemanticsNodes().isEmpty())
+        assertTrue(requests.none { it == "GET /api/users/quiet-fox HTTP/1.1" })
     }
 
     @Test fun systemBackClosesMemberProfileBeforeReturningFromSearchToMap() {

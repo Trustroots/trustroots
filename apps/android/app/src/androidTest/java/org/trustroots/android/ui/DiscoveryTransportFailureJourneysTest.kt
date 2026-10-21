@@ -23,6 +23,8 @@ import org.osmdroid.views.MapView
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
+import org.trustroots.android.ui.hostmap.HostMapScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -85,11 +87,11 @@ class DiscoveryTransportFailureJourneysTest {
         compose.onNodeWithText("Last active: 6 months").performClick()
         compose.waitUntil(10_000) {
             offersRequests.get() > failedAttempts &&
-                compose.onAllNodesWithText("1 offers · 0 Nostroots notes in this area")
+                compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
 
-        compose.onNodeWithText("1 offers · 0 Nostroots notes in this area").assertIsDisplayed()
+        compose.onNodeWithText("1 offer · 0 Nostroots notes in this area").assertIsDisplayed()
         assertTrue(local.requests.count { it.path.startsWith("/api/offers?") } > failedAttempts)
         assertEquals(0, invalidations.get())
     }

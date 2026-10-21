@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -32,9 +31,10 @@ import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.common.FormActionBar
+import org.trustroots.android.ui.common.LabelledCheckbox
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.rememberFormCancel
-import org.trustroots.android.ui.common.FormActionBar
 import org.trustroots.android.ui.common.resolveFailureMessage
 
 @Composable
@@ -122,10 +122,13 @@ internal fun HostOfferScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 8.dp)) {
-            Checkbox(enabled = !state.isSaving, checked = form.showOnlyInMyCircles, onCheckedChange = { viewModel.onEvent(HostOfferEvent.ShowOnlyInMyCirclesChanged(it)) })
-            Text(showOnlyMyCircles)
-        }
+        LabelledCheckbox(
+            label = showOnlyMyCircles,
+            checked = form.showOnlyInMyCircles,
+            enabled = !state.isSaving,
+            modifier = Modifier.padding(top = 8.dp),
+            onCheckedChange = { viewModel.onEvent(HostOfferEvent.ShowOnlyInMyCirclesChanged(it)) },
+        )
         state.failure?.let {
             Text(resolveFailureMessage(it), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
         }

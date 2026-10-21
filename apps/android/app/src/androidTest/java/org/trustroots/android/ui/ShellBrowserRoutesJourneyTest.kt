@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.test.core.app.ApplicationProvider
@@ -24,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -109,6 +111,23 @@ class ShellBrowserRoutesJourneyTest {
         assertBrowserRoute("Reset password", "https://www.trustroots.org/password/forgot")
         compose.onNodeWithText("Close fake browser").performClick()
         compose.onNodeWithText("Username or email").assertIsDisplayed()
+        assertTrue(requests.isEmpty())
+    }
+
+    @Test fun systemBackFromSignInBrowserReturnsToTheSameFormEntry() {
+        startResponder()
+        showApp()
+
+        waitForText("Username or email")
+        compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
+        compose.onNodeWithText("Join").performScrollTo().performClick()
+        assertBrowserRoute("Join Trustroots", "https://www.trustroots.org/signup")
+
+        pressSystemBack()
+
+        compose.onNodeWithText("Username or email").assertIsDisplayed()
+        assertEquals("anonymous-heron", compose.onNodeWithTag("signin-username")
+            .fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsProperties.EditableText].text)
         assertTrue(requests.isEmpty())
     }
 
