@@ -58,6 +58,7 @@ type MockMapProps = {
   height: string;
   location?: [number, number];
   mapStyle?: string;
+  mapboxAccessToken?: string;
   interactiveLayerIds?: string[];
   onClick: (event: { features?: MockMapFeature[] }) => void;
   onMouseMove: (event: { features?: MockMapFeature[] }) => void;
@@ -480,6 +481,7 @@ describe('Search', () => {
   it('initialises the loaded map without touch rotation and fetches visible offers', async () => {
     mockPersistentMapLocation.zoom = 8;
     renderSearchMap();
+    expect(mockMapProps.mapboxAccessToken).toBe('test-token');
     await act(async () => mockMapProps.onLoad());
     expect(mockMap.touchZoomRotate.disableRotation).toHaveBeenCalled();
     expect(mockQueryOffers).toHaveBeenCalled();
