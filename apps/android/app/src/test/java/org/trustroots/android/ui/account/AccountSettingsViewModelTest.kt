@@ -359,6 +359,28 @@ class AccountSettingsViewModelTest {
         assertEquals(1, platform.previewChecks)
     }
 
+    @Test fun disablingPreviewAlertsCancelsAnInFlightCheckAndKeepsAlertsOffStatus() {
+        val response = CompletableDeferred<ApkUpdateCheckResult>()
+        val platform = FakePlatform().apply {
+            previewCheckHandler = { withContext(NonCancellable) { response.await() } }
+        }
+        val viewModel = model(platform = platform)
+
+        viewModel.onEvent(AccountEvent.ToggleUpdateAlerts(notificationPermissionGranted = true))
+        assertTrue(viewModel.state.value.isCheckingUpdates)
+
+        viewModel.onEvent(AccountEvent.ToggleUpdateAlerts(notificationPermissionGranted = true))
+        response.complete(
+            ApkUpdateCheckResult.NewVersion(
+                AndroidPreviewRelease(14, "14.0", "https://example.test/releases/14"),
+            ),
+        )
+
+        assertFalse(viewModel.state.value.updateAlertsEnabled)
+        assertFalse(viewModel.state.value.isCheckingUpdates)
+        assertEquals(AccountUpdateStatus.AlertsOff, viewModel.state.value.updateStatus)
+    }
+
     @Test fun previewUpdateCheckDoesNothingWhenAlertsAreDisabled() {
         val platform = FakePlatform()
         val viewModel = model(platform = platform)
@@ -934,6 +956,7 @@ class AccountSettingsViewModelTest {
         var disableFailure: Throwable? = null
         var previewChecks = 0
         var previewFailure: Throwable? = null
+        var previewCheckHandler: (suspend () -> ApkUpdateCheckResult)? = null
         var disableHandler: (suspend () -> Unit)? = null
         var updateEnabled = false
         val updateAlertChanges = mutableListOf<Boolean>()
@@ -951,6 +974,7 @@ class AccountSettingsViewModelTest {
         override suspend fun checkPreviewUpdates(): ApkUpdateCheckResult {
             previewChecks++
             previewFailure?.let { throw it }
+            previewCheckHandler?.let { return it() }
             return previewResult
         }
     }
