@@ -10,6 +10,7 @@ import { annotateFeature } from '../../../scripts/e2e/feature-coverage-summary.m
 import {
   captureSection,
   trackScreenshotPages,
+  captureNamedScreenshot,
   sanitizeFileName,
   useElementScreenshot,
   useViewportScreenshot,

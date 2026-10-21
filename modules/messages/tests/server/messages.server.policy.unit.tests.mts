@@ -9,6 +9,7 @@ import {
 describe('Messages policy unit tests', () => {
   it('grants exactly the documented permissions per role', () => {
     assertGrants(policy.isAllowed, [
+      'user GET /api/messages-hosting',
       'user GET /api/messages',
       'user POST /api/messages',
       'user GET /api/messages/:messageUserId',

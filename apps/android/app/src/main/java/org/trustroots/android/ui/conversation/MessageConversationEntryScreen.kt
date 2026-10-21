@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -25,7 +27,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,6 +47,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -223,6 +228,12 @@ internal fun MessageConversationEntryScreen(
                                             messageContent(message.content, api.backendURL, message.plainText)
                                         },
                                     )
+                                    message.hostingDetails?.let { details ->
+                                        Text(if (details.guests == 1) "1 guest" else "${details.guests} guests")
+                                        if (details.arrival != null && details.departure != null) {
+                                            Text("${details.arrival} – ${details.departure}")
+                                        }
+                                    }
                                     message.createdAt?.let { created ->
                                         Text(messageTime(LocalContext.current.resources, created), style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -231,6 +242,89 @@ internal fun MessageConversationEntryScreen(
                             }
                         }
                     }
+                }
+            }
+            if (member != null && state.hostingMode) {
+                Column(
+                    Modifier.heightIn(max = 280.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    when {
+                        state.hostingContextLoading || !state.hostingContextLoaded && !state.hostingContextError ->
+                            Text("Loading hosting details…")
+                        state.hostingContextError -> Column {
+                            Text(
+                                "Could not load hosting details. Retry or turn off hosting mode.",
+                                color = MaterialTheme.colorScheme.error,
+                            )
+                            TextButton(
+                                onClick = { model.onEvent(MessageConversationEvent.RetryHostingContext) },
+                                modifier = Modifier.testTag("hostingContextRetry"),
+                            ) { Text(stringResource(R.string.retry)) }
+                        }
+                        state.hostingContextLoaded -> {
+                            if (state.hostingDescription.isNotBlank()) {
+                                Text(Html.fromHtml(state.hostingDescription, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                            }
+                            Text("Please read the host’s description before sending your visit details.")
+                            if (state.hostingAcknowledgementStale) {
+                                Text(
+                                    "Review the hosting description and acknowledge it before sending.",
+                                    color = MaterialTheme.colorScheme.error,
+                                )
+                            }
+                            state.hostingDetailsError?.let {
+                                Text(it, color = MaterialTheme.colorScheme.error)
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                TextField(
+                                    value = state.hostingGuests,
+                                    onValueChange = { model.onEvent(MessageConversationEvent.HostingGuestsChanged(it)) },
+                                    label = { Text("Guests") },
+                                    modifier = Modifier.weight(1f).testTag("hostingGuests"),
+                                    singleLine = true,
+                                )
+                                TextField(
+                                    value = state.hostingArrival,
+                                    onValueChange = { model.onEvent(MessageConversationEvent.HostingArrivalChanged(it)) },
+                                    label = { Text("Arrival (YYYY-MM-DD)") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                )
+                                TextField(
+                                    value = state.hostingDeparture,
+                                    onValueChange = { model.onEvent(MessageConversationEvent.HostingDepartureChanged(it)) },
+                                    label = { Text("Departure (YYYY-MM-DD)") },
+                                    modifier = Modifier.weight(1f),
+                                    singleLine = true,
+                                )
+                            }
+                            if (state.hostingAckRequired) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Checkbox(
+                                        checked = state.hostingDescriptionAcknowledged,
+                                        onCheckedChange = {
+                                            model.onEvent(MessageConversationEvent.HostingAcknowledgementChanged(it))
+                                        },
+                                        modifier = Modifier.testTag("hostingDescriptionAcknowledgement"),
+                                    )
+                                    Text("I have read this host’s hosting description and requirements.")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (member != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(
+                        checked = state.hostingMode,
+                        onCheckedChange = {
+                            model.onEvent(MessageConversationEvent.HostingModeChanged(it))
+                        },
+                        modifier = Modifier.testTag("hostingModeToggle"),
+                    )
+                    Text("Add hosting details")
                 }
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -255,7 +349,8 @@ internal fun MessageConversationEntryScreen(
                 trailingIcon = {
                     IconButton(
                         onClick = { send(state.draft) },
-                        enabled = member != null && state.draft.isNotBlank() && !state.isSending,
+                        enabled = member != null && state.draft.isNotBlank() && !state.isSending &&
+                            (!state.hostingMode || state.hostingComposerReady),
                     ) {
                         Icon(painterResource(R.drawable.ic_material_send),
                             contentDescription = stringResource(if (state.isSending) R.string.form_sending_message else R.string.form_send_message))

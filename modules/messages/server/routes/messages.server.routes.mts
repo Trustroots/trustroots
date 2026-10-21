@@ -4,6 +4,10 @@ import messages from '../controllers/messages.server.controller.mts';
 
 function register(app: Application): void {
   app
+    .route('/api/messages-hosting')
+    .all(messagesPolicy.isAllowed)
+    .get(messages.hostingContext);
+  app
     .route('/api/messages')
     .all(messagesPolicy.isAllowed)
     .get(messages.inbox)

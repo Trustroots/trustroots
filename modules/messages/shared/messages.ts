@@ -18,12 +18,25 @@ export type MessageParticipant<Id = string> =
   | { _id: Id }
   | null;
 
+/** Calendar dates describe the visit, without a time zone or booking status. */
+export interface HostingDetails {
+  guests: number;
+  arrival?: string;
+  departure?: string;
+}
+
+export interface MessageHostingContext {
+  description: string;
+  acknowledgementRequired: boolean;
+}
+
 /** POST /api/messages request. The server ignores `read`; the client sends false. */
 export interface SendMessageRequest {
   userTo: string;
   content: string;
   read?: false;
   hostingDescriptionAcknowledged?: boolean;
+  hostingDetails?: HostingDetails;
 }
 
 export interface MarkMessagesReadRequest {
@@ -46,6 +59,7 @@ export interface MessagePayload<
   read: boolean;
   userFrom: Member;
   userTo: Member;
+  hostingDetails?: HostingDetails;
 }
 
 /** Inbox message preview omits content and spam metadata. */

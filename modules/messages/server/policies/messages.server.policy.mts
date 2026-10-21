@@ -7,6 +7,7 @@ import type {
 } from '../../../core/server/services/policy-types.server.mts';
 
 const authoriseRoute = createRouteAuthorisation({
+  '/api/messages-hosting': { user: ['get'] },
   '/api/messages': { user: ['get', 'post'] },
   '/api/messages/:messageUserId': { user: ['get'] },
   '/api/messages-preview': { admin: ['post'], user: ['post'] },

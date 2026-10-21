@@ -356,6 +356,14 @@ module.exports = function (app) {
       resourcePolicy(messagesPolicy.isAllowed, '/api/messages'),
       messages.send,
     );
+  app
+    .route('/api/mobile/v0/messages-hosting')
+    .get(
+      mobileAuthentication.authenticate,
+      mobileAuthentication.prepareResource,
+      resourcePolicy(messagesPolicy.isAllowed, '/api/messages-hosting'),
+      messages.hostingContext,
+    );
   app.route('/api/mobile/v0/messages/:memberId').get(
     mobileAuthentication.authenticate,
     mobileAuthentication.prepareResource,

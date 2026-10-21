@@ -480,7 +480,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   <legend>
                     <h4>Available only in my circles?</h4>
                   </legend>
-                  <div className="checkbox offer-circle-visibility">
+                  <div className="checkbox offer-host-checkbox">
                     <label>
                       <input
                         checked={offer.showOnlyInMyCircles}
