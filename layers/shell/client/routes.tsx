@@ -411,6 +411,7 @@ export function createAppRouter() {
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,
+    scrollRestoration: () => false,
     stringifySearch: stringifyLegacySearch,
   });
 }
