@@ -54,6 +54,8 @@ class ConversationJourneyTest {
             .toString()
         LocalTransportFixture { request ->
             when {
+                request.method == "GET" && request.path == "/api/messages?page=1&limit=50" ->
+                    LocalTransportFixture.Response("[]")
                 request.method == "GET" && request.path == "/api/messages/member-one?limit=100" ->
                     LocalTransportFixture.Response("[]")
                 request.method == "GET" && request.path == "/api/users/mini/member-one" ->
