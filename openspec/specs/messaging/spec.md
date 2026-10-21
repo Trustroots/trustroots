@@ -322,41 +322,76 @@ The system SHALL send eligible member messages without contacting an external sp
 - **WHEN** historical message metadata is read or processed for statistics
 - **THEN** its stored spam classification is preserved
 
-### Requirement: Optional hosting description acknowledgement
+### Requirement: Hosting details in ordinary conversations
 
-Hosts SHALL be able to require acknowledgement of their hosting description
-before another member sends a message in a new conversation. The preference
-SHALL default to disabled and SHALL be editable with the hosting description.
+Members SHALL be able to opt into hosting mode in the existing message composer.
+Hosting messages SHALL remain messages in the same conversation and SHALL include
+a guest count defaulting to one. Arrival and departure SHALL either both be absent
+or be real calendar dates with departure after arrival. The guest count SHALL be
+an integer from one to one hundred. Ordinary messages SHALL remain available.
 
-#### Scenario: First contact with an opted-in host
+#### Scenario: Dates unknown
 
-- **GIVEN** the recipient's hosting offer requires acknowledgement
-- **AND** the two members have no existing conversation
-- **WHEN** the sender opens the composer
-- **THEN** the hosting description appears above the composer
-- **AND** an initially unchecked acknowledgement is required to send
-- **AND** the server rejects a send request without literal boolean acknowledgement
+- **WHEN** a member sends a hosting message without dates
+- **THEN** its guest count and text appear in the conversation
+- **AND** no dates are invented
 
-#### Scenario: Acknowledged first message
+#### Scenario: Invalid visit details
 
-- **GIVEN** a new conversation with an opted-in host
-- **WHEN** the sender ticks the acknowledgement and sends
-- **THEN** the message is sent subject to the usual messaging checks
+- **WHEN** hosting details have a partial or invalid date range or invalid guest count
+- **THEN** sending is rejected without saving a message
 
-#### Scenario: Existing conversation or disabled preference
+### Requirement: Hosting description reminder and acknowledgement
 
-- **GIVEN** either member has already started a conversation, or the host has not opted in
-- **WHEN** a member sends a message
-- **THEN** no hosting description acknowledgement is required
+Hosting mode SHALL show the recipient's active hosting description and a gentle
+reading reminder. The optional host preference SHALL require an initially
+unchecked acknowledgement only for the first hosting message visible in the
+conversation. Ordinary message history SHALL not count as a hosting message.
+The server SHALL determine this using all visible history, not a page of results.
+Expired offers and incoming shadow-hidden history SHALL be ignored.
 
-#### Scenario: Preference or description cannot be loaded
+#### Scenario: Ordinary contact
 
-- **GIVEN** a new conversation
-- **WHEN** the hosting offer cannot be loaded
-- **THEN** the composer does not allow an unchecked first message to bypass the requirement
+- **WHEN** a member sends an ordinary message to an opted-in host
+- **THEN** no hosting acknowledgement is required
 
-#### Scenario: Expired legacy hosting offer
+#### Scenario: First hosting message after ordinary messages
 
-- **GIVEN** a legacy hosting offer has expired and is hidden from guests
-- **WHEN** a guest starts a conversation with its owner
-- **THEN** that expired offer does not require acknowledgement
+- **GIVEN** a host opted in and no visible hosting message exists between the members
+- **WHEN** either member sends hosting details to that host
+- **THEN** literal boolean acknowledgement is required
+- **AND** an unchecked send is rejected without saving a message
+
+#### Scenario: Later hosting message
+
+- **GIVEN** a visible hosting message already exists in the conversation
+- **WHEN** another hosting message is sent
+- **THEN** no repeated acknowledgement is required
+
+#### Scenario: Preference changes while composing
+
+- **WHEN** the server rejects a hosting send because acknowledgement became required
+- **THEN** the client refreshes hosting context and keeps the text and visit details
+
+#### Scenario: Hosting context cannot be loaded
+
+- **WHEN** hosting context loading fails
+- **THEN** hosting mode offers a retry and does not send until context is loaded
+- **AND** the member can switch back to an ordinary message
+
+### Requirement: Contextual hosting replies
+
+Hosting reply shortcuts SHALL appear only when an incoming hosting message exists
+after the member's latest outgoing message. Shortcuts SHALL send ordinary messages
+using the existing yes/no hosting reply format, without creating booking status.
+
+#### Scenario: Ordinary incoming message
+
+- **WHEN** the latest unanswered incoming messages have no hosting details
+- **THEN** hosting reply shortcuts are absent
+
+#### Scenario: Hosting question and response
+
+- **WHEN** an incoming hosting message has not been answered
+- **THEN** hosting reply shortcuts are available
+- **AND** sending a reply hides them until a later incoming hosting message

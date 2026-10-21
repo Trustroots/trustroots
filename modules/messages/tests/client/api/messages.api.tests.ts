@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import {
   fetchMessages,
+  fetchHostingContext,
   fetchThreads,
   markRead,
   previewMessage,
@@ -39,6 +40,38 @@ describe('messages api', () => {
       });
     },
   );
+  it('includes hosting details when sending a hosting message', async () => {
+    mockedAxios.post.mockResolvedValueOnce({ data: {} });
+    await sendMessage('fictional-host', 'A fictional request.', true, {
+      guests: 2,
+      arrival: '2026-08-10',
+      departure: '2026-08-13',
+    });
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/messages', {
+      userTo: 'fictional-host',
+      content: 'A fictional request.',
+      read: false,
+      hostingDescriptionAcknowledged: true,
+      hostingDetails: {
+        guests: 2,
+        arrival: '2026-08-10',
+        departure: '2026-08-13',
+      },
+    });
+  });
+  it('fetches the active hosting context for an opted-in conversation', async () => {
+    const context = {
+      description: 'Please arrive before sunset.',
+      acknowledgementRequired: true,
+    };
+    mockedAxios.get.mockResolvedValueOnce({ data: context });
+    await expect(fetchHostingContext('fictional-host')).resolves.toEqual(
+      context,
+    );
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/messages-hosting', {
+      params: { userTo: 'fictional-host' },
+    });
+  });
   it('formats a draft without sending it', async () => {
     mockedAxios.post.mockResolvedValueOnce({
       data: { content: '<p>Draft</p>' },

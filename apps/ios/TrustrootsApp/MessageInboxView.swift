@@ -205,12 +205,22 @@ struct ConversationView: View {
     @ObservedObject var session: MemberSessionStore
     @State private var messages: [DirectMessage] = []
     @State private var isLoading = false
+    @State private var messagesLoaded = false
     @State private var errorMessage: String?
     @State private var draft = ""
     @State private var isSending = false
     @State private var conversationExperience: ConversationExperience?
     @State private var hasCheckedExperience = false
     @State private var showingExperienceForm = false
+    @State private var hostingMode = false
+    @State private var hostingGuests = 1
+    @State private var hostingArrival = ""
+    @State private var hostingDeparture = ""
+    @State private var hostingContext: HostingContext?
+    @State private var isLoadingHostingContext = false
+    @State private var hostingContextError: String?
+    @State private var hostingAcknowledgementError: String?
+    @State private var hostingDescriptionAcknowledged = false
     @FocusState private var isDraftFocused: Bool
 
     private let api = TrustrootsAPI()
@@ -234,12 +244,19 @@ struct ConversationView: View {
                                 .padding(.top, 16)
                             }
                             ForEach(messages.reversed()) { message in
-                                Text(message.content.plainText)
-                                    .padding(12)
-                                    .foregroundStyle(.primary)
-                                    .background(message.isFrom(username: session.member?.username) ? TrustrootsPalette.green.opacity(0.16) : Color.secondary.opacity(0.12))
-                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                                    .frame(maxWidth: .infinity, alignment: message.isFrom(username: session.member?.username) ? .trailing : .leading)
+                                VStack(alignment: .leading, spacing: 6) {
+                                    Text(message.content.plainText)
+                                        .foregroundStyle(.primary)
+                                    if let details = message.hostingDetails {
+                                        Text(hostingDetailsSummary(details))
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                }
+                                .padding(12)
+                                .background(message.isFrom(username: session.member?.username) ? TrustrootsPalette.green.opacity(0.16) : Color.secondary.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                .frame(maxWidth: .infinity, alignment: message.isFrom(username: session.member?.username) ? .trailing : .leading)
                             }
                             Color.clear
                                 .frame(height: 1)
@@ -283,6 +300,10 @@ struct ConversationView: View {
         }
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
+                if HostingReplyPolicy.shouldShow(messages: messages, username: session.member?.username) {
+                    hostingQuickReplies
+                }
+                hostingComposerDetails
                 if hasCheckedExperience {
                     if let conversationExperience,
                        conversationExperience.userFromID == otherMember.id,
@@ -350,7 +371,15 @@ struct ConversationView: View {
                     .foregroundStyle(.white)
                     .background(TrustrootsPalette.green)
                     .clipShape(Circle())
-                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || isSending)
+                    .disabled(
+                        draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            || isSending
+                            || !messagesLoaded
+                            || (hostingMode && (!messagesLoaded || hostingContext == nil
+                                || isLoadingHostingContext || hostingContextError != nil))
+                            || (hostingMode && hostingContext?.acknowledgementRequired == true
+                                && !hostingDescriptionAcknowledged)
+                    )
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
@@ -382,14 +411,135 @@ struct ConversationView: View {
 
         do {
             messages = try await api.conversation(serverURLString: session.serverURLString, memberID: id)
+            messagesLoaded = true
             conversationExperience = try? await api.conversationExperience(
                 serverURLString: session.serverURLString,
                 memberID: id
             )
             hasCheckedExperience = true
         } catch {
+            messagesLoaded = false
             errorMessage = error.localizedDescription
         }
+    }
+
+    private var hostingComposerDetails: some View {
+        Group {
+            Toggle("Add hosting details", isOn: $hostingMode)
+                .font(.caption.weight(.semibold))
+                .onChange(of: hostingMode) { _, enabled in
+                    guard enabled else { return }
+                    hostingDescriptionAcknowledged = false
+                    Task { await loadHostingContext() }
+                }
+            if hostingMode {
+                if isLoadingHostingContext {
+                    HStack(spacing: 8) {
+                        ProgressView()
+                        Text("Checking hosting details…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                } else if let hostingContextError {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Hosting details could not be checked. Retry before sending a hosting message.")
+                            .font(.caption)
+                        Button("Retry") { Task { await loadHostingContext() } }
+                            .font(.caption.weight(.semibold))
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .accessibilityLabel(hostingContextError)
+                } else if let hostingContext {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(hostingContext.description.plainText)
+                                .font(.caption)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            Text("Please read the host’s description before sharing your visit details.")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                            Stepper("Guests: \(hostingGuests)", value: $hostingGuests, in: 1...100)
+                                .font(.caption)
+                            TextField("Arrival (YYYY-MM-DD, optional)", text: $hostingArrival)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .font(.caption)
+                            TextField("Departure (YYYY-MM-DD, optional)", text: $hostingDeparture)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .font(.caption)
+                            if let validation = HostingDetailsValidation.error(
+                                guests: hostingGuests,
+                                arrival: hostingArrival,
+                                departure: hostingDeparture
+                            ) {
+                                Text(validation).font(.caption2).foregroundStyle(.red)
+                            }
+                            if let hostingAcknowledgementError {
+                                Text(hostingAcknowledgementError).font(.caption).foregroundStyle(.red)
+                            }
+                            if hostingContext.acknowledgementRequired {
+                                Toggle("I have read this host’s hosting description and requirements.", isOn: $hostingDescriptionAcknowledged)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+                    .frame(maxHeight: 220)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(TrustrootsPalette.paleGreen)
+                }
+            }
+        }
+    }
+
+    private func loadHostingContext() async {
+        guard !isLoadingHostingContext, let id = otherMember.id else { return }
+        isLoadingHostingContext = true
+        hostingContext = nil
+        hostingContextError = nil
+        hostingAcknowledgementError = nil
+        defer { isLoadingHostingContext = false }
+        do {
+            hostingContext = try await api.hostingContext(
+                serverURLString: session.serverURLString,
+                userID: id
+            )
+        } catch {
+            hostingContextError = error.localizedDescription
+        }
+    }
+
+    private var hostingQuickReplies: some View {
+        HStack {
+            Button("Yes, I can host!") { sendQuickHostingReply(yes: true) }
+                .buttonStyle(.bordered)
+            Button("Sorry I can’t host") { sendQuickHostingReply(yes: false) }
+                .buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+    }
+
+    private func sendQuickHostingReply(yes: Bool) {
+        let content = yes
+            ? "<p data-hosting=\"yes\"><b><i>Yes, I can host!</i></b></p>"
+            : "<p data-hosting=\"no\"><b><i>Sorry I can't host</i></b></p>"
+        Task { await sendMessage(contentOverride: content, ordinary: true) }
+    }
+
+    private func hostingDetailsSummary(_ details: HostingMessageDetails) -> String {
+        var summary = "Hosting · \(details.guests) \(details.guests == 1 ? "guest" : "guests")"
+        if let arrival = details.arrival, let departure = details.departure {
+            summary += " · \(arrival)–\(departure)"
+        }
+        return summary
     }
 
     private var conversationMemberHeader: some View {
@@ -406,9 +556,18 @@ struct ConversationView: View {
         }
     }
 
-    private func sendMessage() async {
-        let content = draft.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func sendMessage(contentOverride: String? = nil, ordinary: Bool = false) async {
+        let content = (contentOverride ?? draft).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !content.isEmpty, let id = otherMember.id, !isSending else { return }
+        guard messagesLoaded else { return }
+        let sendingHostingDetails = hostingMode && !ordinary
+        guard !sendingHostingDetails || (hostingContext != nil && hostingContextError == nil && !isLoadingHostingContext) else { return }
+        guard !sendingHostingDetails || HostingDetailsValidation.error(
+            guests: hostingGuests,
+            arrival: hostingArrival,
+            departure: hostingDeparture
+        ) == nil else { return }
+        guard !sendingHostingDetails || hostingContext?.acknowledgementRequired != true || hostingDescriptionAcknowledged else { return }
 
         isSending = true
         errorMessage = nil
@@ -418,15 +577,40 @@ struct ConversationView: View {
             let sentMessage = try await api.sendMessage(
                 serverURLString: session.serverURLString,
                 memberID: id,
-                content: content
+                content: content,
+                hostingDescriptionAcknowledged: sendingHostingDetails && hostingContext?.acknowledgementRequired == true
+                    ? hostingDescriptionAcknowledged : nil,
+                hostingDetails: sendingHostingDetails ? HostingDetailsValidation.details(
+                    guests: hostingGuests,
+                    arrival: hostingArrival,
+                    departure: hostingDeparture
+                ) : nil
             )
             messages.insert(sentMessage, at: 0)
-            draft = ""
+            if contentOverride == nil {
+                draft = ""
+                if sendingHostingDetails {
+                    hostingMode = false
+                    hostingGuests = 1
+                    hostingArrival = ""
+                    hostingDeparture = ""
+                    hostingDescriptionAcknowledged = false
+                    hostingContext = nil
+                    hostingContextError = nil
+                    hostingAcknowledgementError = nil
+                }
+            }
             isDraftFocused = false
             try? await Task.sleep(for: .milliseconds(60))
             isDraftFocused = true
         } catch {
-            errorMessage = error.localizedDescription
+            if error as? TrustrootsAPIError == .hostingDescriptionAcknowledgementRequired {
+                hostingDescriptionAcknowledged = false
+                await loadHostingContext()
+                hostingAcknowledgementError = "The host’s acknowledgement preference changed. Review the description and confirm to continue."
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

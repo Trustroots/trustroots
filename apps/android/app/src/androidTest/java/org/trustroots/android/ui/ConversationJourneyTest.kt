@@ -119,7 +119,7 @@ class ConversationJourneyTest {
                         request.startsWith("POST") ->
                             """{"_id":"message-two","content":"Yes, I can host!","created":"${Instant.now()}","userFrom":{"_id":"mine","username":"steady-heron"}}"""
                         request.contains("/api/messages/") ->
-                            """[{"_id":"message-zero","content":"Can you host?","created":"${Instant.now()}","userFrom":{"_id":"member-one","username":"quiet-fox"}}]"""
+                            """[{"_id":"message-zero","content":"Can you host?","created":"${Instant.now()}","userFrom":{"_id":"member-one","username":"quiet-fox"},"hostingDetails":{"guests":1}}]"""
                         else -> "[]"
                     }
                     val bytes = if (request.contains("/avatar?")) {

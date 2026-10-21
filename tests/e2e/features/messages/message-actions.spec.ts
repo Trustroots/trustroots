@@ -2,6 +2,7 @@
 
 import {
   annotateFeature,
+  captureNamedScreenshot,
   expectPresent,
   expect,
   test,
@@ -25,14 +26,14 @@ const portland = SEEDED_MEMBERS[1];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
 
 for (const width of [390, 1280]) {
-  test(`hosting acknowledgement is optional and required only for a new conversation at ${width}px`, async ({
+  test(`hosting details share the message conversation at ${width}px`, async ({
     page,
     browser,
     baseURL,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.new-conversation', [
-      'Opted-in hosts require acknowledgement only for a new conversation.',
+      'Opted-in hosts require acknowledgement for a first hosting message, even after ordinary messages.',
     ]);
     const host = createUser();
     const context = await createIsolatedContext(browser, baseURL);
@@ -40,6 +41,7 @@ for (const width of [390, 1280]) {
       await registerViaApi(context.request, host);
       await updateUserByUsername(host.username, { $set: { public: true } });
       const hostPage = await context.newPage();
+      await hostPage.setViewportSize({ width, height: 844 });
       await signInViaApi(hostPage, context.request, host);
       const created = await context.request.post('/api/offers', {
         data: {
@@ -68,16 +70,21 @@ for (const width of [390, 1280]) {
       await expect(hostPage).toHaveURL(new RegExp(`/profile/${host.username}`));
       await hostPage.goto('/offer/host#description');
       await expect(preference).toBeChecked();
+      await captureNamedScreenshot(
+        hostPage,
+        testInfo,
+        'host-requires-acknowledgement-enabled',
+      );
 
-      const hostId = await fetchUserIdByUsername(request, host.username);
-      const rejected = await page.request.post('/api/messages', {
-        data: { userTo: hostId, content: 'A fictional request.' },
-      });
-      expect(rejected.status()).toBe(400);
-      expect((await rejected.json()).error).toBe(
-        'hosting-description-acknowledgement-required',
+      const sentOrdinary = page.waitForResponse(
+        response =>
+          new URL(response.url()).pathname === '/api/messages' &&
+          response.request().method() === 'POST',
       );
       await page.locator('#messageReplySubmit').click();
+      expect((await sentOrdinary).ok()).toBeTruthy();
+      await expect(editor).toHaveText('');
+      await page.getByRole('checkbox', { name: 'Add hosting details' }).check();
       const acknowledgement = page.getByRole('checkbox', {
         name: 'I have read this host’s hosting description and requirements.',
       });
@@ -85,12 +92,43 @@ for (const width of [390, 1280]) {
         page.getByText('Please arrive before sunset.'),
       ).toBeVisible();
       await expect(acknowledgement).not.toBeChecked();
-      await expect(editor).toHaveText('A fictional opening request.');
+      await page.locator('.hosting-message-options').evaluate(element => {
+        element.scrollTop = 0;
+        element
+          .querySelector('.hosting-description-acknowledgement')
+          ?.scrollTo(0, 0);
+      });
+      await editor.fill('A fictional hosting request.');
+      await page.getByLabel('Guests').fill('2');
+      await page.getByLabel('Arrival (optional)').fill('2026-08-10');
+      await page.getByLabel('Departure (optional)').fill('2026-08-13');
       await expect(page.locator('#messageReplySubmit')).toBeDisabled();
+      await page.locator('.hosting-message-options').evaluate(element => {
+        element.scrollTop = 0;
+        element
+          .querySelector('.hosting-description-acknowledgement')
+          ?.scrollTo(0, 0);
+      });
+      await captureNamedScreenshot(
+        page,
+        testInfo,
+        'guest-unchecked-description-send-disabled',
+      );
       await editor.press('Control+Enter');
-      await expect(editor).toHaveText('A fictional opening request.');
       await acknowledgement.check();
       await expect(page.locator('#messageReplySubmit')).toBeInViewport();
+      await expect(page.locator('#messageReplySubmit')).toBeEnabled();
+      await page.locator('.hosting-message-options').evaluate(element => {
+        element.scrollTop = 0;
+        element
+          .querySelector('.hosting-description-acknowledgement')
+          ?.scrollTo(0, 0);
+      });
+      await captureNamedScreenshot(
+        page,
+        testInfo,
+        'guest-acknowledged-send-enabled',
+      );
       const sent = page.waitForResponse(
         response =>
           new URL(response.url()).pathname === '/api/messages' &&
@@ -99,13 +137,53 @@ for (const width of [390, 1280]) {
       await page.locator('#messageReplySubmit').click();
       expect((await sent).ok()).toBeTruthy();
       await expect(acknowledgement).toHaveCount(0);
-      await page.reload();
-      await expect(editor).toBeVisible();
-      await expect(acknowledgement).toHaveCount(0);
-      const reply = await page.request.post('/api/messages', {
-        data: { userTo: hostId, content: 'A fictional follow-up.' },
-      });
-      expect(reply.ok()).toBeTruthy();
+      await expect(
+        page.locator('.message-hosting-details').last(),
+      ).toContainText('Guests: 2');
+      const formattedArrival = await page.evaluate(() =>
+        new Intl.DateTimeFormat(undefined, {
+          dateStyle: 'medium',
+          timeZone: 'UTC',
+        }).format(new Date('2026-08-10T00:00:00.000Z')),
+      );
+      const formattedDeparture = await page.evaluate(() =>
+        new Intl.DateTimeFormat(undefined, {
+          dateStyle: 'medium',
+          timeZone: 'UTC',
+        }).format(new Date('2026-08-13T00:00:00.000Z')),
+      );
+      await expect(
+        page.locator('.message-hosting-details').last(),
+      ).toContainText(formattedArrival);
+      await expect(
+        page.locator('.message-hosting-details').last(),
+      ).toContainText(formattedDeparture);
+
+      await editor.fill(
+        'A fictional second hosting request with unknown dates.',
+      );
+      await page.getByRole('checkbox', { name: 'Add hosting details' }).check();
+      await expect(
+        page.getByText('Please arrive before sunset.'),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('checkbox', { name: /I have read this host/ }),
+      ).toHaveCount(0);
+      const secondHostingSend = page.waitForResponse(
+        response =>
+          new URL(response.url()).pathname === '/api/messages' &&
+          response.request().method() === 'POST',
+      );
+      await page.locator('#messageReplySubmit').click();
+      expect((await secondHostingSend).ok()).toBeTruthy();
+      const secondDetails = page.locator('.message-hosting-details').last();
+      await expect(secondDetails).toContainText('Guests: 1');
+      await expect(secondDetails).not.toContainText('2026');
+
+      await hostPage.goto(`/messages/${berlin.username}`);
+      await expect(hostPage.getByTestId('quick-reply')).toBeVisible();
+      await hostPage.getByRole('button', { name: 'Yes, I can host!' }).click();
+      await expect(hostPage.getByTestId('quick-reply')).toHaveCount(0);
     } finally {
       await context.close();
     }

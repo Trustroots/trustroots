@@ -32,6 +32,33 @@ export function useElementScreenshot(
   });
 }
 
+export async function captureNamedScreenshot(
+  page: Page,
+  testInfo: TestInfo,
+  name: string,
+): Promise<void> {
+  if (!captureScreenshots || page.isClosed()) {
+    return;
+  }
+
+  try {
+    fs.mkdirSync(screenshotsDir, { recursive: true });
+    const fileName = [
+      sanitizeFileName(testInfo.project.name),
+      sanitizeFileName(testInfo.title),
+      sanitizeFileName(name),
+      testInfo.retry,
+      testInfo.repeatEachIndex,
+    ].join('-');
+    await page.screenshot({
+      path: path.join(screenshotsDir, `${fileName}.png`),
+      fullPage: false,
+    });
+  } catch {
+    // Screenshot capture is best-effort and must not fail the test run.
+  }
+}
+
 function getScreenshotSelector(testInfo: TestInfo): string | undefined {
   const annotation = testInfo.annotations.find(
     item => item.type === SCREENSHOT_SELECTOR_ANNOTATION,

@@ -53,12 +53,19 @@ function getForm(container: HTMLElement): HTMLFormElement {
 }
 
 describe('<ThreadReply>', () => {
-  it('blocks form submission and Ctrl+Enter until acknowledgement enables sending, preserving the draft', async () => {
+  it('blocks hosting sends until acknowledgement and preserves the draft', async () => {
     const onSend: OnSend = jest.fn().mockResolvedValue(true);
-    const { container, getByRole, rerender } = render(
-      <ThreadReply disabled onSend={onSend} />,
+    const { container, getByRole } = render(
+      <ThreadReply
+        hostingContext={{
+          description: 'Please arrive before sunset.',
+          acknowledgementRequired: true,
+        }}
+        onSend={onSend}
+      />,
     );
     const editor = getByRole('textbox');
+    fireEvent.click(getByRole('checkbox', { name: 'Add hosting details' }));
     fireEvent.change(editor, {
       target: { value: 'A fictional opening message.' },
     });
@@ -66,10 +73,100 @@ describe('<ThreadReply>', () => {
     fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
     expect(onSend).not.toHaveBeenCalled();
     expect(editor).toHaveValue('A fictional opening message.');
-    rerender(<ThreadReply disabled={false} onSend={onSend} />);
+    fireEvent.click(
+      getByRole('checkbox', {
+        name: 'I have read this host’s hosting description and requirements.',
+      }),
+    );
     fireEvent.keyDown(editor, { key: 'Enter', ctrlKey: true });
-    await waitFor(() => expect(onSend).toHaveBeenCalledTimes(1));
+    await waitFor(() =>
+      expect(onSend).toHaveBeenCalledWith(
+        'A fictional opening message.',
+        { guests: 1 },
+        true,
+      ),
+    );
+    expect(
+      getByRole('checkbox', { name: 'Add hosting details' }),
+    ).not.toBeChecked();
+    fireEvent.click(getByRole('checkbox', { name: 'Add hosting details' }));
+    expect(getByRole('spinbutton', { name: 'Guests' })).toHaveValue(1);
   });
+  it('sends hosting details with unknown dates and blocks partial or reversed ranges', async () => {
+    const onSend: OnSend = jest.fn().mockResolvedValue(true);
+    const { getByRole, unmount } = render(
+      <ThreadReply
+        hostingContext={{ description: '', acknowledgementRequired: false }}
+        onSend={onSend}
+      />,
+    );
+    fireEvent.click(getByRole('checkbox', { name: 'Add hosting details' }));
+    fireEvent.change(getByRole('textbox'), {
+      target: { value: 'A fictional request with dates not decided.' },
+    });
+    fireEvent.click(getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(onSend).toHaveBeenCalledWith(
+        'A fictional request with dates not decided.',
+        { guests: 1 },
+        undefined,
+      ),
+    );
+    unmount();
+
+    const onSendRange: OnSend = jest.fn().mockResolvedValue(true);
+    const range = render(
+      <ThreadReply
+        hostingContext={{ description: '', acknowledgementRequired: false }}
+        onSend={onSendRange}
+      />,
+    );
+    fireEvent.click(
+      range.getByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    fireEvent.change(range.getByRole('textbox'), {
+      target: { value: 'A fictional dated request.' },
+    });
+    const arrivalInput = range.getByLabelText('Arrival (optional)');
+    Object.defineProperty(arrivalInput, 'value', {
+      configurable: true,
+      get: () => '0000-01-01',
+    });
+    fireEvent.change(arrivalInput);
+    expect(range.getByRole('button', { name: /Send/ })).toBeDisabled();
+    Reflect.deleteProperty(arrivalInput, 'value');
+    fireEvent.change(range.getByLabelText('Arrival (optional)'), {
+      target: { value: '2026-08-10' },
+    });
+    expect(range.getByRole('button', { name: /Send/ })).toBeDisabled();
+    fireEvent.change(range.getByLabelText('Departure (optional)'), {
+      target: { value: '2026-08-09' },
+    });
+    expect(range.getByRole('button', { name: /Send/ })).toBeDisabled();
+    fireEvent.change(range.getByLabelText('Departure (optional)'), {
+      target: { value: '2026-08-13' },
+    });
+    fireEvent.change(range.getByLabelText('Guests'), {
+      target: { value: '101' },
+    });
+    expect(range.getByRole('button', { name: /Send/ })).toBeDisabled();
+    fireEvent.change(range.getByLabelText('Guests'), {
+      target: { value: '2' },
+    });
+    expect(range.getByRole('button', { name: /Send/ })).toBeEnabled();
+  });
+
+  it('keeps the retry control safe when no retry callback is provided', () => {
+    const { getByRole } = render(
+      <ThreadReply hostingContextError onSend={jest.fn()} />,
+    );
+    fireEvent.click(getByRole('checkbox', { name: 'Add hosting details' }));
+    fireEvent.click(getByRole('button', { name: 'Retry' }));
+    expect(getByRole('alert')).toHaveTextContent(
+      'Could not load the hosting information.',
+    );
+  });
+
   it('resizes with the keyboard within limits without replacing the editor or changing the draft', () => {
     const { container, getByRole } = render(
       <ThreadReply cacheKey="expanded-draft" onSend={jest.fn()} />,

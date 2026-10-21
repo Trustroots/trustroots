@@ -26,6 +26,16 @@ function getHostingData(content: string): { 'data-hosting'?: 'yes' | 'no' } {
   };
 }
 
+function formatCalendarDate(value: string): string {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(date);
+}
+
 type ThreadMessageProps = { message: Message; user: MessageUser };
 
 export default function ThreadMessage({ message, user }: ThreadMessageProps) {
@@ -54,6 +64,29 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
           <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
+          {message.hostingDetails && (
+            <div className="message-hosting-details">
+              <strong>{t<string>('Hosting details')}</strong>
+              <span>
+                {t<string>('Guests: {{count}}', {
+                  count: message.hostingDetails.guests,
+                })}
+              </span>
+              {message.hostingDetails.arrival &&
+                message.hostingDetails.departure && (
+                  <span>
+                    {t<string>('{{arrival}} to {{departure}}', {
+                      arrival: formatCalendarDate(
+                        message.hostingDetails.arrival,
+                      ),
+                      departure: formatCalendarDate(
+                        message.hostingDetails.departure,
+                      ),
+                    })}
+                  </span>
+                )}
+            </div>
+          )}
           <RichText className="panel-body" content={message.content} />
         </div>
       </div>

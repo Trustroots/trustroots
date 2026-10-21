@@ -10,6 +10,23 @@ const {
 } = require('../../server/services/messages-payload.server.service.mts');
 
 describe('Message API payload construction', () => {
+  it('persists and projects optional hosting details without internal fields', () => {
+    for (const details of [
+      { guests: 1 },
+      { guests: 2, arrival: '2028-02-29', departure: '2028-03-02' },
+    ]) {
+      const fields = prepareNewMessageFields(
+        { userTo: 'host', content: 'Hello', hostingDetails: details },
+        'guest',
+      );
+      assert.deepEqual(fields.hostingDetails, details);
+      const projected = prepareMessageForClient({
+        ...fields,
+        hostingDetails: { ...details, internal: true },
+      });
+      assert.deepEqual(projected.hostingDetails, details);
+    }
+  });
   it('selects only validated send fields and the authenticated sender', () => {
     assert.deepEqual(
       prepareNewMessageFields(

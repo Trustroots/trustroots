@@ -13,6 +13,7 @@ import {
 } from '../../../scripts/e2e/feature-coverage-summary.mts';
 import {
   captureEndOfTestScreenshot,
+  captureNamedScreenshot,
   sanitizeFileName,
   useElementScreenshot,
   useViewportScreenshot,
@@ -107,4 +108,5 @@ export {
   featureAnnotation,
   useElementScreenshot,
   useViewportScreenshot,
+  captureNamedScreenshot,
 };

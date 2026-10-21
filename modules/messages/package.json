@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@trustroots/core": "workspace:*",
+    "@trustroots/offers": "workspace:*",
     "@trustroots/references-thread": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/support": "workspace:*",

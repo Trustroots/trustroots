@@ -2365,14 +2365,17 @@ const features = [
           requiresAuth: true,
         }),
       ],
-      apiRoutes: [apiRoute('POST', '/api/messages', source.messagesServer)],
+      apiRoutes: [
+        apiRoute('POST', '/api/messages', source.messagesServer),
+        apiRoute('GET', '/api/messages-hosting', source.messagesServer),
+      ],
     },
     requiredScenarios: [
       'Profile action links to a new message thread.',
       'New thread empty state is visible.',
       'New thread empty state links to safety guidance.',
       'Sending an opening message creates the conversation.',
-      'Opted-in hosts require acknowledgement only for a new conversation.',
+      'Opted-in hosts require acknowledgement for a first hosting message, even after ordinary messages.',
     ],
     relatedSpecs: [
       spec(
