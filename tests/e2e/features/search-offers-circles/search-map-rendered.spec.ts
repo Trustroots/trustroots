@@ -15,6 +15,7 @@ import {
   blockUnexpectedMapNetwork,
   fixturePath,
   prepareRasterSearchMap,
+  routeRasterMapTiles,
   seedMapState,
   stubNostrAuthorVisibility,
   useMapProviderHar,
@@ -286,6 +287,11 @@ async function waitForRasterTileNear(
 }
 
 test.describe('rendered search map feature coverage', () => {
+  // These existing cases exercise the WebGL renderer and its event handling.
+  // Chromium compatibility cases below override this with their real engine UA.
+  test.use({
+    userAgent: 'Mozilla/5.0 Gecko/20100101 Firefox/143.0',
+  });
   test.beforeEach(
     async ({ context, page, request, mapZoom, browser }, testInfo) => {
       // The test API permits eval source maps; built assets must also work
@@ -349,6 +355,69 @@ test.describe('rendered search map feature coverage', () => {
       });
     }
   });
+
+  for (const browser of [
+    {
+      name: 'Chrome and Brave',
+      userAgent: 'Mozilla/5.0 Chrome/140.0.0.0 Safari/537.36',
+    },
+    {
+      name: 'Edge',
+      userAgent: 'Mozilla/5.0 Chrome/140.0.0.0 Safari/537.36 Edg/140.0.0.0',
+    },
+  ]) {
+    test.describe(`${browser.name} search compatibility`, () => {
+      test.use({ userAgent: browser.userAgent });
+
+      test('raster search works even when WebGL is available', async ({
+        page,
+        context,
+      }, testInfo) => {
+        annotateFeature(testInfo, 'search.map', [
+          'Chromium receives raster tiles even when WebGL can initialise.',
+          'Offer pins, zoom controls and place search remain usable.',
+        ]);
+        await routeRasterMapTiles(context, { includeMapbox: true });
+        await page.goto('/search');
+        expect(
+          await page.evaluate(() =>
+            Boolean(document.createElement('canvas').getContext('webgl')),
+          ),
+        ).toBe(true);
+        const map = page.getByTestId('leaflet-search-map');
+        await expect(map).toBeVisible();
+        await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+        await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+        const initialZoom = await readMapZoom(page);
+        expectPresent(initialZoom);
+        await map.locator('.leaflet-control-zoom-in').click();
+        await expect.poll(() => readMapZoom(page)).toBeGreaterThan(initialZoom);
+        const host = map.locator('.leaflet-interactive[fill="#58ba58"]');
+        await expect(host).toBeVisible();
+        await host.dispatchEvent('click');
+        await expect(page).toHaveURL(/offer=665100000000000000000001/);
+        await expect(
+          page.locator('.search-sidebar-container.is-offer-open'),
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Back to results' }).click();
+        await page.setViewportSize({ width: 375, height: 667 });
+        await page.getByRole('button', { name: 'Back to map' }).click();
+        await page.getByRole('button', { name: 'Search places' }).click();
+        await page
+          .getByRole('textbox', { name: 'Search places' })
+          .fill('Berlin');
+        await page
+          .getByRole('list', { name: 'Place suggestions' })
+          .getByRole('button')
+          .click();
+        await waitForRasterTileNear(page, {
+          latitude: 52.52,
+          longitude: 13.405,
+        });
+        await expect(map).toBeVisible();
+      });
+    });
+  }
 
   test('search map renders with offline style and fixture offers', async ({
     page,
