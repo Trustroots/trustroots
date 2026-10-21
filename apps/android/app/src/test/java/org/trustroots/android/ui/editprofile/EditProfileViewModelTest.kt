@@ -21,6 +21,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.MobileApiException
@@ -168,6 +169,38 @@ class EditProfileViewModelTest {
             assertEquals("LOAD_PROFILE", model.state.value.failure?.fallback?.name)
             assertNull(model.state.value.pendingInvalidation)
             assertNull(model.state.value.baseline)
+            assertFalse(model.state.value.isDirty)
+            model.onEvent(EditProfileEvent.Save)
+            assertEquals(0, repository.saveCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun profileApiFailurePreservesUsefulServerMessageAndOmitsWhitespaceOnlyMessage() {
+        val repository = FakeRepository().apply {
+            profileResults += Result.failure(
+                MobileApiException(503, "A fictional profile service message.", ApiFailureKind.REQUEST_REJECTED),
+            )
+            profileResults += Result.failure(MobileApiException(503, " \t", ApiFailureKind.REQUEST_REJECTED))
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = EditProfileViewModel(
+                username = "quiet-fox",
+                repository = repository,
+                initialApi = api(),
+                initialSession = session(),
+                scope = scope,
+            )
+            assertEquals("A fictional profile service message.", model.state.value.failure?.serverMessage)
+            assertEquals(ApiFailureKind.REQUEST_REJECTED, model.state.value.failure?.apiKind)
+
+            model.updateEnvironment(api("https://api.example.test/"), session(cookie = "refreshed-cookie"))
+
+            assertNull(model.state.value.failure?.serverMessage)
+            assertEquals(ApiFailureKind.REQUEST_REJECTED, model.state.value.failure?.apiKind)
         } finally {
             scope.cancel()
         }
@@ -206,12 +239,120 @@ class EditProfileViewModelTest {
         val model = newModel(repository)
         model.onEvent(EditProfileEvent.NameChanged("Draft name"))
 
+        model.updateEnvironment(api(), session())
+
+        assertEquals("Draft name", model.state.value.name)
+        assertEquals(0, repository.profileCalls)
+
         model.updateEnvironment(MobileApiClient("https://api.example.test/"), session(cookie = "new-cookie"))
 
         assertEquals("Draft name", model.state.value.name)
         assertEquals(0, repository.profileCalls)
         assertEquals("new-cookie", repository.latestSession?.cookieHeader)
         assertFalse(model.state.value.isSaving)
+    }
+
+    @Test
+    fun credentialRefreshCancelsPendingSaveWithoutReplacingLaterDraftOrBaseline() {
+        val pending = CompletableDeferred<Result<MemberProfile>>()
+        val repository = FakeRepository().apply {
+            saveOperation = { withContext(NonCancellable) { pending.await() } }
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = EditProfileViewModel(
+                username = "quiet-fox",
+                repository = repository,
+                initialApi = api(),
+                initialSession = session(),
+                initialProfile = profileFixture(),
+                scope = scope,
+            )
+            model.onEvent(EditProfileEvent.NameChanged("Submitted Name"))
+            model.onEvent(EditProfileEvent.Save)
+            model.onEvent(EditProfileEvent.NameChanged("Later Draft"))
+            assertTrue(model.state.value.isSaving)
+
+            model.updateEnvironment(api(), session(cookie = "rotated-fictional-cookie"))
+            pending.complete(Result.success(profileFixture("Submitted Name")))
+
+            assertFalse(model.state.value.isSaving)
+            assertEquals("Quiet Fox", model.state.value.baseline?.displayName)
+            assertEquals("Later Draft", model.state.value.name)
+            assertTrue(model.state.value.isDirty)
+            assertNull(model.state.value.pendingSave)
+            assertEquals(1, repository.saveCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun backendRefreshDuringSaveKeepsFreshProfileWhenOldSuccessReturnsInline() {
+        val repository = FakeRepository().apply {
+            profileResult = Result.success(profileFixture("Fresh Backend Profile"))
+            saveResults += Result.success(profileFixture("Old Save Response"))
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        lateinit var model: EditProfileViewModel
+        repository.beforeSaveResult = {
+            model.updateEnvironment(api("https://other.example.test/"), session())
+        }
+        try {
+            model = EditProfileViewModel(
+                username = "quiet-fox",
+                repository = repository,
+                initialApi = api(),
+                initialSession = session(),
+                initialProfile = profileFixture(),
+                scope = scope,
+            )
+            model.onEvent(EditProfileEvent.NameChanged("Submitted Name"))
+            model.onEvent(EditProfileEvent.Save)
+
+            assertEquals("Fresh Backend Profile", model.state.value.baseline?.displayName)
+            assertEquals("Fresh Backend Profile", model.state.value.name)
+            assertNull(model.state.value.pendingSave)
+            assertFalse(model.state.value.isSaving)
+            assertEquals(1, repository.profileCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun credentialRefreshDuringRetryIgnoresOldAuthenticationFailureBeforeLaunchReturns() {
+        val repository = FakeRepository().apply {
+            saveResults += Result.failure(IllegalStateException("Temporary save failure"))
+            saveResults += Result.failure(MobileApiException(401, "Fictional stale session."))
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val model = EditProfileViewModel(
+            username = "quiet-fox",
+            repository = repository,
+            initialApi = api(),
+            initialSession = session(),
+            initialProfile = profileFixture(),
+            scope = scope,
+        )
+        try {
+            model.onEvent(EditProfileEvent.NameChanged("Submitted Name"))
+            model.onEvent(EditProfileEvent.Save)
+            assertEquals("SAVE_PROFILE", model.state.value.failure?.fallback?.name)
+
+            repository.beforeSaveResult = {
+                model.updateEnvironment(api(), session(cookie = "rotated-fictional-cookie"))
+            }
+            model.onEvent(EditProfileEvent.Save)
+
+            assertNull(model.state.value.pendingInvalidation)
+            assertNull(model.state.value.failure)
+            assertFalse(model.state.value.isSaving)
+            assertEquals("Submitted Name", model.state.value.name)
+            assertEquals(2, repository.saveCalls)
+        } finally {
+            scope.cancel()
+        }
     }
 
     @Test
@@ -330,6 +471,7 @@ class EditProfileViewModelTest {
         var saveCalls = 0
         var profileCalls = 0
         var latestSession: MemberSession? = null
+        var beforeSaveResult: (() -> Unit)? = null
         override fun updateApi(api: MobileApiClient): Boolean = true
         override fun updateSession(session: MemberSession): Boolean {
             latestSession = session
@@ -343,6 +485,10 @@ class EditProfileViewModelTest {
         override suspend fun update(profile: ProfileUpdate): Result<MemberProfile> {
             saved = profile
             saveCalls++
+            beforeSaveResult?.also {
+                beforeSaveResult = null
+                it()
+            }
             saveOperation?.let { return it() }
             return if (saveResults.isEmpty()) Result.success(profileFixture(profile.displayName)) else saveResults.removeFirst()
         }

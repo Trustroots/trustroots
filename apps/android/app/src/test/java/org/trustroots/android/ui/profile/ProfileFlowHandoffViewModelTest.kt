@@ -56,9 +56,13 @@ class ProfileFlowHandoffViewModelTest {
         model.updateEnvironment(api, session)
         model.retainProfile(10L, snapshot, environment)
         model.retainDisplayName(11L, "Steady Owl", environment)
+        model.completeProfileSaved(10L, profile("member-one", "Quiet Fox Updated"), environment)
+        val pendingCompletion = model.handoffs.value[10L]?.completion
+        model.updateEnvironment(api, session)
 
         assertEquals(snapshot, model.handoffs.value[10L]?.profileSnapshot)
         assertEquals("Quiet Fox", model.handoffs.value[10L]?.displayName)
+        assertEquals(pendingCompletion, model.handoffs.value[10L]?.completion)
         assertEquals("Steady Owl", model.handoffs.value[11L]?.displayName)
         assertFalseStateContainsCookie(model)
 
@@ -216,6 +220,7 @@ class ProfileFlowHandoffViewModelTest {
         model.completeProfileSaved(11L, profile("member-two", "Steady Owl"), environment)
         model.retainProfile(11L, profile("member-two", "Steady Owl"), environment)
         model.retainDisplayName(12L, "Calm Badger", environment)
+        model.removeProfileVisit(10L)
         model.updateEnvironment(
             MobileApiClient("https://replacement.example.invalid"),
             MemberSession("connect.sid=replacement-cookie", MobileMember("replacement-member", "Replacement")),

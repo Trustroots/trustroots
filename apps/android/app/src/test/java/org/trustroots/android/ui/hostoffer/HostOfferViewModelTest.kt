@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -71,14 +72,63 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun accountChangeClearsHostOfferDraftAndLoadsTheNewAccountBaseline() = withScope { scope ->
+        val repository = FakeHostOfferRepository().apply {
+            loadHandler = { call ->
+                Result.success(HostOfferForm(id = if (call == 1) "old-account-offer" else "new-account-offer"))
+            }
+        }
+        val api = MobileApiClient("https://api.example.test/")
+        val oldSession = MemberSession("connect.sid=steady", MobileMember("quiet-fox", "Quiet Fox"))
+        val viewModel = HostOfferViewModel(repository, scope, api, oldSession)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A private fictional draft"))
+        assertTrue(viewModel.state.value.isDirty)
+
+        viewModel.updateEnvironment(api, MemberSession("connect.sid=steady", MobileMember("amber-owl", "Amber Owl")))
+
+        assertEquals(2, repository.loadCalls)
+        assertEquals("new-account-offer", viewModel.state.value.form.id)
+        assertEquals("", viewModel.state.value.form.description)
+        assertFalse(viewModel.state.value.isDirty)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun backendChangeLoadsTheNewOfferAndDropsThePreviousBackendDraft() = withScope { scope ->
+        val repository = FakeHostOfferRepository().apply {
+            loadHandler = { call ->
+                Result.success(HostOfferForm(id = if (call == 1) "old-backend-offer" else "new-backend-offer"))
+            }
+        }
+        val oldApi = MobileApiClient("https://old-api.example.test")
+        val newApi = MobileApiClient("https://new-api.example.test")
+        val session = MemberSession("connect.sid=steady", MobileMember("quiet-fox", "Quiet Fox"))
+        val viewModel = HostOfferViewModel(repository, scope, oldApi, session)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A draft for the old backend"))
+
+        viewModel.updateEnvironment(newApi, session)
+
+        assertSame(newApi, repository.currentApi)
+        assertEquals(2, repository.loadCalls)
+        assertEquals("new-backend-offer", viewModel.state.value.original?.id)
+        assertEquals("", viewModel.state.value.form.description)
+        assertFalse(viewModel.state.value.isDirty)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
     fun freshOfferUsesCurrentDefaultsAndValidation() = withScope { scope ->
-        val viewModel = HostOfferViewModel(FakeHostOfferRepository(), scope)
+        val repository = FakeHostOfferRepository()
+        val viewModel = HostOfferViewModel(repository, scope)
 
         assertEquals(HostOfferForm(), viewModel.state.value.form)
         assertTrue(viewModel.state.value.descriptionTooShort)
         assertFalse(viewModel.state.value.isDirty)
         assertEquals(DEFAULT_HOST_LATITUDE, viewModel.state.value.form.latitude, 0.0)
         assertEquals(DEFAULT_HOST_LONGITUDE, viewModel.state.value.form.longitude, 0.0)
+        viewModel.onEvent(HostOfferEvent.Save)
+        assertEquals("An invalid default offer must not be submitted", 0, repository.saveCalls)
+        assertFalse(viewModel.state.value.isSaving)
 
         viewModel.onEvent(HostOfferEvent.StatusChanged("no"))
         assertFalse(viewModel.state.value.descriptionTooShort)
@@ -199,6 +249,8 @@ class HostOfferViewModelTest {
         val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
         assertFalse(viewModel.state.value.isSaving)
         assertEquals(1, repository.saveCalls)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("An edit while invalidated"))
+        assertEquals("A suitable room", viewModel.state.value.form.description)
         viewModel.onEvent(HostOfferEvent.Save)
         viewModel.onEvent(HostOfferEvent.SessionInvalidationDelivered(invalidation.id + 1))
         assertEquals(invalidation, viewModel.state.value.pendingSessionInvalidation)
@@ -256,6 +308,61 @@ class HostOfferViewModelTest {
         assertEquals(submitted.copy(id = "server-issued-id"), state.current)
         assertFalse(state.isDirty)
         assertTrue(state.saveSucceeded)
+    }
+
+    @Test
+    fun sameBackendClientReplacementLeavesPendingSaveObservedExactlyOnce() = withScope { scope ->
+        val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
+        val repository = FakeHostOfferRepository().apply { saveHandler = { pendingSave.await() } }
+        val api = MobileApiClient("https://api.example.test/")
+        val session = MemberSession("connect.sid=steady", MobileMember("quiet-fox", "Quiet Fox"))
+        val viewModel = HostOfferViewModel(repository, scope, api, session)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        viewModel.updateEnvironment(MobileApiClient("https://api.example.test"), session)
+
+        assertEquals(1, repository.saveCalls)
+        assertTrue(viewModel.state.value.isSaving)
+        pendingSave.complete(Result.success(hostOffer("saved-once")))
+
+        assertEquals(1, repository.saveCalls)
+        assertEquals("saved-once", viewModel.state.value.form.id)
+        assertTrue(viewModel.state.value.saveSucceeded)
+        assertFalse(viewModel.state.value.isSaving)
+    }
+
+    @Test
+    fun reentrantCredentialRotationRejectsOldSaveAuthenticationFailure() = withScope { scope ->
+        lateinit var viewModel: HostOfferViewModel
+        val api = MobileApiClient("https://api.example.test/")
+        val oldSession = MemberSession("connect.sid=old", MobileMember("quiet-fox", "Quiet Fox"))
+        val newSession = MemberSession("connect.sid=renewed", MobileMember("quiet-fox", "Quiet Fox"))
+        val repository = FakeHostOfferRepository().apply {
+            saveHandler = { call ->
+                if (call == 1) {
+                    // The unconfined Save launch is re-entered before saveJob is assigned.
+                    viewModel.updateEnvironment(api, newSession)
+                    Result.failure(MobileApiException(401, "Expired old save"))
+                } else Result.success(hostOffer("saved-after-rotation"))
+            }
+        }
+        viewModel = HostOfferViewModel(repository, scope, api, oldSession)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        assertEquals(1, repository.saveCalls)
+        assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertNull(viewModel.state.value.failure)
+        assertFalse(viewModel.state.value.isSaving)
+        assertEquals("A suitable room", viewModel.state.value.form.description)
+        assertTrue(viewModel.state.value.isDirty)
+
+        viewModel.onEvent(HostOfferEvent.Save)
+        assertEquals(2, repository.saveCalls)
+        assertEquals("saved-after-rotation", viewModel.state.value.form.id)
+        assertTrue(viewModel.state.value.saveSucceeded)
     }
 
     @Test
@@ -426,11 +533,18 @@ class HostOfferViewModelTest {
     ) : HostOfferRepository {
         var loadCalls = 0
         var saveCalls = 0
+        var currentApi: MobileApiClient? = null
         val submitted = mutableListOf<HostOfferUpdate>()
         val saveCookies = mutableListOf<String?>()
         var currentCookie: String? = null
         var loadHandler: suspend (Int) -> Result<HostOfferForm> = { loadResult }
         var saveHandler: suspend (Int) -> Result<AccommodationOffer> = { Result.success(hostOffer("saved-offer")) }
+
+        override fun updateApi(api: MobileApiClient): Boolean {
+            val changed = currentApi?.backendURL != api.backendURL
+            currentApi = api
+            return changed
+        }
 
         override suspend fun load(): Result<HostOfferForm> = loadHandler(++loadCalls)
 

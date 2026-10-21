@@ -21,6 +21,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.AccommodationOffer
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
@@ -88,6 +89,117 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun nonAuthenticationProfileFailureStopsLoadingAndRetainsUsefulApiDetails() {
+        val repository = FakeMemberProfileRepository().apply {
+            profileResult = Result.failure(
+                MobileApiException(
+                    statusCode = 503,
+                    serverMessage = "  ",
+                    failureKind = ApiFailureKind.REQUEST_REJECTED,
+                ),
+            )
+        }
+
+        val state = newModel("quiet-fox", repository).state.value
+
+        assertFalse(state.isLoading)
+        assertNull(state.profile)
+        assertEquals(
+            MemberProfileFailure(
+                MemberProfileFailureReason.PROFILE,
+                apiKind = ApiFailureKind.REQUEST_REJECTED,
+            ),
+            state.failure,
+        )
+        assertNull(state.pendingSessionInvalidation)
+        assertEquals(0, repository.hostingCalls)
+        assertEquals(0, repository.contactsCalls)
+        assertEquals(0, repository.referenceCalls)
+        assertEquals(0, repository.relationshipCalls)
+
+        repository.profileResult = Result.failure(
+            MobileApiException(
+                statusCode = 503,
+                serverMessage = "The profile is temporarily unavailable.",
+                failureKind = ApiFailureKind.REQUEST_REJECTED,
+            ),
+        )
+        val messageState = newModel("quiet-fox", repository).state.value
+        assertEquals("The profile is temporarily unavailable.", messageState.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, messageState.failure?.apiKind)
+    }
+
+    @Test
+    fun profileWithoutMemberIDKeepsIdentityAndSkipsRelatedRequestsAndActions() {
+        val repository = FakeMemberProfileRepository().apply {
+            profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
+        }
+        val model = newModel("quiet-fox", repository)
+
+        assertEquals("Quiet Fox", model.state.value.profile?.displayName)
+        assertFalse(model.state.value.isLoading)
+        assertFalse(model.state.value.hostingLoaded)
+        assertFalse(model.state.value.relationshipResolved)
+        model.onEvent(MemberProfileEvent.RefreshReferences)
+        model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+
+        assertEquals(0, repository.hostingCalls)
+        assertEquals(0, repository.contactsCalls)
+        assertEquals(0, repository.referenceCalls)
+        assertEquals(0, repository.relationshipCalls)
+        assertTrue(repository.removedContactIDs.isEmpty())
+    }
+
+    @Test
+    fun viewingOwnProfileSkipsRelationshipAndAccountOrBackendChangesReloadIt() {
+        val repository = FakeMemberProfileRepository()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = MemberProfileViewModel("quiet-fox", "quiet-fox", repository, scope)
+            assertEquals(1, repository.profileCalls)
+            assertEquals(0, repository.relationshipCalls)
+            assertFalse(model.state.value.relationshipResolved)
+
+            model.updateEnvironment(
+                MobileApiClient("http://127.0.0.1:1"),
+                MemberSession("connect.sid=fictional-session", MobileMember("member-self", "Member Self")),
+            )
+            assertEquals(2, repository.profileCalls)
+            assertEquals(1, repository.relationshipCalls)
+            assertEquals(ContactRelationship("relationship-fox", true), model.state.value.relationship)
+
+            model.updateEnvironment(
+                MobileApiClient("http://127.0.0.1:2"),
+                MemberSession("connect.sid=fictional-session", MobileMember("member-self", "Member Self")),
+            )
+            assertEquals(3, repository.profileCalls)
+            assertEquals(2, repository.relationshipCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun parallelSectionAuthenticationFailuresShareOneInvalidation() {
+        val repository = FakeMemberProfileRepository().apply {
+            hostingResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+            contactsResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+            referencesResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+            relationshipResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+        }
+
+        val state = newModel("quiet-fox", repository).state.value
+
+        assertEquals(1L, state.pendingSessionInvalidation?.id)
+        assertFalse(state.isLoading)
+        assertTrue(state.hostingLoaded)
+        assertEquals(1, repository.hostingCalls)
+        assertEquals(1, repository.contactsCalls)
+        assertEquals(1, repository.referenceCalls)
+        assertEquals(1, repository.relationshipCalls)
+    }
+
+    @Test
     fun hostingAuthenticationFailureCompletesSectionAndPreservesProfile() {
         val repository = FakeMemberProfileRepository().apply {
             hostingResult = Result.failure(MobileApiException(401, "Fictional session expired."))
@@ -99,6 +211,47 @@ class MemberProfileViewModelTest {
         assertNull(model.state.value.hosting)
         assertEquals(1L, model.state.value.pendingSessionInvalidation?.id)
         assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
+    fun nonAuthenticationHostingFailureCompletesSectionWithoutInvalidatingSession() {
+        val repository = FakeMemberProfileRepository().apply {
+            hostingResult = Result.failure(IOException("Temporary hosting failure"))
+        }
+
+        val state = newModel("quiet-fox", repository).state.value
+
+        assertEquals("Quiet Fox", state.profile?.displayName)
+        assertTrue(state.hostingLoaded)
+        assertNull(state.hosting)
+        assertNull(state.pendingSessionInvalidation)
+    }
+
+    @Test
+    fun contactSectionFailurePreservesProfileAndOnlyAuthenticationFailureInvalidatesSession() {
+        val repository = FakeMemberProfileRepository().apply {
+            contactsResult = Result.failure(IOException("Temporary contacts failure"))
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+
+            assertEquals("Quiet Fox", model.state.value.profile?.displayName)
+            assertTrue(model.state.value.contacts.isEmpty())
+            assertNull(model.state.value.pendingSessionInvalidation)
+
+            repository.contactsResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+            model.updateEnvironment(
+                MobileApiClient("http://127.0.0.1:1"),
+                MemberSession("connect.sid=refreshed-fictional-session", MobileMember("member-self", "Member Self")),
+            )
+
+            assertEquals("Quiet Fox", model.state.value.profile?.displayName)
+            assertTrue(model.state.value.contacts.isEmpty())
+            assertEquals(1L, model.state.value.pendingSessionInvalidation?.id)
+        } finally {
+            scope.cancel()
+        }
     }
 
     @Test
@@ -212,6 +365,20 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun nonAuthenticationReferenceRefreshFailureKeepsPreviouslyLoadedReferences() {
+        val repository = FakeMemberProfileRepository()
+        val model = newModel("quiet-fox", repository)
+        val originalReferences = model.state.value.references
+        repository.referencesResult = Result.failure(IOException("Temporary references failure"))
+
+        model.onEvent(MemberProfileEvent.RefreshReferences)
+
+        assertEquals(originalReferences, model.state.value.references)
+        assertNull(model.state.value.pendingSessionInvalidation)
+        assertEquals(2, repository.referenceCalls)
+    }
+
+    @Test
     fun newestReferenceRefreshWinsWhenAnOlderRequestCompletesLate() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val staleReferences = CompletableDeferred<Result<List<ProfileReference>>>()
@@ -259,6 +426,34 @@ class MemberProfileViewModelTest {
             assertEquals(ContactRelationship(null, false), model.state.value.relationship)
             assertTrue(model.state.value.contactRemovalSucceeded)
             assertFalse(model.state.value.isRemovingContact)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun environmentRefreshDuringRemovalRejectsTheSynchronousOldAuthenticationFailure() {
+        val repository = FakeMemberProfileRepository().apply {
+            profileResult = Result.success(profile("quiet-fox", "Fresh Profile"))
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        lateinit var model: MemberProfileViewModel
+        repository.removalHandler = {
+            model.updateEnvironment(
+                MobileApiClient("http://127.0.0.1:2"),
+                MemberSession("connect.sid=rotated-fictional-session", MobileMember("member-self", "Member Self")),
+            )
+            Result.failure(MobileApiException(401, "Fictional stale session."))
+        }
+        try {
+            model = newModel("quiet-fox", repository, scope)
+            model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+
+            assertEquals("Fresh Profile", model.state.value.profile?.displayName)
+            assertNull(model.state.value.pendingSessionInvalidation)
+            assertFalse(model.state.value.isRemovingContact)
+            assertNull(model.state.value.removalFailure)
+            assertEquals(2, repository.profileCalls)
         } finally {
             scope.cancel()
         }
@@ -344,11 +539,16 @@ class MemberProfileViewModelTest {
         var profileHandler: (suspend (String) -> Result<MemberProfile>)? = null
         var profileCalls = 0
         var currentCookie: String? = "connect.sid=fictional-session"
-        var currentApi: MobileApiClient? = null
+        var currentApi: MobileApiClient? = MobileApiClient("http://127.0.0.1:1")
+        var hostingCalls = 0
+        var contactsCalls = 0
         var hostingResult: Result<AccommodationOffer?> = Result.success(AccommodationOffer("offer-fox", "yes", "A home", null, 2))
         var relationshipResult: Result<ContactRelationship> = Result.success(ContactRelationship("relationship-fox", true))
         var relationshipCalls = 0
         var referenceCalls = 0
+        var contactsResult: Result<List<ProfileContact>> = Result.success(
+            listOf(ProfileContact("contact-owl", org.trustroots.android.api.MessageMember("owl-id", "steady-owl", "Steady Owl"))),
+        )
         var referencesResult: Result<List<ProfileReference>> = Result.success(
             listOf(ProfileReference("reference-one", org.trustroots.android.api.MessageMember("ref-id", "reference-owl", "Reference Owl"), "A kind visit", "yes", null)),
         )
@@ -356,8 +556,9 @@ class MemberProfileViewModelTest {
         var removalResult: Result<Unit> = Result.success(Unit)
         var removalHandler: (suspend (String) -> Result<Unit>)? = null
         override fun updateApi(api: MobileApiClient): Boolean {
+            val changed = currentApi?.backendURL != api.backendURL
             currentApi = api
-            return false
+            return changed
         }
         override fun updateSession(session: MemberSession): Boolean {
             val changed = currentCookie != session.cookieHeader
@@ -369,8 +570,14 @@ class MemberProfileViewModelTest {
             val handler = profileHandler ?: { _: String -> profileResult }
             return handler(username)
         }
-        override suspend fun hosting(memberID: String) = hostingResult
-        override suspend fun contacts(memberID: String) = Result.success(listOf(ProfileContact("contact-owl", org.trustroots.android.api.MessageMember("owl-id", "steady-owl", "Steady Owl"))))
+        override suspend fun hosting(memberID: String): Result<AccommodationOffer?> {
+            hostingCalls++
+            return hostingResult
+        }
+        override suspend fun contacts(memberID: String): Result<List<ProfileContact>> {
+            contactsCalls++
+            return contactsResult
+        }
         override suspend fun references(memberID: String): Result<List<ProfileReference>> {
             referenceCalls++
             return referencesHandler?.invoke(referenceCalls) ?: referencesResult

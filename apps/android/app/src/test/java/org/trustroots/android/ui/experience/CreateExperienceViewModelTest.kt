@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -29,6 +30,20 @@ import org.trustroots.android.api.MobileMember
 @Config(sdk = [35], manifest = Config.NONE)
 class CreateExperienceViewModelTest {
     @Test
+    fun mobileRepositoryTracksBackendCookieAndAccountIdentity() {
+        val api = api()
+        val original = session(cookie = "connect.sid=old")
+        val repository = MobileApiCreateExperienceRepository(api, original)
+
+        assertFalse(repository.updateApi(api()))
+        assertTrue(repository.updateApi(MobileApiClient("https://other.example.test")))
+        assertFalse(repository.updateSession(original))
+        assertTrue(repository.updateSession(session(cookie = "connect.sid=new")))
+        assertTrue(repository.updateSession(session(username = "amber-owl", cookie = "connect.sid=new")))
+        assertFalse(repository.updateSession(session(username = "amber-owl", cookie = "connect.sid=new")))
+    }
+
+    @Test
     fun preservesDefaultsAndSendsExistingExperiencePayload() {
         val repository = FakeRepository()
         val model = newModel(repository)
@@ -46,6 +61,8 @@ class CreateExperienceViewModelTest {
         model.onEvent(CreateExperienceEvent.Submit)
         assertEquals("A pending success must not submit a duplicate experience", 1, repository.calls)
         val success = requireNotNull(model.state.value.pendingSuccess)
+        model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id + 1))
+        assertEquals(success, model.state.value.pendingSuccess)
         model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id))
         assertNull(model.state.value.pendingSuccess)
     }
@@ -201,6 +218,44 @@ class CreateExperienceViewModelTest {
     }
 
     @Test
+    fun reentrantCredentialRotationRejectsOldAuthenticationFailure() = withScope { scope ->
+        lateinit var model: CreateExperienceViewModel
+        var calls = 0
+        val client = api()
+        val oldSession = session(cookie = "old-cookie")
+        val newSession = session(cookie = "rotated-cookie")
+        val repository = CreateExperienceRepository {
+            calls++
+            if (calls == 1) {
+                // Unconfined launch executes this before submit stores requestJob.
+                model.updateEnvironment(client, newSession)
+                Result.failure(MobileApiException(401, "Expired old request"))
+            } else Result.success(Unit)
+        }
+        model = CreateExperienceViewModel(
+            memberID = "member-owl",
+            repository = repository,
+            initialApi = client,
+            initialSession = oldSession,
+            scope = scope,
+        )
+        model.onEvent(CreateExperienceEvent.FeedbackChanged("A retained fictional draft"))
+
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        assertEquals(1, calls)
+        assertNull(model.state.value.pendingInvalidation)
+        assertNull(model.state.value.failure)
+        assertFalse(model.state.value.isSaving)
+        assertEquals("A retained fictional draft", model.state.value.feedback)
+        assertTrue(model.state.value.isDirty)
+
+        model.onEvent(CreateExperienceEvent.Submit)
+        assertEquals(2, calls)
+        assertTrue(model.state.value.pendingSuccess != null)
+    }
+
+    @Test
     fun authenticationInvalidationIsDeliveredOnce() {
         val repository = FakeRepository().apply {
             result = Result.failure(MobileApiException(401, "expired"))
@@ -210,6 +265,8 @@ class CreateExperienceViewModelTest {
 
         model.onEvent(CreateExperienceEvent.Submit)
         val invalidation = requireNotNull(model.state.value.pendingInvalidation)
+        model.onEvent(CreateExperienceEvent.InvalidationDelivered(invalidation.id + 1))
+        assertEquals(invalidation, model.state.value.pendingInvalidation)
         model.onEvent(CreateExperienceEvent.InvalidationDelivered(invalidation.id))
         model.onEvent(CreateExperienceEvent.Submit)
 
@@ -247,6 +304,26 @@ class CreateExperienceViewModelTest {
     }
 
     @Test
+    fun accountOnlyChangeCancelsTheOldAccountCreateAndClearsItsDraft() {
+        val pending = CompletableDeferred<Result<Unit>>()
+        val submissions = mutableListOf<ExperienceCreate>()
+        val repository = CreateExperienceRepository { experience ->
+            submissions += experience
+            withContext(NonCancellable) { pending.await() }
+        }
+        val model = newModel(repository)
+        model.onEvent(CreateExperienceEvent.FeedbackChanged("A private fictional draft"))
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        model.updateEnvironment(api(), session(username = "amber-owl"))
+        assertEquals(CreateExperienceUiState(), model.state.value)
+        pending.complete(Result.success(Unit))
+
+        assertEquals(1, submissions.size)
+        assertEquals(CreateExperienceUiState(), model.state.value)
+    }
+
+    @Test
     fun removingTheExperienceEntryCancelsItsPendingSubmission() {
         val pending = CompletableDeferred<Result<Unit>>()
         var calls = 0
@@ -270,6 +347,15 @@ class CreateExperienceViewModelTest {
 
         assertNull(model.state.value.pendingSuccess)
         assertFalse(model.state.value.isSaving)
+    }
+
+    private fun withScope(block: (CoroutineScope) -> Unit) {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            block(scope)
+        } finally {
+            scope.cancel()
+        }
     }
 
     private fun newModel(repository: CreateExperienceRepository) = CreateExperienceViewModel(

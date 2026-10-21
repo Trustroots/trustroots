@@ -222,6 +222,18 @@ class MemberShellViewModelTest {
     }
 
     @Test
+    fun blankApiErrorMessageIsNotShownAsAnOrdinaryShellFailure() = withScope { scope ->
+        val repository = FakeMemberShellRepository().apply {
+            unreadHandler = { Result.failure(MobileApiException(503, "   ", ApiFailureKind.REQUEST_REJECTED)) }
+        }
+        val model = MemberShellViewModel(repository, scope)
+        model.onEvent(MemberShellEvent.LifecycleChanged(true))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(3))
+
+        assertEquals(MemberShellFailure(serverMessage = null, apiFailureKind = ApiFailureKind.REQUEST_REJECTED), model.state.value.failure)
+    }
+
+    @Test
     fun authenticationFailureFromEitherLookupIsDeliveredOnce() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             avatarHandler = { Result.success("member-safe-id") }

@@ -4,8 +4,13 @@ import org.trustroots.android.ui.account.AccountSettingsScreen
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -50,7 +55,7 @@ class AccountChangesJourneyTest {
 
     @Test fun savesEmailAndRequiresMatchingPasswordConfirmation() {
         responder = thread(isDaemon = true) {
-            repeat(3) {
+            repeat(4) {
                 val socket = acceptOrStop() ?: return@thread
                 socket.use {
                     val input = socket.getInputStream().bufferedReader()
@@ -73,8 +78,15 @@ class AccountChangesJourneyTest {
                     requests += request to body.concatToString(0, offset)
                     val payload = when {
                         request.startsWith("POST /api/users/password") -> "{}"
-                        request.startsWith("PUT /api/users ") ->
-                            """{"username":"steady-heron","displayName":"Steady Heron","email":"new@example.test","newsletter":false}"""
+                        request.startsWith("PUT /api/users ") -> {
+                            val update = JSONObject(body.concatToString(0, offset))
+                            JSONObject()
+                                .put("username", "steady-heron")
+                                .put("displayName", "Steady Heron")
+                                .put("email", update.getString("email"))
+                                .put("newsletter", update.getBoolean("newsletter"))
+                                .toString()
+                        }
                         else ->
                             """{"username":"steady-heron","displayName":"Steady Heron","email":"old@example.test","newsletter":false}"""
                     }
@@ -104,10 +116,25 @@ class AccountChangesJourneyTest {
             compose.onAllNodesWithText("old@example.test").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Email address").performTextReplacement("new@example.test")
+        val newsletterToggle = compose.onNode(
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox) and
+                hasAnySibling(hasText("Community newsletter")),
+        )
+        newsletterToggle.performScrollTo().performClick()
         compose.onNodeWithText("Save email settings").performScrollTo().performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Account saved.").fetchSemanticsNodes().isNotEmpty()
+            requests.count { it.first.startsWith("PUT /api/users ") } >= 1 &&
+                compose.onAllNodesWithText("Account saved.").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.waitForIdle()
+        newsletterToggle.performScrollTo().performClick()
+        compose.onNodeWithText("Save email settings").performScrollTo().performClick()
+        compose.waitUntil(10_000) {
+            requests.count { it.first.startsWith("PUT /api/users ") } >= 2 &&
+                runCatching { compose.onNodeWithText("Save email settings").assertIsEnabled() }.isSuccess
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("new@example.test").assertIsDisplayed()
         compose.onNodeWithText("Current password").performScrollTo().performTextReplacement("fictional-old-password")
         compose.onNodeWithText("New password").performScrollTo().performTextReplacement("fictional-new-password")
         compose.onNodeWithText("Verify new password").performScrollTo().performTextReplacement("different-password")
@@ -119,9 +146,14 @@ class AccountChangesJourneyTest {
             compose.onAllNodesWithText("Password changed.").fetchSemanticsNodes().isNotEmpty()
         }
 
-        assertEquals(3, requests.size)
-        val accountBody = JSONObject(requests.first { it.first.startsWith("PUT /api/users ") }.second)
-        assertEquals("new@example.test", accountBody.getString("email"))
+        assertEquals(4, requests.size)
+        val accountBodies = requests.filter { it.first.startsWith("PUT /api/users ") }
+            .map { JSONObject(it.second) }
+        assertEquals(2, accountBodies.size)
+        assertEquals("new@example.test", accountBodies[0].getString("email"))
+        assertTrue(accountBodies[0].getBoolean("newsletter"))
+        assertEquals("new@example.test", accountBodies[1].getString("email"))
+        assertFalse(accountBodies[1].getBoolean("newsletter"))
         val passwordRequest = requests.first { it.first.startsWith("POST /api/users/password ") }
         assertFalse(passwordRequest.second.contains("different-password"))
         assertTrue(passwordRequest.second.contains("fictional-new-password"))

@@ -42,6 +42,105 @@ class ContactsViewModelTest {
         assertTrue(viewModel.state.value.hasAttemptedLoad)
         assertFalse(viewModel.state.value.isLoading)
         assertNull(viewModel.state.value.failure)
+
+        viewModel.updateEnvironment(
+            MobileApiClient("https://api.example.test"),
+            session(cookie = "connect.sid=old"),
+        )
+        assertEquals("An unchanged account/backend must not refetch Contacts", listOf("steady-heron"), repository.profileUsernames)
+        assertEquals(listOf("member-self"), repository.contactMemberIDs)
+    }
+
+    @Test
+    fun mobileRepositoryReportsOnlyBackendOrAuthenticatedIdentityChanges() {
+        val api = MobileApiClient("https://api.example.test/")
+        val original = session(cookie = "connect.sid=old")
+        val repository = MobileApiContactsRepository(api, original)
+
+        assertFalse(repository.updateEnvironment(MobileApiClient("https://api.example.test"), original))
+        assertTrue(repository.updateEnvironment(MobileApiClient("https://other.example.test"), original))
+        assertTrue(repository.updateEnvironment(MobileApiClient("https://other.example.test/"), session(cookie = "connect.sid=new")))
+        assertTrue(repository.updateEnvironment(MobileApiClient("https://other.example.test"), session(cookie = "connect.sid=new", username = "amber-owl")))
+        assertFalse(repository.updateEnvironment(MobileApiClient("https://other.example.test/"), session(cookie = "connect.sid=new", username = "amber-owl")))
+    }
+
+    @Test
+    fun retryWhileProfileIsLoadingDoesNotStartAnotherRequest() = withScope { scope ->
+        val finishProfile = CompletableDeferred<Result<MemberProfile>>()
+        val repository = FakeContactsRepository().apply {
+            profileHandler = { call ->
+                if (call == 1) finishProfile.await() else Result.success(memberProfile("member-self"))
+            }
+        }
+        val viewModel = ContactsViewModel("steady-heron", repository, scope)
+
+        assertTrue(viewModel.state.value.isLoading)
+        viewModel.onEvent(ContactsEvent.Retry)
+
+        assertEquals(listOf("steady-heron"), repository.profileUsernames)
+        assertTrue(viewModel.state.value.isLoading)
+        finishProfile.complete(Result.success(memberProfile("member-self")))
+
+        assertEquals(listOf("member-self"), repository.contactMemberIDs)
+        assertEquals(listOf(contact("quiet-fox")), viewModel.state.value.contacts)
+    }
+
+    @Test
+    fun reentrantEnvironmentChangeRejectsTheObsoleteContactsSuccess() = withScope { scope ->
+        lateinit var viewModel: ContactsViewModel
+        val repository = FakeContactsRepository().apply {
+            contactsHandler = { call ->
+                when (call) {
+                    2 -> {
+                        // The retry's launch is running inline before load assigns its new Job.
+                        viewModel.updateEnvironment(
+                            MobileApiClient("https://other.example.test"),
+                            session(cookie = "connect.sid=renewed"),
+                        )
+                        Result.success(listOf(contact("obsolete-fox")))
+                    }
+                    3 -> Result.success(listOf(contact("current-owl")))
+                    else -> Result.success(listOf(contact("initial-fox")))
+                }
+            }
+        }
+        viewModel = ContactsViewModel("steady-heron", repository, scope)
+
+        viewModel.onEvent(ContactsEvent.Retry)
+
+        assertEquals(3, repository.contactMemberIDs.size)
+        assertEquals(listOf(contact("current-owl")), viewModel.state.value.contacts)
+        assertNull(viewModel.state.value.failure)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun reentrantEnvironmentChangeRejectsAnObsoleteContactsFailure() = withScope { scope ->
+        lateinit var viewModel: ContactsViewModel
+        val repository = FakeContactsRepository().apply {
+            contactsHandler = { call ->
+                when (call) {
+                    2 -> {
+                        viewModel.updateEnvironment(
+                            MobileApiClient("https://other.example.test"),
+                            session(cookie = "connect.sid=renewed"),
+                        )
+                        Result.failure(MobileApiException(401, "Fictional stale session."))
+                    }
+                    3 -> Result.success(listOf(contact("current-owl")))
+                    else -> Result.success(listOf(contact("initial-fox")))
+                }
+            }
+        }
+        viewModel = ContactsViewModel("steady-heron", repository, scope)
+
+        viewModel.onEvent(ContactsEvent.Retry)
+
+        assertEquals(listOf(contact("current-owl")), viewModel.state.value.contacts)
+        assertFalse(viewModel.state.value.isSessionInvalidated)
+        assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertNull(viewModel.state.value.failure)
+        assertFalse(viewModel.state.value.isLoading)
     }
 
     @Test
@@ -170,6 +269,8 @@ class ContactsViewModelTest {
         val viewModel = ContactsViewModel("steady-heron", repository, scope)
         val pending = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
 
+        viewModel.onEvent(ContactsEvent.SessionInvalidationDelivered(pending.id + 1))
+        assertEquals(pending, viewModel.state.value.pendingSessionInvalidation)
         viewModel.onEvent(ContactsEvent.SessionInvalidationDelivered(pending.id))
         viewModel.onEvent(ContactsEvent.Retry)
 
@@ -178,6 +279,26 @@ class ContactsViewModelTest {
         assertTrue(viewModel.state.value.contacts.isEmpty())
         assertEquals(1, repository.profileUsernames.size)
         assertTrue(repository.contactMemberIDs.isEmpty())
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun contactsAuthenticationFailureInvalidatesSessionAndPreventsRetryAtThatStage() = withScope { scope ->
+        val repository = FakeContactsRepository().apply {
+            contactsHandler = { Result.failure(MobileApiException(401, "Fictional expired session.")) }
+        }
+        val viewModel = ContactsViewModel("steady-heron", repository, scope)
+        val pending = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
+
+        assertTrue(viewModel.state.value.isSessionInvalidated)
+        assertTrue(viewModel.state.value.contacts.isEmpty())
+        assertEquals(1, repository.profileUsernames.size)
+        assertEquals(1, repository.contactMemberIDs.size)
+        viewModel.onEvent(ContactsEvent.Retry)
+
+        assertEquals(pending, viewModel.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.profileUsernames.size)
+        assertEquals(1, repository.contactMemberIDs.size)
         assertFalse(viewModel.state.value.isLoading)
     }
 
@@ -297,7 +418,8 @@ class ContactsViewModelTest {
     }
 
     private companion object {
-        fun session(cookie: String) = MemberSession(cookie, MobileMember("steady-heron", "Steady Heron"))
+        fun session(cookie: String, username: String = "steady-heron") =
+            MemberSession(cookie, MobileMember(username, username.replaceFirstChar { it.uppercase() }))
 
         fun memberProfile(id: String? = "member-self") = MemberProfile(
             id = id,

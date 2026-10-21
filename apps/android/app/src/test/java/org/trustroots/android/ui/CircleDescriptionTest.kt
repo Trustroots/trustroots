@@ -55,6 +55,21 @@ class CircleDescriptionTest {
         assertEquals("Visible", unclosedComment.text)
     }
 
+    @Test fun removesClosedCommentsWithoutJoiningReadableTextOrFormatting() {
+        val inline = circleDescription(
+            "<p>Keep <!-- a hidden comment --> reading <strong>bold text</strong><!-- another comment --> here.</p>",
+        )
+        val betweenTags = circleDescription(
+            "<p>First paragraph</p><!-- comment between tags --><p>Second paragraph</p>",
+        )
+
+        assertTrue(Regex("Keep\\s+reading bold text\\s+here\\.").containsMatchIn(inline.text))
+        assertTrue(inline.spanStyles.any { it.item.fontWeight == FontWeight.Bold })
+        assertFalse(inline.text.contains("hidden comment"))
+        assertTrue(Regex("First paragraph\\s+Second paragraph").containsMatchIn(betweenTags.text))
+        assertFalse(betweenTags.text.contains("comment between tags"))
+    }
+
     @Test fun recoversAtAnOuterBlockedTagWhenBlockedTagsAreMismatched() {
         val rendered = circleDescription("<script><style>hidden</script>visible</style>")
 
