@@ -91,9 +91,8 @@ test.describe('seeded message flows', () => {
         ['Unreplied', unreplied],
       ]) {
         await expect(
-          page.getByRole('link', {
-            name: `${label} conversations`,
-            exact: true,
+          page.getByRole('option', {
+            name: new RegExp(`${label} conversations`),
           }),
         ).toContainText(`(${count})`);
       }
@@ -102,14 +101,9 @@ test.describe('seeded message flows', () => {
     await assertCounts(1, 1);
     for (const width of [1280, 768, 375, 320]) {
       await page.setViewportSize({ width, height: 800 });
-      for (const label of ['All', 'Unread', 'Unreplied']) {
-        await expect(
-          page.getByRole('link', {
-            name: `${label} conversations`,
-            exact: true,
-          }),
-        ).toBeInViewport();
-      }
+      await expect(
+        page.getByRole('combobox', { name: 'Conversation filter' }),
+      ).toBeInViewport();
       expect(
         await page
           .locator('html')
@@ -117,8 +111,8 @@ test.describe('seeded message flows', () => {
       ).toBeTruthy();
     }
     await page
-      .getByRole('link', { name: 'Unreplied conversations', exact: true })
-      .click();
+      .getByRole('combobox', { name: 'Conversation filter' })
+      .selectOption('unreplied');
     await expect(page).toHaveURL(/filter=unreplied/);
     await page.getByText(sender.displayName).click();
     await expect(page.getByText(message.content)).toBeVisible();
@@ -265,7 +259,9 @@ test.describe('seeded message flows', () => {
     await expect(page.getByText('Older Unread Member')).toHaveCount(0);
     await expect(page.getByLabel('1 unread messages')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Unread conversations' }).click();
+    await page
+      .getByRole('combobox', { name: 'Conversation filter' })
+      .selectOption('unread');
     await expect(page).toHaveURL(/\/messages\?filter=unread/);
     await expect(page.getByText('Older Unread Member')).toBeVisible();
     await page.getByText('Older Unread Member').click();

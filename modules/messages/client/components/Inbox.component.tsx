@@ -3,7 +3,10 @@ import { useTranslation } from 'react-i18next';
 
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import {
+  navigate,
+  trackEvent,
+} from '@/modules/core/client/services/client-runtime';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type {
@@ -146,66 +149,33 @@ export default function Inbox({ user }: InboxProps) {
   return (
     <section className="container-spacer">
       <div className="container inbox-controls">
-        <nav
+        <select
           aria-label={t<string>('Conversation filter')}
-          className="inbox-view-filters"
+          className="form-control inbox-view-filter"
+          value={filter}
+          onChange={event =>
+            navigate(
+              event.target.value === 'all'
+                ? '/messages'
+                : `/messages?filter=${event.target.value}`,
+              {},
+              { reload: true },
+            )
+          }
         >
-          <a
-            href="/messages"
-            rel="external"
-            aria-current={filter === 'all' ? 'page' : undefined}
-            aria-label={t<string>('All conversations')}
-            aria-describedby={counts ? 'inbox-count-all' : undefined}
-            className="btn btn-default"
-          >
-            <span className="hidden-xs">{t<string>('All conversations')}</span>
-            <span className="visible-xs-inline">{t<string>('All')}</span>
-            {counts && (
-              <span id="inbox-count-all" className="inbox-filter-count">
-                {' '}
-                ({counts.all})
-              </span>
-            )}
-          </a>
-          <a
-            href="/messages?filter=unread"
-            rel="external"
-            aria-current={filter === 'unread' ? 'page' : undefined}
-            aria-label={t<string>('Unread conversations')}
-            aria-describedby={counts ? 'inbox-count-unread' : undefined}
-            className="btn btn-default"
-          >
-            <span className="hidden-xs">
-              {t<string>('Unread conversations')}
-            </span>
-            <span className="visible-xs-inline">{t<string>('Unread')}</span>
-            {counts && (
-              <span id="inbox-count-unread" className="inbox-filter-count">
-                {' '}
-                ({counts.unread})
-              </span>
-            )}
-          </a>
-          <a
-            href="/messages?filter=unreplied"
-            rel="external"
-            aria-current={filter === 'unreplied' ? 'page' : undefined}
-            aria-label={t<string>('Unreplied conversations')}
-            aria-describedby={counts ? 'inbox-count-unreplied' : undefined}
-            className="btn btn-default"
-          >
-            <span className="hidden-xs">
-              {t<string>('Unreplied conversations')}
-            </span>
-            <span className="visible-xs-inline">{t<string>('Unreplied')}</span>
-            {counts && (
-              <span id="inbox-count-unreplied" className="inbox-filter-count">
-                {' '}
-                ({counts.unreplied})
-              </span>
-            )}
-          </a>
-        </nav>
+          <option value="all">
+            {t<string>('All conversations')}
+            {counts && ` (${counts.all})`}
+          </option>
+          <option value="unread">
+            {t<string>('Unread conversations')}
+            {counts && ` (${counts.unread})`}
+          </option>
+          <option value="unreplied">
+            {t<string>('Unreplied conversations')}
+            {counts && ` (${counts.unreplied})`}
+          </option>
+        </select>
         <div className="inbox-search">
           <input
             type="search"

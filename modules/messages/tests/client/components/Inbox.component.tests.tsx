@@ -9,7 +9,10 @@ import {
   generateClientUser,
   generateThreads,
 } from '@/testutils/client/data.client.testutil';
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import {
+  navigate,
+  trackEvent,
+} from '@/modules/core/client/services/client-runtime';
 
 jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock('@/modules/core/client/services/client-runtime');
@@ -38,35 +41,49 @@ beforeEach(() => {
 });
 
 describe('<Inbox>', () => {
+  it.each([
+    ['all', '/messages'],
+    ['unread', '/messages?filter=unread'],
+    ['unreplied', '/messages?filter=unreplied'],
+  ])('navigates to the %s view from the select', async (value, path) => {
+    api.fetchThreads.mockResolvedValue({ threads: [] });
+    const { getByRole, findByRole } = render(<Inbox user={me} />);
+    await findByRole('alert');
+    const select = getByRole('combobox', { name: 'Conversation filter' });
+    expect(select).toHaveValue('all');
+    fireEvent.change(select, { target: { value } });
+    expect(navigate).toHaveBeenCalledWith(path, {}, { reload: true });
+  });
+
   it('shows totals independently of search and refreshes on focus and visibility', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
     const { getByRole } = render(<Inbox user={me} />);
     await waitFor(() =>
       expect(
-        getByRole('link', { name: 'All conversations' }),
+        getByRole('option', { name: /All conversations/ }),
       ).toHaveTextContent('(42)'),
     );
     expect(
-      getByRole('link', { name: 'Unread conversations' }),
+      getByRole('option', { name: /Unread conversations/ }),
     ).toHaveTextContent('(3)');
     expect(
-      getByRole('link', { name: 'Unreplied conversations' }),
+      getByRole('option', { name: /Unreplied conversations/ }),
     ).toHaveTextContent('(7)');
     fireEvent.change(getByRole('searchbox'), { target: { value: 'no match' } });
-    expect(getByRole('link', { name: 'All conversations' })).toHaveTextContent(
-      '(42)',
-    );
+    expect(
+      getByRole('option', { name: /All conversations/ }),
+    ).toHaveTextContent('(42)');
     jest
       .mocked(messagesApi.conversationCounts)
       .mockResolvedValue({ all: 42, unread: 0, unreplied: 6 });
     fireEvent.focus(window);
     await waitFor(() =>
       expect(
-        getByRole('link', { name: 'Unread conversations' }),
+        getByRole('option', { name: /Unread conversations/ }),
       ).toHaveTextContent('(0)'),
     );
     expect(
-      getByRole('link', { name: 'Unreplied conversations' }),
+      getByRole('option', { name: /Unreplied conversations/ }),
     ).toHaveTextContent('(6)');
     fireEvent(document, new Event('visibilitychange'));
     await waitFor(() =>
@@ -95,18 +112,18 @@ describe('<Inbox>', () => {
     );
     const { getByRole } = render(<Inbox user={me} />);
     expect(
-      getByRole('link', { name: 'All conversations' }),
+      getByRole('option', { name: /All conversations/ }),
     ).not.toHaveTextContent('(');
     await act(async () => {
       rejectCounts(new Error('Offline'));
     });
     expect(
-      getByRole('link', { name: 'All conversations' }),
+      getByRole('option', { name: /All conversations/ }),
     ).not.toHaveTextContent('(');
     fireEvent.focus(window);
     await waitFor(() =>
       expect(
-        getByRole('link', { name: 'All conversations' }),
+        getByRole('option', { name: /All conversations/ }),
       ).toHaveTextContent('(42)'),
     );
   });
@@ -146,11 +163,12 @@ describe('<Inbox>', () => {
     );
     expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unreplied' });
     expect(
-      getByRole('link', { name: 'Unreplied conversations' }),
-    ).toHaveAttribute('aria-current', 'page');
-    expect(
-      getByRole('link', { name: 'All conversations' }),
-    ).not.toHaveAttribute('aria-current');
+      getByRole('option', { name: /Unreplied conversations/ }),
+    ).toHaveProperty('selected', true);
+    expect(getByRole('option', { name: /All conversations/ })).toHaveProperty(
+      'selected',
+      false,
+    );
   });
 
   it.each(['pagination', 'search'])(
@@ -228,10 +246,9 @@ describe('<Inbox>', () => {
       'No unread conversations.',
     );
     expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unread' });
-    expect(getByRole('link', { name: 'Unread conversations' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
+    expect(
+      getByRole('option', { name: /Unread conversations/ }),
+    ).toHaveProperty('selected', true);
   });
 
   it('keeps the unread filter when loading older conversations', async () => {
