@@ -3,10 +3,12 @@ package org.trustroots.android.ui
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.first
 import java.net.ServerSocket
 import java.util.concurrent.CopyOnWriteArrayList
@@ -15,6 +17,7 @@ import kotlin.concurrent.thread
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import java.io.IOException
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -77,15 +80,53 @@ class MemberShellViewModelTest {
     }
 
     @Test
+    fun repeatedActiveVisitAndLifecycleEventsDoNotDuplicateTheCurrentRefresh() = withScope { scope ->
+        val repository = FakeMemberShellRepository()
+        val model = MemberShellViewModel(repository, scope)
+
+        model.onEvent(MemberShellEvent.LifecycleChanged(true))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(12))
+        model.onEvent(MemberShellEvent.LifecycleChanged(true))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(12))
+
+        assertEquals(1, repository.unreadCalls)
+        assertEquals(2, model.state.value.unreadMessageCount)
+    }
+
+    @Test
+    fun ordinaryAvatarFailureCanBeRetriedAndUnexpectedExceptionsBecomeSafeFailures() = withScope { scope ->
+        val repository = FakeMemberShellRepository().apply {
+            avatarHandler = { call ->
+                if (call == 1) Result.failure(IOException("Temporary avatar failure"))
+                else Result.success("recovered-avatar")
+            }
+            unreadHandler = { throw IllegalStateException("Temporary unread failure") }
+        }
+        val model = MemberShellViewModel(repository, scope)
+
+        assertEquals(MemberShellFailure(message = null, statusCode = null), model.state.value.failure)
+        assertFalse(model.state.value.isAvatarLoading)
+        model.onEvent(MemberShellEvent.RetryAvatar)
+        assertEquals("recovered-avatar", model.state.value.avatarID)
+        assertEquals(0, repository.unreadCalls)
+
+        model.onEvent(MemberShellEvent.LifecycleChanged(true))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
+        assertEquals(1, repository.unreadCalls)
+        assertEquals(MemberShellFailure(message = null, statusCode = null), model.state.value.failure)
+        assertFalse(model.state.value.isUnreadRefreshing)
+    }
+
+    @Test
     fun changedEnvironmentCancelsStaleResultsAndClearsPreviousAccountState() = withScope { scope ->
         val repository = FakeMemberShellRepository()
         val oldAvatar = CompletableDeferred<Result<String?>>()
         repository.avatarHandler = { call ->
-            if (call == 1) oldAvatar.await() else Result.success("new-avatar")
+            if (call == 1) withContext(NonCancellable) { oldAvatar.await() } else Result.success("new-avatar")
         }
         val staleUnread = CompletableDeferred<Result<Int>>()
         repository.unreadHandler = { call ->
-            if (call == 1) staleUnread.await() else Result.success(1)
+            if (call == 1) withContext(NonCancellable) { staleUnread.await() } else Result.success(1)
         }
         val model = MemberShellViewModel(repository, scope)
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
@@ -151,8 +192,10 @@ class MemberShellViewModelTest {
         model.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
         model.onEvent(MemberShellEvent.ActiveVisitChanged(1))
+        model.onEvent(MemberShellEvent.RetryAvatar)
 
         assertNull(model.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.avatarCalls)
         assertEquals(0, repository.unreadCalls)
     }
 
@@ -237,6 +280,28 @@ class MemberShellViewModelTest {
                 scope.cancel()
             }
         }
+    }
+
+    @Test
+    fun productionRepositoryDetectsBackendCookieAndAccountIdentityChanges() {
+        val originalApi = MobileApiClient("https://api.example.test/")
+        val originalSession = session()
+        val repository = MobileApiMemberShellRepository(originalApi, originalSession)
+
+        assertFalse(repository.updateEnvironment(MobileApiClient("https://api.example.test"), originalSession))
+        assertTrue(repository.updateEnvironment(MobileApiClient("https://other.example.test"), originalSession))
+        assertFalse(repository.updateEnvironment(MobileApiClient("https://other.example.test/"), originalSession))
+        assertTrue(repository.updateEnvironment(
+            MobileApiClient("https://other.example.test"), session("connect.sid=refreshed-fictional"),
+        ))
+        assertTrue(repository.updateEnvironment(
+            MobileApiClient("https://other.example.test"),
+            MemberSession("connect.sid=refreshed-fictional", MobileMember("calm-lynx", "Calm Lynx")),
+        ))
+        assertFalse(repository.updateEnvironment(
+            MobileApiClient("https://other.example.test"),
+            MemberSession("connect.sid=refreshed-fictional", MobileMember("calm-lynx", "Calm Lynx")),
+        ))
     }
 
     @Test
