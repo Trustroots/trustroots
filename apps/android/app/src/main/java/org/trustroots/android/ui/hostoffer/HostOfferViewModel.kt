@@ -25,6 +25,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.toUiFailure
 
 internal const val DEFAULT_HOST_LATITUDE = 48.6908333333
@@ -152,7 +153,7 @@ internal sealed interface HostOfferEvent {
 
 internal class HostOfferViewModel(
     private val repository: HostOfferRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
     initialApi: MobileApiClient? = null,
     initialSession: MemberSession? = null,
 ) : ViewModel() {
@@ -365,9 +366,7 @@ internal fun rememberHostOfferViewModel(
     val factory = remember(owner, repository, api, session) {
         HostOfferViewModel.Factory(repository, initialApi = api, initialSession = session)
     }
-    val viewModel = remember(owner, repository) {
-        ViewModelProvider(owner, factory).get(HostOfferViewModel::class.java)
-    }
+    val viewModel = rememberEntryViewModel(owner, HostOfferViewModel::class.java, factory)
     androidx.compose.runtime.SideEffect { viewModel.updateEnvironment(api, session) }
     return viewModel
 }

@@ -1,7 +1,6 @@
 package org.trustroots.android.ui.experience
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -22,6 +21,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal fun interface CreateExperienceRepository {
     fun updateApi(api: MobileApiClient): Boolean = false
@@ -92,7 +92,7 @@ internal class CreateExperienceViewModel(
     private val repository: CreateExperienceRepository,
     initialApi: MobileApiClient,
     initialSession: MemberSession,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(CreateExperienceUiState())
@@ -222,12 +222,17 @@ internal fun rememberCreateExperienceViewModel(
     memberID: String,
 ): CreateExperienceViewModel {
     val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Experience creation must be hosted by a Navigation 3 ViewModelStoreOwner." }
-    val viewModel = remember(owner, memberID) {
-        ViewModelProvider(
-            owner,
-            CreateExperienceViewModel.Factory(memberID, MobileApiCreateExperienceRepository(api, session), api, session),
-        )["CreateExperienceViewModel:$memberID", CreateExperienceViewModel::class.java]
-    }
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = CreateExperienceViewModel::class.java,
+        factory = CreateExperienceViewModel.Factory(
+            memberID,
+            MobileApiCreateExperienceRepository(api, session),
+            api,
+            session,
+        ),
+        key = "CreateExperienceViewModel:$memberID",
+    )
     androidx.compose.runtime.SideEffect { viewModel.updateEnvironment(api, session) }
     return viewModel
 }

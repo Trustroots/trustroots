@@ -8,7 +8,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -23,6 +22,7 @@ import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface MemberShellRepository {
     /** Replaces runtime request dependencies; true means the account or backend changed. */
@@ -78,7 +78,7 @@ internal sealed interface MemberShellEvent {
 
 internal class MemberShellViewModel(
     private val repository: MemberShellRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
     private val waitForNextPoll: suspend () -> Unit = { delay(60_000) },
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
@@ -259,10 +259,11 @@ internal fun rememberMemberShellViewModel(
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "The member shell must be hosted by its root Navigation 3 entry."
     }
-    val viewModel = remember(owner, api, session) {
-        ViewModelProvider(owner, MemberShellViewModel.Factory(MobileApiMemberShellRepository(api, session)))
-            .get(MemberShellViewModel::class.java)
-    }
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = MemberShellViewModel::class.java,
+        factory = MemberShellViewModel.Factory(MobileApiMemberShellRepository(api, session)),
+    )
     SideEffect { viewModel.onEvent(MemberShellEvent.EnvironmentChanged(api, session)) }
     return viewModel
 }

@@ -1,7 +1,6 @@
 package org.trustroots.android.ui.contacts
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
@@ -23,6 +22,7 @@ import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface ContactsRepository {
     /** Replaces request dependencies; true means the backend or signed-in account changed. */
@@ -85,7 +85,7 @@ internal sealed interface ContactsEvent {
 internal class ContactsViewModel(
     private val username: String,
     private val repository: ContactsRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(ContactsUiState())
@@ -237,9 +237,16 @@ internal fun rememberContactsViewModel(
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "Contacts must be hosted by a Navigation 3 ViewModelStoreOwner."
     }
-    val viewModel = remember(owner, api, session) {
-        owner.contactsViewModel(api, session)
-    }
+    val username = session.member.username
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = ContactsViewModel::class.java,
+        factory = ContactsViewModel.Factory(
+            username = username,
+            repository = MobileApiContactsRepository(api, session),
+        ),
+        key = "ContactsViewModel:$username",
+    )
     androidx.compose.runtime.SideEffect { viewModel.updateEnvironment(api, session) }
     return viewModel
 }

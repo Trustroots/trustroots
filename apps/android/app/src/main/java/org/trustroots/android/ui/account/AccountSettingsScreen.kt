@@ -58,6 +58,7 @@ import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
@@ -98,9 +99,17 @@ internal fun AccountSettingsScreen(
             disableMessageAlerts = disableMessageAlerts,
         )
     }
-    val viewModel = remember(owner) {
-        owner.accountSettingsViewModel(api, session, platform)
-    }
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = AccountSettingsViewModel::class.java,
+        factory = AccountSettingsViewModel.Factory(
+            username = session.member.username,
+            repository = MobileApiAccountRepository(api, session),
+            platform = platform,
+            api = api,
+            session = session,
+        ),
+    )
     SideEffect {
         platform.updateSession(session)
         viewModel.updateEnvironment(api, session, platform)

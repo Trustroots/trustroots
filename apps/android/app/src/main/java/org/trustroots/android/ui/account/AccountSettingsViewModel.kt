@@ -3,7 +3,6 @@ package org.trustroots.android.ui.account
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -571,18 +570,3 @@ internal class AccountSettingsViewModel(
         }
     }
 }
-
-internal fun ViewModelStoreOwner.accountSettingsViewModel(
-    api: MobileApiClient,
-    session: MemberSession,
-    platform: AccountPlatformSettings,
-): AccountSettingsViewModel = ViewModelProvider(
-    this,
-    AccountSettingsViewModel.Factory(
-        username = session.member.username,
-        repository = MobileApiAccountRepository(api, session),
-        platform = platform,
-        api = api,
-        session = session,
-    ),
-)[AccountSettingsViewModel::class.java]

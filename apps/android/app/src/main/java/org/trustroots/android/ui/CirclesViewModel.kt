@@ -89,7 +89,7 @@ internal sealed interface CirclesEvent {
 
 internal class CirclesViewModel(
     private val repository: CircleRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(CirclesUiState())

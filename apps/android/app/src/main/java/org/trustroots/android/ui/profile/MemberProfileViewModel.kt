@@ -1,7 +1,6 @@
 package org.trustroots.android.ui.profile
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
@@ -26,6 +25,7 @@ import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface MemberProfileRepository {
     fun updateApi(api: MobileApiClient): Boolean = false
@@ -284,9 +284,14 @@ internal class MemberProfileViewModel(
 @Composable
 internal fun rememberMemberProfileViewModel(api: MobileApiClient, session: MemberSession, username: String): MemberProfileViewModel {
     val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Member profiles must be hosted by a Navigation 3 ViewModelStoreOwner." }
-    return remember(owner, username) {
-        ViewModelProvider(owner, MemberProfileViewModel.Factory(
-            username, session.member.username, MobileApiMemberProfileRepository(api, session),
-        ))["MemberProfileViewModel:$username", MemberProfileViewModel::class.java]
-    }
+    return rememberEntryViewModel(
+        owner = owner,
+        modelClass = MemberProfileViewModel::class.java,
+        factory = MemberProfileViewModel.Factory(
+            username,
+            session.member.username,
+            MobileApiMemberProfileRepository(api, session),
+        ),
+        key = "MemberProfileViewModel:$username",
+    )
 }

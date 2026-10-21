@@ -2,7 +2,6 @@ package org.trustroots.android.ui.editprofile
 
 import android.text.Html
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -24,6 +23,7 @@ import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileUpdate
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface EditProfileRepository {
     fun updateApi(api: MobileApiClient): Boolean = false
@@ -106,7 +106,7 @@ internal class EditProfileViewModel(
     initialApi: MobileApiClient,
     initialSession: MemberSession,
     initialProfile: MemberProfile? = null,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(
@@ -286,12 +286,18 @@ internal fun rememberEditProfileViewModel(
     initialProfile: MemberProfile? = null,
 ): EditProfileViewModel {
     val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner." }
-    val viewModel = remember(owner, username) {
-        ViewModelProvider(
-            owner,
-            EditProfileViewModel.Factory(username, MobileApiEditProfileRepository(api, session), api, session, initialProfile),
-        )["EditProfileViewModel:$username", EditProfileViewModel::class.java]
-    }
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = EditProfileViewModel::class.java,
+        factory = EditProfileViewModel.Factory(
+            username,
+            MobileApiEditProfileRepository(api, session),
+            api,
+            session,
+            initialProfile,
+        ),
+        key = "EditProfileViewModel:$username",
+    )
     androidx.compose.runtime.SideEffect { viewModel.updateEnvironment(api, session) }
     return viewModel
 }

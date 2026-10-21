@@ -2,7 +2,6 @@ package org.trustroots.android.ui.profile
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
@@ -13,6 +12,7 @@ import java.security.MessageDigest
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal sealed interface ProfileFlowCompletion {
     val deliveryID: Long
@@ -126,12 +126,12 @@ internal fun rememberProfileFlowHandoffViewModel(
     val owner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
         "Profile route handoffs must use their enclosing decorated Navigation 3 entry owner."
     }
-    val viewModel = remember(owner) {
-        ViewModelProvider(owner, ProfileFlowHandoffViewModel.Factory())[
-            "ProfileFlowHandoffViewModel",
-            ProfileFlowHandoffViewModel::class.java,
-        ]
-    }
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = ProfileFlowHandoffViewModel::class.java,
+        factory = ProfileFlowHandoffViewModel.Factory(),
+        key = "ProfileFlowHandoffViewModel",
+    )
     SideEffect { viewModel.updateEnvironment(api, session) }
     return viewModel
 }

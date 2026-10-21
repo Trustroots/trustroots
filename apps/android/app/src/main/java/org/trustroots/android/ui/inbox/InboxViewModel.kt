@@ -89,7 +89,7 @@ internal sealed interface InboxEvent {
 internal class InboxViewModel(
     private val repository: InboxRepository,
     initialSession: MemberSession,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(InboxUiState())
