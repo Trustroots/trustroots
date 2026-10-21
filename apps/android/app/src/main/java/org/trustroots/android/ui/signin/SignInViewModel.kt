@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -23,6 +22,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal data class SignInUiState(
     val username: String = "",
@@ -52,7 +52,7 @@ internal class SignInViewModel(
     apiBaseUrl: String,
     initialMessage: UiFailure?,
     private val authenticator: SignInAuthenticator = SignInAuthenticator(MobileApiClient(apiBaseUrl)::signIn),
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val parentScope = scope ?: viewModelScope
     private val requestJob = SupervisorJob(parentScope.coroutineContext[Job])
@@ -145,10 +145,11 @@ internal fun rememberSignInViewModel(apiBaseUrl: String, initialMessage: UiFailu
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "Sign-in screens must be hosted by their Navigation 3 entry."
     }
-    return remember(owner) {
-        ViewModelProvider(owner, SignInViewModelFactory(apiBaseUrl, initialMessage))
-            .get(SignInViewModel::class.java)
-    }
+    return rememberEntryViewModel(
+        owner,
+        SignInViewModel::class.java,
+        SignInViewModelFactory(apiBaseUrl, initialMessage),
+    )
 }
 
 internal class SignInViewModelFactory(

@@ -1,10 +1,8 @@
 package org.trustroots.android.ui.membersearch
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CancellationException
@@ -22,6 +20,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal fun interface MemberSearchRepository {
     suspend fun searchMembers(query: String): Result<List<MemberProfile>>
@@ -68,7 +67,7 @@ internal sealed interface MemberSearchEvent {
 
 internal class MemberSearchViewModel(
     private val repository: MemberSearchRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(MemberSearchUiState())
@@ -223,13 +222,9 @@ internal fun rememberMemberSearchViewModel(
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "Member search must be hosted by a Navigation 3 ViewModelStoreOwner."
     }
-    return remember(owner, api, session) { owner.memberSearchViewModel(api, session) }
+    return rememberEntryViewModel(
+        owner,
+        MemberSearchViewModel::class.java,
+        MemberSearchViewModel.Factory(MobileApiMemberSearchRepository(api, session)),
+    )
 }
-
-internal fun ViewModelStoreOwner.memberSearchViewModel(
-    api: MobileApiClient,
-    session: MemberSession,
-): MemberSearchViewModel = ViewModelProvider(
-    this,
-    MemberSearchViewModel.Factory(MobileApiMemberSearchRepository(api, session)),
-)[MemberSearchViewModel::class.java]

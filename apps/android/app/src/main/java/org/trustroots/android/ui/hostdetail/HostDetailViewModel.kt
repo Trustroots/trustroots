@@ -75,7 +75,7 @@ internal sealed interface HostDetailEvent {
 
 internal class HostDetailViewModel(
     private val repository: HostDetailRepository,
-    private val scope: CoroutineScope? = null,
+    private val scope: CoroutineScope?,
 ) : ViewModel() {
     private val workScope get() = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(HostDetailUiState())

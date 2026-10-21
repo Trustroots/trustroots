@@ -91,7 +91,7 @@ internal class AndroidAppSessionOperations(
 internal class AppSessionViewModel(
     private val operations: AppSessionOperations,
     initialBackendURL: String = "",
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val elapsedRealtime: () -> Long = SystemClock::elapsedRealtime,
     private val wait: suspend (Long) -> Unit = { delay(it) },

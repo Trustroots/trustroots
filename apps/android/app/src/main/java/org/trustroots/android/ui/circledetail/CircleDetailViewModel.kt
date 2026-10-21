@@ -49,7 +49,7 @@ internal sealed interface CircleDetailEvent {
 internal class CircleDetailViewModel(
     private val slug: String,
     private val repository: CircleRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(CircleDetailUiState())

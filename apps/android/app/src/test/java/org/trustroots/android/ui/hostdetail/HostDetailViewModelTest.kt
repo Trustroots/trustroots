@@ -124,6 +124,7 @@ class HostDetailViewModelTest {
         model.onEvent(HostDetailEvent.Load("reentrant-old-offer", SearchOfferType.Host))
 
         assertEquals(listOf("reentrant-old-offer", "reentrant-current-offer"), repository.offerIDs)
+        assertEquals("reentrant-current-offer", model.state.value.offerID)
         assertEquals("reentrant-current-offer", model.state.value.offer?.id)
         assertEquals(SearchOfferType.Meet, model.state.value.offerType)
     }

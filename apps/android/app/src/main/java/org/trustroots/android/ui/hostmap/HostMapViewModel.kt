@@ -31,6 +31,7 @@ import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.toUiFailure
+import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.search.SearchHubScreen
 
 internal data class MapViewport(
@@ -172,7 +173,7 @@ internal class HostMapViewModel(
     private val repository: HostMapRepository,
     private val notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
         ::createNostrootsNotesConnection,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
     private val wait: suspend (Long) -> Unit = { delay(it) },
 ) : ViewModel() {
     private val workScope = scope ?: viewModelScope
@@ -513,9 +514,7 @@ internal fun rememberHostMapViewModel(
     val factory = remember(owner, repository, sourceFactory) {
         HostMapViewModel.Factory(repository, sourceFactory)
     }
-    val viewModel = remember(owner, factory) {
-        ViewModelProvider(owner, factory).get(HostMapViewModel::class.java)
-    }
+    val viewModel = rememberEntryViewModel(owner, HostMapViewModel::class.java, factory)
     androidx.compose.runtime.SideEffect { viewModel.updateSession(session) }
     return viewModel
 }

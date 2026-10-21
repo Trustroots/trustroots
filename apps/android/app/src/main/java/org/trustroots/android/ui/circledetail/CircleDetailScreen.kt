@@ -43,6 +43,7 @@ import org.trustroots.android.ui.circles.circleDescription
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.bottomInset
 import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 @Composable
 internal fun CircleDetailEntry(
@@ -60,9 +61,7 @@ internal fun CircleDetailEntry(
     val factory = remember(owner, slug) {
         CircleDetailViewModel.Factory(slug, MobileApiCircleRepository(api, session))
     }
-    val viewModel = remember(owner, factory) {
-        ViewModelProvider(owner, factory).get(CircleDetailViewModel::class.java)
-    }
+    val viewModel = rememberEntryViewModel(owner, CircleDetailViewModel::class.java, factory)
     SideEffect { viewModel.updateEnvironment(api, session) }
     val state by viewModel.state.collectAsState()
     LaunchedEffect(viewModel, state.pendingSessionInvalidation?.id) {

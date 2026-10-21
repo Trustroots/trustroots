@@ -76,6 +76,7 @@ import org.trustroots.android.ui.session.AndroidAppSessionOperations
 import org.trustroots.android.ui.session.AppSessionEvent
 import org.trustroots.android.ui.session.AppSessionSource
 import org.trustroots.android.ui.session.AppSessionViewModel
+import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageScreenTracking
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.contacts.ContactsScreen
@@ -118,15 +119,14 @@ internal fun TrustrootsApp(
     }
     val sessionStore = remember { SecureMobileSessionStore(context.applicationContext) }
     val responseCache = remember { SecureResponseCache(context.applicationContext) }
-    val sessionViewModel = remember(activity, sessionStore, responseCache, signInStoreHolder, shellGraphStore) {
-        ViewModelProvider(
-            activity,
-            AppSessionViewModel.Factory(
-                AndroidAppSessionOperations(sessionStore, responseCache, signInStoreHolder, shellGraphStore),
-                initialBackendURL = apiBaseUrl,
-            ),
-        )[AppSessionViewModel::class.java]
-    }
+    val sessionViewModel = rememberEntryViewModel(
+        activity,
+        AppSessionViewModel::class.java,
+        AppSessionViewModel.Factory(
+            AndroidAppSessionOperations(sessionStore, responseCache, signInStoreHolder, shellGraphStore),
+            initialBackendURL = apiBaseUrl,
+        ),
+    )
     DisposableEffect(sessionViewModel, apiBaseUrl) {
         sessionViewModel.onEvent(AppSessionEvent.BackendChanged(apiBaseUrl))
         onDispose { }
