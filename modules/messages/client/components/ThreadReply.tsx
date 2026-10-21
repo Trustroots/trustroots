@@ -239,6 +239,7 @@ export default function ThreadReply({
                       <RichText
                         className="panel-body"
                         content={previewContent}
+                        allowTrustrootsLinks
                       />
                     </div>
                   </div>

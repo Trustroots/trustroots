@@ -4,6 +4,26 @@ import '@testing-library/jest-dom';
 import RichText from '../../../client/components/RichText';
 import { richTextLinkSchemes } from '../../../shared/rich-text-policy.mts';
 
+test('allows Trustroots links only when requested and sanitises their markup', () => {
+  const content =
+    '<a href="https://www.trustroots.org/safety" onclick="alert(1)">Safety</a><a href="https://outside.example/">External</a>';
+  const { rerender } = render(<RichText content={content} />);
+  expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  rerender(<RichText content={content} allowTrustrootsLinks />);
+  expect(screen.getByRole('link', { name: 'Safety' })).toHaveAttribute(
+    'href',
+    'https://www.trustroots.org/safety',
+  );
+  expect(screen.getByRole('link', { name: 'Safety' })).not.toHaveAttribute(
+    'onclick',
+  );
+  expect(
+    screen.queryByRole('link', { name: 'External' }),
+  ).not.toBeInTheDocument();
+  rerender(<RichText content={content} allowTrustrootsLinks={false} />);
+  expect(screen.queryByRole('link')).not.toBeInTheDocument();
+});
+
 test('retains supported formatting and attributes on their supported elements', () => {
   const { container, rerender } = render(
     <RichText

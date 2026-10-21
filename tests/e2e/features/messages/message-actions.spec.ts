@@ -145,7 +145,7 @@ test.describe.serial('message action feature coverage', () => {
       const selectedHeight = await page
         .locator('#message-reply')
         .evaluate(el => el.style.height);
-      const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a></p>`;
+      const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a> <a href="https://www.trustroots.org/safety">Safety guidance</a> <a href="https://trustroots.org/circles">Circles</a></p>`;
       await editor.evaluate((element, content) => {
         element.innerHTML = content;
         element.dispatchEvent(new Event('input', { bubbles: true }));
@@ -165,7 +165,15 @@ test.describe.serial('message action feature coverage', () => {
         preview.getByRole('link', { name: 'External label' }),
       ).toHaveCount(0);
       await expect(preview).toContainText('Internal label');
-      await expect(preview.locator('a')).toHaveCount(0);
+      await expect(
+        preview.getByRole('link', { name: 'Internal label' }),
+      ).toHaveAttribute('href', '/profile/fictional');
+      await expect(
+        preview.getByRole('link', { name: 'Safety guidance' }),
+      ).toHaveAttribute('href', 'https://www.trustroots.org/safety');
+      await expect(
+        preview.getByRole('link', { name: 'Circles', exact: true }),
+      ).toHaveAttribute('href', 'https://trustroots.org/circles');
       expect(sends).toHaveLength(0);
       await expect(
         page.getByRole('button', { name: 'Edit', exact: true }),
@@ -197,6 +205,19 @@ test.describe.serial('message action feature coverage', () => {
       await expect(page.locator('.message .panel-body b').last()).toContainText(
         'Fictional preview',
       );
+      await page.reload();
+      const body = page
+        .locator('.message .panel-body')
+        .filter({ hasText: draft.match(/Fictional preview \d+/)![0] });
+      await expect(
+        body.getByRole('link', { name: 'Safety guidance' }),
+      ).toHaveAttribute('href', 'https://www.trustroots.org/safety');
+      await expect(
+        body.getByRole('link', { name: 'Circles', exact: true }),
+      ).toHaveAttribute('href', 'https://trustroots.org/circles');
+      await expect(
+        body.getByRole('link', { name: 'External label' }),
+      ).toHaveCount(0);
     });
   }
 

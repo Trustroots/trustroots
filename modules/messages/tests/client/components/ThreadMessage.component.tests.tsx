@@ -62,7 +62,7 @@ describe('<ThreadMessage />', function () {
     expect(profileLink.closest('.message')).toHaveClass('message-sender-other');
   });
 
-  it('shows all message links as text', () => {
+  it('keeps Trustroots links clickable and displays external links as text', () => {
     const { container } = render(
       <ThreadMessage
         user={me}
@@ -77,6 +77,8 @@ describe('<ThreadMessage />', function () {
             '<a href="javascript:alert(1)">unsafe scheme</a> ' +
             '<a href="http://[">invalid address</a> ' +
             '<a>missing address</a> ' +
+            '<a href="https://www.trustroots.org/faq">common questions</a> ' +
+            '<a href="https://trustroots.org/circles">circles</a> ' +
             '<a href="/safety">safety guidance</a></p>',
           userTo: me,
           userFrom: me,
@@ -94,7 +96,17 @@ describe('<ThreadMessage />', function () {
     expect(body).toHaveTextContent('unsafe scheme');
     expect(body).toHaveTextContent('invalid address');
     expect(body).toHaveTextContent('missing address');
-    expect(body.querySelectorAll('a')).toHaveLength(0);
+    expect(body.querySelectorAll('a')).toHaveLength(3);
+    expect(
+      screen.getByRole('link', { name: 'safety guidance' }),
+    ).toHaveAttribute('href', '/safety');
+    expect(
+      screen.getByRole('link', { name: 'common questions' }),
+    ).toHaveAttribute('href', 'https://www.trustroots.org/faq');
+    expect(screen.getByRole('link', { name: 'circles' })).toHaveAttribute(
+      'href',
+      'https://trustroots.org/circles',
+    );
     expect(body).toHaveTextContent('safety guidance');
   });
 
