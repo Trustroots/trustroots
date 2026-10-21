@@ -3,7 +3,6 @@ package org.trustroots.android.ui.contacts
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CancellationException
@@ -249,18 +248,4 @@ internal fun rememberContactsViewModel(
     )
     androidx.compose.runtime.SideEffect { viewModel.updateEnvironment(api, session) }
     return viewModel
-}
-
-internal fun ViewModelStoreOwner.contactsViewModel(
-    api: MobileApiClient,
-    session: MemberSession,
-): ContactsViewModel {
-    val username = session.member.username
-    return ViewModelProvider(
-        this,
-        ContactsViewModel.Factory(
-            username = username,
-            repository = MobileApiContactsRepository(api, session),
-        ),
-    )["ContactsViewModel:$username", ContactsViewModel::class.java]
 }
