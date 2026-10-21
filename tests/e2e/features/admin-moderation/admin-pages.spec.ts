@@ -57,6 +57,22 @@ test.describe('admin moderation page flows', () => {
       'Dashboard shows ten most recent negative experiences.',
     ]);
 
+    const buildFixture = {
+      commitUrl: 'https://github.com/Trustroots/trustroots/commit/abcdef012345',
+      committedAt: '2026-10-21 00:00',
+      shortCommit: 'abcdef0',
+    };
+    await page.addInitScript(build => {
+      let settings: Record<string, unknown> = {};
+      Object.defineProperty(window, 'settings', {
+        configurable: true,
+        get: () => settings,
+        set: value => {
+          settings = { ...value, build };
+        },
+      });
+    }, buildFixture);
+
     await gotoAdminPage(page, '/admin', /\/admin$/);
 
     await expect(page).toHaveTitle(/Admin - Trustroots/);
@@ -116,6 +132,10 @@ test.describe('admin moderation page flows', () => {
     await footer.scrollIntoViewIfNeeded();
     await expect(footer.locator('.site-footer-content')).toBeVisible();
     await expect(footer.locator('.site-footer-meta')).toBeVisible();
+    await expect(footer.locator('.site-footer-build')).toHaveAttribute(
+      'href',
+      buildFixture.commitUrl,
+    );
 
     for (const [name, href] of [
       ['Volunteering', '/support?category=volunteering'],
