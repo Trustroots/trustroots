@@ -41,9 +41,11 @@ export default function Map(props: MapProps) {
   const [mapStyle, setMapstyle] = useState<string | typeof MAP_STYLE_OSM>(
     MAP_STYLE_DEFAULT,
   );
-  const [webGLSupported] = useState(isWebGLSupported);
+  const [useWebGL] = useState(
+    () => isWebGLSupported() && Boolean(getMapBoxToken()),
+  );
   const surfaceRef = useRef<HTMLDivElement>(null);
-  usePageWheel(surfaceRef, webGLSupported && !preferRaster);
+  usePageWheel(surfaceRef, useWebGL && !preferRaster);
   const [viewport, setViewport] = useState({
     latitude: location[0],
     longitude: location[1],
@@ -66,7 +68,7 @@ export default function Map(props: MapProps) {
     requestedMapStyles &&
     (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
 
-  if (preferRaster || !webGLSupported) {
+  if (preferRaster || !useWebGL) {
     return (
       <LeafletMap
         ariaHidden={props['aria-hidden']}

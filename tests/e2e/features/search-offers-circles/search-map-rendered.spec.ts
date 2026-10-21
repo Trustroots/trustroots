@@ -677,6 +677,44 @@ test.describe('rendered search map feature coverage', () => {
     }
   }
 
+  test('search map uses OpenStreetMap without a Mapbox key', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Tokenless installations render OpenStreetMap tiles even with WebGL available.',
+      'A previously saved Mapbox style does not prevent the fallback from loading.',
+    ]);
+    await routeRasterMapTiles(page);
+    await page.goto('/circles');
+    expect(
+      await page.evaluate(() =>
+        Boolean(document.createElement('canvas').getContext('webgl2')),
+      ),
+    ).toBe(true);
+    await page.evaluate(() => {
+      Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {});
+      window.localStorage.setItem(
+        'search-map-style',
+        JSON.stringify('mapbox://styles/mapbox/streets-v11'),
+      );
+    });
+    await page.locator('a[href="/search"]').first().click();
+    await expect(
+      page.locator('[data-testid="leaflet-search-map"]'),
+    ).toBeVisible();
+    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+    const tile = page.locator('.leaflet-tile').first();
+    await expect(tile).toHaveAttribute('src', /tile\.openstreetmap\.org/);
+    await expect(tile).toHaveJSProperty('naturalWidth', 1);
+    const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
+    await expect(hostMarker).toBeVisible();
+    await hostMarker.dispatchEvent('click');
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await expect(
+      page.locator('.search-sidebar-container.is-offer-open'),
+    ).toBeVisible();
+  });
+
   test('search map uses the raster fallback when WebGL is unavailable', async ({
     context,
     page,
