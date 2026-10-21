@@ -48,6 +48,22 @@ function linkedModules(name: string, root: string): string[] {
   ].sort();
 }
 
+const UI_PACKAGE = '@trustroots/ui';
+const UI_IMPORT = /from\s+['"]@trustroots\/ui['"]/;
+
+function importsUiPackage(name: string, root: string): boolean {
+  return fs
+    .globSync(
+      `{client,shared,tests}/**/*.{${SOURCE_EXTENSIONS.replaceAll('.', '')}}`,
+      { cwd: path.join(root, 'modules', name) },
+    )
+    .some(file =>
+      UI_IMPORT.test(
+        fs.readFileSync(path.join(root, 'modules', name, file), 'utf8'),
+      ),
+    );
+}
+
 export function expectedManifest(name: string, root = ROOT): Manifest {
   const dir = ['modules', name];
   const exports: Record<string, string> = {};
@@ -77,10 +93,13 @@ export function expectedManifest(name: string, root = ROOT): Manifest {
     exports,
     scripts,
   };
-  const links = linkedModules(name, root);
-  if (links.length) {
+  const dependencies = linkedModules(name, root).map(
+    link => `@trustroots/${link}`,
+  );
+  if (importsUiPackage(name, root)) dependencies.push(UI_PACKAGE);
+  if (dependencies.length) {
     manifest.dependencies = Object.fromEntries(
-      links.map(link => [`@trustroots/${link}`, 'workspace:*']),
+      dependencies.sort().map(dependency => [dependency, 'workspace:*']),
     );
   }
   return manifest;

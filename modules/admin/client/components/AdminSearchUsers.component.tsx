@@ -11,6 +11,7 @@ import {
   isObviousSpamUser,
   normalizeAdminQuery,
 } from './userSearch.helpers.js';
+import { Button } from '@trustroots/ui';
 
 interface MemberSort {
   column: string;
@@ -257,13 +258,14 @@ export class AdminSearchUsersContent extends Component<
                   onChange={this.onSearchChange}
                 />
               </label>
-              <button
-                className="btn btn-md btn-default"
+              <Button
+                variant="default"
+                size="md"
                 disabled={normalizedSearch.length < SEARCH_STRING_LIMIT}
                 type="submit"
               >
                 Search
-              </button>
+              </Button>
               <div className="checkbox">
                 <label>
                   <input
@@ -293,9 +295,9 @@ export class AdminSearchUsersContent extends Component<
                   </option>
                 ))}
               </select>
-              <button className="btn btn-md btn-default" type="submit">
+              <Button variant="default" size="md" type="submit">
                 List users in role
-              </button>
+              </Button>
             </form>
           </div>
         </div>

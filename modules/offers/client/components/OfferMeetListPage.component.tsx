@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { trackEvent } from '@/modules/core/client/services/client-runtime';
@@ -105,13 +106,15 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
           <h3>Your meetups</h3>
         </div>
         <div className="col-xs-12 col-sm-2 text-right">
-          <a
+          <Button
+            as="a"
             aria-label="Add new meet offer"
-            className="btn btn-lg btn-primary"
+            size="lg"
+            variant="primary"
             href="/offer/meet/add"
           >
             Add new
-          </a>
+          </Button>
         </div>
       </div>
 
@@ -139,12 +142,13 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
                 <em>No description!</em>
                 <br />
                 <br />
-                <a
-                  className="btn btn-primary"
+                <Button
+                  as="a"
+                  variant="primary"
                   href={`/offer/meet/${offer._id}`}
                 >
                   Write description
-                </a>
+                </Button>
               </div>
             )}
 
@@ -191,31 +195,33 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
             <br />
 
             <div className="text-center">
-              <a
-                className="btn btn-inverse-primary"
+              <Button
+                as="a"
+                variant="inverse-primary"
                 href={`/search?offer=${offer._id}`}
               >
                 <span className="hidden-xs">See on big map</span>
                 <span className="visible-xs-inline">Big Map</span>
-              </a>
+              </Button>
               &nbsp;
-              <a
+              <Button
+                as="a"
                 aria-label="Modify this meet offer"
-                className="btn btn-inverse-primary"
+                variant="inverse-primary"
                 href={`/offer/meet/${offer._id}`}
               >
                 Modify
-              </a>
+              </Button>
               &nbsp;
-              <button
+              <Button
                 aria-label="Remove this meet offer"
-                className="btn btn-inverse-primary"
+                variant="inverse-primary"
                 disabled={isRemoving}
                 onClick={() => handleRemove(offer)}
                 type="button"
               >
                 Remove
-              </button>
+              </Button>
             </div>
           </div>
           <div className="panel-footer text-muted text-center">
@@ -230,9 +236,9 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
       {offers.length > 0 && (
         <div className="text-center">
           <br />
-          <a className="btn btn-lg btn-primary" href="/offer/meet/add">
+          <Button as="a" size="lg" variant="primary" href="/offer/meet/add">
             Add new meetup
-          </a>
+          </Button>
         </div>
       )}
     </section>

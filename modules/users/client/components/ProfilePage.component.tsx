@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import AboutMe from './AboutMe.component';
 import AvatarNameMobile from './AvatarNameMobile.component';
@@ -157,28 +158,37 @@ function ProfileDesktopActions({
       {!isSelf && (
         <>
           <li>
-            <a href={`/messages/${profile.username}`} className="btn btn-link">
+            <Button
+              as="a"
+              href={`/messages/${profile.username}`}
+              variant="link"
+            >
               <i className="fa icon-message-alt" />
               {t('Send a message') as string}
-            </a>
+            </Button>
           </li>
           {referencesEnabled && (
             <li>
-              <a
-                className="btn btn-link"
+              <Button
+                as="a"
+                variant="link"
                 href={getProfileExperiencesPath(profile.username)}
               >
                 <i className="icon-plus-squared-alt" />
                 {t('Share your experience') as string}
-              </a>
+              </Button>
             </li>
           )}
           <li>
             {contactResolved && !contact._id && (
-              <a className="btn btn-link" href={`/contact-add/${profile._id}`}>
+              <Button
+                as="a"
+                variant="link"
+                href={`/contact-add/${profile._id}`}
+              >
                 <i className="icon-plus-squared-alt" />
                 {t('Add contact') as string}
-              </a>
+              </Button>
             )}
             {contactResolved && contact._id && (
               <TooltipWithContent
@@ -193,16 +203,12 @@ function ProfileDesktopActions({
                 }
                 placement="bottom"
               >
-                <button
-                  type="button"
-                  className="btn btn-link"
-                  onClick={onRemoveClick}
-                >
+                <Button type="button" variant="link" onClick={onRemoveClick}>
                   <i className="icon-minus-squared-alt" />
                   {contact.confirmed
                     ? (t('Remove contact') as string)
                     : (t('Delete contact request') as string)}
-                </button>
+                </Button>
               </TooltipWithContent>
             )}
           </li>
@@ -210,10 +216,10 @@ function ProfileDesktopActions({
       )}
       {isAdmin && (
         <li>
-          <a className="btn btn-link" href={getAdminUserHref(profile)}>
+          <Button as="a" variant="link" href={getAdminUserHref(profile)}>
             <i className="icon-cog" aria-hidden="true" />
             Admin
-          </a>
+          </Button>
         </li>
       )}
     </ul>
@@ -522,21 +528,24 @@ export default function ProfilePage({
                       {t('sent you a contact request') as string}
                     </li>
                     <li>
-                      <a
-                        className="btn btn-sm btn-primary"
+                      <Button
+                        as="a"
+                        variant="primary"
+                        size="sm"
                         href={`/contact-confirm/${contact._id}`}
                       >
                         {t('Confirm Request') as string}
-                      </a>
+                      </Button>
                     </li>
                     <li>
-                      <button
+                      <Button
                         type="button"
-                        className="btn btn-sm btn-danger"
+                        variant="danger"
+                        size="sm"
                         onClick={() => setShowRemoveModal(true)}
                       >
                         {t('Decline Request') as string}
-                      </button>
+                      </Button>
                     </li>
                   </ul>
                   <hr />
@@ -577,12 +586,14 @@ export default function ProfilePage({
                           @{profile.username}
                         </h4>
                         {isSelf && (
-                          <a
+                          <Button
+                            as="a"
                             href="/profile/edit"
-                            className="btn btn-primary pull-right"
+                            variant="primary"
+                            className="pull-right"
                           >
                             {t('Edit your profile') as string}
-                          </a>
+                          </Button>
                         )}
                         {profile.tagline && (
                           <div className="profile-tagline">

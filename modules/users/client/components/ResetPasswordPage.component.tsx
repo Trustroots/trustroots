@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from '@trustroots/ui';
 
 import Board from '@/modules/core/client/components/Board';
 import {
@@ -125,9 +126,10 @@ export default function ResetPasswordPage() {
                 />
               </div>
               <div className="text-center form-group">
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-lg btn-default"
+                  variant="default"
+                  size="lg"
                   disabled={
                     isLoading ||
                     passwordDetails.newPassword.length < 8 ||
@@ -135,7 +137,7 @@ export default function ResetPasswordPage() {
                   }
                 >
                   Update Password
-                </button>
+                </Button>
               </div>
               {error && (
                 <div className="text-center alert alert-danger" role="alert">

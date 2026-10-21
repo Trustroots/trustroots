@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@trustroots/ui';
 
 export default function OfferActivateProfile() {
   return (
@@ -22,13 +23,16 @@ export default function OfferActivateProfile() {
         <p>
           <br />
           <small>
-            <a
+            <Button
+              as="a"
               aria-label="Support"
-              className="btn btn-xs btn-link text-muted"
+              size="xs"
+              variant="link"
+              className="text-muted"
               href="/support"
             >
               Help!
-            </a>
+            </Button>
           </small>
         </p>
       </div>

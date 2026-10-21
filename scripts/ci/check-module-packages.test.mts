@@ -55,6 +55,20 @@ test('manifest of a module without client tests has no test:client script and no
   assert.deepEqual(Object.keys(manifest.exports), ['./shared/*']);
 });
 
+test('manifest declares the ui package when module code imports it', () => {
+  const root = makeRepo({
+    ...FIXTURE,
+    'modules/b/client/button.tsx': "import { Button } from '@trustroots/ui';\n",
+  });
+  assert.deepEqual(expectedManifest('b', root).dependencies, {
+    '@trustroots/ui': 'workspace:*',
+  });
+  assert.deepEqual(expectedManifest('a', root).dependencies, {
+    '@trustroots/b': 'workspace:*',
+    '@trustroots/c': 'workspace:*',
+  });
+});
+
 test('main fails on a missing or drifted manifest and passes after --update', () => {
   const root = makeRepo(FIXTURE);
   assert.equal(main([], root), 1);

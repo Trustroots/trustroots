@@ -15,6 +15,7 @@
     "@trustroots/core": "workspace:*",
     "@trustroots/support": "workspace:*",
     "@trustroots/tribes": "workspace:*",
+    "@trustroots/ui": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }

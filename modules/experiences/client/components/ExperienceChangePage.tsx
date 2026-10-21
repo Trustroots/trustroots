@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui';
 
 import * as api from '../api/experience-changes.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -187,15 +188,15 @@ export default function ExperienceChangePage({
                   </div>
                 ))}
               </fieldset>
-              <button
-                className="btn btn-primary"
+              <Button
+                variant="primary"
                 type="submit"
                 disabled={
                   submitting || !Object.values(interactions).some(Boolean)
                 }
               >
                 Request edit
-              </button>
+              </Button>
             </form>
           )}
           <hr />
@@ -204,14 +205,14 @@ export default function ExperienceChangePage({
             The Experience will remain visible under its current rules until an
             admin accepts your request.
           </p>
-          <button
-            className="btn btn-default"
+          <Button
+            variant="default"
             type="button"
             disabled={submitting}
             onClick={() => void submit('remove')}
           >
             Request removal
-          </button>
+          </Button>
         </>
       )}
       {submitError && (

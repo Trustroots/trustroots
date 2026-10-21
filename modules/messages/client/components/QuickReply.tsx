@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 type QuickReplyProps = {
   onSend: (content: string) => void;
@@ -57,13 +58,14 @@ export default function QuickReply({ onSend, onFocus }: QuickReplyProps) {
         }
 
         return (
-          <button
+          <Button
             key={content}
-            className={`btn btn-sm ${className}`}
+            size="sm"
+            className={className}
             onClick={onClick}
           >
             {content}
-          </button>
+          </Button>
         );
       })}
     </div>

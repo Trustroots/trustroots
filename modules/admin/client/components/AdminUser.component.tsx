@@ -34,6 +34,7 @@ import {
   normalizeAdminQuery,
   isSuspendedUser,
 } from './userSearch.helpers';
+import { Button } from '@trustroots/ui';
 
 interface MemberSort {
   column: string;
@@ -804,12 +805,13 @@ export default class AdminUser extends Component<
 
                 <div className="admin-user-actions">
                   {user.profile.username && !isSuspended && (
-                    <a
-                      className="btn btn-default"
+                    <Button
+                      as="a"
+                      variant="default"
                       href={`/profile/${user.profile.username}`}
                     >
                       Public profile
-                    </a>
+                    </Button>
                   )}
                   <div
                     className="admin-user-action-group"
@@ -822,35 +824,35 @@ export default class AdminUser extends Component<
                     {[
                       {
                         role: 'suspended',
-                        color: 'danger',
+                        color: 'danger' as const,
                         label: 'Suspend',
                       },
                       ...(!isSuspended || isShadowbanned
                         ? [
                             {
                               role: 'shadowban',
-                              color: 'danger',
+                              color: 'danger' as const,
                               label: 'Shadow ban',
                             },
                           ]
                         : []),
                     ].map(({ role, color, label }) =>
                       role === 'shadowban' && isShadowbanned ? (
-                        <button
+                        <Button
                           key={role}
                           type="button"
-                          className="btn btn-default"
+                          variant="default"
                           disabled={isSettingUserRole}
                           onClick={() =>
                             this.handleUserRoleChange('shadowban', 'remove')
                           }
                         >
                           Unshadowban
-                        </button>
+                        </Button>
                       ) : (
-                        <button
+                        <Button
                           key={role}
-                          className={`btn btn-${color}`}
+                          variant={color}
                           disabled={
                             user.profile.roles.includes(role) ||
                             isSettingUserRole
@@ -858,7 +860,7 @@ export default class AdminUser extends Component<
                           onClick={() => this.handleUserRoleChange(role)}
                         >
                           {label}
-                        </button>
+                        </Button>
                       ),
                     )}
                   </div>
@@ -876,10 +878,10 @@ export default class AdminUser extends Component<
                           label: 'Make volunteer alumni',
                         },
                       ].map(({ role, label }) => (
-                        <button
+                        <Button
                           key={role}
                           type="button"
-                          className="btn btn-default"
+                          variant="default"
                           disabled={
                             user.profile.roles.includes(role) ||
                             isSettingUserRole
@@ -887,16 +889,16 @@ export default class AdminUser extends Component<
                           onClick={() => this.handleUserRoleChange(role)}
                         >
                           {label}
-                        </button>
+                        </Button>
                       ))}
                     <Tooltip
                       id="welcome-team-role-help"
                       placement="bottom"
                       tooltip={ROLE_DESCRIPTIONS['welcome-team']}
                     >
-                      <button
+                      <Button
                         type="button"
-                        className="btn btn-default"
+                        variant="default"
                         aria-describedby="welcome-team-role-description"
                         disabled={isSettingUserRole}
                         onClick={() =>
@@ -909,7 +911,7 @@ export default class AdminUser extends Component<
                         {this.hasRole('welcome-team')
                           ? 'Remove greeter'
                           : 'Make greeter'}
-                      </button>
+                      </Button>
                     </Tooltip>
                     <span
                       id="welcome-team-role-description"
@@ -917,9 +919,9 @@ export default class AdminUser extends Component<
                     >
                       {ROLE_DESCRIPTIONS['welcome-team']}
                     </span>
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-default"
+                      variant="default"
                       disabled={isSettingUserRole}
                       title={ROLE_DESCRIPTIONS['support-team']}
                       onClick={() =>
@@ -932,7 +934,7 @@ export default class AdminUser extends Component<
                       {this.hasRole('support-team')
                         ? 'Remove from support team'
                         : 'Add to support team'}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -1237,19 +1239,23 @@ export default class AdminUser extends Component<
                               ]}
                             />
                             <p>
-                              <a
+                              <Button
+                                as="a"
                                 href={`/search?offer=${offer._id}`}
-                                className="btn btn-sm btn-default"
+                                variant="default"
+                                size="sm"
                               >
                                 Show offer on map
-                              </a>
+                              </Button>
                               {formattedLocation && (
-                                <a
+                                <Button
+                                  as="a"
                                   href={`/search?location=${searchLocation}`}
-                                  className="btn btn-sm btn-default"
+                                  variant="default"
+                                  size="sm"
                                 >
                                   Show location on map
-                                </a>
+                                </Button>
                               )}
                             </p>
                             <details>
@@ -1384,17 +1390,17 @@ export default class AdminUser extends Component<
                 )}
               </Modal.Body>
               <Modal.Footer>
-                <button
+                <Button
                   type="button"
-                  className="btn btn-default"
+                  variant="default"
                   onClick={this.cancelUserRoleChange}
                   disabled={isSettingUserRole}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
-                  className="btn btn-danger"
+                  variant="danger"
                   onClick={this.confirmUserRoleChange}
                   disabled={isSettingUserRole}
                 >
@@ -1403,7 +1409,7 @@ export default class AdminUser extends Component<
                     : roleChangeSucceeded
                       ? 'Close'
                       : roleChangeConfirmation.confirmLabel}
-                </button>
+                </Button>
               </Modal.Footer>
             </>
           )}

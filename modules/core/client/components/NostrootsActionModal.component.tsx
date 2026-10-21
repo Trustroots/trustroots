@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Button } from '@trustroots/ui';
 
 /**
  * Action-gate modal shown when a user tries to perform an action that requires
@@ -74,31 +75,40 @@ export default function NostrootsActionModal({
         </p>
 
         <div className="nostroots-modal-actions">
-          <a
+          <Button
+            as="a"
             ref={ctaRef}
             href="https://apps.apple.com/us/app/nostroots/id6755037304"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary btn-block nostroots-modal-btn"
+            variant="primary"
+            block
+            className="nostroots-modal-btn"
           >
             Download for iOS
-          </a>
-          <a
+          </Button>
+          <Button
+            as="a"
             href="https://play.google.com/store/apps/details?id=org.trustroots.nostroots"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-primary btn-block nostroots-modal-btn"
+            variant="primary"
+            block
+            className="nostroots-modal-btn"
           >
             Download for Android
-          </a>
-          <a
+          </Button>
+          <Button
+            as="a"
             href={webAppUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-default btn-block nostroots-modal-btn"
+            variant="default"
+            block
+            className="nostroots-modal-btn"
           >
             Open web app
-          </a>
+          </Button>
         </div>
 
         <button

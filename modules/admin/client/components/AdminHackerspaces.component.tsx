@@ -22,6 +22,7 @@ import {
   type AddressablePlaceEvent,
   type SpaceApiPlace,
 } from '../services/hackerspaces-nostr.client.service';
+import { Button } from '@trustroots/ui';
 
 type NostrEvent = AddressablePlaceEvent;
 type Space = {
@@ -406,14 +407,14 @@ export default function AdminHackerspaces() {
           aria-label="Signing identity"
         >
           <h3>Signing identity</h3>
-          <button
+          <Button
             type="button"
-            className="btn btn-default"
+            variant="default"
             disabled={busy}
             onClick={connectSigner}
           >
             Connect or refresh signer
-          </button>
+          </Button>
           {signer ? (
             <>
               <p>All approved events will be signed with this key:</p>
@@ -437,16 +438,16 @@ export default function AdminHackerspaces() {
           )}
         </section>
         <p>
-          <button className="btn btn-default" disabled={busy} onClick={preview}>
+          <Button variant="default" disabled={busy} onClick={preview}>
             Fetch preview
-          </button>{' '}
-          <button
-            className="btn btn-primary"
+          </Button>{' '}
+          <Button
+            variant="primary"
             disabled={busy || !toPublish || !signer}
             onClick={publish}
           >
             Sign and publish approved changes
-          </button>
+          </Button>
         </p>
         <p role="status" aria-live="polite">
           {status}

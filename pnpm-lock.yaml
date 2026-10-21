@@ -42,6 +42,9 @@ importers:
       '@tanstack/react-router':
         specifier: 1.170.44
         version: 1.170.44(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:packages/ui
       agenda:
         specifier: 4.4.0
         version: 4.4.0(supports-color@5.5.0)
@@ -481,6 +484,9 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -490,6 +496,9 @@ importers:
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -505,6 +514,9 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -520,6 +532,9 @@ importers:
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -538,6 +553,9 @@ importers:
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -553,6 +571,9 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -568,6 +589,9 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -583,6 +607,9 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -598,6 +625,9 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -631,6 +661,9 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -648,6 +681,9 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -666,6 +702,9 @@ importers:
       '@trustroots/search':
         specifier: workspace:*
         version: link:../search
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -705,6 +744,11 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+
+  packages/ui: {}
 
 packages:
 

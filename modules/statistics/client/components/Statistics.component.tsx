@@ -2,6 +2,7 @@
 import { Trans, useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import { get, type StatisticsResponse } from '../api/statistics.api';
@@ -446,12 +447,14 @@ export default function Statistics({
                     </p>
                     {isAuthenticated && (
                       <p>
-                        <a
-                          className="btn btn-sm btn-default"
+                        <Button
+                          as="a"
+                          variant="default"
+                          size="sm"
                           href="/profile/edit/account"
                         >
                           {t('Subscribe to newsletter')}
-                        </a>
+                        </Button>
                       </p>
                     )}
                   </>

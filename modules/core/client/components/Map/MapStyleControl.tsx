@@ -3,6 +3,7 @@ import { useMap, type MapRef } from 'react-map-gl/mapbox';
 import type { TFunction } from 'i18next';
 import { withTranslation } from 'react-i18next';
 import React from 'react';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import {
@@ -69,10 +70,9 @@ class MapStyleControl extends React.Component<
         onClick={event => event.stopPropagation()}
       >
         {!isOpen && (
-          <button
+          <Button
             aria-expanded={isOpen}
             aria-haspopup="true"
-            className="btn"
             onClick={this.open}
             onMouseEnter={() => !this.props.map?.isMoving() && this.open()}
             aria-label={t('Change map style')}
@@ -85,7 +85,7 @@ class MapStyleControl extends React.Component<
             {typeof mapStyle === 'string'
               ? mapboxStyleNames[mapStyle]
               : mapStyle.name}
-          </button>
+          </Button>
         )}
         {isOpen && (
           <div

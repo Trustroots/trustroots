@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 
 // Internal dependencies
+import { Button } from '@trustroots/ui';
 import LanguageSwitch from './LanguageSwitch';
 
 export default function NavigationLoggedOut({
@@ -24,20 +25,22 @@ export default function NavigationLoggedOut({
         <span className="header-welcome-text hidden-xs" dir="auto">
           {t<string>('New to Trustroots?')}
         </span>
-        <a href="/signup" className="btn btn-lg btn-default">
+        <Button as="a" href="/signup" size="lg" variant="default">
           {t<string>('Join')}
-        </a>
-        <a href="/signin" className="btn btn-lg btn-inverse">
+        </Button>
+        <Button as="a" href="/signin" size="lg" variant="inverse">
           {t<string>('Login')}
-        </a>
+        </Button>
         {currentPath !== '/' && (
-          <a
+          <Button
+            as="a"
             aria-label={t<string>('Read more about Trustroots')}
-            className="btn btn-link header-more-text hidden-xs"
+            variant="link"
+            className="header-more-text hidden-xs"
             href="/"
           >
             {t<string>('Read more')}
-          </a>
+          </Button>
         )}
         <div className="flex-side language-switch">
           <LanguageSwitch buttonStyle="inverse" />

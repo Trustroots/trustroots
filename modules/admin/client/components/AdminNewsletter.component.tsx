@@ -21,6 +21,7 @@ import AdminHeader from './AdminHeader.component';
 import { getErrorMessage } from '@/modules/core/client/api/http-client';
 import { newsletterAudienceFilename } from '../utils/newsletter-audience-filename';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
+import { Button } from '@trustroots/ui';
 
 const ALL_SUBSCRIBERS_FILE_NAME = 'newsletter-subscribers.csv';
 const CIRCLE_SUBSCRIBERS_FILE_PREFIX = 'newsletter-circle-';
@@ -486,9 +487,9 @@ export default function AdminNewsletter() {
             <p className="text-danger">{audienceErrorMessage}</p>
           )}
 
-          <button className="btn btn-primary" type="submit">
+          <Button variant="primary" type="submit">
             Count recipients
-          </button>
+          </Button>
           <div className="alert alert-info" style={{ marginTop: '12px' }}>
             {isAudienceCountLoading && <span>Counting recipients…</span>}
             {!isAudienceCountLoading && audienceCount === null && (
@@ -501,28 +502,28 @@ export default function AdminNewsletter() {
               </span>
             )}
             {audienceCount !== null && (
-              <button
-                className="btn btn-default"
+              <Button
+                variant="default"
                 onClick={() => onAudienceExport()}
                 style={{ marginLeft: '12px' }}
                 type="button"
               >
                 Export audience CSV
-              </button>
+              </Button>
             )}
           </div>
         </form>
 
         <h3>Export subscribers</h3>
         <p>
-          <button
-            className="btn btn-default"
+          <Button
+            variant="default"
             disabled={isExportingAll || isExportingCircle}
             onClick={() => onExportAll()}
             type="button"
           >
             {isExportingAll ? 'Exporting…' : 'Export all subscribers CSV'}
-          </button>
+          </Button>
         </p>
 
         <form className="form-inline" onSubmit={event => onExportCircle(event)}>
@@ -538,14 +539,14 @@ export default function AdminNewsletter() {
             type="text"
             value={circleId}
           />
-          <button
-            className="btn btn-default"
+          <Button
+            variant="default"
             disabled={isExportingAll || isExportingCircle}
             style={{ marginLeft: '8px' }}
             type="submit"
           >
             {isExportingCircle ? 'Exporting…' : 'Export circle subscribers CSV'}
-          </button>
+          </Button>
         </form>
 
         {exportErrorMessage && (
@@ -578,13 +579,9 @@ export default function AdminNewsletter() {
               emailAddress, or address field.
             </p>
           </div>
-          <button
-            className="btn btn-default"
-            disabled={isUploading}
-            type="submit"
-          >
+          <Button variant="default" disabled={isUploading} type="submit">
             {isUploading ? 'Checking…' : 'Check recipients'}
-          </button>
+          </Button>
         </form>
 
         {errorMessage && (
@@ -601,8 +598,8 @@ export default function AdminNewsletter() {
               excluded.
             </p>
             <p>
-              <button
-                className="btn btn-default"
+              <Button
+                variant="default"
                 onClick={() =>
                   triggerRecipientDownload(
                     ELIGIBLE_FILE_PREFIX,
@@ -613,9 +610,9 @@ export default function AdminNewsletter() {
                 type="button"
               >
                 Download eligible {result.outputFormat.toUpperCase()}
-              </button>{' '}
-              <button
-                className="btn btn-default"
+              </Button>{' '}
+              <Button
+                variant="default"
                 onClick={() =>
                   triggerRecipientDownload(
                     EXCLUDED_FILE_PREFIX,
@@ -626,7 +623,7 @@ export default function AdminNewsletter() {
                 type="button"
               >
                 Download excluded {result.outputFormat.toUpperCase()}
-              </button>
+              </Button>
             </p>
           </div>
         )}

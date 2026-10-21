@@ -2,6 +2,7 @@ import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
 
 export default function Volunteering() {
@@ -45,12 +46,13 @@ export default function Volunteering() {
             </p>
             <ul className="list-inline">
               <li>
-                <a
+                <Button
+                  as="a"
                   href="/support?category=volunteering"
-                  className="btn btn-primary"
+                  variant="primary"
                 >
                   {t('I’d like to help run Trustroots')}
-                </a>
+                </Button>
               </li>
               <li>
                 <a href="https://team.trustroots.org/">{t('Team Guide')}</a>

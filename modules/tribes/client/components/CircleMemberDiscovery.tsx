@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
@@ -145,13 +146,13 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
       {!isLoading && hasError && (
         <div className="circle-member-error" role="alert">
           <p>{t('Could not load circle members. Please try again.')}</p>
-          <button
+          <Button
             type="button"
-            className="btn btn-default"
+            variant="default"
             onClick={() => setAttempt(value => value + 1)}
           >
             {t('Try again')}
-          </button>
+          </Button>
         </div>
       )}
       {!isLoading &&

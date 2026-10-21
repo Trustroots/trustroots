@@ -1,6 +1,7 @@
 // External dependencies
 import { withTranslation } from 'react-i18next';
 import React, { Component } from 'react';
+import { Button } from '@trustroots/ui';
 import type { Offer } from '../api/offers.api';
 
 // Internal dependencies
@@ -52,13 +53,17 @@ export class OffersPresentational extends Component<
       <>
         {/* Edit button */}
         {isOwnOffer && (
-          <a
+          <Button
+            as="a"
             aria-label={t('Modify hosting offer')}
-            className="btn btn-inverse-primary btn-round btn-raised pull-right"
+            variant="inverse-primary"
+            round
+            raised
+            className="pull-right"
             href="/offer/host"
           >
             <span className="icon-edit"></span>
-          </a>
+          </Button>
         )}
         <ReadMorePanel
           content={offer.description ?? ''}
@@ -80,13 +85,17 @@ export class OffersPresentational extends Component<
       <>
         {/* Edit button */}
         {isOwnOffer && (
-          <a
+          <Button
+            as="a"
             aria-label={t('Modify hosting offer')}
-            className="btn btn-inverse-primary btn-round btn-raised pull-right"
+            variant="inverse-primary"
+            round
+            raised
+            className="pull-right"
             href="/offer/host"
           >
             <span className="icon-edit"></span>
-          </a>
+          </Button>
         )}
 
         {/* User has written explanation */}
@@ -126,16 +135,17 @@ export class OffersPresentational extends Component<
           <div className="text-center">
             <br />
             <hr className="hr-gray hr-tight hr-xs" />
-            <a
+            <Button
+              as="a"
               href={'/offer/host?status=yes'}
-              className="btn btn-inverse-primary"
+              variant="inverse-primary"
             >
               {t('Start hosting travellers')}
-            </a>
+            </Button>
             &nbsp;
-            <a href={'/offer/meet'} className="btn btn-inverse-primary">
+            <Button as="a" href={'/offer/meet'} variant="inverse-primary">
               {t('Meet people')}
-            </a>
+            </Button>
           </div>
         )}
       </>

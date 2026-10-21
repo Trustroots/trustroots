@@ -6,6 +6,7 @@ import * as api from '../api/admin-notes.api';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from './UserLink.component';
+import { Button } from '@trustroots/ui';
 
 interface AdminNote {
   _id: string;
@@ -83,13 +84,13 @@ export default function AdminNotes({
             placeholder="Write a note"
             text={newNote}
           />
-          <button
-            className="btn btn-default"
+          <Button
+            variant="default"
             disabled={isFetching || !newNote}
             onClick={addNote}
           >
             Save note
-          </button>
+          </Button>
           {isFetching && <p>Loading notes...</p>}
           {!isFetching &&
             notes &&

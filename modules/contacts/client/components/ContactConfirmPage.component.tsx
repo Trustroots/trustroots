@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -184,15 +185,16 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
 
             {canConfirm && (
               <div className="text-center">
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-lg btn-primary"
+                  variant="primary"
+                  size="lg"
                   disabled={isLoading}
                 >
                   {isLoading
                     ? (t('Wait a moment…') as string)
                     : (t('Confirm contact') as string)}
-                </button>
+                </Button>
                 <br />
                 <br />
                 <a

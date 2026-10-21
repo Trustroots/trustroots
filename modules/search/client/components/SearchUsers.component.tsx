@@ -1,6 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
@@ -75,9 +76,10 @@ export default function SearchUsers() {
         />
         <span className="input-group-btn">
           <span>
-            <button
+            <Button
               aria-label={t('Clear members search')}
-              className="btn btn-lg btn-default"
+              size="lg"
+              variant="default"
               disabled={
                 isSearching || searchQuery.length < MINIMUM_QUERY_LENGTH
               }
@@ -90,12 +92,13 @@ export default function SearchUsers() {
               type="button"
             >
               <i className="icon-close"></i>
-            </button>
+            </Button>
           </span>
           <span>
-            <button
+            <Button
               aria-label={t('Search members')}
-              className="btn btn-lg btn-default"
+              size="lg"
+              variant="default"
               disabled={
                 isSearching || searchQuery.length < MINIMUM_QUERY_LENGTH
               }
@@ -103,7 +106,7 @@ export default function SearchUsers() {
             >
               <i className="icon-search"></i>
               <span className="hidden-xs">{String(t('Search'))}</span>
-            </button>
+            </Button>
           </span>
         </span>
       </div>

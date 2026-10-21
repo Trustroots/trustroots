@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
+import { Button } from '@trustroots/ui';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -323,8 +324,9 @@ export default function SearchSidebarResults({
       )}
 
       {(offer || communityNote) && (
-        <button
-          className="btn btn-default search-results-back"
+        <Button
+          variant="default"
+          className="search-results-back"
           onClick={() => {
             onBackToOffers();
             window.requestAnimationFrame(() => {
@@ -344,16 +346,18 @@ export default function SearchSidebarResults({
           type="button"
         >
           Back to results
-        </button>
+        </Button>
       )}
 
-      <button
-        className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+      <Button
+        action
+        variant="primary"
+        className="visible-xs-block search-sidebar-close"
         onClick={onCloseSidebar}
         type="button"
       >
         Back to map
-      </button>
+      </Button>
     </section>
   );
 }

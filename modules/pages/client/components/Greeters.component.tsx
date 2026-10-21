@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import type { PageTranslator, PageUser } from '../types';
 import { getGreeters, type Greeter } from '../api/greeters.api';
@@ -84,12 +85,14 @@ export default function Greeters({ user }: { user?: PageUser | null }) {
         <div className="col-xs-12 text-center">
           <h2>{t('Want to join the greeters?')}</h2>
           <p>
-            <a
-              className="btn btn-lg btn-primary"
+            <Button
+              as="a"
+              size="lg"
+              variant="primary"
               href="/support?category=volunteering"
             >
               {t('Want to join?')}
-            </a>
+            </Button>
           </p>
         </div>
       </div>

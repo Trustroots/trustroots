@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import type { TribeMembership } from '../types';
@@ -67,13 +68,14 @@ export default function MembershipsList({
             ))}
           </div>
           {limit && sortedMemberships.length > limit && (
-            <button
+            <Button
               type="button"
-              className="panel-more-fade btn btn-link"
+              variant="link"
+              className="panel-more-fade"
               onClick={() => setLimit(undefined)}
             >
               {t('Show more...')}
-            </button>
+            </Button>
           )}
         </ul>
       )}
@@ -92,17 +94,17 @@ export default function MembershipsList({
               </p>
               <br />
               <br />
-              <a href="/circles" className="btn btn-primary">
+              <Button as="a" href="/circles" variant="primary">
                 {t('Join circles')}
-              </a>
+              </Button>
             </div>
           )}
           {sortedMemberships.length > 0 && (
             <div>
               <hr className="hr-gray hr-tight" />
-              <a href="/circles" className="btn btn-sm btn-default">
+              <Button as="a" href="/circles" variant="default" size="sm">
                 {t('Join more circles')}
-              </a>
+              </Button>
             </div>
           )}
         </div>

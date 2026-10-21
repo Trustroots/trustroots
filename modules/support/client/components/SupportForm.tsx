@@ -1,6 +1,7 @@
 // External dependencies
 import React, { useState, useEffect, useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import { send } from '../api/support.api';
@@ -323,13 +324,14 @@ export default function SupportForm({ user }: SupportFormProps) {
 
           <div className="form-group">
             <div className="offset-sm-3 col-sm-9">
-              <button
+              <Button
                 type="submit"
-                className="btn btn-lg btn-primary"
+                variant="primary"
+                size="lg"
                 disabled={isSending || supportMessage?.trim()?.length === 0}
               >
                 {isSending ? t<string>('Wait…') : t<string>('Send')}
-              </button>
+              </Button>
             </div>
           </div>
         </form>

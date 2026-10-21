@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@trustroots/core": "workspace:*",
+    "@trustroots/ui": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }

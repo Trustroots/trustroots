@@ -1,5 +1,5 @@
 // External dependencies
-import classnames from 'classnames';
+import { Button } from '@trustroots/ui';
 import React from 'react';
 
 // Internal dependencies
@@ -24,16 +24,15 @@ export default function MapStyleButton({
   styleName,
 }: MapStyleButtonProps) {
   return (
-    <button
-      className={classnames('btn', 'btn-default', {
-        'is-active': selectedStyle === styleName,
-      })}
+    <Button
+      variant="default"
+      className={selectedStyle === styleName ? 'is-active' : undefined}
       disabled={disabled}
       onClick={onClick}
       type="button"
     >
       <MapIcon mapboxStyle={iconStyle} />
       {label}
-    </button>
+    </Button>
   );
 }

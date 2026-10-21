@@ -1,6 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import Icon from '@/modules/core/client/components/Icon';
@@ -22,14 +23,16 @@ export default function NoMeets() {
         <br />
       </p>
       <p>
-        <a
-          className="btn btn-action btn-inverse-primary"
+        <Button
+          as="a"
+          action
+          variant="inverse-primary"
           href="https://nos.trustroots.org/"
           target="_blank"
           rel="noreferrer"
         >
           {String(t('Add it to map!'))}
-        </a>
+        </Button>
         <br />
         <br />
       </p>

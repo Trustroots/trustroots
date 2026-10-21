@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
 import AdminHeader from './AdminHeader.component';
+import { Button } from '@trustroots/ui';
 
 const suggestedColours = [
   '1e3a8a',
@@ -136,13 +137,13 @@ export default function AdminCircles() {
               Create and maintain the public circle catalogue.
             </p>
           </div>
-          <button
-            className="btn btn-default"
+          <Button
+            variant="default"
             onClick={() => editCircle(emptyCircle)}
             type="button"
           >
             New circle
-          </button>
+          </Button>
         </div>
         {message && <p className="text-success">{message}</p>}
         {error && <p className="text-danger">{error}</p>}
@@ -281,13 +282,9 @@ export default function AdminCircles() {
                   value={circle.attribution_url || ''}
                 />
               </div>
-              <button
-                className="btn btn-primary"
-                disabled={isSaving}
-                type="submit"
-              >
+              <Button variant="primary" disabled={isSaving} type="submit">
                 {isSaving ? 'Saving…' : 'Save circle'}
-              </button>
+              </Button>
             </form>
           </div>
         </div>

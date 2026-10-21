@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
@@ -221,14 +222,14 @@ export default function ThreadReply({
                   <p>
                     {t<string>('Failed to load preview. Please try again.')}
                   </p>
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-default"
+                    variant="default"
                     disabled={sending}
                     onClick={showPreview}
                   >
                     {t<string>('Retry')}
-                  </button>
+                  </Button>
                 </div>
               ) : previewContent === null ? (
                 <p role="status">{t<string>('Loading preview…')}</p>
@@ -259,30 +260,33 @@ export default function ThreadReply({
         </div>
       </div>
       <div className="col-xs-2 col-sm-12 message-reply-actions">
-        <button
+        <Button
           ref={editButton}
           type="button"
-          className="btn btn-default message-preview-toggle"
+          variant="default"
+          className="message-preview-toggle"
           aria-pressed={previewing}
           disabled={sending || (!previewing && plainTextLength(content) === 0)}
           onClick={previewing ? edit : showPreview}
         >
           {previewing ? t<string>('Edit') : t<string>('Preview')}
-        </button>
+        </Button>
         <small className="text-muted hidden-xs">
           {t<string>(
             'Highlight text to change its appearance. Ctrl+Enter to send.',
           )}
         </small>
-        <button
+        <Button
           id="messageReplySubmit"
-          className="btn btn-md btn-primary message-reply-btn"
+          variant="primary"
+          size="md"
+          className="message-reply-btn"
           type="submit"
           disabled={sending}
         >
           <i className="icon-send" />
           <span className="hidden-xs">&nbsp;{t<string>('Send')}</span>
-        </button>
+        </Button>
       </div>
     </form>
   );

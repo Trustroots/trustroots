@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import React from 'react';
 import styled from 'styled-components';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import { DAYS_TO_REPLY } from '../../utils/constants';
@@ -151,12 +152,13 @@ export default function Experience({
             </PendingNotice>
             {userFrom?.username && (
               <p>
-                <a
-                  className="btn btn-primary"
+                <Button
+                  as="a"
+                  variant="primary"
                   href={getProfileExperiencesPath(userFrom.username)}
                 >
                   {t('Write about your experience with them') as string}
-                </a>
+                </Button>
               </p>
             )}
           </>
@@ -194,12 +196,13 @@ export default function Experience({
       </div>
       {!response && isPublicExperience && onReceiverProfile && (
         <div className="panel-footer text-right">
-          <a
+          <Button
+            as="a"
             href={getProfileExperiencesPath(userFrom.username)}
-            className="btn btn-default"
+            variant="default"
           >
             {t('Write about your experience') as string}
-          </a>
+          </Button>
         </div>
       )}
     </div>

@@ -4,6 +4,7 @@ import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 
 // Internal dependencies`
+import { Button } from '@trustroots/ui';
 import Board from './PageBoard';
 import ManifestoText from './ManifestoText.component.js';
 
@@ -129,12 +130,15 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
                 <p>
                   <br />
                   <br />
-                  <a
+                  <Button
+                    as="a"
                     href="/signup"
-                    className="btn btn-lg btn-action btn-inverse"
+                    size="lg"
+                    action
+                    variant="inverse"
                   >
                     {t('Join Trustroots')}
-                  </a>
+                  </Button>
                 </p>
               )}
             </div>

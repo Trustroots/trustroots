@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import BirthdateSelect from '@/modules/core/client/components/BirthdateSelect.component';
 import TrEditor from '@/modules/core/client/components/TrEditor';
@@ -93,13 +94,15 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
         </div>
 
         <p>
-          <button
+          <Button
             type="submit"
-            className="btn btn-lg btn-primary profile-editor-save"
+            variant="primary"
+            size="lg"
+            className="profile-editor-save"
             disabled={!hasChanges}
           >
             {t('Save')}
-          </button>
+          </Button>
         </p>
 
         <div className="panel panel-default">
@@ -209,13 +212,15 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
           </div>
         </div>
 
-        <button
+        <Button
           type="submit"
-          className="btn btn-lg btn-primary profile-editor-save"
+          variant="primary"
+          size="lg"
+          className="profile-editor-save"
           disabled={!hasChanges}
         >
           {t('Save')}
-        </button>
+        </Button>
 
         {statusMessage && (
           <p className="help-block" role="status">

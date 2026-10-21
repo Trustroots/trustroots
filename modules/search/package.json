@@ -14,6 +14,7 @@
     "@trustroots/core": "workspace:*",
     "@trustroots/offers": "workspace:*",
     "@trustroots/tribes": "workspace:*",
+    "@trustroots/ui": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }

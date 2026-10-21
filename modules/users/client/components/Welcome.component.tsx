@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 export default function Welcome() {
   const { t } = useTranslation('users') as {
@@ -34,9 +35,9 @@ export default function Welcome() {
             {t('Go travel & spread the word!')}
             <br />
             <br />
-            <a href="/profile/edit" className="btn btn-lg btn-primary">
+            <Button as="a" href="/profile/edit" variant="primary" size="lg">
               {t('Fill your profile')}
-            </a>
+            </Button>
           </p>
         </div>
       </div>

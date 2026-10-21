@@ -8,6 +8,7 @@ import {
 } from '../api/location-corrections.api';
 import AdminHeader from './AdminHeader.component';
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { Button } from '@trustroots/ui';
 
 function offerEditUrl(offer: LocationCorrectionOffer): string {
   return offer.type === 'host' ? '/offer/host' : `/offer/meet/${offer._id}`;
@@ -154,13 +155,14 @@ export default function AdminLocationCorrections() {
                         </a>{' '}
                         ({candidate.username}) · {candidate.offers.length} offer
                         {candidate.offers.length === 1 ? '' : 's'}
-                        <button
-                          className="btn btn-default pull-right"
+                        <Button
+                          variant="default"
+                          className="pull-right"
                           type="button"
                           onClick={() => review(candidate)}
                         >
                           Review {candidate.username}
-                        </button>
+                        </Button>
                       </div>
                     </li>
                   ))}
@@ -220,21 +222,21 @@ export default function AdminLocationCorrections() {
                   value={content}
                 />
                 {/* eslint-enable jsx-a11y/no-autofocus */}
-                <button
-                  className="btn btn-primary"
+                <Button
+                  variant="primary"
                   disabled={isSending || !content.trim()}
                   type="submit"
                 >
                   {isSending ? 'Sending…' : 'Send message'}
-                </button>{' '}
-                <button
-                  className="btn btn-default"
+                </Button>{' '}
+                <Button
+                  variant="default"
                   type="button"
                   disabled={isSending}
                   onClick={() => setSelected(null)}
                 >
                   Cancel
-                </button>
+                </Button>
               </form>
             </Modal.Body>
           </Modal>

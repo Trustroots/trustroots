@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 import '@/config/client/i18n';
 
 export default function Activate() {
@@ -33,13 +34,16 @@ export default function Activate() {
         <p>
           <br />
           <small>
-            <a
-              className="btn btn-xs btn-link text-muted"
+            <Button
+              as="a"
+              variant="link"
+              size="xs"
+              className="text-muted"
               href="/support"
               aria-label={t('Support')}
             >
               {t('Help!')}
-            </a>
+            </Button>
           </small>
         </p>
       </div>

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
 import HostingAndMeetPanel from './HostingAndMeetPanel.component';
@@ -88,13 +89,15 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
         </div>
 
         <p>
-          <button
+          <Button
             type="submit"
-            className="btn btn-lg btn-primary profile-editor-save"
+            variant="primary"
+            size="lg"
+            className="profile-editor-save"
             disabled={!hasChanges}
           >
             {t('Save')}
-          </button>
+          </Button>
         </p>
       </form>
 

@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
 
 // Internal dependencies
+import { Button } from '@trustroots/ui';
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
@@ -196,12 +197,15 @@ export default function Home({
                     <h4 className="home-subtagline">
                       {t('Sharing, hosting and getting people together.')}
                     </h4>
-                    <a
+                    <Button
+                      as="a"
                       href={getSignupUrl(circleRoute)}
-                      className="btn btn-action btn-default home-join hidden-xs"
+                      action
+                      variant="default"
+                      className="home-join hidden-xs"
                     >
                       {t('Join Trustroots now')}
-                    </a>
+                    </Button>
                     {/*
                   {!isNativeMobileApp && (
                     <div className="home-apps">
@@ -316,9 +320,9 @@ export default function Home({
                   tells others what you're interested in.`)}
                     <br />
                     <br />
-                    <a href="/circles" className="btn btn-default btn-lg">
+                    <Button as="a" href="/circles" variant="default" size="lg">
                       {t('More circles')}
-                    </a>
+                    </Button>
                   </p>
                 </div>
               </div>
@@ -370,12 +374,15 @@ export default function Home({
                 <p>
                   <br />
                   <br />
-                  <a
+                  <Button
+                    as="a"
                     href={getSignupUrl(circleRoute)}
-                    className="btn btn-lg btn-action btn-default"
+                    size="lg"
+                    action
+                    variant="default"
                   >
                     {t('Join Trustroots')}
-                  </a>
+                  </Button>
                 </p>
               )}
             </div>

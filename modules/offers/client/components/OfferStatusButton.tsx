@@ -2,6 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import React from 'react';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
@@ -35,8 +36,10 @@ export default function OfferStatusButton({
       placement="left"
       tooltip={isOwnOffer ? t('Change') : t('Send a message')}
     >
-      <a
-        className={classnames('btn btn-sm pull-right btn-offer-hosting', {
+      <Button
+        as="a"
+        size="sm"
+        className={classnames('pull-right btn-offer-hosting', {
           'btn-offer-hosting-no': !status || status === 'no',
           'btn-offer-hosting-yes': status === 'yes',
           'btn-offer-hosting-maybe': status === 'maybe',
@@ -46,7 +49,7 @@ export default function OfferStatusButton({
         {(!status || status === 'no') && String(t('Cannot host currently'))}
         {status === 'yes' && String(t('Can host'))}
         {status === 'maybe' && String(t('Might be able to host'))}
-      </a>
+      </Button>
     </AccessibleTooltip>
   );
 }

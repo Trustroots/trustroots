@@ -25,6 +25,7 @@ import {
   resolveExactMemberId,
 } from './userSearch.helpers';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
+import { Button } from '@trustroots/ui';
 
 interface AdminMessage {
   _id: string;
@@ -212,8 +213,8 @@ export default function AdminMessages() {
                 type="text"
                 value={scammerUsername}
               />{' '}
-              <button
-                className="btn btn-default"
+              <Button
+                variant="default"
                 disabled={
                   !scammerUsername.trim() ||
                   isLoadingRecipients ||
@@ -222,7 +223,7 @@ export default function AdminMessages() {
                 type="submit"
               >
                 {isLoadingRecipients ? 'Looking up…' : 'Show recipients'}
-              </button>
+              </Button>
             </form>
             {scammerRecipients && (
               <form onSubmit={event => sendWarning(event, scammerRecipients)}>
@@ -251,13 +252,13 @@ export default function AdminMessages() {
                       rows={3}
                       value={warningContent}
                     />
-                    <button
-                      className="btn btn-warning"
+                    <Button
+                      variant="warning"
                       disabled={!warningContent.trim() || isSendingWarning}
                       type="submit"
                     >
                       {isSendingWarning ? 'Sending…' : 'Send warning to all'}
-                    </button>
+                    </Button>
                   </>
                 )}
               </form>
@@ -292,13 +293,14 @@ export default function AdminMessages() {
             type="text"
             value={member2}
           />
-          <button
-            className="btn btn-lg btn-default"
+          <Button
+            variant="default"
+            size="lg"
             disabled={!member1.trim() || !member2.trim()}
             type="submit"
           >
             Read
-          </button>
+          </Button>
         </form>
 
         {!queried && messages.length === 0 && (

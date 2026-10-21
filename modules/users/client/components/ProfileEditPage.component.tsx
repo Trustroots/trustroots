@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import {
@@ -78,9 +79,9 @@ function ProfileEditSidebar({
       <p>
         <br />
         <br />
-        <a href={`/profile/${username}`} className="btn btn-block btn-default">
+        <Button as="a" href={`/profile/${username}`} variant="default" block>
           {t('View profile')}
-        </a>
+        </Button>
       </p>
       {children}
     </>

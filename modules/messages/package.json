@@ -17,6 +17,7 @@
     "@trustroots/references-thread": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/support": "workspace:*",
+    "@trustroots/ui": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }

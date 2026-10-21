@@ -23,6 +23,7 @@
     "@trustroots/search": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/support": "workspace:*",
-    "@trustroots/tribes": "workspace:*"
+    "@trustroots/tribes": "workspace:*",
+    "@trustroots/ui": "workspace:*"
   }
 }

@@ -5,6 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Button } from '@trustroots/ui';
 
 import {
   getCurrentRouteParams,
@@ -397,8 +398,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           role="group"
         >
           <div className="btn-group btn-group-lg" role="group">
-            <button
-              className="btn btn-default"
+            <Button
+              variant="default"
               onClick={() => {
                 setIsPlaceSearchVisible(true);
                 closeSidebar();
@@ -410,22 +411,22 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
             >
               <i className="icon-search"></i>
               Search places
-            </button>
+            </Button>
           </div>
           <div className="btn-group btn-group-lg" role="group">
-            <button
-              className="btn btn-default"
+            <Button
+              variant="default"
               onClick={() => openSidebar('filters')}
               type="button"
             >
               <i className="icon-sliders"></i>
               Filters
-            </button>
+            </Button>
           </div>
           <div className="btn-group btn-group-lg" role="group">
-            <a className="btn btn-default" href="/search/members">
+            <Button as="a" variant="default" href="/search/members">
               Members
-            </a>
+            </Button>
           </div>
         </div>
       </div>
@@ -437,23 +438,25 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
-          <button
-            className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+          <Button
+            action
+            variant="primary"
+            className="visible-xs-block search-sidebar-close"
             onClick={() => setIsPlaceSearchVisible(false)}
             type="button"
           >
             Back to map
-          </button>
+          </Button>
         </div>
       )}
 
       {isUserPublic && (
         <div className="search-sidebar-toggle hidden-xs">
-          <button
+          <Button
             aria-label={
               isSidebarOpen ? 'Hide search filters' : 'Open search filters'
             }
-            className="btn btn-link"
+            variant="link"
             onClick={() => toggleSidebar()}
             title={isSidebarOpen ? 'Collapse side panel' : 'Open side panel'}
             type="button"
@@ -463,7 +466,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
                 isSidebarOpen ? 'icon-left' : 'icon-right'
               }`}
             ></i>
-          </button>
+          </Button>
         </div>
       )}
 

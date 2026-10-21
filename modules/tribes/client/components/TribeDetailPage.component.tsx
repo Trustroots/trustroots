@@ -2,6 +2,7 @@ import RichText from '@/modules/core/client/components/RichText';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styled, { css } from 'styled-components';
+import { Button } from '@trustroots/ui';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import JoinButton from './JoinButton';
@@ -135,9 +136,9 @@ export default function TribeDetailPage({
                 ) as string
               }
             </p>
-            <a href="/circles" className="btn btn-primary">
+            <Button as="a" href="/circles" variant="primary">
               {t('See other circles') as string}
-            </a>
+            </Button>
           </div>
         </div>
       </section>
@@ -166,12 +167,15 @@ export default function TribeDetailPage({
           <div className="container">
             <div className="row no-gutters">
               <div className="col-xs-12">
-                <a
+                <Button
+                  as="a"
                   href="/circles"
-                  className="btn btn-lg btn-link tribe-header-back"
+                  size="lg"
+                  variant="link"
+                  className="tribe-header-back"
                 >
                   <i className="icon-left"></i> {t('More circles') as string}
-                </a>
+                </Button>
               </div>
             </div>
             <div className="row">
@@ -226,26 +230,32 @@ export default function TribeDetailPage({
                       memberLabel={t("You're a member") as string}
                       onUpdated={handleMembershipUpdated}
                     />
-                    <a
-                      className="btn btn-primary"
+                    <Button
+                      as="a"
+                      variant="primary"
                       href={`/search?tribe=${tribe.slug}`}
                     >
                       {t('Find members') as string}
-                    </a>
+                    </Button>
                     {wikiUrl && !isHackersCircle && (
-                      <a
-                        className="btn btn-default"
+                      <Button
+                        as="a"
+                        variant="default"
                         href={wikiUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
                         {t('Circle Wiki') as string}
-                      </a>
+                      </Button>
                     )}
                   </div>
                 ) : (
-                  <a
-                    className="btn btn-lg btn-primary btn-action tribe-join"
+                  <Button
+                    as="a"
+                    size="lg"
+                    variant="primary"
+                    action
+                    className="tribe-join"
                     href={`/signup?tribe=${tribe.slug}`}
                   >
                     {
@@ -253,26 +263,32 @@ export default function TribeDetailPage({
                         label: tribe.label,
                       }) as string
                     }
-                  </a>
+                  </Button>
                 )}
                 {!user && (
-                  <a
-                    className="btn btn-lg btn-link tribe-readmore"
+                  <Button
+                    as="a"
+                    size="lg"
+                    variant="link"
+                    className="tribe-readmore"
                     href={`/?circle=${tribe.slug}`}
                   >
                     <i className="icon-right"></i>{' '}
                     {t('How does it work?') as string}
-                  </a>
+                  </Button>
                 )}
                 {wikiUrl && !user && !isHackersCircle && (
-                  <a
-                    className="btn btn-lg btn-link tribe-readmore"
+                  <Button
+                    as="a"
+                    size="lg"
+                    variant="link"
+                    className="tribe-readmore"
                     href={wikiUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
                     {t('Circle Wiki') as string}
-                  </a>
+                  </Button>
                 )}
                 {user && (
                   <p className="lead tribe-intro">
@@ -380,13 +396,14 @@ export default function TribeDetailPage({
               </li>
             </ul>
             <div className="hackers-circle-resource-footer">
-              <a
+              <Button
+                as="a"
                 {...resourceLinkProps}
-                className="btn btn-default"
+                variant="default"
                 href={wikiUrl}
               >
                 {t('Circle Wiki') as string}
-              </a>
+              </Button>
               <small className="text-muted">
                 {t('Adapted from the') as string}{' '}
                 <a

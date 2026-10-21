@@ -1,5 +1,5 @@
 module.exports = {
-  roots: ['<rootDir>/modules', '<rootDir>/layers'],
+  roots: ['<rootDir>/modules', '<rootDir>/layers', '<rootDir>/packages'],
   watchman: false,
   moduleNameMapper: {
     '^@/(.*)\\.js$': '<rootDir>/$1',
@@ -14,11 +14,15 @@ module.exports = {
     '^.+\\.(css|jpg|png|gif|webp|svg|less|html)$':
       '<rootDir>/jest/jest.empty-module.cts',
   },
-  testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.[jt]s?(x)'],
+  testMatch: [
+    '<rootDir>/modules/*/tests/client/**/*.tests.[jt]s?(x)',
+    '<rootDir>/packages/*/tests/client/**/*.tests.[jt]s?(x)',
+  ],
   testEnvironment: 'jsdom',
   collectCoverageFrom: [
     '<rootDir>/modules/*/client/**/*.{js,ts,tsx}',
     '<rootDir>/layers/shell/**/*.{js,ts,tsx}',
+    '<rootDir>/packages/*/src/**/*.{ts,tsx}',
     '!<rootDir>/modules/core/client/types.d.ts',
     '!<rootDir>/modules/*/tests/**',
     '!<rootDir>/modules/*/client/**/*.d.ts',

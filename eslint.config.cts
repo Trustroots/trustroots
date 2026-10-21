@@ -109,6 +109,7 @@ const legacyConfig = {
       files: [
         'modules/*/client/**/*.{js,ts,tsx}',
         'layers/shell/**/*.{js,ts,tsx}',
+        'packages/ui/src/**/*.{ts,tsx}',
       ],
       extends: ['plugin:jsx-a11y/recommended'],
       rules: {
@@ -204,6 +205,7 @@ const legacyConfig = {
       files: [
         'config/client/**',
         'layers/shell/**',
+        'packages/ui/**',
         'modules/admin/client/**',
         'modules/**/client/components/**',
         'modules/**/client/react-app/**',
@@ -242,6 +244,7 @@ const legacyConfig = {
       files: [
         'modules/*/tests/client/*.{js,ts,tsx}',
         'modules/*/tests/client/**/*.{js,ts,tsx}',
+        'packages/*/tests/client/**/*.{ts,tsx}',
         'testutils/client/*.{js,ts,tsx}',
       ],
       extends: [
@@ -289,6 +292,7 @@ const legacyConfig = {
         'tests/e2e/**/*.{ts,mts}',
         'playwright.config.cts',
         'layers/shell/**/*.{ts,tsx}',
+        'packages/ui/**/*.{ts,tsx}',
         'modules/*/client/**/*.{ts,tsx}',
         'modules/*/shared/**/*.{ts,tsx,mts}',
         'modules/*/server/**/*.mts',

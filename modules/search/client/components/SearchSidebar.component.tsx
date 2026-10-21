@@ -1,5 +1,6 @@
 import React from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { Button } from '@trustroots/ui';
 
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
@@ -56,10 +57,10 @@ export default function SearchSidebar({
   return (
     <>
       <div className="search-sidebar-section">
-        <a className="btn btn-default btn-block" href="/search/members">
+        <Button as="a" variant="default" block href="/search/members">
           <i className="icon-users" aria-hidden="true" /> Find members by name
           or location
-        </a>
+        </Button>
       </div>
       <div className="search-sidebar-section hidden-xs">
         <SearchPlaceInput

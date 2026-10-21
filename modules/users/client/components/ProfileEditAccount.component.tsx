@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import ProfileEditPage from './ProfileEditPage.component';
 import {
@@ -194,17 +195,17 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               </div>
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <button type="submit" className="btn btn-primary">
+                  <Button type="submit" variant="primary">
                     {t('Change email')}
-                  </button>
+                  </Button>
                   {draftUser.emailTemporary && (
-                    <button
+                    <Button
                       type="button"
-                      className="btn btn-default"
+                      variant="default"
                       onClick={handleResendConfirmation}
                     >
                       {t('Resend confirmation')}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -255,13 +256,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               </div>
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <button
+                  <Button
                     type="submit"
-                    className="btn btn-primary"
+                    variant="primary"
                     disabled={draftUser.usernameUpdateAllowed === false}
                   >
                     {t('Change username')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -321,9 +322,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                 onChange={event => setVerifyPassword(event.target.value)}
               />
             </div>
-            <button type="submit" className="btn btn-primary">
+            <Button type="submit" variant="primary">
               {t('Change password')}
-            </button>
+            </Button>
             {passwordMessage && <p className="help-block">{passwordMessage}</p>}
           </form>
         </div>
@@ -342,9 +343,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               'It does not include your password, your profile photo file, or messages and experiences written by other members.',
             )}
           </p>
-          <a className="btn btn-default" href="/api/users/export">
+          <Button as="a" variant="default" href="/api/users/export">
             {t('Download your data')}
-          </a>
+          </Button>
         </div>
       </div>
 
@@ -390,14 +391,14 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               {t('Yes, I want to remove my profile')}
             </label>
           </div>
-          <button
+          <Button
             type="button"
-            className="btn btn-danger"
+            variant="danger"
             disabled={!removeProfileConfirm || isRemovingProfile}
             onClick={removeProfileConfirm ? handleRemoveProfile : undefined}
           >
             {t('Remove profile')}
-          </button>
+          </Button>
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>

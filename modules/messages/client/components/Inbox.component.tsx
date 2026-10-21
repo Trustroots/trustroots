@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
@@ -117,28 +118,30 @@ export default function Inbox({ user }: InboxProps) {
           aria-label={t<string>('Conversation filter')}
           className="inbox-view-filters"
         >
-          <a
+          <Button
+            as="a"
             href="/messages"
             rel="external"
             aria-current={unreadOnly ? undefined : 'page'}
             aria-label={t<string>('All conversations')}
-            className="btn btn-default"
+            variant="default"
           >
             <span className="hidden-xs">{t<string>('All conversations')}</span>
             <span className="visible-xs-inline">{t<string>('All')}</span>
-          </a>
-          <a
+          </Button>
+          <Button
+            as="a"
             href="/messages?filter=unread"
             rel="external"
             aria-current={unreadOnly ? 'page' : undefined}
             aria-label={t<string>('Unread conversations')}
-            className="btn btn-default"
+            variant="default"
           >
             <span className="hidden-xs">
               {t<string>('Unread conversations')}
             </span>
             <span className="visible-xs-inline">{t<string>('Unread')}</span>
-          </a>
+          </Button>
         </nav>
         <div className="inbox-search">
           <input
@@ -189,12 +192,13 @@ export default function Inbox({ user }: InboxProps) {
       )}
       {!isFetching && !query && hasMore && (
         <div className="text-center">
-          <button
-            className="btn btn-primary btn-lg"
+          <Button
+            variant="primary"
+            size="lg"
             onClick={() => fetchThreads(true)}
           >
             {t<string>('More messages')}
-          </button>
+          </Button>
         </div>
       )}
     </section>

@@ -1,6 +1,7 @@
 // External dependencies
 import { useTranslation, Trans } from 'react-i18next';
 import React from 'react';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -31,12 +32,13 @@ export default function SubmittedInfo({
     <SuccessMessage
       title={t('Thank you for sharing your experience!') as string}
       cta={
-        <a
-          className="btn btn-primary"
+        <Button
+          as="a"
+          variant="primary"
           href={`/profile/${username}/experiences`}
         >
           {t('See their experiences') as string}
-        </a>
+        </Button>
       }
     >
       <p>

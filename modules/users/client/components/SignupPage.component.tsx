@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
+import { Button } from '@trustroots/ui';
 
 import {
   trackEvent,
@@ -503,9 +504,11 @@ export default function SignupPage() {
                         }
                       />
                       <span className="input-group-btn">
-                        <button
+                        <Button
                           type="button"
-                          className="btn btn-lg btn-default btn-password-toggle"
+                          variant="default"
+                          size="lg"
+                          className="btn-password-toggle"
                           aria-label="Toggle password visibility"
                           onClick={() => setShowPassword(current => !current)}
                         >
@@ -514,7 +517,7 @@ export default function SignupPage() {
                               showPassword ? 'icon-eye-off' : 'icon-eye'
                             }`}
                           />
-                        </button>
+                        </Button>
                       </span>
                     </div>
                     {credentials.password &&
@@ -578,13 +581,14 @@ export default function SignupPage() {
                     </p>
                   </div>
                   <div className="col-4 d-block d-sm-none">
-                    <a
-                      className="btn btn-default"
+                    <Button
+                      as="a"
+                      variant="default"
                       href="/rules"
                       onClick={handleOpenRules}
                     >
                       Read rules
-                    </a>
+                    </Button>
                   </div>
                 </div>
                 <div className="form-group">
@@ -610,9 +614,10 @@ export default function SignupPage() {
                 </div>
                 <div className="text-center signup-next">
                   <br />
-                  <button
+                  <Button
                     type="submit"
-                    className="btn btn-lg btn-primary"
+                    variant="primary"
+                    size="lg"
                     disabled={!isStepOneValid || isLoading}
                   >
                     {usernamePending
@@ -620,7 +625,7 @@ export default function SignupPage() {
                       : isStepOneValid
                         ? 'Next'
                         : 'Please fill in the form'}
-                  </button>
+                  </Button>
                   <br />
                   <br />
                 </div>
@@ -667,9 +672,10 @@ export default function SignupPage() {
                   </ul>
                 )}
                 <div className="text-center">
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-default center-block"
+                    variant="default"
+                    className="center-block"
                     disabled={
                       suggestedTribesLimit >= suggestedTribes.length ||
                       suggestedTribes.length === 0
@@ -679,28 +685,30 @@ export default function SignupPage() {
                     }
                   >
                     Show more circles
-                  </button>
+                  </Button>
                   <br />
                 </div>
                 <div className="text-center form-group">
                   <br />
                   <br />
-                  <button
+                  <Button
                     type="button"
-                    className="btn btn-lg btn-primary"
+                    variant="primary"
+                    size="lg"
                     disabled={isLoading}
                     onClick={() => setStep(3)}
                   >
                     Next
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
-                    className="btn btn-lg btn-default"
+                    variant="default"
+                    size="lg"
                     disabled={isLoading}
                     onClick={() => setStep(3)}
                   >
                     Skip
-                  </button>
+                  </Button>
                   <br />
                   <br />
                 </div>
@@ -723,13 +731,15 @@ export default function SignupPage() {
                   there, please mark it as &quot;Not Junk&quot;.
                 </p>
                 <p>
-                  <a
+                  <Button
+                    as="a"
                     href="/profile/edit"
-                    className="btn btn-lg btn-primary"
+                    variant="primary"
+                    size="lg"
                     id="signup-edit"
                   >
                     Fill your profile
-                  </a>
+                  </Button>
                 </p>
               </div>
             </div>
@@ -745,9 +755,9 @@ export default function SignupPage() {
               <br />
               <br />
               <p className="visible-xs-block">
-                <a href="/" className="btn btn-link">
+                <Button as="a" href="/" variant="link">
                   About Trustroots
-                </a>
+                </Button>
               </p>
             </div>
           </div>

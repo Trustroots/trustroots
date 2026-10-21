@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Button } from '@trustroots/ui';
 
 import Board from '@/modules/core/client/components/Board';
 import {
@@ -168,9 +169,11 @@ export default function SigninPage() {
                         }
                       />
                       <span className="input-group-btn">
-                        <button
+                        <Button
                           type="button"
-                          className="btn btn-lg btn-default btn-password-toggle"
+                          variant="default"
+                          size="lg"
+                          className="btn-password-toggle"
                           aria-label="Toggle password visibility"
                           onClick={() => setShowPassword(current => !current)}
                         >
@@ -179,14 +182,15 @@ export default function SigninPage() {
                               showPassword ? 'icon-eye-off' : 'icon-eye'
                             }`}
                           />
-                        </button>
+                        </Button>
                       </span>
                     </div>
                   </div>
                   <div className="form-group">
-                    <button
+                    <Button
                       type="submit"
-                      className="btn btn-default btn-lg"
+                      variant="default"
+                      size="lg"
                       disabled={isLoading}
                     >
                       {isLoading
@@ -194,8 +198,8 @@ export default function SigninPage() {
                         : continueSignin
                           ? 'Sign in to continue'
                           : 'Login'}
-                    </button>
-                    <span className="btn space-h" />
+                    </Button>
+                    <Button as="span" className="space-h" />
                     <a
                       href={forgotHref}
                       className={`btn-link${
@@ -215,9 +219,15 @@ export default function SigninPage() {
               </form>
               <div className="text-white hidden-xs">
                 <br />
-                <a href="/signup" className="btn btn-inverse btn-lg btn-signup">
+                <Button
+                  as="a"
+                  href="/signup"
+                  variant="inverse"
+                  size="lg"
+                  className="btn-signup"
+                >
                   Become a member
-                </a>
+                </Button>
                 <span>&nbsp;&nbsp;or&nbsp;&nbsp;</span>
                 <a href="/" className="link">
                   Back home

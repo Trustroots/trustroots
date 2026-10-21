@@ -2,6 +2,7 @@ import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui';
 
 export default function Guide() {
   const { t: rawT } = useTranslation('pages');
@@ -79,12 +80,12 @@ export default function Guide() {
             <br />
 
             <p>
-              <a href="/profile/edit" className="btn btn-lg btn-default">
+              <Button as="a" href="/profile/edit" size="lg" variant="default">
                 {t('Fill your profile')}
-              </a>
-              <a href="/search" className="btn btn-lg btn-default">
+              </Button>
+              <Button as="a" href="/search" size="lg" variant="default">
                 {t('Find members')}
-              </a>
+              </Button>
             </p>
 
             <h3>{t('More information')}</h3>

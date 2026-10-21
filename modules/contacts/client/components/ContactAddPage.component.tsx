@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
+import { Button } from '@trustroots/ui';
 
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -203,15 +204,16 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
 
             {!isConnected && friend?._id && (
               <p className="text-center">
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-lg btn-primary"
+                  variant="primary"
+                  size="lg"
                   disabled={isLoading}
                 >
                   {isLoading
                     ? (t('Wait a moment…') as string)
                     : (t('Add contact') as string)}
-                </button>
+                </Button>
                 <br />
                 <br />
                 <a href={`/profile/${friend.username}`} className="text-muted">

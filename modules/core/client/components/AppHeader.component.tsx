@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from 'react-bootstrap';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
@@ -52,8 +53,10 @@ export default function AppHeader({
 
   return (
     <Navbar className="hidden-print" id="tr-header" fixed="top" ref={headerRef}>
-      <a
-        className="btn btn-primary sr-only sr-only-focusable sr-helper"
+      <Button
+        as="a"
+        variant="primary"
+        className="sr-only sr-only-focusable sr-helper"
         href="#tr-main"
         onClick={event => {
           // The document base URL points at '/', so native hash navigation
@@ -63,7 +66,7 @@ export default function AppHeader({
         }}
       >
         {t<string>('Skip to main content')}
-      </a>
+      </Button>
       {user?.username ? (
         <NavigationLoggedIn
           onSignout={onSignout}

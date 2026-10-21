@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from '@trustroots/ui';
 
 import Board from '@/modules/core/client/components/Board';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
@@ -85,13 +86,14 @@ export default function ForgotPasswordPage() {
                 />
               </div>
               <div className="text-center form-group">
-                <button
+                <Button
                   type="submit"
-                  className="btn btn-lg btn-default"
+                  variant="default"
+                  size="lg"
                   disabled={isLoading || !credentials.username}
                 >
                   {isLoading ? 'Wait...' : 'Restore'}
-                </button>
+                </Button>
               </div>
               {error && (
                 <div className="text-center alert alert-danger" role="alert">

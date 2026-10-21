@@ -1,9 +1,9 @@
 // External dependencies
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import classnames from 'classnames';
 import React, { useState } from 'react';
 import styled from 'styled-components';
+import { Button, type ButtonVariant } from '@trustroots/ui';
 
 // Internal dependencies
 import {
@@ -43,7 +43,10 @@ const SearchInput = styled.input`
  * @param {String} buttonStyle - Button style: inverse, default, primary
  * @param {Boolean} [saveToAPI=false] - should we save selected language to API?
  */
-type LanguageSwitchProps = { buttonStyle?: string; saveToAPI?: boolean };
+type LanguageSwitchProps = {
+  buttonStyle?: ButtonVariant;
+  saveToAPI?: boolean;
+};
 export default function LanguageSwitch({
   buttonStyle = 'default',
   saveToAPI,
@@ -79,20 +82,17 @@ export default function LanguageSwitch({
 
   return (
     <>
-      <button
+      <Button
         title={currentLanguage?.label}
-        className={classnames('btn', 'text-nowrap', {
-          'btn-primary': buttonStyle === 'primary',
-          'btn-default': buttonStyle === 'default',
-          'btn-inverse': buttonStyle === 'inverse',
-        })}
+        variant={buttonStyle}
+        className="text-nowrap"
         onClick={event => {
           event.preventDefault();
           setIsModalVisible(true);
         }}
       >
         {currentLanguage?.label ?? 'English'}
-      </button>
+      </Button>
       <Modal show={isModalVisible} onHide={onModalHide}>
         <Modal.Header closeButton>
           <Modal.Title>{t<string>('Select a language')}</Modal.Title>
@@ -116,8 +116,8 @@ export default function LanguageSwitch({
                   <SelectedLanguage lang={code}>{label}</SelectedLanguage>
                 )}
                 {code !== currentLanguageCode && (
-                  <button
-                    className="btn btn-link"
+                  <Button
+                    variant="link"
                     dir={i18n.dir(code)}
                     lang={code}
                     onClick={() => {
@@ -126,16 +126,16 @@ export default function LanguageSwitch({
                     }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 )}
               </li>
             ))}
           </LanguageList>
         </Modal.Body>
         <Modal.Footer>
-          <button className="btn btn-default pull-left" onClick={onModalHide}>
+          <Button variant="default" className="pull-left" onClick={onModalHide}>
             {t<string>('Cancel')}
-          </button>
+          </Button>
           <small>
             <a
               href="https://team.trustroots.org/"

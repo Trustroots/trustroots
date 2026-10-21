@@ -4,6 +4,7 @@ import type { PageTranslator, PageUser } from '../types';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
+import { Button } from '@trustroots/ui';
 import { getVolunteers, type Volunteer } from '../api/volunteers.api';
 import Board from './PageBoard';
 import ManifestoText from './ManifestoText.component.js';
@@ -104,12 +105,14 @@ export default function Team({ user }: { user?: PageUser | null }) {
               </em>
             </p>
             <p>
-              <a
-                className="btn btn-lg btn-primary"
+              <Button
+                as="a"
+                size="lg"
+                variant="primary"
                 href="/support?category=volunteering"
               >
                 {t('Get active!')}
-              </a>
+              </Button>
               <br />
               <br />
             </p>
@@ -151,12 +154,15 @@ export default function Team({ user }: { user?: PageUser | null }) {
                 <p>
                   <br />
                   <br />
-                  <a
+                  <Button
+                    as="a"
                     href="/signup"
-                    className="btn btn-lg btn-action btn-inverse"
+                    size="lg"
+                    action
+                    variant="inverse"
                   >
                     {t('Join Trustroots')}
-                  </a>
+                  </Button>
                 </p>
               )}
             </div>
@@ -169,12 +175,14 @@ export default function Team({ user }: { user?: PageUser | null }) {
           <div className="col-xs-12 text-center">
             <p className="text-muted">{t('Follow Trustroots')}</p>
             <div className="btn-group">
-              <a
+              <Button
+                as="a"
                 href="https://ideas.trustroots.org/"
-                className="btn btn-link btn-lg"
+                variant="link"
+                size="lg"
               >
                 {t('Blog')}
-              </a>
+              </Button>
               {/*
               <a
                 href="https://www.facebook.com/trustroots.org"

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { Button } from '@trustroots/ui';
 
 // Internal dependencies
 import {
@@ -13,7 +14,7 @@ import {
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 
-const ChangeButton = styled.button`
+const ChangeButton = styled(Button)`
   display: inline;
   margin: 0;
   padding: 0;
@@ -96,12 +97,12 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
           <>
             <p>{question}</p>
             <div className="btn-group btn-group-lg" role="group">
-              <button className="btn btn-default" onClick={() => answer('yes')}>
+              <Button variant="default" onClick={() => answer('yes')}>
                 {t('Yes') as string}
-              </button>
-              <button className="btn btn-default" onClick={() => answer('no')}>
+              </Button>
+              <Button variant="default" onClick={() => answer('no')}>
                 {t('No') as string}
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -122,10 +123,7 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
             <p className="text-muted">
               <TimeAgo date={new Date(referenceThread?.created || '')} />
               {' · '}
-              <ChangeButton
-                className="btn btn-link"
-                onClick={() => setIsAsking(true)}
-              >
+              <ChangeButton variant="link" onClick={() => setIsAsking(true)}>
                 {t('Change') as string}
               </ChangeButton>
             </p>

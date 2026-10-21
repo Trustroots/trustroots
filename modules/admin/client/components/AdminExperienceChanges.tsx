@@ -9,6 +9,7 @@ import type {
   AdminExperienceChangeSearchExperience,
 } from '../../shared/admin-experience-change';
 import AdminHeader from './AdminHeader.component';
+import { Button } from '@trustroots/ui';
 
 function memberLabel(member: AdminExperienceChangeParticipant): string {
   if (typeof member === 'object' && member !== null) {
@@ -149,9 +150,9 @@ export default function AdminExperienceChanges(): React.JSX.Element {
               value={username}
               onChange={event => setUsername(event.target.value)}
             />{' '}
-            <button className="btn btn-default" type="submit">
+            <Button variant="default" type="submit">
               Find Experiences
-            </button>
+            </Button>
           </form>
           {experiences.map(experience => (
             <div className="panel panel-default" key={experience._id}>
@@ -163,8 +164,8 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                     profile.
                   </p>
                 )}
-                <button
-                  className="btn btn-default"
+                <Button
+                  variant="default"
                   type="button"
                   disabled={busy || experience.canIssue === false}
                   onClick={() =>
@@ -172,15 +173,15 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                   }
                 >
                   Copy link for author
-                </button>{' '}
-                <button
-                  className="btn btn-default"
+                </Button>{' '}
+                <Button
+                  variant="default"
                   type="button"
                   disabled={busy || experience.canIssue === false}
                   onClick={() => void createLink(experience, experience.userTo)}
                 >
                   Copy link for profile owner
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -241,22 +242,22 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                       </p>
                     )
                   )}
-                  <button
-                    className="btn btn-primary"
+                  <Button
+                    variant="primary"
                     type="button"
                     disabled={busy || request.canApprove === false}
                     onClick={() => void decide(request, 'approve')}
                   >
                     Approve
-                  </button>{' '}
-                  <button
-                    className="btn btn-default"
+                  </Button>{' '}
+                  <Button
+                    variant="default"
                     type="button"
                     disabled={busy || request.canReview === false}
                     onClick={() => void decide(request, 'reject')}
                   >
                     Reject
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

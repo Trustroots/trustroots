@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 const { spawnSync } = require('child_process');
-const { globSync } = require('node:fs') as typeof import('node:fs');
+const fs = require('node:fs') as typeof import('node:fs');
+const { globSync } = fs;
 const path = require('node:path') as typeof import('node:path');
 
 const [kind, moduleName, ...extraArguments] = process.argv.slice(2);
@@ -13,7 +14,12 @@ if (!['client', 'server'].includes(kind) || !moduleName) {
 
 const root = path.resolve(__dirname, '..');
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-const testDirectory = `modules/${moduleName}/tests/${kind}`;
+const workspaceDirectory = fs.existsSync(
+  path.join(root, 'packages', moduleName),
+)
+  ? 'packages'
+  : 'modules';
+const testDirectory = `${workspaceDirectory}/${moduleName}/tests/${kind}`;
 
 const result =
   kind === 'client'

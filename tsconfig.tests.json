@@ -6,6 +6,8 @@
   "include": [
     "modules/*/tests/client/**/*.ts",
     "modules/*/tests/client/**/*.tsx",
+    "packages/*/tests/client/**/*.ts",
+    "packages/*/tests/client/**/*.tsx",
     "testutils/client/**/*.ts",
     "testutils/common/**/*.d.ts",
     "modules/*/client/**/*.d.ts"

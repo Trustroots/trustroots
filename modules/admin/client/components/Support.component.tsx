@@ -11,6 +11,7 @@ import type {
   SupportMember,
   SupportRequest,
 } from '../api/support.api';
+import { Button } from '@trustroots/ui';
 
 function useResource<T>(path: string) {
   const [data, setData] = useState<T | null>(null);
@@ -56,20 +57,20 @@ function Pager({
 }) {
   return (
     <div className="support-inbox__pager" aria-label="Pagination">
-      <button
-        className="btn btn-default"
+      <Button
+        variant="default"
         disabled={page === 1}
         onClick={() => onPage(page - 1)}
       >
         Previous
-      </button>
-      <button
-        className="btn btn-default"
+      </Button>
+      <Button
+        variant="default"
         disabled={!hasMore}
         onClick={() => onPage(page + 1)}
       >
         Next
-      </button>
+      </Button>
     </div>
   );
 }
@@ -213,13 +214,9 @@ function RequestDetails({
       <div className="support-inbox__message">{report.message}</div>
       <div className="support-inbox__actions">
         <p>Reply using the existing support email system.</p>
-        <button
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={toggleStatus}
-        >
+        <Button variant="primary" disabled={saving} onClick={toggleStatus}>
           {report.status === 'resolved' ? 'Reopen request' : 'Resolve request'}
-        </button>
+        </Button>
       </div>
       {saveFailed && (
         <p role="alert">Unable to update this request. Please try again.</p>
@@ -256,20 +253,20 @@ function RequestDetails({
             role="group"
             aria-label="Investigation views"
           >
-            <button
-              className="btn btn-default"
+            <Button
+              variant="default"
               aria-pressed={kind === 'messages'}
               onClick={() => setKind('messages')}
             >
               View conversation
-            </button>
-            <button
-              className="btn btn-default"
+            </Button>
+            <Button
+              variant="default"
               aria-pressed={kind === 'experiences'}
               onClick={() => setKind('experiences')}
             >
               View experiences
-            </button>
+            </Button>
           </div>
           {kind && <Investigation key={kind} id={id} kind={kind} />}
         </>
@@ -326,9 +323,9 @@ function MemberSearch() {
           required
           onChange={event => setSearch(event.target.value)}
         />
-        <button className="btn btn-default" type="submit" disabled={pending}>
+        <Button variant="default" type="submit" disabled={pending}>
           Search members
-        </button>
+        </Button>
       </form>
       {pending && <p role="status">Searching…</p>}
       {failed && <ResourceState failed />}
