@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,14 +20,18 @@ import ThreadReply from '@/modules/messages/client/components/ThreadReply';
 import Activate from '@/modules/users/client/components/Activate';
 import ThreadMessages from '@/modules/messages/client/components/ThreadMessages';
 import QuickReply from '@/modules/messages/client/components/QuickReply';
-import RichText from '@/modules/core/client/components/RichText';
-import { getOffers } from '@/modules/offers/client/api/offers.api';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
-import type { Message, MessageUser, PageParams } from '../api/messages.api';
+import type {
+  HostingContext,
+  HostingDetails,
+  Message,
+  MessageUser,
+  PageParams,
+} from '../api/messages.api';
 
 // Required by LanguageList in Monkeybox component.
 const queryClient = new QueryClient();
@@ -152,12 +156,13 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const [failedToLoad, setFailedToLoad] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [hostingOffer, setHostingOffer] = useState<{
-    description?: string;
-    requireHostingDescriptionAcknowledgement?: boolean;
-  } | null>(null);
-  const [hostingDescriptionAcknowledged, setHostingDescriptionAcknowledged] =
-    useState(false);
+  const [hostingContext, setHostingContext] = useState<HostingContext | null>(
+    null,
+  );
+  const [hostingContextLoading, setHostingContextLoading] = useState(false);
+  const [hostingContextError, setHostingContextError] = useState(false);
+  const [hostingMode, setHostingMode] = useState(false);
+  const hostingContextRequest = useRef(0);
   const cacheKey = `messages.thread.${user._id}-${username}`;
   const isBlocked = user.blocked?.includes(otherUser?._id || '');
 
@@ -166,15 +171,20 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     [user],
   );
 
-  const userHasReplied = Boolean(
-    messages.find(message => message.userFrom?._id === user._id),
-  );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
-  const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
-  const requiresHostingAcknowledgement = Boolean(
-    messages.length === 0 &&
-    hostingOffer?.requireHostingDescriptionAcknowledgement,
+  const latestOutgoingTime = messages
+    .filter(message => message.userFrom?._id === user._id)
+    .map(message => message.created)
+    .sort()
+    .pop();
+  const userHasReplied = Boolean(latestOutgoingTime);
+  const hasUnansweredHostingMessage = messages.some(
+    message =>
+      message.userFrom?._id !== user._id &&
+      message.hostingDetails !== undefined &&
+      (!latestOutgoingTime || message.created > latestOutgoingTime),
   );
+  const showQuickReply = showReply && hasUnansweredHostingMessage;
 
   const isExtraSmall = useMediaQuery('(max-width: 767px)');
 
@@ -245,13 +255,25 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     };
   }
 
-  async function fetchHostingOffer(userId: string) {
-    const offers = await getOffers(userId, 'host');
-    setHostingOffer(
-      offers.find(offer => offer.requireHostingDescriptionAcknowledgement) ||
-        null,
-    );
-    setHostingDescriptionAcknowledged(false);
+  async function fetchHostingContext(userId: string) {
+    const requestId = ++hostingContextRequest.current;
+    setHostingContextLoading(true);
+    setHostingContextError(false);
+    setHostingContext(null);
+    try {
+      const context = await api.messages.fetchHostingContext(userId);
+      if (requestId === hostingContextRequest.current) {
+        setHostingContext(context);
+      }
+    } catch {
+      if (requestId === hostingContextRequest.current) {
+        setHostingContextError(true);
+      }
+    } finally {
+      if (requestId === hostingContextRequest.current) {
+        setHostingContextLoading(false);
+      }
+    }
   }
 
   async function fetchData() {
@@ -281,14 +303,6 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
       const { messages, nextParams } = await api.messages.fetchMessages(
         otherUser._id,
       );
-      if (messages.length === 0 && !userRemoved) {
-        try {
-          await fetchHostingOffer(otherUser._id);
-        } catch {
-          setFailedToLoad(true);
-          return;
-        }
-      }
       setOtherUser(otherUser);
       const sortedMessages = messages.sort((a, b) =>
         a.created.localeCompare(b.created),
@@ -316,33 +330,39 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
           ? 'yes'
           : 'no',
       });
+    } catch {
+      setFailedToLoad(true);
     } finally {
       setIsFetching(false);
     }
   }
 
-  async function sendMessage(content: string, via: 'editor' | 'quick_reply') {
-    const sendMessageRequest = requiresHostingAcknowledgement
+  async function sendMessage(
+    content: string,
+    via: 'editor' | 'quick_reply',
+    hostingDetails?: HostingDetails,
+    hostingDescriptionAcknowledged?: boolean,
+  ) {
+    const userToId = (otherUser as MessageUser)._id;
+    const messageRequest = hostingDetails
       ? api.messages.sendMessage(
-          (otherUser as MessageUser)._id,
+          userToId,
           content,
           hostingDescriptionAcknowledged,
+          hostingDetails,
         )
-      : api.messages.sendMessage((otherUser as MessageUser)._id, content);
-    const apiResponse = await sendMessageRequest.catch(async error => {
+      : api.messages.sendMessage(userToId, content);
+    const apiResponse = await messageRequest.catch(async error => {
       track('message_send_failed', {
         reason: messageSendFailureReason(error),
       });
       if (
+        hostingDetails &&
         error?.response?.data?.error ===
-        'hosting-description-acknowledgement-required'
+          'hosting-description-acknowledgement-required'
       ) {
-        try {
-          await fetchHostingOffer((otherUser as MessageUser)._id);
-          return;
-        } catch {
-          // Keep the draft available if refreshing fails.
-        }
+        await fetchHostingContext(otherUser!._id);
+        return;
       }
       // Too many requests - error
       if (error?.response?.status === 429) {
@@ -386,12 +406,25 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     // Append in thread the formatted message we got as a response from API
     const { data: message } = apiResponse;
     setMessages(messages => [...messages, message]);
+    if (hostingDetails) {
+      setHostingContext(context =>
+        context ? { ...context, acknowledgementRequired: false } : context,
+      );
+    }
     focus();
     return true;
   }
 
   function focus() {
     document.querySelector<HTMLElement>('#message-reply-content')?.focus();
+  }
+
+  function toggleHostingMode(enabled: boolean) {
+    setHostingMode(enabled);
+    if (!enabled) hostingContextRequest.current += 1;
+    setHostingContext(null);
+    setHostingContextError(false);
+    if (enabled && otherUser) fetchHostingContext(otherUser._id);
   }
 
   useEffect(() => {
@@ -469,47 +502,28 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                   onFetchMore={fetchMoreData}
                 />
               )}
-              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showQuickReply && (
                 <QuickReply
                   onSend={content => sendMessage(content, 'quick_reply')}
                   onFocus={focus}
                 />
               )}
+              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showReply && (
                 <>
-                  {requiresHostingAcknowledgement && (
-                    <section
-                      className="hosting-description-acknowledgement"
-                      aria-label={t('Hosting description and requirements')}
-                    >
-                      <h4>{t('Hosting description and requirements')}</h4>
-                      <RichText content={hostingOffer?.description || ''} />
-                      <label>
-                        <input
-                          type="checkbox"
-                          required
-                          checked={hostingDescriptionAcknowledged}
-                          onChange={event =>
-                            setHostingDescriptionAcknowledged(
-                              event.target.checked,
-                            )
-                          }
-                        />{' '}
-                        {t(
-                          'I have read this host’s hosting description and requirements.',
-                        )}
-                      </label>
-                    </section>
-                  )}
                   <ThreadReply
                     key={cacheKey}
                     cacheKey={cacheKey}
                     autoFocus={!isExtraSmall}
-                    onSend={content => sendMessage(content, 'editor')}
-                    disabled={
-                      requiresHostingAcknowledgement &&
-                      !hostingDescriptionAcknowledged
+                    onSend={(content, details, acknowledged) =>
+                      sendMessage(content, 'editor', details, acknowledged)
+                    }
+                    hostingContext={hostingMode ? hostingContext : null}
+                    hostingContextLoading={hostingContextLoading}
+                    hostingContextError={hostingContextError}
+                    onHostingModeChange={toggleHostingMode}
+                    onRetryHostingContext={() =>
+                      otherUser && fetchHostingContext(otherUser._id)
                     }
                   />
                 </>

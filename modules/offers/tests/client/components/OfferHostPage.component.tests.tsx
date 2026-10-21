@@ -72,7 +72,9 @@ const analytics = fakeAnalytics();
 describe('OfferHostPage', () => {
   it('defaults acknowledgement off, persists opting in and reloads the preference', async () => {
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
-    const { unmount } = render(<OfferHostPage user={user} />);
+    const { unmount } = render(<OfferHostPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
     fireEvent.click(await screen.findByRole('tab', { name: 'Description' }));
     const checkbox = screen.getByRole('checkbox', {
       name: /Require guests to acknowledge/,
@@ -92,7 +94,7 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([
       { ...hostOffer, requireHostingDescriptionAcknowledgement: true },
     ]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     expect(
       await screen.findByRole('checkbox', {
         name: /Require guests to acknowledge/,

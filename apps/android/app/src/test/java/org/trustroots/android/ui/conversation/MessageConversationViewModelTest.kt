@@ -23,6 +23,8 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.HostingDetails
+import org.trustroots.android.api.HostingContext
 import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
@@ -401,6 +403,96 @@ class MessageConversationViewModelTest {
         model.onEvent(MessageConversationEvent.QuickReply(localizedPayload))
 
         assertEquals(localizedPayload, repository.sentContent)
+        assertNull(repository.sentHostingDetails)
+        assertFalse(repository.sentHostingDescriptionAcknowledged)
+    }
+
+    @Test
+    fun hostingModeLoadsContextAndSendsValidatedVisitDetails() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                Result.success(HostingContext("A fictional hosting description.", true))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        assertEquals("A fictional hosting description.", model.state.value.hostingDescription)
+        model.onEvent(MessageConversationEvent.HostingAcknowledgementChanged(true))
+        model.onEvent(MessageConversationEvent.HostingGuestsChanged("2"))
+        model.onEvent(MessageConversationEvent.HostingArrivalChanged("2027-05-01"))
+        model.onEvent(MessageConversationEvent.HostingDepartureChanged("2027-05-04"))
+        model.onEvent(MessageConversationEvent.Send("A fictional visit request."))
+
+        assertEquals(1, repository.sendCalls)
+        assertEquals(HostingDetails(2, "2027-05-01", "2027-05-04"), repository.sentHostingDetails)
+        assertTrue(repository.sentHostingDescriptionAcknowledged)
+        assertFalse(model.state.value.hostingMode)
+    }
+
+    @Test
+    fun quickReplyWhileHostingModeIsOrdinaryAndDoesNotRequireHostingContext() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                Result.success(HostingContext("A fictional hosting description.", true))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        model.onEvent(MessageConversationEvent.QuickReply("A fictional ordinary reply."))
+
+        assertEquals("A fictional ordinary reply.", repository.sentContent)
+        assertNull(repository.sentHostingDetails)
+        assertFalse(repository.sentHostingDescriptionAcknowledged)
+    }
+
+    @Test
+    fun staleHostingAcknowledgementReloadsDescriptionAndKeepsDraftAndVisitDates() = withScope { scope ->
+        var contextCalls = 0
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            hostingContextHandler = {
+                contextCalls++
+                Result.success(HostingContext("Updated fictional requirements.", true))
+            }
+            hostingSendHandler = { _, _ ->
+                Result.failure(
+                    MobileApiException(
+                        400,
+                        "Please acknowledge.",
+                        code = "hosting-description-acknowledgement-required",
+                    ),
+                )
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.HostingModeChanged(true))
+        model.onEvent(MessageConversationEvent.HostingAcknowledgementChanged(true))
+        model.onEvent(MessageConversationEvent.HostingGuestsChanged("3"))
+        model.onEvent(MessageConversationEvent.HostingArrivalChanged("2027-06-01"))
+        model.onEvent(MessageConversationEvent.HostingDepartureChanged("2027-06-04"))
+        model.onEvent(MessageConversationEvent.DraftChanged("Keep the fictional message"))
+        model.onEvent(MessageConversationEvent.Send("Keep the fictional message"))
+
+        assertEquals(2, contextCalls)
+        assertEquals("Updated fictional requirements.", model.state.value.hostingDescription)
+        assertTrue(model.state.value.hostingAcknowledgementStale)
+        assertFalse(model.state.value.hostingDescriptionAcknowledged)
+        assertEquals("Keep the fictional message", model.state.value.draft)
+        assertEquals("3", model.state.value.hostingGuests)
+        assertEquals("2027-06-01", model.state.value.hostingArrival)
+        assertEquals("2027-06-04", model.state.value.hostingDeparture)
     }
 
     @Test
@@ -712,9 +804,17 @@ class MessageConversationViewModelTest {
         var clearedDraftKey: Pair<String, String>? = null
         var sentContent: String? = null
         var sendCalls = 0
+        var sentHostingDetails: HostingDetails? = null
+        var sentHostingDescriptionAcknowledged = false
         var memberHandler: suspend (String) -> Result<ConversationRecipient> = { memberResult }
         var messagesHandler: suspend (String) -> Result<List<DirectMessage>> = { messagesResult }
+        var hostingContextHandler: suspend (String) -> Result<HostingContext> = {
+            Result.success(HostingContext("A fictional description.", false))
+        }
         var sendHandler: suspend (String, String) -> Result<DirectMessage> = { _, _ -> sendResult }
+        var hostingSendHandler: suspend (String, String) -> Result<DirectMessage> = { id, content ->
+            sendHandler(id, content)
+        }
 
         override fun updateApi(api: MobileApiClient): Boolean {
             val changed = currentApi?.backendURL?.let { it != api.backendURL } ?: false
@@ -732,10 +832,28 @@ class MessageConversationViewModelTest {
             return messagesHandler(memberID)
         }
 
+        override suspend fun hostingContext(memberID: String): Result<HostingContext> =
+            hostingContextHandler(memberID)
+
         override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
             sentContent = content
             sendCalls++
             return sendHandler(memberID, content)
+        }
+
+        override suspend fun send(
+            memberID: String,
+            content: String,
+            hostingDetails: HostingDetails?,
+            hostingDescriptionAcknowledged: Boolean,
+        ): Result<DirectMessage> {
+            sentHostingDetails = hostingDetails
+            sentHostingDescriptionAcknowledged = hostingDescriptionAcknowledged
+            return if (hostingDetails == null) send(memberID, content) else {
+                sentContent = content
+                sendCalls++
+                hostingSendHandler(memberID, content)
+            }
         }
 
         override fun loadDraft(selfUsername: String, otherKey: String): String {
@@ -781,7 +899,12 @@ class MessageConversationViewModelTest {
     private companion object {
         val member = ConversationRecipient("member-owl", "steady-owl", "Steady Owl")
         val incomingSender = MessageMember(member.id, member.username, member.displayName)
-        val incoming = DirectMessage("incoming-message", "A fictional incoming note", incomingSender)
+        val incoming = DirectMessage(
+            "incoming-message",
+            "A fictional incoming note",
+            incomingSender,
+            hostingDetails = HostingDetails(1),
+        )
         val sent = DirectMessage("sent-message", "A fictional sent note", MessageMember("self", "steady-heron", "Steady Heron"))
     }
 }

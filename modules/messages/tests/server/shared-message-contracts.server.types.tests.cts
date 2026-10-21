@@ -43,8 +43,8 @@ describe(
 
     it('rejects an invalid server-selected request field', () => {
       const errors = diagnostics(
-        'return { userTo: body.userTo, content: body.content, userFrom };',
-        'return { userTo: Number(body.userTo), content: body.content, userFrom };',
+        'userTo: body.userTo,',
+        'userTo: Number(body.userTo),',
       );
       assert(errors.some(error => error.code === 2322));
     });

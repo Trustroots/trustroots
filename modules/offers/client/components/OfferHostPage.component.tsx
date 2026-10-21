@@ -336,9 +336,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   rows={8}
                   value={offer.description || ''}
                 />
-                <div className="checkbox">
+                <div className="checkbox offer-host-checkbox offer-host-acknowledgement">
                   <label>
                     <input
+                      aria-describedby="hostingAcknowledgementHelp"
                       checked={offer.requireHostingDescriptionAcknowledgement}
                       onChange={({ target: { checked } }) =>
                         setOffer(current => ({
@@ -348,19 +349,22 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       }
                       type="checkbox"
                     />
-                    Require guests to acknowledge my hosting description before
-                    starting a conversation.
+                    <span>
+                      Require guests to acknowledge my hosting description before
+                      sending their first hosting message in a conversation.
+                    </span>
                   </label>
-                  <p className="help-block">
-                    This applies only to new conversations. An acknowledgement does
-                    not prove someone has read or understood your requirements.
+                  <p className="help-block" id="hostingAcknowledgementHelp">
+                    Ordinary messages do not require acknowledgement. An
+                    acknowledgement does not prove someone has read or understood
+                    your requirements.
                   </p>
                 </div>
                 <fieldset className="offer-circle-settings">
                   <legend>
                     <h4>Available only in my circles?</h4>
                   </legend>
-                  <div className="checkbox offer-circle-visibility">
+                  <div className="checkbox offer-host-checkbox">
                     <label>
                       <input
                         checked={offer.showOnlyInMyCircles}

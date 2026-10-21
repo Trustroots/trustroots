@@ -9,6 +9,7 @@ import {
 import { annotateFeature } from '../../../scripts/e2e/feature-coverage-summary.mts';
 import {
   trackScreenshotPages,
+  captureNamedScreenshot,
   sanitizeFileName,
   useElementScreenshot,
   useViewportScreenshot,
@@ -98,4 +99,10 @@ export function expectPresent<T>(
   }
 }
 
-export { expect, annotateFeature, useElementScreenshot, useViewportScreenshot };
+export {
+  expect,
+  annotateFeature,
+  captureNamedScreenshot,
+  useElementScreenshot,
+  useViewportScreenshot,
+};

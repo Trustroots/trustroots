@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.HostingDetails
 import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
@@ -122,7 +123,8 @@ class MessageConversationBranchContractsTest {
     private companion object {
         val recipient = ConversationRecipient("recipient-id", "steady-owl", "Steady Owl")
         val incoming = DirectMessage("incoming-id", "A fictional incoming message",
-            MessageMember(recipient.id, recipient.username, recipient.displayName))
+            MessageMember(recipient.id, recipient.username, recipient.displayName),
+            hostingDetails = HostingDetails(1))
         val sent = DirectMessage("sent-id", "A fictional sent message", MessageMember("self-id", "steady-heron", "Steady Heron"))
     }
 }
