@@ -6,7 +6,6 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import {
   createAppRouter,
   findRoute,
-  isReactRoute,
   parseLegacySearch,
   routes,
   stringifyLegacySearch,
@@ -429,7 +428,6 @@ describe('React route ownership', () => {
 
   it('normalizes paths before ownership checks', () => {
     expect(normalizePath('/support/?report=alice')).toBe('/support');
-    expect(isReactRoute('/support/?report=alice')).toBe(true);
     expect(findRoute('/support/?report=alice')?.title).toBe('Support');
   });
 
@@ -597,7 +595,6 @@ describe('React route ownership', () => {
   });
 
   it('does not claim legacy profile-edit paths', () => {
-    expect(isReactRoute('/profile-edit/about')).toBe(false);
     expect(findRoute('/profile-edit/about')).toBe(undefined);
   });
 
