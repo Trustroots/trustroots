@@ -5,11 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -19,6 +16,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageDraftStore
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
@@ -224,13 +222,6 @@ internal class MessageConversationViewModel(
         }
     }
 
-    private suspend fun <T> requestResult(operation: suspend () -> Result<T>): Result<T> {
-        val result = try { operation() } catch (cancelled: CancellationException) { throw cancelled }
-        catch (error: Throwable) { Result.failure(error) }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     override fun onCleared() {
         generation++

@@ -1,7 +1,5 @@
 package org.trustroots.android.ui
 
-import org.trustroots.android.ui.common.isAuthenticationFailure
-
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,11 +7,8 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -22,6 +17,8 @@ import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface MemberShellRepository {
@@ -140,7 +137,7 @@ internal class MemberShellViewModel(
         avatarJob?.cancel()
         mutableState.update { it.copy(isAvatarLoading = true, failure = null) }
         avatarJob = requestScope.launch {
-            request { repository.ownAvatarID() }.fold(
+            requestResult { repository.ownAvatarID() }.fold(
                 onSuccess = { id ->
                     if (generation == avatarGeneration) {
                         mutableState.update { it.copy(avatarID = id, isAvatarLoading = false) }
@@ -168,7 +165,7 @@ internal class MemberShellViewModel(
         pollJob = requestScope.launch {
             while (generation == unreadGeneration && started) {
                 mutableState.update { it.copy(isUnreadRefreshing = true, failure = null) }
-                request { repository.unreadCount() }.fold(
+                requestResult { repository.unreadCount() }.fold(
                     onSuccess = { count ->
                         if (generation == unreadGeneration) {
                             mutableState.update {
@@ -189,18 +186,6 @@ internal class MemberShellViewModel(
         }
     }
 
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     private fun reportFailure(error: Throwable) {
         if (error.isAuthenticationFailure()) {

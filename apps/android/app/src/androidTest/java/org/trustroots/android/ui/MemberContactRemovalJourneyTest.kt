@@ -91,6 +91,25 @@ class MemberContactRemovalJourneyTest {
         assertFalse(compose.onAllNodesWithText("Delete contact request?").fetchSemanticsNodes().isNotEmpty())
     }
 
+    @Test fun systemBackCancelsRemovalConfirmationWithoutLeavingTheProfile() {
+        startResponder(confirmed = true)
+        val profileBacks = AtomicInteger()
+        compose.setContent { profile(onBack = { profileBacks.incrementAndGet() }) }
+
+        openContactAction("Remove contact")
+        compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+        pressBackFromNonActivityRoot(compose.activity)
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isEmpty()
+        }
+
+        compose.onNodeWithText("Send a message").assertIsDisplayed()
+        assertEquals(0, profileBacks.get())
+        assertFalse(requests.any { it.method == "DELETE" })
+        openActionMenu()
+        compose.onNodeWithText("Remove contact").assertIsDisplayed()
+    }
+
     @Test fun keepsConfirmedRemovalDialogAfterServiceFailureAndReportsExpiredSessionOnRetry() {
         startResponder(confirmed = true, deleteStatuses = listOf(503, 401))
         val invalidations = AtomicInteger()
@@ -145,12 +164,15 @@ class MemberContactRemovalJourneyTest {
     }
 
     @Composable
-    private fun profile(onSessionInvalidated: () -> Unit = {}) = MemberProfileScreen(
+    private fun profile(
+        onSessionInvalidated: () -> Unit = {},
+        onBack: () -> Unit = {},
+    ) = MemberProfileScreen(
         api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
         session = session,
         username = "quiet-fox",
         onSessionInvalidated = onSessionInvalidated,
-        onBack = {},
+        onBack = onBack,
     )
 
     private fun waitForText(text: String) {

@@ -6,11 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -24,6 +21,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.api.ProfileReference
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
@@ -156,7 +154,7 @@ internal class MemberProfileViewModel(
     private fun load() {
         val request = ++generation
         loadJob = requestScope.launch {
-            val result = safe { repository.profile(username) }
+            val result = requestResult { repository.profile(username) }
             if (request != generation) return@launch
             val problem = result.exceptionOrNull()
             if (problem != null) {
@@ -168,7 +166,7 @@ internal class MemberProfileViewModel(
             mutableState.update { it.copy(profile = member, isLoading = false, failure = null) }
             val id = member.id ?: return@launch
             launch {
-                val value = safe { repository.hosting(id) }
+                val value = requestResult { repository.hosting(id) }
                 if (request != generation) return@launch
                 value.fold(
                     onSuccess = { hosting -> mutableState.update { it.copy(hosting = hosting, hostingLoaded = true) } },
@@ -179,19 +177,19 @@ internal class MemberProfileViewModel(
                 )
             }
             launch {
-                val value = safe { repository.contacts(id) }
+                val value = requestResult { repository.contacts(id) }
                 if (request != generation) return@launch
                 value.onSuccess { contacts -> mutableState.update { it.copy(contacts = contacts.toList()) } }
                     .onFailure { if (it.isAuthenticationFailure()) invalidateSession(request) }
             }
             launch {
-                val value = safe { repository.references(id) }
+                val value = requestResult { repository.references(id) }
                 if (request != generation) return@launch
                 value.onSuccess { refs -> mutableState.update { it.copy(references = refs.toList()) } }
                     .onFailure { if (it.isAuthenticationFailure()) invalidateSession(request) }
             }
             if (member.username != ownUsername) launch {
-                val value = safe { repository.relationship(id) }
+                val value = requestResult { repository.relationship(id) }
                 if (request != generation) return@launch
                 value.fold(
                     onSuccess = { relationship -> mutableState.update { it.copy(relationship = relationship, relationshipResolved = true) } },
@@ -213,7 +211,7 @@ internal class MemberProfileViewModel(
         removalJob?.cancel()
         mutableState.update { it.copy(isRemovingContact = true, removalFailure = null, contactRemovalSucceeded = false) }
         removalJob = requestScope.launch {
-            val result = safe { repository.removeContact(id) }
+            val result = requestResult { repository.removeContact(id) }
             if (request != generation) return@launch
             result.fold(
                 onSuccess = { mutableState.update { it.copy(relationship = ContactRelationship(null, false), isRemovingContact = false, contactRemovalSucceeded = true) } },
@@ -231,7 +229,7 @@ internal class MemberProfileViewModel(
         val request = ++referencesGeneration
         referencesJob?.cancel()
         referencesJob = requestScope.launch {
-            val result = safe { repository.references(memberID) }
+            val result = requestResult { repository.references(memberID) }
             if (request != referencesGeneration) return@launch
             result.onSuccess { references -> mutableState.update { it.copy(references = references.toList()) } }
                 .onFailure { if (it.isAuthenticationFailure()) invalidateSession(generation) }
@@ -251,12 +249,6 @@ internal class MemberProfileViewModel(
         serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
     )
 
-    private suspend fun <T> safe(block: suspend () -> Result<T>): Result<T> {
-        val result = try { block() } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) { Result.failure(error) }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     override fun onCleared() {
         generation++

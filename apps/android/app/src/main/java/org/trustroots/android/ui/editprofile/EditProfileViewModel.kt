@@ -6,11 +6,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -21,6 +18,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileUpdate
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
@@ -184,7 +182,7 @@ internal class EditProfileViewModel(
         mutableState.update { it.copy(isLoading = true, failure = null) }
         requestJob?.cancel()
         requestJob = requestScope.launch {
-            val result = safe { repository.profile(username) }
+            val result = requestResult { repository.profile(username) }
             if (request != generation) return@launch
             result.fold(
                 onSuccess = { profile -> mutableState.value = profile.toEditState() },
@@ -211,7 +209,7 @@ internal class EditProfileViewModel(
             languages = current.languages.toList(),
         )
         requestJob = requestScope.launch {
-            val result = safe { repository.update(update) }
+            val result = requestResult { repository.update(update) }
             if (request != generation) return@launch
             result.fold(
                 onSuccess = { profile -> mutableState.update {
@@ -237,12 +235,6 @@ internal class EditProfileViewModel(
         serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
     )
 
-    private suspend fun <T> safe(block: suspend () -> Result<T>): Result<T> {
-        val result = try { block() } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) { Result.failure(error) }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     override fun onCleared() {
         generation++

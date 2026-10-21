@@ -2,23 +2,30 @@ package org.trustroots.android.ui
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import java.net.ServerSocket
+import java.net.SocketException
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -34,6 +41,7 @@ import org.trustroots.android.ui.hostoffer.HostOfferScreen
 class HostOfferScreenTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
+    private val saveBodies = CopyOnWriteArrayList<String>()
     private lateinit var keyboardTestSupport: KeyboardTestSupport
 
     @Before fun configureEdgeToEdgeWindow() {
@@ -49,15 +57,39 @@ class HostOfferScreenTest {
         server.close()
     }
 
-    @Test fun loadsExistingHostingOffer() {
-        thread(isDaemon = true) {
+    @Test fun validatesDraftAndSavesByTouchWhileImeIsOpen() {
+        val responder = thread(isDaemon = true) {
             repeat(6) {
-                val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
+                val connection = try {
+                    server.accept()
+                } catch (error: SocketException) {
+                    if (server.isClosed) return@thread else throw error
+                }
                 connection.use { socket ->
                     val input = socket.getInputStream().bufferedReader()
                     val request = input.readLine().orEmpty()
-                    while (!input.readLine().isNullOrEmpty()) Unit
+                    var contentLength = 0
+                    while (true) {
+                        val header = input.readLine().orEmpty()
+                        if (header.isEmpty()) break
+                        if (header.startsWith("Content-Length:", ignoreCase = true)) {
+                            contentLength = header.substringAfter(':').trim().toInt()
+                        }
+                    }
+                    val requestBody = if (contentLength > 0) {
+                        CharArray(contentLength).also { buffer ->
+                            var offset = 0
+                            while (offset < buffer.size) {
+                                val count = input.read(buffer, offset, buffer.size - offset)
+                                if (count < 0) break
+                                offset += count
+                            }
+                        }.concatToString()
+                    } else ""
+                    if (request.startsWith("PUT ")) saveBodies += requestBody
                     val payload = when {
+                        request.startsWith("PUT ") ->
+                            """{"_id":"offer-one","status":"yes","description":"A quiet corner for guests.","maxGuests":2,"showOnlyInMyCircles":false,"location":[48.69,9.14]}"""
                         request.contains("/api/offers-by/") ->
                             """[{"_id":"offer-one","status":"yes","description":"<p>The hosting space is a quiet sleeping corner in the front room, with clean bedding, a reading lamp, a shelf for belongings, access to a shared kitchen, and a short walk to the town centre. Guests can arrive in the evening and have a key during their stay. Please bring a sleeping bag in winter, and let me know about accessibility needs before arriving. There is room for one or two guests and a small bag. The neighbourhood is calm overnight, with a bus stop and supermarket nearby. We can share breakfast in the kitchen, and there is a sheltered place to leave wet shoes. Please message before travelling if your arrival time changes.</p>","maxGuests":2,"showOnlyInMyCircles":false,"location":[48.69,9.14]}]"""
                         request.contains("/api/users/") ->
@@ -103,6 +135,43 @@ class HostOfferScreenTest {
         pressImeBack()
         compose.onNodeWithText("3").assertIsDisplayed()
         compose.onNodeWithText("Discard", substring = true).assertDoesNotExist()
+
+        compose.onNodeWithText("Hosting description").performScrollTo().performClick()
+        compose.onNodeWithText("Hosting description").performTextReplacement("Room")
+        keyboardTestSupport.awaitShown(compose)
+        compose.onNodeWithText("Hosting description").performScrollTo()
+        assertAboveIme("Hosting description")
+        assertAboveIme("Save changes")
+        compose.onNodeWithText("Write a longer hosting description first.").assertIsDisplayed()
+        assertEquals("Room", compose.onNodeWithText("Hosting description")
+            .fetchSemanticsNode().config[SemanticsProperties.EditableText].text)
+        compose.onNodeWithText("Save changes").assertIsNotEnabled()
+
+        compose.onNodeWithText("Hosting description").performTextReplacement("A quiet corner for guests.")
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("Write a longer hosting description first.").fetchSemanticsNodes().isEmpty()
+        }
+        keyboardTestSupport.awaitShown(compose)
+        compose.onNodeWithText("Hosting description").performScrollTo()
+        assertAboveIme("Hosting description")
+        assertAboveIme("Save changes")
+        val saveButton = compose.onNodeWithText("Save changes")
+        val saveBounds = saveButton.fetchSemanticsNode().touchBoundsInRoot
+        with(compose.density) {
+            assertTrue("Save action width should provide a 48dp touch target", saveBounds.width.toDp() >= 48.dp)
+            assertTrue("Save action height should provide a 48dp touch target", saveBounds.height.toDp() >= 48.dp)
+        }
+        saveButton.performTouchInput { click() }
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.waitUntil(5_000) { saveBodies.size == 1 }
+        assertTrue(
+            "The saved request should contain the valid draft",
+            saveBodies.single().contains("\"description\":\"A quiet corner for guests.\""),
+        )
+        responder.join(1_000)
     }
 
     private var imeGeometry = "No keyboard geometry recorded"

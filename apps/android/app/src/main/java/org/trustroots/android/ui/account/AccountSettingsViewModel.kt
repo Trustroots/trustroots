@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,6 +19,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
@@ -332,7 +333,7 @@ internal class AccountSettingsViewModel(
         accountJob?.cancel()
         mutableState.update { it.copy(isLoading = true, failure = null) }
         accountJob = requestScope.launch {
-            request { repository.details() }.fold(
+            requestResult { repository.details() }.fold(
                 onSuccess = { details ->
                     if (generation != accountGeneration) return@fold
                     mutableState.update {
@@ -357,7 +358,7 @@ internal class AccountSettingsViewModel(
         accountJob?.cancel()
         mutableState.update { it.copy(isSavingAccount = true, failure = null, notice = null) }
         accountJob = requestScope.launch {
-            request { repository.update(current.email, current.newsletter) }.fold(
+            requestResult { repository.update(current.email, current.newsletter) }.fold(
                 onSuccess = { details ->
                     if (generation != accountGeneration) return@fold
                     mutableState.update { it.copy(details = details, isSavingAccount = false, notice = AccountNotice.AccountSaved) }
@@ -382,7 +383,7 @@ internal class AccountSettingsViewModel(
         val generation = passwordGeneration
         mutableState.update { it.copy(isChangingPassword = true, failure = null, notice = null) }
         passwordJob = requestScope.launch {
-            request { repository.changePassword(current.currentPassword, current.newPassword, current.verifyPassword) }.fold(
+            requestResult { repository.changePassword(current.currentPassword, current.newPassword, current.verifyPassword) }.fold(
                 onSuccess = {
                     if (generation != passwordGeneration) return@fold
                     mutableState.update {
@@ -534,13 +535,6 @@ internal class AccountSettingsViewModel(
         }
     }
 
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try { operation() } catch (cancelled: CancellationException) { throw cancelled }
-        catch (error: Throwable) { Result.failure(error) }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     override fun onCleared() {
         accountGeneration++

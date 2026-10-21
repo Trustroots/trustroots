@@ -4,11 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,6 +13,7 @@ import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
@@ -168,7 +166,7 @@ internal class InboxViewModel(
         loadJob = requestScope.launch {
             var page = startPage
             while (true) {
-                val result = request { repository.page(page) }
+                val result = requestResult { repository.page(page) }
                 if (generation != requestGeneration) return@launch
                 val error = result.exceptionOrNull()
                 if (error != null) {
@@ -225,18 +223,6 @@ internal class InboxViewModel(
         }
     }
 
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     override fun onCleared() {
         requestGeneration++

@@ -66,6 +66,10 @@ class CreateExperienceViewModelTest {
         model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id))
         model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id))
         assertNull(model.state.value.pendingSuccess)
+
+        model.onEvent(CreateExperienceEvent.Submit)
+        assertEquals("A later submission remains available after the old acknowledgement is replayed", 2, repository.calls)
+        assertTrue(requireNotNull(model.state.value.pendingSuccess).id > success.id)
     }
 
     @Test

@@ -414,6 +414,13 @@ class AccountSettingsViewModelTest {
         assertEquals(pending, viewModel.state.value.pendingEffect)
         viewModel.onEvent(AccountEvent.EffectDelivered(pending.id))
         assertNull(viewModel.state.value.pendingEffect)
+
+        viewModel.onEvent(AccountEvent.EffectDelivered(pending.id))
+        assertNull(viewModel.state.value.pendingEffect)
+
+        viewModel.onEvent(AccountEvent.ResetPassword)
+        val next = requireNotNull(viewModel.state.value.pendingEffect)
+        assertTrue(next.id > pending.id)
     }
 
     @Test fun queuedEffectSurvivesOtherActionsButInvalidationAndSignOutTakePrecedence() {

@@ -5,11 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,6 +17,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileContact
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
@@ -127,7 +125,7 @@ internal class ContactsViewModel(
         requestJob?.cancel()
         mutableState.update { it.copy(isLoading = true, failure = null) }
         requestJob = requestScope.launch {
-            val profileResult = request { repository.profile(username) }
+            val profileResult = requestResult { repository.profile(username) }
             val profileFailure = profileResult.exceptionOrNull()
             if (profileFailure != null) {
                 finishFailure(generation, ContactsFailureReason.PROFILE, profileFailure)
@@ -139,7 +137,7 @@ internal class ContactsViewModel(
                 return@launch
             }
 
-            val contactsResult = request { repository.contacts(memberID) }
+            val contactsResult = requestResult { repository.contacts(memberID) }
             val contactsFailure = contactsResult.exceptionOrNull()
             if (contactsFailure != null) {
                 finishFailure(generation, ContactsFailureReason.CONTACTS, contactsFailure)
@@ -190,18 +188,6 @@ internal class ContactsViewModel(
         }
     }
 
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     private fun cancelRequest() {
         requestGeneration++

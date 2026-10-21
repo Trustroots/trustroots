@@ -75,6 +75,31 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun repeatedMembershipTapIsIgnoredUntilTheFirstUpdateCompletes() = withScope { scope ->
+        val pendingUpdate = CompletableDeferred<Result<Unit>>()
+        val repository = FakeCircleRepository().apply {
+            updateHandler = { _, _ -> pendingUpdate.await() }
+        }
+        val circle = circle("circle-one", "Harbour", 3)
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
+        viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
+
+        assertEquals(listOf("circle-one" to false), repository.membershipChanges)
+        assertEquals("circle-one", viewModel.state.value.updatingCircleID)
+        pendingUpdate.complete(Result.success(Unit))
+        assertEquals(setOf("circle-one"), viewModel.state.value.memberships)
+        assertNull(viewModel.state.value.updatingCircleID)
+
+        // Once the acknowledged update settles, the member can immediately leave again.
+        viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
+
+        assertEquals(listOf("circle-one" to false, "circle-one" to true), repository.membershipChanges)
+        assertTrue(viewModel.state.value.memberships.isEmpty())
+    }
+
+    @Test
     fun membershipToggleWinsOverAnOlderMembershipSnapshotStillLoading() = withScope { scope ->
         val circle = circle("circle-one", "Harbour", 3)
         val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
@@ -307,6 +332,7 @@ class CirclesViewModelTest {
         var circleReads = 0
         var membershipReads = 0
         var updateResult: Result<Unit> = Result.success(Unit)
+        var updateHandler: suspend (String, Boolean) -> Result<Unit> = { _, _ -> updateResult }
         private var currentSession: MemberSession? = null
         var circlesHandler: suspend (Int) -> Result<List<TrustrootsCircle>> = { Result.success(circles) }
         var membershipsHandler: suspend (Int) -> Result<Set<String>> = { Result.success(memberships) }
@@ -327,7 +353,7 @@ class CirclesViewModelTest {
 
         override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
             membershipChanges += circleID to isMember
-            return updateResult
+            return updateHandler(circleID, isMember)
         }
     }
 

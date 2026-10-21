@@ -5,11 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -19,6 +16,7 @@ import org.trustroots.android.api.ExperienceCreate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
@@ -163,7 +161,7 @@ internal class CreateExperienceViewModel(
             feedbackPublic = current.feedback,
         )
         requestJob = requestScope.launch {
-            val result = safe { repository.create(experience) }
+            val result = requestResult { repository.create(experience) }
             if (request != generation) return@launch
             result.fold(
                 onSuccess = { mutableState.update { it.copy(isSaving = false, pendingSuccess = ExperienceCreated(++nextSuccessID)) } },
@@ -186,12 +184,6 @@ internal class CreateExperienceViewModel(
         serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
     )
 
-    private suspend fun <T> safe(block: suspend () -> Result<T>): Result<T> {
-        val result = try { block() } catch (cancelled: CancellationException) { throw cancelled } catch (error: Throwable) { Result.failure(error) }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     override fun onCleared() {
         generation++

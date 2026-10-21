@@ -88,6 +88,10 @@ class EditProfileViewModelTest {
         model.onEvent(EditProfileEvent.SaveDelivered(saved.id))
         model.onEvent(EditProfileEvent.SaveDelivered(saved.id))
         assertNull(model.state.value.pendingSave)
+
+        model.onEvent(EditProfileEvent.Save)
+        assertEquals("A later save remains available after the old acknowledgement is replayed", 2, repository.saveCalls)
+        assertTrue(requireNotNull(model.state.value.pendingSave).id > saved.id)
     }
 
     @Test
