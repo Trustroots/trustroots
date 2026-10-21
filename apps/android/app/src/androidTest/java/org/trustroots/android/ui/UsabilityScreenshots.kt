@@ -87,8 +87,15 @@ internal fun captureUsabilityScreenshot(compose: ComposeTestRule, name: String) 
     val directory = File(context.getExternalFilesDir(null), "usability-screenshots").also { it.mkdirs() }
     compose.waitForIdle()
     awaitCommittedFrame()
-    val image = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-    File(directory, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    var image: Bitmap? = null
+    // UiAutomation can return null while the emulator compositor finishes a frame.
+    compose.waitUntil(timeoutMillis = 5_000) {
+        image = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        image != null
+    }
+    File(directory, "$name.png").outputStream().use {
+        checkNotNull(image).compress(Bitmap.CompressFormat.PNG, 100, it)
+    }
 }
 
 internal fun hideTestKeyboard() {

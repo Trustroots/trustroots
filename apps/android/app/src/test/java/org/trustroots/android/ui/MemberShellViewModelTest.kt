@@ -165,6 +165,61 @@ class MemberShellViewModelTest {
     }
 
     @Test
+    fun staleUnreadResponseFromPreviousVisitCannotReplaceCurrentCount() = withScope { scope ->
+        val repository = FakeMemberShellRepository()
+        val previousVisitResponse = CompletableDeferred<Result<Int>>()
+        repository.unreadHandler = { call ->
+            if (call == 1) withContext(NonCancellable) { previousVisitResponse.await() }
+            else Result.success(4)
+        }
+        val model = MemberShellViewModel(repository, scope)
+
+        model.onEvent(MemberShellEvent.LifecycleChanged(true))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(1))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
+        assertEquals(2, repository.unreadCalls)
+        assertEquals(4, model.state.value.unreadMessageCount)
+
+        previousVisitResponse.complete(Result.success(91))
+
+        assertEquals("A late response from the prior visit must not overwrite the current count", 4, model.state.value.unreadMessageCount)
+        assertFalse(model.state.value.isUnreadRefreshing)
+    }
+
+    @Test
+    fun synchronousUnreadReentryRejectsOldVisitSuccessAndAuthenticationFailure() = withScope { scope ->
+        val staleResults = listOf(
+            Result.success(91),
+            Result.failure(MobileApiException(401, "Expired credentials")),
+        )
+
+        staleResults.forEach { staleResult ->
+            val repository = FakeMemberShellRepository()
+            lateinit var model: MemberShellViewModel
+            repository.unreadHandler = { call ->
+                when (call) {
+                    1 -> {
+                        // Unconfined starts this request inline, before the
+                        // outer launch stores its Job in pollJob.
+                        model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
+                        staleResult
+                    }
+                    else -> Result.success(4)
+                }
+            }
+            model = MemberShellViewModel(repository, scope)
+            model.onEvent(MemberShellEvent.LifecycleChanged(true))
+
+            model.onEvent(MemberShellEvent.ActiveVisitChanged(1))
+
+            assertEquals(2, repository.unreadCalls)
+            assertEquals(4, model.state.value.unreadMessageCount)
+            assertNull(model.state.value.pendingSessionInvalidation)
+            assertFalse(model.state.value.isUnreadRefreshing)
+        }
+    }
+
+    @Test
     fun authenticationFailureFromEitherLookupIsDeliveredOnce() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             avatarHandler = { Result.success("member-safe-id") }
