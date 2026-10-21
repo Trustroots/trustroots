@@ -217,6 +217,27 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun queryChangedReentrantlyDuringSearchDoesNotPublishResultsForTheOldQuery() = withScope { scope ->
+        lateinit var viewModel: MemberSearchViewModel
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = { call ->
+            if (call == 1) {
+                viewModel.onEvent(MemberSearchEvent.QueryChanged("current query"))
+                Result.success(listOf(member("old-fox", "Old Fox")))
+            } else Result.success(listOf(member("current-owl", "Current Owl")))
+        }
+        viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("old query"))
+
+        viewModel.onEvent(MemberSearchEvent.Submit)
+
+        assertEquals("current query", viewModel.state.value.query)
+        assertTrue(viewModel.state.value.results.isEmpty())
+        assertFalse(viewModel.state.value.hasSearched)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
     fun clearingTheQueryStillDeliversAnExpiredSessionFromTheSubmittedRequest() = withScope { scope ->
         val response = CompletableDeferred<Result<List<MemberProfile>>>()
         val repository = FakeMemberSearchRepository()

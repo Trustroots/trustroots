@@ -124,6 +124,36 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun stoppedOwnerDefersMapSearchUntilTheOwnerResumes() = withViewModel { viewModel, repository, _ ->
+        viewModel.onEvent(HostMapEvent.OwnerLifecycleChanged(false))
+        viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(), bounds()))
+        viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+
+        assertEquals(0, repository.searchCalls)
+        assertFalse(viewModel.state.value.isLoading)
+
+        viewModel.onEvent(HostMapEvent.OwnerLifecycleChanged(true))
+
+        assertEquals(1, repository.searchCalls)
+        assertEquals(bounds(), repository.searchedBounds.single())
+    }
+
+    @Test
+    fun placeSuggestionAuthenticationFailureInvalidatesSessionAndBlocksMoreGeocoding() = withViewModel { viewModel, repository, _ ->
+        repository.placeHandler = { _, _ -> Result.failure(MobileApiException(401, "Expired")) }
+        viewModel.onEvent(HostMapEvent.LocationQueryChanged("Known fictional place"))
+
+        val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
+        viewModel.onEvent(HostMapEvent.LocationQueryChanged("Another fictional place"))
+        viewModel.onEvent(HostMapEvent.SubmitPlace)
+
+        assertEquals(1, repository.placeQueries.size)
+        assertEquals(invalidation, viewModel.state.value.pendingSessionInvalidation)
+        assertTrue(viewModel.state.value.suggestions.isEmpty())
+        assertNull(viewModel.state.value.placeFailure)
+    }
+
+    @Test
     fun placeSubmissionReportsNoMatchThenAppliesTheFirstSuccessfulSuggestion() = withViewModel { viewModel, repository, _ ->
         repository.placeHandler = { query, maxResults ->
             assertTrue(maxResults in 1..3)

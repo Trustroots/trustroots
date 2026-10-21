@@ -113,6 +113,21 @@ class HostDetailViewModelTest {
         assertEquals(listOf("old-offer", "current-offer"), repository.offerIDs)
     }
 
+    @Test fun reentrantRouteChangeDuringOfferReadKeepsTheNewDetail() = withModel { model, repository ->
+        repository.offerHandler = { call, id ->
+            if (call == 1) {
+                model.onEvent(HostDetailEvent.Load("reentrant-current-offer", SearchOfferType.Meet))
+                Result.success(offerFixture(id))
+            } else Result.success(offerFixture(id))
+        }
+
+        model.onEvent(HostDetailEvent.Load("reentrant-old-offer", SearchOfferType.Host))
+
+        assertEquals(listOf("reentrant-old-offer", "reentrant-current-offer"), repository.offerIDs)
+        assertEquals("reentrant-current-offer", model.state.value.offer?.id)
+        assertEquals(SearchOfferType.Meet, model.state.value.offerType)
+    }
+
     @Test fun authenticationInvalidationIsOneShotAndStopsDependentReads() = withModel { model, repository ->
         repository.offerHandler = { _, _ -> Result.failure(MobileApiException(statusCode = 401)) }
         model.onEvent(HostDetailEvent.Load("expired-offer", SearchOfferType.Host))
