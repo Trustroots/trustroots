@@ -22,8 +22,11 @@ test('statistics shows rolling signup and messaging counts', async ({
     has: page.getByRole('heading', { name: 'Members', exact: true }),
   });
   const table = page.getByRole('table', { name: 'Recent activity' });
+  const activity = page.locator('.panel').filter({
+    has: page.getByRole('heading', { name: 'Recent activity', exact: true }),
+  });
 
-  for (const width of [390, 1280]) {
+  for (const width of [390, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     await expect(members).toContainText(
       `${format(signups!.past7Days!)} new signups in the past 7 days (168 hours)`,
@@ -59,7 +62,16 @@ test('statistics shows rolling signup and messaging counts', async ({
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
+    if (width >= 768) {
+      const memberBox = await members.boundingBox();
+      const activityBox = await activity.boundingBox();
+      expect(memberBox).not.toBeNull();
+      expect(activityBox).not.toBeNull();
+      expect(Math.abs(memberBox!.width - activityBox!.width)).toBeLessThan(2);
+      expect(Math.abs(memberBox!.y - activityBox!.y)).toBeLessThan(2);
+    }
   }
+  await page.evaluate(() => window.scrollTo(0, 0));
 });
 
 test('statistics includes Couchers.org and identifies legacy networks', async ({

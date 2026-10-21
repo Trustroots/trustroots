@@ -33,17 +33,64 @@ const TypedTooltip = Tooltip as unknown as React.ComponentType<{
 }>;
 
 const Grid = styled.div`
-  align-items: stretch;
   display: grid;
-  grid-gap: 20px;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
 
-  @media (min-width: 481px) {
-    grid-gap: 10px;
+  & + & {
+    margin-top: 20px;
+  }
 
-    .is-graph {
-      grid-column: span 2;
-    }
+  .panel {
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+`;
+
+const MetricStack = styled.div`
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr);
+`;
+
+const ChartsGrid = styled(Grid)`
+  > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .panel-body > a {
+    display: block;
+    width: 100%;
+  }
+
+  img {
+    aspect-ratio: 2 / 1;
+    max-height: 300px;
+    object-fit: contain;
+    width: 100%;
+  }
+`;
+
+const SignupSummary = styled.div`
+  border-top: 1px solid #eee;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-top: 8px;
+  padding-top: 16px;
+  width: 100%;
+
+  p {
+    margin: 0;
+  }
+
+  p + p {
+    border-left: 1px solid #eee;
+    padding-left: 16px;
   }
 `;
 
@@ -351,23 +398,27 @@ export default function Statistics({
                 ) : (
                   <>
                     <Count>{numberFormat(statistics?.total)}</Count>
-                    <p className="text-muted">
-                      {t(
-                        '{{count}} new signups in the past 7 days (168 hours)',
-                        {
+                    <SignupSummary>
+                      <p className="text-muted">
+                        {t(
+                          '{{count}} new signups in the past 7 days (168 hours)',
+                          {
+                            count: numberFormat(
+                              statistics.recentActivity?.signups?.past7Days ??
+                                0,
+                            ),
+                          },
+                        )}
+                      </p>
+                      <p className="text-muted">
+                        {t('{{count}} new signups in the past 24 hours', {
                           count: numberFormat(
-                            statistics.recentActivity?.signups?.past7Days ?? 0,
+                            statistics.recentActivity?.signups?.past24Hours ??
+                              0,
                           ),
-                        },
-                      )}
-                    </p>
-                    <p className="text-muted">
-                      {t('{{count}} new signups in the past 24 hours', {
-                        count: numberFormat(
-                          statistics.recentActivity?.signups?.past24Hours ?? 0,
-                        ),
-                      })}
-                    </p>
+                        })}
+                      </p>
+                    </SignupSummary>
                   </>
                 )}
               </Stat>
@@ -443,76 +494,9 @@ export default function Statistics({
                 </ActivityTable>
                 <p className="text-muted">{t('Updated hourly')}</p>
               </Stat>
+            </Grid>
 
-              <Stat title={t('Member growth')} className="is-graph">
-                <a href="https://grafana.trustroots.org/d/000000002/members">
-                  <StatisticsImage
-                    src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&theme=light&panelId=1&width=800&height=400&tz=UTC"
-                    width="100%"
-                    alt={t('Member growth')}
-                  />
-                </a>
-              </Stat>
-
-              <Stat title={t('Hosts')}>
-                {!statistics ? (
-                  <>
-                    <CountPlaceholder />
-                    <CountPlaceholder />
-                    <CountPlaceholder />
-                  </>
-                ) : (
-                  <>
-                    <TypedTooltip
-                      id="hosts-tooltip"
-                      tooltip={t('{{count}} members', {
-                        count: numberFormat(statistics?.hosting?.total ?? 0),
-                      })}
-                    >
-                      <Count>{`${
-                        statistics?.hosting?.percentage ?? 0
-                      }%`}</Count>
-                    </TypedTooltip>
-                    <TypedTooltip
-                      id="hosts-yes-tooltip"
-                      tooltip={t('{{count}} members', {
-                        count: numberFormat(statistics?.hosting?.yes ?? 0),
-                      })}
-                      placement="bottom"
-                    >
-                      <p className="text-muted">
-                        {t('{{percentage}}% yes', {
-                          percentage: statistics?.hosting?.yesPercentage ?? 0,
-                        })}
-                      </p>
-                    </TypedTooltip>
-                    <TypedTooltip
-                      id="hosts-maybe-tooltip"
-                      tooltip={t('{{count}} members', {
-                        count: statistics?.hosting?.maybe ?? 0,
-                      })}
-                      placement="bottom"
-                    >
-                      <p className="text-muted">
-                        {t('{{percentage}}% maybe', {
-                          percentage: statistics?.hosting?.maybePercentage ?? 0,
-                        })}
-                      </p>
-                    </TypedTooltip>
-                  </>
-                )}
-              </Stat>
-
-              <Stat title={t('Member retention')} className="is-graph">
-                <a href="https://grafana.trustroots.org/d/UCqv_IYiz/member-retention">
-                  <StatisticsImage
-                    src="https://grafana.trustroots.org/render/d-solo/UCqv_IYiz/member-retention?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
-                    width="100%"
-                    alt={t('Member retention')}
-                  />
-                </a>
-              </Stat>
-
+            <Grid>
               <Stat title={t('Connected to networks')}>
                 <NetworkList className="list-unstyled">
                   {!statistics
@@ -554,33 +538,105 @@ export default function Statistics({
                   </LegacyNote>
                 )}
               </Stat>
-
-              <Stat title={t('Newsletter')}>
-                {!statistics ? (
-                  <>
-                    <CountPlaceholder />
-                    <CountPlaceholder />
-                  </>
-                ) : (
-                  <>
-                    <Count>{statistics?.newsletter?.percentage ?? 0}%</Count>
-                    <p className="text-muted">
-                      {t('{{count}} subscribers', {
-                        count: statistics?.newsletter?.count ?? 0,
-                      })}
-                    </p>
-                    {isAuthenticated && (
-                      <p>
-                        <a
-                          className="btn btn-sm btn-default"
-                          href="/profile/edit/account"
-                        >
-                          {t('Subscribe to newsletter')}
-                        </a>
+              <MetricStack>
+                <Stat title={t('Hosts')}>
+                  {!statistics ? (
+                    <>
+                      <CountPlaceholder />
+                      <CountPlaceholder />
+                      <CountPlaceholder />
+                    </>
+                  ) : (
+                    <>
+                      <TypedTooltip
+                        id="hosts-tooltip"
+                        tooltip={t('{{count}} members', {
+                          count: numberFormat(statistics?.hosting?.total ?? 0),
+                        })}
+                      >
+                        <Count>{`${
+                          statistics?.hosting?.percentage ?? 0
+                        }%`}</Count>
+                      </TypedTooltip>
+                      <TypedTooltip
+                        id="hosts-yes-tooltip"
+                        tooltip={t('{{count}} members', {
+                          count: numberFormat(statistics?.hosting?.yes ?? 0),
+                        })}
+                        placement="bottom"
+                      >
+                        <p className="text-muted">
+                          {t('{{percentage}}% yes', {
+                            percentage: statistics?.hosting?.yesPercentage ?? 0,
+                          })}
+                        </p>
+                      </TypedTooltip>
+                      <TypedTooltip
+                        id="hosts-maybe-tooltip"
+                        tooltip={t('{{count}} members', {
+                          count: statistics?.hosting?.maybe ?? 0,
+                        })}
+                        placement="bottom"
+                      >
+                        <p className="text-muted">
+                          {t('{{percentage}}% maybe', {
+                            percentage:
+                              statistics?.hosting?.maybePercentage ?? 0,
+                          })}
+                        </p>
+                      </TypedTooltip>
+                    </>
+                  )}
+                </Stat>
+                <Stat title={t('Newsletter')}>
+                  {!statistics ? (
+                    <>
+                      <CountPlaceholder />
+                      <CountPlaceholder />
+                    </>
+                  ) : (
+                    <>
+                      <Count>{statistics?.newsletter?.percentage ?? 0}%</Count>
+                      <p className="text-muted">
+                        {t('{{count}} subscribers', {
+                          count: statistics?.newsletter?.count ?? 0,
+                        })}
                       </p>
-                    )}
-                  </>
-                )}
+                      {isAuthenticated && (
+                        <p>
+                          <a
+                            className="btn btn-sm btn-default"
+                            href="/profile/edit/account"
+                          >
+                            {t('Subscribe to newsletter')}
+                          </a>
+                        </p>
+                      )}
+                    </>
+                  )}
+                </Stat>
+              </MetricStack>
+            </Grid>
+
+            <ChartsGrid>
+              <Stat title={t('Member growth')} className="is-graph">
+                <a href="https://grafana.trustroots.org/d/000000002/members">
+                  <StatisticsImage
+                    src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&theme=light&panelId=1&width=800&height=400&tz=UTC"
+                    width="100%"
+                    alt={t('Member growth')}
+                  />
+                </a>
+              </Stat>
+
+              <Stat title={t('Member retention')} className="is-graph">
+                <a href="https://grafana.trustroots.org/d/UCqv_IYiz/member-retention">
+                  <StatisticsImage
+                    src="https://grafana.trustroots.org/render/d-solo/UCqv_IYiz/member-retention?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
+                    width="100%"
+                    alt={t('Member retention')}
+                  />
+                </a>
               </Stat>
 
               <Stat title={t('Message replies')} className="is-graph">
@@ -593,7 +649,7 @@ export default function Statistics({
                   />
                 </a>
               </Stat>
-            </Grid>
+            </ChartsGrid>
 
             <hr />
 
