@@ -14,6 +14,7 @@ import statService from '../../../stats/server/services/stats.server.service.mts
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 import type {
+  ConversationCounts,
   MessageMember,
   MessagePayload,
   MessageThreadSummary,
@@ -183,6 +184,7 @@ type MessageResponseBody =
       users: HydratedDocument<PopulatedMessageUser>[];
     }
   | { unread: number }
+  | ConversationCounts
   | { content: string }
   | ReturnType<typeof prepareMarkReadResponse>;
 type ClientThreadSummary = MessageThreadSummary<
@@ -285,6 +287,26 @@ function excludeBlockedUsers(
       },
     ],
   };
+}
+
+// Use identical selectors for inbox pages and their totals.
+async function inboxQuery(
+  user: MessageUser,
+  filter: unknown,
+): Promise<Record<string, unknown>> {
+  if (filter === 'unreplied') {
+    const recipients = await Message.distinct('userTo', { userFrom: user._id });
+    return excludeBlockedUsers(
+      { userTo: user._id, userFrom: { $nin: recipients } },
+      user,
+    );
+  }
+  return excludeBlockedUsers(
+    filter === 'unread'
+      ? { read: false, userTo: user._id }
+      : { $or: [{ userFrom: user._id }, { userTo: user._id }] },
+    user,
+  );
 }
 
 // Allowed fields of message object to be set over API
@@ -436,73 +458,60 @@ function sanitizeThreads(
 /**
  * List of threads aka inbox
  */
-service.inbox = function (req, res) {
+service.inbox = async function (req, res) {
   // No user
   const user = authenticatedUser(req);
   if (!user) {
     return errorService.sendForbidden(res);
   }
   const query = req.query!;
-  Thread.paginate(
-    excludeBlockedUsers(
-      query.filter === 'unread'
-        ? {
-            read: false,
-            userTo: user._id,
-          }
-        : {
-            // Returns only threads where currently authenticated user is participating member
-            $or: [
-              {
-                userFrom: user,
-              },
-              {
-                userTo: user,
-              },
-            ],
+  try {
+    const selector = await inboxQuery(user, query.filter);
+    Thread.paginate(
+      selector,
+      {
+        page: query.page || 1,
+        limit: query.limit || 20,
+        sort: '-updated',
+        select: threadFields,
+        populate: [
+          {
+            path: 'message',
+            select: 'content',
           },
-      user,
-    ),
-    {
-      page: query.page || 1,
-      limit: query.limit || 20,
-      sort: '-updated',
-      select: threadFields,
-      populate: [
-        {
-          path: 'message',
-          select: 'content',
-        },
-        userMiniService.miniUserPopulate('userFrom userTo'),
-      ],
-    },
-    function (err, data) {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
-      } else {
-        // Pass pagination data to construct link header
-        paginationService.setLinkHeader(
-          { query },
-          res as PaginatedResponse,
-          data.pages,
-        );
+          userMiniService.miniUserPopulate('userFrom userTo'),
+        ],
+      },
+      function (err, data) {
+        if (err) {
+          return errorService.sendBadRequest(res, err);
+        } else {
+          // Pass pagination data to construct link header
+          paginationService.setLinkHeader(
+            { query },
+            res as PaginatedResponse,
+            data.pages,
+          );
 
-        // Sanitize and return threads
-        sanitizeThreads(data.docs, user._id, function (err, threads) {
-          // If user is deleted, the object from `User` collection is gone.
-          // `Thread.paginate()` attempts to populate it but failing to do so,
-          // leaves `userFrom` or `userTo` as `null` instead of just keeping
-          // the original document `_id` which would still be useful at the frontend.
-          // Until we refactor our code not to use `mongoose-paginate`, this helper
-          // will backfill the IDs. Cumbersome and not optimal, but there are not that
-          // many deleted profiles that this would be a significant issue.
-          fillDeletedProfiles(threads, function (err, threads) {
-            res.json(threads!);
+          // Sanitize and return threads
+          sanitizeThreads(data.docs, user._id, function (err, threads) {
+            // If user is deleted, the object from `User` collection is gone.
+            // `Thread.paginate()` attempts to populate it but failing to do so,
+            // leaves `userFrom` or `userTo` as `null` instead of just keeping
+            // the original document `_id` which would still be useful at the frontend.
+            // Until we refactor our code not to use `mongoose-paginate`, this helper
+            // will backfill the IDs. Cumbersome and not optimal, but there are not that
+            // many deleted profiles that this would be a significant issue.
+            fillDeletedProfiles(threads, function (err, threads) {
+              res.json(threads!);
+            });
           });
-        });
-      }
-    },
-  );
+        }
+      },
+    );
+  } catch (err) {
+    return errorService.sendBadRequest(res, err as Error);
+  }
 };
 
 /**
@@ -958,28 +967,29 @@ service.markRead = function (req, res) {
 /**
  * Get unread message count for currently logged in user
  */
-service.messagesCount = function (req, res) {
+service.messagesCount = async function (req, res) {
   const user = authenticatedUser(req);
   if (!user) {
     return res.status(403).send({
       message: errorService.getErrorMessageByKey('forbidden'),
     });
   }
-  Thread.countDocuments(
-    excludeBlockedUsers(
-      {
-        read: false,
-        userTo: user._id,
-      },
-      user,
-    ),
-  ).then(
-    unreadCount => res.json(prepareUnreadMessageCount(unreadCount)),
-    (err: Error) =>
-      res.status(400).send({
-        message: errorService.getErrorMessage(err),
-      }),
-  );
+  try {
+    if (req.query?.include === 'filters') {
+      const [all, unread, unreplied] = await Promise.all(
+        ['all', 'unread', 'unreplied'].map(async filter =>
+          Thread.countDocuments(await inboxQuery(user, filter)),
+        ),
+      );
+      return res.json({ all, unread, unreplied });
+    }
+    const count = await Thread.countDocuments(await inboxQuery(user, 'unread'));
+    return res.json(prepareUnreadMessageCount(count));
+  } catch (err) {
+    return res
+      .status(400)
+      .send({ message: errorService.getErrorMessage(err as Error) });
+  }
 };
 
 /**

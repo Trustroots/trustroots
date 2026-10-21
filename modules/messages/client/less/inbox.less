@@ -12,6 +12,7 @@
 
 .inbox-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 20px;
@@ -19,7 +20,9 @@
 
 .inbox-view-filters {
   display: flex;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  max-width: 100%;
   gap: 0;
   border: 1px solid darken(@brand-primary, 15%);
   border-radius: @border-radius-base;
@@ -45,6 +48,10 @@
   }
 }
 
+.inbox-filter-count {
+  white-space: nowrap;
+}
+
 .inbox-search {
   flex: 1 1 320px;
   max-width: 420px;
@@ -65,7 +72,8 @@
     margin-bottom: 10px;
 
     .btn {
-      flex: 1 1 50%;
+      flex: 1 1 0;
+      min-width: 0;
       white-space: normal;
     }
   }

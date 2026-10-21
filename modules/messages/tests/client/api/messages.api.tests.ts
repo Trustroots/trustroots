@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import {
+  conversationCounts,
   fetchMessages,
   fetchThreads,
   markRead,
@@ -26,6 +27,14 @@ afterEach(() => {
 });
 
 describe('messages api', () => {
+  it('opts in to all conversation totals', async () => {
+    const counts = { all: 42, unread: 3, unreplied: 7 };
+    mockedAxios.get.mockResolvedValueOnce({ data: counts });
+    await expect(conversationCounts()).resolves.toEqual(counts);
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/messages-count', {
+      params: { include: 'filters' },
+    });
+  });
   it('formats a draft without sending it', async () => {
     mockedAxios.post.mockResolvedValueOnce({
       data: { content: '<p>Draft</p>' },

@@ -29,7 +29,152 @@ const otherMember: messagesApi.MessageUser = generateClientUser({
 const threads: messagesApi.MessageThreadSummary[] = generateThreads(10);
 const moreThreads: messagesApi.MessageThreadSummary[] = generateThreads(7);
 
+beforeEach(() => {
+  jest.mocked(messagesApi.conversationCounts).mockResolvedValue({
+    all: 42,
+    unread: 3,
+    unreplied: 7,
+  });
+});
+
 describe('<Inbox>', () => {
+  it('shows totals independently of search and refreshes on focus and visibility', async () => {
+    api.fetchThreads.mockResolvedValue({ threads });
+    const { getByRole } = render(<Inbox user={me} />);
+    await waitFor(() =>
+      expect(
+        getByRole('link', { name: 'All conversations' }),
+      ).toHaveTextContent('(42)'),
+    );
+    expect(
+      getByRole('link', { name: 'Unread conversations' }),
+    ).toHaveTextContent('(3)');
+    expect(
+      getByRole('link', { name: 'Unreplied conversations' }),
+    ).toHaveTextContent('(7)');
+    fireEvent.change(getByRole('searchbox'), { target: { value: 'no match' } });
+    expect(getByRole('link', { name: 'All conversations' })).toHaveTextContent(
+      '(42)',
+    );
+    jest
+      .mocked(messagesApi.conversationCounts)
+      .mockResolvedValue({ all: 42, unread: 0, unreplied: 6 });
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(
+        getByRole('link', { name: 'Unread conversations' }),
+      ).toHaveTextContent('(0)'),
+    );
+    expect(
+      getByRole('link', { name: 'Unreplied conversations' }),
+    ).toHaveTextContent('(6)');
+    fireEvent(document, new Event('visibilitychange'));
+    await waitFor(() =>
+      expect(messagesApi.conversationCounts).toHaveBeenCalledTimes(3),
+    );
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+    fireEvent(document, new Event('visibilitychange'));
+    expect(messagesApi.conversationCounts).toHaveBeenCalledTimes(3);
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+  });
+
+  it('omits counts while loading and after failure and retries on focus', async () => {
+    api.fetchThreads.mockResolvedValue({ threads: [] });
+    let rejectCounts!: (error: Error) => void;
+    jest.mocked(messagesApi.conversationCounts).mockImplementationOnce(
+      () =>
+        new Promise((resolve, reject) => {
+          rejectCounts = reject;
+        }),
+    );
+    const { getByRole } = render(<Inbox user={me} />);
+    expect(
+      getByRole('link', { name: 'All conversations' }),
+    ).not.toHaveTextContent('(');
+    await act(async () => {
+      rejectCounts(new Error('Offline'));
+    });
+    expect(
+      getByRole('link', { name: 'All conversations' }),
+    ).not.toHaveTextContent('(');
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(
+        getByRole('link', { name: 'All conversations' }),
+      ).toHaveTextContent('(42)'),
+    );
+  });
+
+  it.each(['resolve', 'reject'])(
+    'ignores a count request that %ss after unmount',
+    async outcome => {
+      api.fetchThreads.mockResolvedValue({ threads: [] });
+      let finish!: () => void;
+      jest.mocked(messagesApi.conversationCounts).mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            finish = () =>
+              outcome === 'resolve'
+                ? resolve({ all: 0, unread: 0, unreplied: 0 })
+                : reject(new Error('Offline'));
+          }),
+      );
+      const { unmount, findByRole } = render(<Inbox user={me} />);
+      await findByRole('alert');
+      unmount();
+      await act(async () => {
+        finish();
+      });
+      fireEvent.focus(window);
+      fireEvent(document, new Event('visibilitychange'));
+      expect(messagesApi.conversationCounts).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('shows the unreplied empty state and selects only its filter', async () => {
+    window.history.replaceState(null, '', '/messages?filter=unreplied');
+    api.fetchThreads.mockResolvedValue({ threads: [] });
+    const { findByRole, getByRole } = render(<Inbox user={me} />);
+    expect(await findByRole('alert')).toHaveTextContent(
+      'No unreplied conversations.',
+    );
+    expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unreplied' });
+    expect(
+      getByRole('link', { name: 'Unreplied conversations' }),
+    ).toHaveAttribute('aria-current', 'page');
+    expect(
+      getByRole('link', { name: 'All conversations' }),
+    ).not.toHaveAttribute('aria-current');
+  });
+
+  it.each(['pagination', 'search'])(
+    'preserves unreplied during %s',
+    async method => {
+      window.history.replaceState(null, '', '/messages?filter=unreplied');
+      api.fetchThreads
+        .mockResolvedValueOnce({ threads, nextParams: { page: 2 } })
+        .mockResolvedValue({ threads: moreThreads });
+      const { findByRole, getByRole } = render(<Inbox user={me} />);
+      await findByRole('button', { name: 'More messages' });
+      if (method === 'search')
+        fireEvent.change(getByRole('searchbox'), {
+          target: { value: 'older' },
+        });
+      else fireEvent.click(getByRole('button', { name: 'More messages' }));
+      await waitFor(() =>
+        expect(api.fetchThreads).toHaveBeenCalledWith({
+          page: 2,
+          filter: 'unreplied',
+        }),
+      );
+    },
+  );
   it('filters a conversation with an absent participant by its preview', async () => {
     const missingParticipant: messagesApi.MessageThreadSummary = {
       _id: 'thread-without-sender',
