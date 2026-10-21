@@ -149,10 +149,15 @@ describe('Support team access and investigation', () => {
   });
   it('returns only safe member fields and permits notes and current greeter tools', async () => {
     const member = (
-      await agent.get(`/api/admin/support-members/${users[1]._id}`).expect(200)
+      await agent
+        .get(`/api/admin/support-members/${users[1].username}`)
+        .expect(200)
     ).body;
     member.roles.should.containEql('suspended');
     member.pendingDeletion.should.equal(true);
+    (
+      await agent.get(`/api/admin/support-members/${users[1]._id}`).expect(200)
+    ).body.username.should.equal(users[1].username);
     [
       'password',
       'salt',
@@ -351,9 +356,7 @@ describe('Support team access and investigation', () => {
       await agent.get(`/api/admin/support?${query}`).expect(400);
     for (const id of ['bad', new mongoose.Types.ObjectId().toString()]) {
       await agent.get(endpoint(id)).expect(id === 'bad' ? 400 : 404);
-      await agent
-        .get(`/api/admin/support-members/${id}`)
-        .expect(id === 'bad' ? 400 : 404);
+      await agent.get(`/api/admin/support-members/${id}`).expect(404);
     }
     for (const search of ['', 'ab', 'x'.repeat(255)])
       await agent

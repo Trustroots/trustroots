@@ -5,6 +5,8 @@ import AdminNotes from './AdminNotes';
 import UserState from './UserState.component';
 import { SUPPORT_CATEGORIES } from '../../../support/shared/categories';
 import * as api from '../api/support.api';
+import { formatAdminDateTime } from '../utils/admin-date';
+import { getCurrentUser } from '../../../core/client/services/client-runtime';
 import type {
   InvestigationItem,
   Page,
@@ -111,7 +113,9 @@ function Investigation({
                 <p>
                   <strong>{item.userFrom?.username || 'Deleted member'}</strong>{' '}
                   → {item.userTo?.username || 'Deleted member'} ·{' '}
-                  <time>{new Date(item.created).toLocaleString()}</time>
+                  <time dateTime={item.created}>
+                    {formatAdminDateTime(item.created)}
+                  </time>
                 </p>
                 {item.shadowHidden && <p>Hidden message</p>}
                 {kind === 'experiences' && (
@@ -134,6 +138,48 @@ function Investigation({
         </>
       )}
     </section>
+  );
+}
+
+function CaseMemberStatus({
+  id,
+  label,
+  linkLabel,
+}: {
+  id: string;
+  label: string;
+  linkLabel: string;
+}) {
+  const {
+    data: member,
+    failed,
+    reload,
+  } = useResource<SupportMember>(
+    `/api/admin/support-members/${encodeURIComponent(id)}`,
+  );
+  return (
+    <div role="group" aria-label={label}>
+      {member ? (
+        <>
+          <UserState user={member} />
+          {member.pendingDeletion && <p>Pending deletion</p>}
+        </>
+      ) : failed ? (
+        <p>
+          Account status unavailable.{' '}
+          <button className="btn btn-link" onClick={reload}>
+            Retry
+          </button>
+        </p>
+      ) : (
+        <p role="status">Loading account status…</p>
+      )}
+      <a
+        href={`/admin/support/member/${encodeURIComponent(member?.username || id)}`}
+      >
+        {linkLabel}
+      </a>
+    </div>
   );
 }
 
@@ -206,7 +252,9 @@ function RequestDetails({
         <div>
           <dt>Received</dt>
           <dd>
-            <time>{new Date(report.sent).toLocaleString()}</time>
+            <time dateTime={report.sent}>
+              {formatAdminDateTime(report.sent)}
+            </time>
           </dd>
         </div>
       </dl>
@@ -229,9 +277,13 @@ function RequestDetails({
           <h3>Reporter</h3>
           <p>{report.username || 'Signed-out visitor'}</p>
           {report.user && (
-            <a href={`/admin/support/member/${report.user}`}>
-              Reporter account and notes
-            </a>
+            <>
+              <CaseMemberStatus
+                id={report.user}
+                label="Reporter account status"
+                linkLabel="Reporter account and notes"
+              />
+            </>
           )}
         </div>
         {(report.reportMember || report.reportedUser) && (
@@ -239,9 +291,13 @@ function RequestDetails({
             <h3>Reported member</h3>
             {report.reportMember && <p>{report.reportMember}</p>}
             {report.reportedUser && (
-              <a href={`/admin/support/member/${report.reportedUser}`}>
-                Reported account and notes
-              </a>
+              <>
+                <CaseMemberStatus
+                  id={report.reportedUser}
+                  label="Reported member account status"
+                  linkLabel="Reported account and notes"
+                />
+              </>
             )}
           </div>
         )}
@@ -336,7 +392,9 @@ function MemberSearch() {
       <ul>
         {members.map(member => (
           <li key={member._id}>
-            <a href={`/admin/support/member/${member._id}`}>
+            <a
+              href={`/admin/support/member/${encodeURIComponent(member.username)}`}
+            >
               {member.username} ({member.displayName})
             </a>
           </li>
@@ -350,6 +408,18 @@ export function SupportMemberPage({ id }: { id: string }) {
   const { data: member, failed } = useResource<SupportMember>(
     `/api/admin/support-members/${encodeURIComponent(id)}`,
   );
+  const canOpenAdminUserPage = (getCurrentUser()?.roles || []).includes(
+    'admin',
+  );
+  useEffect(() => {
+    if (member && id !== member.username) {
+      window.history.replaceState(
+        window.history.state,
+        '',
+        `/admin/support/member/${encodeURIComponent(member.username)}`,
+      );
+    }
+  }, [id, member]);
   return (
     <>
       <AdminHeader />
@@ -362,7 +432,13 @@ export function SupportMemberPage({ id }: { id: string }) {
         ) : (
           <>
             <h1>
-              {member.username} ({member.displayName})
+              {canOpenAdminUserPage ? (
+                <a href={`/admin/user/${encodeURIComponent(member.username)}`}>
+                  {member.username} ({member.displayName})
+                </a>
+              ) : (
+                `${member.username} (${member.displayName})`
+              )}
             </h1>
             <UserState user={member} />
             {member.pendingDeletion && <p>Pending deletion</p>}
@@ -485,8 +561,8 @@ export default function SupportInbox() {
                           </strong>
                           <span>{report.username || report.email}</span>
                           <span className="support-inbox__queue-meta">
-                            <time>
-                              {new Date(report.sent).toLocaleString()}
+                            <time dateTime={report.sent}>
+                              {formatAdminDateTime(report.sent)}
                             </time>
                             <span
                               className="support-inbox__status"

@@ -4,7 +4,8 @@ import React from 'react';
 import UserLink from './UserLink.component';
 import UserState from './UserState.component';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component';
-import { formatAdminDate, isSuspendedUser } from './userSearch.helpers';
+import { isSuspendedUser } from './userSearch.helpers';
+import { formatAdminDateTime } from '../utils/admin-date';
 
 interface UserSort {
   column: string;
@@ -137,6 +138,11 @@ export default function AdminUserResultsTable({
               } = user;
               const showProfileLink =
                 showPublicProfileLink && !isSuspendedUser(user);
+              const createdDate = created == null ? null : new Date(created);
+              const createdDateTime =
+                createdDate && !Number.isNaN(createdDate.getTime())
+                  ? createdDate.toISOString()
+                  : undefined;
               return (
                 <tr key={_id}>
                   <td className="admin-search-users__actions">
@@ -185,7 +191,11 @@ export default function AdminUserResultsTable({
                       </>
                     )}
                   </td>
-                  <td>{formatAdminDate(created)}</td>
+                  <td>
+                    <time dateTime={createdDateTime}>
+                      {formatAdminDateTime(created)}
+                    </time>
+                  </td>
                   <td>
                     {lastIpAddress && (
                       <a

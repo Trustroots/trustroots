@@ -41,6 +41,10 @@ jest.mock(
   () => () => <main>Admin audit log</main>,
 );
 jest.mock(
+  '@/modules/admin/client/components/AdminUsernameChanges.component',
+  () => () => <main>Admin username changes</main>,
+);
+jest.mock(
   '@/modules/admin/client/components/AdminCircles.component',
   () => () => <main>Admin circles</main>,
 );
@@ -512,6 +516,18 @@ describe('React route ownership', () => {
       title: 'Admin - Audit log',
     });
     expect(adminRoute.render).toEqual(expect.any(Function));
+
+    const usernameChangesRoute = findRoute('/admin/username-changes')!;
+    expect(usernameChangesRoute).toMatchObject({
+      footerVariant: 'admin',
+      path: '/admin/username-changes',
+      requiresAuth: true,
+      requiresRole: ['admin'],
+      title: 'Admin - Username changes',
+    });
+    expect(
+      renderRoute(usernameChangesRoute).getByText('Admin username changes'),
+    ).toBeInTheDocument();
   });
 
   it('renders the admin circles route with admin metadata', () => {

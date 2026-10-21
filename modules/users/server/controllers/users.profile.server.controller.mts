@@ -32,6 +32,7 @@ import type {
   UserProfileController,
 } from './users.profile.server.contracts.mts';
 import type {
+  UsernameHistoryRecord,
   UserServerDocument,
   UserServerModel,
   UserServerRecord,
@@ -141,7 +142,8 @@ service.update = function (req, res) {
       message: 'Please enter a valid email address.',
     });
   }
-  const authenticatedUser = req.user;
+  let authenticatedUser = req.user;
+  let usernameChange: UsernameHistoryRecord | undefined;
   const requestedEmail = req.body.email as string | undefined;
 
   if (Object.prototype.hasOwnProperty.call(req.body, 'username')) {
@@ -323,15 +325,47 @@ service.update = function (req, res) {
           req.body.username &&
           req.body.username !== authenticatedUser.username
         ) {
-          // They are not allowed to do so
-          if (!isUsernameUpdateAllowed(authenticatedUser)) {
-            return res.status(403).send({
-              message: 'You cannot change your username at this time.',
-            });
-          }
+          const requestedUsername = req.body.username;
+          void (async function () {
+            try {
+              const user = await User.findById(authenticatedUser._id)
+                .select('+usernameHistory')
+                .exec();
+              if (!user) {
+                res.status(404).send({
+                  message: 'User not found.',
+                });
+                return;
+              }
+              authenticatedUser = user;
+              if (requestedUsername === authenticatedUser.username) {
+                return done(null, token, email);
+              }
+              if (!isUsernameUpdateAllowed(authenticatedUser)) {
+                res.status(403).send({
+                  message: 'You cannot change your username at this time.',
+                });
+                return;
+              }
 
-          // Mark username updated
-          authenticatedUser.usernameUpdated = new Date();
+              // Guard the rename save against a concurrent request that
+              // loaded the same old username and cooldown state.
+              authenticatedUser.$where = {
+                username: authenticatedUser.username,
+              };
+              const changedAt = new Date();
+              authenticatedUser.usernameUpdated = changedAt;
+              usernameChange = {
+                oldUsername: authenticatedUser.username,
+                newUsername: requestedUsername,
+                changedAt,
+              };
+              done(null, token, email);
+            } catch (error) {
+              done(error as Error, token, email);
+            }
+          })();
+          return;
         }
         done(null, token, email);
       },
@@ -349,6 +383,10 @@ service.update = function (req, res) {
           authenticatedUser,
           selectProfileUpdateFields(req.body),
         );
+        if (usernameChange) {
+          user.usernameHistory ||= [];
+          user.usernameHistory.push(usernameChange);
+        }
         user.set('updated', Date.now());
 
         // This is set only if user edited email
@@ -359,9 +397,22 @@ service.update = function (req, res) {
         user
           .save()
           .then(function () {
+            req.user = user;
             done(null, token, user);
           })
-          .catch(error => done(error, token, user));
+          .catch(error => {
+            if (
+              usernameChange &&
+              (error instanceof mongoose.Error.DocumentNotFoundError ||
+                error instanceof mongoose.Error.VersionError)
+            ) {
+              return res.status(409).send({
+                message:
+                  'Your username changed in another request. Please try again.',
+              });
+            }
+            done(error, token, user);
+          });
       },
       // Send email
       function (
@@ -1086,6 +1137,8 @@ function sanitizeProfile(
     delete profile.passwordUpdated;
     delete profile.usernameUpdated;
   }
+  // Username history is visible only through the dedicated admin endpoint.
+  delete profile.usernameHistory;
 
   profile.isGreeter = profile.roles!.includes('welcome-team');
 

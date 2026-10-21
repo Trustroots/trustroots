@@ -33,7 +33,7 @@ describe('<AdminHeader />', () => {
       ['Conversations', ['Messages', 'Threads']],
       ['Experiences', ['Reference threads', 'Experience changes']],
       ['Outreach', ['Acquisition stories', 'Newsletter']],
-      ['Audit', ['Audit log']],
+      ['Audit', ['Audit log', 'Username changes']],
     ] as const) {
       const group = within(screen.getByRole('list', { name }));
       expect(group.getAllByRole('link').map(link => link.textContent)).toEqual(
@@ -45,10 +45,6 @@ describe('<AdminHeader />', () => {
   it('shows support navigation without administrator tools', () => {
     window.user = { roles: ['support-team'] };
     render(<AdminHeader />);
-    expect(screen.getByRole('link', { name: 'Support' })).toHaveAttribute(
-      'href',
-      '/admin/support',
-    );
     expect(
       screen.getByRole('link', { name: 'Support inbox' }),
     ).toBeInTheDocument();
@@ -64,6 +60,9 @@ describe('<AdminHeader />', () => {
     expect(
       screen.queryByRole('link', { name: 'Messages' }),
     ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('list', { name: 'Conversations' }),
+    ).not.toBeInTheDocument();
   });
   it.each([
     { roles: ['welcome-team'] },
@@ -74,12 +73,8 @@ describe('<AdminHeader />', () => {
     user => {
       window.user = user;
       render(<AdminHeader />);
-      expect(screen.getByRole('link', { name: 'Greeters' })).toHaveAttribute(
-        'href',
-        '/admin/acquisition-stories',
-      );
       expect(screen.getAllByRole('link')).toHaveLength(
-        user?.roles?.includes('welcome-team') ? 4 : 2,
+        user?.roles?.includes('welcome-team') ? 3 : 1,
       );
       expect(
         screen.queryByRole('link', { name: 'Audit log' }),
@@ -113,10 +108,9 @@ describe('<AdminHeader />', () => {
 
     render(<AdminHeader />);
 
-    expect(screen.getByRole('link', { name: 'Admin' })).toHaveAttribute(
-      'href',
-      '/admin',
-    );
+    expect(
+      screen.queryByRole('link', { name: /^Admin$/ }),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'Messages' }).closest('li'),
     ).toHaveClass('active');

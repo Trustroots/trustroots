@@ -80,9 +80,13 @@ describe('Compact audit log', () => {
     render(<AdminAuditLog />);
     await screen.findByText('Unknown route');
     expect(screen.getByText('Unknown')).toBeInTheDocument();
-    expect(screen.getByText('Unknown time')).toBeInTheDocument();
+    expect(screen.getByRole('table').querySelector('time')).toHaveTextContent(
+      '—',
+    );
     expect(screen.getByText('IP: Unknown IP address')).toBeInTheDocument();
-    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(
+      screen.getByRole('table').querySelector('.admin-audit-log-summary'),
+    ).toHaveTextContent('—');
   });
 
   it('handles invalid audit timestamps', async () => {
@@ -90,7 +94,8 @@ describe('Compact audit log', () => {
       { _id: 'invalid-time', date: 'invalid' },
     ]);
     render(<AdminAuditLog />);
-    expect(await screen.findByText('Unknown time')).toBeInTheDocument();
+    const table = await screen.findByRole('table');
+    expect(table.querySelector('time')).toHaveTextContent('—');
   });
   it('combines staff and team filters and displays empty results', async () => {
     mockedApi.getAuditLog.mockResolvedValue([]);

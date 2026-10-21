@@ -185,11 +185,11 @@ The admin preview SHALL allow ascending and descending sorting by Space, Locatio
 
 ### Requirement: Country exclusions in admin imports
 
-The admin importer SHALL skip new listings whose structured or legacy address identifies Russia or Israel, accepting country names and ISO alpha-2/alpha-3 codes case-insensitively. It SHALL prepare kind 5 deletion requests for existing excluded listings from either configured relay, including event ID, addressable identifier and kind tags. It SHALL sign a deletion request only with the original author key and report mismatches. Public map parsing SHALL remain unchanged.
+The admin importer SHALL skip new listings whose structured or legacy address identifies Russia, Israel or Belarus, accepting country names and ISO alpha-2/alpha-3 codes case-insensitively. It SHALL prepare kind 5 deletion requests for existing excluded listings from either configured relay, including event ID, addressable identifier and kind tags. It SHALL sign a deletion request only with the original author key and report mismatches. Public map parsing SHALL remain unchanged.
 
 #### Scenario: Excluded country appears in a refresh
 
-- **WHEN** a collector listing identifies Russia or Israel
+- **WHEN** a collector listing identifies Russia, Israel or Belarus
 - **THEN** it is excluded from new active publication
 - **AND** matching existing events are included in deletion requests after administrator approval
 

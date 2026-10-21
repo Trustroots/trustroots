@@ -8,7 +8,10 @@ import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import LanguageList from '@/modules/users/client/components/LanguageList';
 import HoverTooltip from '@/modules/core/client/components/Tooltip';
-import { formatAdminUtcDate } from '../utils/admin-date';
+import {
+  formatAdminDateTime,
+  getAdminDateTimeAttribute,
+} from '../utils/admin-date';
 
 type StorySortColumn =
   | 'acquisitionStory'
@@ -356,8 +359,11 @@ export default function AdminAcquisitionStories() {
                 >
                   <td>
                     <a href={`#acquisition-story-${index + 1}`}>
-                      <time className="text-muted">
-                        {formatAdminUtcDate(story.created)}
+                      <time
+                        className="text-muted"
+                        dateTime={getAdminDateTimeAttribute(story.created)}
+                      >
+                        {formatAdminDateTime(story.created)}
                       </time>
                     </a>
                   </td>
@@ -427,7 +433,7 @@ export default function AdminAcquisitionStories() {
                         />
                         <div>
                           <time dateTime={story.welcomer.created}>
-                            {formatAdminUtcDate(story.welcomer.created)}
+                            {formatAdminDateTime(story.welcomer.created)}
                           </time>
                         </div>
                       </>

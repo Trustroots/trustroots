@@ -8,16 +8,6 @@ import type { ReferenceThreadsResponse } from '@/modules/admin/client/api/admin-
 
 jest.mock('@/modules/admin/client/api/admin-reference-threads.api');
 const mockedReferenceThreadsApi = jest.mocked(referenceThreadsApi);
-jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  function MockTimeAgo({ date }: { date: Date }) {
-    return <time>{date.toISOString()}</time>;
-  }
-
-  return MockTimeAgo;
-});
-
 afterEach(() => {
   jest.clearAllMocks();
   jest.restoreAllMocks();
@@ -67,7 +57,11 @@ describe('<AdminReferenceThreads />', () => {
     );
     expect(screen.getByRole('link', { name: 'See messages' })).toHaveAttribute(
       'href',
-      `/admin/messages?userId1=${userTo._id}&userId2=${userFrom._id}`,
+      `/admin/messages?username1=${userTo.username}&username2=${userFrom.username}`,
+    );
+    expect(screen.getByText('2025-06-07 08:09')).toHaveAttribute(
+      'dateTime',
+      '2025-06-07T08:09:10.000Z',
     );
   });
 

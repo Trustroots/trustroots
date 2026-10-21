@@ -164,9 +164,9 @@ describe('<Admin />', () => {
         name: 'experience-sender (Experience sender)',
       }),
     ).toHaveAttribute('href', '/admin/user/experience-sender');
-    expect(screen.getByText('2026-06-21')).toBeInTheDocument();
+    expect(screen.getByText('2026-06-21 12:00')).toBeInTheDocument();
     const feedbackTrigger = screen.getByRole('button', {
-      name: 'Preview public feedback from 2026-06-21',
+      name: 'Preview public feedback from 2026-06-21 12:00',
     });
     fireEvent.focus(feedbackTrigger);
     expect(screen.getByRole('tooltip')).toHaveTextContent(
@@ -253,15 +253,15 @@ describe('<Admin />', () => {
       screen.getByRole('link', { name: 'linked-thread-with-invalid-date' }),
     ).toHaveAttribute(
       'href',
-      '/admin/messages?userId1=user-from-2&userId2=user-to-3',
+      '/admin/messages?username1=sender-two&username2=receiver-three',
     );
     expect(
       screen.queryByRole('link', { name: 'thread-without-users' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByText('Unknown date')).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
     fireEvent.focus(
       screen.getByRole('button', {
-        name: 'Preview public feedback from Unknown date',
+        name: 'Preview public feedback from —',
       }),
     );
     expect(screen.getByRole('tooltip')).toHaveTextContent(

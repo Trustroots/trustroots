@@ -418,7 +418,7 @@ describe('<AdminAcquisitionStories />', () => {
 
     expect(await screen.findByText('No date story.')).toBeInTheDocument();
     expect(screen.getByText('Invalid date story.')).toBeInTheDocument();
-    expect(screen.getAllByText('', { selector: 'time' })).toHaveLength(2);
+    expect(screen.getAllByText('—', { selector: 'time' })).toHaveLength(2);
   });
 
   it('puts shared languages first and emphasises shared non-English languages', async () => {
@@ -510,7 +510,7 @@ describe('<AdminAcquisitionStories />', () => {
     expect(
       await screen.findByRole('link', { name: 'welcomer (Welcomer Example)' }),
     ).toHaveAttribute('href', '/profile/welcomer');
-    expect(screen.getByText('2026-03-04')).toHaveAttribute(
+    expect(screen.getByText('2026-03-04 05:06')).toHaveAttribute(
       'dateTime',
       '2026-03-04T05:06:07.000Z',
     );

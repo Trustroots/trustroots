@@ -65,7 +65,10 @@ export default function AdminHeader() {
     {
       id: 'audit',
       label: 'Audit',
-      pages: [{ path: 'audit-log', label: 'Audit log' }],
+      pages: [
+        { path: 'audit-log', label: 'Audit log' },
+        { path: 'username-changes', label: 'Username changes' },
+      ],
     },
   ]
     .map(group => ({
@@ -87,12 +90,16 @@ export default function AdminHeader() {
     <li
       key={path}
       className={classnames({
-        active: currentPath === path,
+        active: currentPath === path || currentPath.startsWith(`${path}/`),
       })}
     >
       <a
         href={`/admin/${path}`}
-        aria-current={currentPath === path ? 'page' : undefined}
+        aria-current={
+          currentPath === path || currentPath.startsWith(`${path}/`)
+            ? 'page'
+            : undefined
+        }
       >
         {label}
       </a>
@@ -105,29 +112,15 @@ export default function AdminHeader() {
       aria-label="Administration"
     >
       <div className="container">
-        <div className="navbar-header">
-          <a
-            className="navbar-brand"
-            href={
-              isAdmin
-                ? '/admin'
-                : isSupport
-                  ? '/admin/support'
-                  : '/admin/acquisition-stories'
-            }
-          >
-            {isAdmin ? 'Admin' : isSupport ? 'Support' : 'Greeters'}
-          </a>
-        </div>
         <div className="admin-nav-groups">
           {groups.map(group => (
             <div className="admin-nav-group" key={group.id}>
-              <h2
+              <div
                 className="admin-nav-group__label"
                 id={`admin-nav-${group.id}`}
               >
                 {group.label}
-              </h2>
+              </div>
               <ul
                 className="nav navbar-nav"
                 aria-labelledby={`admin-nav-${group.id}`}
@@ -141,3 +134,5 @@ export default function AdminHeader() {
     </nav>
   );
 }
+
+AdminHeader.propTypes = {};

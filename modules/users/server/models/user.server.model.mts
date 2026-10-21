@@ -137,6 +137,17 @@ const UserPushRegistrationSchema = new Schema<
   { _id: false },
 );
 
+const UsernameHistorySchema = new Schema<
+  NonNullable<UserServerRecord['usernameHistory']>[number]
+>(
+  {
+    oldUsername: { type: String, required: true },
+    newUsername: { type: String, required: true },
+    changedAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
 /**
  * User Schema
  */
@@ -235,6 +246,10 @@ const UserSchema = new Schema<
   },
   usernameUpdated: {
     type: Date,
+  },
+  usernameHistory: {
+    type: [UsernameHistorySchema],
+    select: false,
   },
   // Couchers.org username
   extSitesCouchers: {
@@ -578,6 +593,11 @@ UserSchema.methods.authenticate = async function (password: unknown) {
  */
 UserSchema.plugin(uniqueValidation);
 
+UserSchema.index(
+  { 'usernameHistory.changedAt': -1 },
+  { name: 'username_history_changed_at' },
+);
+UserSchema.index({ usernameUpdated: -1 }, { name: 'username_updated' });
 UserSchema.index(
   { nostrNpub: 1 },
   {

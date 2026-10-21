@@ -65,6 +65,9 @@ beforeEach(() => {
   jest.resetAllMocks();
   setStatus.mockResolvedValue(undefined);
 });
+afterEach(() => {
+  delete window.user;
+});
 
 test('triages a report and reads its whole conversation and unpublished experiences', async () => {
   let resolved = false;
@@ -161,6 +164,155 @@ test('triages a report and reads its whole conversation and unpublished experien
   );
 });
 
+test('shows linked account roles and renders support dates in UTC', async () => {
+  load.mockImplementation(async path => {
+    if (path === '/api/admin/support/report-1') return report;
+    if (path === '/api/admin/support/report-1/messages?page=1')
+      return {
+        items: [
+          {
+            _id: 'message-1',
+            created: report.sent,
+            userFrom: { username: 'fictional-target' },
+            userTo: { username: 'fictional-reporter' },
+            content: 'Fictional conversation text',
+          },
+        ],
+        hasMore: false,
+      };
+    if (path === '/api/admin/support-members/reporter-1')
+      return {
+        ...member,
+        _id: 'reporter-1',
+        username: 'renamed-current-reporter',
+        roles: ['user', 'admin', 'support-team', 'welcome-team'],
+      };
+    if (path === '/api/admin/support-members/target-1')
+      return { ...member, username: 'renamed-current-target' };
+    return { items: [report], hasMore: false };
+  });
+  render(<SupportInbox />);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /fictional-reporter · Report a member/,
+    }),
+  );
+  await waitFor(() =>
+    expect(screen.getAllByText('2026-01-02 12:00')).toHaveLength(2),
+  );
+  await screen.findByText('admin', { exact: true });
+  expect(
+    screen.getByRole('group', { name: 'Reporter account status' }),
+  ).toHaveTextContent('admin');
+  expect(
+    screen.getByRole('group', { name: 'Reporter account status' }),
+  ).toHaveTextContent('Support team');
+  expect(
+    screen.getByRole('group', { name: 'Reporter account status' }),
+  ).toHaveTextContent('Greeter');
+  expect(
+    await screen.findByText('suspended', { exact: true }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('group', { name: 'Reported member account status' }),
+  ).toHaveTextContent('shadowban');
+  const details = screen.getByRole('region', { name: 'Support request' });
+  expect(
+    within(details).getByText('fictional-reporter', { selector: 'p' }),
+  ).toBeInTheDocument();
+  expect(
+    within(details).getByText('fictional-target', { selector: 'p' }),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByRole('link', { name: 'Reporter account and notes' }),
+  ).toHaveAttribute('href', '/admin/support/member/renamed-current-reporter');
+  expect(
+    screen.getByRole('link', { name: 'Reported account and notes' }),
+  ).toHaveAttribute('href', '/admin/support/member/renamed-current-target');
+  fireEvent.click(screen.getByRole('button', { name: 'View conversation' }));
+  await waitFor(() =>
+    expect(screen.getAllByText('2026-01-02 12:00')).toHaveLength(3),
+  );
+});
+
+test('retries failed case status and falls back to the reporter id link', async () => {
+  let reporterAttempts = 0;
+  let failReporterLookup: ((error: Error) => void) | undefined;
+  load.mockImplementation(async path => {
+    if (path === '/api/admin/support/report-1')
+      return { ...report, username: undefined };
+    if (path === '/api/admin/support-members/reporter-1') {
+      reporterAttempts += 1;
+      if (reporterAttempts === 1)
+        return new Promise((_, reject) => {
+          failReporterLookup = reject;
+        });
+      return { ...member, _id: 'reporter-1', username: 'fictional-reporter' };
+    }
+    if (path === '/api/admin/support-members/target-1') return member;
+    return { items: [{ ...report, username: undefined }], hasMore: false };
+  });
+
+  render(<SupportInbox />);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /reporter@example\.test · Report a member/,
+    }),
+  );
+  const reporterStatus = await screen.findByRole('group', {
+    name: 'Reporter account status',
+  });
+  expect(
+    within(reporterStatus).getByRole('link', {
+      name: 'Reporter account and notes',
+    }),
+  ).toHaveAttribute('href', '/admin/support/member/reporter-1');
+  await act(async () => failReporterLookup?.(new Error('Unavailable')));
+  await within(reporterStatus).findByText('Account status unavailable.');
+  expect(
+    screen.getByRole('link', { name: 'Reporter account and notes' }),
+  ).toHaveAttribute('href', '/admin/support/member/reporter-1');
+
+  fireEvent.click(
+    within(reporterStatus).getByRole('button', { name: 'Retry' }),
+  );
+  await within(reporterStatus).findByText('suspended');
+  expect(reporterAttempts).toBe(2);
+  expect(
+    within(reporterStatus).getByRole('link', {
+      name: 'Reporter account and notes',
+    }),
+  ).toHaveAttribute('href', '/admin/support/member/fictional-reporter');
+});
+
+test('canonicalizes legacy member IDs and ignores a stale member response', async () => {
+  window.history.pushState({}, '', '/admin/support/member/legacy-id');
+  load.mockResolvedValue({ ...member, _id: 'legacy-id' });
+  render(<SupportMemberPage id="legacy-id" />);
+  await screen.findByText('Notes for legacy-id');
+  await waitFor(() =>
+    expect(window.location.pathname).toBe(
+      '/admin/support/member/fictional-target',
+    ),
+  );
+
+  let resolveRequest: (value: typeof member) => void = () => {};
+  load.mockImplementation(
+    () =>
+      new Promise(resolve => {
+        resolveRequest = resolve;
+      }),
+  );
+  window.history.pushState({}, '', '/admin/support/member/stale-id');
+  const view = render(<SupportMemberPage id="stale-id" />);
+  view.unmount();
+  window.history.pushState({}, '', '/admin/support');
+  await act(async () => {
+    resolveRequest(member);
+  });
+  expect(window.location.pathname).toBe('/admin/support');
+});
+
 test('handles missing linkage, empty results and search errors', async () => {
   load.mockImplementation(async path => {
     if (path.startsWith('/api/admin/support-members')) return [member];
@@ -202,7 +354,7 @@ test('handles missing linkage, empty results and search errors', async () => {
     await screen.findByRole('link', {
       name: 'fictional-target (Fictional Member)',
     }),
-  ).toHaveAttribute('href', '/admin/support/member/target-1');
+  ).toHaveAttribute('href', '/admin/support/member/fictional-target');
   load.mockResolvedValueOnce({ unexpected: true });
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
   expect(await screen.findByText('No members found.')).toBeInTheDocument();
@@ -265,6 +417,7 @@ test('renders empty inbox and request detail errors without stale content', asyn
 });
 
 test('shows safe restricted account information and member notes', async () => {
+  window.user = { roles: ['admin'] };
   load.mockResolvedValue(member);
   render(<SupportMemberPage id="target-1" />);
   await screen.findByRole('heading', {
@@ -275,6 +428,9 @@ test('shows safe restricted account information and member notes', async () => {
   expect(screen.getByText('Pending deletion')).toBeInTheDocument();
   expect(screen.getByText('Profile text')).toBeInTheDocument();
   expect(screen.getByText('Notes for target-1')).toBeInTheDocument();
+  expect(
+    screen.getByRole('link', { name: 'fictional-target (Fictional Member)' }),
+  ).toHaveAttribute('href', '/admin/user/fictional-target');
 });
 
 test('handles deleted accounts and missing optional member fields', async () => {

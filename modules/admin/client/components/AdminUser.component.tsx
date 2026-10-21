@@ -2,7 +2,10 @@
 import get from 'lodash/get';
 import { formatRoleLabel } from '../utils/role-label';
 import { getAdminUserHref } from '../utils/member-url';
-import { formatAdminUtcDate } from '../utils/admin-date';
+import {
+  formatAdminDateTime,
+  getAdminDateTimeAttribute,
+} from '../utils/admin-date';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 import { Modal } from 'react-bootstrap';
 
@@ -654,8 +657,8 @@ export default class AdminUser extends Component<
               : null,
           ],
           ['Profile visible', user.profile.public ? 'Yes' : 'No'],
-          ['Signed up', formatAdminUtcDate(user.profile.created)],
-          ['Last seen', formatAdminUtcDate(user.profile.seen)],
+          ['Signed up', formatAdminDateTime(user.profile.created)],
+          ['Last seen', formatAdminDateTime(user.profile.seen)],
           [
             'Last IP address',
             user.profile.lastIpAddress && (
@@ -1012,7 +1015,11 @@ export default class AdminUser extends Component<
                           <h5>Messages</h5>
                           <p className="admin-member-stat-total">
                             <a
-                              href={`/admin/threads?userId=${user.profile._id}`}
+                              href={
+                                user.profile.username
+                                  ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                  : `/admin/threads?userId=${user.profile._id}`
+                              }
                             >
                               {user.threadCount || 0} threads total
                             </a>
@@ -1232,8 +1239,8 @@ export default class AdminUser extends Component<
                                 ['Status', offer.status],
                                 ['Description', offer.description],
                                 ['Location', formattedLocation],
-                                ['Created', formatAdminUtcDate(offer.created)],
-                                ['Updated', formatAdminUtcDate(offer.updated)],
+                                ['Created', formatAdminDateTime(offer.created)],
+                                ['Updated', formatAdminDateTime(offer.updated)],
                               ]}
                             />
                             <p>
@@ -1315,7 +1322,15 @@ export default class AdminUser extends Component<
                                       contactName
                                     )}
                                   </td>
-                                  <td>{formatAdminUtcDate(contact.created)}</td>
+                                  <td>
+                                    <time
+                                      dateTime={getAdminDateTimeAttribute(
+                                        contact.created,
+                                      )}
+                                    >
+                                      {formatAdminDateTime(contact.created)}
+                                    </time>
+                                  </td>
                                 </tr>
                               );
                             })}

@@ -10,17 +10,7 @@ import {
 import AdminHeader from './AdminHeader.component';
 import Json from './Json.component';
 import UserLink from './UserLink.component';
-
-function auditDate(date?: string) {
-  if (!date) return 'Unknown time';
-  const value = new Date(date);
-  if (Number.isNaN(value.getTime())) return 'Unknown time';
-  return `${value.toLocaleString('en-GB', {
-    timeZone: 'UTC',
-    dateStyle: 'short',
-    timeStyle: 'short',
-  })} UTC`;
-}
+import { formatAdminDateTime } from '../utils/admin-date';
 
 function requestSummary(item: AdminAuditLogEntry) {
   return (
@@ -153,7 +143,9 @@ export default function AdminAuditLog() {
                 {auditLog.map(item => (
                   <tr key={item._id}>
                     <td>
-                      <time dateTime={item.date}>{auditDate(item.date)}</time>
+                      <time dateTime={item.date}>
+                        {formatAdminDateTime(item.date)}
+                      </time>
                     </td>
                     <td>
                       <UserLink user={item.user || {}} />

@@ -1490,6 +1490,13 @@ describe('Profile controller unit tests', () => {
           _id: new mongoose.Types.ObjectId(),
           created: new Date('2020-01-01T00:00:00.000Z'),
           displayName: 'Fictional Member',
+          usernameHistory: [
+            {
+              oldUsername: 'formername',
+              newUsername: 'fictional',
+              changedAt: new Date('2025-01-01T00:00:00.000Z'),
+            },
+          ],
           email: 'member@example.test',
           locale: 'en',
           blocked: [],
@@ -1512,10 +1519,18 @@ describe('Profile controller unit tests', () => {
         'lastIpAddress',
         'pushRegistration',
         'providerData',
+        'usernameHistory',
         'futurePrivateField',
       ]) {
         (sanitized[field] === undefined).should.be.true();
       }
+
+      const publicSanitized = profileController.sanitizeProfile(
+        profile,
+        false,
+        null,
+      );
+      (publicSanitized?.usernameHistory === undefined).should.be.true();
     });
 
     it('derives public greeter recognition from current roles without exposing roles', async () => {

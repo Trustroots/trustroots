@@ -133,6 +133,28 @@ describe('<NavigationLoggedIn />', () => {
     expect(adminListItem.nextElementSibling).toBe(circlesListItem);
   });
 
+  it.each([
+    '/admin',
+    '/admin/',
+    '/admin/messages',
+    '/admin/support/member/fictional-member',
+  ])('keeps the Admin link selected on %s', currentPath => {
+    render(
+      <NavigationLoggedIn
+        currentPath={currentPath}
+        onSignout={jest.fn()}
+        user={{
+          _id: 'fictional-member',
+          username: 'fictional-member',
+          roles: ['admin'],
+        }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: /^Admin$/ }).closest('li'),
+    ).toHaveClass('active');
+  });
+
   it.each([undefined, [], ['user']])(
     'omits the administrator shortcut for non-admin roles %j',
     (roles: string[] | undefined) => {

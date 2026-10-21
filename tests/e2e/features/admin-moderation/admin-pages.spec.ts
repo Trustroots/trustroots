@@ -222,7 +222,7 @@ test.describe('admin moderation page flows', () => {
   test('admin threads page loads', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.threads', [
       'Admin threads page loads.',
-      'Admin can query threads by username/user id.',
+      'Threads are opened from member account links.',
     ]);
 
     await gotoAdminPage(page, '/admin/threads', /\/admin\/threads/);
@@ -230,6 +230,9 @@ test.describe('admin moderation page flows', () => {
     await expect(page).toHaveTitle(/Admin - Threads - Trustroots/);
     await expect(
       page.getByRole('textbox', { name: 'Member username or ID' }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText('Open a member’s threads from their account page.'),
     ).toBeVisible();
   });
 

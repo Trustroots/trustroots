@@ -7,15 +7,6 @@ import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
 jest.mock('@/modules/admin/client/api/admin-notes.api');
 const mockedNotesApi = jest.mocked(notesApi);
-jest.mock('@/modules/core/client/components/TimeAgo', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  function MockTimeAgo({ date }: { date: Date }) {
-    return <time>{date.toISOString()}</time>;
-  }
-
-  return MockTimeAgo;
-});
 jest.mock('@/modules/core/client/components/TrEditor', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
@@ -90,6 +81,10 @@ describe('<AdminNotes />', () => {
       await screen.findByRole('link', { name: 'admin-alice (Admin Alice)' }),
     ).toHaveAttribute('href', '/admin/user/admin-alice');
     expect(screen.getByText('Needs review')).toBeInTheDocument();
+    expect(screen.getByText('2025-05-06 07:08')).toHaveAttribute(
+      'dateTime',
+      '2025-05-06T07:08:09.000Z',
+    );
     expect(mockedNotesApi.listNotes).toHaveBeenCalledWith(userId);
   });
 

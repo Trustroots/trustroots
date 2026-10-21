@@ -88,6 +88,11 @@ describe('<AdminUserResultsTable />', () => {
       'target',
       '_self',
     );
+    expect(screen.getByText('2026-01-01 00:00')).toHaveAttribute(
+      'dateTime',
+      '2026-01-01T00:00:00.000Z',
+    );
+    expect(screen.getByText('—')).toBeInTheDocument();
   });
 
   it('shows page metadata and requests adjacent pages', () => {

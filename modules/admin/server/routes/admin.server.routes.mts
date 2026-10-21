@@ -5,6 +5,7 @@ import adminMessages from './../controllers/admin.messages.server.controller.mts
 import adminNewsletter from './../controllers/admin.newsletter.server.controller.mts';
 import adminPolicy from './../policies/admin.server.policy.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mts';
+import adminUsernameChanges from './../controllers/admin.username-changes.server.controller.mts';
 import adminUsers from './../controllers/admin.users.server.controller.mts';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mts';
 import support from '../controllers/admin.support.server.controller.mts';
@@ -101,6 +102,10 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/audit-log/actors')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.actors);
+  app
+    .route('/api/admin/username-changes')
+    .all(adminPolicy.isAllowed)
+    .get(adminAuditLog.record, adminUsernameChanges.list);
 
   app
     .route('/api/admin/dashboard')

@@ -30,6 +30,11 @@ describe('NIP-41 SpaceAPI place events', () => {
     'rus',
     'IL',
     'isr',
+    'BY',
+    'blr',
+    'Belarus',
+    'беларусь',
+    'Белоруссия',
     'Russia',
     'Russian Federation',
     'Israel',
@@ -54,6 +59,12 @@ describe('NIP-41 SpaceAPI place events', () => {
     expect(isExcludedHackerspaceAddress(['Example Street, Israel'])).toBe(true);
     expect(
       isExcludedHackerspaceAddress(['Example Street', '', '', '', 'GB']),
+    ).toBe(false);
+    expect(
+      isExcludedHackerspaceAddress(['Example Street, Minsk, Belarus']),
+    ).toBe(true);
+    expect(
+      isExcludedHackerspaceAddress(['Belarusian Street, Example City, GB']),
     ).toBe(false);
     expect(isExcludedHackerspaceAddress(['Israelson Street'])).toBe(false);
     expect(

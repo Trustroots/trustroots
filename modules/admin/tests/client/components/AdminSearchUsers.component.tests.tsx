@@ -173,7 +173,7 @@ describe('<AdminSearchUsers />', () => {
       sort: { column: 'username', direction: 'ascending' },
     });
     expect(screen.getByText('151 user(s). Page 1 of 2.')).toBeInTheDocument();
-    expect(screen.getAllByText('2024-01-15')).toHaveLength(150);
+    expect(screen.getAllByText('2024-01-15 12:00')).toHaveLength(150);
     expect(screen.queryByText('ID')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
   });

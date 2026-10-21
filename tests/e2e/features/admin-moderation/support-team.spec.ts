@@ -28,6 +28,7 @@ test('support can triage a report and investigate only its verified member pair'
   const target = createUser({ firstName: 'Fictional', lastName: 'Member' });
   const support = createUser({ firstName: 'Fictional', lastName: 'Support' });
   let requestId: string | undefined;
+  let targetId: string | undefined;
   try {
     for (const user of [reporter, target, support])
       await registerViaApi(context.request, user);
@@ -38,6 +39,7 @@ test('support can triage a report and investigate only its verified member pair'
       const targetDoc = (await db
         .collection('users')
         .findOne({ username: target.username }))!;
+      targetId = targetDoc._id.toString();
       const supportDoc = (await db
         .collection('users')
         .findOne({ username: support.username }))!;
@@ -130,6 +132,19 @@ test('support can triage a report and investigate only its verified member pair'
         name: new RegExp(`${target.username} \\(Fictional Member\\)`),
       }),
     ).toBeVisible();
+    await expect(
+      page.getByRole('link', {
+        name: new RegExp(`${target.username} \\(Fictional Member\\)`),
+      }),
+    ).toHaveAttribute(
+      'href',
+      `/admin/support/member/${encodeURIComponent(target.username)}`,
+    );
+    await page.goto(`/admin/support/member/${targetId}`);
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/support/member/${target.username}$`),
+    );
+    await page.goto('/admin/support');
     await page
       .getByRole('button', {
         name: new RegExp(`${reporter.username} · Report a member`),
@@ -200,7 +215,13 @@ test('support can triage a report and investigate only its verified member pair'
     await page
       .getByRole('link', { name: 'Reported account and notes' })
       .click();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/support/member/${target.username}$`),
+    );
     await expect(page.getByText('shadowban', { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('link', { name: 'Admin user page' }),
+    ).toHaveCount(0);
     await expect(
       page.getByRole('heading', { name: 'Safety notes about user' }),
     ).toBeVisible();
