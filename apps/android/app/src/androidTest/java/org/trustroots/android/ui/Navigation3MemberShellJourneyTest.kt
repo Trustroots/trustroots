@@ -19,6 +19,8 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
@@ -37,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
@@ -85,6 +89,7 @@ class Navigation3MemberShellJourneyTest {
     private val accountWrites = AtomicInteger()
     private val messageReads = AtomicInteger()
     private val joinedHarbour = AtomicBoolean(false)
+    @Volatile private var membershipResponseGate: CountDownLatch? = null
     @Volatile private var expireMemberSearch = false
     @Volatile private var expireHostMap = false
     @Volatile private var hostMapOffers = """{"features":[]}"""
@@ -148,6 +153,7 @@ class Navigation3MemberShellJourneyTest {
             }
             request.path == "/api/users/memberships" -> {
                 membershipReads.incrementAndGet()
+                membershipResponseGate?.await(10, TimeUnit.SECONDS)
                 LocalTransportFixture.Response(
                     if (joinedHarbour.get()) """[{"tribe":{"_id":"circle-harbour"}}]""" else "[]",
                 )
@@ -193,6 +199,7 @@ class Navigation3MemberShellJourneyTest {
     }
 
     @After fun closeScenarioAndRestoreShellState() {
+        membershipResponseGate?.countDown()
         scenario?.close()
         fixture.close()
         restorePreferences(sessionPreferences, previousSessionPreferences)
@@ -256,7 +263,8 @@ class Navigation3MemberShellJourneyTest {
 
         compose.onNodeWithText("Filter circles").performTextReplacement("sea")
         compose.onNodeWithText("Quiet Harbour").performClick()
-        compose.onNodeWithText("Join circle").performClick()
+        waitForEnabledText("Join circle")
+        compose.onNodeWithText("Join circle").assertIsEnabled().performClick()
         waitForText("Leave circle")
         compose.waitUntil(5_000) { joinedHarbour.get() }
         val initialCircleReads = circleReads.get()
@@ -360,9 +368,17 @@ class Navigation3MemberShellJourneyTest {
         waitForText("Quiet Harbour")
         compose.waitUntil(10_000) { circleReads.get() == 1 && membershipReads.get() == 1 }
         compose.onNodeWithText("Filter circles").performTextReplacement("harbour")
+        val membershipsReady = CountDownLatch(1)
+        membershipResponseGate = membershipsReady
         compose.onNodeWithText("Quiet Harbour").performClick()
-        waitForText("Detail loaded from its own endpoint.")
-        compose.onNodeWithText("Join circle").performClick()
+        try {
+            waitForText("Detail loaded from its own endpoint.")
+            compose.onNodeWithText("Join circle").assertIsNotEnabled()
+        } finally {
+            membershipsReady.countDown()
+        }
+        waitForEnabledText("Join circle")
+        compose.onNodeWithText("Join circle").assertIsEnabled().performClick()
         waitForText("Leave circle")
         compose.waitUntil(5_000) { joinedHarbour.get() }
 
@@ -902,6 +918,12 @@ class Navigation3MemberShellJourneyTest {
     private fun waitForText(text: String) {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun waitForEnabledText(text: String) {
+        compose.waitUntil(10_000) {
+            runCatching { compose.onNodeWithText(text).assertIsEnabled() }.isSuccess
         }
     }
 
