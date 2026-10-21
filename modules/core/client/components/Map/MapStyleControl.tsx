@@ -1,6 +1,5 @@
 // External dependencies
-import { BaseControl } from 'react-map-gl';
-import type { MapControlProps } from 'react-map-gl/dist/es6/components/use-map-control';
+import { useMap, type MapRef } from 'react-map-gl/mapbox';
 import type { TFunction } from 'i18next';
 import { withTranslation } from 'react-i18next';
 import React from 'react';
@@ -18,16 +17,17 @@ import MapStyleButton from './MapStyleButton';
 import './map-style-control.less';
 
 type MapStyle = string | { name: string; [key: string]: unknown };
-type MapStyleControlProps = MapControlProps & {
+type MapStyleControlProps = {
   mapStyle: MapStyle;
   setMapstyle: (style: string | typeof MAP_STYLE_OSM) => void;
   t: TFunction;
+  map?: MapRef;
 };
 type MapStyleControlState = { isOpen: boolean };
 
-class MapStyleControl extends BaseControl<
+class MapStyleControl extends React.Component<
   MapStyleControlProps,
-  HTMLDivElement
+  MapStyleControlState
 > {
   constructor(props: MapStyleControlProps) {
     super(props);
@@ -46,7 +46,7 @@ class MapStyleControl extends BaseControl<
     this.setState({ isOpen: false });
   }
 
-  _render() {
+  render() {
     const { t, mapStyle, setMapstyle } = this.props;
     const { isOpen } = this.state as MapStyleControlState;
     const MAPBOX_TOKEN = getMapBoxToken();
@@ -61,12 +61,12 @@ class MapStyleControl extends BaseControl<
       typeof mapStyle === 'string' ? mapStyle : mapStyle.name;
 
     return (
-      // _containerRef registers event listeners for map interactions
       <div
-        ref={element => {
-          if (element) this._containerRef.current = element;
-        }}
         className="map-style-control-container"
+        role="presentation"
+        onMouseDown={event => event.stopPropagation()}
+        onDoubleClick={event => event.stopPropagation()}
+        onClick={event => event.stopPropagation()}
       >
         {!isOpen && (
           <button
@@ -74,7 +74,7 @@ class MapStyleControl extends BaseControl<
             aria-haspopup="true"
             className="btn"
             onClick={this.open}
-            onMouseEnter={() => !this._context.isDragging && this.open()}
+            onMouseEnter={() => !this.props.map?.isMoving() && this.open()}
             aria-label={t('Change map style')}
           >
             <MapIcon
@@ -131,4 +131,9 @@ class MapStyleControl extends BaseControl<
   }
 }
 
-export default withTranslation(['core'])(MapStyleControl);
+function MapStyleControlWithMap(props: Omit<MapStyleControlProps, 'map'>) {
+  const { current: map } = useMap();
+  return <MapStyleControl {...props} map={map} />;
+}
+
+export default withTranslation(['core'])(MapStyleControlWithMap);

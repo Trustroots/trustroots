@@ -1,103 +1,69 @@
 import React from 'react';
-import { render } from '@testing-library/react';
+import { act, render } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import OfferLocationOverlay from '@/modules/offers/client/components/OfferLocationOverlay';
-type MockBaseControlProps = { children?: React.ReactNode };
-type MockSVGOverlayProps = {
-  redraw: (context: {
-    project: (coordinates: [number, number]) => [number, number];
-  }) => React.ReactElement;
-};
 
 let mockZoom = 10;
-
-jest.mock('react-map-gl', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  class MockBaseControl extends React.Component<MockBaseControlProps> {
-    _context: { viewport: { zoom: number } };
-
-    constructor(props: MockBaseControlProps) {
-      super(props);
-      this._context = {
-        viewport: {
-          zoom: mockZoom,
-        },
-      };
-    }
-
-    _render(): React.ReactNode {
-      return null;
-    }
-
-    render(): React.ReactNode {
-      return this._render();
-    }
-  }
-
-  function MockSVGOverlay({ redraw }: MockSVGOverlayProps) {
-    const circleNode = redraw({
-      project: ([lng, lat]) => [lng, lat],
-    });
-    return <svg>{circleNode}</svg>;
-  }
-
-  return {
-    __esModule: true,
-    BaseControl: MockBaseControl,
-    SVGOverlay: MockSVGOverlay,
-  };
-});
-
+const mockMap = {
+  getZoom: () => mockZoom,
+  on: jest.fn(),
+  off: jest.fn(),
+};
+let mockCurrentMap: typeof mockMap | undefined;
+const mockMarker = jest.fn();
+jest.mock('react-map-gl/mapbox', () => ({
+  useMap: () => ({ current: mockCurrentMap }),
+  Marker: (props: { children: React.ReactNode }) => {
+    mockMarker(props);
+    return <div>{props.children}</div>;
+  },
+}));
 jest.mock('@/modules/offers/client/utils/markers', () => ({
   getOfferHexColor: jest.fn(() => '#abcdef'),
   zoomToPixelMeters: jest.fn(() => 111),
 }));
 
-describe('OfferLocationOverlay', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    mockZoom = 10;
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockZoom = 10;
+  mockCurrentMap = mockMap;
+});
+
+it('anchors an offer dot to its coordinates and updates its area bubble on zoom', () => {
+  const { container, unmount } = render(
+    <OfferLocationOverlay
+      location={[50.1, 19.89]}
+      offerType="host"
+      offerStatus="yes"
+    />,
+  );
+  expect(mockMarker).toHaveBeenCalledWith(
+    expect.objectContaining({
+      latitude: 50.1,
+      longitude: 19.89,
+      anchor: 'center',
+    }),
+  );
+  expect(container.querySelector('circle')).toHaveAttribute('r', '12');
+  expect(container.querySelector('circle')).toHaveStyle({ fill: '#abcdef' });
+  mockZoom = 12;
+  const updateZoom = mockMap.on.mock.calls[0][1];
+  act(() => updateZoom());
+  expect(container.querySelector('circle')).toHaveAttribute('r', '111');
+  expect(container.querySelector('circle')).toHaveStyle({
+    fill: '#b1b1b1',
+    'fill-opacity': '0.5',
+    stroke: '#989898',
+    'stroke-width': '2px',
   });
+  unmount();
+  expect(mockMap.off).toHaveBeenCalledWith('zoom', updateZoom);
+});
 
-  it('renders a high-zoom bubble style and computed radius', () => {
-    mockZoom = 12;
-    const { container } = render(
-      <OfferLocationOverlay
-        location={[50.1, 19.89]}
-        offerType="host"
-        offerStatus="yes"
-      />,
-    );
-
-    const circle = container.querySelector('circle');
-
-    expect(circle).toBeInTheDocument();
-    expect(circle).toHaveAttribute('cx', '19.89');
-    expect(circle).toHaveAttribute('cy', '50.1');
-    expect(circle).toHaveStyle({
-      fill: '#b1b1b1',
-      'fill-opacity': '0.5',
-      stroke: '#989898',
-      'stroke-width': '2px',
-    });
-    expect(circle).toHaveAttribute('r', '111');
-  });
-
-  it('renders a standard offer dot for low zoom levels', () => {
-    const { container } = render(
-      <OfferLocationOverlay
-        location={[50.1, 19.89]}
-        offerType="host"
-        offerStatus="no"
-      />,
-    );
-
-    const circle = container.querySelector('circle');
-
-    expect(circle!.tagName).toBe('circle');
-    expect(circle!).toHaveStyle({ fill: '#abcdef' });
-    expect(circle!).toHaveAttribute('r', '12');
-  });
+it('can render while the map is unavailable', () => {
+  mockCurrentMap = undefined;
+  const { container } = render(<OfferLocationOverlay location={[50, 19]} />);
+  expect(container.querySelector('circle')).toHaveAttribute('r', '12');
+  expect(mockMap.on).not.toHaveBeenCalled();
 });

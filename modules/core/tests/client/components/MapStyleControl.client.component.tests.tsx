@@ -36,33 +36,7 @@ jest.mock('react-i18next', () => ({
     },
 }));
 
-jest.mock('react-map-gl', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  return {
-    __esModule: true,
-    BaseControl: class MockBaseControl extends React.Component<
-      React.ComponentProps<typeof MapStyleControl>,
-      { isOpen: boolean }
-    > {
-      _context = { isDragging: false };
-      _containerRef: { current: HTMLDivElement | null } = { current: null };
-
-      constructor(props: React.ComponentProps<typeof MapStyleControl>) {
-        super(props);
-        this.state = { isOpen: false };
-      }
-
-      _render(): React.ReactNode {
-        return null;
-      }
-
-      render() {
-        return this._render();
-      }
-    },
-  };
-});
+jest.mock('react-map-gl/mapbox', () => ({ useMap: () => ({}) }));
 
 jest.mock('@/modules/core/client/components/Map/MapStyleButton', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -112,6 +86,8 @@ describe('<MapStyleControl />', () => {
     });
 
     expect(trigger).toBeInTheDocument();
+    fireEvent.mouseDown(trigger);
+    fireEvent.doubleClick(trigger);
     expect(trigger).toHaveTextContent('i18n:Satellite');
 
     fireEvent.click(trigger);

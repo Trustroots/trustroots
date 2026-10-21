@@ -13,6 +13,7 @@ import { installNostrRelayStub } from '../../support/nostr.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 import {
   blockUnexpectedMapNetwork,
+  disableWebGL,
   fixturePath,
   prepareRasterSearchMap,
   routeRasterMapTiles,
@@ -94,7 +95,7 @@ async function expectCentreHostPinPreservesZoom(
   const originalCanvas = assertCanvasSurvives
     ? await canvas.elementHandle()
     : null;
-  const surface = page.locator('.search-map-container .overlays');
+  const surface = page.locator('.search-map-container .mapboxgl-canvas');
   const box = await surface.boundingBox();
   expectPresent(box, 'map overlay should have a layout box');
 
@@ -124,15 +125,15 @@ async function wheelOverMap(
 ): Promise<void> {
   const canvas = page.locator(selector);
   await expect(canvas).toBeVisible();
-  // React Map GL receives input through its overlay above the canvas. Hover
+  // Mapbox receives input directly through its canvas. Hover
   // waits for that surface to settle after navigation and viewport changes.
   const surface = page.locator(
     selector === '.mapboxgl-canvas'
-      ? '.search-map-container .overlays'
+      ? '.search-map-container .mapboxgl-canvas'
       : selector,
   );
   if (selector === '.mapboxgl-canvas') {
-    // A visible overlay can resize before the WebGL canvas and controller do.
+    // A visible container can resize before its WebGL canvas does.
     // Sending input in that interval can put it outside the rendered map.
     await expect
       .poll(async () => {
@@ -287,11 +288,6 @@ async function waitForRasterTileNear(
 }
 
 test.describe('rendered search map feature coverage', () => {
-  // These existing cases exercise the WebGL renderer and its event handling.
-  // Chromium compatibility cases below override this with their real engine UA.
-  test.use({
-    userAgent: 'Mozilla/5.0 Gecko/20100101 Firefox/143.0',
-  });
   test.beforeEach(
     async ({ context, page, request, mapZoom, browser }, testInfo) => {
       // The test API permits eval source maps; built assets must also work
@@ -369,36 +365,32 @@ test.describe('rendered search map feature coverage', () => {
     test.describe(`${browser.name} search compatibility`, () => {
       test.use({ userAgent: browser.userAgent });
 
-      test('raster search works even when WebGL is available', async ({
+      test('Mapbox search works when WebGL2 is available', async ({
         page,
-        context,
       }, testInfo) => {
         annotateFeature(testInfo, 'search.map', [
-          'Chromium receives raster tiles even when WebGL can initialise.',
+          'Chromium receives Mapbox GL when WebGL2 is available.',
           'Offer pins, zoom controls and place search remain usable.',
         ]);
-        await routeRasterMapTiles(context, { includeMapbox: true });
         await page.goto('/search');
         expect(
           await page.evaluate(() =>
-            Boolean(document.createElement('canvas').getContext('webgl')),
+            Boolean(document.createElement('canvas').getContext('webgl2')),
           ),
         ).toBe(true);
-        const map = page.getByTestId('leaflet-search-map');
+        const map = page.locator('.search-map');
         await expect(map).toBeVisible();
-        await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
-        await expect(map.locator('.leaflet-tile-loaded').first()).toBeVisible();
+        await waitForSearchMap(page);
+        await expect(page.getByTestId('leaflet-search-map')).toHaveCount(0);
         const initialZoom = await readMapZoom(page);
         expectPresent(initialZoom);
-        await map.locator('.leaflet-control-zoom-in').click();
-        await expect.poll(() => readMapZoom(page)).toBeGreaterThan(initialZoom);
-        const host = map.locator('.leaflet-interactive[fill="#58ba58"]');
-        await expect(host).toBeVisible();
-        await host.dispatchEvent('click');
-        await expect(page).toHaveURL(/offer=665100000000000000000001/);
-        await expect(
-          page.locator('.search-sidebar-container.is-offer-open'),
-        ).toBeVisible();
+        await page
+          .getByRole('button', { name: 'Zoom in', exact: true })
+          .click();
+        await expect
+          .poll(() => readMapZoom(page))
+          .toBeCloseTo(initialZoom + 1, 4);
+        await expectCentreHostPinPreservesZoom(page);
         await page.getByRole('button', { name: 'Back to results' }).click();
         await page.setViewportSize({ width: 375, height: 667 });
         await page.getByRole('button', { name: 'Back to map' }).click();
@@ -410,10 +402,25 @@ test.describe('rendered search map feature coverage', () => {
           .getByRole('list', { name: 'Place suggestions' })
           .getByRole('button')
           .click();
-        await waitForRasterTileNear(page, {
-          latitude: 52.52,
-          longitude: 13.405,
-        });
+        await expect
+          .poll(() =>
+            page.evaluate(
+              () =>
+                JSON.parse(localStorage.getItem('search-map-location')!)
+                  .latitude,
+            ),
+          )
+          .toBeCloseTo(52.52, 1);
+        await expect
+          .poll(() =>
+            page.evaluate(
+              () =>
+                JSON.parse(localStorage.getItem('search-map-location')!)
+                  .longitude,
+            ),
+          )
+          .toBeCloseTo(13.405, 1);
+        await waitForSearchMap(page);
         await expect(map).toBeVisible();
       });
     });
@@ -454,6 +461,43 @@ test.describe('rendered search map feature coverage', () => {
       hasCanvas: true,
       persistedStyleName: 'E2E Offline Map',
     });
+  });
+
+  test('map zoom buttons control the upgraded renderer', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Zoom controls operate on the current Mapbox renderer.',
+    ]);
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    const initialZoom = await readMapZoom(page);
+    expectPresent(initialZoom, 'initial map zoom should be stored');
+    await page.getByRole('button', { name: 'Zoom in', exact: true }).click();
+    await expect.poll(() => readMapZoom(page)).toBeCloseTo(initialZoom + 1, 4);
+    await page.getByRole('button', { name: 'Zoom out', exact: true }).click();
+    await expect.poll(() => readMapZoom(page)).toBeCloseTo(initialZoom, 1);
+  });
+
+  test('search map uses raster tiles when only WebGL1 is available', async ({
+    context,
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'A browser with WebGL1 but no WebGL2 receives the interactive raster map.',
+    ]);
+    await disableWebGL(page, true);
+    await routeRasterMapTiles(context, { includeMapbox: true });
+    await page.goto('/search');
+    await expect(
+      page.locator('[data-testid="leaflet-search-map"]'),
+    ).toBeVisible();
+    await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
+    expect(
+      await page.evaluate(() =>
+        Boolean(document.createElement('canvas').getContext('webgl')),
+      ),
+    ).toBe(true);
   });
 
   test('map fills the pane after the browser viewport grows', async ({
@@ -1156,7 +1200,7 @@ test.describe('rendered search map feature coverage', () => {
     const searchedZoom = await readMapZoom(page);
     expectPresent(searchedZoom);
     await page
-      .locator('.search-map-container .overlays')
+      .locator('.search-map-container .mapboxgl-canvas')
       .dispatchEvent('wheel', {
         ctrlKey: true,
         deltaY: 100,
