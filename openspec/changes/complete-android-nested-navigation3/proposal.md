@@ -34,12 +34,13 @@ toolbar and system navigation.
 
 ## Current delivery slice
 
-This delivery implements nested member flows for Inbox and Conversation,
-Contacts and Profile, profile editing and Experience creation, plus the Menu,
-HostOffer and Account entries. It keeps the existing authenticated shell and
-sign-in owner in place. Circles, Search/map and the final sign-in/session
-extraction remain separate slices. Validation and archival remain pending
-until the combined Android checks complete.
+This delivery implements nested Navigation 3 flows for Circles and
+Search/map, Inbox and Conversation, Contacts and Profile, profile editing and
+Experience creation, plus the Menu, HostOffer and Account entries. It also
+preserves origin-aware Back across top-level visits, nested destinations and
+embedded browser routes, while keeping the existing authenticated shell and
+sign-in owner in place. Validation and archival remain pending until the
+combined Android checks complete.
 
 ## Impact
 
