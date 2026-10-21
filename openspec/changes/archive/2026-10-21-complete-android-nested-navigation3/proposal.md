@@ -39,8 +39,9 @@ Search/map, Inbox and Conversation, Contacts and Profile, profile editing and
 Experience creation, plus the Menu, HostOffer and Account entries. It also
 preserves origin-aware Back across top-level visits, nested destinations and
 embedded browser routes, while keeping the existing authenticated shell and
-sign-in owner in place. Validation and archival remain pending until the
-combined Android checks complete.
+sign-in owner in place. Combined Android checks passed with 475 JVM tests,
+390 API 36 journeys and seven API 32 compatibility journeys; the combined
+coverage report passed the existing line and branch coverage requirements.
 
 ## Impact
 

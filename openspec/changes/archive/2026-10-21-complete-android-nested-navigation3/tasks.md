@@ -16,5 +16,5 @@
 
 ## Validation and archival
 
-- [ ] Complete combined Android validation in CI and review its results.
-- [ ] Archive this change after validation succeeds.
+- [x] Complete combined Android validation in CI and review its results.
+- [x] Archive this change after validation succeeds.
