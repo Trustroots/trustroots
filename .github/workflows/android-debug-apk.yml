@@ -160,6 +160,8 @@ jobs:
           retention-days: 7
           path: |
             apps/android/app/build/reports/androidTests/
+            apps/android/app/build/reports/tests/
+            apps/android/app/build/test-results/
             apps/android/app/build/outputs/androidTest-results/
             apps/android/app/build/outputs/code_coverage/debugAndroidTest/connected/api32/
             apps/android/app/build/reports/coverage/
