@@ -55,6 +55,40 @@ const CountPlaceholder = styled.div`
   background: #eee;
 `;
 
+const ActivityTable = styled.table`
+  font-size: 16px;
+  margin: 0;
+  text-align: left;
+  width: 100%;
+
+  th,
+  td {
+    padding: 8px 5px;
+    text-align: right;
+  }
+
+  th:first-child,
+  td:first-child {
+    text-align: left;
+  }
+
+  thead th {
+    border-bottom: 2px solid #eee;
+    font-size: 13px;
+    vertical-align: bottom;
+  }
+
+  tbody th,
+  tbody td {
+    border-bottom: 1px solid #eee;
+  }
+
+  tbody tr:last-child th,
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+`;
+
 const Count = styled.p`
   font-size: 50px;
   line-height: 55px;
@@ -120,7 +154,7 @@ const LegacyNote = styled.p`
   max-width: 300px;
 `;
 
-const legacyNetworks = new Set(['facebook', 'github']);
+const legacyNetworks = new Set(['couchsurfing', 'facebook', 'github']);
 
 export default function Statistics({
   isAuthenticated,
@@ -315,8 +349,99 @@ export default function Statistics({
                 {!statistics ? (
                   <CountPlaceholder />
                 ) : (
-                  <Count>{numberFormat(statistics?.total)}</Count>
+                  <>
+                    <Count>{numberFormat(statistics?.total)}</Count>
+                    <p className="text-muted">
+                      {t(
+                        '{{count}} new signups in the past 7 days (168 hours)',
+                        {
+                          count: numberFormat(
+                            statistics.recentActivity?.signups?.past7Days ?? 0,
+                          ),
+                        },
+                      )}
+                    </p>
+                    <p className="text-muted">
+                      {t('{{count}} new signups in the past 24 hours', {
+                        count: numberFormat(
+                          statistics.recentActivity?.signups?.past24Hours ?? 0,
+                        ),
+                      })}
+                    </p>
+                  </>
                 )}
+              </Stat>
+
+              <Stat title={t('Recent activity')} className="is-graph">
+                <ActivityTable>
+                  <caption className="sr-only">{t('Recent activity')}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" />
+                      <th scope="col">{t('Past 7 days (168 hours)')}</th>
+                      <th scope="col">{t('Past 24 hours')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">{t('New threads')}</th>
+                      <td>
+                        {statistics ? (
+                          numberFormat(
+                            statistics.recentActivity?.threads?.past7Days ?? 0,
+                          )
+                        ) : (
+                          <CountPlaceholder
+                            role="status"
+                            aria-label={t('Loading statistics')}
+                          />
+                        )}
+                      </td>
+                      <td>
+                        {statistics ? (
+                          numberFormat(
+                            statistics.recentActivity?.threads?.past24Hours ??
+                              0,
+                          )
+                        ) : (
+                          <CountPlaceholder
+                            role="status"
+                            aria-label={t('Loading statistics')}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">{t('Messages sent')}</th>
+                      <td>
+                        {statistics ? (
+                          numberFormat(
+                            statistics.recentActivity?.messages?.past7Days ?? 0,
+                          )
+                        ) : (
+                          <CountPlaceholder
+                            role="status"
+                            aria-label={t('Loading statistics')}
+                          />
+                        )}
+                      </td>
+                      <td>
+                        {statistics ? (
+                          numberFormat(
+                            statistics.recentActivity?.messages?.past24Hours ??
+                              0,
+                          )
+                        ) : (
+                          <CountPlaceholder
+                            role="status"
+                            aria-label={t('Loading statistics')}
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  </tbody>
+                </ActivityTable>
+                <p className="text-muted">{t('Updated hourly')}</p>
               </Stat>
 
               <Stat title={t('Member growth')} className="is-graph">
@@ -391,7 +516,7 @@ export default function Statistics({
               <Stat title={t('Connected to networks')}>
                 <NetworkList className="list-unstyled">
                   {!statistics
-                    ? Array.from({ length: 6 }, (_, index) => (
+                    ? Array.from({ length: 7 }, (_, index) => (
                         <li key={index}>
                           <CountPlaceholder />
                         </li>
@@ -424,7 +549,7 @@ export default function Statistics({
                 {statistics && (
                   <LegacyNote className="text-muted">
                     {t(
-                      'Facebook and GitHub percentages represent legacy connections made before social account linking was retired.',
+                      'Couchsurfing, Facebook and GitHub percentages represent legacy connections from previously linked accounts.',
                     )}
                   </LegacyNote>
                 )}

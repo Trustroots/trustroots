@@ -20,6 +20,11 @@ type InteractionResult = {
   negative: number;
   recent: { total: number; positive: number; negative: number };
 };
+type RecentActivityResult = {
+  signups: { past24Hours: number; past7Days: number };
+  threads: { past24Hours: number; past7Days: number };
+  messages: { past24Hours: number; past7Days: number };
+};
 type HostingResult = { yes: number; maybe: number; no: number };
 type LanguageResult = Array<{ _id: string; count: number }>;
 type MobileStats = {
@@ -39,6 +44,7 @@ interface StatisticsBody {
   newsletter: { count: number; percentage: number };
   experiences: CountResult;
   messageInteractions: InteractionResult;
+  recentActivity: RecentActivityResult;
 }
 interface DeferredResponse {
   body: StatisticsBody;
@@ -70,6 +76,10 @@ interface StatisticsController {
   getMessageInteractionStatistics(
     since: Date,
     callback: Callback<InteractionResult>,
+  ): void;
+  getRecentActivityStatistics(
+    now: Date,
+    callback: Callback<RecentActivityResult>,
   ): void;
   getPublicStatistics(request: object, response: DeferredResponse): void;
   collectStatistics(
@@ -105,6 +115,7 @@ require('./../../../offers/server/models/offer.server.model.mjs');
 require('./../../../users/server/models/user.server.model.mjs');
 require('./../../../experiences/server/models/experiences.server.model.mjs');
 require('./../../../messages/server/models/message-stat.server.model.mjs');
+require('./../../../messages/server/models/message.server.model.mjs');
 require('./../../../references-thread/server/models/reference-thread.server.model.mjs');
 const statistics =
   require('./../../server/controllers/statistics.server.controller.mjs') as StatisticsController;
@@ -128,6 +139,9 @@ const Experience = mongoose.model('Experience') as unknown as ExperienceModel;
 const MessageStat = mongoose.model(
   'MessageStat',
 ) as unknown as MessageStatModel;
+const Message = mongoose.model(
+  'Message',
+) as import('../../../../testutils/server/model-contracts.mts').MessageModel;
 const ReferenceThread = mongoose.model(
   'ReferenceThread',
 ) as unknown as ReferenceThreadModel;
@@ -156,6 +170,11 @@ function deferredResponse(): DeferredResponse {
         positive: 0,
         negative: 0,
         recent: { total: 0, positive: 0, negative: 0 },
+      },
+      recentActivity: {
+        signups: { past24Hours: 0, past7Days: 0 },
+        threads: { past24Hours: 0, past7Days: 0 },
+        messages: { past24Hours: 0, past7Days: 0 },
       },
     },
     headers: {},
@@ -306,6 +325,108 @@ describe('Statistics controller unit tests', () => {
       ).rejects(dbError);
       statistics.getMessageInteractionStatistics(new Date(), err => {
         err!.should.be.Error();
+        done();
+      });
+    });
+
+    it('getRecentActivityStatistics propagates database errors', done => {
+      typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
+        Message,
+        'aggregate',
+      ).rejects(dbError);
+      statistics.getRecentActivityStatistics(new Date(), err => {
+        err!.should.be.Error();
+        done();
+      });
+    });
+
+    const recentActivityModels: Array<[string, object]> = [
+      ['User', User],
+      ['MessageStat', MessageStat],
+    ];
+    recentActivityModels.forEach(([modelName, model]) => {
+      it(`getRecentActivityStatistics propagates ${modelName} errors`, done => {
+        typedStub<[unknown, (error: Error | null, rows: unknown[]) => void]>(
+          model,
+          'aggregate',
+        ).rejects(dbError);
+        statistics.getRecentActivityStatistics(new Date(), err => {
+          err!.should.be.Error();
+          done();
+        });
+      });
+    });
+  });
+
+  describe('getRecentActivityStatistics', () => {
+    it('counts inclusive rolling windows and filters hidden, spam, old, and future records', async () => {
+      const now = new Date('2026-10-21T12:00:00.000Z');
+      const dayStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const users = await utils.saveUsers(utils.generateUsers(5));
+      const userDates = [
+        now,
+        dayStart,
+        weekStart,
+        new Date('2026-10-13T00:00:00Z'),
+        new Date(now.getTime() + 1),
+      ];
+      await Promise.all(
+        userDates.map((created, index) =>
+          User.updateOne({ _id: users[index]._id }, { $set: { created } }),
+        ),
+      );
+      await MessageStat.create(
+        [
+          now,
+          dayStart,
+          weekStart,
+          new Date('2026-10-13T00:00:00Z'),
+          new Date(now.getTime() + 1),
+        ].map((firstMessageCreated, index) => ({
+          firstMessageUserFrom: users[index]._id,
+          firstMessageUserTo: users[(index + 1) % users.length]._id,
+          firstMessageCreated,
+        })),
+      );
+      await Message.create(
+        [
+          { created: now },
+          { created: dayStart },
+          { created: weekStart },
+          { created: new Date('2026-10-13T00:00:00Z') },
+          { created: new Date(now.getTime() + 1) },
+          { created: now, shadowHidden: true },
+          { created: now, spam: true },
+        ].map(message => ({
+          ...message,
+          content: 'Test message',
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+        })),
+      );
+
+      await new Promise<void>((resolve, reject) => {
+        statistics.getRecentActivityStatistics(now, (err, result) => {
+          if (err) return reject(err);
+          result!.should.deepEqual({
+            signups: { past24Hours: 2, past7Days: 3 },
+            threads: { past24Hours: 2, past7Days: 3 },
+            messages: { past24Hours: 2, past7Days: 3 },
+          });
+          resolve();
+        });
+      });
+    });
+
+    it('returns zeroes when all collections are empty', done => {
+      statistics.getRecentActivityStatistics(new Date(), (err, result) => {
+        if (err) return done(err);
+        result!.should.deepEqual({
+          signups: { past24Hours: 0, past7Days: 0 },
+          threads: { past24Hours: 0, past7Days: 0 },
+          messages: { past24Hours: 0, past7Days: 0 },
+        });
         done();
       });
     });
@@ -699,13 +820,17 @@ describe('Statistics controller unit tests', () => {
       res.body.should.have.property('total');
       res.body.should.have.property('connections');
       res.body.should.have.property('hosting');
-      res.body.connections.length.should.be.aboveOrEqual(6);
+      res.body.connections.length.should.equal(7);
+      res.body.connections
+        .map(connection => connection.network)
+        .should.containEql('couchers');
       res.body.connections
         .map(connection => connection.network)
         .should.containEql('nostr');
       res.body.should.have.property('newsletter');
       res.body.should.have.property('experiences');
       res.body.should.have.property('messageInteractions');
+      res.body.should.have.property('recentActivity');
       res.headers['cache-control'].should.equal('public, max-age=3600');
     });
 
@@ -736,25 +861,30 @@ describe('Statistics controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    ['couchsurfing', 'warmshowers', 'facebook', 'github', 'nostr'].forEach(
-      site => {
-        it(`returns 400 when ${site} count fails`, async () => {
-          const original = statistics.getExternalSiteCount;
-          statistics.getExternalSiteCount = function (requestedSite, cb) {
-            if (requestedSite === site) {
-              return cb(new Error(`${site} count failed`));
-            }
-            return original.call(statistics, requestedSite, cb);
-          };
+    [
+      'couchers',
+      'couchsurfing',
+      'warmshowers',
+      'facebook',
+      'github',
+      'nostr',
+    ].forEach(site => {
+      it(`returns 400 when ${site} count fails`, async () => {
+        const original = statistics.getExternalSiteCount;
+        statistics.getExternalSiteCount = function (requestedSite, cb) {
+          if (requestedSite === site) {
+            return cb(new Error(`${site} count failed`));
+          }
+          return original.call(statistics, requestedSite, cb);
+        };
 
-          const res = deferredResponse();
-          statistics.getPublicStatistics({}, res);
-          await res.waitForResponse();
-          statistics.getExternalSiteCount = original;
-          res.statusCode.should.equal(400);
-        });
-      },
-    );
+        const res = deferredResponse();
+        statistics.getPublicStatistics({}, res);
+        await res.waitForResponse();
+        statistics.getExternalSiteCount = original;
+        res.statusCode.should.equal(400);
+      });
+    });
 
     it('returns 400 when newsletter count fails', async () => {
       sinon
@@ -798,6 +928,20 @@ describe('Statistics controller unit tests', () => {
         .stub(statistics, 'getMessageInteractionStatistics')
         .callsFake((since, cb) => {
           cb(new Error('message interaction statistics failed'));
+        });
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.headers['cache-control'].should.equal('no-store');
+    });
+
+    it('returns 400 when recent activity statistics fail', async () => {
+      sinon
+        .stub(statistics, 'getRecentActivityStatistics')
+        .callsFake((now, cb) => {
+          cb(new Error('recent activity statistics failed'));
         });
 
       const res = deferredResponse();

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -58,6 +58,11 @@ describe('<Statistics />', () => {
     getMock.mockResolvedValueOnce(
       response({
         total: 12345,
+        recentActivity: {
+          signups: { past24Hours: 6, past7Days: 42 },
+          threads: { past24Hours: 8, past7Days: 56 },
+          messages: { past24Hours: 120, past7Days: 840 },
+        },
         hosting: {
           total: 1000,
           percentage: 40,
@@ -67,6 +72,8 @@ describe('<Statistics />', () => {
           maybePercentage: 20,
         },
         connections: [
+          { network: 'couchers', count: 25, percentage: 2.5 },
+          { network: 'couchsurfing', count: 100, percentage: 10 },
           { network: 'facebook', count: 45, percentage: 4.5 },
           { network: 'github', count: 3, percentage: 0.3 },
           { network: 'nostr', count: 12, percentage: 1 },
@@ -101,6 +108,33 @@ describe('<Statistics />', () => {
     expect(screen.queryByAltText('Translation status')).not.toBeInTheDocument();
     expect(screen.getByText('Members')).toBeInTheDocument();
     expect(
+      screen.getByText('42 new signups in the past 7 days (168 hours)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('6 new signups in the past 24 hours'),
+    ).toBeInTheDocument();
+    const activityTable = screen.getByRole('table', {
+      name: 'Recent activity',
+    });
+    expect(activityTable).toHaveAccessibleName('Recent activity');
+    expect(screen.getByText('Updated hourly')).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('columnheader').map(header => header.textContent),
+    ).toContain('Past 7 days (168 hours)');
+    expect(
+      screen.getAllByRole('columnheader').map(header => header.textContent),
+    ).toContain('Past 24 hours');
+    expect(
+      within(activityTable).getByRole('rowheader', { name: 'New threads' }),
+    ).toBeInTheDocument();
+    expect(
+      within(activityTable).getByRole('rowheader', { name: 'Messages sent' }),
+    ).toBeInTheDocument();
+    expect(within(activityTable).getByText('56')).toBeInTheDocument();
+    expect(within(activityTable).getByText('8')).toBeInTheDocument();
+    expect(within(activityTable).getByText('840')).toBeInTheDocument();
+    expect(within(activityTable).getByText('120')).toBeInTheDocument();
+    expect(
       screen.getByRole('link', { name: 'Subscribe to newsletter' }),
     ).toBeInTheDocument();
     expect(screen.getByText('Nostroots')).toBeInTheDocument();
@@ -108,10 +142,19 @@ describe('<Statistics />', () => {
     expect(screen.getByText('GitHub')).toBeInTheDocument();
     expect(screen.getByText('4.5%')).toBeInTheDocument();
     expect(screen.getByText('0.3%')).toBeInTheDocument();
-    expect(screen.getAllByText('Legacy')).toHaveLength(2);
+    expect(screen.getAllByText('Legacy')).toHaveLength(3);
+    expect(screen.getByText('Couchsurfing').closest('li')).toHaveTextContent(
+      'Legacy',
+    );
+    expect(screen.getByText('Couchers.org').closest('li')).toHaveTextContent(
+      '2.5%',
+    );
+    expect(
+      screen.getByText('Couchers.org').closest('li'),
+    ).not.toHaveTextContent('Legacy');
     expect(
       screen.getByText(
-        'Facebook and GitHub percentages represent legacy connections made before social account linking was retired.',
+        'Couchsurfing, Facebook and GitHub percentages represent legacy connections from previously linked accounts.',
       ),
     ).toBeInTheDocument();
     expect(screen.getByText('Real-life connections')).toBeInTheDocument();
@@ -199,7 +242,13 @@ describe('<Statistics />', () => {
 
     const { container } = render(<Statistics isAuthenticated={false} />);
 
-    expect(container.querySelectorAll('li div')).toHaveLength(6);
+    expect(container.querySelectorAll('li div')).toHaveLength(7);
+    expect(
+      screen.getByRole('table', { name: 'Recent activity' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('status', { name: 'Loading statistics' }),
+    ).toHaveLength(4);
   });
 
   it('falls back to zero values when optional statistics are missing', async () => {
@@ -218,5 +267,15 @@ describe('<Statistics />', () => {
     expect(screen.getAllByText('0%')).toHaveLength(2);
     expect(screen.getByText('0% yes')).toBeInTheDocument();
     expect(screen.getByText('0 subscribers')).toBeInTheDocument();
+    expect(
+      screen.getByText('0 new signups in the past 7 days (168 hours)'),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('0 new signups in the past 24 hours'),
+    ).toBeInTheDocument();
+    const activityTable = screen.getByRole('table', {
+      name: 'Recent activity',
+    });
+    expect(within(activityTable).getAllByText('0')).toHaveLength(4);
   });
 });

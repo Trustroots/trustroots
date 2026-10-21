@@ -28,6 +28,12 @@ type InteractionCounts = {
   negative: number;
   recent: { total: number; positive: number; negative: number };
 };
+type RecentWindowCounts = { past24Hours: number; past7Days: number };
+type RecentActivity = {
+  signups: RecentWindowCounts;
+  threads: RecentWindowCounts;
+  messages: RecentWindowCounts;
+};
 type PublicStatistics = {
   total: number;
   connections: Array<{ network: string; count: number; percentage: number }>;
@@ -42,6 +48,7 @@ type PublicStatistics = {
   newsletter: { count: number; percentage: number };
   experiences: ExperienceCounts;
   messageInteractions: InteractionCounts;
+  recentActivity: RecentActivity;
 };
 type StatisticsAccumulator = {
   total?: number;
@@ -50,6 +57,7 @@ type StatisticsAccumulator = {
   newsletter?: PublicStatistics['newsletter'];
   experiences: Partial<ExperienceCounts>;
   messageInteractions: Partial<InteractionCounts>;
+  recentActivity?: RecentActivity;
 };
 
 interface UserRecord {
@@ -79,9 +87,15 @@ interface ExperienceRecord {
   interactions?: { met?: boolean };
 }
 interface MessageStatRecord {
+  firstMessageCreated?: Date;
   firstMessageUserFrom?: Types.ObjectId;
   firstMessageUserTo?: Types.ObjectId;
   firstReplyCreated?: Date | null;
+}
+interface MessageRecord {
+  created?: Date;
+  shadowHidden?: boolean;
+  spam?: boolean;
 }
 interface ReferenceThreadRecord {
   userFrom: Types.ObjectId;
@@ -110,6 +124,10 @@ interface FeedbackAggregate {
   negative?: number;
   recentPositive?: number;
   recentNegative?: number;
+}
+interface RecentActivityAggregate {
+  past24Hours?: number;
+  past7Days?: number;
 }
 interface JsonResponse<Body> {
   header(name: string, value: string): this;
@@ -146,6 +164,10 @@ interface StatisticsControllerService {
     since: Date,
     callback: Callback<InteractionCounts>,
   ): void;
+  getRecentActivityStatistics(
+    now: Date,
+    callback: Callback<RecentActivity>,
+  ): void;
   getPublicStatistics(
     req: StatisticsRequest,
     res: JsonResponse<PublicStatistics>,
@@ -163,6 +185,7 @@ const Offer = mongoose.model<OfferRecord>('Offer');
 const User = mongoose.model<UserRecord>('User');
 const Experience = mongoose.model<ExperienceRecord>('Experience');
 const MessageStat = mongoose.model<MessageStatRecord>('MessageStat');
+const Message = mongoose.model<MessageRecord>('Message');
 const ReferenceThread =
   mongoose.model<ReferenceThreadRecord>('ReferenceThread');
 const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
@@ -841,6 +864,75 @@ export const getMessageInteractionStatistics = function (
 };
 
 /**
+ * Count registrations, conversation starts, and sent messages in rolling
+ * windows. One bounded aggregation per collection shares the same instant
+ * and excludes future-dated records.
+ */
+export const getRecentActivityStatistics = function (
+  now: Date,
+  callback: Callback<RecentActivity>,
+): void {
+  const dayStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const dateMatch = (field: string) => ({
+    [field]: { $gte: weekStart, $lte: now },
+  });
+  const groupByDate = (field: string) => ({
+    $group: {
+      _id: null,
+      past24Hours: {
+        $sum: { $cond: [{ $gte: [`$${field}`, dayStart] }, 1, 0] },
+      },
+      past7Days: { $sum: 1 },
+    },
+  });
+  async.parallel<{
+    signups: RecentActivityAggregate[];
+    threads: RecentActivityAggregate[];
+    messages: RecentActivityAggregate[];
+  }>(
+    {
+      signups: done => {
+        User.aggregate<RecentActivityAggregate>([
+          { $match: dateMatch('created') },
+          groupByDate('created'),
+        ]).then(rows => done(null, rows), done);
+      },
+      threads: done => {
+        MessageStat.aggregate<RecentActivityAggregate>([
+          { $match: dateMatch('firstMessageCreated') },
+          groupByDate('firstMessageCreated'),
+        ]).then(rows => done(null, rows), done);
+      },
+      messages: done => {
+        Message.aggregate<RecentActivityAggregate>([
+          {
+            $match: {
+              ...dateMatch('created'),
+              shadowHidden: { $ne: true },
+              spam: { $ne: true },
+            },
+          },
+          groupByDate('created'),
+        ]).then(rows => done(null, rows), done);
+      },
+    },
+    (err, results) => {
+      if (err) return callback(err);
+      const counts = (rows: RecentActivityAggregate[]): RecentWindowCounts => ({
+        past24Hours: parseStatisticsCount(rows[0]?.past24Hours),
+        past7Days: parseStatisticsCount(rows[0]?.past7Days),
+      });
+      return callback(null, {
+        signups: counts(results.signups),
+        threads: counts(results.threads),
+        messages: counts(results.messages),
+      });
+    },
+  );
+};
+
+/**
  * Get all statistics
  */
 export const getPublicStatistics = function (
@@ -884,6 +976,23 @@ export const getPublicStatistics = function (
             }
             state.connections.push({
               network: 'bewelcome',
+              count: count!,
+              percentage: connectionPercentage(count!, state.total),
+            });
+            done();
+          },
+        );
+      },
+      // External sites - Couchers.org
+      function (done: WaterfallDone) {
+        statisticsService.getExternalSiteCount(
+          'couchers',
+          function (err, count) {
+            if (err) {
+              return done(err);
+            }
+            state.connections.push({
+              network: 'couchers',
               count: count!,
               percentage: connectionPercentage(count!, state.total),
             });
@@ -1007,6 +1116,17 @@ export const getPublicStatistics = function (
               return done(err);
             }
             state.messageInteractions = statistics!;
+            done();
+          },
+        );
+      },
+      // Recent registrations, conversation starts, and sent messages
+      function (done: WaterfallDone) {
+        statisticsService.getRecentActivityStatistics(
+          new Date(),
+          function (err, activity) {
+            if (err) return done(err);
+            state.recentActivity = activity!;
             done();
           },
         );
@@ -1140,6 +1260,7 @@ Object.assign(statisticsService, {
   getUserLanguagesCount,
   getExperienceStatistics,
   getMessageInteractionStatistics,
+  getRecentActivityStatistics,
   getPublicStatistics,
   collectStatistics,
 });
