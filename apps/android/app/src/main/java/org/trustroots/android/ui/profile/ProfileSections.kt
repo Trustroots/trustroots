@@ -49,18 +49,15 @@ internal fun ProfileSectionBar(
     selected: ProfileSection,
     contactCount: Int,
     onSelect: (ProfileSection) -> Unit,
-    overArtwork: Boolean = false,
 ) {
     val artworkForeground = colorResource(R.color.artwork_on_scrim)
-    val contentColor = if (overArtwork) artworkForeground else MaterialTheme.colorScheme.onPrimaryContainer
-    val containerColor = if (overArtwork) Color.Transparent else MaterialTheme.colorScheme.primaryContainer
     val tabs: @Composable () -> Unit = {
         ProfileSection.entries.forEach { section ->
             Tab(
                 selected = section == selected,
                 onClick = { onSelect(section) },
                 modifier = Modifier.drawBehind {
-                    if (overArtwork && section == selected) {
+                    if (section == selected) {
                         val strokeWidth = 2.dp.toPx()
                         drawLine(
                             color = artworkForeground,
@@ -77,31 +74,21 @@ internal fun ProfileSectionBar(
                         } else {
                             stringResource(section.label)
                         },
-                        color = contentColor,
+                        color = artworkForeground,
                         fontWeight = if (section == selected) FontWeight.SemiBold else FontWeight.Normal,
                     )
                 },
             )
         }
     }
-    if (overArtwork) {
-        TabRow(
-            selectedTabIndex = selected.ordinal,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            indicator = {},
-            modifier = Modifier.fillMaxWidth().testTag("profileSections"),
-            tabs = { tabs() },
-        )
-    } else {
-        TabRow(
-            selectedTabIndex = selected.ordinal,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            modifier = Modifier.fillMaxWidth().testTag("profileSections"),
-            tabs = { tabs() },
-        )
-    }
+    TabRow(
+        selectedTabIndex = selected.ordinal,
+        containerColor = Color.Transparent,
+        contentColor = artworkForeground,
+        indicator = {},
+        modifier = Modifier.fillMaxWidth().testTag("profileSections"),
+        tabs = { tabs() },
+    )
 }
 
 @Composable

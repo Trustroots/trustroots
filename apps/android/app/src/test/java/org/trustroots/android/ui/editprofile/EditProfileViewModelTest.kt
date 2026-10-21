@@ -3,10 +3,14 @@ package org.trustroots.android.ui.editprofile
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -44,6 +48,125 @@ class EditProfileViewModelTest {
         assertEquals("Updated Name", model.state.value.pendingSave?.profile?.displayName)
         model.onEvent(EditProfileEvent.SaveDelivered(requireNotNull(model.state.value.pendingSave).id))
         assertNull(model.state.value.pendingSave)
+    }
+
+    @Test
+    fun blankNameCannotSaveAndInFlightSavePreservesLaterEditsUntilItsEffectIsAcknowledged() {
+        val repository = FakeRepository()
+        val pendingResponse = CompletableDeferred<Result<MemberProfile>>()
+        repository.saveOperation = { withContext(NonCancellable) { pendingResponse.await() } }
+        val model = newModel(repository)
+
+        model.onEvent(EditProfileEvent.NameChanged("   "))
+        model.onEvent(EditProfileEvent.Save)
+        assertEquals(0, repository.saveCalls)
+        assertFalse(model.state.value.isSaving)
+
+        model.onEvent(EditProfileEvent.NameChanged("Saved Name"))
+        model.onEvent(EditProfileEvent.Save)
+        model.onEvent(EditProfileEvent.Save)
+        assertEquals(1, repository.saveCalls)
+        assertTrue(model.state.value.isSaving)
+
+        model.onEvent(EditProfileEvent.NameChanged("Later Draft"))
+        pendingResponse.complete(Result.success(profileFixture("Saved Name")))
+        val saved = requireNotNull(model.state.value.pendingSave)
+        model.onEvent(EditProfileEvent.Save)
+        model.onEvent(EditProfileEvent.SaveDelivered(saved.id + 1))
+
+        assertEquals(1, repository.saveCalls)
+        assertEquals(saved, model.state.value.pendingSave)
+        assertEquals("Saved Name", model.state.value.baseline?.displayName)
+        assertEquals("Later Draft", model.state.value.name)
+        assertTrue(model.state.value.isDirty)
+
+        model.onEvent(EditProfileEvent.SaveDelivered(saved.id))
+        assertNull(model.state.value.pendingSave)
+    }
+
+    @Test
+    fun dirtyStateTracksEveryCanonicalFieldAndReturnsToCleanWhenValuesAreRestored() {
+        val model = newModel(FakeRepository())
+
+        model.onEvent(EditProfileEvent.TaglineChanged("A different tagline"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(EditProfileEvent.TaglineChanged("A tagline"))
+        assertFalse(model.state.value.isDirty)
+
+        model.onEvent(EditProfileEvent.DescriptionChanged("A different description"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(EditProfileEvent.DescriptionChanged("Plain text"))
+        assertFalse(model.state.value.isDirty)
+
+        model.onEvent(EditProfileEvent.LivingChanged("Another Town"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(EditProfileEvent.LivingChanged("Harbour Town"))
+        assertFalse(model.state.value.isDirty)
+
+        model.onEvent(EditProfileEvent.FromChanged("Another Village"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(EditProfileEvent.FromChanged("Mountain Village"))
+        assertFalse(model.state.value.isDirty)
+
+        model.onEvent(EditProfileEvent.LanguageToggled("eng"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(EditProfileEvent.LanguageToggled("eng"))
+        assertFalse(model.state.value.isDirty)
+    }
+
+    @Test
+    fun loadAuthenticationFailureCanBeAcknowledgedAndRetriedAfterCredentialRefresh() {
+        val repository = FakeRepository().apply {
+            profileResults += Result.failure(MobileApiException(401, "Fictional session expired."))
+            profileResults += Result.success(profileFixture())
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = EditProfileViewModel(
+                username = "quiet-fox",
+                repository = repository,
+                initialApi = api(),
+                initialSession = session(),
+                scope = scope,
+            )
+            val invalidation = requireNotNull(model.state.value.pendingInvalidation)
+
+            model.onEvent(EditProfileEvent.InvalidationDelivered(invalidation.id + 1))
+            assertEquals(invalidation, model.state.value.pendingInvalidation)
+            model.updateEnvironment(api(), session(cookie = "refreshed-fictional-cookie"))
+
+            assertEquals(2, repository.profileCalls)
+            assertEquals("Quiet Fox", model.state.value.baseline?.displayName)
+            assertNull(model.state.value.pendingInvalidation)
+            model.onEvent(EditProfileEvent.InvalidationDelivered(invalidation.id))
+            assertNull(model.state.value.pendingInvalidation)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun ordinaryInitialLoadFailureUsesLoadFallbackWithoutInvalidatingSession() {
+        val repository = FakeRepository().apply {
+            profileResults += Result.failure(IllegalStateException("Temporary profile failure"))
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = EditProfileViewModel(
+                username = "quiet-fox",
+                repository = repository,
+                initialApi = api(),
+                initialSession = session(),
+                scope = scope,
+            )
+
+            assertFalse(model.state.value.isLoading)
+            assertEquals("LOAD_PROFILE", model.state.value.failure?.fallback?.name)
+            assertNull(model.state.value.pendingInvalidation)
+            assertNull(model.state.value.baseline)
+        } finally {
+            scope.cancel()
+        }
     }
 
     @Test
@@ -98,6 +221,19 @@ class EditProfileViewModelTest {
         assertEquals("Quiet Fox", model.state.value.name)
         assertFalse(model.state.value.isDirty)
         assertEquals(1, repository.profileCalls)
+    }
+
+    @Test
+    fun mobileRepositoryDetectsBackendCookieAndAccountIdentityChanges() {
+        val originalSession = session()
+        val repository = MobileApiEditProfileRepository(api(), originalSession)
+
+        assertFalse(repository.updateApi(api("https://api.example.test")))
+        assertTrue(repository.updateApi(api("https://other.example.test")))
+        assertFalse(repository.updateSession(originalSession))
+        assertTrue(repository.updateSession(session(cookie = "refreshed-fictional-cookie")))
+        assertTrue(repository.updateSession(session(username = "calm-lynx", cookie = "refreshed-fictional-cookie")))
+        assertFalse(repository.updateSession(session(username = "calm-lynx", cookie = "refreshed-fictional-cookie")))
     }
 
     @Test
@@ -185,6 +321,7 @@ class EditProfileViewModelTest {
     private class FakeRepository : EditProfileRepository {
         var profileResult: Result<MemberProfile> = Result.success(profileFixture())
         val saveResults = ArrayDeque<Result<MemberProfile>>()
+        val profileResults = ArrayDeque<Result<MemberProfile>>()
         var saved: ProfileUpdate? = null
         var saveCalls = 0
         var profileCalls = 0
@@ -197,7 +334,7 @@ class EditProfileViewModelTest {
         var saveOperation: (suspend () -> Result<MemberProfile>)? = null
         override suspend fun profile(username: String): Result<MemberProfile> {
             profileCalls++
-            return profileResult
+            return if (profileResults.isEmpty()) profileResult else profileResults.removeFirst()
         }
         override suspend fun update(profile: ProfileUpdate): Result<MemberProfile> {
             saved = profile

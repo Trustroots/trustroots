@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.ExperienceCreate
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
@@ -39,9 +40,31 @@ class CreateExperienceViewModelTest {
         model.onEvent(CreateExperienceEvent.Submit)
 
         assertEquals(ExperienceCreate("member-owl", true, true, true, "unknown", "A kind visit"), repository.created)
+        assertEquals(1, repository.calls)
+        model.onEvent(CreateExperienceEvent.Submit)
+        assertEquals("A pending success must not submit a duplicate experience", 1, repository.calls)
         val success = requireNotNull(model.state.value.pendingSuccess)
         model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id))
         assertNull(model.state.value.pendingSuccess)
+    }
+
+    @Test
+    fun submissionRequiresAtLeastOnePositiveExperienceAnswer() {
+        val repository = FakeRepository()
+        val model = newModel(repository)
+
+        model.onEvent(CreateExperienceEvent.MetChanged(false))
+        assertFalse(model.state.value.canSave)
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        assertEquals(0, repository.calls)
+        assertFalse(model.state.value.isSaving)
+
+        model.onEvent(CreateExperienceEvent.WasGuestChanged(true))
+        assertTrue(model.state.value.canSave)
+        model.onEvent(CreateExperienceEvent.Submit)
+        assertEquals(1, repository.calls)
     }
 
     @Test
@@ -61,6 +84,32 @@ class CreateExperienceViewModelTest {
         model.onEvent(CreateExperienceEvent.Submit)
         assertEquals(2, calls.size)
         assertTrue(model.state.value.failure != null)
+        assertFalse(model.state.value.isSaving)
+    }
+
+    @Test
+    fun serverValidationFailureIsExposedAndThrownRepositoryErrorsSettleTheForm() {
+        val repository = FakeRepository().apply {
+            result = Result.failure(
+                MobileApiException(
+                    422,
+                    "  A fictional validation response.  ",
+                    ApiFailureKind.REQUEST_REJECTED,
+                ),
+            )
+        }
+        val model = newModel(repository)
+
+        model.onEvent(CreateExperienceEvent.Submit)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, model.state.value.failure?.apiKind)
+        assertEquals("  A fictional validation response.  ", model.state.value.failure?.serverMessage)
+        assertFalse(model.state.value.isSaving)
+
+        repository.result = Result.success(Unit)
+        repository.throwOnCreate = true
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        assertEquals(CreateExperienceFailure(), model.state.value.failure)
         assertFalse(model.state.value.isSaving)
     }
 
@@ -170,8 +219,11 @@ class CreateExperienceViewModelTest {
         override suspend fun create(experience: ExperienceCreate): Result<Unit> {
             created = experience
             calls++
+            if (throwOnCreate) throw IllegalStateException("A fictional repository failure.")
             return result
         }
+
+        var throwOnCreate = false
     }
 
     private class Owner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner

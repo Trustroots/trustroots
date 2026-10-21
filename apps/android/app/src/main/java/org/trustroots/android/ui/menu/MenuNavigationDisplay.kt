@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -49,8 +50,8 @@ internal fun MenuNavigationDisplay(
     contentPadding: PaddingValues = PaddingValues.Zero,
     openFindPeople: () -> Unit,
     openCircles: () -> Unit,
+    menuBackStack: NavBackStack<NavKey> = rememberNavBackStack(MenuPageVisit(MenuPage.Menu, initialVisitID)),
 ) {
-    val menuBackStack = rememberNavBackStack(MenuPageVisit(MenuPage.Menu, initialVisitID))
     var nextVisitID by rememberSaveable(initialVisitID) { mutableLongStateOf(initialVisitID + 1L) }
     fun allocateVisitID(): Long = nextVisitID++
     val context = LocalContext.current

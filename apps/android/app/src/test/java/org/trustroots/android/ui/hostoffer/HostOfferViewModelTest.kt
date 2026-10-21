@@ -51,7 +51,23 @@ class HostOfferViewModelTest {
             assertEquals("Unavailable", viewModel.state.value.form.noOfferDescription)
             assertEquals(form.toUpdate(), viewModel.state.value.original)
             assertFalse(viewModel.state.value.isDirty)
+            viewModel.onEvent(HostOfferEvent.RetryLoad)
+            assertEquals("A loaded baseline should not be fetched again", 1, repository.loadCalls)
         }
+    }
+
+    @Test
+    fun mobileRepositoryDetectsBackendCookieAndAccountIdentityChanges() {
+        val originalApi = MobileApiClient("https://api.example.test/")
+        val originalSession = MemberSession("connect.sid=old", MobileMember("quiet-fox", "Quiet Fox"))
+        val repository = MobileApiHostOfferRepository(originalApi, originalSession)
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+        assertTrue(repository.updateApi(MobileApiClient("https://other.example.test")))
+        assertFalse(repository.updateSession(originalSession))
+        assertTrue(repository.updateSession(MemberSession("connect.sid=new", MobileMember("quiet-fox", "Quiet Fox"))))
+        assertTrue(repository.updateSession(MemberSession("connect.sid=new", MobileMember("calm-lynx", "Calm Lynx"))))
+        assertFalse(repository.updateSession(MemberSession("connect.sid=new", MobileMember("calm-lynx", "Calm Lynx"))))
     }
 
     @Test
@@ -104,6 +120,49 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun thrownLoadFailureCanBeRetriedAndEditsAreIgnoredUntilItSettles() = withScope { scope ->
+        val finishFirstLoad = CompletableDeferred<Result<HostOfferForm>>()
+        val repository = FakeHostOfferRepository().apply {
+            loadHandler = { call ->
+                when (call) {
+                    1 -> finishFirstLoad.await()
+                    2 -> throw IOException("A fictional repository failure.")
+                    else -> Result.success(HostOfferForm(id = "retried-offer"))
+                }
+            }
+        }
+        val viewModel = HostOfferViewModel(repository, scope)
+
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A pending edit"))
+        assertEquals("", viewModel.state.value.form.description)
+        finishFirstLoad.complete(Result.failure(IOException("Initial offline response.")))
+        assertEquals(UiFailure(fallback = UiFailureFallback.HOST_OFFER_LOAD), viewModel.state.value.failure)
+
+        viewModel.onEvent(HostOfferEvent.RetryLoad)
+        assertEquals(UiFailure(fallback = UiFailureFallback.HOST_OFFER_LOAD), viewModel.state.value.failure)
+        viewModel.onEvent(HostOfferEvent.RetryLoad)
+
+        assertEquals(3, repository.loadCalls)
+        assertEquals("retried-offer", viewModel.state.value.form.id)
+        assertNull(viewModel.state.value.failure)
+    }
+
+    @Test
+    fun noOfferCanBeSavedWithoutAHostingDescription() = withScope { scope ->
+        val repository = FakeHostOfferRepository()
+        val viewModel = HostOfferViewModel(repository, scope)
+
+        viewModel.onEvent(HostOfferEvent.StatusChanged("no"))
+        assertFalse(viewModel.state.value.descriptionTooShort)
+        assertTrue(viewModel.state.value.canSave)
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        assertEquals("no", repository.submitted.single().status)
+        assertEquals("", repository.submitted.single().description)
+        assertTrue(viewModel.state.value.saveSucceeded)
+    }
+
+    @Test
     fun authenticationFailureIsEmittedOnceAndDisablesRetry() = withScope { scope ->
         val repository = FakeHostOfferRepository(
             loadResult = Result.failure(MobileApiException(statusCode = 401, serverMessage = "Expired")),
@@ -117,6 +176,41 @@ class HostOfferViewModelTest {
         assertNull(viewModel.state.value.pendingSessionInvalidation)
         assertNull(viewModel.state.value.failure)
         assertEquals(1, repository.loadCalls)
+    }
+
+    @Test
+    fun authenticationFailureDuringSaveBlocksRetriesUntilCredentialsChange() = withScope { scope ->
+        val repository = FakeHostOfferRepository().apply {
+            saveHandler = { call ->
+                if (call == 1) Result.failure(MobileApiException(statusCode = 401))
+                else Result.success(hostOffer("saved-after-refresh"))
+            }
+        }
+        val api = MobileApiClient("https://api.example.test")
+        val oldSession = MemberSession("connect.sid=old", MobileMember("quiet-fox", "Quiet Fox"))
+        val refreshedSession = MemberSession("connect.sid=new", MobileMember("quiet-fox", "Quiet Fox"))
+        val viewModel = HostOfferViewModel(repository, scope, api, oldSession)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
+        assertFalse(viewModel.state.value.isSaving)
+        assertEquals(1, repository.saveCalls)
+        viewModel.onEvent(HostOfferEvent.Save)
+        viewModel.onEvent(HostOfferEvent.SessionInvalidationDelivered(invalidation.id + 1))
+        assertEquals(invalidation, viewModel.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.saveCalls)
+
+        viewModel.updateEnvironment(api, refreshedSession)
+        assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertEquals("A suitable room", viewModel.state.value.form.description)
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        assertEquals(2, repository.saveCalls)
+        assertEquals(listOf("connect.sid=old", "connect.sid=new"), repository.saveCookies)
+        assertEquals("saved-after-refresh", viewModel.state.value.form.id)
+        assertTrue(viewModel.state.value.saveSucceeded)
     }
 
     @Test

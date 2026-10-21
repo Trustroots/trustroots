@@ -410,7 +410,6 @@ private fun MemberProfileContent(
                                             selected = ProfileSection.entries[profilePager.currentPage],
                                             contactCount = contacts.size,
                                             onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
-                                            overArtwork = true,
                                         )
                                     }
                                 },

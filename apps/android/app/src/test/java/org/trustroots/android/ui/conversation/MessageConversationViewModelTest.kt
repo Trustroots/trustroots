@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,7 @@ import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.common.UiFailureFallback
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
@@ -70,6 +72,55 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun messageLoadFailureKeepsRecipientAndRetryRestoresQuickReply() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "A fictional saved draft",
+        ).apply {
+            messagesHandler = {
+                if (messageLookups.size == 1) Result.failure(IOException("A fictional conversation outage."))
+                else Result.success(listOf(incoming))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        assertEquals(member, model.state.value.member)
+        assertTrue(model.state.value.loadFailed)
+        assertFalse(model.state.value.showQuickReply)
+        assertEquals("A fictional saved draft", model.state.value.draft)
+
+        model.onEvent(MessageConversationEvent.Retry)
+
+        assertEquals(2, repository.messageLookups.size)
+        assertTrue(model.state.value.messagesLoaded)
+        assertFalse(model.state.value.loadFailed)
+        assertTrue(model.state.value.showQuickReply)
+    }
+
+    @Test
+    fun missingRecipientIdentityUsesRequestedIdForDraftsAndCannotBeSent() = withScope { scope ->
+        val recipientWithoutIdentity = MessageMember(id = null, username = null, displayName = "Anonymous Member")
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(recipientWithoutIdentity),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "A fictional saved draft",
+        )
+        val model = MessageConversationViewModel("requested-member-id", repository, session(), scope)
+
+        assertEquals("requested-member-id", repository.loadedDraftKey)
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        model.onEvent(MessageConversationEvent.DraftChanged("A draft for the unresolved recipient"))
+        assertEquals("requested-member-id", repository.savedDraftKey)
+        model.onEvent(MessageConversationEvent.Send("   "))
+        model.onEvent(MessageConversationEvent.Send("A message that must not be sent without a recipient ID"))
+
+        assertNull(repository.sentContent)
+        assertNull(repository.clearedDraftKey)
+        assertFalse(model.state.value.isSending)
+    }
+
+    @Test
     fun draftPersistsAndSuccessfulSendClearsTheSameAccountCounterpartKey() = withScope { scope ->
         val repository = FakeConversationRepository(
             memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
@@ -101,6 +152,51 @@ class MessageConversationViewModelTest {
         model.onEvent(MessageConversationEvent.QuickReply(localizedPayload))
 
         assertEquals(localizedPayload, repository.sentContent)
+    }
+
+    @Test
+    fun duplicateSendAndRetryAreIgnoredWhileSendIsPendingAndThrownErrorKeepsDraft() = withScope { scope ->
+        val pending = CompletableDeferred<Unit>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
+        ).apply {
+            sendHandler = { _, _ ->
+                pending.await()
+                throw IOException("A fictional send outage.")
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        model.onEvent(MessageConversationEvent.DraftChanged("Keep this note"))
+        model.onEvent(MessageConversationEvent.Send("Keep this note"))
+        model.onEvent(MessageConversationEvent.Send("A duplicate"))
+        model.onEvent(MessageConversationEvent.Retry)
+
+        assertTrue(model.state.value.isSending)
+        assertEquals(1, repository.sendCalls)
+        assertEquals(1, repository.memberLookups.size)
+        pending.complete(Unit)
+
+        assertFalse(model.state.value.isSending)
+        assertEquals(UiFailureFallback.SEND_MESSAGE, model.state.value.failure?.fallback)
+        assertEquals("Keep this note", model.state.value.draft)
+        assertEquals(1, repository.sendCalls)
+    }
+
+    @Test
+    fun recipientIDIsUsedForDraftAndClearWhenUsernameIsUnavailable() = withScope { scope ->
+        val recipient = MessageMember(id = "recipient-without-username", username = null, displayName = "Anonymous Recipient")
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(recipient), messagesResult = Result.success(emptyList()),
+            initialDraft = "A saved note",
+        )
+        val model = MessageConversationViewModel("requested-id", repository, session(), scope)
+
+        assertEquals("recipient-without-username", repository.loadedDraftKey)
+        model.onEvent(MessageConversationEvent.Send("A new note"))
+
+        assertEquals("A new note", repository.sentContent)
+        assertEquals("steady-heron" to "recipient-without-username", repository.clearedDraftKey)
+        assertEquals("sent-message", model.state.value.messages.first().id)
     }
 
     @Test
@@ -278,12 +374,25 @@ class MessageConversationViewModelTest {
     @Test
     fun mobileRepositoryComparesNormalizedBackendIdentity() {
         val context = RuntimeEnvironment.getApplication() as Context
+        val originalSession = session()
         val repository = MobileApiMessageConversationRepository(
-            MobileApiClient("https://messages.example.test/"), session(), context,
+            MobileApiClient("https://messages.example.test/"), originalSession, context,
         )
 
         assertFalse(repository.updateApi(MobileApiClient("https://messages.example.test")))
         assertTrue(repository.updateApi(MobileApiClient("https://other-messages.example.test")))
+        assertFalse(repository.updateSession(originalSession))
+        assertTrue(repository.updateSession(session("connect.sid=renewed-fictional-session")))
+        assertTrue(
+            repository.updateSession(
+                MemberSession("connect.sid=renewed-fictional-session", MobileMember("calm-lynx", "Calm Lynx")),
+            ),
+        )
+        assertFalse(
+            repository.updateSession(
+                MemberSession("connect.sid=renewed-fictional-session", MobileMember("calm-lynx", "Calm Lynx")),
+            ),
+        )
     }
 
     private class FakeConversationRepository(
@@ -296,10 +405,12 @@ class MessageConversationViewModelTest {
         val memberLookups = mutableListOf<String>()
         val messageLookups = mutableListOf<String>()
         var loadedDraftKey: String? = null
+        var savedDraftKey: String? = null
         var savedDraftValue: String? = null
         val savedDraft get() = savedDraftValue ?: initialDraft
         var clearedDraftKey: Pair<String, String>? = null
         var sentContent: String? = null
+        var sendCalls = 0
         var memberHandler: suspend (String) -> Result<MessageMember> = { memberResult }
         var messagesHandler: suspend (String) -> Result<List<DirectMessage>> = { messagesResult }
         var sendHandler: suspend (String, String) -> Result<DirectMessage> = { _, _ -> sendResult }
@@ -322,6 +433,7 @@ class MessageConversationViewModelTest {
 
         override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
             sentContent = content
+            sendCalls++
             return sendHandler(memberID, content)
         }
 
@@ -331,6 +443,7 @@ class MessageConversationViewModelTest {
         }
 
         override fun saveDraft(selfUsername: String, otherKey: String, value: String) {
+            savedDraftKey = otherKey
             savedDraftValue = value
         }
 

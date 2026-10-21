@@ -75,6 +75,36 @@ class ContactsViewModelTest {
     }
 
     @Test
+    fun thrownProfileAndContactsFailuresAreTypedAndEachStageCanRetry() = withScope { scope ->
+        val repository = FakeContactsRepository().apply {
+            profileHandler = { attempt ->
+                if (attempt == 1) throw IOException("Temporary profile lookup failure")
+                Result.success(memberProfile("member-self"))
+            }
+            contactsHandler = { attempt ->
+                if (attempt == 1) throw IOException("Temporary contacts lookup failure")
+                Result.success(listOf(contact("recovered-fox")))
+            }
+        }
+        val viewModel = ContactsViewModel("steady-heron", repository, scope)
+
+        assertEquals(ContactsFailureReason.PROFILE, viewModel.state.value.failure?.reason)
+        assertEquals(IOException::class.java.name, viewModel.state.value.failure?.throwableType)
+        assertTrue(repository.contactMemberIDs.isEmpty())
+
+        viewModel.onEvent(ContactsEvent.Retry)
+        assertEquals(ContactsFailureReason.CONTACTS, viewModel.state.value.failure?.reason)
+        assertEquals(IOException::class.java.name, viewModel.state.value.failure?.throwableType)
+
+        viewModel.onEvent(ContactsEvent.Retry)
+        assertEquals(listOf(contact("recovered-fox")), viewModel.state.value.contacts)
+        assertEquals(3, repository.profileUsernames.size)
+        assertEquals(2, repository.contactMemberIDs.size)
+        assertNull(viewModel.state.value.failure)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
     fun storesOnlyNonblankApiServerMessageAndFailureKind() = withScope { scope ->
         val repository = FakeContactsRepository()
         repository.contactsHandler = {

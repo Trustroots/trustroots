@@ -162,6 +162,118 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun mobileRepositoryDetectsBackendCookieAndAccountIdentityChanges() {
+        val originalApi = MobileApiClient("http://127.0.0.1:1")
+        val originalSession = MemberSession("connect.sid=fictional-session", MobileMember("member-self", "Member Self"))
+        val repository = MobileApiMemberProfileRepository(originalApi, originalSession)
+
+        assertFalse(repository.updateApi(MobileApiClient("http://127.0.0.1:1")))
+        assertTrue(repository.updateApi(MobileApiClient("http://127.0.0.1:2")))
+        assertFalse(repository.updateSession(originalSession))
+        assertTrue(repository.updateSession(MemberSession("connect.sid=refreshed", MobileMember("member-self", "Member Self"))))
+        assertTrue(repository.updateSession(MemberSession("connect.sid=refreshed", MobileMember("new-self", "New Self"))))
+        assertFalse(repository.updateSession(MemberSession("connect.sid=refreshed", MobileMember("new-self", "New Self"))))
+    }
+
+    @Test
+    fun referenceRefreshReplacesTheSectionAndRemovalFailureCanBeDismissed() {
+        val repository = FakeMemberProfileRepository()
+        val model = newModel("quiet-fox", repository)
+
+        repository.referencesResult = Result.success(
+            listOf(ProfileReference("reference-new", org.trustroots.android.api.MessageMember("new-ref", "new-owl", "New Owl"), "A new fictional note", "yes", null)),
+        )
+        model.onEvent(MemberProfileEvent.RefreshReferences)
+        assertEquals(listOf("new-owl"), model.state.value.references.map { it.author.username })
+        assertEquals(2, repository.referenceCalls)
+
+        val savedProfile = profile("quiet-fox", "Updated Quiet Fox")
+        model.onEvent(MemberProfileEvent.ProfileSaved(savedProfile))
+        assertEquals("Updated Quiet Fox", model.state.value.profile?.displayName)
+
+        repository.removalResult = Result.failure(IOException("Temporary removal failure"))
+        model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+        assertFalse(model.state.value.isRemovingContact)
+        assertEquals(MemberProfileFailureReason.REMOVE_CONTACT, model.state.value.removalFailure?.reason)
+        model.onEvent(MemberProfileEvent.DismissRemoveContact)
+
+        assertNull(model.state.value.removalFailure)
+        assertFalse(model.state.value.contactRemovalSucceeded)
+        assertEquals(ContactRelationship("relationship-fox", true), model.state.value.relationship)
+    }
+
+    @Test
+    fun newestReferenceRefreshWinsWhenAnOlderRequestCompletesLate() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val staleReferences = CompletableDeferred<Result<List<ProfileReference>>>()
+        val repository = FakeMemberProfileRepository().apply {
+            referencesHandler = { call ->
+                when (call) {
+                    2 -> withContext(NonCancellable) { staleReferences.await() }
+                    3 -> Result.success(listOf(reference("current-reference", "current-owl")))
+                    else -> Result.success(listOf(reference("initial-reference", "initial-owl")))
+                }
+            }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            model.onEvent(MemberProfileEvent.RefreshReferences)
+            model.onEvent(MemberProfileEvent.RefreshReferences)
+            staleReferences.complete(Result.success(listOf(reference("stale-reference", "stale-owl"))))
+
+            assertEquals(listOf("current-owl"), model.state.value.references.map { it.author.username })
+            assertEquals(3, repository.referenceCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun inFlightContactRemovalCannotBeDuplicatedAndCompletesWithTheCanonicalRelationship() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingRemoval = CompletableDeferred<Result<Unit>>()
+        val repository = FakeMemberProfileRepository().apply {
+            removalHandler = { withContext(NonCancellable) { pendingRemoval.await() } }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+            model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+            model.onEvent(MemberProfileEvent.DismissRemoveContact)
+
+            assertEquals(listOf("relationship-fox"), repository.removedContactIDs)
+            assertTrue(model.state.value.isRemovingContact)
+            assertEquals(ContactRelationship("relationship-fox", true), model.state.value.relationship)
+
+            pendingRemoval.complete(Result.success(Unit))
+
+            assertEquals(ContactRelationship(null, false), model.state.value.relationship)
+            assertTrue(model.state.value.contactRemovalSucceeded)
+            assertFalse(model.state.value.isRemovingContact)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun referenceAuthenticationFailureInvalidatesSessionAndBlocksFurtherRefreshes() {
+        val repository = FakeMemberProfileRepository()
+        val model = newModel("quiet-fox", repository)
+        assertEquals(1, repository.referenceCalls)
+
+        repository.referencesResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+        model.onEvent(MemberProfileEvent.RefreshReferences)
+        val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(MemberProfileEvent.RefreshReferences)
+        model.onEvent(MemberProfileEvent.SessionInvalidationDelivered(invalidation.id + 1))
+
+        assertEquals(2, repository.referenceCalls)
+        assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+        model.onEvent(MemberProfileEvent.SessionInvalidationDelivered(invalidation.id))
+        assertNull(model.state.value.pendingSessionInvalidation)
+    }
+
+    @Test
     fun authenticationLatchRejectsProfileAndContactMutations() {
         val repository = FakeMemberProfileRepository().apply {
             hostingResult = Result.failure(MobileApiException(401, "Fictional session expired."))
@@ -227,6 +339,13 @@ class MemberProfileViewModelTest {
         var hostingResult: Result<AccommodationOffer?> = Result.success(AccommodationOffer("offer-fox", "yes", "A home", null, 2))
         var relationshipResult: Result<ContactRelationship> = Result.success(ContactRelationship("relationship-fox", true))
         var relationshipCalls = 0
+        var referenceCalls = 0
+        var referencesResult: Result<List<ProfileReference>> = Result.success(
+            listOf(ProfileReference("reference-one", org.trustroots.android.api.MessageMember("ref-id", "reference-owl", "Reference Owl"), "A kind visit", "yes", null)),
+        )
+        var referencesHandler: (suspend (Int) -> Result<List<ProfileReference>>)? = null
+        var removalResult: Result<Unit> = Result.success(Unit)
+        var removalHandler: (suspend (String) -> Result<Unit>)? = null
         override fun updateApi(api: MobileApiClient): Boolean {
             currentApi = api
             return false
@@ -243,18 +362,29 @@ class MemberProfileViewModelTest {
         }
         override suspend fun hosting(memberID: String) = hostingResult
         override suspend fun contacts(memberID: String) = Result.success(listOf(ProfileContact("contact-owl", org.trustroots.android.api.MessageMember("owl-id", "steady-owl", "Steady Owl"))))
-        override suspend fun references(memberID: String) = Result.success(listOf(ProfileReference("reference-one", org.trustroots.android.api.MessageMember("ref-id", "reference-owl", "Reference Owl"), "A kind visit", "yes", null)))
+        override suspend fun references(memberID: String): Result<List<ProfileReference>> {
+            referenceCalls++
+            return referencesHandler?.invoke(referenceCalls) ?: referencesResult
+        }
         override suspend fun relationship(memberID: String): Result<ContactRelationship> {
             relationshipCalls++
             return relationshipResult
         }
         override suspend fun removeContact(contactID: String): Result<Unit> {
             removedContactIDs += contactID
-            return Result.success(Unit)
+            return removalHandler?.invoke(contactID) ?: removalResult
         }
     }
 
     private companion object {
+        fun reference(id: String, author: String) = ProfileReference(
+            id,
+            org.trustroots.android.api.MessageMember("member-$author", author, author),
+            "A fictional reference",
+            "yes",
+            null,
+        )
+
         fun profile(username: String, displayName: String) = MemberProfile(
             id = "member-$username", username = username, displayName = displayName,
             tagline = null, description = null, location = null, languages = emptyList(),

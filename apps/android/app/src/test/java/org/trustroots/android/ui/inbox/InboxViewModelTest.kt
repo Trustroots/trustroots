@@ -52,6 +52,39 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun retryDuringAnActivePageRequestDoesNotDuplicateIt() = withScope { scope ->
+        val pendingPage = CompletableDeferred<Result<List<MessageThread>>>()
+        val repository = FakeInboxRepository { withContext(NonCancellable) { pendingPage.await() } }
+        val model = InboxViewModel(repository, session(), scope)
+
+        model.onEvent(InboxEvent.Retry)
+
+        assertEquals(listOf(1), repository.pages)
+        assertTrue(model.state.value.isLoading)
+        pendingPage.complete(Result.success(listOf(thread("current-thread", "Current Owl"))))
+
+        assertEquals(listOf(1), repository.pages)
+        assertEquals(listOf("current-thread"), model.state.value.threads.map(MessageThread::id))
+        assertTrue(model.state.value.hasLoaded)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
+    fun emptyPageAfterAFullPageEndsPaginationWithoutAnotherRequest() = withScope { scope ->
+        val repository = FakeInboxRepository { page ->
+            if (page == 1) Result.success((0..49).map { thread("thread-$it", "Neighbour $it") })
+            else Result.success(emptyList())
+        }
+        val model = InboxViewModel(repository, session(), scope)
+
+        assertEquals(listOf(1, 2), repository.pages)
+        assertEquals(50, model.state.value.threads.size)
+        assertEquals(3, model.state.value.nextPage)
+        assertTrue(model.state.value.hasLoaded)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
     fun laterPageFailureKeepsLoadedRowsAndRetryResumesAtFailedPage() = withScope { scope ->
         var pageTwoAttempts = 0
         val repository = FakeInboxRepository { page ->
@@ -162,13 +195,87 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun credentialRefreshKeepsFilterWhileAccountAndBackendChangesReloadTheInbox() = withScope { scope ->
+        val repository = FakeInboxRepository { page -> Result.success(listOf(thread("thread-$page", "Quiet Fox"))) }
+        val firstApi = MobileApiClient("http://127.0.0.1:1")
+        repository.updateApi(firstApi)
+        val model = InboxViewModel(repository, session(), scope)
+        model.onEvent(InboxEvent.FilterChanged("quiet"))
+
+        model.onEvent(InboxEvent.SessionChanged(session("connect.sid=refreshed-fictional-session")))
+
+        assertEquals("quiet", model.state.value.filter)
+        assertEquals(listOf(1, 1), repository.pages)
+
+        model.onEvent(InboxEvent.SessionChanged(session("connect.sid=new-account-session", "calm-lynx")))
+
+        assertEquals("", model.state.value.filter)
+        assertEquals(listOf(1, 1, 1), repository.pages)
+
+        model.updateApi(MobileApiClient("http://127.0.0.1:2"))
+
+        assertEquals(listOf(1, 1, 1, 1), repository.pages)
+        assertEquals(listOf("thread-1"), model.state.value.threads.map(MessageThread::id))
+    }
+
+    @Test
+    fun visibleThreadsFallsBackToUsernameWhenDisplayNameIsBlank() = withScope { scope ->
+        val repository = FakeInboxRepository {
+            Result.success(
+                listOf(
+                    MessageThread(
+                        id = "thread-one",
+                        otherMember = MessageMember("member-one", "quiet-fox", ""),
+                        excerpt = "A note about the mountains.",
+                        read = false,
+                    ),
+                ),
+            )
+        }
+        val model = InboxViewModel(repository, session(), scope)
+
+        model.onEvent(InboxEvent.FilterChanged("QUIET-FOX"))
+
+        assertEquals(listOf("thread-one"), model.state.value.visibleThreads.map(MessageThread::id))
+        model.onEvent(InboxEvent.FilterChanged("mountains"))
+        assertEquals(listOf("thread-one"), model.state.value.visibleThreads.map(MessageThread::id))
+    }
+
+    @Test
+    fun thrownPageFailureCanBeRetriedAtTheFailedPage() = withScope { scope ->
+        var attempts = 0
+        val repository = FakeInboxRepository { page ->
+            if (attempts++ == 0) throw IllegalStateException("A fictional connection failure.")
+            assertEquals(1, page)
+            Result.success(listOf(thread("thread-one", "Quiet Fox")))
+        }
+        val model = InboxViewModel(repository, session(), scope)
+
+        assertEquals(1, model.state.value.failedPage)
+        assertFalse(model.state.value.isLoading)
+        assertTrue(model.state.value.failure != null)
+
+        model.onEvent(InboxEvent.Retry)
+
+        assertEquals(listOf(1, 1), repository.pages)
+        assertEquals(listOf("thread-one"), model.state.value.threads.map(MessageThread::id))
+        assertTrue(model.state.value.hasLoaded)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test
     fun repositoryDistinguishesBackendChangeFromNewClientInstance() {
+        val originalSession = session()
         val repository = MobileApiInboxRepository(
-            MobileApiClient("http://127.0.0.1:1"), session(),
+            MobileApiClient("http://127.0.0.1:1"), originalSession,
         )
 
         assertFalse(repository.updateApi(MobileApiClient("http://127.0.0.1:1")))
         assertTrue(repository.updateApi(MobileApiClient("http://127.0.0.1:2")))
+        assertFalse(repository.updateSession(originalSession))
+        assertTrue(repository.updateSession(session("connect.sid=refreshed-fictional-session")))
+        assertTrue(repository.updateSession(session("connect.sid=refreshed-fictional-session", "calm-lynx")))
+        assertFalse(repository.updateSession(session("connect.sid=refreshed-fictional-session", "calm-lynx")))
     }
 
     @Test
@@ -227,7 +334,10 @@ class InboxViewModelTest {
     }
 
     private fun session(cookie: String = "connect.sid=fictional-session") =
-        MemberSession(cookie, MobileMember("steady-heron", "Steady Heron"))
+        session(cookie, "steady-heron")
+
+    private fun session(cookie: String, username: String) =
+        MemberSession(cookie, MobileMember(username, username.replace('-', ' ').replaceFirstChar(Char::uppercase)))
 
     private fun thread(id: String, name: String) = MessageThread(
         id = id,

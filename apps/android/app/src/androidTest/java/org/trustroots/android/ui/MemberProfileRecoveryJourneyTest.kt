@@ -1,7 +1,8 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -22,10 +23,11 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.profile.MemberProfileScreen
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 
 @RunWith(AndroidJUnit4::class)
 class MemberProfileRecoveryJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
     private val session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron"))
 
@@ -123,6 +125,18 @@ class MemberProfileRecoveryJourneyTest {
         compose.onNodeWithText("Remove contact").performClick()
         compose.onNodeWithText("Remove contact?").assertIsDisplayed()
         compose.onNodeWithText("You will no longer be contacts with this member.").assertIsDisplayed()
+        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithText("Remove contact?").assertDoesNotExist()
+        assertFalse("Cancelling must keep the contact intact", requests.any { it.startsWith("DELETE ") })
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.onNodeWithText("Remove contact").performClick()
+        compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+        pressBackFromNonActivityRoot(compose.activity)
+        compose.onNodeWithText("Remove contact?").assertDoesNotExist()
+        assertFalse("System Back must keep the contact intact", requests.any { it.startsWith("DELETE ") })
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.onNodeWithText("Remove contact").performClick()
+        compose.onNodeWithText("Remove contact?").assertIsDisplayed()
         compose.onNodeWithText("Confirm").performClick()
         compose.waitUntil(10_000) {
             requests.any { it.startsWith("DELETE /api/contact/contact-one ") } &&

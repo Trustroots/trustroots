@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import java.io.IOException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -96,6 +97,53 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun thrownCatalogueAndMembershipFailuresCanBothBeRetried() = withScope { scope ->
+        val repository = FakeCircleRepository()
+        repository.circlesHandler = { attempt ->
+            if (attempt == 1) throw IOException("Temporary catalogue failure")
+            Result.success(listOf(circle("circle-recovered", "Recovered", 4)))
+        }
+        repository.membershipsHandler = { attempt ->
+            if (attempt == 1) throw IOException("Temporary membership lookup failure")
+            Result.success(setOf("circle-recovered"))
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        assertEquals(CirclesFailureKind.MEMBERSHIPS_LOAD, viewModel.state.value.failure?.kind)
+        assertEquals("Temporary membership lookup failure", viewModel.state.value.failure?.serverMessage)
+        assertTrue(viewModel.state.value.canRetryLoad)
+        assertFalse(viewModel.state.value.isLoading)
+
+        viewModel.onEvent(CirclesEvent.RetryLoad)
+
+        assertEquals(listOf("circle-recovered"), viewModel.state.value.circles.map { it.id })
+        assertEquals(setOf("circle-recovered"), viewModel.state.value.memberships)
+        assertNull(viewModel.state.value.failure)
+        assertFalse(viewModel.state.value.canRetryLoad)
+    }
+
+    @Test
+    fun repositoryCancellationDoesNotBecomeAUserFailureAndLaterRetryCanLoad() = withScope { scope ->
+        val repository = FakeCircleRepository()
+        repository.circlesHandler = { attempt ->
+            if (attempt == 1) throw CancellationException("Request superseded")
+            Result.success(listOf(circle("circle-recovered", "Recovered", 4)))
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        assertNull(viewModel.state.value.failure)
+        assertTrue(viewModel.state.value.isLoading)
+        assertEquals(0, repository.membershipReads)
+
+        viewModel.onEvent(CirclesEvent.RetryLoad)
+
+        assertNull(viewModel.state.value.failure)
+        assertFalse(viewModel.state.value.isLoading)
+        assertEquals(listOf("circle-recovered"), viewModel.state.value.circles.map { it.id })
+        assertEquals(1, repository.membershipReads)
+    }
+
+    @Test
     fun retryCancelsAnOldLoadAndItsLateResultCannotReplaceFreshData() = withScope { scope ->
         val oldResponse = CompletableDeferred<Result<List<TrustrootsCircle>>>()
         val repository = FakeCircleRepository()
@@ -148,6 +196,8 @@ class CirclesViewModelTest {
         assertEquals(1, repository.circleReads)
         assertEquals(1, repository.membershipReads)
         assertNull(viewModel.state.value.failure)
+        viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(first.id + 1))
+        assertEquals(first, viewModel.state.value.pendingSessionInvalidation)
         viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(first.id))
         assertNull(viewModel.state.value.pendingSessionInvalidation)
 
