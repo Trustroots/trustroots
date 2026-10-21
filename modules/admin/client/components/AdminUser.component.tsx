@@ -304,7 +304,7 @@ function newestFirstByCreated(
   );
 }
 
-function InfoTable({ rows }: InfoTableProps) {
+export function InfoTable({ rows }: InfoTableProps) {
   const visibleRows = rows.filter(([, value]) => value);
 
   if (!visibleRows.length) {

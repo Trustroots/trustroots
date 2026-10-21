@@ -324,4 +324,19 @@ describe('circle catalogue table', () => {
       screen.getByRole('button', { name: 'Alpine Walkers' }).closest('tr'),
     ).toHaveClass('active');
   });
+
+  it('uses the name as a stable tie breaker when sort metadata is missing', async () => {
+    getCirclesMock.mockResolvedValueOnce([
+      { _id: 'z', label: 'Zulu', public: true },
+      { _id: 'b', label: 'Bravo', public: true },
+      { _id: 'a', label: 'Alpha', public: true },
+    ] as CircleFixture[]);
+    render(<AdminCircles />);
+
+    await screen.findByRole('button', { name: 'Zulu' });
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }));
+    expect(names()).toEqual(['Alpha', 'Bravo', 'Zulu']);
+    fireEvent.click(screen.getByRole('button', { name: 'Members' }));
+    expect(names()).toEqual(['Alpha', 'Bravo', 'Zulu']);
+  });
 });

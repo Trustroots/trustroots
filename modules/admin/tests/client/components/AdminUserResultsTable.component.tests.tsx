@@ -29,6 +29,7 @@ const users: UserResult[] = [
   },
   // Regression record deliberately has an invalid date and omits optional fields.
   { _id: '333333333333333333333333', created: 'not-a-date' },
+  { _id: '444444444444444444444444', username: 'member-without-date' },
 ];
 
 describe('<AdminUserResultsTable />', () => {
@@ -92,7 +93,11 @@ describe('<AdminUserResultsTable />', () => {
       'dateTime',
       '2026-01-01T00:00:00.000Z',
     );
-    expect(screen.getByText('—')).toBeInTheDocument();
+    const undatedRow = screen
+      .getByRole('link', { name: 'member-without-date' })
+      .closest('tr');
+    expect(undatedRow).toHaveTextContent('—');
+    expect(screen.getAllByText('—')).toHaveLength(2);
   });
 
   it('shows page metadata and requests adjacent pages', () => {

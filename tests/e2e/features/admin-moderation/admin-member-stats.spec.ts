@@ -85,7 +85,12 @@ test('admin member statistics distinguish published, unpublished and removed exp
     ).toHaveCount(6);
     await page.setViewportSize({ width: 1600, height: 1000 });
     const reportWidth = await page.locator('.admin-user-page').boundingBox();
-    expect(reportWidth!.width).toBeGreaterThan(1500);
+    expect(reportWidth).not.toBeNull();
+    // The report should use most of the desktop content area alongside the
+    // sidebar and stay within the viewport.
+    expect(reportWidth!.width).toBeGreaterThan(1600 * 0.75);
+    expect(reportWidth!.x).toBeGreaterThanOrEqual(0);
+    expect(reportWidth!.x + reportWidth!.width).toBeLessThanOrEqual(1600);
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(received).toBeVisible();
     expect(

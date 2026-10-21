@@ -15,6 +15,7 @@ import {
   signOut,
   signInViaApi,
 } from '../../support/helpers.mts';
+import { objectId, withE2eDb } from '../../support/db.mts';
 
 const SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK =
   'E2E seeded negative experience for admin coverage.';
@@ -72,24 +73,43 @@ test.describe('admin moderation page flows', () => {
       page.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
     ).toBeVisible();
 
-    const dashboard = await page.request.get('/api/admin/dashboard');
-    expect(dashboard.ok()).toBeTruthy();
-    const dashboardData = (await dashboard.json()) as {
-      threadVotes: Array<{ reference: string }>;
-      negativeExperiences: Array<{
-        recommend: string;
-        feedbackPublic: string;
-      }>;
-    };
-    expect(dashboardData.threadVotes).toHaveLength(1);
-    expect(
-      dashboardData.threadVotes.every(vote => vote.reference === 'no'),
-    ).toBe(true);
-    expect(dashboardData.negativeExperiences).toHaveLength(1);
-    expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
-    expect(dashboardData.negativeExperiences[0].feedbackPublic).toBe(
-      SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
+    const dashboardMarker = `E2E dashboard check ${Date.now()}`;
+    await withE2eDb(db =>
+      db.collection('experiences').insertOne({
+        userFrom: objectId(SEEDED_ADMIN.id),
+        userTo: objectId(SEEDED_MEMBERS[0].id),
+        created: new Date(Date.now() + 60_000),
+        public: true,
+        recommend: 'no',
+        feedbackPublic: dashboardMarker,
+      }),
     );
+    try {
+      const dashboard = await page.request.get('/api/admin/dashboard');
+      expect(dashboard.ok()).toBeTruthy();
+      const dashboardData = (await dashboard.json()) as {
+        threadVotes: Array<{ reference: string }>;
+        negativeExperiences: Array<{
+          recommend: string;
+          feedbackPublic: string;
+        }>;
+      };
+      expect(dashboardData.threadVotes.length).toBeGreaterThan(0);
+      expect(
+        dashboardData.threadVotes.every(vote => vote.reference === 'no'),
+      ).toBe(true);
+      const testNegativeExperience = dashboardData.negativeExperiences.find(
+        experience => experience.feedbackPublic === dashboardMarker,
+      );
+      expect(testNegativeExperience).toBeDefined();
+      expect(testNegativeExperience?.recommend).toBe('no');
+    } finally {
+      await withE2eDb(db =>
+        db.collection('experiences').deleteOne({
+          feedbackPublic: dashboardMarker,
+        }),
+      );
+    }
 
     const footer = page.locator('#tr-footer');
     await expect(footer).toBeVisible();

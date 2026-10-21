@@ -303,6 +303,158 @@ describe('Profile controller unit tests', () => {
       );
     });
 
+    it('returns not found if the account disappears before a username change', async () => {
+      await User.deleteOne({ _id: userDoc._id });
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: 'brandnewusername' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(404);
+    });
+
+    it('accepts the username already saved by a concurrent request', async () => {
+      userDoc.created = new Date('2020-01-01');
+      await userDoc.save();
+      const currentUsername = userDoc.username;
+      userDoc.username = 'staleusername';
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: currentUsername },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      responseString(res, 'username').should.equal(currentUsername);
+      const saved = await User.findById(userDoc._id).select('+usernameHistory');
+      if (!saved) throw new Error('Expected the saved user');
+      (saved.usernameHistory || []).should.have.length(0);
+    });
+
+    it('returns 400 when reloading the account for a username change fails', async () => {
+      const query = {
+        select: sinon.stub(),
+        exec: sinon.stub().rejects(new Error('lookup failed')),
+      };
+      query.select.returns(query);
+      sinon
+        .stub(User, 'findById')
+        .returns(query as unknown as ReturnType<typeof User.findById>);
+      userDoc.created = new Date('2020-01-01');
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: 'brandnewusername' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
+    it('returns a conflict when a concurrent username save wins', async () => {
+      const query = {
+        select: sinon.stub(),
+        exec: sinon.stub().resolves(userDoc),
+      };
+      query.select.returns(query);
+      sinon
+        .stub(User, 'findById')
+        .returns(query as unknown as ReturnType<typeof User.findById>);
+      userDoc.created = new Date('2020-01-01');
+      const conflict = new mongoose.Error.VersionError(userDoc, userDoc.__v, [
+        'username',
+      ]);
+      sinon.stub(userDoc, 'save').rejects(conflict);
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: 'brandnewusername' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(409);
+    });
+
+    it('treats a deleted record during save as a username conflict', async () => {
+      const query = {
+        select: sinon.stub(),
+        exec: sinon.stub().resolves(userDoc),
+      };
+      query.select.returns(query);
+      sinon
+        .stub(User, 'findById')
+        .returns(query as unknown as ReturnType<typeof User.findById>);
+      userDoc.created = new Date('2020-01-01');
+      const missingRecord = new Error('record changed');
+      Object.setPrototypeOf(
+        missingRecord,
+        mongoose.Error.DocumentNotFoundError.prototype,
+      );
+      sinon.stub(userDoc, 'save').rejects(missingRecord);
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: 'brandnewusername' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(409);
+    });
+
+    it('returns a validation error when a username save fails for another reason', async () => {
+      const query = {
+        select: sinon.stub(),
+        exec: sinon.stub().resolves(userDoc),
+      };
+      query.select.returns(query);
+      sinon
+        .stub(User, 'findById')
+        .returns(query as unknown as ReturnType<typeof User.findById>);
+      userDoc.created = new Date('2020-01-01');
+      sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { username: 'brandnewusername' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(400);
+    });
+
     it('rejects an email already used by someone else', async () => {
       const [other] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),

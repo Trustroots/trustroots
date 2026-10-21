@@ -155,6 +155,19 @@ describe('<NavigationLoggedIn />', () => {
     ).toHaveClass('active');
   });
 
+  it('does not select the Admin link outside admin routes', () => {
+    render(
+      <NavigationLoggedIn
+        currentPath="/messages"
+        onSignout={jest.fn()}
+        user={{ ...user, roles: ['admin'] }}
+      />,
+    );
+    expect(
+      screen.getByRole('link', { name: /^Admin$/ }).closest('li'),
+    ).not.toHaveClass('active');
+  });
+
   it.each([undefined, [], ['user']])(
     'omits the administrator shortcut for non-admin roles %j',
     (roles: string[] | undefined) => {

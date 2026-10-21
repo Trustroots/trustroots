@@ -9,7 +9,9 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import AdminUser from '@/modules/admin/client/components/AdminUser.component';
+import AdminUser, {
+  InfoTable,
+} from '@/modules/admin/client/components/AdminUser.component';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
@@ -190,6 +192,11 @@ function submitMemberSearch(value: string) {
 }
 
 describe('<AdminUser />', () => {
+  it('omits an information table when it has no visible rows', () => {
+    const { container } = render(<InfoTable rows={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('handles role helpers safely before a profile has loaded', () => {
     const component = new AdminUser({});
 

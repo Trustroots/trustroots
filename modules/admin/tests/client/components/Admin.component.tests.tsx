@@ -222,6 +222,11 @@ describe('<Admin />', () => {
             },
           },
           {
+            _id: 'review-with-date-without-message-link',
+            created: '2026-06-19T10:00:00.000Z',
+            thread: 'thread-with-date-without-message-link',
+          },
+          {
             _id: 'review-link-with-thread',
             created: 'not-a-date',
             thread: 'linked-thread-with-invalid-date',
@@ -249,6 +254,7 @@ describe('<Admin />', () => {
     expect(await screen.findByText('1 messages')).toBeInTheDocument();
     expect(await screen.findByText('thread-without-users')).toBeInTheDocument();
     expect(screen.getByText('thread-with-invalid-date')).toBeInTheDocument();
+    expect(screen.getByText('2026-06-19 10:00')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'linked-thread-with-invalid-date' }),
     ).toHaveAttribute(

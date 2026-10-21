@@ -40,6 +40,10 @@ describe('<AdminReferenceThreads />', () => {
         userFrom,
         userTo,
       },
+      {
+        _id: 'reference-thread-without-linked-users',
+        created: '2025-06-08T08:09:10.000Z',
+      },
     ]);
 
     render(<AdminReferenceThreads />);
@@ -63,6 +67,9 @@ describe('<AdminReferenceThreads />', () => {
       'dateTime',
       '2025-06-07T08:09:10.000Z',
     );
+    const unlinkedRow = screen.getByText('2025-06-08 08:09').closest('tr');
+    expect(unlinkedRow).toHaveTextContent('—');
+    expect(unlinkedRow).not.toHaveTextContent('See messages');
   });
 
   it('renders top negative recipients', async () => {
