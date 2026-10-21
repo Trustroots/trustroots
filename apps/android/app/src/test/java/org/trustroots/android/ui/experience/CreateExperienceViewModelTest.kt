@@ -3,8 +3,10 @@ package org.trustroots.android.ui.experience
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -68,6 +70,33 @@ class CreateExperienceViewModelTest {
     }
 
     @Test
+    fun eachPositiveExperienceAnswerIndependentlyAllowsSubmission() {
+        val positiveAnswers = listOf(
+            CreateExperienceEvent.MetChanged(true) to Triple(true, false, false),
+            CreateExperienceEvent.HostedChanged(true) to Triple(false, true, false),
+            CreateExperienceEvent.WasGuestChanged(true) to Triple(false, false, true),
+        )
+
+        positiveAnswers.forEach { (positiveAnswer, expected) ->
+            val repository = FakeRepository()
+            val model = newModel(repository)
+            model.onEvent(CreateExperienceEvent.MetChanged(false))
+            model.onEvent(CreateExperienceEvent.HostedChanged(false))
+            model.onEvent(CreateExperienceEvent.WasGuestChanged(false))
+            assertFalse(model.state.value.canSave)
+
+            model.onEvent(positiveAnswer)
+
+            assertTrue(model.state.value.canSave)
+            model.onEvent(CreateExperienceEvent.Submit)
+            assertEquals(1, repository.calls)
+            assertEquals(expected.first, repository.created?.met)
+            assertEquals(expected.second, repository.created?.host)
+            assertEquals(expected.third, repository.created?.guest)
+        }
+    }
+
+    @Test
     fun duplicateSubmitIsIgnoredUntilFailureCanBeRetried() {
         val deferred = CompletableDeferred<Result<Unit>>()
         val calls = mutableListOf<ExperienceCreate>()
@@ -111,6 +140,14 @@ class CreateExperienceViewModelTest {
 
         assertEquals(CreateExperienceFailure(), model.state.value.failure)
         assertFalse(model.state.value.isSaving)
+
+        repository.throwOnCreate = false
+        repository.result = Result.failure(MobileApiException(422, " \t ", ApiFailureKind.REQUEST_REJECTED))
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, model.state.value.failure?.apiKind)
+        assertNull(model.state.value.failure?.serverMessage)
+        assertFalse(model.state.value.isSaving)
     }
 
     @Test
@@ -129,6 +166,37 @@ class CreateExperienceViewModelTest {
 
         assertEquals(1, calls)
         pending.complete(Result.success(Unit))
+        assertTrue(model.state.value.pendingSuccess != null)
+    }
+
+    @Test
+    fun credentialRotationRejectsLateSuccessAndKeepsAnswersForAnExplicitRetry() {
+        val pending = CompletableDeferred<Result<Unit>>()
+        val submissions = mutableListOf<ExperienceCreate>()
+        val repository = CreateExperienceRepository { experience ->
+            submissions += experience
+            if (submissions.size == 1) withContext(NonCancellable) { pending.await() }
+            else Result.success(Unit)
+        }
+        val model = newModel(repository)
+        model.onEvent(CreateExperienceEvent.HostedChanged(true))
+        model.onEvent(CreateExperienceEvent.FeedbackChanged("A retained fictional answer"))
+        val submitted = ExperienceCreate("member-owl", true, false, true, "yes", "A retained fictional answer")
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        model.updateEnvironment(MobileApiClient("https://api.example.test/"), session(cookie = "renewed-cookie"))
+        pending.complete(Result.success(Unit))
+
+        assertEquals(listOf(submitted), submissions)
+        assertFalse(model.state.value.isSaving)
+        assertNull(model.state.value.pendingSuccess)
+        assertEquals("A retained fictional answer", model.state.value.feedback)
+        assertTrue(model.state.value.isDirty)
+
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        assertEquals(2, submissions.size)
+        assertEquals(submitted, submissions.last())
         assertTrue(model.state.value.pendingSuccess != null)
     }
 

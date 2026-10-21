@@ -25,15 +25,26 @@ import org.trustroots.android.api.ProfileContact
 import org.trustroots.android.ui.common.isAuthenticationFailure
 
 internal interface ContactsRepository {
+    /** Replaces request dependencies; true means the backend or signed-in account changed. */
+    fun updateEnvironment(api: MobileApiClient, session: MemberSession): Boolean
     suspend fun profile(username: String): Result<MemberProfile>
     suspend fun contacts(memberID: String): Result<List<ProfileContact>>
 }
 
 /** Keeps the live API client and session in memory for the owning entry only. */
 internal class MobileApiContactsRepository(
-    private val api: MobileApiClient,
-    private val session: MemberSession,
+    private var api: MobileApiClient,
+    private var session: MemberSession,
 ) : ContactsRepository {
+    override fun updateEnvironment(api: MobileApiClient, session: MemberSession): Boolean {
+        val changed = this.api.backendURL != api.backendURL ||
+            this.session.cookieHeader != session.cookieHeader ||
+            this.session.member.username != session.member.username
+        this.api = api
+        this.session = session
+        return changed
+    }
+
     override suspend fun profile(username: String): Result<MemberProfile> =
         api.profile(session, username)
 
@@ -98,6 +109,14 @@ internal class ContactsViewModel(
                 } else current
             }
         }
+    }
+
+    fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
+        if (!repository.updateEnvironment(api, session)) return
+        cancelRequest()
+        sessionInvalidationEmitted = false
+        mutableState.value = ContactsUiState()
+        load()
     }
 
     private fun load(force: Boolean = false) {
@@ -218,9 +237,11 @@ internal fun rememberContactsViewModel(
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "Contacts must be hosted by a Navigation 3 ViewModelStoreOwner."
     }
-    return remember(owner, api, session) {
+    val viewModel = remember(owner, api, session) {
         owner.contactsViewModel(api, session)
     }
+    androidx.compose.runtime.SideEffect { viewModel.updateEnvironment(api, session) }
+    return viewModel
 }
 
 internal fun ViewModelStoreOwner.contactsViewModel(

@@ -75,8 +75,12 @@ class EditProfileViewModelTest {
         model.onEvent(EditProfileEvent.SaveDelivered(saved.id + 1))
 
         assertEquals(1, repository.saveCalls)
+        assertEquals(
+            ProfileUpdate("Saved Name", "A tagline", "Plain text", "Harbour Town", "Mountain Village", listOf("eng")),
+            repository.saved,
+        )
         assertEquals(saved, model.state.value.pendingSave)
-        assertEquals("Saved Name", model.state.value.baseline?.displayName)
+        assertEquals(profileFixture("Saved Name"), model.state.value.baseline)
         assertEquals("Later Draft", model.state.value.name)
         assertTrue(model.state.value.isDirty)
 

@@ -122,6 +122,47 @@ class ProfileFlowHandoffViewModelTest {
         assertTrue(model.handoffs.value.isEmpty())
     }
 
+    @Test
+    fun staleEnvironmentCannotRetainNamesOrPublishEitherCompletionType() {
+        val model = ProfileFlowHandoffViewModel()
+        val api = MobileApiClient("https://api.example.invalid")
+        val firstSession = MemberSession("connect.sid=first-fictional-cookie", MobileMember("member-self", "Member Self"))
+        val staleEnvironment = ProfileFlowEnvironment(api.backendURL, firstSession.member.username, firstSession.cookieHeader)
+        model.updateEnvironment(api, firstSession)
+        model.updateEnvironment(
+            api,
+            MemberSession("connect.sid=second-fictional-cookie", MobileMember("member-self", "Member Self")),
+        )
+
+        model.retainDisplayName(10L, "Stale Name", staleEnvironment)
+        model.completeProfileSaved(10L, profile("member-one", "Stale Profile"), staleEnvironment)
+        model.completeExperienceCreated(10L, staleEnvironment)
+
+        assertTrue(model.handoffs.value.isEmpty())
+    }
+
+    @Test
+    fun profileFlowEnvironmentEqualityUsesBackendUsernameAndCookieFingerprint() {
+        val first = ProfileFlowEnvironment("https://api.example.invalid", "member-self", "fictional-cookie")
+        val equivalent = ProfileFlowEnvironment("https://api.example.invalid", "member-self", "fictional-cookie")
+
+        assertEquals(first, equivalent)
+        assertEquals(first.hashCode(), equivalent.hashCode())
+        assertFalse(first == ProfileFlowEnvironment("https://other.example.invalid", "member-self", "fictional-cookie"))
+        assertFalse(first == ProfileFlowEnvironment("https://api.example.invalid", "other-member", "fictional-cookie"))
+        assertFalse(first == ProfileFlowEnvironment("https://api.example.invalid", "member-self", "other-cookie"))
+        assertFalse(first.equals("not an environment"))
+    }
+
+    @Test
+    fun profileHandoffFactoryRejectsUnrelatedViewModelTypes() {
+        val failure = runCatching {
+            ProfileFlowHandoffViewModel.Factory().create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
 
     @Test
     fun separateDecoratedEntryOwnersCannotReadOrConsumeEachOthersHandoffs() {
@@ -190,6 +231,8 @@ class ProfileFlowHandoffViewModelTest {
     }
 
     private class Owner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class OtherViewModel : ViewModel()
 
     private fun profile(id: String, displayName: String) = MemberProfile(
         id = id,

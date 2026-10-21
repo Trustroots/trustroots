@@ -117,6 +117,8 @@ class HostOfferViewModelTest {
         assertEquals(2, repository.loadCalls)
         assertEquals("offer-loaded", viewModel.state.value.original?.id)
         assertNull(viewModel.state.value.failure)
+        viewModel.onEvent(HostOfferEvent.RetryLoad)
+        assertEquals("A loaded baseline must not be replaced by a redundant retry", 2, repository.loadCalls)
     }
 
     @Test
@@ -280,6 +282,30 @@ class HostOfferViewModelTest {
         assertEquals("returned-id", viewModel.state.value.form.id)
         assertEquals(submitted.copy(id = "returned-id"), viewModel.state.value.original)
         assertFalse(viewModel.state.value.isDirty)
+    }
+
+    @Test
+    fun blankServerSaveMessageKeepsTheSaveFallbackAndApiFailureKind() = withScope { scope ->
+        val repository = FakeHostOfferRepository().apply {
+            saveHandler = {
+                Result.failure(
+                    MobileApiException(
+                        statusCode = 422,
+                        serverMessage = " \t ",
+                        failureKind = ApiFailureKind.REQUEST_REJECTED,
+                    ),
+                )
+            }
+        }
+        val viewModel = HostOfferViewModel(repository, scope)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+
+        viewModel.onEvent(HostOfferEvent.Save)
+
+        assertEquals(UiFailure(apiKind = ApiFailureKind.REQUEST_REJECTED, fallback = UiFailureFallback.HOST_OFFER_SAVE), viewModel.state.value.failure)
+        assertTrue(viewModel.state.value.isDirty)
+        assertFalse(viewModel.state.value.isSaving)
+        assertFalse(viewModel.state.value.saveSucceeded)
     }
 
     @Test

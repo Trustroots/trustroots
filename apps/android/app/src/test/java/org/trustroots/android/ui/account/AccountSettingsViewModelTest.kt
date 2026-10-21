@@ -55,6 +55,30 @@ class AccountSettingsViewModelTest {
         assertEquals(true, viewModel.state.value.details?.newsletter)
     }
 
+    @Test fun blankEmailBlocksSaveAndDuplicateInFlightAccountSaveIsIgnored() {
+        val pending = CompletableDeferred<Result<AccountDetails>>()
+        val repository = FakeRepository().apply {
+            updateHandler = { _, _, _ -> pending.await() }
+        }
+        val viewModel = model(repository)
+
+        viewModel.onEvent(AccountEvent.EmailChanged("   "))
+        viewModel.onEvent(AccountEvent.SaveAccount)
+        assertEquals(0, repository.updateCalls)
+        assertFalse(viewModel.state.value.isSavingAccount)
+
+        viewModel.onEvent(AccountEvent.EmailChanged("new@example.test"))
+        viewModel.onEvent(AccountEvent.SaveAccount)
+        viewModel.onEvent(AccountEvent.SaveAccount)
+        assertEquals(1, repository.updateCalls)
+        assertTrue(viewModel.state.value.isSavingAccount)
+
+        pending.complete(Result.success(AccountDetails(username = "quiet-fox", displayName = "Quiet Fox", email = "new@example.test", newsletter = false)))
+        assertFalse(viewModel.state.value.isSavingAccount)
+        assertEquals(AccountNotice.AccountSaved, viewModel.state.value.notice)
+        assertEquals("new@example.test", viewModel.state.value.details?.email)
+    }
+
     @Test fun passwordSuccessClearsEverySecretField() {
         val repository = FakeRepository()
         val viewModel = model(repository)
@@ -95,6 +119,64 @@ class AccountSettingsViewModelTest {
         assertEquals("fictional-new", viewModel.state.value.verifyPassword)
         assertFalse(viewModel.state.value.isChangingPassword)
         assertEquals("PASSWORD_CHANGE", viewModel.state.value.failure?.fallback?.name)
+    }
+
+    @Test fun blankPasswordFieldsBlockMutationAndDuplicateInFlightChangeIsIgnored() {
+        val pending = CompletableDeferred<Result<Unit>>()
+        val repository = FakeRepository().apply {
+            passwordHandler = { _, _, _ -> pending.await() }
+        }
+        val viewModel = model(repository)
+
+        viewModel.onEvent(AccountEvent.NewPasswordChanged("fictional-new"))
+        viewModel.onEvent(AccountEvent.VerifyPasswordChanged("fictional-new"))
+        viewModel.onEvent(AccountEvent.ChangePassword)
+        viewModel.onEvent(AccountEvent.CurrentPasswordChanged("fictional-current"))
+        viewModel.onEvent(AccountEvent.NewPasswordChanged("  "))
+        viewModel.onEvent(AccountEvent.VerifyPasswordChanged("  "))
+        viewModel.onEvent(AccountEvent.ChangePassword)
+        assertEquals(0, repository.passwordCalls)
+
+        viewModel.onEvent(AccountEvent.NewPasswordChanged("fictional-new"))
+        viewModel.onEvent(AccountEvent.VerifyPasswordChanged("  "))
+        viewModel.onEvent(AccountEvent.ChangePassword)
+        assertEquals(0, repository.passwordCalls)
+
+        viewModel.onEvent(AccountEvent.VerifyPasswordChanged("fictional-new"))
+        viewModel.onEvent(AccountEvent.ChangePassword)
+        viewModel.onEvent(AccountEvent.ChangePassword)
+        assertEquals(1, repository.passwordCalls)
+        assertTrue(viewModel.state.value.isChangingPassword)
+
+        pending.complete(Result.success(Unit))
+        assertFalse(viewModel.state.value.isChangingPassword)
+        assertEquals(AccountNotice.PasswordChanged, viewModel.state.value.notice)
+        assertEquals("", viewModel.state.value.newPassword)
+        assertEquals(1, repository.passwordCalls)
+    }
+
+    @Test fun invalidatedSessionSuppressesAccountSavePasswordChangeAndRetry() {
+        val repository = FakeRepository().apply {
+            detailsResult = Result.failure(MobileApiException(statusCode = 401))
+        }
+        val viewModel = model(repository)
+        val invalidation = viewModel.state.value.pendingEffect as AccountEffect.SessionInvalidated
+        viewModel.onEvent(AccountEvent.EffectDelivered(invalidation.id))
+        viewModel.onEvent(AccountEvent.EmailChanged("draft@example.test"))
+        viewModel.onEvent(AccountEvent.CurrentPasswordChanged("fictional-current"))
+        viewModel.onEvent(AccountEvent.NewPasswordChanged("fictional-new"))
+        viewModel.onEvent(AccountEvent.VerifyPasswordChanged("fictional-new"))
+
+        viewModel.onEvent(AccountEvent.SaveAccount)
+        viewModel.onEvent(AccountEvent.ChangePassword)
+        viewModel.onEvent(AccountEvent.RetryLoad)
+
+        assertEquals(1, repository.detailCalls)
+        assertEquals(0, repository.updateCalls)
+        assertEquals(0, repository.passwordCalls)
+        assertFalse(viewModel.state.value.isSavingAccount)
+        assertFalse(viewModel.state.value.isChangingPassword)
+        assertNull(viewModel.state.value.pendingEffect)
     }
 
     @Test fun permissionAndActivityEffectsAreTypedAndAcknowledgedOnce() {
@@ -185,6 +267,17 @@ class AccountSettingsViewModelTest {
         assertEquals(1, platform.previewChecks)
     }
 
+    @Test fun previewUpdateCheckDoesNothingWhenAlertsAreDisabled() {
+        val platform = FakePlatform()
+        val viewModel = model(platform = platform)
+
+        viewModel.onEvent(AccountEvent.CheckPreviewUpdates)
+
+        assertEquals(0, platform.previewChecks)
+        assertFalse(viewModel.state.value.isCheckingUpdates)
+        assertNull(viewModel.state.value.updateStatus)
+    }
+
     @Test fun staleEffectAcknowledgementCannotConsumeTheCurrentEffect() {
         val viewModel = model()
         viewModel.onEvent(AccountEvent.ResetPassword)
@@ -195,6 +288,36 @@ class AccountSettingsViewModelTest {
         assertEquals(pending, viewModel.state.value.pendingEffect)
         viewModel.onEvent(AccountEvent.EffectDelivered(pending.id))
         assertNull(viewModel.state.value.pendingEffect)
+    }
+
+    @Test fun queuedEffectSurvivesOtherActionsButInvalidationAndSignOutTakePrecedence() {
+        val repository = FakeRepository().apply {
+            updateHandler = { _, _, _ -> Result.failure(MobileApiException(statusCode = 401)) }
+        }
+        val platform = FakePlatform().apply {
+            previewResult = ApkUpdateCheckResult.NewVersion(
+                AndroidPreviewRelease(12, "12.0", "https://example.test/releases/12"),
+            )
+        }
+        val viewModel = model(repository, platform)
+        viewModel.onEvent(AccountEvent.ResetPassword)
+        val queued = requireNotNull(viewModel.state.value.pendingEffect)
+
+        viewModel.onEvent(AccountEvent.ToggleMessageAlerts(notificationPermissionGranted = false))
+        viewModel.onEvent(AccountEvent.ToggleUpdateAlerts(notificationPermissionGranted = true))
+        viewModel.onEvent(AccountEvent.OpenRelease)
+        assertEquals(queued, viewModel.state.value.pendingEffect)
+
+        viewModel.onEvent(AccountEvent.EmailChanged("new@example.test"))
+        viewModel.onEvent(AccountEvent.SaveAccount)
+        val invalidated = viewModel.state.value.pendingEffect as AccountEffect.SessionInvalidated
+        assertTrue(invalidated.id > queued.id)
+        viewModel.onEvent(AccountEvent.ResetPassword)
+        assertEquals(invalidated, viewModel.state.value.pendingEffect)
+
+        viewModel.onEvent(AccountEvent.SignOut)
+        assertTrue(viewModel.state.value.pendingEffect is AccountEffect.SignedOut)
+        assertTrue(requireNotNull(viewModel.state.value.pendingEffect).id > invalidated.id)
     }
 
     @Test fun signOutCancelsPendingAccountAndPasswordJobsAndIgnoresTheirLateResults() {

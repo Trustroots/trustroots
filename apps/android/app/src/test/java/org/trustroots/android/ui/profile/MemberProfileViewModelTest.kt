@@ -200,6 +200,15 @@ class MemberProfileViewModelTest {
         assertNull(model.state.value.removalFailure)
         assertFalse(model.state.value.contactRemovalSucceeded)
         assertEquals(ContactRelationship("relationship-fox", true), model.state.value.relationship)
+
+        repository.removalResult = Result.success(Unit)
+        model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+
+        assertEquals(listOf("relationship-fox", "relationship-fox"), repository.removedContactIDs)
+        assertNull(model.state.value.removalFailure)
+        assertTrue(model.state.value.contactRemovalSucceeded)
+        assertFalse(model.state.value.isRemovingContact)
+        assertEquals(ContactRelationship(null, false), model.state.value.relationship)
     }
 
     @Test

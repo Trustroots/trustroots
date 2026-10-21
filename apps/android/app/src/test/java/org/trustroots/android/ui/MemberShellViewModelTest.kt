@@ -106,7 +106,7 @@ class MemberShellViewModelTest {
         }
         val model = MemberShellViewModel(repository, scope)
 
-        assertEquals(MemberShellFailure(message = null, statusCode = null), model.state.value.failure)
+        assertEquals(MemberShellFailure(serverMessage = null, apiFailureKind = null), model.state.value.failure)
         assertFalse(model.state.value.isAvatarLoading)
         model.onEvent(MemberShellEvent.RetryAvatar)
         assertEquals("recovered-avatar", model.state.value.avatarID)
@@ -115,7 +115,7 @@ class MemberShellViewModelTest {
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
         model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
         assertEquals(1, repository.unreadCalls)
-        assertEquals(MemberShellFailure(message = null, statusCode = null), model.state.value.failure)
+        assertEquals(MemberShellFailure(serverMessage = null, apiFailureKind = null), model.state.value.failure)
         assertFalse(model.state.value.isUnreadRefreshing)
     }
 

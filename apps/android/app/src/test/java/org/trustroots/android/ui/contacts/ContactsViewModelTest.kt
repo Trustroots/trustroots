@@ -20,8 +20,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.MemberProfile
+import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
+import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.ProfileContact
 
@@ -102,6 +105,36 @@ class ContactsViewModelTest {
         assertEquals(2, repository.contactMemberIDs.size)
         assertNull(viewModel.state.value.failure)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun backendSwitchAndSameUserCredentialRotationCancelStaleResponses() = withScope { scope ->
+        val staleBackendResponse = CompletableDeferred<Result<List<ProfileContact>>>()
+        val repository = FakeContactsRepository().apply {
+            contactsHandler = { attempt ->
+                when (attempt) {
+                    2 -> withContext(NonCancellable) { staleBackendResponse.await() }
+                    3 -> Result.success(listOf(contact("rotated-owl")))
+                    else -> Result.success(listOf(contact("initial-fox")))
+                }
+            }
+        }
+        val firstSession = session(cookie = "connect.sid=old")
+        val viewModel = ContactsViewModel("steady-heron", repository, scope)
+
+        assertEquals(listOf(contact("initial-fox")), viewModel.state.value.contacts)
+        viewModel.updateEnvironment(MobileApiClient("https://other.example.test"), firstSession)
+        assertTrue(viewModel.state.value.isLoading)
+
+        val refreshedSession = session(cookie = "connect.sid=rotated")
+        viewModel.updateEnvironment(MobileApiClient("https://other.example.test/"), refreshedSession)
+        staleBackendResponse.complete(Result.failure(MobileApiException(401, "Fictional stale response")))
+
+        assertEquals(listOf(contact("rotated-owl")), viewModel.state.value.contacts)
+        assertFalse(viewModel.state.value.isSessionInvalidated)
+        assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertFalse(viewModel.state.value.isLoading)
+        assertFalse(repository.updateEnvironment(MobileApiClient("https://other.example.test"), refreshedSession))
     }
 
     @Test
@@ -234,11 +267,22 @@ class ContactsViewModelTest {
     private class FakeContactsRepository : ContactsRepository {
         val profileUsernames = mutableListOf<String>()
         val contactMemberIDs = mutableListOf<String>()
+        var currentApi = MobileApiClient("https://api.example.test/")
+        var currentSession = session(cookie = "connect.sid=old")
         var profileHandler: suspend (Int) -> Result<MemberProfile> = {
             Result.success(memberProfile("member-self"))
         }
         var contactsHandler: suspend (Int) -> Result<List<ProfileContact>> = {
             Result.success(listOf(contact("quiet-fox")))
+        }
+
+        override fun updateEnvironment(api: MobileApiClient, session: MemberSession): Boolean {
+            val changed = currentApi.backendURL != api.backendURL ||
+                currentSession.cookieHeader != session.cookieHeader ||
+                currentSession.member.username != session.member.username
+            currentApi = api
+            currentSession = session
+            return changed
         }
 
         override suspend fun profile(username: String): Result<MemberProfile> {
@@ -253,6 +297,8 @@ class ContactsViewModelTest {
     }
 
     private companion object {
+        fun session(cookie: String) = MemberSession(cookie, MobileMember("steady-heron", "Steady Heron"))
+
         fun memberProfile(id: String? = "member-self") = MemberProfile(
             id = id,
             username = "steady-heron",
