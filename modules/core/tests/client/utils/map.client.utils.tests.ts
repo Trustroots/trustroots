@@ -1,7 +1,6 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
   getRasterMapTiles,
-  isChromiumBrowser,
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
 
@@ -17,27 +16,6 @@ function canvasElement(
 }
 
 describe('map utilities', () => {
-  it.each([
-    ['Mozilla/5.0 Chrome/140.0.0.0 Safari/537.36', true],
-    ['Mozilla/5.0 Chromium/140.0.0.0', true],
-    ['Mozilla/5.0 HeadlessChrome/140.0.0.0 Safari/537.36', true],
-    ['Mozilla/5.0 Chrome/140.0.0.0 Edg/140.0.0.0', true],
-    ['Mozilla/5.0 OPR/120.0.0.0', true],
-    ['Mozilla/5.0 Firefox/143.0', false],
-    ['Mozilla/5.0 Version/18.0 Safari/605.1.15', false],
-    ['Mozilla/5.0 CriOS/140.0.0.0 Mobile Safari/604.1', false],
-    ['', false],
-  ])('recognises the Chromium engine in %s', (userAgent, expected) => {
-    // Brave uses the same Chrome user agent as other Chromium browsers.
-    expect(isChromiumBrowser(userAgent)).toBe(expected);
-  });
-
-  it('uses the current browser user agent by default', () => {
-    const userAgent = jest.spyOn(navigator, 'userAgent', 'get');
-    userAgent.mockReturnValue('Mozilla/5.0 Chrome/140.0.0.0');
-    expect(isChromiumBrowser()).toBe(true);
-    userAgent.mockRestore();
-  });
   let createElement: jest.SpyInstance<
     HTMLElement,
     Parameters<Document['createElement']>
@@ -53,24 +31,24 @@ describe('map utilities', () => {
 
   it('detects an available WebGL context', () => {
     const getContext = jest.fn((type: string) =>
-      type === 'webgl' ? {} : null,
+      type === 'webgl2' ? {} : null,
     );
     createElement.mockReturnValue(canvasElement(getContext));
 
     expect(isWebGLSupported()).toBe(true);
     expect(createElement).toHaveBeenCalledWith('canvas');
-    expect(getContext).toHaveBeenCalledWith('webgl');
+    expect(getContext).toHaveBeenCalledWith('webgl2');
   });
 
-  it('uses the legacy WebGL context when necessary', () => {
+  it('uses raster rendering when only WebGL1 is available', () => {
     const getContext = jest.fn(type =>
-      type === 'experimental-webgl' ? {} : null,
+      type === 'webgl' || type === 'experimental-webgl' ? {} : null,
     );
     createElement.mockReturnValue(canvasElement(getContext));
 
-    expect(isWebGLSupported()).toBe(true);
-    expect(getContext).toHaveBeenNthCalledWith(1, 'webgl');
-    expect(getContext).toHaveBeenNthCalledWith(2, 'experimental-webgl');
+    expect(isWebGLSupported()).toBe(false);
+    expect(getContext).toHaveBeenCalledWith('webgl2');
+    expect(getContext).toHaveBeenCalledTimes(1);
   });
 
   it('returns false when the browser blocks WebGL', () => {
@@ -90,6 +68,7 @@ describe('map utilities', () => {
   });
 
   it('falls back to OpenStreetMap raster tiles without a Mapbox token', () => {
+    expect(getRasterMapTiles().url).toContain('openstreetmap.org');
     expect(
       // Preserve the original null token beyond the public optional-token type.
       invokeMalformed(getRasterMapTiles, null),

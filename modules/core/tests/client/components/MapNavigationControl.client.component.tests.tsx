@@ -1,53 +1,33 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import { MapContext, WebMercatorViewport } from 'react-map-gl';
 import '@testing-library/jest-dom';
 
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 
+const mockMap = { zoomIn: jest.fn(), zoomOut: jest.fn() };
+let mockCurrentMap: typeof mockMap | undefined = mockMap;
+jest.mock('react-map-gl/mapbox', () => ({
+  useMap: () => ({ current: mockCurrentMap }),
+}));
 jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => `i18n:${key}`,
-  }),
+  useTranslation: () => ({ t: (key: string) => `i18n:${key}` }),
 }));
 
-describe('<MapNavigationControl />', () => {
-  it('renders translated zoom buttons without a compass in React 19', () => {
-    render(<MapNavigationControl />);
-    expect(screen.getByRole('button', { name: 'i18n:Zoom in' })).toBeVisible();
-    expect(screen.getByRole('button', { name: 'i18n:Zoom out' })).toBeVisible();
-    expect(screen.getAllByRole('button')).toHaveLength(2);
-  });
+it('renders translated zoom buttons and controls the current map', () => {
+  render(<MapNavigationControl />);
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom in' }));
+  fireEvent.mouseDown(screen.getByRole('button', { name: 'i18n:Zoom in' }));
+  fireEvent.doubleClick(screen.getByRole('button', { name: 'i18n:Zoom in' }));
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom out' }));
+  expect(screen.getAllByRole('button')).toHaveLength(2);
+  expect(mockMap.zoomIn).toHaveBeenCalledTimes(1);
+  expect(mockMap.zoomOut).toHaveBeenCalledTimes(1);
+});
 
-  it('changes the map zoom when the real navigation buttons are clicked', () => {
-    const onViewportChange = jest.fn();
-    render(
-      <MapContext.Provider
-        value={{
-          viewport: new WebMercatorViewport({
-            width: 640,
-            height: 320,
-            latitude: 48,
-            longitude: 9,
-            zoom: 6,
-          }),
-          onViewportChange,
-          map: null,
-          container: null,
-          isDragging: false,
-          eventManager: null,
-        }}
-      >
-        <MapNavigationControl />
-      </MapContext.Provider>,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom in' }));
-    expect(onViewportChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ zoom: 7 }),
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom out' }));
-    expect(onViewportChange).toHaveBeenLastCalledWith(
-      expect.objectContaining({ zoom: 5 }),
-    );
-  });
+it('keeps navigation safe before a map is available', () => {
+  mockCurrentMap = undefined;
+  render(<MapNavigationControl />);
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom in' }));
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Zoom out' }));
+  mockCurrentMap = mockMap;
 });

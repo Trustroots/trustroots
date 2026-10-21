@@ -6,7 +6,7 @@ import MapScaleControl from '@/modules/core/client/components/Map/MapScaleContro
 
 const mockScaleControl = jest.fn();
 
-jest.mock('react-map-gl', () => ({
+jest.mock('react-map-gl/mapbox', () => ({
   __esModule: true,
   ScaleControl: (props: unknown) => {
     mockScaleControl(props);
@@ -28,9 +28,7 @@ describe('<MapScaleControl />', () => {
       expect.objectContaining({
         unit: 'metric',
         maxWidth: 100,
-        captureClick: true,
-        captureDoubleClick: true,
-        captureDrag: true,
+        position: 'bottom-left',
       }),
     );
   });

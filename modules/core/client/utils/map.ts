@@ -1,14 +1,6 @@
 export const getMapBoxToken = () =>
   typeof window !== 'undefined' && window.settings?.mapbox?.publicKey;
 
-const getBrowserUserAgent = () => {
-  /* istanbul ignore next -- server rendering has no browser user agent. */
-  return typeof navigator === 'undefined' ? '' : navigator.userAgent;
-};
-
-export const isChromiumBrowser = (userAgent = getBrowserUserAgent()) =>
-  /\b(?:HeadlessChrome|Chrome|Chromium|Edg|OPR)\//.test(userAgent);
-
 const MAPBOX_STREETS_TILE_URL =
   'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
@@ -41,7 +33,7 @@ export const getRasterMapTiles = (mapboxToken = getMapBoxToken()) =>
       };
 
 /**
- * Mapbox GL needs a WebGL context, so callers choose a raster renderer before
+ * Mapbox GL v3 needs WebGL2, so callers choose a raster renderer before
  * mounting it when the browser cannot create one.
  */
 const getBrowserDocument = () => {
@@ -56,9 +48,7 @@ export const isWebGLSupported = (browserDocument = getBrowserDocument()) => {
 
   try {
     const canvas = browserDocument.createElement('canvas');
-    return Boolean(
-      canvas.getContext?.('webgl') || canvas.getContext?.('experimental-webgl'),
-    );
+    return Boolean(canvas.getContext?.('webgl2'));
   } catch {
     return false;
   }
