@@ -1,6 +1,7 @@
 import axios from '@trustroots/core/http-client';
 import { nextPageParams } from './pagination';
 import type {
+  ConversationCounts,
   MarkMessagesReadRequest,
   MarkMessagesReadResponse,
   MessageMember,
@@ -17,6 +18,7 @@ export type MessageUser = MessageMember;
 export type Message = MessagePayload;
 export type { HostingDetails };
 export type { MessageThreadSummary };
+export type { ConversationCounts };
 
 export interface HostingContext {
   description: string;
@@ -98,6 +100,13 @@ export async function unreadCount(): Promise<number> {
     expectedStatuses: [401, 403],
   });
   return unread;
+}
+
+export async function conversationCounts(): Promise<ConversationCounts> {
+  const { data } = await axios.get<ConversationCounts>('/api/messages-count', {
+    params: { include: 'filters' },
+  });
+  return data;
 }
 
 export async function previewMessage(content: string): Promise<string> {

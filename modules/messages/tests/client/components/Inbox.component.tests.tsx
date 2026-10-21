@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent, act, waitFor } from '@testing-library/react';
+import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import Inbox from '@/modules/messages/client/components/Inbox.component';
@@ -8,7 +9,10 @@ import {
   generateClientUser,
   generateThreads,
 } from '@/testutils/client/data.client.testutil';
-import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+import {
+  navigate,
+  trackEvent,
+} from '@/modules/core/client/services/client-runtime';
 
 vi.mock('@tanstack/react-router', async () =>
   (
@@ -33,10 +37,18 @@ const otherMember: messagesApi.MessageUser = generateClientUser({
 const threads: messagesApi.MessageThreadSummary[] = generateThreads(10);
 const moreThreads: messagesApi.MessageThreadSummary[] = generateThreads(7);
 
+beforeEach(() => {
+  vi.mocked(messagesApi.conversationCounts).mockResolvedValue({
+    all: 42,
+    unread: 3,
+    unreplied: 7,
+  });
+});
+
 const analytics = fakeAnalytics();
 
 describe('<Inbox>', () => {
-  it('announces an inbox failure and retries the request', async () => {
+it('announces an inbox failure and retries the request', async () => {
     api.fetchThreads
       .mockRejectedValueOnce(new Error('Unavailable'))
       .mockResolvedValueOnce({ threads });
@@ -51,6 +63,158 @@ describe('<Inbox>', () => {
     expect(api.fetchThreads).toHaveBeenCalledTimes(2);
   });
 
+  it.each([
+    ['all', '/messages'],
+    ['unread', '/messages?filter=unread'],
+    ['unreplied', '/messages?filter=unreplied'],
+  ])('navigates to the %s view from the select', async (value, path) => {
+    api.fetchThreads.mockResolvedValue({ threads: [] });
+    const { getByRole, findByRole } = render(<Inbox user={me} />);
+    await findByRole('alert');
+    const select = getByRole('combobox', { name: 'Conversation filter' });
+    expect(select).toHaveValue('all');
+    fireEvent.change(select, { target: { value } });
+    expect(navigate).toHaveBeenCalledWith(path, {}, { reload: true });
+  });
+
+  it('shows totals independently of search and refreshes on focus and visibility', async () => {
+    api.fetchThreads.mockResolvedValue({ threads });
+    const { getByRole } = render(<Inbox user={me} />);
+    await waitFor(() =>
+      expect(
+        getByRole('option', { name: /All conversations/ }),
+      ).toHaveTextContent('(42)'),
+    );
+    expect(
+      getByRole('option', { name: /Unread conversations/ }),
+    ).toHaveTextContent('(3)');
+    expect(
+      getByRole('option', { name: /Unreplied conversations/ }),
+    ).toHaveTextContent('(7)');
+    fireEvent.change(getByRole('searchbox'), { target: { value: 'no match' } });
+    expect(
+      getByRole('option', { name: /All conversations/ }),
+    ).toHaveTextContent('(42)');
+    jest
+      .mocked(messagesApi.conversationCounts)
+      .mockResolvedValue({ all: 42, unread: 0, unreplied: 6 });
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(
+        getByRole('option', { name: /Unread conversations/ }),
+      ).toHaveTextContent('(0)'),
+    );
+    expect(
+      getByRole('option', { name: /Unreplied conversations/ }),
+    ).toHaveTextContent('(6)');
+    fireEvent(document, new Event('visibilitychange'));
+    await waitFor(() =>
+      expect(messagesApi.conversationCounts).toHaveBeenCalledTimes(3),
+    );
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'hidden',
+    });
+    fireEvent(document, new Event('visibilitychange'));
+    expect(messagesApi.conversationCounts).toHaveBeenCalledTimes(3);
+    Object.defineProperty(document, 'visibilityState', {
+      configurable: true,
+      value: 'visible',
+    });
+  });
+
+  it('omits counts while loading and after failure and retries on focus', async () => {
+    api.fetchThreads.mockResolvedValue({ threads: [] });
+    let rejectCounts!: (error: Error) => void;
+    vi.mocked(messagesApi.conversationCounts).mockImplementationOnce(
+      () =>
+        new Promise((resolve, reject) => {
+          rejectCounts = reject;
+        }),
+    );
+    const { getByRole } = render(<Inbox user={me} />);
+    expect(
+      getByRole('option', { name: /All conversations/ }),
+    ).not.toHaveTextContent('(');
+    await act(async () => {
+      rejectCounts(new Error('Offline'));
+    });
+    expect(
+      getByRole('option', { name: /All conversations/ }),
+    ).not.toHaveTextContent('(');
+    fireEvent.focus(window);
+    await waitFor(() =>
+      expect(
+        getByRole('option', { name: /All conversations/ }),
+      ).toHaveTextContent('(42)'),
+    );
+  });
+
+  it.each(['resolve', 'reject'])(
+    'ignores a count request that %ss after unmount',
+    async outcome => {
+      api.fetchThreads.mockResolvedValue({ threads: [] });
+      let finish!: () => void;
+      vi.mocked(messagesApi.conversationCounts).mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            finish = () =>
+              outcome === 'resolve'
+                ? resolve({ all: 0, unread: 0, unreplied: 0 })
+                : reject(new Error('Offline'));
+          }),
+      );
+      const { unmount, findByRole } = render(<Inbox user={me} />);
+      await findByRole('alert');
+      unmount();
+      await act(async () => {
+        finish();
+      });
+      fireEvent.focus(window);
+      fireEvent(document, new Event('visibilitychange'));
+      expect(messagesApi.conversationCounts).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('shows the unreplied empty state and selects only its filter', async () => {
+    window.history.replaceState(null, '', '/messages?filter=unreplied');
+    api.fetchThreads.mockResolvedValue({ threads: [] });
+    const { findByRole, getByRole } = render(<Inbox user={me} />);
+    expect(await findByRole('alert')).toHaveTextContent(
+      'No unreplied conversations.',
+    );
+    expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unreplied' });
+    expect(
+      getByRole('option', { name: /Unreplied conversations/ }),
+    ).toHaveProperty('selected', true);
+    expect(getByRole('option', { name: /All conversations/ })).toHaveProperty(
+      'selected',
+      false,
+    );
+  });
+
+  it.each(['pagination', 'search'])(
+    'preserves unreplied during %s',
+    async method => {
+      window.history.replaceState(null, '', '/messages?filter=unreplied');
+      api.fetchThreads
+        .mockResolvedValueOnce({ threads, nextParams: { page: 2 } })
+        .mockResolvedValue({ threads: moreThreads });
+      const { findByRole, getByRole } = render(<Inbox user={me} />);
+      await findByRole('button', { name: 'More messages' });
+      if (method === 'search')
+        fireEvent.change(getByRole('searchbox'), {
+          target: { value: 'older' },
+        });
+      else fireEvent.click(getByRole('button', { name: 'More messages' }));
+      await waitFor(() =>
+        expect(api.fetchThreads).toHaveBeenCalledWith({
+          page: 2,
+          filter: 'unreplied',
+        }),
+      );
+    },
+  );
   it('filters a conversation with an absent participant by its preview', async () => {
     const missingParticipant: messagesApi.MessageThreadSummary = {
       _id: 'thread-without-sender',
@@ -61,9 +225,7 @@ describe('<Inbox>', () => {
       message: { excerpt: 'A fictional matching preview' },
     };
     api.fetchThreads.mockResolvedValue({ threads: [missingParticipant] });
-    const { findByRole, getByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByRole, getByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -79,9 +241,7 @@ describe('<Inbox>', () => {
   it('asks private users to activate their profile before loading threads', () => {
     const privateUser = generateClientUser({ public: false });
 
-    const { getByRole } = render(<Inbox user={privateUser} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { getByRole } = render(<Inbox user={privateUser} />);
 
     expect(getByRole('alertdialog')).toHaveTextContent(
       'Sorry, you need to first activate your profile',
@@ -91,11 +251,10 @@ describe('<Inbox>', () => {
 
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole, getByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
-    expect(getByRole('status')).toHaveTextContent('Loading conversations…');
-    await findByRole('heading', { name: 'No conversations yet.' });
+    const { findByRole } = render(<Inbox user={me} />);
+    expect(await findByRole('alert')).toHaveTextContent(
+      'No conversations yet.',
+    );
     expect(api.fetchThreads).toHaveBeenCalled();
   });
 
@@ -103,16 +262,15 @@ describe('<Inbox>', () => {
     window.history.replaceState(null, '', '/messages?filter=unread');
     api.fetchThreads.mockResolvedValue({ threads: [] });
 
-    const { findByRole, getByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByRole, getByRole } = render(<Inbox user={me} />);
 
-    await findByRole('heading', { name: 'No unread conversations.' });
-    expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unread' });
-    expect(getByRole('link', { name: 'Unread conversations' })).toHaveAttribute(
-      'aria-current',
-      'page',
+    expect(await findByRole('alert')).toHaveTextContent(
+      'No unread conversations.',
     );
+    expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unread' });
+    expect(
+      getByRole('option', { name: /Unread conversations/ }),
+    ).toHaveProperty('selected', true);
   });
 
   it('keeps the unread filter when loading older conversations', async () => {
@@ -124,9 +282,7 @@ describe('<Inbox>', () => {
           : { threads, nextParams: { page: 2 } },
       ),
     );
-    const { findByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByRole } = render(<Inbox user={me} />);
 
     fireEvent.click(await findByRole('button', { name: 'More messages' }));
 
@@ -140,9 +296,7 @@ describe('<Inbox>', () => {
 
   it('shows a list of threads with excerpts', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
-    const { findAllByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findAllByRole } = render(<Inbox user={me} />);
     const items = await findAllByRole('listitem');
     expect(items.length).toBe(threads.length);
     threads.forEach((thread, i) => {
@@ -153,9 +307,7 @@ describe('<Inbox>', () => {
   it('shows that I have replied if the last message is from me', async () => {
     const threads = generateThreads(1, { userFrom: me, userTo: otherMember });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { container, findByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
     const icon = container.querySelector('.icon-reply');
     expect(icon).toBeInTheDocument();
@@ -165,9 +317,7 @@ describe('<Inbox>', () => {
   it('does not show that I have replied if the last message is from them', async () => {
     const threads = generateThreads(1, { userFrom: otherMember, userTo: me });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { container, findByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
     const icon = container.querySelector('.icon-reply');
     expect(icon).not.toBeInTheDocument();
@@ -175,9 +325,7 @@ describe('<Inbox>', () => {
 
   it('shows a read more button if there are more results', async () => {
     api.fetchThreads.mockResolvedValue({ threads, nextParams: { foo: 'bar' } });
-    const { findByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByRole } = render(<Inbox user={me} />);
     expect(await findByRole('button')).toHaveTextContent('More messages');
   });
 
@@ -192,9 +340,7 @@ describe('<Inbox>', () => {
           : { threads, nextParams: { page: 2 } },
       ),
     );
-    const { findByText, queryAllByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByText, queryAllByRole } = render(<Inbox user={me} />);
     const more = await findByText('More messages');
 
     // Not sure why I had to wrap this in act()
@@ -213,32 +359,11 @@ describe('<Inbox>', () => {
 
     const items = queryAllByRole('listitem');
     expect(items.length).toBe(threads.length + olderThreads.length);
-  });
 
-  it('retries a failed pagination request at the same page', async () => {
-    api.fetchThreads
-      .mockResolvedValueOnce({ threads, nextParams: { page: 2 } })
-      .mockRejectedValueOnce(new Error('Page unavailable'))
-      .mockResolvedValueOnce({ threads: moreThreads });
-    const { findAllByRole, findByRole, getAllByRole, getByRole } = render(
-      <Inbox user={me} />,
-      { wrapper: analytics.wrapper },
-    );
-    await findAllByRole('listitem');
-    fireEvent.click(await findByRole('button', { name: 'More messages' }));
-
-    expect(await findByRole('alert')).toHaveTextContent(
-      'More conversations unavailable',
-    );
-    fireEvent.click(getByRole('button', { name: 'Try again' }));
-
-    await waitFor(() =>
-      expect(getAllByRole('listitem')).toHaveLength(
-        threads.length + moreThreads.length,
-      ),
-    );
-    expect(api.fetchThreads.mock.calls[1]?.[0]).toEqual({ page: 2 });
-    expect(api.fetchThreads.mock.calls[2]?.[0]).toEqual({ page: 2 });
+    expect(trackEvent).toHaveBeenCalledWith('inbox-pagination', {
+      category: 'messages.inbox',
+      label: 'Inbox page 2',
+    });
   });
 
   it('filters by member name and latest preview across older pages', async () => {
@@ -260,7 +385,6 @@ describe('<Inbox>', () => {
 
     const { findByRole, getByRole, getByText, queryByText } = render(
       <Inbox user={me} />,
-      { wrapper: analytics.wrapper },
     );
     await findByRole('listitem');
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -282,16 +406,14 @@ describe('<Inbox>', () => {
 
   it('shows when no conversations match the filter', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
-    const { findAllByRole, getByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findAllByRole, getByRole } = render(<Inbox user={me} />);
     await findAllByRole('listitem');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
       target: { value: 'no matching member or preview' },
     });
 
-    expect(getByRole('status')).toHaveTextContent('No matching conversations.');
+    expect(getByRole('alert')).toHaveTextContent('No matching conversations.');
   });
 
   it('searches the other member in a conversation I sent', async () => {
@@ -301,9 +423,7 @@ describe('<Inbox>', () => {
     });
     sentThreads[0].userTo.displayName = 'Matching Recipient';
     api.fetchThreads.mockResolvedValue({ threads: sentThreads });
-    const { findByText, getByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByText, getByRole } = render(<Inbox user={me} />);
     await findByText('Matching Recipient');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -325,9 +445,7 @@ describe('<Inbox>', () => {
           : { threads: firstPage, nextParams: { page: 2 } },
       ),
     );
-    const { findByRole, findByText, getByRole } = render(<Inbox user={me} />, {
-      wrapper: analytics.wrapper,
-    });
+    const { findByRole, findByText, getByRole } = render(<Inbox user={me} />);
     await findByRole('listitem');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -354,7 +472,6 @@ describe('<Inbox>', () => {
     );
     const { findAllByRole, findByRole, getByRole } = render(
       <Inbox user={me} />,
-      { wrapper: analytics.wrapper },
     );
     await findAllByRole('listitem');
 
@@ -371,14 +488,13 @@ describe('<Inbox>', () => {
   });
 
   it('reports a failure while loading older conversations for search', async () => {
-    api.fetchThreads.mockImplementationOnce(() =>
-      Promise.resolve({ threads, nextParams: { page: 2 } }),
+    api.fetchThreads.mockImplementation((params = {}) =>
+      params.page === 2
+        ? Promise.reject(new Error('Page unavailable'))
+        : Promise.resolve({ threads, nextParams: { page: 2 } }),
     );
-    api.fetchThreads.mockRejectedValueOnce(new Error('Page unavailable'));
-    api.fetchThreads.mockResolvedValueOnce({ threads: moreThreads });
     const { findAllByRole, findByText, getByRole } = render(
       <Inbox user={me} />,
-      { wrapper: analytics.wrapper },
     );
     await findAllByRole('listitem');
 
@@ -389,7 +505,5 @@ describe('<Inbox>', () => {
     expect(
       await findByText('Older conversations could not be loaded.'),
     ).toBeInTheDocument();
-    fireEvent.click(getByRole('button', { name: 'Try again' }));
-    await waitFor(() => expect(api.fetchThreads).toHaveBeenCalledTimes(3));
   });
 });

@@ -8,8 +8,13 @@ import ContentState from '@/modules/core/client/components/ContentState';
 import * as api from '../api/messages.api';
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
+import { navigate } from '@/modules/core/client/services/client-runtime';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
-import type { MessageThreadSummary, PageParams } from '../api/messages.api';
+import type {
+  ConversationCounts,
+  MessageThreadSummary,
+  PageParams,
+} from '../api/messages.api';
 
 type InboxProps = { user: { public?: boolean; _id: string } };
 
@@ -22,7 +27,12 @@ export default function Inbox({ user }: InboxProps) {
     );
   }
   const { t } = useTranslation('messages');
-  const unreadOnly = useSearch({ strict: false }).filter === 'unread';
+  const requestedFilter = useSearch({ strict: false }).filter;
+  const filter =
+    requestedFilter === 'unread' || requestedFilter === 'unreplied'
+      ? requestedFilter
+      : 'all';
+  const [counts, setCounts] = useState<ConversationCounts | null>(null);
 
   const [nextParams, setNextParams] = useState<PageParams | null>(null);
   const [isFetching, setIsFetching] = useState(true);
@@ -59,7 +69,7 @@ export default function Inbox({ user }: InboxProps) {
     try {
       const params = next ? (nextParams as PageParams) : {};
       const data = await api.fetchThreads(
-        unreadOnly ? { ...params, filter: 'unread' } : params,
+        filter === 'all' ? params : { ...params, filter },
       );
       setThreads(threads =>
         next ? threads.concat(data.threads) : data.threads,
@@ -97,7 +107,7 @@ export default function Inbox({ user }: InboxProps) {
       try {
         while (params) {
           const data = await api.fetchThreads(
-            unreadOnly ? { ...params, filter: 'unread' } : params,
+            filter === 'all' ? params : { ...params, filter },
           );
           olderThreads.push(...data.threads);
           params = data.nextParams || null;
@@ -114,32 +124,59 @@ export default function Inbox({ user }: InboxProps) {
     loadOlderConversations();
   }, [query, nextParams, isFetching, isLoadingForSearch, searchLoadFailed]);
 
+  useEffect(() => {
+    let active = true;
+    async function refreshCounts() {
+      try {
+        const data = await api.conversationCounts();
+        if (active) setCounts(data);
+      } catch {
+        if (active) setCounts(null);
+      }
+    }
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') refreshCounts();
+    }
+    refreshCounts();
+    window.addEventListener('focus', refreshCounts);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      active = false;
+      window.removeEventListener('focus', refreshCounts);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, []);
+
   return (
     <section className="container-spacer">
       <div className="tw:page-container inbox-controls">
-        <nav
+        <select
           aria-label={t('Conversation filter')}
-          className="inbox-view-filters"
+          className="form-control inbox-view-filter"
+          value={filter}
+          onChange={event =>
+            navigate(
+              event.target.value === 'all'
+                ? '/messages'
+                : `/messages?filter=${event.target.value}`,
+              {},
+              { reload: true },
+            )
+          }
         >
-          <Button
-            render={<a href="/messages" rel="external" />}
-            aria-current={unreadOnly ? undefined : 'page'}
-            aria-label={t('All conversations')}
-          >
-            <span className="tw:max-sm:hidden">{t('All conversations')}</span>
-            <span className="tw:inline tw:sm:hidden">{t('All')}</span>
-          </Button>
-          <Button
-            render={<a href="/messages?filter=unread" rel="external" />}
-            aria-current={unreadOnly ? 'page' : undefined}
-            aria-label={t('Unread conversations')}
-          >
-            <span className="tw:max-sm:hidden">
-              {t('Unread conversations')}
-            </span>
-            <span className="tw:inline tw:sm:hidden">{t('Unread')}</span>
-          </Button>
-        </nav>
+          <option value="all">
+            {t('All conversations')}
+            {counts && ` (${counts.all})`}
+          </option>
+          <option value="unread">
+            {t('Unread conversations')}
+            {counts && ` (${counts.unread})`}
+          </option>
+          <option value="unreplied">
+            {t('Unreplied conversations')}
+            {counts && ` (${counts.unreplied})`}
+          </option>
+        </select>
         <div className="inbox-search">
           <Input
             type="search"
@@ -228,9 +265,11 @@ export default function Inbox({ user }: InboxProps) {
             heading={
               query
                 ? t('No matching conversations.')
-                : unreadOnly
-                  ? t('No unread conversations.')
-                  : t('No conversations yet.')
+                : filter === 'unreplied'
+                  ? t('No unreplied conversations.')
+                  : filter === 'unread'
+                    ? t('No unread conversations.')
+                    : t('No conversations yet.')
             }
             description={t(
               'Conversations with other members will appear here.',

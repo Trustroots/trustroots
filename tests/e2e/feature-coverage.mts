@@ -2565,6 +2565,7 @@ const features = [
       'Inbox excludes shadow-hidden conversations.',
       'Unread conversations beyond the first page can be opened.',
       'Conversation text filter finds older names and previews.',
+      'Unreplied conversations and all three totals reflect reading and replying.',
     ],
     relatedSpecs: [
       spec(
@@ -2579,6 +2580,10 @@ const features = [
       spec(
         'messages.spec.js',
         'older unread conversations can be filtered and opened',
+      ),
+      spec(
+        'messages.spec.js',
+        'unreplied conversations and totals follow reading and replying',
       ),
     ],
   },
