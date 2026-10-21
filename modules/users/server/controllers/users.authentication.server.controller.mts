@@ -162,6 +162,14 @@ service.signup = function (req, res) {
           return done(err);
         }
 
+        if (req.body.ageConfirmed !== true) {
+          const err: AccountError = new Error(
+            'You must confirm that you are 18 years old or older to sign up.',
+          );
+          err.userFacing = true;
+          return done(err);
+        }
+
         done();
       },
 

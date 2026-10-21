@@ -125,6 +125,7 @@ function present<T>(value: T | null | undefined): T {
  */
 describe('User signup and authentication CRUD tests', function () {
   const jobs = testutils.catchJobs();
+  const emails = testutils.catchEmails();
   before(function (done) {
     (async () => {
       // Get application
@@ -186,10 +187,45 @@ describe('User signup and authentication CRUD tests', function () {
       .catch(done);
   });
   afterEach(dataUtils.clearDatabase);
+  for (const ageConfirmed of [
+    undefined,
+    false,
+    null,
+    'true',
+    1,
+    [],
+    {},
+    ['true'],
+  ]) {
+    it(
+      'rejects unconfirmed adult status: ' + JSON.stringify(ageConfirmed),
+      async function () {
+        const response = await agent
+          .post('/api/auth/signup')
+          .send({
+            firstName: 'Amina',
+            lastName: 'Vale',
+            username: 'adultmember',
+            email: 'adult-member@example.test',
+            password: 'Password123!',
+            ageConfirmed,
+          })
+          .expect(400);
+        present(response.body.message).should.equal(
+          'You must confirm that you are 18 years old or older to sign up.',
+        );
+        should.not.exist(await User.findOne({ username: 'adultmember' }));
+        emails.should.have.length(0);
+        jobs.length.should.equal(0);
+      },
+    );
+  }
+
   it('explains underscore rejection without creating an account', async function () {
     const response = await agent
       .post('/api/auth/signup')
       .send({
+        ageConfirmed: true,
         firstName: 'Amina',
         lastName: 'Vale',
         username: 'sample_member',
@@ -211,6 +247,7 @@ describe('User signup and authentication CRUD tests', function () {
       const response = await agent
         .post('/api/auth/signup')
         .send({
+          ageConfirmed: true,
           firstName: 'Amina',
           lastName: 'Vale',
           username,
@@ -241,13 +278,15 @@ describe('User signup and authentication CRUD tests', function () {
     };
     const response = await agent
       .post('/api/auth/signup')
-      .send(payload)
+      .send({ ...payload, ageConfirmed: true })
       .expect(200);
     const stored = await User.findOne({ username: payload.username });
     assertPresent(stored);
     present(stored.authVersion).should.equal(0);
     present(stored.roles).should.deepEqual(['user']);
     present(stored.newsletter).should.equal(true);
+    Object.hasOwn(stored.toObject(), 'ageConfirmed').should.be.false();
+    Object.hasOwn(response.body, 'ageConfirmed').should.be.false();
     present(stored.locale).should.equal('en');
     present(stored.acquisitionStory).should.equal(payload.acquisitionStory);
     present(stored.avatarUploaded).should.equal(false);
@@ -274,7 +313,7 @@ describe('User signup and authentication CRUD tests', function () {
     ]) {
       const response = await agent
         .post('/api/auth/signup')
-        .send({ ...payload, [field]: { value: null } })
+        .send({ ...payload, ageConfirmed: true, [field]: { value: null } })
         .expect(400);
       present(response.body.message).should.equal(
         'Please provide required fields.',
@@ -283,7 +322,7 @@ describe('User signup and authentication CRUD tests', function () {
     for (const field of ['locale', 'acquisitionStory', 'newsletter']) {
       const response = await agent
         .post('/api/auth/signup')
-        .send({ ...payload, [field]: { value: null } })
+        .send({ ...payload, ageConfirmed: true, [field]: { value: null } })
         .expect(400);
       present(response.body.message).should.equal(
         'Please provide valid signup preferences.',
@@ -296,7 +335,10 @@ describe('User signup and authentication CRUD tests', function () {
     _unConfirmedUser.email = 'register-new-user@example.org';
     agent
       .post('/api/auth/signup')
-      .send(_unConfirmedUser)
+      .send({
+        ..._unConfirmedUser,
+        ageConfirmed: true,
+      })
       .expect(200)
       .end(function (signupErr, signupRes) {
         // Handle signup error
@@ -344,7 +386,10 @@ describe('User signup and authentication CRUD tests', function () {
     _unConfirmedUser.roles = ['user', 'admin'];
     agent
       .post('/api/auth/signup')
-      .send(_unConfirmedUser)
+      .send({
+        ..._unConfirmedUser,
+        ageConfirmed: true,
+      })
       .expect(200)
       .end(function (err, signupRes) {
         should.not.exist(err);
@@ -367,7 +412,10 @@ describe('User signup and authentication CRUD tests', function () {
     _unConfirmedUser.email = 'register-new-user@example.org';
     agent
       .post('/api/auth/signup')
-      .send(_unConfirmedUser)
+      .send({
+        ..._unConfirmedUser,
+        ageConfirmed: true,
+      })
       .expect(200)
       .end(function (signupErr, signupRes) {
         // Handle signup error
@@ -445,7 +493,10 @@ describe('User signup and authentication CRUD tests', function () {
     _unConfirmedUser.email = 'register-new-user@example.org';
     agent
       .post('/api/auth/signup')
-      .send(_unConfirmedUser)
+      .send({
+        ..._unConfirmedUser,
+        ageConfirmed: true,
+      })
       .expect(200)
       .end(function (signupErr, signupRes) {
         // Handle signup error

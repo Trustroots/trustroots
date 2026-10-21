@@ -66,6 +66,11 @@ describe('<Faq />', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByText('about the site & community')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', {
+        name: 'What is the minimum age to use Trustroots?',
+      }),
+    ).toHaveAttribute('href', '/faq#what-is-the-minimum-age');
     expect(screen.getByText('custom content')).toBeInTheDocument();
   });
 

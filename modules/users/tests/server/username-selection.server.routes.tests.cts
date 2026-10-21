@@ -66,7 +66,7 @@ describe('Username selection and existing identities', function () {
     it('rejects selection consistently: ' + username, async function () {
       const signup = await request(app)
         .post('/api/auth/signup')
-        .send({ ...member(), username })
+        .send({ ...member(), ageConfirmed: true, username })
         .expect(400);
       signup.body.message.should.equal(formatMessage);
       const validation = await request(app)
@@ -95,7 +95,7 @@ describe('Username selection and existing identities', function () {
       async function () {
         await request(app)
           .post('/api/auth/signup')
-          .send({ ...member(), username })
+          .send({ ...member(), ageConfirmed: true, username })
           .expect(400);
         const validation = await request(app)
           .post('/api/auth/signup/validate')

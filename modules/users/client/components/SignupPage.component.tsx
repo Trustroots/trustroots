@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
 
@@ -108,6 +109,7 @@ function getCurrentUsernameFieldErrors(username: string): UsernameFieldErrors {
 }
 
 export default function SignupPage() {
+  const { t } = useTranslation('users');
   const { user, setUser } = useAuth() as {
     user: UserProfile | null;
     setUser: (user: UserProfile | AuthenticatedUser) => void;
@@ -115,6 +117,7 @@ export default function SignupPage() {
   const { tribe: tribeSlug } = getCurrentRouteParams();
   const [credentials, setCredentials] = useState({
     acquisitionStory: '',
+    ageConfirmed: false,
     email: '',
     firstName: '',
     lastName: '',
@@ -243,6 +246,7 @@ export default function SignupPage() {
   });
 
   const isStepOneValid =
+    credentials.ageConfirmed &&
     credentials.firstName &&
     credentials.lastName &&
     credentials.email &&
@@ -276,6 +280,16 @@ export default function SignupPage() {
   }
 
   async function handleSubmitSignup() {
+    if (step !== 1) return;
+    if (!credentials.ageConfirmed) {
+      setErrorMessage(
+        t('You must confirm that you are 18 years old or older to sign up.'),
+      );
+      return;
+    }
+
+    if (!isStepOneValid || isLoading) return;
+
     setIsLoading(true);
     setIsEmailTaken(false);
     setErrorMessage('');
@@ -315,7 +329,15 @@ export default function SignupPage() {
           {errorMessage}
         </div>
       )}
-      <form className="signin form-horizontal" noValidate autoComplete="off">
+      <form
+        className="signin form-horizontal"
+        noValidate
+        autoComplete="off"
+        onSubmit={event => {
+          event.preventDefault();
+          void handleSubmitSignup();
+        }}
+      >
         <div className="row">
           <div className="col-xs-12 text-center">
             <h3>Join Trustroots</h3>
@@ -503,6 +525,24 @@ export default function SignupPage() {
                       )}
                   </div>
                 </div>
+                <div className="form-group">
+                  <div className="col-sm-8 offset-sm-4">
+                    <label htmlFor="ageConfirmed">
+                      <input
+                        type="checkbox"
+                        id="ageConfirmed"
+                        name="ageConfirmed"
+                        required
+                        checked={credentials.ageConfirmed}
+                        disabled={isLoading}
+                        onChange={event =>
+                          updateCredential('ageConfirmed', event.target.checked)
+                        }
+                      />{' '}
+                      {t('I am 18 years old or older.')}
+                    </label>
+                  </div>
+                </div>
                 <div className="form-group signup-newsletter">
                   <div className="col-sm-8 offset-sm-4">
                     <label className="signup-newsletter-label">
@@ -571,10 +611,9 @@ export default function SignupPage() {
                 <div className="text-center signup-next">
                   <br />
                   <button
-                    type="button"
+                    type="submit"
                     className="btn btn-lg btn-primary"
                     disabled={!isStepOneValid || isLoading}
-                    onClick={handleSubmitSignup}
                   >
                     {usernamePending
                       ? 'Checking username…'

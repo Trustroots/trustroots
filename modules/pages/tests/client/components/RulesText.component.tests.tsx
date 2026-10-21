@@ -8,6 +8,9 @@ import RulesText from '@/modules/pages/client/components/RulesText.component';
 describe('<RulesText />', () => {
   it('renders all high-level rule statements', () => {
     render(<RulesText />);
+    expect(
+      screen.getByText('You must be 18 years old or older to use Trustroots.'),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByText(

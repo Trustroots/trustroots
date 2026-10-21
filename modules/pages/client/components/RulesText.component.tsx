@@ -24,6 +24,7 @@ export default function RulesText() {
       </p>
 
       <ul>
+        <li>{text('You must be 18 years old or older to use Trustroots.')}</li>
         <li>
           {text('Be friendly and know when to stop messaging someone.')}{' '}
           {text('We have no tolerance for abusive members.')}

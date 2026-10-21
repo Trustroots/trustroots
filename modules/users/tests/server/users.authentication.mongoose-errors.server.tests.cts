@@ -38,6 +38,7 @@ describe('Authentication controller mongoose error handling', () => {
     authController.signup(
       {
         body: {
+          ageConfirmed: true,
           firstName: 'Fictional',
           lastName: 'Member',
           username: 'fictionalsaveerror',

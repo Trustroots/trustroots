@@ -827,10 +827,15 @@ const features = [
     requiredScenarios: [
       'Signup form validates required fields.',
       'Signup succeeds for a unique user.',
+      'Signup requires explicit adult confirmation.',
       'Signup can preload suggested circles from the tribe query parameter.',
     ],
     relatedSpecs: [
       spec('auth-smoke.spec.js', 'signup submits a unique user through the UI'),
+      spec(
+        'auth-smoke.spec.js',
+        'signup requires adult confirmation before creating an account',
+      ),
     ],
   },
   {

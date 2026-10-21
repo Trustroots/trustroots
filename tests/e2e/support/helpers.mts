@@ -163,6 +163,7 @@ export async function registerViaApi(
       // shared storage-state session.
       headers: { Cookie: '' },
       data: {
+        ageConfirmed: true,
         firstName: user.firstName,
         lastName: user.lastName,
         username: user.username,
@@ -216,6 +217,7 @@ export async function signUp(page: Page, user: NewUser): Promise<void> {
   await page.locator('#email').fill(user.email);
   await page.locator('#username').fill(user.username);
   await page.locator('#password').fill(user.password);
+  await page.getByLabel('I am 18 years old or older.').check();
 
   const signupResponse = page.waitForResponse(
     response =>

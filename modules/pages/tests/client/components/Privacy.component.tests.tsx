@@ -18,6 +18,9 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
 describe('<Privacy />', () => {
   it('renders privacy policy headings and key links', () => {
     render(<Privacy />);
+    expect(
+      screen.getByText('You must be 18 years old or older to use Trustroots.'),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole('heading', { name: 'Privacy' }),

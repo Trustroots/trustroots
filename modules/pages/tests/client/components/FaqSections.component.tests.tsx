@@ -25,6 +25,14 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
 describe('FAQ page sections', () => {
   it('renders general FAQ questions and sidebar context', () => {
     render(<FaqGeneral />);
+    expect(
+      screen.getByRole('heading', {
+        name: 'What is the minimum age to use Trustroots?',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText('You must be 18 years old or older to use Trustroots.'),
+    ).toBeInTheDocument();
 
     expect(
       screen.getByRole('heading', {
@@ -33,7 +41,7 @@ describe('FAQ page sections', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(content =>
-        content.includes('No. Trustroots is for everyone.'),
+        content.includes('No. Trustroots is for everyone aged 18 or older.'),
       ),
     ).toBeInTheDocument();
     expect(
