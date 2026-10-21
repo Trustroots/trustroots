@@ -7,7 +7,9 @@ stack for its nested destinations. Nested routes SHALL retain their originating
 screen so Back returns to the screen that opened them, including when the same
 destination can be opened from multiple flows. Route keys SHALL be serialisable
 and contain only route identity and the minimum stable public resource
-identifier needed to reload the destination. Session credentials, member
+identifier needed to reload the destination. Persisted route types SHALL keep
+their Java class names across package organisation so Navigation 3 can resolve
+older Android SavedState entries. Session credentials, member
 session objects, API responses and private message content SHALL remain outside
 navigation keys and saved navigation state. The live authenticated parent and
 entry-scoped screen state owners SHALL supply session data and destination
@@ -82,5 +84,13 @@ content.
 - **AND** destination data is reloaded from the authenticated API
 - **AND** route state contains no credentials, private message text or API
   response payloads
+
+#### Scenario: Android restores an existing Menu saved-state key
+
+- **WHEN** Android restores a Menu stack saved by an earlier app version
+- **THEN** its Menu page and browser keys resolve to the same route classes and
+  values
+- **AND** their Java class names remain stable even when their source file is
+  organised under `ui/menu`
 - **AND** if the session is missing or invalid, the authenticated route stacks
   are discarded and sign-in is shown

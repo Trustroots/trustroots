@@ -1,13 +1,15 @@
 package org.trustroots.android.ui
 
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -17,8 +19,10 @@ import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -30,7 +34,7 @@ import org.trustroots.android.ui.profile.MemberProfileScreen
 
 @RunWith(AndroidJUnit4::class)
 class ProfileExperienceNavigationJourneyTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0).apply { soTimeout = 20_000 }
     private val session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron"))
     private val requests = CopyOnWriteArrayList<CapturedRequest>()
@@ -53,15 +57,27 @@ class ProfileExperienceNavigationJourneyTest {
         compose.setContent { profile() }
 
         openExperienceForm()
+        compose.onNodeWithText("Public experience (optional)")
+            .performTextReplacement("A discarded draft.")
         compose.onNodeWithContentDescription("Cancel").performClick()
+        compose.onNodeWithText("Discard changes").performClick()
         openExperienceMenu()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
 
         openExperienceForm()
         compose.onNodeWithText("Experience with Quiet Fox").assertIsDisplayed()
+        assertTrue(compose.onAllNodesWithText("A discarded draft.").fetchSemanticsNodes().isEmpty())
         compose.onNodeWithText("Save changes").performClick()
         openExperienceMenu()
         compose.onNodeWithText("Share your experience").assertIsDisplayed()
+        compose.waitUntil(10_000) {
+            requests.count { it.line.startsWith("GET /api/experiences?userTo=member-two ") } >= 2
+        }
+        assertEquals(
+            "The Experience completion should refresh only its parent profile once",
+            2,
+            requests.count { it.line.startsWith("GET /api/experiences?userTo=member-two ") },
+        )
 
         assertTrue(requests.any { it.line.startsWith("POST /api/experiences ") && it.body.contains("\"userTo\":\"member-two\"") })
         assertTrue(compose.onAllNodesWithText("Experience with Quiet Fox").fetchSemanticsNodes().isEmpty())
@@ -97,12 +113,31 @@ class ProfileExperienceNavigationJourneyTest {
         assertTrue(compose.onAllNodesWithText("Experience with Quiet Fox").fetchSemanticsNodes().isEmpty())
     }
 
+    @Test fun expiredExperienceSubmissionInvalidatesTheSessionOnlyOnce() {
+        val invalidations = AtomicInteger()
+        respondToRequests { request ->
+            if (request.startsWith("POST /api/experiences ")) {
+                HttpReply(401, """{"message":"Session expired."}""")
+            } else profileReply(request)
+        }
+        compose.setContent { profile(onSessionInvalidated = { invalidations.incrementAndGet() }) }
+
+        openExperienceForm()
+        compose.onNodeWithText("Save changes").performClick()
+        compose.waitUntil(10_000) { invalidations.get() == 1 }
+        compose.onNodeWithText("Save changes").performClick()
+
+        compose.waitForIdle()
+        assertTrue("The failed submission is not retried after session invalidation", requests.count { it.line.startsWith("POST /api/experiences ") } == 1)
+        assertTrue("Session invalidation is delivered once", invalidations.get() == 1)
+    }
+
     @Composable
-    private fun profile() = MemberProfileScreen(
+    private fun profile(onSessionInvalidated: () -> Unit = {}) = MemberProfileScreen(
         api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
         session = session,
         username = "quiet-fox",
-        onSessionInvalidated = {},
+        onSessionInvalidated = onSessionInvalidated,
         onBack = {},
     )
 

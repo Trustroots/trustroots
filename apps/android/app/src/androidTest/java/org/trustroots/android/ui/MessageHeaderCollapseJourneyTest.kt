@@ -39,10 +39,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.ui.conversation.ConversationScreen
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
@@ -121,15 +119,17 @@ class MessageHeaderCollapseJourneyTest {
     }
 
     @Test fun conversationHeaderCollapsesAndExpandsWithHistoryGestures() {
-        var profileOpened = false
-        var navigatedBack = false
         var statusBarInsetPx = 0f
         var startInsetPx = 0f
         var rootWidthPx = 0f
         var backInsetUpperBoundPx = 0f
         startResponder { request ->
             when {
+                request.startsWith("GET /api/users/mini/member-one ") -> "200 OK" to
+                    """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}"""
                 request.startsWith("GET /api/messages/member-one?") -> "200 OK" to conversationPayload()
+                request.startsWith("GET /api/users/quiet-fox ") -> "200 OK" to
+                    """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","member":[]}"""
                 request.contains("/avatar?") -> "404 Not Found" to ""
                 else -> "404 Not Found" to "{}"
             }
@@ -148,17 +148,13 @@ class MessageHeaderCollapseJourneyTest {
             CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
                 val direction = LocalLayoutDirection.current
                 startInsetPx = with(density) { contentPadding.calculateStartPadding(direction).toPx() }
-                TrustrootsTheme {
-                    ConversationScreen(
-                        api = MobileApiClient(baseUrl),
-                        session = session,
-                        member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
-                        onSessionInvalidated = {},
-                        onBack = { navigatedBack = true },
-                        onOpenProfile = { profileOpened = true },
-                        contentPadding = contentPadding,
-                    )
-                }
+                ConversationRouteTestHarness(
+                    api = MobileApiClient(baseUrl),
+                    session = session,
+                    memberID = "member-one",
+                    onSessionInvalidated = {},
+                    contentPadding = contentPadding,
+                )
             }
         }
         compose.waitUntil(10_000) {
@@ -212,9 +208,14 @@ class MessageHeaderCollapseJourneyTest {
         println("MESSAGE_HEADER conversation expandedAgain title=$titleExpanded")
         captureUsabilityScreenshot(compose, "android_message_conversation_expanded_again")
         compose.onNodeWithText("View profile").performClick()
-        assertTrue("The conversation profile action keeps its callback", profileOpened)
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("About").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("About").assertIsDisplayed()
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.onNodeWithText("Fictional conversation note 30").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
-        assertTrue("Back keeps its conversation navigation callback", navigatedBack)
+        compose.onNodeWithText("Messages").assertIsDisplayed()
     }
 
     private val baseUrl get() = "http://127.0.0.1:${server.localPort}"

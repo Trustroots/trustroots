@@ -49,16 +49,19 @@ class BackendApiSwitchJourneyTest {
     private lateinit var previousAlertPreferences: Map<String, *>
     private var previousDestination: MessageDestination? = null
     private var previousStatus: String? = null
+    private var previousStatusMetadata: org.trustroots.android.notifications.MessageAlertStatusMetadata? = null
 
     @Before fun isolateSessionAndAlerts() {
         previousSessionPreferences = sessionPreferences.all
         previousAlertPreferences = alertPreferences.all
         previousDestination = MessageAlerts.destination.value
         previousStatus = MessageAlerts.status.value
+        previousStatusMetadata = MessageAlerts.statusMetadata.value
         sessionPreferences.edit().clear().commit()
         alertPreferences.edit().clear().commit()
         MessageAlerts.clearDestination()
         MessageAlerts.status.value = null
+        MessageAlerts.statusMetadata.value = null
     }
 
     @After fun restoreSessionAndAlerts() {
@@ -66,6 +69,7 @@ class BackendApiSwitchJourneyTest {
         restorePreferences(alertPreferences, previousAlertPreferences)
         MessageAlerts.destination.value = previousDestination
         MessageAlerts.status.value = previousStatus
+        MessageAlerts.statusMetadata.value = previousStatusMetadata
     }
 
     @Test fun signedInShellUsesChangedBackendForScreensAndSignOut() {

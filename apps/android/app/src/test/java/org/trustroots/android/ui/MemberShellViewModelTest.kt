@@ -26,6 +26,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
@@ -55,6 +56,7 @@ class MemberShellViewModelTest {
             activityStore.clear()
         }
     }
+
 
     @Test
     fun loadsAvatarAndRefreshesUnreadOnActiveVisitChangesAndResume() = withScope { scope ->
@@ -94,6 +96,19 @@ class MemberShellViewModelTest {
     }
 
     @Test
+    fun unchangedEnvironmentNotificationDoesNotRestartShellLookups() = withScope { scope ->
+        val repository = FakeMemberShellRepository()
+        val model = MemberShellViewModel(repository, scope)
+        val initialState = model.state.value
+
+        model.onEvent(MemberShellEvent.EnvironmentChanged(api(), session()))
+
+        assertEquals(1, repository.avatarCalls)
+        assertEquals(0, repository.unreadCalls)
+        assertEquals(initialState, model.state.value)
+    }
+
+    @Test
     fun ordinaryAvatarFailureCanBeRetriedAndUnexpectedExceptionsBecomeSafeFailures() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             avatarHandler = { call ->
@@ -104,7 +119,7 @@ class MemberShellViewModelTest {
         }
         val model = MemberShellViewModel(repository, scope)
 
-        assertEquals(MemberShellFailure(message = null, statusCode = null), model.state.value.failure)
+        assertEquals(MemberShellFailure(serverMessage = null, apiFailureKind = null), model.state.value.failure)
         assertFalse(model.state.value.isAvatarLoading)
         model.onEvent(MemberShellEvent.RetryAvatar)
         assertEquals("recovered-avatar", model.state.value.avatarID)
@@ -113,8 +128,37 @@ class MemberShellViewModelTest {
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
         model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
         assertEquals(1, repository.unreadCalls)
-        assertEquals(MemberShellFailure(message = null, statusCode = null), model.state.value.failure)
+        assertEquals(MemberShellFailure(serverMessage = null, apiFailureKind = null), model.state.value.failure)
         assertFalse(model.state.value.isUnreadRefreshing)
+    }
+
+    @Test
+    fun avatarApiFailureShowsServerMessageAndRetryReplacesItWithFreshAvatar() = withScope { scope ->
+        val repository = FakeMemberShellRepository().apply {
+            avatarHandler = { call ->
+                if (call == 1) {
+                    Result.failure(
+                        MobileApiException(503, "Avatar service is temporarily unavailable.", ApiFailureKind.REQUEST_REJECTED),
+                    )
+                } else Result.success("recovered-avatar")
+            }
+        }
+        val model = MemberShellViewModel(repository, scope)
+
+        assertEquals(
+            MemberShellFailure(
+                serverMessage = "Avatar service is temporarily unavailable.",
+                apiFailureKind = ApiFailureKind.REQUEST_REJECTED,
+            ),
+            model.state.value.failure,
+        )
+        assertFalse(model.state.value.isAvatarLoading)
+
+        model.onEvent(MemberShellEvent.RetryAvatar)
+
+        assertEquals("recovered-avatar", model.state.value.avatarID)
+        assertNull(model.state.value.failure)
+        assertFalse(model.state.value.isAvatarLoading)
     }
 
     @Test
@@ -149,15 +193,15 @@ class MemberShellViewModelTest {
     fun ordinaryFailureIsTypedAndRetriedOnNextActiveVisit() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             unreadHandler = { call ->
-                if (call == 1) Result.failure(MobileApiException(503, "Temporary outage"))
+                if (call == 1) Result.failure(MobileApiException(503, "Temporary outage", ApiFailureKind.REQUEST_REJECTED))
                 else Result.success(3)
             }
         }
         val model = MemberShellViewModel(repository, scope)
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
         model.onEvent(MemberShellEvent.ActiveVisitChanged(1))
-        assertEquals("Temporary outage", model.state.value.failure?.message)
-        assertEquals(503, model.state.value.failure?.statusCode)
+        assertEquals("Temporary outage", model.state.value.failure?.serverMessage)
+        assertEquals(ApiFailureKind.REQUEST_REJECTED, model.state.value.failure?.apiFailureKind)
 
         model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
         assertEquals(3, model.state.value.unreadMessageCount)
@@ -220,6 +264,52 @@ class MemberShellViewModelTest {
     }
 
     @Test
+    fun synchronousAvatarRetryReentryRejectsOldSuccessAndAuthenticationFailure() = withScope { scope ->
+        val staleResults = listOf(
+            Result.success("stale-avatar"),
+            Result.failure(MobileApiException(401, "Expired credentials")),
+        )
+
+        staleResults.forEach { staleResult ->
+            val repository = FakeMemberShellRepository()
+            lateinit var model: MemberShellViewModel
+            repository.avatarHandler = { call ->
+                when (call) {
+                    1 -> Result.success("initial-avatar")
+                    2 -> {
+                    // With Unconfined, the first result returns inline before
+                    // loadAvatar has stored its Job. A synchronous retry must
+                    // keep the stale completion from replacing the newer result.
+                    model.onEvent(MemberShellEvent.RetryAvatar)
+                    staleResult
+                    }
+                    else -> Result.success("current-avatar")
+                }
+            }
+            model = MemberShellViewModel(repository, scope)
+            model.onEvent(MemberShellEvent.RetryAvatar)
+
+            assertEquals(3, repository.avatarCalls)
+            assertEquals("current-avatar", model.state.value.avatarID)
+            assertNull(model.state.value.failure)
+            assertNull(model.state.value.pendingSessionInvalidation)
+            assertFalse(model.state.value.isAvatarLoading)
+        }
+    }
+
+    @Test
+    fun blankApiErrorMessageIsNotShownAsAnOrdinaryShellFailure() = withScope { scope ->
+        val repository = FakeMemberShellRepository().apply {
+            unreadHandler = { Result.failure(MobileApiException(503, "   ", ApiFailureKind.REQUEST_REJECTED)) }
+        }
+        val model = MemberShellViewModel(repository, scope)
+        model.onEvent(MemberShellEvent.LifecycleChanged(true))
+        model.onEvent(MemberShellEvent.ActiveVisitChanged(3))
+
+        assertEquals(MemberShellFailure(serverMessage = null, apiFailureKind = ApiFailureKind.REQUEST_REJECTED), model.state.value.failure)
+    }
+
+    @Test
     fun authenticationFailureFromEitherLookupIsDeliveredOnce() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             avatarHandler = { Result.success("member-safe-id") }
@@ -229,6 +319,8 @@ class MemberShellViewModelTest {
         model.onEvent(MemberShellEvent.LifecycleChanged(true))
         model.onEvent(MemberShellEvent.ActiveVisitChanged(1))
         val pending = requireNotNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(MemberShellEvent.InvalidationDelivered(pending.id + 1))
+        assertEquals("A stale delivery acknowledgement must not consume the active invalidation", pending, model.state.value.pendingSessionInvalidation)
         model.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
         assertNull(model.state.value.pendingSessionInvalidation)
         model.onEvent(MemberShellEvent.ActiveVisitChanged(2))
@@ -433,12 +525,12 @@ class MemberShellViewModelTest {
         override suspend fun unreadCount(): Result<Int> = unreadHandler(++unreadCalls)
     }
 
-    private class TestStoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
-
     class StoreMarker : androidx.lifecycle.ViewModel() {
         var cleared = false
         override fun onCleared() { cleared = true }
     }
+
+    private class TestStoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
 
     private class ShellApiServer : AutoCloseable {
         private val server = ServerSocket(0)

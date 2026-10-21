@@ -81,7 +81,10 @@ stacks. Keys may contain opaque public resource IDs and safe route enums, but
 never credentials, response payloads, private message content or member
 session objects. Reload destination data from the authenticated API after
 restoration. Keep keys serialisable and version their route shape conservatively
-so unknown saved keys fall back to the owning flow's safe root.
+so unknown saved keys fall back to the owning flow's safe root. For key types
+already persisted by an earlier app version, preserve the Java class name: the
+Navigation 3 SavedState serializer stores and resolves the runtime class name,
+so `@SerialName` alone cannot migrate a package rename.
 
 Migrate in vertical slices while the established screen remains usable:
 

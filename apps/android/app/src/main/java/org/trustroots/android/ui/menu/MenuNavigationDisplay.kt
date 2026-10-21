@@ -1,36 +1,39 @@
-package org.trustroots.android.ui
+package org.trustroots.android.ui.menu
 
+import android.content.Context
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import android.content.Context
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.DefaultBrowserContent
-import org.trustroots.android.notifications.MessageAlerts
+import org.trustroots.android.ui.MenuBrowserDestination
+import org.trustroots.android.ui.MenuBrowserVisit
+import org.trustroots.android.ui.MenuPage
+import org.trustroots.android.ui.MenuPageVisit
 import org.trustroots.android.ui.common.LocalLeaveGuard
+import org.trustroots.android.ui.common.SharedNavigationLinks
 import org.trustroots.android.ui.contacts.ContactsScreen
+import org.trustroots.android.ui.account.AccountSettingsScreen
+import org.trustroots.android.ui.editprofile.EditProfileScreen
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @Composable
 internal fun MenuNavigationDisplay(
@@ -47,8 +50,8 @@ internal fun MenuNavigationDisplay(
     contentPadding: PaddingValues = PaddingValues.Zero,
     openFindPeople: () -> Unit,
     openCircles: () -> Unit,
+    menuBackStack: NavBackStack<NavKey> = rememberNavBackStack(MenuPageVisit(MenuPage.Menu, initialVisitID)),
 ) {
-    val menuBackStack = rememberNavBackStack(MenuPageVisit(MenuPage.Menu, initialVisitID))
     var nextVisitID by rememberSaveable(initialVisitID) { mutableLongStateOf(initialVisitID + 1L) }
     fun allocateVisitID(): Long = nextVisitID++
     val context = LocalContext.current
@@ -60,31 +63,42 @@ internal fun MenuNavigationDisplay(
             Unit
         }
     }
+    val leaveGuardState = LocalLeaveGuard.current
+    val resetMenuFromNavigation: () -> Unit = {
+        val reset = resetToMenuRoot
+        leaveGuardState?.value?.invoke(reset) ?: reset()
+    }
     SideEffect {
         onCurrentUsageScreen(
             initialVisitID,
-            when ((currentMenuRoute as? MenuPageVisit)?.page) {
-                MenuPage.Menu -> org.trustroots.android.analytics.UsageScreen.Menu
-                MenuPage.Profile -> org.trustroots.android.analytics.UsageScreen.Profile
-                MenuPage.EditProfile -> org.trustroots.android.analytics.UsageScreen.EditProfile
-                MenuPage.Contacts -> org.trustroots.android.analytics.UsageScreen.Contacts
-                MenuPage.Host -> org.trustroots.android.analytics.UsageScreen.Host
-                MenuPage.Account -> org.trustroots.android.analytics.UsageScreen.Account
-                null -> null
+            when (currentMenuRoute) {
+                is MenuMemberProfileVisit -> org.trustroots.android.analytics.UsageScreen.Profile
+                is MenuEditProfileVisit -> org.trustroots.android.analytics.UsageScreen.EditProfile
+                is MenuPageVisit -> when (currentMenuRoute.page) {
+                    MenuPage.Menu -> org.trustroots.android.analytics.UsageScreen.Menu
+                    MenuPage.Profile -> org.trustroots.android.analytics.UsageScreen.Profile
+                    MenuPage.EditProfile -> org.trustroots.android.analytics.UsageScreen.EditProfile
+                    MenuPage.Contacts -> org.trustroots.android.analytics.UsageScreen.Contacts
+                    MenuPage.Host -> org.trustroots.android.analytics.UsageScreen.Host
+                    MenuPage.Account -> org.trustroots.android.analytics.UsageScreen.Account
+                }
+                else -> null
             },
         )
-        if (isActiveTabVisit) onResetAvailable(initialVisitID, resetToMenuRoot)
+        if (isActiveTabVisit) onResetAvailable(initialVisitID, resetMenuFromNavigation)
     }
     val popRoute: () -> Unit = {
         if (menuBackStack.size > 1) menuBackStack.removeLastOrNull()
     }
-    val leaveGuardState = LocalLeaveGuard.current
     val popRouteFromNavigation: () -> Unit = {
         val leave = popRoute
         leaveGuardState?.value?.invoke(leave) ?: leave()
     }
     val pushPage: (MenuPage) -> Unit = { page ->
         menuBackStack.add(MenuPageVisit(page, allocateVisitID()))
+    }
+    val pushMemberProfile: (String) -> Unit = { username ->
+        menuBackStack.add(MenuMemberProfileVisit(username, allocateVisitID()))
     }
     val pushBrowser: (MenuBrowserVisit) -> Unit = { route ->
         menuBackStack.add(route)
@@ -103,7 +117,7 @@ internal fun MenuNavigationDisplay(
                     MenuPage.Menu -> MenuScreen(
                         session = session,
                         openProfile = { pushPage(MenuPage.Profile) },
-                        openEditProfile = { pushPage(MenuPage.EditProfile) },
+                        openEditProfile = { menuBackStack.add(MenuEditProfileVisit(session.member.username, allocateVisitID())) },
                         openHost = { pushPage(MenuPage.Host) },
                         openNostroots = {
                             pushBrowser(MenuBrowserVisit(MenuBrowserDestination.Nostroots, allocateVisitID()))
@@ -135,24 +149,24 @@ internal fun MenuNavigationDisplay(
                         contentPadding = contentPadding,
                         browserContent = browserContent,
                     )
-                    MenuPage.EditProfile -> MemberProfileScreen(
+                    MenuPage.EditProfile -> EditProfileScreen(
                         api = api,
                         session = session,
                         username = session.member.username,
                         onSessionInvalidated = onSessionInvalidated,
-                        startInEditMode = true,
-                        onBack = popRoute,
-                        onOwnProfileSaved = { updated ->
+                        onCancel = popRoute,
+                        onSaved = { updated ->
                             onMemberUpdated(MobileMember(updated.username, updated.displayName))
+                            popRoute()
                         },
                         contentPadding = contentPadding,
-                        browserContent = browserContent,
                     )
                     MenuPage.Contacts -> ContactsScreen(
                         api = api,
                         session = session,
                         onSessionInvalidated = onSessionInvalidated,
-                        onBack = popRoute,
+                        onBack = popRouteFromNavigation,
+                        onOpenProfile = pushMemberProfile,
                         contentPadding = contentPadding,
                     )
                     MenuPage.Host -> HostOfferScreen(
@@ -173,15 +187,34 @@ internal fun MenuNavigationDisplay(
                                 MenuBrowserVisit(MenuBrowserDestination.ResetPassword, allocateVisitID()),
                             )
                         },
-                        onSignedOut = {
-                            CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
-                                MessageAlerts.disable(context, session)
-                                api.signOut(session)
-                                withContext(Dispatchers.Main) { onSignedOut() }
-                            }
-                        },
+                        onSignedOut = onSignedOut,
                     )
                 }
+            }
+            entry<MenuMemberProfileVisit> { route ->
+                MemberProfileScreen(
+                    api = api,
+                    session = session,
+                    username = route.username,
+                    onSessionInvalidated = onSessionInvalidated,
+                    onBack = popRouteFromNavigation,
+                    contentPadding = contentPadding,
+                    browserContent = browserContent,
+                )
+            }
+            entry<MenuEditProfileVisit> { route ->
+                EditProfileScreen(
+                    api = api,
+                    session = session,
+                    username = route.username,
+                    onSessionInvalidated = onSessionInvalidated,
+                    onCancel = popRoute,
+                    onSaved = { updated ->
+                        onMemberUpdated(MobileMember(updated.username, updated.displayName))
+                        popRoute()
+                    },
+                    contentPadding = contentPadding,
+                )
             }
             entry<MenuBrowserVisit> { route ->
                 val browserRoute = remember(route, session.cookieHeader, context) {

@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.hasScrollToIndexAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.semantics.SemanticsProperties
@@ -15,6 +16,8 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
@@ -37,11 +40,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.inbox.MessageInboxScreen
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class MessageLoadingAndDeclineJourneyTest {
@@ -94,11 +95,16 @@ class MessageLoadingAndDeclineJourneyTest {
         assertEquals(2, local.requests.count { it.path.startsWith("/api/messages?") })
     }
 
-    @Test fun inbox503OnLaterPageKeepsPreviouslyLoadedConversationsWithoutReplacingThemWithAnError() {
+    @Test fun inbox503OnLaterPageKeepsConversationsAndRetriesOnlyTheFailedPage() {
+        val secondPageRequests = AtomicInteger()
         val local = startFixture { request ->
             when (request.path) {
                 "/api/messages?page=1&limit=50" -> Response(200, inboxPageOfFifty())
-                "/api/messages?page=2&limit=50" -> Response(503, "{\"message\":\"Fictional later page unavailable.\"}")
+                "/api/messages?page=2&limit=50" -> if (secondPageRequests.incrementAndGet() == 1) {
+                    Response(503, "{\"message\":\"Fictional later page unavailable.\"}")
+                } else {
+                    Response(200, """[{"_id":"thread-extra","userFrom":{"_id":"member-extra","username":"quiet-fox","displayName":"Quiet Fox"},"userTo":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional recovered page."},"read":true}]""")
+                }
                 else -> Response(404, "{}")
             }
         }
@@ -114,14 +120,24 @@ class MessageLoadingAndDeclineJourneyTest {
             local.requests.any { it.path == "/api/messages?page=2&limit=50" } &&
                 compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
                     .fetchSemanticsNodes().isEmpty() &&
-                compose.onAllNodesWithText("A fictional message from neighbour 0.").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithText("A fictional message from neighbour 0.").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithText("Fictional later page unavailable.").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Messages").assertIsDisplayed()
         compose.onNodeWithText("A fictional message from neighbour 0.").assertIsDisplayed()
-        assertTrue(compose.onAllNodesWithText("Fictional later page unavailable.").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("Fictional later page unavailable.").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("No conversations yet.").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithTag("inboxRetry").performClick()
+        compose.waitUntil(10_000) {
+            secondPageRequests.get() == 2 &&
+                compose.onAllNodes(SemanticsMatcher.keyIsDefined(SemanticsProperties.ProgressBarRangeInfo))
+                    .fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithText("Fictional later page unavailable.").fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(51)
+        compose.onNodeWithText("A fictional recovered page.").performScrollTo().assertIsDisplayed()
         assertEquals(
-            listOf("/api/messages?page=1&limit=50", "/api/messages?page=2&limit=50"),
+            listOf("/api/messages?page=1&limit=50", "/api/messages?page=2&limit=50", "/api/messages?page=2&limit=50"),
             local.requests.filter { it.path.startsWith("/api/messages?") }.map { it.path },
         )
     }
@@ -130,24 +146,31 @@ class MessageLoadingAndDeclineJourneyTest {
         val conversationRequests = AtomicInteger()
         val invalidations = AtomicInteger()
         val local = startFixture { request ->
-            if (request.path.startsWith("/api/messages/")) {
+            when {
+                request.path == "/api/users/mini/other-member-one" -> Response(
+                    200,
+                    """{"_id":"other-member-one","username":"quiet-fox","displayName":"Quiet Fox"}""",
+                )
+                request.path == "/api/users/mini/other-member-two" -> Response(
+                    200,
+                    """{"_id":"other-member-two","username":"quiet-fox","displayName":"Quiet Fox"}""",
+                )
+                request.path.startsWith("/api/messages/") ->
                 when (conversationRequests.incrementAndGet()) {
                     1 -> Response(503, "{\"message\":\"Fictional conversation unavailable.\"}")
                     else -> Response(401, "{\"message\":\"Please sign in again.\"}")
                 }
-            } else {
-                Response(404, "{}")
+                else -> Response(404, "{}")
             }
         }
         var selectedCase by mutableStateOf("service-unavailable")
         compose.setContent {
             key(selectedCase) {
-                ConversationScreen(
+                ConversationRouteTestHarness(
                     api = MobileApiClient(local.baseURL),
                     session = session(if (selectedCase == "unauthorised") "second-session" else "first-session"),
-                    member = if (selectedCase == "unauthorised") member("other-member-two") else member("other-member-one"),
+                    memberID = if (selectedCase == "unauthorised") "other-member-two" else "other-member-one",
                     onSessionInvalidated = { invalidations.incrementAndGet() },
-                    onBack = {},
                 )
             }
         }
@@ -173,6 +196,11 @@ class MessageLoadingAndDeclineJourneyTest {
     @Test fun declineQuickReplySendsHostingNoAndHidesQuickReplies() {
         val local = startFixture { request ->
             when {
+                request.method == "GET" && request.path == "/api/users/mini/other-member-one" ->
+                    Response(
+                        200,
+                        """{"_id":"other-member-one","username":"quiet-fox","displayName":"Quiet Fox"}""",
+                    )
                 request.method == "POST" && request.path == "/api/messages" -> {
                     val posted = JSONObject(request.body)
                     val content = posted.getString("content")
@@ -201,12 +229,11 @@ class MessageLoadingAndDeclineJourneyTest {
         draftPreferences.edit().remove(draftKey).commit()
         try {
             compose.setContent {
-                ConversationScreen(
+                ConversationRouteTestHarness(
                     api = MobileApiClient(local.baseURL),
                     session = session,
-                    member = member("other-member-one"),
+                    memberID = "other-member-one",
                     onSessionInvalidated = {},
-                    onBack = {},
                 )
             }
             compose.waitUntil(10_000) {
@@ -241,8 +268,6 @@ class MessageLoadingAndDeclineJourneyTest {
 
     private fun session(cookie: String = "first-session") =
         MemberSession("connect.sid=$cookie", MobileMember("steady-heron", "Steady Heron"))
-
-    private fun member(id: String) = MessageMember(id, "quiet-fox", "Quiet Fox")
 
     private fun inboxPageOfFifty(): String =
         (0 until 50).joinToString(prefix = "[", postfix = "]") { index ->

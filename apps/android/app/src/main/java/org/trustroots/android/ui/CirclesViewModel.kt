@@ -3,11 +3,8 @@ package org.trustroots.android.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,6 +12,7 @@ import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.isAuthenticationFailure
 
 internal interface CircleRepository {
@@ -89,7 +87,7 @@ internal sealed interface CirclesEvent {
 
 internal class CirclesViewModel(
     private val repository: CircleRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(CirclesUiState())
@@ -142,14 +140,14 @@ internal class CirclesViewModel(
         }
         loadJob = requestScope.launch {
             val membershipRevisionAtStart = membershipRevision
-            val circleResult = request { repository.circles() }
+            val circleResult = requestResult { repository.circles() }
             if (generation != loadGeneration) return@launch
             circleResult.fold(
                 onSuccess = { circles -> mutableState.update { it.copy(circles = circles) } },
                 onFailure = { reportFailure(it, CirclesFailureKind.CIRCLES_LOAD, retryLoad = true) },
             )
 
-            val membershipResult = request { repository.memberships() }
+            val membershipResult = requestResult { repository.memberships() }
             if (generation != loadGeneration) return@launch
             membershipResult.fold(
                 onSuccess = { memberships ->
@@ -168,7 +166,7 @@ internal class CirclesViewModel(
         val joined = circle.id in mutableState.value.memberships
         mutableState.update { it.copy(updatingCircleID = circle.id, failure = null, canRetryLoad = false) }
         updateJob = requestScope.launch {
-            val result = request { repository.setMembership(circle.id, joined) }
+            val result = requestResult { repository.setMembership(circle.id, joined) }
             result.fold(
                 onSuccess = {
                     membershipRevision++
@@ -188,18 +186,6 @@ internal class CirclesViewModel(
         }
     }
 
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     private fun reportFailure(
         error: Throwable,

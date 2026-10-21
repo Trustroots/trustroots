@@ -1,11 +1,13 @@
 package org.trustroots.android.ui
 
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
-import androidx.activity.ComponentActivity
+import androidx.test.core.app.ActivityScenario
+import androidx.lifecycle.Lifecycle
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -24,6 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -34,11 +37,11 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.notifications.MessageDestination
 import org.trustroots.android.notifications.MessageAlerts
-import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class TrustrootsAppShellJourneyTest {
-    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+    @get:Rule val compose = createEmptyComposeRule()
+    private var scenario: ActivityScenario<SignInJourneyActivity>? = null
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val server = ServerSocket(0)
     private val session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron"))
@@ -69,6 +72,7 @@ class TrustrootsAppShellJourneyTest {
         restorePreferences(sessionPreferences, previousSessionPreferences)
         MessageAlerts.destination.value = previousDestination
         MessageAlerts.status.value = previousStatus
+        scenario?.close()
         server.close()
     }
 
@@ -163,13 +167,103 @@ class TrustrootsAppShellJourneyTest {
         assertTrue(compose.onAllNodesWithText("Name or username").fetchSemanticsNodes().isEmpty())
     }
 
-    @Test fun accountSignOutClearsTheSessionAndReturnsToSignIn() {
+    @Test fun shellOwnsUnreadRefreshOutsideMessagesAndRetainsItsRootAcrossRecreation() {
+        SecureMobileSessionStore(context).save(session)
+        val requests = CopyOnWriteArrayList<String>()
+        startResponder(requests) { path ->
+            when {
+                path.startsWith("/api/users/steady-heron") ->
+                    "200 OK" to """{"_id":"member-safe-id","username":"steady-heron","displayName":"Steady Heron"}"""
+                path.startsWith("/api/messages?") -> "200 OK" to "[]"
+                path == "/api/tribes?limit=150" -> "200 OK" to "[]"
+                path == "/api/users/memberships" -> "200 OK" to "[]"
+                path.contains("/avatar?") -> "404 Not Found" to ""
+                else -> "404 Not Found" to ""
+            }
+        }
+        showApp()
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
+                requests.any { it.startsWith("GET /api/messages?") } &&
+                requests.any { it.startsWith("GET /api/users/steady-heron ") }
+        }
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").performClick()
+        compose.waitUntil(10_000) {
+            requests.count { it.startsWith("GET /api/messages?") } >= 2
+        }
+        assertEquals(1, requests.count { it.startsWith("GET /api/users/steady-heron ") })
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+
+        requireNotNull(scenario).recreate()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertEquals(1, requests.count { it.startsWith("GET /api/users/steady-heron ") })
+        compose.waitUntil(10_000) {
+            requests.count { it.startsWith("GET /api/messages?") } >= 3
+        }
+        val unreadCallsBeforeStop = requests.count { it.startsWith("GET /api/messages?") }
+        requireNotNull(scenario).moveToState(Lifecycle.State.CREATED)
+        requireNotNull(scenario).moveToState(Lifecycle.State.RESUMED)
+        compose.waitUntil(10_000) {
+            requests.count { it.startsWith("GET /api/messages?") } > unreadCallsBeforeStop
+        }
+    }
+
+    @Test fun authInvalidationClearsRootAndChildEntryStoresBeforeSameAccountRestores() {
+        SecureMobileSessionStore(context).save(session)
+        val requests = CopyOnWriteArrayList<String>()
+        startResponder(requests) { path ->
+            when {
+                path.startsWith("/api/users/steady-heron") ->
+                    "200 OK" to """{"_id":"member-safe-id","username":"steady-heron","displayName":"Steady Heron"}"""
+                path.startsWith("/api/messages?") ->
+                    if (requests.count { it.startsWith("GET /api/messages?") } == 1) {
+                        "401 Unauthorized" to """{"message":"Session expired."}"""
+                    } else {
+                        "200 OK" to "[]"
+                    }
+                path == "/api/tribes?limit=150" -> "200 OK" to "[]"
+                path == "/api/users/memberships" -> "200 OK" to "[]"
+                path.contains("/avatar?") -> "404 Not Found" to ""
+                else -> "404 Not Found" to ""
+            }
+        }
+        showApp()
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Username or email").fetchSemanticsNodes().isNotEmpty() &&
+                requests.any { it.startsWith("GET /api/tribes?limit=150") }
+        }
+        assertNull(SecureMobileSessionStore(context).load())
+        assertEquals(1, requests.count { it.startsWith("GET /api/users/steady-heron ") })
+        assertEquals(1, requests.count { it.startsWith("GET /api/tribes?limit=150") })
+
+        SecureMobileSessionStore(context).save(
+            MemberSession("connect.sid=renewed-fictional-session", MobileMember("steady-heron", "Steady Heron")),
+        )
+        requireNotNull(scenario).recreate()
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
+                requests.count { it.startsWith("GET /api/users/steady-heron ") } == 2 &&
+                requests.count { it.startsWith("GET /api/tribes?limit=150") } == 2
+        }
+        assertEquals(2, requests.count { it.startsWith("GET /api/users/steady-heron ") })
+        assertEquals(2, requests.count { it.startsWith("GET /api/tribes?limit=150") })
+    }
+
+    @Test fun accountSignOutClearsTheSessionAndANewAccountGetsAFreshShellOwner() {
         SecureMobileSessionStore(context).save(session)
         val requests = CopyOnWriteArrayList<String>()
         startResponder(requests) { path ->
             when {
                 path.startsWith("/api/users/steady-heron") ->
                     "200 OK" to """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","email":"steady@example.test","newsletter":false}"""
+                path.startsWith("/api/users/quiet-fox") ->
+                    "200 OK" to """{"_id":"member-next","username":"quiet-fox","displayName":"Quiet Fox"}"""
                 path.startsWith("/api/messages?") -> "200 OK" to "[]"
                 path == "/api/tribes?limit=150" -> "200 OK" to "[]"
                 path == "/api/users/memberships" -> "200 OK" to "[]"
@@ -216,6 +310,18 @@ class TrustrootsAppShellJourneyTest {
         assertTrue(returnedToSignIn)
         assertNull(SecureMobileSessionStore(context).load())
         assertTrue(requests.any { it.startsWith("POST /api/auth/signout ") })
+        val previousAccountRequests = requests.count { it.startsWith("GET /api/users/steady-heron ") }
+
+        SecureMobileSessionStore(context).save(
+            MemberSession("connect.sid=next-fictional-session", MobileMember("quiet-fox", "Quiet Fox")),
+        )
+        requireNotNull(scenario).recreate()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty() &&
+                requests.any { it.startsWith("GET /api/users/quiet-fox ") }
+        }
+        assertEquals(1, requests.count { it.startsWith("GET /api/users/quiet-fox ") })
+        assertEquals(previousAccountRequests, requests.count { it.startsWith("GET /api/users/steady-heron ") })
     }
 
     @Test fun invalidOwnProfileSessionReturnsToSignInWithAnExplanation() {
@@ -241,18 +347,14 @@ class TrustrootsAppShellJourneyTest {
         compose.onNodeWithText("Your session expired or is no longer valid. Please sign in again.")
             .assertIsDisplayed()
         assertNull(SecureMobileSessionStore(context).load())
-        assertTrue(requests.count { it.startsWith("GET /api/users/steady-heron ") } == 1)
+        assertEquals(1, requests.count { it.startsWith("GET /api/users/steady-heron ") })
     }
 
     private fun showApp() {
-        compose.setContent {
-            TrustrootsTheme {
-                TrustrootsApp(
-                    apiBaseUrl = "http://127.0.0.1:${server.localPort}",
-                    reconcileAlerts = { _, _ -> },
-                )
-            }
-        }
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, "http://127.0.0.1:${server.localPort}"),
+        )
     }
 
     private fun startResponder(

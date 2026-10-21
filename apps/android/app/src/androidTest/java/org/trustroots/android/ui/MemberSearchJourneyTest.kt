@@ -33,6 +33,7 @@ import org.junit.Assert.assertTrue
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.R
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
 
 @RunWith(AndroidJUnit4::class)
@@ -186,7 +187,7 @@ class MemberSearchJourneyTest {
                     val payload = if (attempt == 1) {
                         """{"message":"Search temporarily unavailable."}"""
                     } else {
-                        """[{"username":"quiet-fox","displayName":"Quiet Fox"}]"""
+                        """[{"username":"quiet-fox","displayName":"Quiet Fox","locationFrom":"Fictional Bay"}]"""
                     }
                     val bytes = payload.toByteArray()
                     socket.getOutputStream().write(
@@ -215,6 +216,7 @@ class MemberSearchJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithText(compose.activity.getString(R.string.member_location_from, "Fictional Bay")).assertIsDisplayed()
         assertEquals(2, requestCount.get())
         assertTrue(compose.onAllNodesWithText("Search temporarily unavailable.").fetchSemanticsNodes().isEmpty())
         responder.join(1_000)

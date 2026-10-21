@@ -71,7 +71,12 @@ internal fun rememberFormLeave(dirty: Boolean, saving: Boolean, onCancel: () -> 
             title = { Text(stringResource(R.string.discard_changes_title)) },
             text = { Text(stringResource(R.string.unsaved_changes_lost)) },
             confirmButton = {
-                TextButton(onClick = { val action = pending; pending = null; action?.invoke() }) {
+                TextButton(onClick = {
+                    val action = pending
+                    pending = null
+                    if (shellGuard?.value === guard) shellGuard.value = null
+                    action?.invoke()
+                }) {
                     Text(stringResource(R.string.discard_changes))
                 }
             },

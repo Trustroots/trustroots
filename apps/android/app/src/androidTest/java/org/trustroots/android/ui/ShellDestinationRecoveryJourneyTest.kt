@@ -199,6 +199,8 @@ class ShellDestinationRecoveryJourneyTest {
         } else {
             "[]"
         }
+        request.startsWith("GET /api/users/mini/member-sender ") -> "200 OK" to
+            """{"_id":"member-sender","username":"quiet-fox","displayName":"Quiet Fox"}"""
         request.startsWith("GET /api/messages/member-sender?limit=100 ") -> "200 OK" to
             """[{"_id":"message-one","content":"A fictional message opened from an alert.","userFrom":{"_id":"member-sender","username":"quiet-fox","displayName":"Quiet Fox"},"created":"2025-02-03T04:05:06Z"}]"""
         request.startsWith("GET /api/tribes?limit=150 ") -> "200 OK" to "[]"

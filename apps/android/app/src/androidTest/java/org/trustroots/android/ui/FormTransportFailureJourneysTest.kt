@@ -1,8 +1,6 @@
 package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
@@ -15,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -29,12 +28,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.R
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.ui.theme.TrustrootsTheme
 import org.trustroots.android.ui.editprofile.EditProfileScreen
+import org.trustroots.android.ui.experience.CreateExperienceScreen
+import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class FormTransportFailureJourneysTest {
@@ -177,7 +178,8 @@ class FormTransportFailureJourneysTest {
         val firstRequestReached = CountDownLatch(1)
         val releaseFirstResponse = CountDownLatch(1).also { pendingResponseRelease = it }
         val invalidated = AtomicInteger()
-        val routeKey = mutableIntStateOf(0)
+        val errorText = ApplicationProvider.getApplicationContext<android.content.Context>()
+            .getString(R.string.screen_account_load_error)
         val apiFixture = LocalTransportFixture { request ->
             if (request.method == "GET" && request.path == "/api/users/steady-heron" && offline.get()) {
                 firstRequestReached.countDown()
@@ -192,42 +194,42 @@ class FormTransportFailureJourneysTest {
 
         compose.setContent {
             TrustrootsTheme {
-                key(routeKey.intValue) {
-                    AccountSettingsScreen(
-                        api = MobileApiClient(apiFixture.baseURL),
-                        session = session,
-                        onSessionInvalidated = { invalidated.incrementAndGet() },
-                        onBack = {},
-                        onResetPassword = {},
-                        onSignedOut = {},
-                    )
-                }
+                FormRecoveryNav3Harness(
+                    api = MobileApiClient(apiFixture.baseURL),
+                    session = session,
+                    onSessionInvalidated = { invalidated.incrementAndGet() },
+                )
             }
         }
 
+        compose.onNodeWithText("Open account settings").performClick()
+        compose.waitForIdle()
         assertTrue("The account request should reach the local fixture", firstRequestReached.await(5, TimeUnit.SECONDS))
         compose.waitUntil(5_000) { visibleTexts().contains("Signed in as Steady Heron (@steady-heron).") }
-        val loadingTexts = visibleTexts()
         assertTrue(hasIndeterminateProgress())
         releaseFirstResponse.countDown()
         compose.waitUntil(10_000) {
             apiFixture.requests.size >= 1 && !hasIndeterminateProgress() &&
-                visibleTexts().any { it !in loadingTexts && it !in ACCOUNT_CONTENT_TEXTS }
+                errorText in visibleTexts()
         }
         compose.waitForIdle()
-        val errorText = visibleTexts().first { it !in loadingTexts && it !in ACCOUNT_CONTENT_TEXTS }
+        assertTrue("The account load error should be visible after the failed request", errorText in visibleTexts())
         compose.onNodeWithText(errorText).performScrollTo().assertIsDisplayed()
         assertFalse(hasIndeterminateProgress())
-        compose.onNodeWithText("Signed in as Steady Heron (@steady-heron).").assertIsDisplayed()
+        compose.onNodeWithText("Signed in as Steady Heron (@steady-heron).")
+            .performScrollTo()
+            .assertIsDisplayed()
         assertEquals(0, invalidated.get())
         assertTrue(apiFixture.requests.isNotEmpty())
 
         offline.set(false)
         val failedRequests = apiFixture.requests.size
-        compose.runOnUiThread { routeKey.intValue++ }
+        compose.onNodeWithText("Return to form launcher").performClick()
+        compose.onNodeWithText("Open account settings").performClick()
         compose.waitUntil(10_000) {
             apiFixture.requests.size > failedRequests &&
-                compose.onAllNodesWithText("member@example.test").fetchSemanticsNodes().isNotEmpty()
+                compose.onAllNodesWithText("member@example.test").fetchSemanticsNodes().isNotEmpty() &&
+                errorText !in visibleTexts()
         }
         compose.onNodeWithText("member@example.test").performScrollTo().assertIsDisplayed()
         assertEquals(0, invalidated.get())
@@ -272,23 +274,5 @@ class FormTransportFailureJourneysTest {
         }
         compose.waitForIdle()
         return visibleTexts().first { it !in initialTexts && it != "Saving…" }
-    }
-
-    private companion object {
-        val ACCOUNT_CONTENT_TEXTS = setOf(
-            "Email",
-            "Email address",
-            "Community newsletter",
-            "Save email settings",
-            "Change password",
-            "Current password",
-            "New password",
-            "Verify new password",
-            "Forgot your password?",
-            "Message alerts",
-            "Receive an alert for an unread conversation after ten minutes. This requires an installed UnifiedPush distributor, such as ntfy.",
-            "Turn on message alerts",
-            "Sign out",
-        )
     }
 }

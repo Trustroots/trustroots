@@ -52,7 +52,7 @@ class ContactsFailureJourneyTest {
         }
         compose.setContent {
             TrustrootsTheme {
-                ContactsScreen(api(), session("quiet-fox"), onSessionInvalidated = {}, onBack = {})
+                ContactsScreen(api(), session("quiet-fox"), onSessionInvalidated = {}, onBack = {}, onOpenProfile = {})
             }
         }
 
@@ -84,7 +84,7 @@ class ContactsFailureJourneyTest {
         val activeSession = mutableStateOf(session("quiet-fox"))
         compose.setContent {
             TrustrootsTheme {
-                ContactsScreen(api(), activeSession.value, onSessionInvalidated = {}, onBack = {})
+                ContactsScreen(api(), activeSession.value, onSessionInvalidated = {}, onBack = {}, onOpenProfile = {})
             }
         }
 
@@ -133,6 +133,7 @@ class ContactsFailureJourneyTest {
                     activeSession.value,
                     onSessionInvalidated = { invalidations.incrementAndGet() },
                     onBack = {},
+                    onOpenProfile = {},
                 )
             }
         }

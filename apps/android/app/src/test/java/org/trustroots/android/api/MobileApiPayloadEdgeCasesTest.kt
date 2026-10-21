@@ -18,7 +18,7 @@ class MobileApiPayloadEdgeCasesTest {
         assertEquals("A fictional unavailable date.", offer.description)
         assertEquals(3, offer.maxGuests)
         assertEquals("member-edge", offer.user.id)
-        assertEquals("Calm Lynx", offer.user.label)
+        assertEquals("Calm Lynx", offer.user.displayName)
     }
 
     @Test fun mapOfferParserDropsOverflowCoordinatesFromMixedFeatures() {

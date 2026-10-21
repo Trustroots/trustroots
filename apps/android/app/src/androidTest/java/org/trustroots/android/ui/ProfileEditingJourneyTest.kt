@@ -1,8 +1,12 @@
 package org.trustroots.android.ui
 
+import android.content.res.Configuration
 import androidx.activity.ComponentActivity
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.graphics.toPixelMap
@@ -73,8 +77,49 @@ class ProfileEditingJourneyTest {
         assertTrue("Adjacent profile fields should have a consistent gap", taglineBounds.top - nameBounds.bottom >= minimumGap)
     }
 
+    @Test fun profileFormFieldsUseDarkFilledSurfaceAndKeepVerticalSpacing() {
+        val activity = compose.activity
+        val darkConfiguration = Configuration(activity.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        }
+        val darkContext = activity.createConfigurationContext(darkConfiguration)
+        val filledContainerColour = AtomicReference(0)
+        compose.setContent {
+            CompositionLocalProvider(
+                LocalContext provides darkContext,
+                LocalConfiguration provides darkContext.resources.configuration,
+            ) {
+                TrustrootsTheme {
+                    val surfaceContainerHighest = MaterialTheme.colorScheme.surfaceContainerHighest.toArgb()
+                    SideEffect { filledContainerColour.set(surfaceContainerHighest) }
+                    EditProfileScreen(
+                        api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                        session = MemberSession("connect.sid=test", MobileMember("quiet-fox", "Quiet Fox")),
+                        profile = MemberProfile("member-one", "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList()),
+                        onSessionInvalidated = {},
+                        onCancel = {},
+                        onSaved = {},
+                    )
+                }
+            }
+        }
+
+        val nameBounds = compose.onNodeWithText("Name").fetchSemanticsNode().boundsInRoot
+        val taglineBounds = compose.onNodeWithText("Tagline").fetchSemanticsNode().boundsInRoot
+        val minimumGap = with(compose.density) { 12.dp.toPx() }
+        val sampleX = with(compose.density) { 8.dp.toPx().toInt() }
+        val sampleY = with(compose.density) { 24.dp.toPx().toInt() }
+        val sampledContainerColour = compose.onNodeWithText("Name")
+            .captureToImage()
+            .toPixelMap()[sampleX, sampleY]
+
+        assertEquals("Dark filled fields should use the dark Material surface container colour", filledContainerColour.get(), sampledContainerColour.toArgb())
+        assertTrue("Adjacent dark profile fields should retain a consistent gap", taglineBounds.top - nameBounds.bottom >= minimumGap)
+    }
+
     @Test fun editsOwnProfileAndShowsSavedFields() {
         val savedBody = AtomicReference("")
+        val profileLoads = AtomicInteger()
         val returnedToMap = AtomicBoolean(false)
         thread(isDaemon = true) {
             repeat(10) {
@@ -90,6 +135,7 @@ class ProfileEditingJourneyTest {
                             contentLength = header.substringAfter(':').trim().toInt()
                         }
                     }
+                    if (request.startsWith("GET /api/users/quiet-fox ")) profileLoads.incrementAndGet()
                     if (request.startsWith("PUT ")) {
                         val body = CharArray(contentLength)
                         var offset = 0
@@ -125,14 +171,18 @@ class ProfileEditingJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Old line").fetchSemanticsNodes().isNotEmpty()
         }
+        assertEquals("The profile route should load its canonical profile once", 1, profileLoads.get())
         compose.onNodeWithText("Edit your profile").performClick()
         compose.onNodeWithText("Tagline").performTextReplacement("New line")
+        assertEquals("Ordinary edit navigation should use the retained snapshot", 1, profileLoads.get())
+        compose.onNodeWithText("New line").assertIsDisplayed()
         compose.onNodeWithText("Save changes").performClick()
         compose.waitUntil(10_000) { savedBody.get().isNotBlank() }
         assertTrue(savedBody.get().contains("\"tagline\":\"New line\""))
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("New line").fetchSemanticsNodes().isNotEmpty()
         }
+        assertEquals("The saved profile completion should update the retained parent without a duplicate profile request", 1, profileLoads.get())
         compose.onNodeWithText("New line").assertIsDisplayed()
         compose.onNodeWithText("Experiences").assertIsDisplayed()
         compose.onNodeWithText("About").assertIsDisplayed()

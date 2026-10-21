@@ -14,7 +14,8 @@ toolbar and system navigation.
   browser pages.
 - Give each top-level visit its own child back stack so returning to a tab
   restores that visit's route and origin. Represent screen transitions as
-  typed, serialisable route keys with unique entry identities.
+  typed, serialisable route keys with unique entry identities, preserving the
+  Java class names of already-persisted route types for SavedState restoration.
 - Route toolbar Back, system Back and predictive Back through the same active
   child stack before the top-level stack, and keep form leave guards in front
   of every committed push or pop.
@@ -30,6 +31,15 @@ toolbar and system navigation.
 
 - `native-android-member-app`: specify nested Navigation 3 route ownership,
   origin-aware Back, restoration, leave guards and per-flow history.
+
+## Current delivery slice
+
+This delivery implements nested member flows for Inbox and Conversation,
+Contacts and Profile, profile editing and Experience creation, plus the Menu,
+HostOffer and Account entries. It keeps the existing authenticated shell and
+sign-in owner in place. Circles, Search/map and the final sign-in/session
+extraction remain separate slices. Validation and archival remain pending
+until the combined Android checks complete.
 
 ## Impact
 

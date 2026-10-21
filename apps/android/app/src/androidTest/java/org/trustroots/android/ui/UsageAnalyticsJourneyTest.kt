@@ -1,21 +1,21 @@
 package org.trustroots.android.ui
 
+import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.key
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
-import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import android.content.Context
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.*
@@ -27,6 +27,8 @@ import org.trustroots.android.analytics.AndroidUsageConsentStore
 import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.analytics.UsageTransport
+import org.trustroots.android.ui.common.UsageAnalyticsSettings
+import org.trustroots.android.ui.common.UsageScreenTracking
 
 @RunWith(AndroidJUnit4::class)
 class UsageAnalyticsJourneyTest {

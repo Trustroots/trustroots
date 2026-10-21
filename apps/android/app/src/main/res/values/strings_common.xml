@@ -22,4 +22,5 @@
         <item quantity="one">1 day ago</item>
         <item quantity="other">%1$d days ago</item>
     </plurals>
+    <string name="member_location_from">From %1$s</string>
 </resources>

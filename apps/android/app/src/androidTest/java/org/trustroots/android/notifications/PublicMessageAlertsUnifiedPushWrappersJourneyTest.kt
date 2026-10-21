@@ -40,6 +40,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.notifications.FakeUnifiedPushDistributorReceiver.RESULT_ACTION as UNIFIED_PUSH_FIXTURE_RESULT_ACTION
 import org.trustroots.android.BuildConfig
+import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
@@ -75,6 +76,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
     private var previousAlertPreferences: Map<String, *> = emptyMap<String, Any>()
     private var previousSessionPreferences: Map<String, *> = emptyMap<String, Any>()
     private var previousStatus: String? = null
+    private var previousStatusMetadata: MessageAlertStatusMetadata? = null
     private var previousDestination: MessageDestination? = null
 
     @Test fun publicEnableExplainsWhenNoDistributorIsInstalled() {
@@ -108,6 +110,16 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
             result.get() == "Install a UnifiedPush distributor such as ntfy, then try again."
         }
         assertEquals(1, countRequests("GET"))
+        assertFalse(MessageAlerts.isEnabled(targetContext, session.member.username))
+        assertTrue(alertPreferences.all.isEmpty())
+        val typedResult = AtomicReference<MessageAlertStatusMetadata?>(null)
+        activityScenario?.onActivity { activity ->
+            MessageAlerts.enableWithStatus(activity, session) { typedResult.set(it) }
+        }
+        waitUntil("typed enable reports the localisable missing-distributor status") {
+            typedResult.get()?.resourceId == R.string.message_alerts_install_distributor
+        }
+        assertEquals(2, countRequests("GET"))
         assertFalse(MessageAlerts.isEnabled(targetContext, session.member.username))
         assertTrue(alertPreferences.all.isEmpty())
         assertResponderHealthy()
@@ -215,9 +227,19 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         assertRegisterPayload(distributorEvents.first { it.action == ACTION_REGISTER }, targetContext.packageName)
         assertTrue(MessageAlerts.isEnabled(targetContext, session.member.username))
 
+        val typedEnableResult = AtomicReference<MessageAlertStatusMetadata?>(null)
+        activityScenario?.onActivity { activity ->
+            MessageAlerts.enableWithStatus(activity, session) { typedEnableResult.set(it) }
+        }
+        waitUntil("typed enable registers with the selected distributor and retains a resource status") {
+            typedEnableResult.get()?.resourceId == R.string.message_alerts_waiting_registration &&
+                countRequests("GET") >= 2 && distributorEvents.count { it.action == ACTION_REGISTER } == 2
+        }
+        assertRegisterPayload(distributorEvents.last { it.action == ACTION_REGISTER }, targetContext.packageName)
+
         MessageAlerts.reconcile(targetContext, session)
-        waitUntil("reconcile fetched configuration and sent a second REGISTER") {
-            countRequests("GET") >= 2 && distributorEvents.count { it.action == ACTION_REGISTER } >= 2
+        waitUntil("reconcile fetched configuration and sent a third REGISTER") {
+            countRequests("GET") >= 3 && distributorEvents.count { it.action == ACTION_REGISTER } >= 3
         }
         assertEquals(testContext.packageName, UnifiedPush.getSavedDistributor(targetContext))
         assertRegisterPayload(distributorEvents.last { it.action == ACTION_REGISTER }, targetContext.packageName)
@@ -247,7 +269,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         waitUntil("disable sent the fake distributor UNREGISTER broadcast") {
             distributorEvents.any { it.action == ACTION_UNREGISTER }
         }
-        assertEquals(2, distributorEvents.count { it.action == ACTION_REGISTER })
+        assertEquals(3, distributorEvents.count { it.action == ACTION_REGISTER })
         assertEquals(1, distributorEvents.count { it.action == ACTION_UNREGISTER })
         val unregistration = requests.first { it.method == "DELETE" }
         val unregistrationBody = JSONObject(unregistration.body)
@@ -293,6 +315,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
                                 restorePreferences(alertPreferences, previousAlertPreferences)
                                 restorePreferences(sessionPreferences, previousSessionPreferences)
                                 MessageAlerts.status.value = previousStatus
+                                MessageAlerts.statusMetadata.value = previousStatusMetadata
                                 MessageAlerts.destination.value = previousDestination
                             }
                         } finally {
@@ -310,6 +333,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         previousAlertPreferences = alertPreferences.all
         previousSessionPreferences = sessionPreferences.all
         previousStatus = MessageAlerts.status.value
+        previousStatusMetadata = MessageAlerts.statusMetadata.value
         previousDestination = MessageAlerts.destination.value
         receiverEnabledState = testContext.packageManager.getComponentEnabledSetting(receiverComponent)
         componentStateCaptured = true
@@ -317,6 +341,7 @@ class PublicMessageAlertsUnifiedPushWrappersJourneyTest {
         alertPreferences.edit().clear().commit()
         sessionPreferences.edit().clear().commit()
         MessageAlerts.status.value = null
+        MessageAlerts.statusMetadata.value = null
         MessageAlerts.destination.value = null
     }
 

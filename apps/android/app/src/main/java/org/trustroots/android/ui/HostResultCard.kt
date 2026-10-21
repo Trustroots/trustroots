@@ -40,6 +40,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.ui.theme.HostResultCardTheme
 
 @Composable
@@ -82,10 +83,10 @@ internal fun HostResultCard(
                     else -> notHosting
                 }
                 Row(verticalAlignment = Alignment.Top) {
-                    RemoteArtwork(offer.user.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, offer.user.label, 64.dp)
+                    RemoteArtwork(offer.user.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, offer.user.localizedLabel(), 64.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(offer.user.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(offer.user.localizedLabel(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         offer.user.username?.let { Text(String.format(uiLocale, usernameHandleFormat, it), style = MaterialTheme.typography.bodySmall) }
                         Surface(
                             color = if (offer.status == "yes" || isMeet) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,

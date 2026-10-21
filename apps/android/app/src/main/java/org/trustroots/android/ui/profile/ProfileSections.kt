@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
+import org.trustroots.android.ui.common.localizedLabel
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
@@ -48,18 +49,15 @@ internal fun ProfileSectionBar(
     selected: ProfileSection,
     contactCount: Int,
     onSelect: (ProfileSection) -> Unit,
-    overArtwork: Boolean = false,
 ) {
     val artworkForeground = colorResource(R.color.artwork_on_scrim)
-    val contentColor = if (overArtwork) artworkForeground else MaterialTheme.colorScheme.onPrimaryContainer
-    val containerColor = if (overArtwork) Color.Transparent else MaterialTheme.colorScheme.primaryContainer
     val tabs: @Composable () -> Unit = {
         ProfileSection.entries.forEach { section ->
             Tab(
                 selected = section == selected,
                 onClick = { onSelect(section) },
                 modifier = Modifier.drawBehind {
-                    if (overArtwork && section == selected) {
+                    if (section == selected) {
                         val strokeWidth = 2.dp.toPx()
                         drawLine(
                             color = artworkForeground,
@@ -76,31 +74,21 @@ internal fun ProfileSectionBar(
                         } else {
                             stringResource(section.label)
                         },
-                        color = contentColor,
+                        color = artworkForeground,
                         fontWeight = if (section == selected) FontWeight.SemiBold else FontWeight.Normal,
                     )
                 },
             )
         }
     }
-    if (overArtwork) {
-        TabRow(
-            selectedTabIndex = selected.ordinal,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            indicator = {},
-            modifier = Modifier.fillMaxWidth().testTag("profileSections"),
-            tabs = { tabs() },
-        )
-    } else {
-        TabRow(
-            selectedTabIndex = selected.ordinal,
-            containerColor = containerColor,
-            contentColor = contentColor,
-            modifier = Modifier.fillMaxWidth().testTag("profileSections"),
-            tabs = { tabs() },
-        )
-    }
+    TabRow(
+        selectedTabIndex = selected.ordinal,
+        containerColor = Color.Transparent,
+        contentColor = artworkForeground,
+        indicator = {},
+        modifier = Modifier.fillMaxWidth().testTag("profileSections"),
+        tabs = { tabs() },
+    )
 }
 
 @Composable
@@ -121,11 +109,11 @@ internal fun ProfileOverviewSection(
                     RemoteArtwork(
                         reference.author.id?.let { api.avatarURL(it, 64) },
                         session.cookieHeader,
-                        reference.author.label,
+                        reference.author.localizedLabel(),
                         36.dp,
                     )
                     TextButton(onClick = { reference.author.username?.let(onOpenRelated) }) {
-                        Text(reference.author.label)
+                        Text(reference.author.localizedLabel())
                     }
                 }
                 reference.feedback?.let {
@@ -232,10 +220,10 @@ internal fun ProfileContactsSection(
             RemoteArtwork(
                 contact.user.id?.let { api.avatarURL(it, 64) },
                 session.cookieHeader,
-                contact.user.label,
+                contact.user.localizedLabel(),
                 36.dp,
             )
-            Text(contact.user.label, modifier = Modifier.padding(start = 10.dp))
+            Text(contact.user.localizedLabel(), modifier = Modifier.padding(start = 10.dp))
         }
     }
     if (contacts.size > 6) {

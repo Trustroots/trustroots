@@ -15,36 +15,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.ui.platform.testTag
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.api.ProfileContact
-import org.trustroots.android.R
 import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.isAuthenticationFailure
-import org.trustroots.android.ui.common.messageOr
-import org.trustroots.android.ui.profile.MemberProfileScreen
+import org.trustroots.android.ui.common.resolveFailureMessage
 
 @Composable
 internal fun ContactsScreen(
@@ -52,49 +50,23 @@ internal fun ContactsScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onBack: () -> Unit,
+    onOpenProfile: (String) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
+    viewModel: ContactsViewModel? = null,
 ) {
-    val contactsLoadError = stringResource(R.string.screen_contacts_load_error)
+    val model = viewModel ?: rememberContactsViewModel(api, session)
+    val state by model.state.collectAsState()
     val contactsTitle = stringResource(R.string.screen_contacts_title)
     val contactsEmpty = stringResource(R.string.screen_contacts_empty)
-    val uiLocale = LocalConfiguration.current.locales[0]
     val usernameHandleFormat = stringResource(R.string.screen_username_handle)
-    var contacts by remember { mutableStateOf<List<ProfileContact>>(emptyList()) }
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var selectedUsername by remember { mutableStateOf<String?>(null) }
-    selectedUsername?.let { username ->
-        MemberProfileScreen(api, session, username, onSessionInvalidated, onBack = { selectedUsername = null }, contentPadding = contentPadding)
-        return
+    val uiLocale = LocalConfiguration.current.locales[0]
+
+    LaunchedEffect(model, state.pendingSessionInvalidation?.id) {
+        val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
+        onSessionInvalidated()
+        model.onEvent(ContactsEvent.SessionInvalidationDelivered(pending.id))
     }
-    LaunchedEffect(session.member.username) {
-        loading = true
-        error = null
-        api.profile(session, session.member.username).onSuccess { member ->
-            val memberID = member.id
-            if (memberID == null) {
-                error = contactsLoadError
-                loading = false
-                return@onSuccess
-            }
-            api.contacts(session, memberID).onSuccess {
-                contacts = it
-                loading = false
-            }.onFailure {
-                if (it.isAuthenticationFailure()) onSessionInvalidated()
-                else {
-                    error = it.messageOr(contactsLoadError)
-                    loading = false
-                }
-            }
-        }.onFailure {
-            if (it.isAuthenticationFailure()) onSessionInvalidated()
-            else {
-                error = it.messageOr(contactsLoadError)
-                loading = false
-            }
-        }
-    }
+
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -110,13 +82,44 @@ internal fun ContactsScreen(
     ) { appBarPadding ->
         val bottomPadding = appBarPadding.calculateBottomPadding() + contentPadding.calculateBottomPadding()
         when {
-            loading -> Box(Modifier.fillMaxSize().padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding).padding(20.dp)) {
+            state.isLoading -> Box(
+                Modifier.fillMaxSize()
+                    .padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding)
+                    .padding(20.dp),
+            ) {
                 CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             }
-            error != null -> Box(Modifier.fillMaxSize().padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding).padding(20.dp)) {
-                Text(requireNotNull(error), color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 16.dp))
+            state.isSessionInvalidated -> Unit
+            state.failure != null -> Box(
+                Modifier.fillMaxSize()
+                    .padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding)
+                    .padding(20.dp),
+            ) {
+                Column(Modifier.padding(top = 16.dp)) {
+                    val failure = requireNotNull(state.failure)
+                    Text(
+                        resolveFailureMessage(
+                            UiFailure(
+                                serverMessage = failure.serverMessage,
+                                apiKind = failure.apiKind,
+                                fallback = UiFailureFallback.LOAD_CONTACTS,
+                            ),
+                        ),
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                    TextButton(
+                        onClick = { model.onEvent(ContactsEvent.Retry) },
+                        modifier = Modifier.testTag("contactsRetry"),
+                    ) {
+                        Text(stringResource(R.string.screen_contacts_retry))
+                    }
+                }
             }
-            contacts.isEmpty() -> Box(Modifier.fillMaxSize().padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding).padding(20.dp)) {
+            state.contacts.isEmpty() -> Box(
+                Modifier.fillMaxSize()
+                    .padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding)
+                    .padding(20.dp),
+            ) {
                 Text(
                     contactsEmpty,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -124,8 +127,10 @@ internal fun ContactsScreen(
                 )
             }
             else -> LazyColumn(
-                Modifier.fillMaxSize().padding(top = appBarPadding.calculateTopPadding())
-                    .padding(contentPadding.horizontalInset()).testTag("contactsList"),
+                Modifier.fillMaxSize()
+                    .padding(top = appBarPadding.calculateTopPadding())
+                    .padding(contentPadding.horizontalInset())
+                    .testTag("contactsList"),
                 contentPadding = PaddingValues(
                     start = 20.dp,
                     end = 20.dp,
@@ -133,11 +138,11 @@ internal fun ContactsScreen(
                     bottom = bottomPadding + 12.dp,
                 ),
             ) {
-                items(contacts, key = { it.id }) { contact ->
+                items(state.contacts, key = { it.id }) { contact ->
                     val username = contact.user.username
                     Row(
                         modifier = Modifier.fillMaxWidth()
-                            .then(if (username != null) Modifier.clickable { selectedUsername = username } else Modifier)
+                            .then(if (username != null) Modifier.clickable { onOpenProfile(username) } else Modifier)
                             .padding(vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

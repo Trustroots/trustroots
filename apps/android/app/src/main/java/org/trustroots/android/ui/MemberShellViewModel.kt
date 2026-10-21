@@ -6,21 +6,20 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.remember
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface MemberShellRepository {
     /** Replaces runtime request dependencies; true means the account or backend changed. */
@@ -52,8 +51,8 @@ internal class MobileApiMemberShellRepository(
 internal data class MemberShellInvalidation(val id: Long)
 
 internal data class MemberShellFailure(
-    val message: String?,
-    val statusCode: Int?,
+    val serverMessage: String?,
+    val apiFailureKind: ApiFailureKind?,
 )
 
 internal data class MemberShellUiState(
@@ -76,7 +75,7 @@ internal sealed interface MemberShellEvent {
 
 internal class MemberShellViewModel(
     private val repository: MemberShellRepository,
-    scope: CoroutineScope? = null,
+    scope: CoroutineScope?,
     private val waitForNextPoll: suspend () -> Unit = { delay(60_000) },
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
@@ -138,7 +137,7 @@ internal class MemberShellViewModel(
         avatarJob?.cancel()
         mutableState.update { it.copy(isAvatarLoading = true, failure = null) }
         avatarJob = requestScope.launch {
-            request { repository.ownAvatarID() }.fold(
+            requestResult { repository.ownAvatarID() }.fold(
                 onSuccess = { id ->
                     if (generation == avatarGeneration) {
                         mutableState.update { it.copy(avatarID = id, isAvatarLoading = false) }
@@ -166,7 +165,7 @@ internal class MemberShellViewModel(
         pollJob = requestScope.launch {
             while (generation == unreadGeneration && started) {
                 mutableState.update { it.copy(isUnreadRefreshing = true, failure = null) }
-                request { repository.unreadCount() }.fold(
+                requestResult { repository.unreadCount() }.fold(
                     onSuccess = { count ->
                         if (generation == unreadGeneration) {
                             mutableState.update {
@@ -187,18 +186,6 @@ internal class MemberShellViewModel(
         }
     }
 
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
-    }
 
     private fun reportFailure(error: Throwable) {
         if (error.isAuthenticationFailure()) {
@@ -217,8 +204,8 @@ internal class MemberShellViewModel(
             mutableState.update {
                 it.copy(
                     failure = MemberShellFailure(
-                        message = apiError?.message?.takeIf(String::isNotBlank),
-                        statusCode = apiError?.statusCode,
+                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        apiFailureKind = apiError?.failureKind,
                     ),
                 )
             }
@@ -257,10 +244,11 @@ internal fun rememberMemberShellViewModel(
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "The member shell must be hosted by its root Navigation 3 entry."
     }
-    val viewModel = remember(owner, api, session) {
-        ViewModelProvider(owner, MemberShellViewModel.Factory(MobileApiMemberShellRepository(api, session)))
-            .get(MemberShellViewModel::class.java)
-    }
+    val viewModel = rememberEntryViewModel(
+        owner = owner,
+        modelClass = MemberShellViewModel::class.java,
+        factory = MemberShellViewModel.Factory(MobileApiMemberShellRepository(api, session)),
+    )
     SideEffect { viewModel.onEvent(MemberShellEvent.EnvironmentChanged(api, session)) }
     return viewModel
 }

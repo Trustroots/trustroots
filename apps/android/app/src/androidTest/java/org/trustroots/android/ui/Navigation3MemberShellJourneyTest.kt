@@ -16,21 +16,23 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.unit.dp
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.Assert.assertEquals
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
+import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.notifications.MessageDestination
 
@@ -44,21 +46,29 @@ class Navigation3MemberShellJourneyTest {
     private lateinit var previousSessionPreferences: Map<String, *>
     private lateinit var previousAlertPreferences: Map<String, *>
     private var previousAlertStatus: String? = null
+    private var previousAlertStatusMetadata: MessageAlertStatusMetadata? = null
     private var previousAlertDestination: MessageDestination? = null
     private var scenario: ActivityScenario<SignInJourneyActivity>? = null
     @Volatile private var circlesResponse = "[]"
     @Volatile private var circlesStatus = 200
     private val circleReads = AtomicInteger()
     private val membershipReads = AtomicInteger()
-    private val ownProfileReads = AtomicInteger()
+    private val accountReads = AtomicInteger()
+    private val accountWrites = AtomicInteger()
     private val messageReads = AtomicInteger()
     private val joinedHarbour = AtomicBoolean(false)
     private val fixture = LocalTransportFixture { request ->
         when {
             request.path.startsWith("/api/users/steady-heron") -> {
-                if (request.method == "GET") ownProfileReads.incrementAndGet()
+                accountReads.incrementAndGet()
                 LocalTransportFixture.Response(
-                    """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
+                    """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","email":"member@example.test","newsletter":false}""",
+                )
+            }
+            request.path == "/api/users" && request.method == "PUT" -> {
+                accountWrites.incrementAndGet()
+                LocalTransportFixture.Response(
+                    """{"username":"steady-heron","displayName":"Steady Heron","email":"draft@example.test","newsletter":false}""",
                 )
             }
             request.path.startsWith("/api/messages?") -> {
@@ -81,7 +91,6 @@ class Navigation3MemberShellJourneyTest {
                     if (joinedHarbour.get()) """[{"tribe":{"_id":"circle-harbour"}}]""" else "[]",
                 )
             }
-            request.path.startsWith("/api/offers?") -> LocalTransportFixture.Response("""{"features":[]}""")
             request.path.contains("/avatar?") -> LocalTransportFixture.Response("", 404)
             else -> LocalTransportFixture.Response("[]")
         }
@@ -91,6 +100,7 @@ class Navigation3MemberShellJourneyTest {
         previousSessionPreferences = sessionPreferences.all
         previousAlertPreferences = alertPreferences.all
         previousAlertStatus = MessageAlerts.status.value
+        previousAlertStatusMetadata = MessageAlerts.statusMetadata.value
         previousAlertDestination = MessageAlerts.destination.value
         sessionPreferences.edit().clear().commit()
         alertPreferences.edit().clear().commit()
@@ -99,7 +109,8 @@ class Navigation3MemberShellJourneyTest {
         circlesStatus = 200
         circleReads.set(0)
         membershipReads.set(0)
-        ownProfileReads.set(0)
+        accountReads.set(0)
+        accountWrites.set(0)
         messageReads.set(0)
         joinedHarbour.set(false)
         SecureMobileSessionStore(context).save(
@@ -114,6 +125,7 @@ class Navigation3MemberShellJourneyTest {
         restorePreferences(alertPreferences, previousAlertPreferences)
         MessageAlerts.destination.value = previousAlertDestination
         MessageAlerts.status.value = previousAlertStatus
+        MessageAlerts.statusMetadata.value = previousAlertStatusMetadata
     }
 
     @Test fun repeatedTabVisitsRestoreAcrossActivityRecreationAndPredictiveBack() {
@@ -122,15 +134,15 @@ class Navigation3MemberShellJourneyTest {
                 .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
         )
         waitForText("Discover circles")
-        compose.waitUntil(10_000) { ownProfileReads.get() == 1 && circleReads.get() == 1 }
+        compose.waitUntil(10_000) { accountReads.get() >= 1 }
+        assertEquals("The shell and active Circles entries should finish their profile reads once", 1, accountReads.get())
         waitForStableMessageReads(1)
-        assertEquals("Initial shell avatar plus Circles load complete before recreation", 1, ownProfileReads.get())
 
         compose.onNodeWithTag("navigation-messages").performClick()
         waitForText("No conversations yet.")
         waitForStableMessageReads(3) // one shell badge poll and one inbox load
         compose.onNodeWithTag("navigation-messages").performClick()
-        waitForStableMessageReads(5) // one reselect badge poll and one refreshed inbox load
+        waitForStableMessageReads(5) // one new-visit badge poll and one refreshed inbox load
         compose.onNodeWithTag("navigation-circles").performClick()
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
@@ -144,7 +156,7 @@ class Navigation3MemberShellJourneyTest {
         waitForText("Discover circles")
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
         compose.waitForIdle()
-        assertEquals("Recreation retains the successful shell profile lookup", 1, ownProfileReads.get())
+        assertEquals("Activity recreation retains the shell and Circles profile reads", 1, accountReads.get())
 
         cancelPredictiveBack()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
@@ -218,6 +230,34 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithText("Mountain Circle").assertIsDisplayed()
     }
 
+    @Test fun accountEntryRetainsDraftAcrossActivityRecreationWithoutRepeatingLoad() {
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        // The shell separately resolves its own profile/avatar from this same
+        // endpoint before Account is opened, so record the stable baseline.
+        compose.waitUntil(5_000) { accountReads.get() >= 1 }
+        assertEquals("The shell should resolve the signed-in member once", 1, accountReads.get())
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNodeWithText("Account").performScrollTo().performClick()
+        waitForText("member@example.test")
+        compose.waitUntil(5_000) { accountReads.get() >= 2 }
+        assertEquals("Opening one Account entry should make one additional account request", 2, accountReads.get())
+
+        compose.onNodeWithText("Email address").performScrollTo().performTextReplacement("draft@example.test")
+        requireNotNull(scenario).recreate()
+        waitForText("draft@example.test")
+        // Both decorated entries retain their loaded state across recreation.
+        // Neither the shell avatar nor the Account draft needs another read.
+        assertEquals("Recreation retains the shell and Account profile reads", 2, accountReads.get())
+
+        compose.onNodeWithText("Save email settings").performScrollTo().performClick()
+        waitForText("Account saved.")
+        assertEquals(1, accountWrites.get())
+    }
+
     @Test fun failedCircleCatalogueLoadCanBeRetriedFromTheScreen() {
         circlesResponse = """[{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","description":"A coastal circle.","count":4,"image":false}]"""
         circlesStatus = 503
@@ -252,7 +292,7 @@ class Navigation3MemberShellJourneyTest {
 
         compose.onNodeWithTag("navigation-search").performClick()
         compose.onNodeWithText("Discard changes").performClick()
-        waitForText("Search places")
+        compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
         compose.onNodeWithTag("navigation-search").assertIsSelected()
         pressSystemBack()
         waitForText("View your profile")
@@ -331,6 +371,12 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
     }
 
+    private fun pressBack() {
+        compose.waitForIdle()
+        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+    }
+
     private fun requirePredictiveBackSupport() {
         assumeTrue("Predictive back event dispatch requires Android 14+", Build.VERSION.SDK_INT >= 34)
     }
@@ -382,10 +428,6 @@ class Navigation3MemberShellJourneyTest {
             }
         }
         assertEquals("Expected one shell badge poll plus any inbox load", expected, messageReads.get())
-    }
-
-    private fun pressBack() {
-        requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
     }
 
     private fun restorePreferences(preferences: android.content.SharedPreferences, values: Map<String, *>) {

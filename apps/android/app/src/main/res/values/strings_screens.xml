@@ -168,4 +168,8 @@
         <item quantity="one">1 unread conversation</item>
         <item quantity="other">%1$d unread conversations</item>
     </plurals>
+    <string name="api_sign_in_rejected">Sign-in was not accepted.</string>
+    <string name="api_missing_session">Trustroots did not return a member session.</string>
+    <string name="api_request_rejected">The request was not accepted.</string>
+    <string name="screen_sign_in_session_expired">Your session expired or is no longer valid. Please sign in again.</string>
 </resources>

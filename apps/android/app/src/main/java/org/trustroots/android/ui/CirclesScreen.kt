@@ -46,7 +46,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
@@ -55,6 +54,7 @@ import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.bottomInset
 import org.trustroots.android.ui.common.horizontalInset
 
@@ -71,9 +71,7 @@ internal fun CirclesScreen(
     val factory = remember(owner, api, session.member.username) {
         CirclesViewModel.Factory(MobileApiCircleRepository(api, session))
     }
-    val viewModel = remember(owner, factory) {
-        ViewModelProvider(owner, factory).get(CirclesViewModel::class.java)
-    }
+    val viewModel = rememberEntryViewModel(owner, CirclesViewModel::class.java, factory)
     SideEffect { viewModel.updateSession(session) }
     val state by viewModel.state.collectAsState()
     val failureMessage = when (val failure = state.failure) {

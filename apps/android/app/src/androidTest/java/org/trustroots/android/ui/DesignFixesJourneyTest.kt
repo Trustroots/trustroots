@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,9 +35,10 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
-import org.trustroots.android.ui.theme.TrustrootsTheme
-import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
+import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.theme.TrustrootsTheme
 
 /** Native end-to-end journeys use a local HTTP API and real map/view lifecycles. */
 @RunWith(AndroidJUnit4::class)
@@ -181,7 +182,15 @@ class DesignFixesJourneyTest {
         assertTrue(last.bottom <= navigation.top)
         compose.onNodeWithText("Traveller 30").performClick()
         compose.onNodeWithTag("messageComposer").assertIsDisplayed()
+        compose.waitForIdle()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        compose.onNodeWithText("Traveller 30").assertIsDisplayed()
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
+        compose.waitForIdle()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("Filter conversations").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("Filter conversations").performTextInput("traveller-30")
         compose.onNodeWithText("Traveller 30").assertIsDisplayed()
         compose.onNodeWithText("Traveller 1").assertDoesNotExist()
