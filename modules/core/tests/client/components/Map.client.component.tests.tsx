@@ -1,4 +1,5 @@
 import React from 'react';
+import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -11,11 +12,14 @@ type MapStyleControlProps = React.ComponentProps<typeof MapStyleControl>;
 type LeafletMapProps = React.ComponentProps<typeof LeafletMap>;
 
 const mockIsWebGLSupported = jest.fn<boolean, []>();
+const mockGetMapBoxToken = jest.mocked(getMapBoxToken);
+beforeEach(() => mockGetMapBoxToken.mockReturnValue('test-token'));
 jest.mock('@/modules/core/client/utils/map', () => ({
   ...jest.requireActual<typeof import('@/modules/core/client/utils/map')>(
     '@/modules/core/client/utils/map',
   ),
   isWebGLSupported: () => mockIsWebGLSupported(),
+  getMapBoxToken: jest.fn(() => 'test-token'),
 }));
 
 const mockMapGL = jest.fn<void, [props: MapProps]>();
@@ -115,6 +119,13 @@ describe('<Map />', () => {
         zoom: 11,
       }),
     );
+  });
+
+  it('uses raster tiles without a token even when WebGL is supported', () => {
+    mockGetMapBoxToken.mockReturnValue(undefined);
+    render(<Map />);
+    expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
+    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
   });
 
   it('can prefer raster tiles even when WebGL is supported', () => {

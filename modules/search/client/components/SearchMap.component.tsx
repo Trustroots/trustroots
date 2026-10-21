@@ -347,7 +347,11 @@ export default function SearchMap({
   viewportRef.current = viewport;
   const gestureSurfaceRef = useRef<HTMLDivElement | null>(null);
   const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
-  const [useWebGL] = useState(isWebGLSupported);
+  // Mapbox GL v3 requires a token even for a third-party raster style.
+  // Tokenless installations use Leaflet with OpenStreetMap tiles.
+  const [useWebGL] = useState(
+    () => isWebGLSupported() && Boolean(getMapBoxToken()),
+  );
   usePageWheel(gestureSurfaceRef, useWebGL);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState<MapboxMap | undefined>();

@@ -1,4 +1,5 @@
 import React from 'react';
+import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -74,9 +75,11 @@ type MockSourceProps = {
 };
 
 const mockIsWebGLSupported = jest.fn();
+const mockGetMapBoxToken = jest.mocked(getMapBoxToken);
 jest.mock('@/modules/core/client/utils/map', () => ({
   ...jest.requireActual('@/modules/core/client/utils/map'),
   isWebGLSupported: () => mockIsWebGLSupported(),
+  getMapBoxToken: jest.fn(() => 'test-token'),
 }));
 
 type MockNostrEvent = Partial<NostrEvent> & { authorPubkey?: string };
@@ -153,7 +156,7 @@ jest.mock('@/modules/search/client/hooks/use-persistent-map-location', () => ({
   default: () => [mockPersistentMapLocation, mockSetPersistentMapLocation],
 }));
 
-let mockMapStyle = 'mock-map-style';
+let mockMapStyle: string | typeof MAP_STYLE_OSM = 'mock-map-style';
 const mockSetMapStyle = jest.fn();
 jest.mock('@/modules/search/client/hooks/use-persistent-map-style', () => ({
   __esModule: true,
@@ -427,6 +430,7 @@ async function flushCommunityNotesViewport(viewport: Record<string, number>) {
 }
 
 beforeEach(() => {
+  mockGetMapBoxToken.mockReturnValue('test-token');
   mockIsWebGLSupported.mockReturnValue(true);
   mockLeafletSearchMap.mockClear();
   mockSourcePropsById = {};
@@ -826,13 +830,18 @@ describe('Search', () => {
     consoleError.mockRestore();
   });
 
-  it('falls back to OSM when a mapbox style is persisted without a token', () => {
-    mockMapStyle = 'mapbox://styles/trustroots/custom';
-
-    renderSearchMap();
-
-    expect(mockMapProps.mapStyle).toBe(MAP_STYLE_OSM);
-  });
+  it.each([MAP_STYLE_OSM, 'mapbox://styles/trustroots/custom'])(
+    'uses Leaflet without a token even when WebGL is supported (style %p)',
+    style => {
+      mockGetMapBoxToken.mockReturnValue(undefined);
+      mockMapStyle = style;
+      renderSearchMap();
+      expect(screen.getByTestId('leaflet-search-map')).toBeInTheDocument();
+      expect(
+        screen.queryByTestId('react-map-gl/mapbox'),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it('queries public offers inside the visible map bounds', async () => {
     mockPersistentMapLocation = {
