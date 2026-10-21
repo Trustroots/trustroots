@@ -21,6 +21,10 @@ function invokeRolesPolicies() {
       roles: ['admin'],
       allows: [
         {
+          resources: '/api/messages-hosting',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/messages',
           permissions: [],
         },
@@ -49,6 +53,10 @@ function invokeRolesPolicies() {
     {
       roles: ['user'],
       allows: [
+        {
+          resources: '/api/messages-hosting',
+          permissions: ['get'],
+        },
         {
           resources: '/api/messages',
           permissions: ['get', 'post'],

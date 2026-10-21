@@ -503,11 +503,15 @@ struct DirectMessage: Decodable, Identifiable {
     let id: String
     let content: String
     let userFrom: MiniMember
+    let created: Date?
+    let hostingDetails: HostingMessageDetails?
 
     enum CodingKeys: String, CodingKey {
         case id = "_id"
         case content
         case userFrom
+        case created
+        case hostingDetails
     }
 
     func isFrom(username: String?) -> Bool {
@@ -515,10 +519,72 @@ struct DirectMessage: Decodable, Identifiable {
     }
 }
 
+struct HostingMessageDetails: Codable, Equatable {
+    let guests: Int
+    let arrival: String?
+    let departure: String?
+}
+
+struct HostingContext: Decodable, Equatable {
+    let description: String
+    let acknowledgementRequired: Bool
+}
+
+enum HostingDetailsValidation {
+    static func error(guests: Int, arrival: String, departure: String) -> String? {
+        guard (1...100).contains(guests) else { return "Guest count must be from 1 to 100." }
+        if arrival.isEmpty && departure.isEmpty { return nil }
+        guard !arrival.isEmpty, !departure.isEmpty else {
+            return "Enter both arrival and departure dates, or leave both blank."
+        }
+        guard let arrivalDate = date(arrival), let departureDate = date(departure) else {
+            return "Enter real dates in YYYY-MM-DD format."
+        }
+        guard departureDate > arrivalDate else {
+            return "Departure must be after arrival."
+        }
+        return nil
+    }
+
+    static func details(guests: Int, arrival: String, departure: String) -> HostingMessageDetails? {
+        guard error(guests: guests, arrival: arrival, departure: departure) == nil else { return nil }
+        return HostingMessageDetails(
+            guests: guests,
+            arrival: arrival.isEmpty ? nil : arrival,
+            departure: departure.isEmpty ? nil : departure
+        )
+    }
+
+    private static func date(_ value: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.calendar = Calendar(identifier: .gregorian)
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.isLenient = false
+        guard let date = formatter.date(from: value), formatter.string(from: date) == value else { return nil }
+        return date
+    }
+}
+
+struct HostingReplyPolicy {
+    static func shouldShow(messages: [DirectMessage], username: String?) -> Bool {
+        guard let username else { return false }
+        let latestHostingIncoming = messages.firstIndex {
+            !$0.isFrom(username: username) && $0.hostingDetails != nil
+        }
+        let latestOutgoing = messages.firstIndex { $0.isFrom(username: username) }
+        guard let latestHostingIncoming else { return false }
+        guard let latestOutgoing else { return true }
+        return latestHostingIncoming < latestOutgoing
+    }
+}
+
 enum TrustrootsAPIError: LocalizedError, Equatable {
     case invalidServerURL
     case invalidResponse
     case authenticationRequired
+    case hostingDescriptionAcknowledgementRequired
     case requestFailed(String)
     case serverMessage(String)
 
@@ -530,6 +596,8 @@ enum TrustrootsAPIError: LocalizedError, Equatable {
             return "Trustroots returned an unexpected response."
         case .authenticationRequired:
             return "Your session is no longer valid. Please sign in again."
+        case .hostingDescriptionAcknowledgementRequired:
+            return "Please review and acknowledge the host’s description before sending hosting details."
         case .requestFailed(let description):
             return "Could not reach Trustroots: \(description)"
         case .serverMessage(let message):
@@ -1239,10 +1307,20 @@ final class TrustrootsAPI {
         )
     }
 
+    func hostingContext(serverURLString: String, userID: String) async throws -> HostingContext {
+        try await get(
+            serverURLString: serverURLString,
+            path: "api/messages-hosting",
+            queryItems: [URLQueryItem(name: "userTo", value: userID)]
+        )
+    }
+
     func sendMessage(
         serverURLString: String,
         memberID: String,
-        content: String
+        content: String,
+        hostingDescriptionAcknowledged: Bool? = nil,
+        hostingDetails: HostingMessageDetails? = nil
     ) async throws -> DirectMessage {
         guard let configuration = TrustrootsAPIConfiguration(baseURLString: serverURLString) else {
             throw TrustrootsAPIError.invalidServerURL
@@ -1253,10 +1331,19 @@ final class TrustrootsAPI {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.httpBody = try encoder.encode([
-            "userTo": memberID,
-            "content": content,
-        ])
+        struct MessageRequest: Encodable {
+            let userTo: String
+            let content: String
+            let hostingDescriptionAcknowledged: Bool?
+            let hostingDetails: HostingMessageDetails?
+        }
+        let body = MessageRequest(
+            userTo: memberID,
+            content: content,
+            hostingDescriptionAcknowledged: hostingDescriptionAcknowledged,
+            hostingDetails: hostingDetails
+        )
+        request.httpBody = try encoder.encode(body)
 
         do {
             let (data, response) = try await session.data(for: request)
@@ -1333,14 +1420,19 @@ final class TrustrootsAPI {
         statusCode: Int,
         isSignIn: Bool = false
     ) -> TrustrootsAPIError {
+        struct ErrorResponse: Decodable {
+            let message: String?
+            let code: String?
+            let error: String?
+        }
+        let error = try? decoder.decode(ErrorResponse.self, from: data)
         if !isSignIn && statusCode == 401 {
             return .authenticationRequired
         }
-        struct ErrorResponse: Decodable {
-            let message: String?
+        if (error?.code ?? error?.error) == "hosting-description-acknowledgement-required" {
+            return .hostingDescriptionAcknowledgementRequired
         }
-        let message = (try? decoder.decode(ErrorResponse.self, from: data))?.message
-        return .serverMessage(message ?? "Sign-in was not accepted.")
+        return .serverMessage(error?.message ?? "Sign-in was not accepted.")
     }
 
     private func authorise(_ request: inout URLRequest) {

@@ -159,6 +159,42 @@ describe('<ThreadMessage />', function () {
     );
   });
 
+  it('renders hosting guest count and date-only dates without inventing a time zone', () => {
+    const { container } = render(
+      <ThreadMessage
+        user={me}
+        message={{
+          _id: 'msg-hosting-details',
+          created: '2026-06-05T12:00:00.000Z',
+          read: false,
+          content: '<p>A fictional stay request</p>',
+          userTo: me,
+          userFrom: me,
+          hostingDetails: {
+            guests: 2,
+            arrival: '2026-08-10',
+            departure: '2026-08-13',
+          },
+        }}
+      />,
+    );
+
+    const details = container.querySelector('.message-hosting-details');
+    expect(details).toHaveTextContent('Guests: 2');
+    expect(details).toHaveTextContent(
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeZone: 'UTC',
+      }).format(new Date('2026-08-10T00:00:00.000Z')),
+    );
+    expect(details).toHaveTextContent(
+      new Intl.DateTimeFormat(undefined, {
+        dateStyle: 'medium',
+        timeZone: 'UTC',
+      }).format(new Date('2026-08-13T00:00:00.000Z')),
+    );
+  });
+
   it('marks messages that explicitly say hosting was declined', () => {
     const { container } = render(
       <ThreadMessage

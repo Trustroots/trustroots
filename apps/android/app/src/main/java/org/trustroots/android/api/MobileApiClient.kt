@@ -63,7 +63,15 @@ data class MessageThread(
     val read: Boolean,
 )
 
-data class DirectMessage(val id: String, val content: String, val sender: MessageMember, val createdAt: Long? = null)
+data class HostingDetails(val guests: Int, val arrival: String? = null, val departure: String? = null)
+data class HostingContext(val description: String, val acknowledgementRequired: Boolean)
+data class DirectMessage(
+    val id: String,
+    val content: String,
+    val sender: MessageMember,
+    val createdAt: Long? = null,
+    val hostingDetails: HostingDetails? = null,
+)
 
 data class MapOffer(val id: String, val latitude: Double, val longitude: Double, val type: String = "host", val status: String = "yes")
 
@@ -134,6 +142,7 @@ data class TrustrootsCircle(
 class MobileApiException(
     val statusCode: Int,
     override val message: String,
+    val code: String? = null,
 ) : Exception(message) {
     val isAuthenticationFailure: Boolean
         get() = statusCode == HttpURLConnection.HTTP_UNAUTHORIZED
@@ -402,14 +411,47 @@ class MobileApiClient(
             }
         }
 
-    suspend fun sendMessage(session: MemberSession, memberID: String, content: String): Result<DirectMessage> =
+    suspend fun sendMessage(
+        session: MemberSession,
+        memberID: String,
+        content: String,
+        hostingDetails: HostingDetails? = null,
+        hostingDescriptionAcknowledged: Boolean = false,
+    ): Result<DirectMessage> =
         withContext(Dispatchers.IO) {
             runCatching {
                 require(content.isNotBlank())
-                val body = JSONObject().put("userTo", memberID).put("content", content.trim()).toString()
+                hostingDetails?.let {
+                    val validationMessage = hostingDetailsValidationMessage(it)
+                    require(validationMessage == null) { validationMessage ?: "Invalid hosting details." }
+                }
+                val bodyObject = JSONObject().put("userTo", memberID).put("content", content.trim())
+                hostingDetails?.let { details ->
+                    val hosting = JSONObject().put("guests", details.guests)
+                    details.arrival?.let { hosting.put("arrival", it) }
+                    details.departure?.let { hosting.put("departure", it) }
+                    bodyObject.put("hostingDetails", hosting)
+                    if (hostingDescriptionAcknowledged) bodyObject.put("hostingDescriptionAcknowledged", true)
+                }
+                val body = bodyObject.toString()
                 parseMessage(JSONObject(jsonRequest(
                     "/api/messages", "POST", body, session.cookieHeader,
                 ).body))
+            }
+        }
+
+    suspend fun hostingContext(session: MemberSession, memberID: String): Result<HostingContext> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = jsonRequest(
+                    "/api/messages-hosting?userTo=${encode(memberID)}", "GET",
+                    sessionCookie = session.cookieHeader,
+                )
+                val value = JSONObject(response.body)
+                HostingContext(
+                    description = value.optString("description"),
+                    acknowledgementRequired = value.optBoolean("acknowledgementRequired", false),
+                )
             }
         }
 
@@ -579,12 +621,13 @@ class MobileApiClient(
                 connection.errorStream
             })?.bufferedReader()?.use { it.readText() }.orEmpty()
             if (connection.responseCode !in 200..299) {
-                val message = runCatching { JSONObject(responseBody).optString("message") }
-                    .getOrNull()
-                    .orEmpty()
+                val errorBody = runCatching { JSONObject(responseBody) }.getOrNull()
+                val message = errorBody?.optString("message").orEmpty()
                 throw MobileApiException(
                     statusCode = connection.responseCode,
                     message = message.ifBlank { rejectedMessage },
+                    code = errorBody?.optString("error")?.takeIf { it.isNotBlank() }
+                        ?: errorBody?.optString("code")?.takeIf { it.isNotBlank() },
                 )
             }
             if (method == "GET" && sessionCookie != null && cacheAccount != null) {
@@ -722,7 +765,37 @@ internal fun parseMessage(value: JSONObject): DirectMessage = DirectMessage(
     content = value.getString("content"),
     sender = parseMessageMember(value.getJSONObject("userFrom")),
     createdAt = value.optionalText("created")?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
+    hostingDetails = value.optJSONObject("hostingDetails")?.let { details ->
+        HostingDetails(details.optInt("guests", 1), details.optionalText("arrival"), details.optionalText("departure"))
+    },
 )
+
+internal fun hostingDetailsValidationMessage(details: HostingDetails): String? {
+    if (details.guests !in 1..100) return "Enter a guest count from 1 to 100."
+    if ((details.arrival == null) != (details.departure == null)) return "Enter both arrival and departure dates, or leave both blank."
+    val arrival = details.arrival ?: return null
+    val departure = details.departure ?: return null
+    if (!arrival.matches(Regex("\\d{4}-\\d{2}-\\d{2}")) || !departure.matches(Regex("\\d{4}-\\d{2}-\\d{2}"))) {
+        return "Enter dates in YYYY-MM-DD format."
+    }
+    val arrivalDate = runCatching { java.time.LocalDate.parse(arrival) }.getOrNull()
+        ?: return "Enter dates in YYYY-MM-DD format."
+    val departureDate = runCatching { java.time.LocalDate.parse(departure) }.getOrNull()
+        ?: return "Enter dates in YYYY-MM-DD format."
+    if (!departureDate.isAfter(arrivalDate)) return "Departure must be after arrival."
+    return null
+}
+
+internal fun hostingDetailsValidationMessage(guests: String, arrival: String, departure: String): String? {
+    val count = guests.toIntOrNull() ?: return "Enter the number of guests."
+    return hostingDetailsValidationMessage(
+        HostingDetails(
+            count,
+            arrival.trim().takeIf { it.isNotEmpty() },
+            departure.trim().takeIf { it.isNotEmpty() },
+        ),
+    )
+}
 
 internal fun parseMessages(values: JSONArray): List<DirectMessage> =
     (0 until values.length()).map { parseMessage(values.getJSONObject(it)) }

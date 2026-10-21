@@ -29,6 +29,7 @@ interface HostOffer {
   location: [number, number] | null;
   maxGuests: number;
   showOnlyInMyCircles: boolean;
+  requireHostingDescriptionAcknowledgement: boolean;
 }
 
 interface HostPageProps {
@@ -44,6 +45,7 @@ function defaultHostOffer(): HostOffer {
     location: null,
     maxGuests: 1,
     showOnlyInMyCircles: false,
+    requireHostingDescriptionAcknowledgement: false,
   };
 }
 
@@ -162,6 +164,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
+        requireHostingDescriptionAcknowledgement:
+          offer.requireHostingDescriptionAcknowledgement,
         location: offer.location!,
       };
 
@@ -375,6 +379,27 @@ export default function OfferHostPage({ user }: HostPageProps) {
             </div>
           </Tab>
           <Tab eventKey="description" title="Description">
+            <div className="checkbox">
+              <label>
+                <input
+                  checked={offer.requireHostingDescriptionAcknowledgement}
+                  onChange={({ target: { checked } }) =>
+                    setOffer(current => ({
+                      ...current,
+                      requireHostingDescriptionAcknowledgement: checked,
+                    }))
+                  }
+                  type="checkbox"
+                />
+                Require guests to acknowledge my hosting description before
+                sending their first hosting message in a conversation.
+              </label>
+              <p className="help-block">
+                Ordinary messages do not require acknowledgement. An
+                acknowledgement does not prove someone has read or understood
+                your requirements.
+              </p>
+            </div>
             {offer.status === 'no' && (
               <div className="panel panel-default">
                 <div className="panel-heading">

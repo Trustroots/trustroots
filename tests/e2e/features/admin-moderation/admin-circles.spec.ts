@@ -34,15 +34,15 @@ test.describe('admin circles feature coverage', () => {
 
     await page.getByRole('button', { name: new RegExp(label) }).click();
     await page
-      .getByLabel('Description')
+      .getByRole('textbox', { name: 'Description', exact: true })
       .fill('Edited by the administration test.');
     await page.getByRole('button', { name: 'Save circle' }).click();
     await expect(page.getByText('Circle saved.')).toBeVisible();
     await page.reload();
     await page.getByRole('button', { name: new RegExp(label) }).click();
-    await expect(page.getByLabel('Description')).toHaveValue(
-      'Edited by the administration test.',
-    );
+    await expect(
+      page.getByRole('textbox', { name: 'Description', exact: true }),
+    ).toHaveValue('Edited by the administration test.');
     await expect(page.getByLabel('Public')).not.toBeChecked();
   });
 });

@@ -532,6 +532,9 @@ importers:
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
       '@trustroots/references-thread':
         specifier: workspace:*
         version: link:../references-thread

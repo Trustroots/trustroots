@@ -188,7 +188,7 @@ class MessageLoadingAndDeclineJourneyTest {
                 }
                 request.path.startsWith("/api/messages/other-member-one?") -> Response(
                     200,
-                    """[{"_id":"fictional-message-one","content":"<p>Can you host?</p>","created":"${Instant.now()}","userFrom":{"_id":"other-id","username":"quiet-fox"}}]""",
+                    """[{"_id":"fictional-message-one","content":"<p>Can you host?</p>","created":"${Instant.now()}","userFrom":{"_id":"other-id","username":"quiet-fox"},"hostingDetails":{"guests":1}}]""",
                 )
                 else -> Response(404, "{}")
             }

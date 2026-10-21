@@ -45,6 +45,53 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(APIServerDiagnostic.unexpectedResponse.state, .unexpectedResponse)
     }
 
+    func testHostingDetailsValidationRequiresRealCompleteDateRange() {
+        XCTAssertNil(HostingDetailsValidation.error(guests: 1, arrival: "", departure: ""))
+        XCTAssertNil(HostingDetailsValidation.error(guests: 3, arrival: "2027-02-28", departure: "2027-03-01"))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 1, arrival: "2027-02-30", departure: "2027-03-01"))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 1, arrival: "2027-02-28", departure: ""))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 1, arrival: "2027-03-01", departure: "2027-02-28"))
+        XCTAssertNotNil(HostingDetailsValidation.error(guests: 101, arrival: "", departure: ""))
+    }
+
+    func testHostingReplyOnlyShowsForUnansweredIncomingHostingMessage() {
+        let me = MiniMember(id: "member-me", username: "me", displayName: "Me")
+        let them = MiniMember(id: "member-them", username: "them", displayName: "Them")
+        let hostingMessage = DirectMessage(
+            id: "hosting-1",
+            content: "Are you available?",
+            userFrom: them,
+            created: nil,
+            hostingDetails: HostingMessageDetails(guests: 2, arrival: nil, departure: nil)
+        )
+        let ordinaryMessage = DirectMessage(
+            id: "ordinary-1",
+            content: "Hi",
+            userFrom: them,
+            created: nil,
+            hostingDetails: nil
+        )
+        let outgoingMessage = DirectMessage(
+            id: "outgoing-1",
+            content: "Thanks",
+            userFrom: me,
+            created: nil,
+            hostingDetails: nil
+        )
+
+        XCTAssertTrue(HostingReplyPolicy.shouldShow(messages: [hostingMessage, ordinaryMessage], username: "me"))
+        XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [hostingMessage, outgoingMessage], username: "me"))
+        XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [ordinaryMessage], username: "me"))
+    }
+
+    func testDirectMessageWithoutHostingMetadataDecodesAsOrdinaryMessage() throws {
+        let message = try JSONDecoder().decode(
+            DirectMessage.self,
+            from: Data(#"{"_id":"message-1","content":"Hello","userFrom":{"username":"traveller"}}"#.utf8)
+        )
+        XCTAssertNil(message.hostingDetails)
+    }
+
     func testBuildDateUsesStableYearMonthDayAndTimeFormat() {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let formatted = TrustrootsBuildInfo.formatted(date)
@@ -507,6 +554,117 @@ final class TrustrootsTests: XCTestCase {
         XCTAssertEqual(offer?.maxGuests, 2)
     }
 
+    func testSendMessageEncodesHostingAcknowledgementAsBoolean() async throws {
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"_id":"message-1","content":"Hello","userFrom":{"username":"traveller"},"hostingDetails":{"guests":2,"arrival":"2027-04-01","departure":"2027-04-04"}}"#.utf8))
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        let message = try await api.sendMessage(
+            serverURLString: "https://api.example.test",
+            memberID: "member-1",
+            content: "Hello",
+            hostingDescriptionAcknowledged: true,
+            hostingDetails: HostingMessageDetails(guests: 2, arrival: "2027-04-01", departure: "2027-04-04")
+        )
+
+        let request = try XCTUnwrap(recordedRequest)
+        let body = try XCTUnwrap(requestBodyData(from: request))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertEqual(object["hostingDescriptionAcknowledged"] as? Bool, true)
+        let hostingDetails = try XCTUnwrap(object["hostingDetails"] as? [String: Any])
+        XCTAssertEqual(hostingDetails["guests"] as? Int, 2)
+        XCTAssertEqual(hostingDetails["arrival"] as? String, "2027-04-01")
+        XCTAssertEqual(hostingDetails["departure"] as? String, "2027-04-04")
+        XCTAssertEqual(message.hostingDetails, HostingMessageDetails(guests: 2, arrival: "2027-04-01", departure: "2027-04-04"))
+    }
+
+    func testHostingContextUsesMessagesHostingEndpoint() async throws {
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"description":"A quiet room","acknowledgementRequired":true}"#.utf8))
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        let context = try await api.hostingContext(
+            serverURLString: "https://api.example.test",
+            userID: "member-1"
+        )
+
+        XCTAssertEqual(recordedRequest?.url?.path, "/api/messages-hosting")
+        XCTAssertEqual(recordedRequest?.url?.query, "userTo=member-1")
+        XCTAssertEqual(context, HostingContext(description: "A quiet room", acknowledgementRequired: true))
+    }
+
+    func testSendMessageOmitsOptionalHostingAcknowledgementByDefault() async throws {
+        var recordedRequest: URLRequest?
+        APIURLProtocol.handler = { request in
+            recordedRequest = request
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil
+            )!
+            return (response, Data(#"{"_id":"message-1","content":"Hello","userFrom":{"username":"traveller"}}"#.utf8))
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        _ = try await api.sendMessage(
+            serverURLString: "https://api.example.test",
+            memberID: "member-1",
+            content: "Hello"
+        )
+
+        let request = try XCTUnwrap(recordedRequest)
+        let body = try XCTUnwrap(requestBodyData(from: request))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+        XCTAssertNil(object["hostingDescriptionAcknowledged"])
+        XCTAssertNil(object["hostingDetails"])
+    }
+
+    func testSendMessageRecognizesHostingAcknowledgementError() async throws {
+        APIURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!, statusCode: 400, httpVersion: nil, headerFields: nil
+            )!
+            return (
+                response,
+                Data(#"{"error":"hosting-description-acknowledgement-required","message":"Please acknowledge."}"#.utf8)
+            )
+        }
+        defer { APIURLProtocol.handler = nil }
+
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [APIURLProtocol.self]
+        let api = TrustrootsAPI(session: URLSession(configuration: configuration))
+        do {
+            _ = try await api.sendMessage(
+                serverURLString: "https://api.example.test",
+                memberID: "member-1",
+                content: "Hello"
+            )
+            XCTFail("Expected acknowledgement-required error")
+        } catch {
+            XCTAssertEqual(error as? TrustrootsAPIError, .hostingDescriptionAcknowledgementRequired)
+        }
+    }
+
     func testSignInUsesExistingRouteAndCapturesSessionCookie() async throws {
         var recordedRequest: URLRequest?
         APIURLProtocol.handler = { request in
@@ -596,6 +754,26 @@ private final class APIURLProtocol: URLProtocol {
     }
 
     override func stopLoading() {}
+}
+
+private func requestBodyData(from request: URLRequest) -> Data? {
+    if let httpBody = request.httpBody {
+        return httpBody
+    }
+    guard let stream = request.httpBodyStream else { return nil }
+    stream.open()
+    defer { stream.close() }
+
+    var body = Data()
+    let bufferSize = 4096
+    let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: bufferSize)
+    defer { buffer.deallocate() }
+    while stream.hasBytesAvailable {
+        let readCount = stream.read(buffer, maxLength: bufferSize)
+        guard readCount > 0 else { break }
+        body.append(buffer, count: readCount)
+    }
+    return body
 }
 
 private final class InMemorySessionCredentialStore: SessionCredentialStoring {

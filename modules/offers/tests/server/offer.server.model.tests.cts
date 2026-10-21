@@ -24,6 +24,15 @@ let offerMeet: OfferDocument;
  * Unit tests
  */
 describe('Offer Model Unit Tests:', function () {
+  it('defaults hosting acknowledgement off and persists the explicit preference', async () => {
+    const offer = new Offer({ type: 'host', location: [12, 34] });
+    offer.get('requireHostingDescriptionAcknowledgement').should.equal(false);
+    offer.set('requireHostingDescriptionAcknowledgement', true);
+    await offer.save();
+    const saved = await Offer.findById(offer._id);
+    should.exist(saved);
+    saved!.get('requireHostingDescriptionAcknowledgement').should.equal(true);
+  });
   beforeEach(function (done) {
     user = new User({
       firstName: 'Full',

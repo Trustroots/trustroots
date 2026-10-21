@@ -15,6 +15,7 @@ const offerUpdateFields = [
   'location',
   'validUntil',
   'showOnlyInMyCircles',
+  'requireHostingDescriptionAcknowledgement',
 ] as const;
 
 export type OfferUpdateInput = Partial<
@@ -43,6 +44,12 @@ export function prepareOfferPayload<Id, Timestamp>(
     ...(offer.showOnlyInMyCircles === undefined
       ? {}
       : { showOnlyInMyCircles: offer.showOnlyInMyCircles }),
+    ...(offer.requireHostingDescriptionAcknowledgement === undefined
+      ? {}
+      : {
+          requireHostingDescriptionAcknowledgement:
+            offer.requireHostingDescriptionAcknowledgement,
+        }),
   };
 }
 
@@ -64,6 +71,12 @@ export function prepareOfferUpdate(
     ...(body.showOnlyInMyCircles === undefined
       ? {}
       : { showOnlyInMyCircles: body.showOnlyInMyCircles }),
+    ...(body.requireHostingDescriptionAcknowledgement === undefined
+      ? {}
+      : {
+          requireHostingDescriptionAcknowledgement:
+            body.requireHostingDescriptionAcknowledgement,
+        }),
   };
 }
 

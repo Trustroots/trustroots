@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -32,6 +33,7 @@ const api = {
   users: { fetch: jest.mocked(usersAPI.fetch) },
   messages: {
     fetchMessages: jest.mocked(messagesAPI.fetchMessages),
+    fetchHostingContext: jest.mocked(messagesAPI.fetchHostingContext),
     sendMessage: jest.mocked(messagesAPI.sendMessage),
     markRead: jest.mocked(messagesAPI.markRead),
   },
@@ -145,11 +147,16 @@ function createMessage(
 beforeEach(() => {
   api.users.fetch.mockReset();
   api.messages.fetchMessages.mockReset();
+  api.messages.fetchHostingContext.mockReset();
   api.messages.sendMessage.mockReset();
   api.messages.markRead.mockReset();
 
   api.users.fetch.mockResolvedValue(otherUser);
   api.messages.fetchMessages.mockResolvedValue({ messages: [] });
+  api.messages.fetchHostingContext.mockResolvedValue({
+    description: 'Please arrive before sunset.',
+    acknowledgementRequired: false,
+  });
   api.messages.markRead.mockResolvedValue();
 });
 
@@ -165,6 +172,275 @@ let routeParams: { username: string; userId?: string } = {
 getRouteParams.mockReturnValue(routeParams);
 
 describe('<Thread>', () => {
+  it('does not load hosting context until hosting mode is selected', async () => {
+    render(<Thread user={me} profileMinimumLength={0} />);
+    await screen.findByRole('textbox');
+    expect(api.messages.fetchHostingContext).not.toHaveBeenCalled();
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    expect(
+      await screen.findByText('Please arrive before sunset.'),
+    ).toBeVisible();
+    expect(api.messages.fetchHostingContext).toHaveBeenCalledWith(
+      otherUser._id,
+    );
+  });
+
+  it('sends an ordinary message to an opted-in host without loading hosting context', async () => {
+    api.messages.sendMessage.mockResolvedValueOnce({
+      data: createMessage(me),
+    } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A fictional ordinary hello.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(api.messages.sendMessage).toHaveBeenCalledWith(
+        otherUser._id,
+        'A fictional ordinary hello.',
+      ),
+    );
+    expect(api.messages.fetchHostingContext).not.toHaveBeenCalled();
+  });
+
+  it('sends optional hosting details and requires acknowledgement only when the context says so', async () => {
+    api.messages.fetchHostingContext.mockResolvedValueOnce({
+      description: 'Please arrive before sunset.',
+      acknowledgementRequired: true,
+    });
+    api.messages.sendMessage.mockResolvedValueOnce({
+      data: createMessage(me),
+    } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    const ack = await screen.findByRole('checkbox', {
+      name: 'I have read this host’s hosting description and requirements.',
+    });
+    expect(ack).not.toBeChecked();
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'A fictional hosting request.' },
+    });
+    fireEvent.change(screen.getByLabelText('Guests'), {
+      target: { value: '2' },
+    });
+    fireEvent.change(screen.getByLabelText('Arrival (optional)'), {
+      target: { value: '2026-08-10' },
+    });
+    fireEvent.change(screen.getByLabelText('Departure (optional)'), {
+      target: { value: '2026-08-13' },
+    });
+    expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+    fireEvent.click(ack);
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(api.messages.sendMessage).toHaveBeenCalledWith(
+        otherUser._id,
+        'A fictional hosting request.',
+        true,
+        { guests: 2, arrival: '2026-08-10', departure: '2026-08-13' },
+      ),
+    );
+  });
+
+  it('finishes an in-flight hosting send after the guest switches modes', async () => {
+    let resolveSend!: (
+      response: Awaited<ReturnType<typeof messagesAPI.sendMessage>>,
+    ) => void;
+    api.messages.sendMessage.mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          resolveSend = resolve;
+        }),
+    );
+    render(<Thread user={me} profileMinimumLength={0} />);
+    const hostingToggle = await screen.findByRole('checkbox', {
+      name: 'Add hosting details',
+    });
+    fireEvent.click(hostingToggle);
+    await screen.findByText('Please arrive before sunset.');
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A fictional in-flight hosting request.' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() => expect(api.messages.sendMessage).toHaveBeenCalled());
+
+    fireEvent.click(hostingToggle);
+    expect(hostingToggle).not.toBeChecked();
+    expect(
+      screen.queryByText('Please arrive before sunset.'),
+    ).not.toBeInTheDocument();
+    await act(async () => {
+      resolveSend({ data: createMessage(me) } as Awaited<
+        ReturnType<typeof messagesAPI.sendMessage>
+      >);
+    });
+
+    await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(''));
+    expect(
+      screen.getByRole('checkbox', { name: 'Add hosting details' }),
+    ).not.toBeChecked();
+  });
+
+  it('refreshes a newly required acknowledgement and preserves the draft and details', async () => {
+    api.messages.fetchHostingContext
+      .mockResolvedValueOnce({
+        description: 'Please arrive before sunset.',
+        acknowledgementRequired: false,
+      })
+      .mockResolvedValueOnce({
+        description: 'Please arrive before sunset.',
+        acknowledgementRequired: true,
+      });
+    api.messages.sendMessage
+      .mockRejectedValueOnce({
+        response: {
+          status: 400,
+          data: { error: 'hosting-description-acknowledgement-required' },
+        },
+      })
+      .mockResolvedValueOnce({ data: createMessage(me) } as Awaited<
+        ReturnType<typeof messagesAPI.sendMessage>
+      >);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A saved draft.' },
+    });
+    fireEvent.change(screen.getByLabelText('Guests'), {
+      target: { value: '3' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    const checkbox = await screen.findByRole('checkbox', {
+      name: 'I have read this host’s hosting description and requirements.',
+    });
+    expect(checkbox).not.toBeChecked();
+    expect(screen.getByText('Please arrive before sunset.')).toBeVisible();
+    expect(screen.getByRole('textbox')).toHaveValue('A saved draft.');
+    expect(screen.getByLabelText('Guests')).toHaveValue(3);
+    expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+    fireEvent.click(checkbox);
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(api.messages.sendMessage).toHaveBeenLastCalledWith(
+        otherUser._id,
+        'A saved draft.',
+        true,
+        { guests: 3 },
+      ),
+    );
+    await waitFor(() => expect(screen.getByRole('textbox')).toHaveValue(''));
+  });
+
+  it('keeps ordinary messages available when hosting context cannot load', async () => {
+    api.messages.fetchHostingContext.mockRejectedValueOnce(
+      new Error('offline'),
+    );
+    api.messages.sendMessage.mockResolvedValueOnce({
+      data: createMessage(me),
+    } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    await screen.findByRole('alert');
+    fireEvent.change(screen.getByRole('textbox'), {
+      target: { value: 'A saved draft.' },
+    });
+    expect(screen.getByRole('button', { name: /Send/ })).toBeDisabled();
+    fireEvent.click(
+      screen.getByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: /Send/ }));
+    await waitFor(() =>
+      expect(api.messages.sendMessage).toHaveBeenCalledWith(
+        otherUser._id,
+        'A saved draft.',
+      ),
+    );
+  });
+
+  it('retries failed hosting context loading without losing the draft', async () => {
+    api.messages.fetchHostingContext
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce({
+        description: 'Please arrive before sunset.',
+        acknowledgementRequired: false,
+      });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    fireEvent.click(
+      await screen.findByRole('checkbox', { name: 'Add hosting details' }),
+    );
+    fireEvent.change(await screen.findByRole('textbox'), {
+      target: { value: 'A saved hosting draft.' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'Retry' }));
+    await screen.findByText('Please arrive before sunset.');
+    expect(screen.getByRole('textbox')).toHaveValue('A saved hosting draft.');
+    expect(api.messages.fetchHostingContext).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores a hosting context response after switching back to ordinary messaging', async () => {
+    let resolveFirst!: (context: {
+      description: string;
+      acknowledgementRequired: boolean;
+    }) => void;
+    api.messages.fetchHostingContext
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolveFirst = resolve;
+          }),
+      )
+      .mockResolvedValueOnce({
+        description: 'Fresh hosting description.',
+        acknowledgementRequired: true,
+      });
+    render(<Thread user={me} profileMinimumLength={0} />);
+    const hostingToggle = await screen.findByRole('checkbox', {
+      name: 'Add hosting details',
+    });
+    fireEvent.click(hostingToggle);
+    fireEvent.click(hostingToggle);
+    resolveFirst({
+      description: 'Stale hosting description.',
+      acknowledgementRequired: true,
+    });
+    expect(await screen.findByRole('textbox')).toBeEnabled();
+    expect(
+      screen.queryByText('Stale hosting description.'),
+    ).not.toBeInTheDocument();
+    fireEvent.click(hostingToggle);
+    expect(await screen.findByText('Fresh hosting description.')).toBeVisible();
+    expect(api.messages.fetchHostingContext).toHaveBeenCalledTimes(2);
+  });
+
+  it('ignores a failed hosting context request after switching back to ordinary messaging', async () => {
+    let rejectFirst!: (error: Error) => void;
+    api.messages.fetchHostingContext.mockImplementationOnce(
+      () =>
+        new Promise((_, reject) => {
+          rejectFirst = reject;
+        }),
+    );
+    render(<Thread user={me} profileMinimumLength={0} />);
+    const hostingToggle = await screen.findByRole('checkbox', {
+      name: 'Add hosting details',
+    });
+    fireEvent.click(hostingToggle);
+    fireEvent.click(hostingToggle);
+    rejectFirst(new Error('stale request failure'));
+    await waitFor(() => expect(screen.getByRole('textbox')).toBeEnabled());
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Send/ })).toBeEnabled();
+  });
   let originalVisualViewport: PropertyDescriptor | undefined;
 
   beforeEach(() => {
@@ -186,6 +462,9 @@ describe('<Thread>', () => {
   });
 
   it('resizes the mobile thread above the on-screen keyboard', async () => {
+    api.messages.fetchMessages.mockResolvedValueOnce({
+      messages: [createMessage(otherUser, { hostingDetails: { guests: 1 } })],
+    });
     const windowHeight = window.innerHeight;
     const readKeyboardInset = () =>
       document.documentElement.style.getPropertyValue(
@@ -463,6 +742,17 @@ describe('<Thread>', () => {
     expect(api.messages.fetchMessages).not.toHaveBeenCalled();
   });
 
+  it('shows a load failure when fetching the conversation fails', async () => {
+    api.messages.fetchMessages.mockRejectedValueOnce(new Error('offline'));
+
+    render(<Thread user={me} profileMinimumLength={0} />);
+
+    expect(
+      await screen.findByText('Failed to load messages. Please try again.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('form')).not.toBeInTheDocument();
+  });
+
   it('repairs missing message endpoints for removed users', async () => {
     routeParams = {
       username: otherUser.username,
@@ -663,7 +953,7 @@ describe('<Thread>', () => {
           ...createMessage(otherUser),
           _id: 'only-message',
           content: 'Only message',
-          created: '2026-06-05T12:00:00.000Z',
+          created: new Date().toISOString(),
         },
       ],
       // The API uses null to represent the end of pagination.
@@ -765,7 +1055,7 @@ describe('<Thread>', () => {
   describe('only messages from other user', () => {
     beforeEach(() => {
       api.messages.fetchMessages.mockResolvedValueOnce({
-        messages: [createMessage(otherUser)],
+        messages: [createMessage(otherUser, { hostingDetails: { guests: 1 } })],
       });
     });
 
@@ -781,6 +1071,22 @@ describe('<Thread>', () => {
       );
     });
 
+    it('keeps shortcuts visible when an ordinary incoming message follows a hosting message', async () => {
+      api.messages.fetchMessages.mockReset().mockResolvedValueOnce({
+        messages: [
+          createMessage(otherUser, {
+            created: '2026-06-05T12:00:00.000Z',
+            hostingDetails: { guests: 1 },
+          }),
+          createMessage(otherUser, {
+            created: '2026-06-06T12:00:00.000Z',
+          }),
+        ],
+      });
+      render(<Thread user={me} profileMinimumLength={0} />);
+      expect(await screen.findByTestId('quick-reply')).toBeInTheDocument();
+    });
+
     it('sends a hosting quick reply through the thread API', async () => {
       // The component consumes only AxiosResponse.data in this mock.
       api.messages.sendMessage.mockResolvedValueOnce({
@@ -788,7 +1094,7 @@ describe('<Thread>', () => {
           ...createMessage(me),
           _id: 'quick-reply-message',
           content: '<p data-hosting="yes"><b><i>Yes, I can host!</i></b></p>',
-          created: '2026-06-05T12:00:00.000Z',
+          created: new Date().toISOString(),
         },
       } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
 
@@ -830,7 +1136,9 @@ describe('<Thread>', () => {
 
   describe('messages from both users', () => {
     beforeEach(() => {
-      const messageFromOther = createMessage(otherUser);
+      const messageFromOther = createMessage(otherUser, {
+        hostingDetails: { guests: 1 },
+      });
       messageFromOther.content = 'Hi there from other user';
       const messageFromMe = createMessage(me);
       messageFromMe._id = 'my-message';

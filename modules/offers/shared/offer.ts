@@ -12,6 +12,7 @@ export interface OfferEditableFields {
   location?: OfferLocation;
   validUntil?: string | number | Date;
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }
 
 /** Request payload accepted by POST /api/offers. */
@@ -58,6 +59,7 @@ export interface OfferPayload<Id = string, Timestamp = string> {
   updated?: Timestamp;
   validUntil?: Timestamp;
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }
 
 /** Populated read-one response from GET /api/offers/:offerId. */

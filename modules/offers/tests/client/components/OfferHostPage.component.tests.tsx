@@ -69,6 +69,35 @@ const hostOffer: OfferPayload = {
 };
 
 describe('OfferHostPage', () => {
+  it('defaults acknowledgement off, persists opting in and reloads the preference', async () => {
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
+    const { unmount } = render(<OfferHostPage user={user} />);
+    fireEvent.click(await screen.findByRole('tab', { name: 'Description' }));
+    const checkbox = screen.getByRole('checkbox', {
+      name: /Require guests to acknowledge/,
+    });
+    expect(checkbox).not.toBeChecked();
+    fireEvent.click(checkbox);
+    fireEvent.submit(document.querySelector('form')!);
+    await waitFor(() =>
+      expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+        'offer-1',
+        expect.objectContaining({
+          requireHostingDescriptionAcknowledgement: true,
+        }),
+      ),
+    );
+    unmount();
+    offersApiMock.getOffers.mockResolvedValue([
+      { ...hostOffer, requireHostingDescriptionAcknowledgement: true },
+    ]);
+    render(<OfferHostPage user={user} />);
+    expect(
+      await screen.findByRole('checkbox', {
+        name: /Require guests to acknowledge/,
+      }),
+    ).toBeChecked();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     window.history.replaceState({}, '', '/offer/host');

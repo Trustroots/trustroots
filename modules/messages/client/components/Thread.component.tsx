@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import { useMediaQuery } from 'react-responsive';
 import { useTranslation } from 'react-i18next';
@@ -23,7 +23,13 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
-import type { Message, MessageUser, PageParams } from '../api/messages.api';
+import type {
+  HostingContext,
+  HostingDetails,
+  Message,
+  MessageUser,
+  PageParams,
+} from '../api/messages.api';
 
 // Required by LanguageList in Monkeybox component.
 const queryClient = new QueryClient();
@@ -171,6 +177,13 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const [failedToLoad, setFailedToLoad] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [hostingContext, setHostingContext] = useState<HostingContext | null>(
+    null,
+  );
+  const [hostingContextLoading, setHostingContextLoading] = useState(false);
+  const [hostingContextError, setHostingContextError] = useState(false);
+  const [hostingMode, setHostingMode] = useState(false);
+  const hostingContextRequest = useRef(0);
   const cacheKey = `messages.thread.${user._id}-${username}`;
   const isBlocked = user.blocked?.includes(otherUser?._id || '');
 
@@ -179,11 +192,20 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     [user],
   );
 
-  const userHasReplied = Boolean(
-    messages.find(message => message.userFrom?._id === user._id),
-  );
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
-  const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
+  const latestOutgoingTime = messages
+    .filter(message => message.userFrom?._id === user._id)
+    .map(message => message.created)
+    .sort()
+    .pop();
+  const userHasReplied = Boolean(latestOutgoingTime);
+  const hasUnansweredHostingMessage = messages.some(
+    message =>
+      message.userFrom?._id !== user._id &&
+      message.hostingDetails !== undefined &&
+      (!latestOutgoingTime || message.created > latestOutgoingTime),
+  );
+  const showQuickReply = showReply && hasUnansweredHostingMessage;
 
   const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
 
@@ -254,6 +276,27 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     };
   }
 
+  async function fetchHostingContext(userId: string) {
+    const requestId = ++hostingContextRequest.current;
+    setHostingContextLoading(true);
+    setHostingContextError(false);
+    setHostingContext(null);
+    try {
+      const context = await api.messages.fetchHostingContext(userId);
+      if (requestId === hostingContextRequest.current) {
+        setHostingContext(context);
+      }
+    } catch {
+      if (requestId === hostingContextRequest.current) {
+        setHostingContextError(true);
+      }
+    } finally {
+      if (requestId === hostingContextRequest.current) {
+        setHostingContextLoading(false);
+      }
+    }
+  }
+
   async function fetchData() {
     try {
       setIsFetching(true);
@@ -302,30 +345,51 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         setMessages(sortedMessages);
       }
       setNextParams(nextParams ?? null);
+    } catch {
+      setFailedToLoad(true);
     } finally {
       setIsFetching(false);
     }
   }
 
-  async function sendMessage(content: string) {
-    const apiResponse = await api.messages
-      .sendMessage((otherUser as MessageUser)._id, content)
-      .catch(error => {
-        // Too many requests - error
-        if (error?.response?.status === 429) {
-          window.alert(
-            t<string>(
-              'You are writing to too many people too fast. Slow down and try later again.',
-            ),
-          );
-        } else {
-          window.alert(
-            t<string>(
-              'Failed to send the message. Perhaps your internet went down? Please try again.',
-            ),
-          );
-        }
-      });
+  async function sendMessage(
+    content: string,
+    hostingDetails?: HostingDetails,
+    hostingDescriptionAcknowledged?: boolean,
+  ) {
+    const userToId = (otherUser as MessageUser)._id;
+    const messageRequest = hostingDetails
+      ? api.messages.sendMessage(
+          userToId,
+          content,
+          hostingDescriptionAcknowledged,
+          hostingDetails,
+        )
+      : api.messages.sendMessage(userToId, content);
+    const apiResponse = await messageRequest.catch(async error => {
+      if (
+        hostingDetails &&
+        error?.response?.data?.error ===
+          'hosting-description-acknowledgement-required'
+      ) {
+        await fetchHostingContext(otherUser!._id);
+        return;
+      }
+      // Too many requests - error
+      if (error?.response?.status === 429) {
+        window.alert(
+          t<string>(
+            'You are writing to too many people too fast. Slow down and try later again.',
+          ),
+        );
+      } else {
+        window.alert(
+          t<string>(
+            'Failed to send the message. Perhaps your internet went down? Please try again.',
+          ),
+        );
+      }
+    });
 
     // Failed to send message
     if (!apiResponse?.data) {
@@ -335,12 +399,25 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     // Append in thread the formatted message we got as a response from API
     const { data: message } = apiResponse;
     setMessages(messages => [...messages, message]);
+    if (hostingDetails) {
+      setHostingContext(context =>
+        context ? { ...context, acknowledgementRequired: false } : context,
+      );
+    }
     focus();
     return true;
   }
 
   function focus() {
     document.querySelector<HTMLElement>('#message-reply-content')?.focus();
+  }
+
+  function toggleHostingMode(enabled: boolean) {
+    setHostingMode(enabled);
+    if (!enabled) hostingContextRequest.current += 1;
+    setHostingContext(null);
+    setHostingContextError(false);
+    if (enabled && otherUser) fetchHostingContext(otherUser._id);
   }
 
   useEffect(() => {
@@ -414,20 +491,31 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                   onFetchMore={fetchMoreData}
                 />
               )}
-              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showQuickReply && (
                 <QuickReply
                   onSend={content => sendMessage(content)}
                   onFocus={focus}
                 />
               )}
+              {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showReply && (
-                <ThreadReply
-                  key={cacheKey}
-                  cacheKey={cacheKey}
-                  autoFocus={!isExtraSmall}
-                  onSend={content => sendMessage(content)}
-                />
+                <>
+                  <ThreadReply
+                    key={cacheKey}
+                    cacheKey={cacheKey}
+                    autoFocus={!isExtraSmall}
+                    onSend={(content, details, acknowledged) =>
+                      sendMessage(content, details, acknowledged)
+                    }
+                    hostingContext={hostingMode ? hostingContext : null}
+                    hostingContextLoading={hostingContextLoading}
+                    hostingContextError={hostingContextError}
+                    onHostingModeChange={toggleHostingMode}
+                    onRetryHostingContext={() =>
+                      otherUser && fetchHostingContext(otherUser._id)
+                    }
+                  />
+                </>
               )}
               {removed && (
                 <div className="panel panel-default">

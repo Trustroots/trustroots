@@ -1,5 +1,6 @@
 import mongoose, { type Types } from 'mongoose';
 import mongoosePaginate from '../../../../config/lib/mongoose-paginate.mjs';
+import type { HostingDetails } from '../../shared/messages.js';
 const service = {};
 
 export interface MessageRecord {
@@ -16,6 +17,7 @@ export interface MessageRecord {
   spam?: boolean;
   shadowHidden?: boolean;
   notificationCount?: number;
+  hostingDetails?: HostingDetails;
 }
 
 /**
@@ -37,6 +39,17 @@ const MessageSchema = new Schema<MessageRecord>({
     trim: true,
     // Preserve the legacy string option passed to Mongoose's required setter.
     required: 'Message cannot be blank' as unknown as boolean,
+  },
+  hostingDetails: {
+    type: new Schema<HostingDetails>(
+      {
+        guests: { type: Number, required: true, min: 1, max: 100 },
+        arrival: String,
+        departure: String,
+      },
+      { _id: false },
+    ),
+    default: undefined,
   },
   userFrom: {
     type: Schema.Types.ObjectId,

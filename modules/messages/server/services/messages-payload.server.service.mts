@@ -4,6 +4,7 @@ import type {
   MessageThreadSummary,
   PreviewMessageResponse,
   SendMessageRequest,
+  HostingDetails,
   UnreadMessageCountResponse,
 } from '../../shared/messages.js';
 
@@ -15,8 +16,20 @@ export interface MessageReadSelector<Id> {
 export function prepareNewMessageFields<Id>(
   body: SendMessageRequest,
   userFrom: Id,
-): { userTo: string; content: string; userFrom: Id } {
-  return { userTo: body.userTo, content: body.content, userFrom };
+): {
+  userTo: string;
+  content: string;
+  userFrom: Id;
+  hostingDetails?: HostingDetails;
+} {
+  return {
+    userTo: body.userTo,
+    content: body.content,
+    userFrom,
+    ...(body.hostingDetails === undefined
+      ? {}
+      : { hostingDetails: body.hostingDetails }),
+  };
 }
 
 /** Select only the fields exposed by the send and thread message endpoints. */
@@ -30,6 +43,19 @@ export function prepareMessageForClient<Id, Timestamp, Member>(
     read: message.read,
     userFrom: message.userFrom,
     userTo: message.userTo,
+    ...(message.hostingDetails === undefined
+      ? {}
+      : {
+          hostingDetails: {
+            guests: message.hostingDetails.guests,
+            ...(message.hostingDetails.arrival === undefined
+              ? {}
+              : {
+                  arrival: message.hostingDetails.arrival,
+                  departure: message.hostingDetails.departure,
+                }),
+          },
+        }),
   };
 }
 

@@ -137,6 +137,7 @@ export interface ExperienceRecord {
 
 /** Message fields used by message and unread-notification tests. */
 export interface MessageRecord {
+  hostingDetails?: import('../../modules/messages/shared/messages.js').HostingDetails;
   created?: Date;
   content?: string;
   userFrom?: Types.ObjectId;

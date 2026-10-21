@@ -8,13 +8,20 @@ import type {
   MessageThreadSummary,
   PreviewMessageRequest,
   PreviewMessageResponse,
+  HostingDetails,
   SendMessageRequest,
   UnreadMessageCountResponse,
 } from '../../shared/messages';
 
 export type MessageUser = MessageMember;
 export type Message = MessagePayload;
+export type { HostingDetails };
 export type { MessageThreadSummary };
+
+export interface HostingContext {
+  description: string;
+  acknowledgementRequired: boolean;
+}
 
 export type RequestParams = Record<
   string,
@@ -51,14 +58,29 @@ export async function fetchMessages(
   return { messages, nextParams };
 }
 
+export async function fetchHostingContext(
+  userToId: string,
+): Promise<HostingContext> {
+  const { data } = await axios.get<HostingContext>('/api/messages-hosting', {
+    params: { userTo: userToId },
+  });
+  return data;
+}
+
 export async function sendMessage(
   userToId: string,
   content: string,
+  hostingDescriptionAcknowledged?: boolean,
+  hostingDetails?: HostingDetails,
 ): Promise<import('axios').AxiosResponse<Message>> {
   const payload: SendMessageRequest = {
     userTo: userToId,
     content,
     read: false,
+    ...(hostingDescriptionAcknowledged === undefined
+      ? {}
+      : { hostingDescriptionAcknowledged }),
+    ...(hostingDetails === undefined ? {} : { hostingDetails }),
   };
   return await axios.post<Message>('/api/messages', payload);
 }

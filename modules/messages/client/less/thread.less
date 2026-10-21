@@ -134,6 +134,43 @@
   max-height: ~'max(100px, 50vh)';
   overflow: hidden;
 
+  .hosting-message-options {
+    flex: 0 1 auto;
+    min-height: 0;
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 8px 12px;
+    background: white;
+    border: 1px solid #ddd;
+  }
+
+  .hosting-message-details {
+    padding-top: 8px;
+  }
+
+  .hosting-visit-fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+
+    label {
+      min-width: 0;
+      font-size: @font-size-small;
+      font-weight: normal;
+    }
+
+    input {
+      padding: 6px;
+    }
+
+    @media (max-width: @screen-xs-max) {
+      grid-template-columns: 1fr 1fr;
+      label:first-child {
+        grid-column: 1 / -1;
+      }
+    }
+  }
+
   .message-reply-resize-handle {
     flex: 0 0 16px;
     cursor: ns-resize;
@@ -288,6 +325,28 @@
     max-height: ~'max(100px, 25vh)';
   }
 
+  // Hosting details need room for the description and acknowledgement while
+  // keeping the editor and send actions in the same viewport.
+  &.message-reply-hosting {
+    max-height: 70vh;
+
+    .hosting-message-options {
+      max-height: 40vh;
+    }
+
+    .panel #message-reply-content {
+      max-height: ~'min(250px, calc(70vh - 61px))';
+    }
+
+    @media (max-width: @screen-xs-max) {
+      max-height: 70vh;
+
+      .panel #message-reply-content {
+        max-height: ~'min(100px, calc(70vh - 61px))';
+      }
+    }
+  }
+
   // The thread container follows the virtual keyboard inset. Clamp manually
   // resized composers to it, with room left for the conversation above.
   &.message-reply-resized {
@@ -325,4 +384,26 @@
       max-height: none;
     }
   }
+}
+.hosting-description-acknowledgement {
+  flex: 0 1 auto;
+  min-height: 0;
+  max-height: 40vh;
+  overflow-y: auto;
+  padding: 12px;
+  background: white;
+  border: 1px solid #ddd;
+  label {
+    display: block;
+    margin-top: 12px;
+  }
+}
+
+.message-hosting-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  padding: 10px 12px 0;
+  color: @gray;
+  font-size: @font-size-small;
 }

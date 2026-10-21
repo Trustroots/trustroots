@@ -120,6 +120,277 @@ function deferredResponse(): DeferredResponse {
 }
 
 describe('Messages controller unit tests', () => {
+  describe('hosting description acknowledgement', () => {
+    const Offer = mongoose.model('Offer');
+    let sender: UserDocument;
+    let host: UserDocument;
+
+    beforeEach(async () => {
+      [sender, host] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      sender.description =
+        'A fictional member who enjoys sharing food, travelling slowly and meeting other members. '.repeat(
+          4,
+        );
+      await sender.save();
+      host.description = sender.description;
+      await host.save();
+      await new Offer({
+        user: host._id,
+        type: 'host',
+        location: [12, 34],
+        description: 'Please arrive before sunset.',
+        requireHostingDescriptionAcknowledgement: true,
+      }).save();
+    });
+
+    async function send(
+      acknowledgement?: unknown,
+      reverse = false,
+      hostingDetails: unknown = { guests: 1 },
+    ) {
+      const res = deferredResponse();
+      await messagesController.send(
+        {
+          user: reverse ? host : sender,
+          body: {
+            userTo: (reverse ? sender : host)._id.toString(),
+            content: 'A fictional request.',
+            hostingDescriptionAcknowledged: acknowledgement,
+            hostingDetails,
+          },
+          headers: {},
+        },
+        res,
+      );
+      return res.waitForResponse();
+    }
+
+    async function context(
+      user: UserDocument = sender,
+      userTo: unknown = host._id.toString(),
+    ) {
+      const res = deferredResponse();
+      await messagesController.hostingContext({ user, query: { userTo } }, res);
+      return res;
+    }
+
+    it('allows ordinary contact but still requires acknowledgement for the first hosting message', async () => {
+      (await send(undefined, false, null)).statusCode.should.equal(400);
+      const ordinary = deferredResponse();
+      await messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: host._id.toString(),
+            content: 'A friendly introduction.',
+          },
+          headers: {},
+        },
+        ordinary,
+      );
+      (await ordinary.waitForResponse()).statusCode.should.equal(200);
+      (await send()).statusCode.should.equal(400);
+      (await send(true)).statusCode.should.equal(200);
+      const response = await context();
+      bodyField<boolean>(response.body, 'acknowledgementRequired').should.equal(
+        false,
+      );
+    });
+
+    it('returns required hosting context without depending on message pagination', async () => {
+      const initial = await context();
+      bodyField<string>(initial.body, 'description').should.equal(
+        'Please arrive before sunset.',
+      );
+      bodyField<boolean>(initial.body, 'acknowledgementRequired').should.equal(
+        true,
+      );
+      (
+        await send(true, false, {
+          guests: 2,
+          arrival: '2028-02-29',
+          departure: '2028-03-02',
+        })
+      ).statusCode.should.equal(200);
+      await Message.insertMany(
+        Array.from({ length: 25 }, () => ({
+          userFrom: host._id,
+          userTo: sender._id,
+          content: 'A later note.',
+        })),
+      );
+      bodyField<boolean>(
+        (await context()).body,
+        'acknowledgementRequired',
+      ).should.equal(false);
+      const stored = await Message.findOne({
+        hostingDetails: { $exists: true },
+      });
+      required(stored).get('hostingDetails.guests').should.equal(2);
+    });
+
+    it('requires authentication and valid recipients for hosting context', async () => {
+      const unauthenticated = deferredResponse();
+      await messagesController.hostingContext({}, unauthenticated);
+      unauthenticated.statusCode.should.equal(403);
+      const missingRecipient = deferredResponse();
+      await messagesController.hostingContext(
+        { user: sender },
+        missingRecipient,
+      );
+      missingRecipient.statusCode.should.equal(400);
+      for (const userTo of [null, [], 'invalid']) {
+        (await context(sender, userTo)).statusCode.should.equal(400);
+      }
+      (
+        await context(sender, new mongoose.Types.ObjectId().toString())
+      ).statusCode.should.equal(404);
+      host.public = false;
+      await host.save();
+      (await context()).statusCode.should.equal(404);
+      sender.roles = ['admin'];
+      (await context()).statusCode.should.equal(200);
+    });
+
+    it('returns errors from the context offer lookup', async () => {
+      const stub = sinon
+        .stub(Offer, 'findOne')
+        .throws(new Error('Lookup failed'));
+      try {
+        (await context()).statusCode.should.equal(400);
+      } finally {
+        stub.restore();
+      }
+    });
+
+    it('does not count hosting history hidden by a block', async () => {
+      (await send(true)).statusCode.should.equal(200);
+      sender.blocked = [host._id];
+      bodyField<boolean>(
+        (await context()).body,
+        'acknowledgementRequired',
+      ).should.equal(true);
+    });
+
+    it('removes contact details from hosting context for restricted senders', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { description: '<p>Write to fictional@example.org</p>' } },
+      );
+      sender.roles = ['user', 'shadowban'];
+      const hidden = await context();
+      bodyField<string>(hidden.body, 'description').should.not.containEql(
+        'fictional@example.org',
+      );
+      sender.roles = ['user', 'shadowban', 'admin'];
+      const visible = await context();
+      bodyField<string>(visible.body, 'description').should.containEql(
+        'fictional@example.org',
+      );
+    });
+
+    for (const value of [undefined, false, 'true', 1, {}, []]) {
+      it(`rejects first contact without literal true: ${JSON.stringify(value)}`, async () => {
+        const res = await send(value);
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'error').should.equal(
+          'hosting-description-acknowledgement-required',
+        );
+        (await Message.countDocuments({})).should.equal(0);
+        (await Thread.countDocuments({})).should.equal(0);
+      });
+    }
+
+    it('allows acknowledgement once and subsequent messages in either direction', async () => {
+      (await send(true)).statusCode.should.equal(200);
+      (await send()).statusCode.should.equal(200);
+      (await send(undefined, true)).statusCode.should.equal(200);
+    });
+
+    it('allows follow-ups when outgoing messages have no inbox thread', async () => {
+      sender.roles = ['user', 'shadowban'];
+      await sender.save();
+      (await send()).statusCode.should.equal(400);
+      (await send(true)).statusCode.should.equal(200);
+      (await Thread.countDocuments({})).should.equal(0);
+      (await send()).statusCode.should.equal(200);
+      (await Message.countDocuments({ shadowHidden: true })).should.equal(2);
+      (await Thread.countDocuments({})).should.equal(0);
+    });
+
+    for (const shadowHidden of [false, true]) {
+      it(`uses only visible incoming history without an inbox thread: ${shadowHidden}`, async () => {
+        await new Message({
+          userFrom: host._id,
+          userTo: sender._id,
+          content: 'A fictional earlier greeting.',
+          shadowHidden,
+          hostingDetails: { guests: 1 },
+        }).save();
+        (await send()).statusCode.should.equal(shadowHidden ? 400 : 200);
+      });
+    }
+
+    it('reports history lookup failures without creating a conversation', async () => {
+      const stub = sinon
+        .stub(Message, 'exists')
+        .rejects(new Error('Lookup failed'));
+      try {
+        (await send()).statusCode.should.equal(400);
+        (await Message.countDocuments({})).should.equal(0);
+      } finally {
+        stub.restore();
+      }
+    });
+
+    it('does not enforce a preference on meetup offers', async () => {
+      await Offer.updateMany({}, { $set: { type: 'meet' } });
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('allows first contact after the host disables the preference', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { requireHostingDescriptionAcknowledgement: false } },
+      );
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('ignores expired legacy host offers that are not visible to guests', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { validUntil: new Date('2000-01-01') } },
+      );
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('requires acknowledgement for an unexpired legacy host offer', async () => {
+      await Offer.updateMany(
+        {},
+        { $set: { validUntil: new Date('2100-01-01') } },
+      );
+      (await send()).statusCode.should.equal(400);
+    });
+
+    it('does not enforce the sender’s own hosting preference', async () => {
+      (await send(undefined, true)).statusCode.should.equal(200);
+      (await send()).statusCode.should.equal(200);
+    });
+
+    it('reports offer query failures without creating a conversation', async () => {
+      const stub = sinon
+        .stub(Offer, 'findOne')
+        .throws(new Error('Fictional lookup failure'));
+      try {
+        (await send()).statusCode.should.equal(400);
+        (await Thread.countDocuments({})).should.equal(0);
+      } finally {
+        stub.restore();
+      }
+    });
+  });
   describe('draft previews', () => {
     it('requires authentication', () => {
       const res = deferredResponse();
