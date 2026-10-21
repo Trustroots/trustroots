@@ -179,6 +179,41 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun failedCircleLoadCanBeRetriedAndSuccessfulResultIsThenCached() = withViewModel { viewModel, repository, _ ->
+        repository.circleHandler = {
+            if (repository.circleCalls == 1) Result.failure(IllegalStateException("Temporary circle failure"))
+            else Result.success(listOf(circle("retry-circle")))
+        }
+
+        viewModel.onEvent(HostMapEvent.CirclesRequested)
+        assertEquals(UiFailureFallback.CIRCLES_LOAD, viewModel.state.value.failure?.fallback)
+
+        viewModel.onEvent(HostMapEvent.CirclesRequested)
+        viewModel.onEvent(HostMapEvent.CirclesRequested)
+
+        assertEquals(2, repository.circleCalls)
+        assertEquals(listOf("retry-circle"), viewModel.state.value.circles.map { it.id })
+        assertNull(viewModel.state.value.failure)
+    }
+
+    @Test
+    fun successfulCircleLoadDoesNotClearAConcurrentHostSearchFailure() = withViewModel { viewModel, repository, _ ->
+        val pendingCircles = CompletableDeferred<Result<List<TrustrootsCircle>>>()
+        repository.circleHandler = { withContext(NonCancellable) { pendingCircles.await() } }
+        repository.searchHandler = { _, _, _ -> Result.failure(IOException("Temporary host search failure")) }
+
+        viewModel.onEvent(HostMapEvent.CirclesRequested)
+        viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(), bounds()))
+        viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+        assertEquals(UiFailureFallback.HOST_SEARCH, viewModel.state.value.failure?.fallback)
+
+        pendingCircles.complete(Result.success(listOf(circle("retrieved-circle"))))
+
+        assertEquals(listOf(circle("retrieved-circle")), viewModel.state.value.circles)
+        assertEquals(UiFailureFallback.HOST_SEARCH, viewModel.state.value.failure?.fallback)
+    }
+
+    @Test
     fun placeSubmissionConvertsThrownGeocoderErrorsIntoThePlaceFallback() = withViewModel { viewModel, repository, _ ->
         repository.placeHandler = { _, _ -> throw IOException("Fictional geocoder failure.") }
         viewModel.onEvent(HostMapEvent.LocationQueryChanged("Known fictional place"))

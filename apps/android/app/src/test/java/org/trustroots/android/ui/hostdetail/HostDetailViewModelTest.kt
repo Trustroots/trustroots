@@ -57,6 +57,17 @@ class HostDetailViewModelTest {
         assertEquals(1, repository.membershipCalls)
     }
 
+    @Test fun sameOfferIdentifierWithDifferentOfferTypeLoadsTheNewRouteContext() = withModel { model, repository ->
+        model.onEvent(HostDetailEvent.Load("shared-route-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("shared-route-offer", SearchOfferType.Meet))
+
+        assertEquals(listOf("shared-route-offer", "shared-route-offer"), repository.offerIDs)
+        assertEquals(SearchOfferType.Meet, model.state.value.offerType)
+        assertEquals("shared-route-offer", model.state.value.offer?.id)
+        assertEquals(2, repository.profileUsernames.size)
+        assertEquals(2, repository.membershipCalls)
+    }
+
     @Test fun loadOwnsCanonicalOfferProfileAndMembershipData() = withModel { model, repository ->
         model.onEvent(HostDetailEvent.Load("safe-offer-id", SearchOfferType.Meet))
 

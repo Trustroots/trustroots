@@ -36,7 +36,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.circles.CirclesFailure
 import org.trustroots.android.ui.circles.MobileApiCircleRepository
-import org.trustroots.android.ui.circles.CirclesLargeTopAppBar
+import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.circles.circleColor
 import org.trustroots.android.ui.circles.circlesFailureMessage
 import org.trustroots.android.ui.circles.circleDescription
@@ -115,7 +115,7 @@ private fun CircleDetailScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            CirclesLargeTopAppBar(
+            MemberLargeTopAppBar(
                 title = circle?.label ?: stringResource(R.string.screen_discover_circles),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,

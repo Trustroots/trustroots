@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
@@ -60,6 +61,12 @@ class CircleDetailViewModelTest {
         assertFalse(viewModel.state.value.isMember)
         val left = requireNotNull(viewModel.state.value.pendingOverviewMembershipEvent)
         assertFalse(left.isMember)
+        viewModel.onEvent(CircleDetailEvent.OverviewMembershipEventDelivered(joined.id))
+        assertEquals("A prior join acknowledgement must not consume the current leave event", left, viewModel.state.value.pendingOverviewMembershipEvent)
+        viewModel.onEvent(CircleDetailEvent.OverviewMembershipEventDelivered(left.id))
+        assertNull(viewModel.state.value.pendingOverviewMembershipEvent)
+        viewModel.onEvent(CircleDetailEvent.OverviewMembershipEventDelivered(left.id))
+        assertNull(viewModel.state.value.pendingOverviewMembershipEvent)
     }
 
     @Test
@@ -99,6 +106,34 @@ class CircleDetailViewModelTest {
     }
 
     @Test
+    fun thrownDetailAndMembershipExceptionsBecomeRetryableFailures() = withRepository { repository, scope ->
+        repository.circleHandler = { call, slug ->
+            if (call == 1) throw IOException("Temporary detail transport failure")
+            Result.success(circle("quiet-id", slug, "Quiet Circle", 7))
+        }
+        repository.membershipsHandler = { call ->
+            if (call == 1) throw IllegalStateException("Temporary membership lookup failure")
+            Result.success(emptySet())
+        }
+        val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
+
+        assertNull(fresh.state.value.circle)
+        assertEquals(CirclesFailureKind.CIRCLE_DETAIL_LOAD, fresh.state.value.failure?.kind)
+        assertTrue(fresh.state.value.canRetryLoad)
+
+        fresh.onEvent(CircleDetailEvent.RetryLoad)
+        assertEquals("quiet-id", fresh.state.value.circle?.id)
+        assertEquals(CirclesFailureKind.MEMBERSHIPS_LOAD, fresh.state.value.failure?.kind)
+        assertTrue(fresh.state.value.canRetryLoad)
+
+        fresh.onEvent(CircleDetailEvent.RetryLoad)
+        assertTrue(fresh.state.value.membershipsLoaded)
+        assertFalse(fresh.state.value.isMember)
+        assertNull(fresh.state.value.failure)
+        assertEquals(listOf("quiet-circle", "quiet-circle", "quiet-circle"), repository.detailSlugs)
+    }
+
+    @Test
     fun membershipFailurePreservesStatusAndCanBeRetried() = withRepository { repository, scope ->
         repository.membershipSet = setOf("quiet-id")
         val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
@@ -124,6 +159,29 @@ class CircleDetailViewModelTest {
         fresh.onEvent(CircleDetailEvent.ToggleMembership)
         assertFalse(fresh.state.value.isMember)
         assertNull(fresh.state.value.failure)
+    }
+
+    @Test
+    fun thrownMembershipMutationFailureKeepsStateAndCanBeRetried() = withRepository { repository, scope ->
+        val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
+        repository.updateHandler = {
+            if (repository.membershipChanges.size == 1) throw IllegalStateException("Temporary update failure")
+            Result.success(Unit)
+        }
+
+        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+
+        assertFalse(fresh.state.value.isMember)
+        assertFalse(fresh.state.value.isUpdating)
+        assertEquals(CirclesFailureKind.MEMBERSHIP_UPDATE, fresh.state.value.failure?.kind)
+        assertFalse(fresh.state.value.canRetryLoad)
+
+        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+
+        assertTrue(fresh.state.value.isMember)
+        assertFalse(fresh.state.value.isUpdating)
+        assertNull(fresh.state.value.failure)
+        assertEquals(2, repository.membershipChanges.size)
     }
 
     @Test
@@ -231,6 +289,84 @@ class CircleDetailViewModelTest {
         assertEquals(listOf("quiet-circle", "quiet-circle"), repository.detailSlugs)
         assertNull(fresh.state.value.pendingSessionInvalidation)
         assertNull(fresh.state.value.failure)
+    }
+
+    @Test
+    fun staleSessionInvalidationAcknowledgementDoesNotClearANewerInvalidation() = withRepository { repository, scope ->
+        repository.circleHandler = { _, slug -> Result.failure(MobileApiException(401, "Expired")) }
+        val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
+        val first = requireNotNull(fresh.state.value.pendingSessionInvalidation)
+        fresh.onEvent(CircleDetailEvent.SessionInvalidationDelivered(first.id))
+
+        fresh.updateEnvironment(api("https://other.example.test"), session("renewed-cookie"))
+
+        val current = requireNotNull(fresh.state.value.pendingSessionInvalidation)
+        assertTrue(current.id > first.id)
+        fresh.onEvent(CircleDetailEvent.SessionInvalidationDelivered(first.id))
+        assertEquals("The previous account's acknowledgement must not dismiss the new invalidation", current, fresh.state.value.pendingSessionInvalidation)
+        fresh.onEvent(CircleDetailEvent.SessionInvalidationDelivered(current.id))
+        assertNull(fresh.state.value.pendingSessionInvalidation)
+    }
+
+    @Test
+    fun clearingTheEntryCancelsAnOngoingLoadWithoutTurningCancellationIntoFailure() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = FakeCircleRepository()
+        var loadCancelled = false
+        repository.circleHandler = { _, _ ->
+            try {
+                awaitCancellation()
+            } finally {
+                loadCancelled = true
+            }
+        }
+        val store = ViewModelStore()
+        try {
+            val viewModel = ViewModelProvider(
+                StoreOwner(store),
+                CircleDetailViewModel.Factory("quiet-circle", repository, scope),
+            ).get(CircleDetailViewModel::class.java)
+            assertTrue(viewModel.state.value.isLoading)
+
+            store.clear()
+
+            assertTrue(loadCancelled)
+            assertEquals(CircleDetailUiState(isLoading = false), viewModel.state.value)
+        } finally {
+            store.clear()
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun clearingTheEntryCancelsAnOngoingMembershipMutationWithoutPublishingFailure() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = FakeCircleRepository()
+        var updateCancelled = false
+        repository.updateHandler = {
+            try {
+                awaitCancellation()
+            } finally {
+                updateCancelled = true
+            }
+        }
+        val store = ViewModelStore()
+        try {
+            val viewModel = ViewModelProvider(
+                StoreOwner(store),
+                CircleDetailViewModel.Factory("quiet-circle", repository, scope),
+            ).get(CircleDetailViewModel::class.java)
+            viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+            assertTrue(viewModel.state.value.isUpdating)
+
+            store.clear()
+
+            assertTrue(updateCancelled)
+            assertEquals(CircleDetailUiState(isLoading = false), viewModel.state.value)
+        } finally {
+            store.clear()
+            scope.cancel()
+        }
     }
 
     @Test

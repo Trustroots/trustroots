@@ -11,20 +11,16 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -47,7 +43,6 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
@@ -67,6 +62,7 @@ import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
+import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
@@ -239,7 +235,7 @@ private fun CircleOverviewScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            CirclesLargeTopAppBar(
+            MemberLargeTopAppBar(
                 title = stringResource(R.string.screen_discover_circles),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,
@@ -304,40 +300,6 @@ private fun CircleOverviewScreen(
             }
         }
     }
-}
-
-@Composable
-internal fun CirclesLargeTopAppBar(
-    title: String,
-    scrollBehavior: TopAppBarScrollBehavior,
-    contentPadding: PaddingValues,
-    onBack: (() -> Unit)? = null,
-) {
-    LargeTopAppBar(
-        title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        modifier = Modifier.padding(contentPadding.horizontalInset()),
-        windowInsets = WindowInsets(
-            left = 0.dp,
-            top = contentPadding.calculateTopPadding(),
-            right = 0.dp,
-            bottom = 0.dp,
-        ),
-        navigationIcon = {
-            if (onBack != null) {
-                IconButton(onClick = onBack, modifier = Modifier.size(48.dp)) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back),
-                    )
-                }
-            }
-        },
-        colors = TopAppBarDefaults.largeTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
-        ),
-        scrollBehavior = scrollBehavior,
-    )
 }
 
 internal fun circleColor(value: String?, fallback: Color): Color =

@@ -161,6 +161,22 @@ class AppSessionViewModelTest {
     }
 
     @Test
+    fun memberUpdateDeliveredAfterSignOutCannotRecreateTheSession() = withScope { scope ->
+        val backendURL = "https://example.invalid"
+        val existingSession = session()
+        val operations = FakeOperations().apply { restoredSession = existingSession }
+        val model = settledModel(scope, operations, backendURL)
+        val source = AppSessionSource.from(existingSession, backendURL)
+        model.onEvent(AppSessionEvent.SignedOut(source))
+        operations.events.clear()
+
+        model.onEvent(AppSessionEvent.MemberUpdated(source, MobileMember("quiet-heron", "Late Profile")))
+
+        assertNull(model.state.value.session)
+        assertTrue(operations.events.isEmpty())
+    }
+
+    @Test
     fun callbacksForThePreviousUsernameCannotClearTheUpdatedAccount() = withScope { scope ->
         val backendURL = "https://example.invalid"
         val originalSession = session()

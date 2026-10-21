@@ -380,7 +380,12 @@ internal class HostMapViewModel(
         if (state.value.circles.isNotEmpty() || circlesJob?.isActive == true) return
         circlesJob = workScope.launch {
             request { repository.circles() }.fold(
-                onSuccess = { circles -> mutableState.update { it.copy(circles = circles) } },
+                onSuccess = { circles -> mutableState.update { current ->
+                    current.copy(
+                        circles = circles,
+                        failure = current.failure?.takeUnless { it.fallback == UiFailureFallback.CIRCLES_LOAD },
+                    )
+                } },
                 onFailure = { handleFailure(it, UiFailureFallback.CIRCLES_LOAD) },
             )
         }

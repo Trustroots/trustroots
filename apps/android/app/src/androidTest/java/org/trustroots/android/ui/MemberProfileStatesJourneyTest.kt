@@ -86,7 +86,7 @@ class MemberProfileStatesJourneyTest {
 
         awaitProfileRequests()
         compose.onNodeWithTag("profileSection-contacts").performClick()
-        compose.onNodeWithText("More contacts (1)").performScrollTo().performClick()
+        compose.onNodeWithText("1 more contact").performScrollTo().performClick()
         compose.onNodeWithText("Contact Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Contact Seven").performClick()
         awaitRelatedProfile()
@@ -100,7 +100,7 @@ class MemberProfileStatesJourneyTest {
 
         revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").performClick()
-        compose.onNodeWithText("More experiences (1)").performScrollTo().performClick()
+        compose.onNodeWithText("1 more experience").performScrollTo().performClick()
         compose.onNodeWithText("Reference Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Reference Seven").performClick()
         awaitRelatedProfile()
