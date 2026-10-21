@@ -85,5 +85,7 @@
   "Read the account removal FAQ": "Read the account removal FAQ",
   "Your data": "Your data",
   "This downloads a JSON file of your profile, the circles you belong to, your contacts (including requests that are still waiting), your hosting and meet offers (including ones that have expired), and the messages and experiences you have written. The filename includes your username and the UTC time of the download, for example trustroots-data-username-20261014-0931.json.": "This downloads a JSON file of your profile, the circles you belong to, your contacts (including requests that are still waiting), your hosting and meet offers (including ones that have expired), and the messages and experiences you have written. The filename includes your username and the UTC time of the download, for example trustroots-data-username-20261014-0931.json.",
-  "It does not include your password, your profile photo file, or messages and experiences written by other members.": "It does not include your password, your profile photo file, or messages and experiences written by other members."
+  "It does not include your password, your profile photo file, or messages and experiences written by other members.": "It does not include your password, your profile photo file, or messages and experiences written by other members.",
+  "I am 18 years old or older.": "I am 18 years old or older.",
+  "You must confirm that you are 18 years old or older to sign up.": "You must confirm that you are 18 years old or older to sign up."
 }

@@ -478,6 +478,7 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signup(
         {
           body: {
+            ageConfirmed: true,
             firstName: 'Ada',
             lastName: 'Lovelace',
             username: 'has space',
@@ -497,6 +498,7 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signup(
         {
           body: {
+            ageConfirmed: true,
             firstName: 'Ada',
             lastName: 'Lovelace',
             username: 'has_underscore',
@@ -516,6 +518,7 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signup(
         {
           body: {
+            ageConfirmed: true,
             firstName: 'Amina',
             lastName: 'spam_name',
             username: 'samplemember',
@@ -542,6 +545,7 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signup(
         {
           body: {
+            ageConfirmed: true,
             firstName: 'Amina',
             lastName: 'Vale',
             username: 'samplemember',
@@ -590,6 +594,7 @@ describe('Authentication controller OAuth unit tests', () => {
       const res = deferredResponse();
       const req = {
         body: {
+          ageConfirmed: true,
           firstName: 'Ada',
           lastName: 'Lovelace',
           username: 'adalovelace',
@@ -623,6 +628,7 @@ describe('Authentication controller OAuth unit tests', () => {
       const res = deferredResponse();
       const req = {
         body: {
+          ageConfirmed: true,
           firstName: 'TrustRoots',
           lastName: 'Member',
           username: 'flaggedmember',
@@ -667,6 +673,7 @@ describe('Authentication controller OAuth unit tests', () => {
       const res = deferredResponse();
       const req = {
         body: {
+          ageConfirmed: true,
           firstName: 'Support',
           lastName: 'Member',
           username: 'alertfailure',

@@ -352,6 +352,15 @@ test.describe('public pages and unauthenticated flows', () => {
       await expect(page).toHaveURL(new RegExp(pagePath.replace(/\//g, '\\/')));
       await expect(page).toHaveTitle(title);
 
+      if (['/rules', '/privacy', '/faq'].includes(pagePath)) {
+        await expect(
+          page.getByText(
+            'You must be 18 years old or older to use Trustroots.',
+            { exact: true },
+          ),
+        ).toBeVisible();
+      }
+
       if (pagePath === '/foundation') {
         await expect(
           page.getByRole('heading', { name: 'Board', exact: true }),

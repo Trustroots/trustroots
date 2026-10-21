@@ -40,6 +40,7 @@ describe('auth.api', () => {
 
     await expect(
       authApi.signup({
+        ageConfirmed: true,
         email: 'ada@example.com',
         password: 'fictional-password',
         username: 'ada',

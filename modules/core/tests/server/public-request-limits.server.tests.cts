@@ -37,6 +37,7 @@ describe('Signup and support request allowances', () => {
 
   function signup(email: string) {
     return {
+      ageConfirmed: true,
       firstName: 'Amina',
       lastName: 'Vale',
       // Selection policy allows letters and numbers only; emails may still use hyphens.

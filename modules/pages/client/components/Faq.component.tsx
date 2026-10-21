@@ -113,6 +113,12 @@ export default function Faq({ category, children }: FaqProps) {
                   <div className="panel-body">
                     <div className="list-group">
                       <a
+                        href="/faq#what-is-the-minimum-age"
+                        className="list-group-item"
+                      >
+                        {t('What is the minimum age to use Trustroots?')}
+                      </a>
+                      <a
                         href="/faq#is-trustroots-exclusively-for-hitchhikers"
                         className="list-group-item"
                       >

@@ -6,6 +6,7 @@ export interface SigninCredentials {
 }
 
 export interface SignupCredentials extends SigninCredentials {
+  ageConfirmed: boolean;
   email: string;
   [key: string]: unknown;
 }

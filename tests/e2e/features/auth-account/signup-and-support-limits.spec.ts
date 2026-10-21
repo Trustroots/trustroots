@@ -43,6 +43,7 @@ for (const operation of ['signup', 'support']) {
           data:
             operation === 'signup'
               ? {
+                  ageConfirmed: true,
                   firstName: 'Amina',
                   lastName: 'Vale',
                   username: `allowance-${suffix}`,

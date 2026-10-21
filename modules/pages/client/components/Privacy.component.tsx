@@ -35,9 +35,9 @@ export default function Privacy() {
               itemProp="datePublished"
               {...{ dateTime: '2014-12-23' }}
             >
-              <time itemProp="dateModified" dateTime="2026-07-26">
+              <time itemProp="dateModified" dateTime="2026-10-21">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2026, 6, 26),
+                  date: new Date(2026, 9, 21),
                 })}
               </time>
             </p>
@@ -50,6 +50,7 @@ export default function Privacy() {
                   )}
                 </em>
               </p>
+              <p>{t('You must be 18 years old or older to use Trustroots.')}</p>
               <h3>{t('Your data is yours')}</h3>
               <Trans t={rawT} ns="pages">
                 Members on Trustroots can download their profile, contact and

@@ -101,6 +101,7 @@ test.describe.serial('authentication smoke', () => {
       const payload = route.request().postDataJSON();
 
       expect(payload).toMatchObject({
+        ageConfirmed: true,
         email: signupUser.email,
         firstName: signupUser.firstName,
         lastName: signupUser.lastName,
@@ -122,6 +123,47 @@ test.describe.serial('authentication smoke', () => {
     });
 
     await signUp(page, signupUser);
+  });
+
+  test('signup requires adult confirmation before creating an account', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup requires explicit adult confirmation.',
+    ]);
+    const member = createUser();
+    await page.goto('/signup');
+    const confirmation = page.getByRole('checkbox', {
+      name: 'I am 18 years old or older.',
+    });
+    await expect(confirmation).not.toBeChecked();
+    await page.locator('#firstName').fill(member.firstName);
+    await page.locator('#lastName').fill(member.lastName);
+    await page.locator('#email').fill(member.email);
+    await page.locator('#username').fill(member.username);
+    await page.locator('#password').fill(member.password);
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    expect(await findUserByUsername(member.username)).toBeNull();
+    await confirmation.check();
+    await expect(page.getByRole('button', { name: 'Next' })).toBeEnabled();
+    await confirmation.uncheck();
+    await expect(
+      page.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    await confirmation.check();
+    const responsePromise = page.waitForResponse(response =>
+      response.url().endsWith('/api/auth/signup'),
+    );
+    await page.getByRole('button', { name: 'Next' }).click();
+    const response = await responsePromise;
+    expect(response.request().postDataJSON().ageConfirmed).toBe(true);
+    expect(response.ok()).toBeTruthy();
+    await expect(page.getByRole('button', { name: 'Skip' })).toBeVisible();
+    const stored = await findUserByUsername(member.username);
+    expect(stored?.username).toBe(member.username);
+    expect(stored?.ageConfirmed).toBeUndefined();
   });
 
   test('signup uses the Trustroots primary colour', async ({
@@ -169,6 +211,7 @@ test.describe.serial('authentication smoke', () => {
     await page.locator('#lastName').fill(member.lastName);
     await page.locator('#email').fill(member.email);
     await page.locator('#password').fill(member.password);
+    await page.getByLabel('I am 18 years old or older.').check();
     const validationResponse = page.waitForResponse(
       response =>
         response.url().endsWith('/api/auth/signup/validate') &&
@@ -187,7 +230,11 @@ test.describe.serial('authentication smoke', () => {
       page.getByRole('button', { name: 'Please fill in the form' }),
     ).toBeDisabled();
     const rejected = await request.post('/api/auth/signup', {
-      data: { ...member, username: 'nostr' },
+      data: {
+        ageConfirmed: true,
+        ...member,
+        username: 'nostr',
+      },
     });
     expect(rejected.status()).toBe(400);
     await page.locator('#username').fill(member.username);
@@ -216,6 +263,7 @@ test.describe.serial('authentication smoke', () => {
     await page.locator('#lastName').fill(member.lastName);
     await page.locator('#email').fill(member.email);
     await page.locator('#password').fill(member.password);
+    await page.getByLabel('I am 18 years old or older.').check();
     await page.locator('#username').fill('sample_member');
     await expect(
       page.getByRole('button', { name: 'Please fill in the form' }),
@@ -229,7 +277,11 @@ test.describe.serial('authentication smoke', () => {
         .first(),
     ).toBeVisible();
     const rejected = await request.post('/api/auth/signup', {
-      data: { ...member, username: 'sample_member' },
+      data: {
+        ageConfirmed: true,
+        ...member,
+        username: 'sample_member',
+      },
     });
     expect(rejected.status()).toBe(400);
     expect((await rejected.json()).message).toContain(
@@ -259,6 +311,7 @@ test.describe.serial('authentication smoke', () => {
     await page.locator('#lastName').fill(member.lastName);
     await page.locator('#email').fill(member.email);
     await page.locator('#password').fill(member.password);
+    await page.getByLabel('I am 18 years old or older.').check();
     for (const username of [
       'sample_member',
       'sample-member',
@@ -276,7 +329,11 @@ test.describe.serial('authentication smoke', () => {
       expect(
         (
           await request.post('/api/auth/signup', {
-            data: { ...member, username },
+            data: {
+              ageConfirmed: true,
+              ...member,
+              username,
+            },
           })
         ).status(),
       ).toBe(400);
