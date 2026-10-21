@@ -71,6 +71,7 @@ describe('<Map />', () => {
     );
 
     expect(screen.getByText('Map child')).toBeInTheDocument();
+    expect(latestReactMapProps().mapboxAccessToken).toBe('test-token');
     const disableRotation = jest.fn();
     act(() =>
       latestReactMapProps().onLoad!({

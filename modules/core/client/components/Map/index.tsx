@@ -41,9 +41,8 @@ export default function Map(props: MapProps) {
   const [mapStyle, setMapstyle] = useState<string | typeof MAP_STYLE_OSM>(
     MAP_STYLE_DEFAULT,
   );
-  const [useWebGL] = useState(
-    () => isWebGLSupported() && Boolean(getMapBoxToken()),
-  );
+  const [mapboxToken] = useState(() => getMapBoxToken() || undefined);
+  const [useWebGL] = useState(() => isWebGLSupported() && Boolean(mapboxToken));
   const surfaceRef = useRef<HTMLDivElement>(null);
   usePageWheel(surfaceRef, useWebGL && !preferRaster);
   const [viewport, setViewport] = useState({
@@ -63,10 +62,7 @@ export default function Map(props: MapProps) {
     const { viewState } = event;
     setViewport(viewState);
   }
-  const MAPBOX_TOKEN = getMapBoxToken();
-  const showMapStyles =
-    requestedMapStyles &&
-    (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
+  const showMapStyles = requestedMapStyles && useWebGL;
 
   if (preferRaster || !useWebGL) {
     return (
@@ -94,7 +90,7 @@ export default function Map(props: MapProps) {
       <ReactMapGL
         reuseMaps
         dragRotate={false}
-        mapboxAccessToken={MAPBOX_TOKEN || undefined}
+        mapboxAccessToken={mapboxToken}
         mapStyle={mapStyle as string | StyleSpecification}
         onMove={handleViewportChange}
         onDrag={event => {

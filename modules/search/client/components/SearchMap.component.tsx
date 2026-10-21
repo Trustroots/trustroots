@@ -349,9 +349,8 @@ export default function SearchMap({
   const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
   // Mapbox GL v3 requires a token even for a third-party raster style.
   // Tokenless installations use Leaflet with OpenStreetMap tiles.
-  const [useWebGL] = useState(
-    () => isWebGLSupported() && Boolean(getMapBoxToken()),
-  );
+  const [mapboxToken] = useState(() => getMapBoxToken() || undefined);
+  const [useWebGL] = useState(() => isWebGLSupported() && Boolean(mapboxToken));
   usePageWheel(gestureSurfaceRef, useWebGL);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState<MapboxMap | undefined>();
@@ -379,20 +378,18 @@ export default function SearchMap({
     ? JSON.parse(filters)
     : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
-  const MAPBOX_TOKEN = getMapBoxToken();
   // A Mapbox style can be persisted in localStorage from a session that had a
   // token configured. Without a token, mapbox-gl can't load it and the map
   // renders blank, so fall back to the tokenless OSM style.
   const isMapboxStyle =
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
-    !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
+    !mapboxToken && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
   const isOsmStyle =
     typeof effectiveMapStyle !== 'string' &&
     effectiveMapStyle?.name === MAP_STYLE_OSM.name;
-  // If no mapbox token, and we're in production, don't show the style switcher
-  const showMapStyles =
-    useWebGL && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
+  // The style switcher only applies while rendering the Mapbox map.
+  const showMapStyles = useWebGL;
   const mapRef = useRef<MapRef>(null);
 
   // Get the Mapbox object for direct map manipulation
@@ -1107,7 +1104,7 @@ export default function SearchMap({
             ? [communityNotesLayer.id, communityNotesClusterLayer.id]
             : []),
         ]}
-        mapboxAccessToken={MAPBOX_TOKEN || undefined}
+        mapboxAccessToken={mapboxToken}
         mapStyle={effectiveMapStyle as string | StyleSpecification}
         onClick={event => onClickMap(event as unknown as MapMouseEvent)}
         onError={event => handleMapError(event)}
