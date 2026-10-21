@@ -64,6 +64,29 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun rejectsBlankConversationRecipientIDBeforeOpeningAConnection() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+
+        val result = runBlocking {
+            MobileApiClient("http://127.0.0.1:1").messageMember(session, "  \t ")
+        }
+
+        assertEquals(IllegalArgumentException::class.java, result.exceptionOrNull()?.javaClass)
+    }
+
+    @Test
+    fun rejectsMiniUserResponseWithoutCanonicalMemberID() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"username":"steady-owl","displayName":"Steady Owl"}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).messageMember(session, "anonymous-member-id") } }
+
+        assertEquals(IllegalArgumentException::class.java, result.exceptionOrNull()?.javaClass)
+        assertEquals("GET /api/users/mini/anonymous-member-id HTTP/1.1", request.line)
+    }
+
+    @Test
     fun usesTheOtherConversationDirectionAndDefaultsMissingThreadFields() {
         val threads = parseThreads(
             JSONArray(
@@ -197,6 +220,23 @@ class MobileApiClientTest {
         assertEquals(0, member.circles.single().count)
         assertFalse(member.circles.single().image)
         assertEquals(listOf("circle-two"), circles.map { it.id })
+    }
+
+    @Test
+    fun profileEndpointUsesCanonicalMemberAliasesAndLocationFallbacks() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val result = withApiResponse(
+            status = 200,
+            responseBody = """{"id":"profile-alias-id","username":"calm-lynx","displayName":"  ","locationLiving":" ","locationFrom":"Fictional Hills","languages":null,"member":null}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).profile(session, "calm-lynx") } }.first
+
+        val profile = result.getOrThrow()
+        assertEquals("profile-alias-id", profile.id)
+        assertEquals("calm-lynx", profile.displayName)
+        assertEquals("Fictional Hills", profile.location)
+        assertEquals("Fictional Hills", profile.locationFrom)
+        assertEquals(emptyList<String>(), profile.languages)
+        assertEquals(emptyList<String>(), profile.circles)
     }
 
     @Test
@@ -422,6 +462,20 @@ class MobileApiClientTest {
         assertNull(blankError.serverMessage)
         assertEquals(ApiFailureKind.REQUEST_REJECTED, blankError.failureKind)
         assertNull(blankError.message)
+    }
+
+    @Test
+    fun emptyErrorResponsePreservesStatusWithoutInventingAServerMessage() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(status = 503, responseBody = "") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).accountDetails(session) }
+        }
+
+        val error = result.exceptionOrNull() as MobileApiException
+        assertEquals(503, error.statusCode)
+        assertNull(error.serverMessage)
+        assertNull(error.message)
+        assertEquals("GET /api/users/quiet-fox HTTP/1.1", request.line)
     }
 
     @Test

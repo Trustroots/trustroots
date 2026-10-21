@@ -508,6 +508,22 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun profileWithoutAnExistingRelationshipDoesNotAttemptContactRemoval() {
+        val repository = FakeMemberProfileRepository().apply {
+            relationshipResult = Result.success(ContactRelationship(id = null, confirmed = false))
+        }
+        val model = newModel("quiet-fox", repository)
+
+        assertTrue(model.state.value.relationshipResolved)
+        assertEquals(ContactRelationship(null, false), model.state.value.relationship)
+        model.onEvent(MemberProfileEvent.ConfirmRemoveContact)
+
+        assertTrue(repository.removedContactIDs.isEmpty())
+        assertFalse(model.state.value.isRemovingContact)
+        assertNull(model.state.value.removalFailure)
+    }
+
+    @Test
     fun confirmingContactRemovalUpdatesTheRelationshipWithoutReloadingTheProfile() {
         val repository = FakeMemberProfileRepository()
         val model = newModel("quiet-fox", repository)

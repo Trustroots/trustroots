@@ -219,7 +219,7 @@ class InboxViewModelTest {
     }
 
     @Test
-    fun visibleThreadsFallsBackToUsernameWhenDisplayNameIsBlank() = withScope { scope ->
+    fun visibleThreadsSearchesUsernameAndExcerptWhenDisplayNameIsBlank() = withScope { scope ->
         val repository = FakeInboxRepository {
             Result.success(
                 listOf(
@@ -227,6 +227,12 @@ class InboxViewModelTest {
                         id = "thread-one",
                         otherMember = MessageMember("member-one", "quiet-fox", ""),
                         excerpt = "A note about the mountains.",
+                        read = false,
+                    ),
+                    MessageThread(
+                        id = "thread-two",
+                        otherMember = MessageMember("member-two", null, ""),
+                        excerpt = "A note about the valley.",
                         read = false,
                     ),
                 ),
@@ -239,6 +245,8 @@ class InboxViewModelTest {
         assertEquals(listOf("thread-one"), model.state.value.visibleThreads.map(MessageThread::id))
         model.onEvent(InboxEvent.FilterChanged("mountains"))
         assertEquals(listOf("thread-one"), model.state.value.visibleThreads.map(MessageThread::id))
+        model.onEvent(InboxEvent.FilterChanged("valley"))
+        assertEquals(listOf("thread-two"), model.state.value.visibleThreads.map(MessageThread::id))
     }
 
     @Test

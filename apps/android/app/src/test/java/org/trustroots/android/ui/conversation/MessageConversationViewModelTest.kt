@@ -99,6 +99,68 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun thrownMessageLoadFailureKeepsRecipientAndCanBeRetried() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "A fictional saved draft",
+        ).apply {
+            messagesHandler = {
+                if (messageLookups.size == 1) throw IOException("A fictional conversation outage.")
+                Result.success(listOf(incoming))
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        assertEquals(member, model.state.value.member)
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        assertTrue(model.state.value.loadFailed)
+        assertEquals(UiFailureFallback.LOAD_CONVERSATION, model.state.value.failure?.fallback)
+
+        model.onEvent(MessageConversationEvent.Retry)
+
+        assertEquals(2, repository.messageLookups.size)
+        assertTrue(model.state.value.messagesLoaded)
+        assertFalse(model.state.value.loadFailed)
+        assertEquals(listOf(incoming), model.state.value.messages)
+    }
+
+    @Test
+    fun recipientAuthenticationFailureWaitsForRenewedSessionBeforeRetrying() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        ).apply {
+            memberHandler = {
+                if (memberLookups.size == 1) {
+                    Result.failure(MobileApiException(401, "Fictional session expired."))
+                } else {
+                    Result.success(member)
+                }
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        val pending = requireNotNull(model.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.memberLookups.size)
+        assertTrue(repository.messageLookups.isEmpty())
+        model.onEvent(MessageConversationEvent.Retry)
+        assertEquals(1, repository.memberLookups.size)
+        model.onEvent(MessageConversationEvent.SessionInvalidationDelivered(pending.id))
+        model.onEvent(MessageConversationEvent.Retry)
+        assertEquals(1, repository.memberLookups.size)
+
+        model.onEvent(MessageConversationEvent.SessionChanged(session("connect.sid=renewed-fictional-session")))
+
+        assertEquals(2, repository.memberLookups.size)
+        assertEquals(1, repository.messageLookups.size)
+        assertNull(model.state.value.pendingSessionInvalidation)
+        assertTrue(model.state.value.messagesLoaded)
+        assertFalse(model.state.value.loadFailed)
+    }
+
+    @Test
     fun missingRecipientIdentityUsesRequestedIdForDraftsAndCannotBeSent() = withScope { scope ->
         val recipientWithoutIdentity = MessageMember(id = null, username = null, displayName = "Anonymous Member")
         val repository = FakeConversationRepository(
@@ -216,6 +278,9 @@ class MessageConversationViewModelTest {
         assertEquals(pending, model.state.value.pendingSessionInvalidation)
         model.onEvent(MessageConversationEvent.SessionInvalidationDelivered(pending.id))
         assertNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(MessageConversationEvent.Send("A second note after session expiry"))
+        assertEquals(1, repository.sendCalls)
+        assertEquals("Keep this fictional note", model.state.value.draft)
         model.onEvent(MessageConversationEvent.Retry)
         assertEquals(1, repository.memberLookups.size)
     }

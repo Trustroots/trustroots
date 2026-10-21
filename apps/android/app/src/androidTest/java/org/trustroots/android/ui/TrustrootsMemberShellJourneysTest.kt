@@ -6,9 +6,13 @@ import android.content.SharedPreferences
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -88,6 +92,28 @@ class TrustrootsMemberShellJourneysTest {
         restorePreferences(alertPreferences, previousAlertPreferences)
         MessageAlerts.destination.value = previousDestination
         MessageAlerts.status.value = previousStatus
+    }
+
+    @Test fun menuCirclesShortcutReturnsToItsMenuOriginAfterActivityRecreation() {
+        showShell()
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        compose.onNode(
+            hasText("Circles") and hasAnyAncestor(hasTestTag("profileDestinationScreen")),
+        ).performScrollTo().performClick()
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
+
+        requireNotNull(scenario).recreate()
+        waitForText("Discover circles")
+        requireNotNull(scenario).onActivity { activity ->
+            activity.onBackPressedDispatcher.onBackPressed()
+        }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("profileDestinationScreen").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("profileDestinationScreen").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-menu").assertIsSelected()
     }
 
     @Test fun contactsOpenAMemberProfileAndBackReturnsToTheContactList() {

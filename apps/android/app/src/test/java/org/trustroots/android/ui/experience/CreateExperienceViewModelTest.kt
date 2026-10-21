@@ -87,6 +87,27 @@ class CreateExperienceViewModelTest {
     }
 
     @Test
+    fun recommendationAndFeedbackDraftsAreDirtyButDoNotReplaceTheExperienceEligibilityAnswers() {
+        val repository = FakeRepository()
+        val model = newModel(repository)
+        model.onEvent(CreateExperienceEvent.MetChanged(false))
+        model.onEvent(CreateExperienceEvent.RecommendationChanged("no"))
+        model.onEvent(CreateExperienceEvent.FeedbackChanged("A fictional note"))
+
+        assertTrue(model.state.value.isDirty)
+        assertFalse(model.state.value.canSave)
+        model.onEvent(CreateExperienceEvent.Submit)
+        assertEquals(0, repository.calls)
+
+        model.onEvent(CreateExperienceEvent.HostedChanged(true))
+        model.onEvent(CreateExperienceEvent.Submit)
+
+        assertEquals("no", repository.created?.recommend)
+        assertEquals("A fictional note", repository.created?.feedbackPublic)
+        assertEquals(1, repository.calls)
+    }
+
+    @Test
     fun eachPositiveExperienceAnswerIndependentlyAllowsSubmission() {
         val positiveAnswers = listOf(
             CreateExperienceEvent.MetChanged(true) to Triple(true, false, false),
