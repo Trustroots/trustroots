@@ -75,6 +75,26 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun membershipToggleWinsOverAnOlderMembershipSnapshotStillLoading() = withScope { scope ->
+        val circle = circle("circle-one", "Harbour", 3)
+        val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
+        val repository = FakeCircleRepository(circles = listOf(circle)).apply {
+            membershipsHandler = { pendingMemberships.await() }
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        assertTrue(viewModel.state.value.isLoading)
+        assertEquals(listOf("circle-one"), viewModel.state.value.circles.map { it.id })
+        viewModel.onEvent(CirclesEvent.ToggleMembership(circle))
+
+        assertEquals(setOf("circle-one"), viewModel.state.value.memberships)
+        pendingMemberships.complete(Result.success(emptySet()))
+
+        assertEquals(setOf("circle-one"), viewModel.state.value.memberships)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
     fun loadFailureOffersRetryAndRetryReplacesTheFailureWithLoadedData() = withScope { scope ->
         val repository = FakeCircleRepository()
         repository.circlesHandler = { call ->

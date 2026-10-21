@@ -219,6 +219,20 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun identicalSessionChangeDoesNotReloadOrDiscardInboxState() = withScope { scope ->
+        val repository = FakeInboxRepository { Result.success(listOf(thread("thread-one", "Quiet Fox"))) }
+        val currentSession = session()
+        val model = InboxViewModel(repository, currentSession, scope)
+        model.onEvent(InboxEvent.FilterChanged("quiet"))
+
+        model.onEvent(InboxEvent.SessionChanged(currentSession))
+
+        assertEquals(listOf(1), repository.pages)
+        assertEquals("quiet", model.state.value.filter)
+        assertEquals(listOf("thread-one"), model.state.value.threads.map(MessageThread::id))
+    }
+
+    @Test
     fun visibleThreadsSearchesUsernameAndExcerptWhenDisplayNameIsBlank() = withScope { scope ->
         val repository = FakeInboxRepository {
             Result.success(

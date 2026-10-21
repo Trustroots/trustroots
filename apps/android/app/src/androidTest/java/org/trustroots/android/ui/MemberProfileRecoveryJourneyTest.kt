@@ -150,6 +150,69 @@ class MemberProfileRecoveryJourneyTest {
         responder.join(1_000)
     }
 
+    @Test fun deletesAPendingContactRequestWithItsOwnConfirmation() {
+        val requests = CopyOnWriteArrayList<String>()
+        val responder = thread(isDaemon = true) {
+            repeat(12) {
+                val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
+                connection.use { socket ->
+                    val input = socket.getInputStream().bufferedReader()
+                    val request = input.readLine().orEmpty()
+                    requests += request
+                    while (!input.readLine().isNullOrEmpty()) Unit
+                    val (status, payload) = if (request.contains("/avatar?")) {
+                        "404 Not Found" to ""
+                    } else when {
+                        request.startsWith("GET /api/users/quiet-fox ") ->
+                            "200 OK" to """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}"""
+                        request.startsWith("GET /api/offers-by/") -> "200 OK" to "[]"
+                        request.startsWith("GET /api/contacts/") -> "200 OK" to "[]"
+                        request.startsWith("GET /api/experiences?") -> "200 OK" to "[]"
+                        request.startsWith("GET /api/contact-by/") -> "200 OK" to """{"_id":"request-one","confirmed":false}"""
+                        request.startsWith("DELETE /api/contact/request-one ") -> "200 OK" to "{}"
+                        else -> "404 Not Found" to ""
+                    }
+                    val bytes = payload.toByteArray()
+                    socket.getOutputStream().write(
+                        "HTTP/1.1 $status\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                    )
+                    socket.getOutputStream().write(bytes)
+                    socket.getOutputStream().flush()
+                }
+            }
+        }
+        compose.setContent {
+            MemberProfileScreen(
+                api = api(),
+                session = session,
+                username = "quiet-fox",
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("More profile actions").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Delete contact request").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Delete contact request").performClick()
+        compose.onNodeWithText("Delete contact request?").assertIsDisplayed()
+        compose.onNodeWithText("This cancels the pending contact request.").assertIsDisplayed()
+        compose.onNodeWithText("Confirm").performClick()
+        compose.waitUntil(10_000) {
+            requests.any { it.startsWith("DELETE /api/contact/request-one ") } &&
+                compose.onAllNodesWithText("Delete contact request?").fetchSemanticsNodes().isEmpty()
+        }
+
+        compose.onNodeWithContentDescription("More profile actions").performClick()
+        compose.onNodeWithText("Add contact").assertIsDisplayed()
+        assertTrue(requests.any { it.startsWith("DELETE /api/contact/request-one ") })
+        responder.join(1_000)
+    }
+
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
 
     private fun serveRequests(

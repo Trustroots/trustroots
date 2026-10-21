@@ -140,6 +140,43 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun editsAreIgnoredUntilTheInitialOfferLoadCompletes() = withScope { scope ->
+        val pendingLoad = CompletableDeferred<Result<HostOfferForm>>()
+        val repository = FakeHostOfferRepository().apply {
+            loadHandler = { pendingLoad.await() }
+        }
+        val viewModel = HostOfferViewModel(repository, scope)
+
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("An edit before the baseline"))
+
+        assertTrue(viewModel.state.value.isLoading)
+        assertEquals("", viewModel.state.value.form.description)
+        pendingLoad.complete(Result.success(HostOfferForm(id = "loaded-offer", description = "Loaded offer")))
+
+        assertEquals("Loaded offer", viewModel.state.value.form.description)
+        assertFalse(viewModel.state.value.isDirty)
+    }
+
+    @Test
+    fun credentialRefreshKeepsAnExistingDraftWithoutReloadingTheOffer() = withScope { scope ->
+        val repository = FakeHostOfferRepository(loadResult = Result.success(HostOfferForm(id = "offer-one")))
+        val api = MobileApiClient("https://api.example.test")
+        val firstSession = MemberSession("connect.sid=old", MobileMember("quiet-fox", "Quiet Fox"))
+        val refreshedSession = MemberSession("connect.sid=new", MobileMember("quiet-fox", "Quiet Fox"))
+        val viewModel = HostOfferViewModel(repository, scope, api, firstSession)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A retained fictional draft"))
+        val original = viewModel.state.value.original
+
+        viewModel.updateEnvironment(api, refreshedSession)
+
+        assertEquals(1, repository.loadCalls)
+        assertEquals("A retained fictional draft", viewModel.state.value.form.description)
+        assertEquals(original, viewModel.state.value.original)
+        assertTrue(viewModel.state.value.isDirty)
+        assertFalse(viewModel.state.value.isSaving)
+    }
+
+    @Test
     fun loadFailureKeepsApiKindAndRetryLoadsACompleteBaseline() = withScope { scope ->
         val repository = FakeHostOfferRepository().apply {
             loadHandler = { call ->
