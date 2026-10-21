@@ -39,6 +39,28 @@
     list-style: none;
   }
 
+  .admin-nav-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+  }
+
+  .admin-nav-group {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px solid @gray-lighter;
+  }
+
+  .admin-nav-group__label {
+    margin: 0 0 6px;
+    padding: 0 12px;
+    color: @gray;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
+  }
+
   .navbar-nav > li > a {
     display: block;
     padding: 8px 12px;
@@ -73,6 +95,40 @@
   + .container > h2:first-child {
     margin-top: 0;
   }
+}
+
+.admin-hackerspaces-sort {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid darken(@brand-primary, 10%);
+    outline-offset: 3px;
+  }
+}
+
+.admin-hackerspaces-signer {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid @gray-lighter;
+  border-radius: 6px;
+
+  h3 {
+    margin-top: 0;
+  }
+
+  .btn {
+    margin-bottom: 12px;
+  }
+}
+
+.admin-hackerspaces-page code {
+  overflow-wrap: anywhere;
 }
 
 .admin-landing {

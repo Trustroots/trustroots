@@ -30,6 +30,10 @@ describe('Admin access route tests', () => {
   const adminRequests = (): AdminRequest[] => [
     {
       method: 'get',
+      path: `/api/admin/hackerspaces/signer?publicKey=${'a'.repeat(64)}`,
+    },
+    {
+      method: 'get',
       path: '/api/admin/location-corrections',
     },
     {

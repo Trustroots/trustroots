@@ -16,7 +16,11 @@ test.describe('admin circles feature coverage', () => {
 
     const label = `E2E Circle ${Date.now()}`;
     await page.goto('/admin/circles');
-    await expect(page.getByRole('heading', { name: 'Circles' })).toBeVisible();
+    await expect(
+      page
+        .locator('.admin-circles-page')
+        .getByRole('heading', { name: 'Circles' }),
+    ).toBeVisible();
     await page.getByRole('button', { name: 'New circle' }).click();
     await page.getByLabel('Name').fill(label);
     await page.getByLabel('Public').uncheck();
