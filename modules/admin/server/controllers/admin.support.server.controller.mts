@@ -366,9 +366,14 @@ export const searchMembers = handler(async (req, res) => {
 });
 
 export const member = handler(async (req, res) => {
-  const result = await User.findById(objectId(req.params.memberId))
-    .select(MEMBER_FIELDS)
-    .lean();
+  const identifier = req.params.memberId;
+  const result =
+    (await User.findOne({ username: identifier })
+      .select(MEMBER_FIELDS)
+      .lean()) ||
+    (/^[a-f\d]{24}$/i.test(identifier)
+      ? await User.findById(objectId(identifier)).select(MEMBER_FIELDS).lean()
+      : null);
   if (!result) {
     throw Object.assign(new Error('Member not found.'), { status: 404 });
   }

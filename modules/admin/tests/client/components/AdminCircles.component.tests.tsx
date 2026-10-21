@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
@@ -210,5 +216,127 @@ describe('circle form feedback and fields', () => {
     expect(
       screen.getByText('White labels will be hard to read on this colour.'),
     ).toBeVisible();
+  });
+});
+
+describe('circle catalogue table', () => {
+  beforeEach(() => {
+    getCirclesMock.mockResolvedValue([
+      {
+        _id: 'a',
+        label: 'Alpine Walkers',
+        slug: 'alpine-walkers',
+        public: true,
+        count: 12,
+        description: 'Woodland walks',
+        image: true,
+        modified: '2026-10-21T12:00:00Z',
+      },
+      {
+        _id: 'b',
+        label: 'Book Club',
+        public: false,
+        count: 3,
+        description: 'Shared reading',
+      },
+      { _id: 'c', label: 'Coastal Makers', public: true },
+    ]);
+  });
+
+  function names() {
+    return within(screen.getByRole('table', { name: 'Circles' }))
+      .getAllByRole('row')
+      .slice(1)
+      .map(row => within(row).getByRole('button').textContent);
+  }
+
+  it('shows thumbnails, descriptions, hidden status and numeric counts', async () => {
+    render(<AdminCircles />);
+    const row = (
+      await screen.findByRole('button', { name: 'Alpine Walkers' })
+    ).closest('tr')!;
+    expect(row.querySelector('img')).toHaveAttribute(
+      'src',
+      '/uploads-circle/alpine-walkers/120x120.jpg?v=1792584000000',
+    );
+    expect(within(row).getByText('Woodland walks')).toBeInTheDocument();
+    expect(within(row).getByText('12', { exact: true })).toBeInTheDocument();
+    expect(screen.queryByText('12 members')).not.toBeInTheDocument();
+    const hidden = screen
+      .getByRole('button', { name: /Book Club/ })
+      .closest('tr')!;
+    expect(within(hidden).getByText('Hidden')).toBeInTheDocument();
+    expect(within(hidden).getByText('3', { exact: true })).toBeInTheDocument();
+    const missing = screen
+      .getByRole('button', { name: 'Coastal Makers' })
+      .closest('tr')!;
+    expect(missing.querySelector('img')).not.toBeInTheDocument();
+    expect(within(missing).getByText('—')).toBeInTheDocument();
+    expect(within(missing).getByText('0')).toBeInTheDocument();
+  });
+
+  it('sorts every data column in both directions without changing the selected circle', async () => {
+    render(<AdminCircles />);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Alpine Walkers' }),
+    );
+    expect(names()).toEqual([
+      'Alpine Walkers',
+      'Book ClubHidden',
+      'Coastal Makers',
+    ]);
+    const nameHeader = screen.getByRole('columnheader', { name: 'Name' });
+    expect(nameHeader).toHaveAttribute('aria-sort', 'ascending');
+    fireEvent.click(within(nameHeader).getByRole('button'));
+    expect(names()).toEqual([
+      'Coastal Makers',
+      'Book ClubHidden',
+      'Alpine Walkers',
+    ]);
+    expect(nameHeader).toHaveAttribute('aria-sort', 'descending');
+    fireEvent.click(screen.getByRole('button', { name: 'Members' }));
+    expect(names()).toEqual([
+      'Coastal Makers',
+      'Book ClubHidden',
+      'Alpine Walkers',
+    ]);
+    expect(nameHeader).toHaveAttribute('aria-sort', 'none');
+    fireEvent.click(screen.getByRole('button', { name: 'Members' }));
+    expect(names()).toEqual([
+      'Alpine Walkers',
+      'Book ClubHidden',
+      'Coastal Makers',
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }));
+    expect(names()).toEqual([
+      'Coastal Makers',
+      'Book ClubHidden',
+      'Alpine Walkers',
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }));
+    expect(names()).toEqual([
+      'Alpine Walkers',
+      'Book ClubHidden',
+      'Coastal Makers',
+    ]);
+    expect(screen.getByLabelText('Name')).toHaveValue('Alpine Walkers');
+    expect(
+      screen.getByRole('button', { name: 'Alpine Walkers' }).closest('tr'),
+    ).toHaveClass('active');
+  });
+
+  it('uses the name as a stable tie breaker when sort metadata is missing', async () => {
+    getCirclesMock.mockResolvedValueOnce([
+      { _id: 'z', label: 'Zulu', public: true },
+      { _id: 'b', label: 'Bravo', public: true },
+      { _id: 'a', label: 'Alpha', public: true },
+    ] as CircleFixture[]);
+    render(<AdminCircles />);
+
+    await screen.findByRole('button', { name: 'Zulu' });
+    fireEvent.click(screen.getByRole('button', { name: 'Description' }));
+    expect(names()).toEqual(['Alpha', 'Bravo', 'Zulu']);
+    fireEvent.click(screen.getByRole('button', { name: 'Members' }));
+    expect(names()).toEqual(['Alpha', 'Bravo', 'Zulu']);
   });
 });

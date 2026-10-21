@@ -396,10 +396,10 @@ export default function AdminHackerspaces() {
           relay.trustroots.org and relay.nomadwiki.org.
         </p>
         <p>
-          Listings identified as being in Russia or Israel are excluded from
-          publication. Approved changes include kind 5 deletion requests for
-          existing excluded listings, signed by their original author. Relays
-          may retain copies despite a deletion request.
+          Listings identified as being in Russia, Israel or Belarus are excluded
+          from publication. Approved changes include kind 5 deletion requests
+          for existing excluded listings, signed by their original author.
+          Relays may retain copies despite a deletion request.
         </p>
         <section
           className="admin-hackerspaces-signer"

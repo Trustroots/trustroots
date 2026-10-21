@@ -217,7 +217,10 @@ test.describe('admin role and audit feature coverage', () => {
       await signInViaApi(memberPage, memberContext.request, member);
       await memberPage.goto('/admin/acquisition-stories');
       await expect(
-        memberPage.getByRole('link', { name: 'Greeters', exact: true }),
+        memberPage.getByRole('link', {
+          name: 'Acquisition stories',
+          exact: true,
+        }),
       ).toBeVisible();
       await expect(
         memberPage

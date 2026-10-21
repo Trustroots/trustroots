@@ -2,7 +2,7 @@ import React from 'react';
 
 // Internal dependencies
 import UserLink from './UserLink.component';
-import { getReferenceUserId } from './userSearch.helpers';
+import { getAdminMessagesHref } from '../utils/member-url';
 
 interface ReferenceUserSummary {
   _id?: string;
@@ -45,8 +45,10 @@ export default function AdminReferenceVoteItem({
   const { labelClassName, text, textClassName } = getReferenceLabel(
     referenceThread.reference,
   );
-  const userFromId = getReferenceUserId(referenceThread, 'userFrom');
-  const userToId = getReferenceUserId(referenceThread, 'userTo');
+  const messagesHref = getAdminMessagesHref(
+    referenceThread.userFrom,
+    referenceThread.userTo,
+  );
 
   if (showBadge) {
     return (
@@ -67,14 +69,10 @@ export default function AdminReferenceVoteItem({
               : undefined
           }
         />
-        {showMessagesLink && (
+        {showMessagesLink && messagesHref && (
           <>
             {' · '}
-            <a
-              href={`/admin/messages?userId1=${userFromId}&userId2=${userToId}`}
-            >
-              Read messages
-            </a>
+            <a href={messagesHref}>Read messages</a>
           </>
         )}
       </li>

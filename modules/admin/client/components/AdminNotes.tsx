@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 
 import * as api from '../api/admin-notes.api';
 import TrEditor from '@/modules/core/client/components/TrEditor';
-import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from './UserLink.component';
+import { formatAdminDateTime } from '../utils/admin-date';
 
 interface AdminNote {
   _id: string;
@@ -98,7 +98,7 @@ export default function AdminNotes({
               return (
                 <div key={_id} className="admin-note">
                   <p className="text-muted">
-                    <TimeAgo date={new Date(date)} />
+                    <time dateTime={date}>{formatAdminDateTime(date)}</time>
                     {' by '}
                     <UserLink user={admin} />
                   </p>

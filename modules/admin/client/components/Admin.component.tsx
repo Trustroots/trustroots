@@ -8,17 +8,14 @@ import AdminHeader from './AdminHeader.component.js';
 import { AdminSearchUsersContent } from './AdminSearchUsers.component.js';
 import UserLink from './UserLink.component.js';
 import AdminNegativeExperiencePreview from './AdminNegativeExperiencePreview.component.js';
-import { formatAdminUtcDate } from '../utils/admin-date.js';
+import { formatAdminDateTime } from '../utils/admin-date.js';
+import { getAdminMessagesHref } from '../utils/member-url.js';
 
 function adminMessagesUrl(
   userFrom?: AdminUserSummary,
   userTo?: AdminUserSummary,
 ) {
-  if (!userFrom || !userFrom._id || !userTo || !userTo._id) {
-    return null;
-  }
-
-  return `/admin/messages?userId1=${userFrom._id}&userId2=${userTo._id}`;
+  return getAdminMessagesHref(userFrom, userTo);
 }
 
 export default function Admin() {
@@ -150,10 +147,14 @@ export default function Admin() {
                               <td className="text-right">
                                 {messagesUrl ? (
                                   <a href={messagesUrl}>
-                                    {formatAdminUtcDate(created) || thread}
+                                    {formatAdminDateTime(created) === '—'
+                                      ? thread
+                                      : formatAdminDateTime(created)}
                                   </a>
+                                ) : formatAdminDateTime(created) === '—' ? (
+                                  thread
                                 ) : (
-                                  formatAdminUtcDate(created) || thread
+                                  formatAdminDateTime(created)
                                 )}
                               </td>
                             </tr>
@@ -197,10 +198,7 @@ export default function Admin() {
                               </td>
                               <td className="text-right">
                                 <AdminNegativeExperiencePreview
-                                  dateLabel={
-                                    formatAdminUtcDate(created) ||
-                                    'Unknown date'
-                                  }
+                                  dateLabel={formatAdminDateTime(created)}
                                   feedbackPublic={feedbackPublic}
                                 />
                               </td>

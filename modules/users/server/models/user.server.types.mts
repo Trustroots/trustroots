@@ -12,6 +12,12 @@ export interface UserPushRegistrationRecord {
   deviceId?: string;
 }
 
+export interface UsernameHistoryRecord {
+  oldUsername: string;
+  newUsername: string;
+  changedAt: Date;
+}
+
 export interface UserProviderData {
   facebook?: { id?: string };
   twitter?: { screen_name?: string };
@@ -29,6 +35,7 @@ export interface UserServerRecord {
   emailHash?: string;
   username: string;
   usernameUpdated?: Date;
+  usernameHistory?: UsernameHistoryRecord[];
   tagline?: string;
   description?: string;
   birthdate?: Date;

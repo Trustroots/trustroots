@@ -823,3 +823,149 @@ SHALL use a consistent responsive layout and show zero for empty categories.
 - **WHEN** an administrator opens a member report without experiences
 - **THEN** all experience counts are zero
 - **AND** activity cards remain readable at desktop and mobile widths
+
+### Requirement: Sortable circle catalogue overview
+
+The admin circle catalogue SHALL display circle images, left-aligned names, descriptions and numeric membership counts in a responsive table. Hidden circles SHALL retain a text visibility indicator and their numeric count. Available images SHALL use the existing versioned circle thumbnail URL. Missing images and descriptions SHALL preserve the table layout.
+
+#### Scenario: Administrator compares circles
+
+- **WHEN** an administrator opens the circle catalogue
+- **THEN** names, descriptions and membership counts appear in separate columns
+- **AND** available thumbnails appear beside the circle names
+- **AND** member counts do not repeat a unit label in each row
+
+#### Scenario: Administrator sorts a column
+
+- **WHEN** the administrator activates a name, description or member-count column heading
+- **THEN** the table sorts by that column and exposes its direction with aria-sort
+- **AND** activating the heading again reverses the direction
+- **AND** membership counts sort numerically
+- **AND** sorting preserves the selected circle and its editing form
+
+### Requirement: Readable member thread overview
+
+The admin thread page SHALL use username-based navigation and display conversations in a table with participants, read status, directional thread votes and first and last message datetimes. Datetimes SHALL use UTC yyyy-mm-dd hh:mm format and SHALL come from actual messages in either direction. Missing values SHALL display a placeholder. The page SHALL omit the member query input and raw thread details.
+
+#### Scenario: Administrator opens a member's threads
+
+- **WHEN** the administrator follows the member's thread link
+- **THEN** the URL identifies the member by username
+- **AND** the table shows the member's conversation participants, votes and message datetimes
+- **AND** the conversation link uses usernames
+
+#### Scenario: Legacy identifier link
+
+- **WHEN** the administrator opens a legacy userId link for an existing member
+- **THEN** the system resolves that member and replaces the URL with its username equivalent
+- **AND** the same conversations are available
+
+#### Scenario: Messages in both directions
+
+- **WHEN** a thread contains messages sent by both participants
+- **THEN** its first and last datetime cover both directions
+- **AND** votes are attributed to their author and recipient
+
+### Requirement: Compact administration sidebar
+
+Desktop admin pages SHALL display grouped navigation in a compact sidebar beside the content. Smaller screens SHALL display the navigation above the content. The duplicated Admin brand link SHALL be omitted, and the primary Admin navigation item SHALL remain selected across admin paths.
+
+#### Scenario: Administrator moves between tools
+
+- **WHEN** an administrator visits an admin page on desktop
+- **THEN** all authorised navigation groups appear in the sidebar
+- **AND** the selected subsection and primary Admin item are highlighted
+
+### Requirement: Readable administration conversations
+
+The admin Messages view SHALL use the standard conversation bubble presentation in a read-only view. Conversation URLs SHALL prefer participant usernames and resolve legacy identifier links. The view SHALL omit manual participant fields, the Read button, raw message details and recipient warning controls. Existing warning APIs and their authorisation SHALL remain unchanged.
+
+#### Scenario: Administrator opens a conversation
+
+- **WHEN** an administrator opens a conversation through participant usernames or a legacy identifier link
+- **THEN** messages render as conversation bubbles with sender, read state and formatted timestamps
+- **AND** legacy links are replaced by username links when those usernames are available
+
+### Requirement: Consistent administration datetimes
+
+Rendered administration datetimes SHALL use UTC yyyy-mm-dd hh:mm format. Machine-readable timestamps, date input values and export filenames SHALL preserve their established formats.
+
+#### Scenario: Administrator compares activity times
+
+- **WHEN** an administrator views member activity, notes, support cases, audit events or conversations
+- **THEN** the displayed datetimes use the same year-first minute-precision format
+
+### Requirement: Support account context and username navigation
+
+Support case details SHALL show account state and roles for linked reporters and reported members. Support member URLs SHALL prefer usernames, accept legacy identifiers and link to the full admin member view for authorised administrators. Existing role permissions SHALL remain in force.
+
+#### Scenario: Staff inspects a support case
+
+- **WHEN** staff opens a case linked to member accounts
+- **THEN** the case shows each member's current suspension, shadowban and staff-role badges where applicable
+- **AND** account links identify the members by username when available
+
+#### Scenario: Administrator opens a support member
+
+- **WHEN** an administrator opens a support member page through a legacy identifier
+- **THEN** the page replaces the URL with the member's username
+- **AND** offers a link to that member's full admin account view
+
+### Requirement: Username change history
+
+The system SHALL retain each successful username change as an old/new pair
+with its timestamp. A failed username update SHALL NOT append history. Username
+history SHALL be private and available only through admin-authorised tools. The
+system SHALL NOT expose it through public or member profile responses.
+Administrators SHALL be able to inspect changes from the previous 90 days or
+all available history. The default list SHALL cover the previous 90 days and
+return at most 50 changes per page, ordered by change time descending and
+member ID ascending to break ties. It SHALL show each member's current username
+linked to their admin report, optional display name, old and new usernames,
+and exact UTC change time. Historical members whose previous username is
+unknown SHALL show that value as unavailable, never fabricated.
+
+#### Scenario: Username changes successfully
+
+- **WHEN** an eligible member successfully changes their username
+- **THEN** the former and new usernames and change time are saved atomically
+- **AND** the member's current username and existing change timestamp are
+  updated in that same save
+
+#### Scenario: Username change fails
+
+- **WHEN** a username change fails validation or persistence
+- **THEN** no username history entry is saved
+
+#### Scenario: Administrator opens recent username changes
+
+- **WHEN** an authorised administrator opens `/admin/username-changes`
+- **THEN** the page lists changes from the previous 90 days by default
+- **AND** shows the member's current username, optional display name, old and
+  new usernames, and exact UTC times
+- **AND** links each current username to its admin member report
+
+#### Scenario: Administrator chooses all available history
+
+- **WHEN** an administrator selects the all-time history range
+- **THEN** the page includes every recorded username change
+- **AND** includes legacy `usernameUpdated` timestamps with the old username
+  unavailable when no recorded history exists
+
+#### Scenario: Administrator pages through changes
+
+- **WHEN** more than 50 username changes match the selected range
+- **THEN** the API returns pages of at most 50 changes
+- **AND** each page continues the same descending-time order with stable ID
+  tie-breaking
+
+#### Scenario: Regular member requests recent username changes
+
+- **WHEN** a regular member requests the username changes page or API
+- **THEN** the system denies access
+
+#### Scenario: Administrator reviews a historical timestamp without a prior name
+
+- **WHEN** a historical timestamp has no corresponding username history
+- **THEN** the interface identifies the previous username as unavailable
+- **AND** does not infer a previous username from the current one

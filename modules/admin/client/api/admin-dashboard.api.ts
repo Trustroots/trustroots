@@ -2,6 +2,7 @@ import axios from '../../../core/client/api/http-client.js';
 
 export interface AdminUserSummary {
   _id?: string;
+  username?: string;
   [key: string]: unknown;
 }
 

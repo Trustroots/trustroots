@@ -1,6 +1,7 @@
 import axios from '../../../core/client/api/http-client.js';
 
-export type ReferenceUserOrId = string | { _id: string };
+export type ReferenceUserOrId =
+  string | { _id: string; username?: string; displayName?: string };
 
 export interface ReferenceThread {
   _id: string;

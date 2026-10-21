@@ -60,9 +60,10 @@ export function getSpaceApiIdentifier(endpoint: string) {
 export function isExcludedHackerspaceAddress(address: string[] = []) {
   const country =
     typeof address[4] === 'string' ? address[4].trim().toLowerCase() : '';
-  if (country && ['ru', 'rus', 'il', 'isr'].includes(country)) return true;
+  if (country && ['ru', 'rus', 'il', 'isr', 'by', 'blr'].includes(country))
+    return true;
   return address.some(part =>
-    /(?:^|[,;\n])\s*(?:russia|russian federation|israel|россия|российская федерация|ישראל)\s*\.?\s*(?=$|[,;\n])/iu.test(
+    /(?:^|[,;\n])\s*(?:russia|russian federation|israel|belarus|беларусь|белоруссия|россия|российская федерация|ישראל)\s*\.?\s*(?=$|[,;\n])/iu.test(
       part,
     ),
   );

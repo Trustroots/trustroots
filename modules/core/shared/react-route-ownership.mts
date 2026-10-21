@@ -352,7 +352,7 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
-    path: '/admin/support/member/:memberId',
+    path: '/admin/support/member/:username',
     requiresRole: ['admin', 'support-team'],
     title: 'Support - Member',
   },
@@ -365,6 +365,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/audit-log',
     title: 'Admin - Audit log',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/username-changes',
+    requiresRole: ['admin'],
+    title: 'Admin - Username changes',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,

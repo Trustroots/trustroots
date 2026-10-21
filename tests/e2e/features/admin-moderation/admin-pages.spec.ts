@@ -15,6 +15,7 @@ import {
   signOut,
   signInViaApi,
 } from '../../support/helpers.mts';
+import { objectId, withE2eDb } from '../../support/db.mts';
 
 const SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK =
   'E2E seeded negative experience for admin coverage.';
@@ -56,6 +57,22 @@ test.describe('admin moderation page flows', () => {
       'Dashboard shows ten most recent negative experiences.',
     ]);
 
+    const buildFixture = {
+      commitUrl: 'https://github.com/Trustroots/trustroots/commit/abcdef012345',
+      committedAt: '2026-10-21 00:00',
+      shortCommit: 'abcdef0',
+    };
+    await page.addInitScript(build => {
+      let settings: Record<string, unknown> = {};
+      Object.defineProperty(window, 'settings', {
+        configurable: true,
+        get: () => settings,
+        set: value => {
+          settings = { ...value, build };
+        },
+      });
+    }, buildFixture);
+
     await gotoAdminPage(page, '/admin', /\/admin$/);
 
     await expect(page).toHaveTitle(/Admin - Trustroots/);
@@ -72,30 +89,53 @@ test.describe('admin moderation page flows', () => {
       page.getByRole('heading', { name: 'Last 10 Negative Experiences' }),
     ).toBeVisible();
 
-    const dashboard = await page.request.get('/api/admin/dashboard');
-    expect(dashboard.ok()).toBeTruthy();
-    const dashboardData = (await dashboard.json()) as {
-      threadVotes: Array<{ reference: string }>;
-      negativeExperiences: Array<{
-        recommend: string;
-        feedbackPublic: string;
-      }>;
-    };
-    expect(dashboardData.threadVotes).toHaveLength(1);
-    expect(
-      dashboardData.threadVotes.every(vote => vote.reference === 'no'),
-    ).toBe(true);
-    expect(dashboardData.negativeExperiences).toHaveLength(1);
-    expect(dashboardData.negativeExperiences[0].recommend).toBe('no');
-    expect(dashboardData.negativeExperiences[0].feedbackPublic).toBe(
-      SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
+    const dashboardMarker = `E2E dashboard check ${Date.now()}`;
+    await withE2eDb(db =>
+      db.collection('experiences').insertOne({
+        userFrom: objectId(SEEDED_ADMIN.id),
+        userTo: objectId(SEEDED_MEMBERS[0].id),
+        created: new Date(Date.now() + 60_000),
+        public: true,
+        recommend: 'no',
+        feedbackPublic: dashboardMarker,
+      }),
     );
+    try {
+      const dashboard = await page.request.get('/api/admin/dashboard');
+      expect(dashboard.ok()).toBeTruthy();
+      const dashboardData = (await dashboard.json()) as {
+        threadVotes: Array<{ reference: string }>;
+        negativeExperiences: Array<{
+          recommend: string;
+          feedbackPublic: string;
+        }>;
+      };
+      expect(dashboardData.threadVotes.length).toBeGreaterThan(0);
+      expect(
+        dashboardData.threadVotes.every(vote => vote.reference === 'no'),
+      ).toBe(true);
+      const testNegativeExperience = dashboardData.negativeExperiences.find(
+        experience => experience.feedbackPublic === dashboardMarker,
+      );
+      expect(testNegativeExperience).toBeDefined();
+      expect(testNegativeExperience?.recommend).toBe('no');
+    } finally {
+      await withE2eDb(db =>
+        db.collection('experiences').deleteOne({
+          feedbackPublic: dashboardMarker,
+        }),
+      );
+    }
 
     const footer = page.locator('#tr-footer');
     await expect(footer).toBeVisible();
     await footer.scrollIntoViewIfNeeded();
     await expect(footer.locator('.site-footer-content')).toBeVisible();
     await expect(footer.locator('.site-footer-meta')).toBeVisible();
+    await expect(footer.locator('.site-footer-build')).toHaveAttribute(
+      'href',
+      buildFixture.commitUrl,
+    );
 
     for (const [name, href] of [
       ['Volunteering', '/support?category=volunteering'],
@@ -222,7 +262,7 @@ test.describe('admin moderation page flows', () => {
   test('admin threads page loads', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.threads', [
       'Admin threads page loads.',
-      'Admin can query threads by username/user id.',
+      'Threads are opened from member account links.',
     ]);
 
     await gotoAdminPage(page, '/admin/threads', /\/admin\/threads/);
@@ -230,6 +270,9 @@ test.describe('admin moderation page flows', () => {
     await expect(page).toHaveTitle(/Admin - Threads - Trustroots/);
     await expect(
       page.getByRole('textbox', { name: 'Member username or ID' }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByText('Open a member’s threads from their account page.'),
     ).toBeVisible();
   });
 

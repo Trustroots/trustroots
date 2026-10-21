@@ -59,6 +59,10 @@ describe('Admin access route tests', () => {
     },
     {
       method: 'get',
+      path: '/api/admin/username-changes',
+    },
+    {
+      method: 'get',
       path: '/api/admin/dashboard',
     },
     {

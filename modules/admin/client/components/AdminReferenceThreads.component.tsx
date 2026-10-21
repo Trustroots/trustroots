@@ -2,9 +2,13 @@
 import React, { useEffect, useState } from 'react';
 
 import * as api from '../api/admin-reference-threads.api';
-import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from './UserLink.component';
 import AdminHeader from './AdminHeader.component';
+import {
+  formatAdminDateTime,
+  getAdminDateTimeAttribute,
+} from '../utils/admin-date';
+import { getAdminMessagesHref } from '../utils/member-url';
 import type {
   ReferenceThread,
   ReferenceUserOrId,
@@ -86,15 +90,14 @@ export default function AdminReferenceThreads() {
             </thead>
             <tbody>
               {referenceThreads.map(({ _id, userFrom, userTo, created }) => {
-                const userToId =
-                  typeof userTo === 'string' ? userTo : userTo?._id;
-                const userFromId =
-                  typeof userFrom === 'string' ? userFrom : userFrom?._id;
+                const messagesHref = getAdminMessagesHref(userTo, userFrom);
 
                 return (
                   <tr key={_id}>
                     <td>
-                      <TimeAgo date={new Date(created)} />
+                      <time dateTime={getAdminDateTimeAttribute(created)}>
+                        {formatAdminDateTime(created)}
+                      </time>
                     </td>
                     <td>
                       <ReferenceUser user={userFrom} />
@@ -103,11 +106,11 @@ export default function AdminReferenceThreads() {
                       <ReferenceUser user={userTo} />
                     </td>
                     <td>
-                      <a
-                        href={`/admin/messages?userId1=${userToId}&userId2=${userFromId}`}
-                      >
-                        See messages
-                      </a>
+                      {messagesHref ? (
+                        <a href={messagesHref}>See messages</a>
+                      ) : (
+                        '—'
+                      )}
                     </td>
                   </tr>
                 );

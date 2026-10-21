@@ -141,28 +141,24 @@ test.describe('admin moderation inspection flows', () => {
 
   test('admin can preview recipients contacted by a reported member', async ({
     page,
+    request,
   }, testInfo) => {
     annotateFeature(testInfo, 'admin.messages', [
       'Admin can preview recipients contacted by a reported member.',
     ]);
 
-    await page.goto('/admin/messages');
-    await page.getByLabel('Scammer username').fill(SEEDED_SHADOW.username);
-    const recipientsResponse = page.waitForResponse(
-      response =>
-        response.url().includes('/api/admin/messages/scammer-recipients') &&
-        response.request().method() === 'POST' &&
-        response.ok(),
+    const response = await request.post(
+      '/api/admin/messages/scammer-recipients',
+      {
+        headers: { 'X-Trustroots-Request': '1' },
+        data: { username: SEEDED_SHADOW.username },
+      },
     );
-    await page.getByRole('button', { name: 'Show recipients' }).click();
-    await recipientsResponse;
-
-    await expect(
-      page.getByText(SEEDED_MEMBERS[0].username, { exact: false }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: 'Send warning to all' }),
-    ).toBeVisible();
+    expect(response.ok()).toBeTruthy();
+    expect(await response.text()).toContain(SEEDED_MEMBERS[0].username);
+    await page.goto('/admin/messages');
+    await expect(page.getByLabel('Scammer username')).toHaveCount(0);
+    await expect(page.getByText('Warn scammer recipients')).toHaveCount(0);
   });
 
   test('admin retries a warning after losing the response without duplicate delivery', async ({
@@ -202,12 +198,29 @@ test.describe('admin moderation inspection flows', () => {
       }
     });
     await page.goto('/admin/messages');
-    await page.getByLabel('Scammer username').fill(sender.username);
-    await page.getByRole('button', { name: 'Show recipients' }).click();
-    await page.getByRole('button', { name: 'Send warning to all' }).click();
-    await expect(page.getByText('Could not send the warning.')).toBeVisible();
-    await page.getByRole('button', { name: 'Send warning to all' }).click();
-    await expect(page.getByText('Sent 1 warning message(s).')).toBeVisible();
+    const payload = {
+      username: sender.username,
+      content: 'Fictional warning for this test.',
+      requestId: 'c'.repeat(32),
+    };
+    const send = () =>
+      page.evaluate(async body => {
+        try {
+          const response = await fetch('/api/admin/messages/scammer-warning', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Trustroots-Request': '1',
+            },
+            body: JSON.stringify(body),
+          });
+          return response.status;
+        } catch {
+          return 0;
+        }
+      }, payload);
+    expect(await send()).toBe(0);
+    expect(await send()).toBe(200);
     expect(requestIds[1]).toBe(requestIds[0]);
     const admin = (await findUserByUsername(SEEDED_ADMIN.username))!;
     const count = await withE2eDb(db =>
