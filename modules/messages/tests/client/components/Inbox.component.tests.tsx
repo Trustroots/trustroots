@@ -9,6 +9,7 @@ import {
   generateClientUser,
   generateThreads,
 } from '@/testutils/client/data.client.testutil';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import {
   navigate,
   trackEvent,
