@@ -152,7 +152,7 @@ describe('<ThreadReply>', () => {
     previewMessageMock
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce(
-        '<p><a href="https://outside.example/">External</a> <a href="/profile/fictional">Internal</a></p>',
+        '<p><a href="https://outside.example/">External</a> <a href="/profile/fictional">Internal</a> <a href="https://www.trustroots.org/safety">Guidance</a></p>',
       );
     const { getByRole } = render(<ThreadReply onSend={jest.fn()} />);
     fireEvent.change(getByRole('textbox'), {
@@ -172,8 +172,18 @@ describe('<ThreadReply>', () => {
       'External',
     );
     expect(
-      getByRole('region', { name: 'Message preview' }).querySelector('a'),
+      getByRole('region', { name: 'Message preview' }).querySelector(
+        'a[href="https://outside.example/"]',
+      ),
     ).toBeNull();
+    expect(getByRole('link', { name: 'Internal' })).toHaveAttribute(
+      'href',
+      '/profile/fictional',
+    );
+    expect(getByRole('link', { name: 'Guidance' })).toHaveAttribute(
+      'href',
+      'https://www.trustroots.org/safety',
+    );
     expect(previewMessageMock).toHaveBeenCalledTimes(2);
   });
 

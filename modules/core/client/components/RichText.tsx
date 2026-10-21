@@ -6,12 +6,18 @@ type RichTextProps = Omit<
   'children' | 'dangerouslySetInnerHTML'
 > & {
   content: string;
+  allowTrustrootsLinks?: boolean;
 };
 
-export default function RichText({ content, ...props }: RichTextProps) {
+export default function RichText({
+  content,
+  allowTrustrootsLinks = false,
+  ...props
+}: RichTextProps) {
   const html = useMemo(
-    () => disableUserContentLinks(sanitiseRichText(content)),
-    [content],
+    () =>
+      disableUserContentLinks(sanitiseRichText(content), allowTrustrootsLinks),
+    [content, allowTrustrootsLinks],
   );
   return <div {...props} dangerouslySetInnerHTML={{ __html: html }} />;
 }
