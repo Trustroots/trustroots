@@ -86,6 +86,7 @@ class EditProfileViewModelTest {
         assertTrue(model.state.value.isDirty)
 
         model.onEvent(EditProfileEvent.SaveDelivered(saved.id))
+        model.onEvent(EditProfileEvent.SaveDelivered(saved.id))
         assertNull(model.state.value.pendingSave)
     }
 

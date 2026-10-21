@@ -96,6 +96,19 @@ class MemberShellViewModelTest {
     }
 
     @Test
+    fun unchangedEnvironmentNotificationDoesNotRestartShellLookups() = withScope { scope ->
+        val repository = FakeMemberShellRepository()
+        val model = MemberShellViewModel(repository, scope)
+        val initialState = model.state.value
+
+        model.onEvent(MemberShellEvent.EnvironmentChanged(api(), session()))
+
+        assertEquals(1, repository.avatarCalls)
+        assertEquals(0, repository.unreadCalls)
+        assertEquals(initialState, model.state.value)
+    }
+
+    @Test
     fun ordinaryAvatarFailureCanBeRetriedAndUnexpectedExceptionsBecomeSafeFailures() = withScope { scope ->
         val repository = FakeMemberShellRepository().apply {
             avatarHandler = { call ->

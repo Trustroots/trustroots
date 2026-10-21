@@ -162,6 +162,13 @@ class PopulatedInboxJourneyTest {
         val edgeTolerance = with(compose.density) { 1.dp.toPx() }
         assertTrue("Inbox row should start at the list's full-width edge", rowBounds.left <= rootBounds.left + edgeTolerance)
         assertTrue("Inbox row should extend to the list's full-width edge", rowBounds.right >= rootBounds.right - edgeTolerance)
+        val profileBounds = compose.onAllNodesWithText("Profile").fetchSemanticsNodes().first().boundsInRoot
+        val rowCentreY = (rowBounds.top + rowBounds.bottom) / 2f
+        val profileCentreY = (profileBounds.top + profileBounds.bottom) / 2f
+        assertTrue(
+            "Profile action should be vertically centred in its inbox row",
+            kotlin.math.abs(profileCentreY - rowCentreY) <= edgeTolerance,
+        )
         row.performTouchInput {
             click(Offset(width - 4f, height / 2f))
         }

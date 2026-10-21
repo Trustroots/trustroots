@@ -64,6 +64,7 @@ class CreateExperienceViewModelTest {
         model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id + 1))
         assertEquals(success, model.state.value.pendingSuccess)
         model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id))
+        model.onEvent(CreateExperienceEvent.SuccessDelivered(success.id))
         assertNull(model.state.value.pendingSuccess)
     }
 

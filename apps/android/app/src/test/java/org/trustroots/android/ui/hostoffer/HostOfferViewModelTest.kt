@@ -260,6 +260,7 @@ class HostOfferViewModelTest {
         val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
 
         viewModel.onEvent(HostOfferEvent.SessionInvalidationDelivered(invalidation.id))
+        viewModel.onEvent(HostOfferEvent.SessionInvalidationDelivered(invalidation.id))
         viewModel.onEvent(HostOfferEvent.RetryLoad)
 
         assertNull(viewModel.state.value.pendingSessionInvalidation)

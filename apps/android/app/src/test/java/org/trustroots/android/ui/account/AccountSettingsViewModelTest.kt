@@ -288,6 +288,16 @@ class AccountSettingsViewModelTest {
         assertEquals(null, viewModel.state.value.pendingEffect)
     }
 
+    @Test fun messageAlertsCanBeEnabledImmediatelyWhenPermissionIsAlreadyGranted() {
+        val platform = FakePlatform()
+        val viewModel = model(platform = platform)
+
+        viewModel.onEvent(AccountEvent.ToggleMessageAlerts(notificationPermissionGranted = true))
+
+        assertEquals(AccountEffect.EnableMessageAlerts(1L), viewModel.state.value.pendingEffect)
+        assertFalse(viewModel.state.value.messageAlertsEnabled)
+    }
+
     @Test fun messageAlertToggleDisablesExistingAlertsAndReportsDeniedPermission() {
         val platform = FakePlatform().apply { enabled = true }
         val viewModel = model(platform = platform)
