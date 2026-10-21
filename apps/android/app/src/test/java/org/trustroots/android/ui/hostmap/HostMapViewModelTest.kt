@@ -272,6 +272,36 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun concurrentNotesAndCircleAuthFailuresKeepOneInvalidationAndBlockFurtherReads() = withViewModel { viewModel, repository, notesConnections ->
+        val pendingCircles = CompletableDeferred<Result<List<TrustrootsCircle>>>()
+        repository.circleHandler = { withContext(NonCancellable) { pendingCircles.await() } }
+        repository.visibleAuthorsHandler = {
+            Result.failure(MobileApiException(401, "Fictional session expired."))
+        }
+        viewModel.onEvent(HostMapEvent.FiltersChanged(HostMapFilters(includeMeet = true)))
+        viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+        viewModel.onEvent(HostMapEvent.CirclesRequested)
+        assertEquals(1, repository.circleCalls)
+
+        val connection = notesConnections.connections.single()
+        connection.emit(note("expired-note", "fictional-author"))
+        val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
+        assertEquals(1, connection.closeCalls)
+
+        pendingCircles.complete(Result.failure(MobileApiException(401, "Fictional session expired.")))
+
+        assertEquals("A concurrent auth failure must not create another callback", invalidation, viewModel.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.circleCalls)
+        viewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(invalidation.id))
+        viewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(invalidation.id))
+        viewModel.onEvent(HostMapEvent.CirclesRequested)
+
+        assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertEquals("Acknowledgement must not repeat reads before a changed session", 1, repository.circleCalls)
+        assertEquals(1, connection.closeCalls)
+    }
+
+    @Test
     fun communityNotesOnlyExposeVisibleAuthorsAndPruneSelectionsWhenVisibilityChanges() = withViewModel { viewModel, repository, notesConnections ->
         repository.visibleAuthors = setOf("visible-author")
         viewModel.onEvent(HostMapEvent.FiltersChanged(HostMapFilters(includeMeet = true)))

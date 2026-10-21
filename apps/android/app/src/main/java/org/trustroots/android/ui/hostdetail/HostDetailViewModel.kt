@@ -8,11 +8,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -24,6 +21,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
 import org.trustroots.android.ui.search.SearchOfferType
 
@@ -127,20 +125,20 @@ internal class HostDetailViewModel(
             isLoading = true,
         )
         loadJob = workScope.launch {
-            val offerResult = request { repository.offer(offerID) }
+            val offerResult = requestResult { repository.offer(offerID) }
             if (requestGeneration != generation) return@launch
             offerResult.fold(
                 onSuccess = { offer ->
                     mutableState.update { it.copy(offer = offer) }
                     val username = offer.user.username ?: return@launch finishLoading(requestGeneration)
-                    val profileResult = request { repository.profile(username) }
+                    val profileResult = requestResult { repository.profile(username) }
                     if (requestGeneration != generation) return@launch
                     profileResult.fold(
                         onSuccess = { profile -> mutableState.update { it.copy(profile = profile) } },
                         onFailure = { handleFailure(it, UiFailureFallback.LOAD_PROFILE) },
                     )
                     if (invalidationEmitted || requestGeneration != generation) return@launch
-                    val membershipsResult = request { repository.memberships() }
+                    val membershipsResult = requestResult { repository.memberships() }
                     if (requestGeneration != generation) return@launch
                     membershipsResult.fold(
                         onSuccess = { memberships -> mutableState.update { it.copy(sharedCircleIDs = memberships) } },
@@ -155,19 +153,6 @@ internal class HostDetailViewModel(
 
     private suspend fun finishLoading(requestGeneration: Long) {
         if (requestGeneration == generation) mutableState.update { it.copy(isLoading = false) }
-    }
-
-    private suspend fun <T> request(block: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            block()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        coroutineContext.ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
     }
 
     private fun handleFailure(error: Throwable, fallback: UiFailureFallback) {

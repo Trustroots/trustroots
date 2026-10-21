@@ -3,11 +3,8 @@ package org.trustroots.android.ui.circledetail
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -16,6 +13,7 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.circles.CircleRepository
 import org.trustroots.android.ui.circles.CirclesFailure
 import org.trustroots.android.ui.circles.CirclesFailureKind
@@ -109,12 +107,12 @@ internal class CircleDetailViewModel(
             )
         }
         loadJob = requestScope.launch {
-            val circleResult = request { repository.circleBySlug(slug) }
+            val circleResult = requestResult { repository.circleBySlug(slug) }
             if (generation != loadGeneration) return@launch
             circleResult.fold(
                 onSuccess = { circle ->
                     mutableState.update { it.copy(circle = circle) }
-                    val membershipResult = request { repository.memberships() }
+                    val membershipResult = requestResult { repository.memberships() }
                     if (generation != loadGeneration) return@launch
                     membershipResult.fold(
                         onSuccess = { memberships ->
@@ -139,7 +137,7 @@ internal class CircleDetailViewModel(
         mutableState.update { it.copy(isUpdating = true, failure = null, canRetryLoad = false) }
         updateJob?.cancel()
         updateJob = requestScope.launch {
-            request { repository.setMembership(circle.id, isMember = !joining) }.fold(
+            requestResult { repository.setMembership(circle.id, isMember = !joining) }.fold(
                 onSuccess = {
                     val event = CircleDetailMembershipEvent(
                         id = ++nextMembershipEventID,
@@ -192,19 +190,6 @@ internal class CircleDetailViewModel(
                 )
             }
         }
-    }
-
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
     }
 
     override fun onCleared() {

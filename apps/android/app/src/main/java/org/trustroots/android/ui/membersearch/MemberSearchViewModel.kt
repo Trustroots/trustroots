@@ -5,11 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -20,6 +17,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal fun interface MemberSearchRepository {
@@ -123,7 +121,7 @@ internal class MemberSearchViewModel(
         mutableState.update { it.copy(isLoading = true, failure = null) }
         val submittedQuery = current.query
         searchJob = requestScope.launch {
-            val result = request { repository.searchMembers(submittedQuery) }
+            val result = requestResult { repository.searchMembers(submittedQuery) }
             val requestFailure = result.exceptionOrNull()
             if (requestFailure?.isAuthenticationFailure() == true) {
                 emitSessionInvalidation()
@@ -177,19 +175,6 @@ internal class MemberSearchViewModel(
         sessionInvalidationEmitted = true
         val invalidation = MemberSearchSessionInvalidation(++nextInvalidationID)
         mutableState.update { it.copy(pendingSessionInvalidation = invalidation) }
-    }
-
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        currentCoroutineContext().ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
     }
 
     override fun onCleared() {

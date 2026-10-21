@@ -292,6 +292,38 @@ class CircleDetailViewModelTest {
     }
 
     @Test
+    fun concurrentMembershipAndReloadAuthFailuresKeepOneInvalidationAndBlockFurtherWork() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        val pendingMutation = CompletableDeferred<Result<Unit>>()
+        repository.updateHandler = { pendingMutation.await() }
+        repository.membershipsHandler = { call ->
+            if (call == 2) Result.failure(MobileApiException(401, "Expired"))
+            else Result.success(repository.membershipSet)
+        }
+        val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
+
+        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        assertTrue(fresh.state.value.isUpdating)
+        fresh.onEvent(CircleDetailEvent.RetryLoad)
+        val invalidation = requireNotNull(fresh.state.value.pendingSessionInvalidation)
+        pendingMutation.complete(Result.failure(MobileApiException(401, "Expired")))
+
+        assertEquals("A concurrent auth failure must not replace the one pending callback", invalidation, fresh.state.value.pendingSessionInvalidation)
+        assertFalse(fresh.state.value.isUpdating)
+        assertEquals(listOf("quiet-circle", "quiet-circle"), repository.detailSlugs)
+        assertEquals(2, repository.membershipReads)
+        assertEquals(listOf("quiet-id" to true), repository.membershipChanges)
+
+        fresh.onEvent(CircleDetailEvent.SessionInvalidationDelivered(invalidation.id))
+        fresh.onEvent(CircleDetailEvent.SessionInvalidationDelivered(invalidation.id))
+        fresh.onEvent(CircleDetailEvent.RetryLoad)
+
+        assertNull(fresh.state.value.pendingSessionInvalidation)
+        assertEquals("Acknowledgement must not reset the expired-session latch or repeat requests", 2, repository.detailSlugs.size)
+        assertEquals(2, repository.membershipReads)
+    }
+
+    @Test
     fun staleSessionInvalidationAcknowledgementDoesNotClearANewerInvalidation() = withRepository { repository, scope ->
         repository.circleHandler = { _, slug -> Result.failure(MobileApiException(401, "Expired")) }
         val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)

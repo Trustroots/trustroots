@@ -9,13 +9,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import kotlin.coroutines.coroutineContext
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -30,6 +27,7 @@ import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.search.SearchHubScreen
@@ -310,7 +308,7 @@ internal class HostMapViewModel(
         searchJob = workScope.launch {
             wait(550)
             mutableState.update { it.copy(isLoading = true, failure = null) }
-            val result = request { repository.searchOffers(bounds, current.filters) }
+            val result = requestResult { repository.searchOffers(bounds, current.filters) }
             if (generation != searchGeneration) return@launch
             result.fold(
                 onSuccess = { offers ->
@@ -332,7 +330,7 @@ internal class HostMapViewModel(
         if (sessionInvalidationEmitted || query.trim().length < 3) return
         placeJob = workScope.launch {
             wait(400)
-            val result = request { repository.places(query.trim(), 3) }
+            val result = requestResult { repository.places(query.trim(), 3) }
             if (generation != placeGeneration) return@launch
             result.fold(
                 onSuccess = { places -> mutableState.update { it.copy(suggestions = places) } },
@@ -350,7 +348,7 @@ internal class HostMapViewModel(
         placeJob?.cancel()
         mutableState.update { it.copy(suggestions = emptyList(), failure = null, placeFailure = null) }
         placeJob = workScope.launch {
-            val result = request { repository.places(query, 1) }
+            val result = requestResult { repository.places(query, 1) }
             if (generation != placeGeneration) return@launch
             result.fold(
                 onSuccess = { places ->
@@ -380,7 +378,7 @@ internal class HostMapViewModel(
         if (sessionInvalidationEmitted) return
         if (state.value.circles.isNotEmpty() || circlesJob?.isActive == true) return
         circlesJob = workScope.launch {
-            request { repository.circles() }.fold(
+            requestResult { repository.circles() }.fold(
                 onSuccess = { circles -> mutableState.update { current ->
                     current.copy(
                         circles = circles,
@@ -414,7 +412,7 @@ internal class HostMapViewModel(
         notesFilterJob = workScope.launch {
             wait(250)
             val authors = receivedNotes.values.map { it.author }.toSet()
-            val visible = request { repository.visibleNostrAuthors(authors) }.getOrElse { error ->
+            val visible = requestResult { repository.visibleNostrAuthors(authors) }.getOrElse { error ->
                 if (error.isAuthenticationFailure()) handleFailure(error, UiFailureFallback.HOST_SEARCH)
                 authors
             }
@@ -466,19 +464,6 @@ internal class HostMapViewModel(
         notesFilterJob?.cancel()
         placeJob = null
         circlesJob = null
-    }
-
-    private suspend fun <T> request(operation: suspend () -> Result<T>): Result<T> {
-        val result = try {
-            operation()
-        } catch (cancelled: CancellationException) {
-            throw cancelled
-        } catch (error: Throwable) {
-            Result.failure(error)
-        }
-        coroutineContext.ensureActive()
-        (result.exceptionOrNull() as? CancellationException)?.let { throw it }
-        return result
     }
 
     class Factory(
