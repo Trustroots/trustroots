@@ -350,6 +350,45 @@ test.describe.serial('account settings feature coverage', () => {
     expect(updatedProfile.blocked).toEqual([]);
   });
 
+  test('members can change and persist their interface language in account settings', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.details-update', [
+      'Signed-in members can select an interface language from account settings.',
+      'The selected language is saved to their account.',
+    ]);
+
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    await page.goto('/profile/edit/account');
+
+    const languagePanel = page
+      .locator('.panel')
+      .filter({ hasText: 'Interface language' });
+    await expect(languagePanel).toBeVisible();
+    await languagePanel.getByRole('button', { name: 'English' }).click();
+    const languageDialog = page.getByRole('dialog');
+    const updateResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/users') &&
+        response.request().method() === 'PUT',
+    );
+    await languageDialog
+      .getByRole('button', { name: 'Español, Castellano' })
+      .click();
+    const response = await updateResponse;
+    expect(response.ok()).toBeTruthy();
+    expect((await response.json()).locale).toBe('es');
+    expect((await findUserByUsername(user.username))?.locale).toBe('es');
+
+    await page.reload();
+    await expect(
+      page.locator('.panel button[title="Español, Castellano"]'),
+    ).toBeVisible();
+  });
+
   test('older members who sign in through the UI can change username', async ({
     page,
     request,

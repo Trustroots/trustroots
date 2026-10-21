@@ -3,7 +3,6 @@
 export {
   createAppRouter,
   findRoute,
-  isReactRoute,
   normalizePath,
   parseLegacySearch,
   rootRoute,

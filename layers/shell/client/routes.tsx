@@ -430,8 +430,4 @@ export function findRoute(path: string) {
   };
 }
 
-export function isReactRoute(path: string): boolean {
-  return Boolean(matchReactRoute(path));
-}
-
 export { normalizePath };

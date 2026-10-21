@@ -9,6 +9,14 @@ import type { UserProfile } from '@/modules/users/client/types';
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/api/users.api');
+jest.mock('@/config/client/i18n', () => ({
+  __esModule: true,
+  default: {
+    language: 'en',
+    changeLanguage: jest.fn(),
+    dir: () => 'ltr',
+  },
+}));
 const updateUser = jest.mocked(usersApi.update);
 const changePassword = jest.mocked(usersApi.changePassword);
 const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
@@ -107,6 +115,17 @@ describe('ProfileEditAccount', () => {
     expect(
       screen.getByRole('link', { name: 'Read the account removal FAQ' }),
     ).toHaveAttribute('href', '/faq#how-can-i-remove-my-account');
+  });
+
+  it('lets a signed-in member change their interface language and saves it', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
+
+    await waitFor(() => {
+      expect(usersApi.update).toHaveBeenCalledWith({ locale: 'cs' });
+    });
   });
 
   it('focuses and scrolls to removal when opened with its fragment', async () => {

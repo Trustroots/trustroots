@@ -15,6 +15,7 @@ import {
   SIGNUP_USERNAME_REGEX,
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '../config/username.client.constants';
+import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -266,6 +267,18 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               </div>
             </div>
           </form>
+        </div>
+      </div>
+
+      <div className="panel panel-default">
+        <div className="panel-heading">{t('Interface language')}</div>
+        <div className="panel-body">
+          <p>
+            {t(
+              'This is the language of the interface you see across the site.',
+            )}
+          </p>
+          <LanguageSwitch saveToAPI={true} />
         </div>
       </div>
 
