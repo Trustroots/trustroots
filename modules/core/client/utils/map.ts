@@ -1,6 +1,14 @@
 export const getMapBoxToken = () =>
   typeof window !== 'undefined' && window.settings?.mapbox?.publicKey;
 
+const getBrowserUserAgent = () => {
+  /* istanbul ignore next -- server rendering has no browser user agent. */
+  return typeof navigator === 'undefined' ? '' : navigator.userAgent;
+};
+
+export const isChromiumBrowser = (userAgent = getBrowserUserAgent()) =>
+  /\b(?:HeadlessChrome|Chrome|Chromium|Edg|OPR)\//.test(userAgent);
+
 const MAPBOX_STREETS_TILE_URL =
   'https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/{z}/{x}/{y}?access_token={accessToken}';
 const OSM_TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';

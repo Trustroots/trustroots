@@ -72,9 +72,11 @@ type MockSourceProps = {
 };
 
 const mockIsWebGLSupported = jest.fn();
+const mockIsChromiumBrowser = jest.fn();
 jest.mock('@/modules/core/client/utils/map', () => ({
   ...jest.requireActual('@/modules/core/client/utils/map'),
   isWebGLSupported: () => mockIsWebGLSupported(),
+  isChromiumBrowser: () => mockIsChromiumBrowser(),
 }));
 
 type MockNostrEvent = Partial<NostrEvent> & { authorPubkey?: string };
@@ -432,6 +434,7 @@ async function flushCommunityNotesViewport(viewport: Record<string, number>) {
 
 beforeEach(() => {
   mockIsWebGLSupported.mockReturnValue(true);
+  mockIsChromiumBrowser.mockReturnValue(false);
   mockLeafletSearchMap.mockClear();
   mockSourcePropsById = {};
   mockLayerPropsById = {};
@@ -485,6 +488,14 @@ describe('Search', () => {
         onOfferOpen={() => {}}
       />,
     );
+  });
+
+  it('uses raster tiles in Chromium even when WebGL can initialise', () => {
+    mockIsChromiumBrowser.mockReturnValue(true);
+    renderSearchMap();
+    expect(screen.getByTestId('leaflet-search-map')).toBeInTheDocument();
+    expect(screen.queryByTestId('react-map-gl')).not.toBeInTheDocument();
+    expect(mockIsWebGLSupported).not.toHaveBeenCalled();
   });
 
   it('uses the Leaflet renderer when WebGL is unavailable', async () => {

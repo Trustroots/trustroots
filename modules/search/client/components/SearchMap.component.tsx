@@ -17,6 +17,7 @@ import type { OfferSearchFeatureCollection } from '@/modules/offers/shared/offer
 // Internal dependencies
 import {
   getMapBoxToken,
+  isChromiumBrowser,
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
 import {
@@ -346,7 +347,9 @@ export default function SearchMap({
   viewportRef.current = viewport;
   const gestureSurfaceRef = useRef<HTMLDivElement | null>(null);
   const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
-  const [webGLSupported] = useState(isWebGLSupported);
+  // Mapbox GL 1.x can initialise in Chromium while drawing blank map detail.
+  // Use the existing raster renderer for that engine, including Edge and Brave.
+  const [useWebGL] = useState(() => !isChromiumBrowser() && isWebGLSupported());
   const [mapController] = useState(() => new WheelMapController());
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState<MapboxMap | undefined>();
@@ -387,7 +390,7 @@ export default function SearchMap({
     effectiveMapStyle?.name === MAP_STYLE_OSM.name;
   // If no mapbox token, and we're in production, don't show the style switcher
   const showMapStyles =
-    webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
+    useWebGL && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
   const mapRef = createRef<React.ComponentRef<typeof ReactMapGL>>();
 
   // Get the Mapbox object for direct map manipulation
@@ -482,7 +485,7 @@ export default function SearchMap({
   useEffect(() => {
     const surface = gestureSurfaceRef.current;
 
-    if (!webGLSupported || !surface) {
+    if (!useWebGL || !surface) {
       return undefined;
     }
 
@@ -511,7 +514,7 @@ export default function SearchMap({
     });
 
     return () => surface.removeEventListener('wheel', handlePinchWheel, true);
-  }, [webGLSupported]);
+  }, [useWebGL]);
 
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
@@ -857,7 +860,7 @@ export default function SearchMap({
   // available while panning. The Results pane lists only pins and
   // author-visible community notes inside the actual map viewport.
   useEffect(() => {
-    const mapBounds = webGLSupported
+    const mapBounds = useWebGL
       ? getMapRef()?.getBounds()
       : leafletMapState?.bounds;
     const corners = mapBounds ? normalizeBoundsCorners(mapBounds) : undefined;
@@ -921,12 +924,12 @@ export default function SearchMap({
     onVisibleCommunityNoteThreadsChange,
     onVisibleOffersChange,
     viewport,
-    webGLSupported,
+    useWebGL,
   ]);
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
-    if (webGLSupported) {
+    if (useWebGL) {
       setMap(getMapRef());
     }
   }, []);
@@ -934,10 +937,10 @@ export default function SearchMap({
   // Apply externally changed bounds object
   // Changed by the search sidebar
   useEffect(() => {
-    if (webGLSupported && bounds?.northEast && bounds?.southWest) {
+    if (useWebGL && bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds as MapBounds);
     }
-  }, [bounds, webGLSupported]);
+  }, [bounds, useWebGL]);
 
   // Apply externally changed filters object
   // Changed by the search sidebar
@@ -954,7 +957,7 @@ export default function SearchMap({
 
     // Update map offers
     setOffers({ features: [], type: 'FeatureCollection' });
-    updateOffers(webGLSupported ? undefined : leafletMapState);
+    updateOffers(useWebGL ? undefined : leafletMapState);
   }, [filters]);
 
   // Subscribe/unsubscribe to community notes based on toggle
@@ -1058,7 +1061,7 @@ export default function SearchMap({
     }
   }, [location]);
 
-  if (!webGLSupported) {
+  if (!useWebGL) {
     const leafletOffers = {
       features: offers.features.map(feature => ({
         type: 'Feature' as const,

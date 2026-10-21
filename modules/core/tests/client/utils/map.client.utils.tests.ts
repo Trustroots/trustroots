@@ -1,6 +1,7 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
   getRasterMapTiles,
+  isChromiumBrowser,
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
 
@@ -16,6 +17,27 @@ function canvasElement(
 }
 
 describe('map utilities', () => {
+  it.each([
+    ['Mozilla/5.0 Chrome/140.0.0.0 Safari/537.36', true],
+    ['Mozilla/5.0 Chromium/140.0.0.0', true],
+    ['Mozilla/5.0 HeadlessChrome/140.0.0.0 Safari/537.36', true],
+    ['Mozilla/5.0 Chrome/140.0.0.0 Edg/140.0.0.0', true],
+    ['Mozilla/5.0 OPR/120.0.0.0', true],
+    ['Mozilla/5.0 Firefox/143.0', false],
+    ['Mozilla/5.0 Version/18.0 Safari/605.1.15', false],
+    ['Mozilla/5.0 CriOS/140.0.0.0 Mobile Safari/604.1', false],
+    ['', false],
+  ])('recognises the Chromium engine in %s', (userAgent, expected) => {
+    // Brave uses the same Chrome user agent as other Chromium browsers.
+    expect(isChromiumBrowser(userAgent)).toBe(expected);
+  });
+
+  it('uses the current browser user agent by default', () => {
+    const userAgent = jest.spyOn(navigator, 'userAgent', 'get');
+    userAgent.mockReturnValue('Mozilla/5.0 Chrome/140.0.0.0');
+    expect(isChromiumBrowser()).toBe(true);
+    userAgent.mockRestore();
+  });
   let createElement: jest.SpyInstance<
     HTMLElement,
     Parameters<Document['createElement']>
