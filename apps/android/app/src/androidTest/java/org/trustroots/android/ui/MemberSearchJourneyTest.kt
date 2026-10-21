@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -22,6 +23,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.ByteArrayOutputStream
@@ -133,6 +135,7 @@ class MemberSearchJourneyTest {
         compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
         compose.waitUntil(10_000) { compose.onAllNodesWithText("Spare room").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Spare room").performScrollTo().assertIsDisplayed()
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-contacts").assertIsDisplayed().performClick()
         compose.onNodeWithTag("profileContact-contact-one").performScrollTo().assertIsDisplayed()
         compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
@@ -140,6 +143,15 @@ class MemberSearchJourneyTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
         responder.join(1_000)
+    }
+
+    private fun revealProfileTabsIfClipped() {
+        val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
+        val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
+        if (tabs == null || tabs.boundsInRoot.bottom > heroBottom + 1f) {
+            compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        }
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
     }
 
     @Test fun requiresThreeCharactersAndShowsEmptySearchResults() {

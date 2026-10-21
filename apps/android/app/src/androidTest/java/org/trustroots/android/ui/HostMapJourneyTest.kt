@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -122,13 +123,14 @@ class HostMapJourneyTest {
         compose.waitUntil(15_000) { offerFilters.isNotEmpty() }
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("All circles").performClick()
+        compose.onNodeWithTag("circleFilterOption-all").assertIsSelected()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Quiet Circle").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Quiet Circle").performClick()
         compose.onNodeWithText("Wanderers").performClick()
-        compose.onNodeWithText("✓ Quiet Circle").assertIsDisplayed()
-        compose.onNodeWithText("✓ Wanderers").assertIsDisplayed()
+        compose.onNodeWithTag("circleFilterOption-circle-two").assertIsSelected()
+        compose.onNodeWithTag("circleFilterOption-circle-one").assertIsSelected()
         compose.waitUntil(15_000) {
             offerFilters.any { it.contains("\"tribes\":[\"circle-one\",\"circle-two\"]") }
         }

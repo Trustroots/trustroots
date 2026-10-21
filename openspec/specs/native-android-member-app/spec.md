@@ -748,7 +748,11 @@ and tabs SHALL remain outside the `HorizontalPager`, which contains only
 scrollable section content. Tab selection and pager swipes SHALL stay
 synchronised. The avatar SHALL retain a minimum 48 dp touch target. On compact
 screens, the header SHALL use a horizontal avatar and text layout and preserve
-usable section space after system insets.
+usable section space after system insets. At full collapse, the artwork header
+SHALL occupy one inset-aware action row; the tabs SHALL clip out of view with
+the artwork. Scrolling back toward the start SHALL expand the artwork and
+reveal the tabs again. Pager swipes SHALL continue to change sections while
+the tabs are clipped, and each section's scroll position SHALL be preserved.
 
 #### Scenario: Member opens another member's profile
 
@@ -762,21 +766,31 @@ usable section space after system insets.
 
 #### Scenario: Member scrolls a profile section
 
-- **WHEN** a member scrolls the About, Contacts or Experiences content
-- **THEN** the profile actions, artwork header and section tabs remain visible
+- **WHEN** a member scrolls the About, Contacts or Experiences content down to
+  full collapse
+- **THEN** the artwork header collapses to one inset-aware action row
+- **AND** the tabs clip out of view with the artwork while remaining outside
+  the pager
+- **AND** Back and the applicable profile actions remain available
 - **AND** only the current section content scrolls
+- **AND** scrolling back toward the start expands the artwork and reveals the
+  tabs again
 
 #### Scenario: Member swipes between profile sections
 
-- **WHEN** a member swipes the section pager
-- **THEN** the newly selected section is shown
-- **AND** its tab is selected while the shared header and tab row remain in one
-  place
+- **WHEN** a member swipes the section pager while the tabs are visible or
+  clipped by a fully collapsed artwork header
+- **THEN** the newly selected section is shown and its scroll position is
+  preserved
+- **AND** its tab is selected when the tabs are visible
+- **AND** the shared artwork frame remains in one place
 
 #### Scenario: Member sees section tabs over the profile artwork
 
-- **WHEN** a member views a loaded profile
-- **THEN** the section tabs are inside the artwork header
+- **WHEN** a member views a loaded profile or scrolls its content toward the
+  start
+- **THEN** the section tabs are inside the artwork header and outside the
+  pager
 - **AND** the profile background image and scrim continue behind the tabs
 - **AND** the tabs remain legible against the scrim
 

@@ -1,6 +1,8 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
@@ -103,8 +105,12 @@ class HostMapFilterOptionsJourneyTest {
             offerFilters.count { it.contains("\"types\":[\"host\"]") } > hostRequestsBeforeReenable
         }
         compose.onNodeWithText("Spoken languages").performScrollTo().performClick()
+        compose.onNodeWithTag("languageFilterOption-any").assertIsSelected()
+        compose.onNodeWithTag("languageFilterOption-por").assertIsNotSelected()
         val languageRequestsBeforeSelection = offerFilters.count { it.contains("\"languages\":[\"por\"]") }
         compose.onNodeWithText("Portuguese").performClick()
+        compose.onNodeWithTag("languageFilterOption-por").assertIsSelected()
+        compose.onNodeWithTag("languageFilterOption-any").assertIsNotSelected()
         compose.waitUntil(15_000) {
             offerFilters.count {
                 it.contains("\"types\":[\"host\"]") && it.contains("\"languages\":[\"por\"]")
@@ -113,7 +119,9 @@ class HostMapFilterOptionsJourneyTest {
         assertTrue(offerFilters.any { it.contains("\"languages\":[\"por\"]") })
 
         val unfilteredRequestsBeforeClear = offerFilters.count { !it.contains("\"languages\"") }
-        compose.onNodeWithText("✓ Portuguese").performClick()
+        compose.onNodeWithTag("languageFilterOption-por").performClick()
+        compose.onNodeWithTag("languageFilterOption-por").assertIsNotSelected()
+        compose.onNodeWithTag("languageFilterOption-any").assertIsSelected()
         compose.waitUntil(15_000) {
             offerFilters.count { it.contains("\"types\":[\"host\"]") && !it.contains("\"languages\"") } >
                 unfilteredRequestsBeforeClear

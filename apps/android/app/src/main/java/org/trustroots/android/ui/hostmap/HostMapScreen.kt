@@ -31,11 +31,13 @@ import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import org.trustroots.android.ui.common.SubmittedSearchField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -58,6 +60,8 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import java.io.File
@@ -368,7 +372,11 @@ internal fun HostMapScreen(
                                         when (selectedCircleIDs.size) {
                                             0 -> allCirclesLabel
                                             1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: oneCircleLabel
-                                            else -> stringResource(R.string.screen_circles_count, selectedCircleIDs.size)
+                                            else -> pluralStringResource(
+                                                R.plurals.screen_circles_count,
+                                                selectedCircleIDs.size,
+                                                selectedCircleIDs.size,
+                                            )
                                         },
                                     )
                                 },
@@ -376,11 +384,23 @@ internal fun HostMapScreen(
                             DropdownMenu(expanded = circleMenuOpen, onDismissRequest = { circleMenuOpen = false }) {
                                 DropdownMenuItem(
                                     text = { Text(allCirclesLabel) },
+                                    modifier = Modifier
+                                        .testTag("circleFilterOption-all")
+                                        .semantics { selected = selectedCircleIDs.isEmpty() },
+                                    trailingIcon = {
+                                        if (selectedCircleIDs.isEmpty()) Icon(Icons.Default.Check, contentDescription = null)
+                                    },
                                     onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(circleIDs = emptySet()))); circleMenuOpen = false },
                                 )
                                 circles.forEach { circle ->
                                     DropdownMenuItem(
-                                        text = { Text("${if (circle.id in selectedCircleIDs) "✓ " else ""}${circle.label}") },
+                                        text = { Text(circle.label) },
+                                        modifier = Modifier
+                                            .testTag("circleFilterOption-${circle.id}")
+                                            .semantics { selected = circle.id in selectedCircleIDs },
+                                        trailingIcon = {
+                                            if (circle.id in selectedCircleIDs) Icon(Icons.Default.Check, contentDescription = null)
+                                        },
                                         onClick = {
                                             mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(circleIDs = if (circle.id in selectedCircleIDs) selectedCircleIDs - circle.id else selectedCircleIDs + circle.id)))
                                         },
@@ -404,12 +424,24 @@ internal fun HostMapScreen(
                             DropdownMenu(expanded = languageMenuOpen, onDismissRequest = { languageMenuOpen = false }) {
                                 DropdownMenuItem(
                                     text = { Text(anyLanguageLabel) },
+                                    modifier = Modifier
+                                        .testTag("languageFilterOption-any")
+                                        .semantics { selected = selectedLanguages.isEmpty() },
+                                    trailingIcon = {
+                                        if (selectedLanguages.isEmpty()) Icon(Icons.Default.Check, contentDescription = null)
+                                    },
                                     onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(languages = emptySet()))); languageMenuOpen = false },
                                 )
                                 mapFilterLanguages.forEach { code ->
                                     DropdownMenuItem(
                                         text = {
-                                            Text("${if (code in selectedLanguages) "✓ " else ""}${languageName(code, languageLocale)}")
+                                            Text(languageName(code, languageLocale))
+                                        },
+                                        modifier = Modifier
+                                            .testTag("languageFilterOption-$code")
+                                            .semantics { selected = code in selectedLanguages },
+                                        trailingIcon = {
+                                            if (code in selectedLanguages) Icon(Icons.Default.Check, contentDescription = null)
                                         },
                                         onClick = {
                                             mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(languages = if (code in selectedLanguages) selectedLanguages - code else selectedLanguages + code)))

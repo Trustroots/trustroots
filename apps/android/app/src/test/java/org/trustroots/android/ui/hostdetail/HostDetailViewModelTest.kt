@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.hostdetail
 
+import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,17 +16,47 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.HostOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.common.UiFailure
+import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.search.SearchOfferType
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostDetailViewModelTest {
+    @Test fun blankAndRepeatedRouteLoadsDoNotDuplicateDetailRequests() = withModel { model, repository ->
+        val pendingOffer = CompletableDeferred<Result<HostOffer>>()
+        repository.offerHandler = { call, id ->
+            if (call == 1) withContext(NonCancellable) { pendingOffer.await() }
+            else Result.success(offerFixture(id))
+        }
+
+        model.onEvent(HostDetailEvent.Load("", SearchOfferType.Host))
+        assertTrue(repository.offerIDs.isEmpty())
+        model.onEvent(HostDetailEvent.Load("one-route-offer", SearchOfferType.Host))
+        model.updateClientAndSession(
+            MobileApiClient("https://api.example.test"),
+            MemberSession("connect.sid=unchanged", MobileMember("member-self", "Member Self")),
+        )
+        model.onEvent(HostDetailEvent.Load("one-route-offer", SearchOfferType.Host))
+        assertEquals(listOf("one-route-offer"), repository.offerIDs)
+
+        pendingOffer.complete(Result.success(offerFixture("one-route-offer")))
+        model.onEvent(HostDetailEvent.Load("one-route-offer", SearchOfferType.Host))
+
+        assertEquals(listOf("one-route-offer"), repository.offerIDs)
+        assertEquals("one-route-offer", model.state.value.offer?.id)
+        assertEquals(1, repository.profileUsernames.size)
+        assertEquals(1, repository.membershipCalls)
+    }
+
     @Test fun loadOwnsCanonicalOfferProfileAndMembershipData() = withModel { model, repository ->
         model.onEvent(HostDetailEvent.Load("safe-offer-id", SearchOfferType.Meet))
 
@@ -102,6 +133,153 @@ class HostDetailViewModelTest {
         assertEquals("current-route-offer", model.state.value.offer?.id)
     }
 
+    @Test fun profileFailureKeepsCanonicalOfferAndMembershipsAndRetryReloadsTheDetail() = withModel { model, repository ->
+        repository.profileHandler = { call, username ->
+            if (call == 1) Result.failure(IOException("Temporary profile failure"))
+            else Result.success(profile(username))
+        }
+
+        model.onEvent(HostDetailEvent.Load("canonical-offer", SearchOfferType.Host))
+
+        assertEquals("canonical-offer", model.state.value.offer?.id)
+        assertNull(model.state.value.profile)
+        assertEquals(setOf("circle-one"), model.state.value.sharedCircleIDs)
+        assertEquals(UiFailureFallback.LOAD_PROFILE, model.state.value.failure?.fallback)
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertEquals(listOf("canonical-offer", "canonical-offer"), repository.offerIDs)
+        assertEquals(listOf("host-owl", "host-owl"), repository.profileUsernames)
+        assertEquals(2, repository.membershipCalls)
+        assertEquals("host-owl", model.state.value.profile?.username)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test fun expiredProfileSessionInvalidatesOnceAndSkipsMembershipRead() = withModel { model, repository ->
+        repository.profileHandler = { _, _ -> Result.failure(MobileApiException(401, "Expired")) }
+
+        model.onEvent(HostDetailEvent.Load("canonical-offer", SearchOfferType.Host))
+        val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(HostDetailEvent.Retry)
+        model.onEvent(HostDetailEvent.Load("another-offer", SearchOfferType.Meet))
+
+        assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+        assertEquals(listOf("canonical-offer"), repository.offerIDs)
+        assertEquals(listOf("host-owl"), repository.profileUsernames)
+        assertEquals(0, repository.membershipCalls)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test fun offerWithoutUsernameKeepsOfferAndSkipsProfileAndMembershipRequests() = withModel { model, repository ->
+        repository.offerHandler = { _, id ->
+            Result.success(offerFixture(id).copy(user = MessageMember("anonymous-member-id", null, "Anonymous Host")))
+        }
+
+        model.onEvent(HostDetailEvent.Load("offer-without-username", SearchOfferType.Host))
+
+        assertEquals("offer-without-username", model.state.value.offer?.id)
+        assertNull(model.state.value.profile)
+        assertTrue(model.state.value.sharedCircleIDs.isEmpty())
+        assertEquals(emptyList<String>(), repository.profileUsernames)
+        assertEquals(0, repository.membershipCalls)
+        assertFalse(model.state.value.isLoading)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test fun membershipFailurePreservesOfferAndProfileAndRetryAcceptsAnEmptyMembershipSet() = withModel { model, repository ->
+        repository.membershipHandler = { call ->
+            if (call == 1) {
+                Result.failure(
+                    MobileApiException(
+                        statusCode = 503,
+                        serverMessage = "  ",
+                        failureKind = ApiFailureKind.REQUEST_REJECTED,
+                    ),
+                )
+            } else if (call == 2) throw IOException("Temporary membership lookup failure.")
+            else Result.success(emptySet())
+        }
+
+        model.onEvent(HostDetailEvent.Load("membership-retry-offer", SearchOfferType.Host))
+
+        assertEquals("membership-retry-offer", model.state.value.offer?.id)
+        assertEquals("host-owl", model.state.value.profile?.username)
+        assertEquals(UiFailure(apiKind = ApiFailureKind.REQUEST_REJECTED, fallback = UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD), model.state.value.failure)
+        assertFalse(model.state.value.isLoading)
+
+        model.onEvent(HostDetailEvent.Retry)
+        assertEquals(UiFailure(fallback = UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD), model.state.value.failure)
+        assertEquals("host-owl", model.state.value.profile?.username)
+
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertEquals(3, repository.membershipCalls)
+        assertTrue(model.state.value.sharedCircleIDs.isEmpty())
+        assertNull(model.state.value.failure)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test fun membershipAuthenticationFailureKeepsDetailAndInvalidatesOnlyOnce() = withModel { model, repository ->
+        repository.membershipHandler = { Result.failure(MobileApiException(401, "Fictional session expired.")) }
+
+        model.onEvent(HostDetailEvent.Load("membership-auth-offer", SearchOfferType.Meet))
+        val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(HostDetailEvent.SessionInvalidationDelivered(invalidation.id + 1))
+        model.onEvent(HostDetailEvent.Retry)
+        model.onEvent(HostDetailEvent.Load("another-offer", SearchOfferType.Host))
+
+        assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+        assertEquals("membership-auth-offer", model.state.value.offer?.id)
+        assertEquals("host-owl", model.state.value.profile?.username)
+        assertNull(model.state.value.failure)
+        assertEquals(listOf("membership-auth-offer"), repository.offerIDs)
+        assertEquals(1, repository.membershipCalls)
+
+        model.onEvent(HostDetailEvent.SessionInvalidationDelivered(invalidation.id))
+        assertNull(model.state.value.pendingSessionInvalidation)
+        model.onEvent(HostDetailEvent.Retry)
+        assertEquals(1, repository.offerIDs.size)
+    }
+
+    @Test fun profileFromAnEarlierSelectionCannotReplaceTheCurrentHost() = withModel { model, repository ->
+        val oldProfile = CompletableDeferred<Result<MemberProfile>>()
+        repository.offerHandler = { _, id ->
+            Result.success(offerFixture(id, if (id == "old-offer") "old-owl" else "current-owl"))
+        }
+        repository.profileHandler = { _, username ->
+            if (username == "old-owl") withContext(NonCancellable) { oldProfile.await() }
+            else Result.success(profile(username))
+        }
+
+        model.onEvent(HostDetailEvent.Load("old-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("current-offer", SearchOfferType.Meet))
+        oldProfile.complete(Result.success(profile("old-owl")))
+
+        assertEquals("current-offer", model.state.value.offer?.id)
+        assertEquals("current-owl", model.state.value.profile?.username)
+        assertEquals(setOf("circle-one"), model.state.value.sharedCircleIDs)
+        assertEquals(listOf("old-owl", "current-owl"), repository.profileUsernames)
+    }
+
+    @Test fun membershipFailureForAnEarlierSelectionCannotReplaceCurrentCircleAccess() = withModel { model, repository ->
+        val oldMemberships = CompletableDeferred<Result<Set<String>>>()
+        repository.offerHandler = { _, id ->
+            Result.success(offerFixture(id, if (id == "old-offer") "old-owl" else "current-owl"))
+        }
+        repository.membershipHandler = { call ->
+            if (call == 1) withContext(NonCancellable) { oldMemberships.await() }
+            else Result.success(setOf("current-circle"))
+        }
+
+        model.onEvent(HostDetailEvent.Load("old-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("current-offer", SearchOfferType.Meet))
+        oldMemberships.complete(Result.success(setOf("stale-circle")))
+
+        assertEquals("current-offer", model.state.value.offer?.id)
+        assertEquals("current-owl", model.state.value.profile?.username)
+        assertEquals(setOf("current-circle"), model.state.value.sharedCircleIDs)
+        assertEquals(2, repository.membershipCalls)
+    }
+
     private fun withModel(test: (HostDetailViewModel, FakeRepository) -> Unit) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val repository = FakeRepository()
@@ -116,8 +294,12 @@ class HostDetailViewModelTest {
         val offerIDs = mutableListOf<String>()
         val profileUsernames = mutableListOf<String>()
         var membershipCalls = 0
+        var membershipHandler: suspend (Int) -> Result<Set<String>> = { Result.success(setOf("circle-one")) }
         var sessionChanged = false
         var offerHandler: suspend (Int, String) -> Result<HostOffer> = { _, id -> Result.success(offerFixture(id)) }
+        var profileHandler: suspend (Int, String) -> Result<MemberProfile> = { _, username ->
+            Result.success(HostDetailViewModelTest.profile(username))
+        }
 
         override fun updateClientAndSession(api: org.trustroots.android.api.MobileApiClient, session: MemberSession) =
             sessionChanged.also { sessionChanged = false }
@@ -129,24 +311,23 @@ class HostDetailViewModelTest {
 
         override suspend fun profile(username: String): Result<MemberProfile> {
             profileUsernames += username
-            return Result.success(
-                MemberProfile(null, username, "Anonymous Host", "A fictional host", null, null, languages = emptyList()),
-            )
+            return profileHandler(profileUsernames.size, username)
         }
 
         override suspend fun memberships(): Result<Set<String>> {
             membershipCalls++
-            return Result.success(setOf("circle-one"))
+            return membershipHandler(membershipCalls)
         }
     }
 
     private companion object {
-        fun offerFixture(id: String) = HostOffer(
+        fun offerFixture(id: String, username: String = "host-owl") = HostOffer(
             id = id,
             status = "yes",
             description = "A fictional room",
             maxGuests = 2,
-            user = MessageMember("anonymous-member-id", "host-owl", "Anonymous Host"),
+            user = MessageMember("anonymous-member-id", username, "Anonymous Host"),
         )
+        fun profile(username: String) = MemberProfile(null, username, "Anonymous Host", "A fictional host", null, null, languages = emptyList())
     }
 }

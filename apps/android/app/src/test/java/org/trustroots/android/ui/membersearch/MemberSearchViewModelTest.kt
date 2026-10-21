@@ -94,6 +94,59 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun repositoryExceptionBecomesRetryableFailureAndNextSubmissionSucceeds() = withScope { scope ->
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = { call ->
+            if (call == 1) throw IOException("Temporary repository exception")
+            Result.success(listOf(member("steady-owl", "Steady Owl")))
+        }
+        val viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("steady"))
+
+        viewModel.onEvent(MemberSearchEvent.Submit)
+        assertFalse(viewModel.state.value.isLoading)
+        assertEquals(MemberSearchFailureKind.SEARCH, viewModel.state.value.failure?.kind)
+        assertTrue(viewModel.state.value.results.isEmpty())
+
+        viewModel.onEvent(MemberSearchEvent.Submit)
+
+        assertEquals(listOf("steady", "steady"), repository.queries)
+        assertEquals(listOf(member("steady-owl", "Steady Owl")), viewModel.state.value.results)
+        assertNull(viewModel.state.value.failure)
+    }
+
+    @Test
+    fun inFlightSubmissionIsNotDuplicated() = withScope { scope ->
+        val response = CompletableDeferred<Result<List<MemberProfile>>>()
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = { withContext(NonCancellable) { response.await() } }
+        val viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("steady"))
+
+        viewModel.onEvent(MemberSearchEvent.Submit)
+        viewModel.onEvent(MemberSearchEvent.Submit)
+        assertEquals(listOf("steady"), repository.queries)
+        assertTrue(viewModel.state.value.isLoading)
+
+        response.complete(Result.success(listOf(member("steady-owl", "Steady Owl"))))
+
+        assertEquals(listOf(member("steady-owl", "Steady Owl")), viewModel.state.value.results)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun staleVersionedResetCannotClearCurrentEntryStateAndScrollNeverGoesNegative() = withScope { scope ->
+        val viewModel = MemberSearchViewModel(FakeMemberSearchRepository(), scope)
+        viewModel.onEvent(MemberSearchEvent.Reset(generation = 8))
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("current query"))
+        viewModel.onEvent(MemberSearchEvent.ResultsScrolled(-4))
+        viewModel.onEvent(MemberSearchEvent.Reset(generation = 7))
+
+        assertEquals("current query", viewModel.state.value.query)
+        assertEquals(0, viewModel.state.value.resultScrollOffset)
+    }
+
+    @Test
     fun storesOnlyNonblankApiServerMessageAndFailureKind() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
         repository.searchHandler = {
@@ -205,6 +258,8 @@ class MemberSearchViewModelTest {
         viewModel.onEvent(MemberSearchEvent.Submit)
         val pending = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
 
+        viewModel.onEvent(MemberSearchEvent.SessionInvalidationDelivered(pending.id + 1))
+        assertEquals(pending, viewModel.state.value.pendingSessionInvalidation)
         viewModel.onEvent(MemberSearchEvent.SessionInvalidationDelivered(pending.id))
         assertNull(viewModel.state.value.pendingSessionInvalidation)
         viewModel.onEvent(MemberSearchEvent.Submit)

@@ -121,7 +121,18 @@ jobs:
             adb shell settings put secure show_ime_with_hard_keyboard 1
             adb shell ime list -s
             adb shell settings get secure default_input_method
-            bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
+            if bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable; then
+              :
+            else
+              status=$?
+              diagnostics=apps/android/app/build/diagnostics/api36-failure
+              mkdir -p "$diagnostics"
+              adb logcat -d -v threadtime > "$diagnostics/logcat.txt" 2>&1 || true
+              adb shell dumpsys window windows > "$diagnostics/window.txt" 2>&1 || true
+              adb shell dumpsys activity activities > "$diagnostics/activities.txt" 2>&1 || true
+              adb shell dumpsys activity lastanr > "$diagnostics/last-anr.txt" 2>&1 || true
+              exit "$status"
+            fi
       - name: Merge API 32 notification and WebView compatibility coverage
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
@@ -162,6 +173,7 @@ jobs:
             apps/android/app/build/reports/androidTests/
             apps/android/app/build/reports/tests/
             apps/android/app/build/test-results/
+            apps/android/app/build/diagnostics/api36-failure/
             apps/android/app/build/outputs/androidTest-results/
             apps/android/app/build/outputs/code_coverage/debugAndroidTest/connected/api32/
             apps/android/app/build/reports/coverage/

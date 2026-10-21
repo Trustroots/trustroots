@@ -3,12 +3,16 @@ package org.trustroots.android.ui
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
@@ -31,6 +35,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
@@ -92,24 +97,44 @@ class HostMapDetailAndCircleFilterJourneyTest {
         compose.waitUntil(15_000) { offerFilters.isNotEmpty() }
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("All circles").performClick()
+        compose.onNodeWithTag("circleFilterOption-all").assertIsSelected()
         waitForText("Quiet Circle")
+        compose.onNodeWithTag("circleFilterOption-circle-one").assertIsNotSelected()
         compose.onNodeWithText("Quiet Circle").performClick()
+        compose.onNodeWithTag("circleFilterOption-circle-two").assertIsSelected()
         compose.onNodeWithText("Wanderers").performClick()
+        compose.onNodeWithTag("circleFilterOption-circle-one").assertIsSelected()
         compose.waitUntil(15_000) {
             offerFilters.any { it.contains("\"tribes\":[\"circle-one\",\"circle-two\"]") }
         }
         val filterCountBeforeDeselect = offerFilters.size
-        compose.onNodeWithText("✓ Quiet Circle").performClick()
+        compose.onNodeWithTag("circleFilterOption-circle-two").performClick()
+        compose.onNodeWithTag("circleFilterOption-circle-two").assertIsNotSelected()
+        compose.onNodeWithTag("circleFilterOption-all").assertIsNotSelected()
 
         compose.waitUntil(15_000) {
             offerFilters.drop(filterCountBeforeDeselect)
                 .any { it.contains("\"tribes\":[\"circle-one\"]") }
         }
-        compose.onNodeWithText("Wanderers").assertIsDisplayed()
-        compose.onNodeWithText("✓ Wanderers").assertIsDisplayed()
+        compose.onNodeWithTag("circleFilterOption-circle-one").assertIsDisplayed()
+        compose.onNodeWithTag("circleFilterOption-circle-one").assertIsSelected()
         val filtersAfterDeselect = offerFilters.drop(filterCountBeforeDeselect)
         assertTrue(filtersAfterDeselect.any { it.contains("\"tribes\":[\"circle-one\"]") })
         assertFalse(filtersAfterDeselect.any { it.contains("\"tribes\":[\"circle-one\",\"circle-two\"]") })
+
+        pressBackFromNonActivityRoot(compose.activity)
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag("circleFilterOption-all").fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithText("Spoken languages").performScrollTo().performClick()
+        compose.onNodeWithTag("languageFilterOption-any").assertIsSelected()
+        compose.onNodeWithTag("languageFilterOption-eng").assertIsNotSelected()
+        compose.onNodeWithTag("languageFilterOption-eng").performScrollTo().performClick()
+        compose.onNodeWithTag("languageFilterOption-eng").assertIsSelected()
+        compose.onNodeWithTag("languageFilterOption-any").assertIsNotSelected()
+        compose.onNodeWithTag("languageFilterOption-eng").performScrollTo().performClick()
+        compose.onNodeWithTag("languageFilterOption-eng").assertIsNotSelected()
+        compose.onNodeWithTag("languageFilterOption-any").assertIsSelected()
     }
 
     private val invalidations = AtomicInteger()

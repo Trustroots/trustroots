@@ -1,4 +1,4 @@
-package org.trustroots.android.ui.circles
+package org.trustroots.android.ui.circledetail
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -16,6 +16,10 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.circles.CircleRepository
+import org.trustroots.android.ui.circles.CirclesFailure
+import org.trustroots.android.ui.circles.CirclesFailureKind
+import org.trustroots.android.ui.circles.CirclesSessionInvalidation
 
 internal data class CircleDetailMembershipEvent(
     val id: Long,

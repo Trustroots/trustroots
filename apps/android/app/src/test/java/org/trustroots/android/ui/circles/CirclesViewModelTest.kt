@@ -79,7 +79,7 @@ class CirclesViewModelTest {
     fun repeatedMembershipTapIsIgnoredUntilTheFirstUpdateCompletes() = withScope { scope ->
         val pendingUpdate = CompletableDeferred<Result<Unit>>()
         val repository = FakeCircleRepository().apply {
-            updateHandler = { _, _ -> pendingUpdate.await() }
+            updateHandler = { pendingUpdate.await() }
         }
         val circle = circle("circle-one", "Harbour", 3)
         val viewModel = CirclesViewModel(repository, scope = scope)
@@ -303,6 +303,29 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun environmentSwitchCancelsPendingMembershipMutationAndLoadsNewAccountState() = withScope { scope ->
+        val oldMutation = CompletableDeferred<Result<Unit>>()
+        val repository = FakeCircleRepository()
+        repository.updateApi(api())
+        repository.updateSession(session("connect.sid=old-session"))
+        repository.circles = listOf(circle("new-circle", "New account", 2))
+        repository.updateHandler = { withContext(NonCancellable) { oldMutation.await() } }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        viewModel.onEvent(CirclesEvent.ToggleMembership(circle("old-circle", "Old account", 1)))
+        assertEquals("old-circle", viewModel.state.value.updatingCircleID)
+
+        viewModel.updateEnvironment(api("https://other.example.test"), session("connect.sid=new-session"))
+        oldMutation.complete(Result.success(Unit))
+
+        assertEquals(listOf("new-circle"), viewModel.state.value.circles.map { it.id })
+        assertTrue(viewModel.state.value.memberships.isEmpty())
+        assertNull(viewModel.state.value.updatingCircleID)
+        assertFalse(viewModel.state.value.isLoading)
+        assertEquals(listOf("old-circle" to false), repository.membershipChanges)
+    }
+
+    @Test
     fun replacingClientForSameNormalizedBackendKeepsOverviewStateWithoutReloading() = withScope { scope ->
         val firstApi = api("https://api.example.test")
         val repository = FakeCircleRepository(circles = listOf(circle("circle-one", "First", 1)))
@@ -382,7 +405,7 @@ class CirclesViewModelTest {
         var circleReads = 0
         var membershipReads = 0
         var updateResult: Result<Unit> = Result.success(Unit)
-        var updateHandler: suspend (String, Boolean) -> Result<Unit> = { _, _ -> updateResult }
+        var updateHandler: suspend () -> Result<Unit> = { updateResult }
         private var currentSession: MemberSession? = null
         private var currentBackendURL: String? = null
         var circlesHandler: suspend (Int) -> Result<List<TrustrootsCircle>> = { Result.success(circles) }
@@ -413,7 +436,7 @@ class CirclesViewModelTest {
 
         override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
             membershipChanges += circleID to isMember
-            return updateHandler(circleID, isMember)
+            return updateHandler()
         }
     }
 

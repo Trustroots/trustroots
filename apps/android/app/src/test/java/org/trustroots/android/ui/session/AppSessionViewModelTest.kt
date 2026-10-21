@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.ViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -108,6 +109,30 @@ class AppSessionViewModelTest {
     }
 
     @Test
+    fun backendChangeNormalisesTheActiveIdentityBeforeAcceptingSignIn() = withScope { scope ->
+        val operations = FakeOperations()
+        val model = settledModel(scope, operations, "https://first.example.invalid")
+        val signedIn = session("connect.sid=backend-switch-session")
+
+        model.onEvent(AppSessionEvent.BackendChanged(" https://second.example.invalid/ "))
+        model.onEvent(AppSessionEvent.SignedIn(signedIn, "https://first.example.invalid"))
+        assertNull(model.state.value.session)
+        assertTrue(operations.events.isEmpty())
+
+        model.onEvent(AppSessionEvent.SignedIn(signedIn, "https://second.example.invalid/"))
+        assertEquals(signedIn, model.state.value.session)
+        assertEquals(listOf("save:quiet-heron", "clear-sign-in"), operations.events)
+    }
+
+    @Test
+    fun sessionFactoryRejectsUnrelatedViewModelTypes() {
+        val factory = AppSessionViewModel.Factory(FakeOperations())
+        val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun signInPersistsBeforePublishingAndClearsTheSignInDestination() = withScope { scope ->
         val operations = FakeOperations()
         val model = settledModel(scope, operations)
@@ -133,6 +158,24 @@ class AppSessionViewModelTest {
         assertEquals(listOf("save:quiet-heron"), operations.events)
         assertEquals("connect.sid=fictional-session", model.state.value.session?.cookieHeader)
         assertEquals(updatedMember, model.state.value.session?.member)
+    }
+
+    @Test
+    fun callbacksForThePreviousUsernameCannotClearTheUpdatedAccount() = withScope { scope ->
+        val backendURL = "https://example.invalid"
+        val originalSession = session()
+        val operations = FakeOperations().apply { restoredSession = originalSession }
+        val model = settledModel(scope, operations, backendURL)
+        val originalSource = AppSessionSource.from(originalSession, backendURL)
+        val updatedMember = MobileMember("updated-quiet-heron", "Quiet Heron")
+        model.onEvent(AppSessionEvent.MemberUpdated(originalSource, updatedMember))
+        operations.events.clear()
+
+        model.onEvent(AppSessionEvent.SignedOut(originalSource))
+
+        assertEquals(originalSession.cookieHeader, model.state.value.session?.cookieHeader)
+        assertEquals(updatedMember, model.state.value.session?.member)
+        assertTrue(operations.events.isEmpty())
     }
 
     @Test
@@ -418,4 +461,6 @@ class AppSessionViewModelTest {
     }
 
     private class TestStoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class OtherViewModel : ViewModel()
 }

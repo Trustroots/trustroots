@@ -159,7 +159,10 @@
     <string name="screen_last_active_any_time">Last active: any time</string>
     <string name="screen_all_circles">All circles</string>
     <string name="screen_one_circle">1 circle</string>
-    <string name="screen_circles_count">%1$d circles</string>
+    <plurals name="screen_circles_count">
+        <item quantity="one">%1$d circle</item>
+        <item quantity="other">%1$d circles</item>
+    </plurals>
     <string name="screen_spoken_languages">Spoken languages</string>
     <string name="screen_any_language">Any language</string>
     <string name="screen_community_notes_via_nostroots">Community notes via Nostroots</string>

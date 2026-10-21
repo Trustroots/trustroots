@@ -113,18 +113,20 @@ trigger a fresh build. Android changes also build automatically without the labe
 
 ## Member screen source layout
 
-The member screens extracted from `MemberJourneys.kt` each have a package below
-`app/src/main/java/org/trustroots/android/ui`: `membersearch`, `profile`,
-`editprofile`, `inbox`, `conversation` and `contacts`. Profile actions and sections
-live beside the profile screen; the conversation's quick replies live beside its
-screen. Shared artwork, form navigation, inset and failure helpers, language
-labels and message timestamps live in `ui/common`.
+Member feature screens have dedicated packages below
+`app/src/main/java/org/trustroots/android/ui`, including `account`, `circles`,
+`contacts`, `conversation`, `editprofile`, `experience`, `hostdetail`,
+`hostmap`, `hostoffer`, `inbox`, `membersearch`, `menu`, `profile`, `search`
+and `signin`. Feature-specific actions, sections and supporting UI live beside
+their screen; shared artwork, form navigation, inset and failure helpers,
+language labels and message timestamps live in `ui/common`. The root
+`TrustrootsApp` hosts shell and destination navigation, while the embedded
+browser remains a shared platform component.
 
-This source organisation preserves the current screen state and navigation
-callbacks. The remaining screen organisation, ViewModels, Navigation 3,
-localisation, themes and presentation work are tracked in
-[issue #3234](https://github.com/Trustroots/trustroots/issues/3234). Reproduce
-reported behaviour against the current app before implementing those changes.
+Further native Android screen and navigation work is tracked in
+[issue #3234](https://github.com/Trustroots/trustroots/issues/3234); this source
+layout description does not imply that the issue or its verification is
+complete.
 
 ## Search controls
 

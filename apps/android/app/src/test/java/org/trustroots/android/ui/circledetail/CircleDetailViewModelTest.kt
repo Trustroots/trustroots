@@ -1,4 +1,4 @@
-package org.trustroots.android.ui.circles
+package org.trustroots.android.ui.circledetail
 
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -25,6 +25,9 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.TrustrootsCircle
+import org.trustroots.android.ui.circles.CircleRepository
+import org.trustroots.android.ui.circles.CirclesFailureKind
+import org.trustroots.android.ui.circles.CirclesSessionInvalidation
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
@@ -156,6 +159,28 @@ class CircleDetailViewModelTest {
         assertEquals("new-account-id", fresh.state.value.circle?.id)
         assertEquals("New Account Circle", fresh.state.value.circle?.label)
         assertFalse(fresh.state.value.isLoading)
+    }
+
+    @Test
+    fun sessionReplacementRejectsLateMembershipsFromPreviousAccount() = withRepository { repository, scope ->
+        val oldMemberships = CompletableDeferred<Result<Set<String>>>()
+        repository.membershipsHandler = { call ->
+            if (call == 1) withContext(NonCancellable) { oldMemberships.await() }
+            else Result.success(setOf("new-account-id"))
+        }
+        repository.circleHandler = { _, _ ->
+            Result.success(circle("new-account-id", "quiet-circle", "Current Circle", 4))
+        }
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope = scope)
+        assertFalse(viewModel.state.value.membershipsLoaded)
+
+        viewModel.updateEnvironment(api("https://other.example.test"), session("rotated-cookie"))
+        oldMemberships.complete(Result.success(emptySet()))
+
+        assertTrue(viewModel.state.value.membershipsLoaded)
+        assertTrue(viewModel.state.value.isMember)
+        assertEquals("new-account-id", viewModel.state.value.circle?.id)
+        assertFalse(viewModel.state.value.isLoading)
     }
 
     @Test

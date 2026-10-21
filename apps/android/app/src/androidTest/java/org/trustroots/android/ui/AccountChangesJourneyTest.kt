@@ -4,13 +4,12 @@ import org.trustroots.android.ui.account.AccountSettingsScreen
 
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.hasClickAction
-import androidx.compose.ui.test.hasAnySibling
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.SemanticsMatcher
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -116,24 +115,20 @@ class AccountChangesJourneyTest {
             compose.onAllNodesWithText("old@example.test").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Email address").performTextReplacement("new@example.test")
-        val newsletterToggle = compose.onNode(
-            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox) and
-                hasAnySibling(hasText("Community newsletter")),
-        )
-        newsletterToggle.performScrollTo().performClick()
+        val newsletter = compose.onNodeWithText("Community newsletter")
+        newsletter.assertIsOff().assert(hasClickAction()).performClick().assertIsOn()
         compose.onNodeWithText("Save email settings").performScrollTo().performClick()
         compose.waitUntil(10_000) {
             requests.count { it.first.startsWith("PUT /api/users ") } >= 1 &&
                 compose.onAllNodesWithText("Account saved.").fetchSemanticsNodes().isNotEmpty()
         }
         compose.waitForIdle()
-        newsletterToggle.performScrollTo().performClick()
+        newsletter.assertIsOn().assert(hasClickAction()).performClick().assertIsOff()
         compose.onNodeWithText("Save email settings").performScrollTo().performClick()
         compose.waitUntil(10_000) {
             requests.count { it.first.startsWith("PUT /api/users ") } >= 2 &&
                 runCatching { compose.onNodeWithText("Save email settings").assertIsEnabled() }.isSuccess
         }
-        compose.waitForIdle()
         compose.onNodeWithText("new@example.test").assertIsDisplayed()
         compose.onNodeWithText("Current password").performScrollTo().performTextReplacement("fictional-old-password")
         compose.onNodeWithText("New password").performScrollTo().performTextReplacement("fictional-new-password")

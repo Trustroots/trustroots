@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.layout.size
@@ -40,10 +41,10 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.Modifier
@@ -355,7 +356,7 @@ private fun MemberProfileContent(
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
-                    val compactHeaderHeight = profileActionsHeight + profileSectionBarHeight
+                    val compactHeaderHeight = profileActionsHeight
                     val expandedHeaderHeight = if (compactHeader) {
                         (maxHeight - contentPadding.calculateBottomPadding() - sectionContentTarget)
                             .coerceAtLeast(compactHeaderHeight)
@@ -387,12 +388,12 @@ private fun MemberProfileContent(
                     val compactProfileHeader = headerHeight <= compactHeaderHeight + 1.dp
                     val addContactLabel = stringResource(R.string.profile_add_contact)
                     Column(Modifier.fillMaxSize().nestedScroll(collapseConnection)) {
-                        Box(Modifier.fillMaxWidth().height(headerHeight)) {
+                        Box(Modifier.fillMaxWidth().height(headerHeight).clipToBounds()) {
                             ArtworkHero(
                                 url = member.id?.let { api.avatarURL(it, 512) },
                                 sessionCookie = session.cookieHeader,
                                 label = member.displayName,
-                                subtitle = "@${member.username}",
+                                subtitle = stringResource(R.string.screen_username_handle, member.username),
                                 background = MaterialTheme.colorScheme.primary,
                                 blurBackground = true,
                                 testTag = "profileHero",
@@ -400,17 +401,22 @@ private fun MemberProfileContent(
                                 compact = compactProfileHeader,
                                 showCompactIdentity = false,
                                 bottomContent = {
-                                    Box(
-                                        Modifier.fillMaxWidth().onSizeChanged { size ->
-                                            val measuredHeight = with(density) { size.height.toDp() }
-                                            if (profileSectionBarHeight != measuredHeight) profileSectionBarHeight = measuredHeight
-                                        },
-                                    ) {
-                                        ProfileSectionBar(
-                                            selected = ProfileSection.entries[profilePager.currentPage],
-                                            contactCount = contacts.size,
-                                            onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
-                                        )
+                                    if (!compactProfileHeader) {
+                                        val tabOffset = (profileActionsHeight - (headerHeight - profileSectionBarHeight)).coerceAtLeast(0.dp)
+                                        Box(
+                                            Modifier.fillMaxWidth()
+                                                .offset(y = tabOffset)
+                                                .onSizeChanged { size ->
+                                                    val measuredHeight = with(density) { size.height.toDp() }
+                                                    if (profileSectionBarHeight != measuredHeight) profileSectionBarHeight = measuredHeight
+                                                },
+                                        ) {
+                                            ProfileSectionBar(
+                                                selected = ProfileSection.entries[profilePager.currentPage],
+                                                contactCount = contacts.size,
+                                                onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
+                                            )
+                                        }
                                     }
                                 },
                                 onProfileImageClick = if (member.id != null) {
