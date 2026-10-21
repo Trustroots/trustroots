@@ -27,7 +27,7 @@ describe('React route ownership', function () {
 
   it('owns username admin links with the same admin-only access as ID links', () => {
     const matched = matchReactRoute('/admin/user/fictional-member');
-    matched.params.should.deepEqual({ username: 'fictional-member' });
+    should({ ...matched.params }).deepEqual({ username: 'fictional-member' });
     matched.policy.path.should.equal('/admin/user/:username');
     should(
       getReactRouteAccessRedirect(matched.policy, { roles: ['admin'] }),
