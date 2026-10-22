@@ -659,11 +659,13 @@ export default function ProfilePage({
         {!isLoading && profile?.username && profile.$resolved && (
           <>
             {isSelf && <ProfileCompletionReminders profile={profile} />}
-            <YourConnection
-              viewer={authUser}
-              member={profile}
-              onContactRemoved={removeContact}
-            />
+            {tab !== 'experiences' && tab !== 'experiences-new' && (
+              <YourConnection
+                viewer={authUser}
+                member={profile}
+                onContactRemoved={removeContact}
+              />
+            )}
             {pendingIncomingContact && (
               <div
                 className="tw:grid-row"

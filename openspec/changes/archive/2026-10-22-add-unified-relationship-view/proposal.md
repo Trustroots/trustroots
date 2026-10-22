@@ -7,9 +7,9 @@ parts of a member relationship but currently appear in separate places. Message
 feedback is hidden on small screens. Members can also mistake a contact request
 for permission to message or an endorsement of someone they have met.
 
-This proposal is the first PR towards #2888. It defines the existing-records
-delivery before implementation; #2888 remains open until that delivery is tested
-and complete.
+This proposal defines the existing-records delivery for #2888. Implementation
+delivers that scope using the existing contact, Experience and thread-feedback
+APIs; the richer shared-data work remains in #3136.
 
 ## What Changes
 
@@ -30,11 +30,10 @@ and complete.
 
 ## Scope and Compatibility
 
-This PR adds proposal documents only. Implementation tasks remain unchecked.
-The proposed delivery adds no relationship record, endpoint, migration or
+The delivery adds no relationship record, endpoint, migration or
 dependency. Existing contact and Experience identifiers, counts, reference-thread
 history and publication timers remain authoritative. Existing links and forms
-continue to work. Deployment requires only the eventual client changes.
+continue to work. Deployment requires only the client changes.
 
 Shared relationship data, persistent quick meeting entry, fact correction and
 hosting-detail editing belong to #3136. This delivery does not introduce those

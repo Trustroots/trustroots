@@ -172,7 +172,7 @@ test('member edits and submits a contact request and sees its pending state', as
   await expect(page.locator('#tr-react-root')).toBeVisible();
   await expect(
     page.getByText(
-      "You don't need to add someone as a contact to message them. Only add someone as a contact if you have met them or plan to meet them.",
+      'You can message this member without adding them as a contact. Only send contact requests to people you know, and only accept requests from people you know.',
     ),
   ).toBeVisible();
   const editor = page.locator('.contact-message [contenteditable="true"]');
