@@ -5,6 +5,7 @@ import userPassword from './../controllers/users.password.server.controller.mjs'
 import userAuthentication from './../controllers/users.authentication.server.controller.mjs';
 import userExport from './../controllers/users.export.server.controller.mjs';
 import unifiedPush from './../controllers/users.unified-push.server.controller.mjs';
+import { challenge } from '../controllers/users.nostr.server.controller.mts';
 import targetedRequestLimit from '../../../core/server/middleware/targeted-request-limit.server.middleware.mjs';
 
 /**
@@ -38,6 +39,12 @@ const defaultExport = function (app: RouteApplication) {
     .all(usersPolicy.isAllowed)
     .get(userProfile.getProfileRemovalStatus)
     .delete(userProfile.cancelProfileRemoval);
+
+  // Confirm user removal
+  app
+    .route('/api/users/nostr/challenge')
+    .all(usersPolicy.isAllowed)
+    .post(challenge);
 
   // Confirm user removal
   app

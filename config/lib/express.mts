@@ -374,6 +374,7 @@ function initHelmetHeaders(app: Express) {
           ...FEATURED_NOTE_RELAYS,
           'wss://relay.nomadwiki.org',
           'wss://relay.maps.hitchwiki.org',
+          'wss:', // Member-selected NIP-46 signer relays.
           'https://1p.trustroots.org', // Umami analytics
         ],
         // Allows control over Flash and other plugins.
