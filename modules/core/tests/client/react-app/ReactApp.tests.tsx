@@ -269,10 +269,9 @@ vi.mock('@/modules/messages/client/components/ThreadMessages', () => ({
 vi.mock('@/modules/users/client/components/Monkeybox', () => ({
   default: () => null,
 }));
-vi.mock(
-  '@/modules/references-thread/client/components/ReferenceThread',
-  () => ({ default: () => null }),
-);
+vi.mock('@/modules/contacts/client/components/YourConnection', () => ({
+  default: () => null,
+}));
 vi.mock('@/modules/users/client/components/ProfileOverview.component', () => ({
   default: () => null,
 }));

@@ -13,6 +13,7 @@
     "test:server": "node ../../scripts/test-module.cts server messages"
   },
   "dependencies": {
+    "@trustroots/contacts": "workspace:*",
     "@trustroots/core": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/users": "workspace:*"

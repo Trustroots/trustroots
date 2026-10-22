@@ -74,6 +74,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
           response.request().method() === 'POST' &&
           response.ok(),
       );
+      await expect(memberPage.getByRole('note')).toContainText(
+        'Only send contact requests to people you know, and only accept requests from people you know.',
+      );
       await memberPage.getByRole('button', { name: /^add contact$/i }).click();
       await addContact;
       await expect(
@@ -104,6 +107,9 @@ test.describe.serial('contacts and safety feature coverage', () => {
           response.url().includes(`/api/contact/${contact._id}`) &&
           response.request().method() === 'PUT' &&
           response.ok(),
+      );
+      await expect(alicePage.getByRole('note')).toContainText(
+        'You can message this member without adding them as a contact.',
       );
       await alicePage
         .getByRole('button', { name: /^confirm contact$/i })

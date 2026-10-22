@@ -253,16 +253,8 @@ vi.mock(
 );
 vi.mock('@/modules/messages/client/components/Thread.component', () => ({
   __esModule: true,
-  default: ({
-    user,
-    ReferencePanel,
-  }: UserRouteProps & {
-    ReferencePanel: React.ComponentType<{ userToId: string }>;
-  }) => (
-    <main>
-      Thread {user?.username}
-      <ReferencePanel userToId="thread-member" />
-    </main>
+  default: ({ user }: UserRouteProps) => (
+    <main>Thread {user?.username}</main>
   ),
 }));
 vi.mock('@/modules/search/client/components/SearchUsers.component', () => ({

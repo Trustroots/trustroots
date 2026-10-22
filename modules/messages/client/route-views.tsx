@@ -3,9 +3,7 @@ import Thread from './components/Thread.component';
 import { useSettings } from '@trustroots/core/app-context';
 import { useAuth } from '@trustroots/core/auth';
 
-export function ThreadRoute({
-  ReferencePanel,
-}: Pick<React.ComponentProps<typeof Thread>, 'ReferencePanel'>) {
+export function ThreadRoute() {
   const { user } = useAuth();
   /* istanbul ignore next -- app settings always provide this default in production. */
   const { profileMinimumLength = 140 } = useSettings();
@@ -14,7 +12,6 @@ export function ThreadRoute({
 
   return (
     <Thread
-      ReferencePanel={ReferencePanel}
       profileMinimumLength={profileMinimumLength as number}
       user={user as React.ComponentProps<typeof Thread>['user']}
     />

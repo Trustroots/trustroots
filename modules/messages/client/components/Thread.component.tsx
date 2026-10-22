@@ -22,6 +22,7 @@ import ThreadMessages from '@/modules/messages/client/components/ThreadMessages'
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import YourConnection from '@/modules/contacts/client/components/YourConnection';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type { Message, MessageUser, PageParams } from '../api/messages.api';
@@ -114,7 +115,6 @@ type ThreadCurrentUser = MessageUser & {
 type ThreadProps = {
   user: ThreadCurrentUser;
   profileMinimumLength: number;
-  ReferencePanel: React.ComponentType<{ userToId: string }>;
 };
 
 /** Counts, once per showing, that the reply form is hidden from the member. */
@@ -129,7 +129,6 @@ function MessageGateShown({ reason }: { reason: MessageGateReason }) {
 export default function Thread({
   user,
   profileMinimumLength,
-  ReferencePanel,
 }: ThreadProps) {
   const { t } = useTranslation('messages');
   const { track } = useAnalytics();
@@ -400,6 +399,14 @@ export default function Thread({
           {!isFetching && (
             <div className="thread-container tw:fixed tw:inset-s-0 tw:top-[var(--tr-header-height,44px)] tw:bottom-[var(--trustroots-keyboard-inset,0px)] tw:flex tw:min-h-0 tw:w-full tw:flex-col tw:overflow-hidden tw:sm:inset-s-auto tw:sm:bottom-3 tw:sm:w-[505px] tw:md:w-[667px] tw:lg:w-[800px]">
               {isFetchingMore && <Loading />}
+              {otherUser && !removed && (
+                <details style={{ flexShrink: 0 }}>
+                  <summary>{t<string>('Your connection')}</summary>
+                  <div style={{ maxHeight: '35vh', overflowY: 'auto' }}>
+                    <YourConnection viewer={user} member={otherUser} />
+                  </div>
+                </details>
+              )}
               {messages.length === 0 ? (
                 <>
                   <div className="tw:grow" />
@@ -473,7 +480,6 @@ export default function Thread({
                 }
               />
             </QueryClientProvider>
-            {messages.length > 0 && <ReferencePanel userToId={otherUser._id} />}
             <ReportMember username={otherUser.username as string} />
             <br />
             <br />

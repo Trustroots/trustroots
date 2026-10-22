@@ -30,6 +30,20 @@ vi.mock('@tanstack/react-router', async () =>
 vi.mock('@/modules/users/client/api/users.api');
 vi.mock('@/modules/contacts/client/api/contacts.api');
 vi.mock('@/modules/experiences/client/api/experiences.api');
+vi.mock('@/modules/contacts/client/components/YourConnection', () => ({
+  __esModule: true,
+  default: ({
+    viewer,
+    member,
+  }: {
+    viewer: { _id: string };
+    member: { _id: string };
+  }) => (
+    <div data-testid="your-connection">
+      Connection for {viewer._id} and {member._id}
+    </div>
+  ),
+}));
 const fetchProfile = vi.mocked(usersApi.fetch);
 const getContact = vi.mocked(contactsApi.getByUserId);
 const listContacts = vi.mocked(contactsApi.list);
@@ -404,6 +418,9 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('About Bob Example')).toBeVisible();
     expect(screen.getByText('Offers panel')).toBeVisible();
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
+    expect(screen.getByTestId('your-connection')).toHaveTextContent(
+      `Connection for ${authUser._id} and ${profile._id}`,
+    );
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
     expect(analytics.track).toHaveBeenCalledTimes(1);
     expect(analytics.track).toHaveBeenCalledWith('profile_viewed', {
