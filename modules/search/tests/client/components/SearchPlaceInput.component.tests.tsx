@@ -12,11 +12,12 @@ type PlaceSuggestion = Awaited<
 const locationApiMock = jest.mocked(locationApi);
 
 jest.mock('@/modules/search/client/api/location.api');
-jest.mock('use-debounce', () => {
+jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
   return {
-    useDebouncedCallback<Args extends unknown[], Result>(
+    __esModule: true,
+    default<Args extends unknown[], Result>(
       callback: (...args: Args) => Result,
     ) {
       const callbackRef = React.useRef(callback);

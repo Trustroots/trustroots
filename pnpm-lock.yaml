@@ -72,9 +72,6 @@ importers:
       connect-mongo:
         specifier: 5.1.0
         version: 5.1.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
-      cookie-parser:
-        specifier: 1.4.7
-        version: 1.4.7
       core-js:
         specifier: 3.50.0
         version: 3.50.0
@@ -189,9 +186,6 @@ importers:
       react-map-gl:
         specifier: 8.1.3
         version: 8.1.3(mapbox-gl@3.33.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
-      react-responsive:
-        specifier: 8.2.0
-        version: 8.2.0(react@19.3.1)
       react-select:
         specifier: 5.10.2
         version: 5.10.2(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@5.5.0)
@@ -219,9 +213,6 @@ importers:
       url:
         specifier: 0.11.4
         version: 0.11.4
-      use-debounce:
-        specifier: 10.1.1
-        version: 10.1.1(react@19.3.1)
       use-local-storage-state:
         specifier: 20.0.0
         version: 20.0.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -313,9 +304,6 @@ importers:
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
-      '@types/react-responsive':
-        specifier: 8.0.8
-        version: 8.0.8
       '@types/sinon':
         specifier: 22.0.0
         version: 22.0.0
@@ -2452,9 +2440,6 @@ packages:
     peerDependencies:
       '@types/react': ^19.3.0
 
-  '@types/react-responsive@8.0.8':
-    resolution: {integrity: sha512-HDUZtoeFRHrShCGaND23HmXAB9evOOTjkghd2wAasLkuorYYitm5A1XLeKkhXKZppcMBxqB/8V4Snl6hRUTA8g==}
-
   '@types/react-transition-group@4.4.12':
     resolution: {integrity: sha512-8TV6R3h2j7a91c+1DXdJi3Syo69zzIZbz7Lg5tORM5LEJG7X/E6a1V3drRyBRZq7/utz7A+c4OgYLiLcYGHG6w==}
     peerDependencies:
@@ -3281,13 +3266,6 @@ packages:
   cookie-es@3.1.1:
     resolution: {integrity: sha512-UaXxwISYJPTr9hwQxMFYZ7kNhSXboMXP+Z3TRX6f1/NyaGPfuNUZOWP1pUEb75B2HjfklIYLVRfWiFZJyC6Npg==}
 
-  cookie-parser@1.4.7:
-    resolution: {integrity: sha512-nGUvgXnotP3BsjiLX2ypbQnWoGUPIIfHQNZkkC668ntrzGWEZVW70HDEB1qnNGMicPje6EttlIgzo51YSwNQGw==}
-    engines: {node: '>= 0.8.0'}
-
-  cookie-signature@1.0.6:
-    resolution: {integrity: sha512-QADzlaHc8icV8I7vbaJXJwod9HWYp8uCqf1xa4OfNu1T7JVxQIrUgOWtHdNDtPiywmFbiS12VjotIXLrKM3orQ==}
-
   cookie-signature@1.0.7:
     resolution: {integrity: sha512-NXdYc3dLr47pBkpUCHtKSwIOQXLVn8dZEuywboCOJY/osA0wFSLlSawr3KN8qXJEyX66FcONTH8EIlVuK0yyFA==}
 
@@ -3325,9 +3303,6 @@ packages:
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
     engines: {node: '>= 8'}
-
-  css-mediaquery@0.1.2:
-    resolution: {integrity: sha512-COtn4EROW5dBGlE/4PiKnh6rZpAPxDeFLaEEwt4i10jpDMFt2EhQGS79QmmrO+iKCHv0PU/HrOWEhijFd1x99Q==}
 
   css-select@5.2.2:
     resolution: {integrity: sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==}
@@ -4195,9 +4170,6 @@ packages:
     engines: {node: '>=12'}
     hasBin: true
 
-  hyphenate-style-name@1.1.0:
-    resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
-
   i18next-browser-languagedetector@8.2.1:
     resolution: {integrity: sha512-bZg8+4bdmaOiApD7N7BPT9W8MLZG+nPTOFlLiJiT8uzKXFjhxw4v2ierCXOwB5sFDMtuA5G4kgYZ0AznZxQ/cw==}
 
@@ -4904,9 +4876,6 @@ packages:
   mapbox-gl@3.33.0:
     resolution: {integrity: sha512-2HpIrVedccHedolZyMVG/7FXdpgmsLTENgEDsX71x3/gKDGfYMf1FCRY0prntknkn/JXcraUKXlBTv7vkr0EXg==}
 
-  matchmediaquery@0.3.1:
-    resolution: {integrity: sha512-Hlk20WQHRIm9EE9luN1kjRjYXAQToHOIAHPJn9buxBwuhfTHoKUcX+lXBbxc85DVQfXYbEQ4HcwQdd128E3qHQ==}
-
   math-intrinsics@1.1.0:
     resolution: {integrity: sha512-/IXtbwEk5HTPyEwyKX6hGkYXxM9nbj64B+ilVJnC/R6B0pH5G4V3b0pVbL7DBj4tkhBAppbQUlf6F6Xl9LHu1g==}
     engines: {node: '>= 0.4'}
@@ -5581,12 +5550,6 @@ packages:
       maplibre-gl:
         optional: true
 
-  react-responsive@8.2.0:
-    resolution: {integrity: sha512-iagCqVrw4QSjhxKp3I/YK6+ODkWY6G+YPElvdYKiUUbywwh9Ds0M7r26Fj2/7dWFFbOpcGnJE6uE7aMck8j5Qg==}
-    engines: {node: '>= 0.10'}
-    peerDependencies:
-      react: '>=16.8.0'
-
   react-select@5.10.2:
     resolution: {integrity: sha512-Z33nHdEFWq9tfnfVXaiM12rbJmk+QjFEztWLtmXqQhz6Al4UZZ9xc0wiatmGtUOCCnHN0WizL3tCMYRENX4rVQ==}
     peerDependencies:
@@ -5832,9 +5795,6 @@ packages:
 
   setprototypeof@1.2.0:
     resolution: {integrity: sha512-E5LDX7Wrp85Kil5bhZv46j8jOeboKq5JMmYM3gVGdGH8xFpPWXUMsNrlODCrkoxMEeNi/XZIwuRvY4XNwYMJpw==}
-
-  shallow-equal@1.2.1:
-    resolution: {integrity: sha512-S4vJDjHHMBaiZuT9NPb616CSmLf618jawtv3sufLl6ivK8WocjAo58cXwbRV1cgqxH0Qbv+iUt6m05eqEa2IRA==}
 
   sharp@0.35.5:
     resolution: {integrity: sha512-Ywn4OnzGukp7CDMrp08RQ50YKmuwG47brZgIVPTvBaaAfQlRlygrRqSrxdCiL9M+LlzLBiJ68IR1QqvzHyjC7g==}
@@ -6357,12 +6317,6 @@ packages:
   url@0.11.4:
     resolution: {integrity: sha512-oCwdVC7mTuWiPyjLUz/COz5TLk6wgp0RCsN+wHZ2Ekneac9w8uuV0njcbbie2ME+Vs+d6duwmYuR3HgQXs1fOg==}
     engines: {node: '>= 0.4'}
-
-  use-debounce@10.1.1:
-    resolution: {integrity: sha512-kvds8BHR2k28cFsxW8k3nc/tRga2rs1RHYCqmmGqb90MEeE++oALwzh2COiuBLO1/QXiOuShXoSN2ZpWnMmvuQ==}
-    engines: {node: '>= 16.0.0'}
-    peerDependencies:
-      react: '*'
 
   use-isomorphic-layout-effect@1.2.1:
     resolution: {integrity: sha512-tpZZ+EX0gaghDAiFR37hj5MgY6ZN55kLiPkJsKxBMZ6GZdOSPJXiOzPM984oPYZ5AnehYx5WQp1+ME8I/P/pRA==}
@@ -8696,10 +8650,6 @@ snapshots:
     dependencies:
       '@types/react': 19.3.0
 
-  '@types/react-responsive@8.0.8':
-    dependencies:
-      '@types/react': 19.3.0
-
   '@types/react-transition-group@4.4.12(@types/react@19.3.0)':
     dependencies:
       '@types/react': 19.3.0
@@ -9618,13 +9568,6 @@ snapshots:
 
   cookie-es@3.1.1: {}
 
-  cookie-parser@1.4.7:
-    dependencies:
-      cookie: 0.7.2
-      cookie-signature: 1.0.6
-
-  cookie-signature@1.0.6: {}
-
   cookie-signature@1.0.7: {}
 
   cookie-signature@1.2.2: {}
@@ -9661,8 +9604,6 @@ snapshots:
       path-key: 3.1.1
       shebang-command: 2.0.0
       which: 2.0.2
-
-  css-mediaquery@0.1.2: {}
 
   css-select@5.2.2:
     dependencies:
@@ -10731,8 +10672,6 @@ snapshots:
 
   husky@7.0.4: {}
 
-  hyphenate-style-name@1.1.0: {}
-
   i18next-browser-languagedetector@8.2.1:
     dependencies:
       '@babel/runtime': 7.29.10
@@ -11627,10 +11566,6 @@ snapshots:
 
   mapbox-gl@3.33.0: {}
 
-  matchmediaquery@0.3.1:
-    dependencies:
-      css-mediaquery: 0.1.2
-
   math-intrinsics@1.1.0: {}
 
   media-typer@0.3.0: {}
@@ -12334,14 +12269,6 @@ snapshots:
     optionalDependencies:
       mapbox-gl: 3.33.0
 
-  react-responsive@8.2.0(react@19.3.1):
-    dependencies:
-      hyphenate-style-name: 1.1.0
-      matchmediaquery: 0.3.1
-      prop-types: 15.8.1
-      react: 19.3.1
-      shallow-equal: 1.2.1
-
   react-select@5.10.2(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@5.5.0):
     dependencies:
       '@babel/runtime': 7.29.10
@@ -12684,8 +12611,6 @@ snapshots:
       split-string: 3.1.0
 
   setprototypeof@1.2.0: {}
-
-  shallow-equal@1.2.1: {}
 
   sharp@0.35.5(@types/node@26.6.5):
     dependencies:
@@ -13296,10 +13221,6 @@ snapshots:
     dependencies:
       punycode: 1.4.1
       qs: 6.16.1
-
-  use-debounce@10.1.1(react@19.3.1):
-    dependencies:
-      react: 19.3.1
 
   use-isomorphic-layout-effect@1.2.1(@types/react@19.3.0)(react@19.3.1):
     dependencies:

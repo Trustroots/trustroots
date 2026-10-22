@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { useMediaQuery } from 'react-responsive';
+import { useExtraSmall } from '../utils/use-extra-small';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -185,7 +185,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const showReply = (messages.length > 0 || !hasEmptyProfile) && !removed;
   const showQuickReply = showReply && messages.length > 0 && !userHasReplied;
 
-  const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
+  const isExtraSmall = useExtraSmall();
 
   useEffect(() => {
     const viewport = window.visualViewport;
@@ -401,6 +401,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 </>
               ) : (
                 <ThreadMessages
+                  isExtraSmall={isExtraSmall}
                   user={
                     user as React.ComponentProps<typeof ThreadMessages>['user']
                   }

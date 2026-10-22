@@ -49,8 +49,8 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
   navigate: jest.fn(),
 }));
 let mockIsExtraSmall = true;
-jest.mock('react-responsive', () => ({
-  useMediaQuery: () => mockIsExtraSmall,
+jest.mock('@/modules/messages/client/utils/use-extra-small', () => ({
+  useExtraSmall: () => mockIsExtraSmall,
 }));
 jest.mock('@/modules/messages/client/components/InfiniteMessages', () => {
   const React = jest.requireActual<typeof import('react')>('react');

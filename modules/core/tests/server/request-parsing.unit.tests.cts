@@ -14,7 +14,7 @@ describe('Request parsing middleware', function () {
     app.all(
       '/inspect',
       (req: import('express').Request, res: import('express').Response) => {
-        res.json({ body: req.body, method: req.method, cookies: req.cookies });
+        res.json({ body: req.body, method: req.method });
       },
     );
     // Express identifies error middleware by its four-argument signature.
@@ -31,16 +31,14 @@ describe('Request parsing middleware', function () {
     );
   });
 
-  it('parses JSON and cookies', async function () {
+  it('parses JSON', async function () {
     const response = await request(app)
       .post('/inspect')
-      .set('Cookie', 'example=value')
       .send({ example: 'value' })
       .expect(200);
     assert.deepEqual(response.body, {
       body: { example: 'value' },
       method: 'POST',
-      cookies: { example: 'value' },
     });
   });
 
