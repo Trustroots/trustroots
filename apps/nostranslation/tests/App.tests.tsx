@@ -124,6 +124,26 @@ async function connect() {
 }
 
 describe('proofreading and improvements', () => {
+  it('organises proofreading in a table with comparable text and inline review controls', async () => {
+    await ready();
+    expect(
+      screen.getByRole('table', { name: 'Translation proofreading' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getAllByRole('columnheader').map(header => header.textContent),
+    ).toEqual([
+      'English source',
+      'Published translation',
+      'Your proposed translation',
+      'Review',
+    ]);
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+    expect(
+      screen.getByRole('region', { name: 'Translation table' }),
+    ).toHaveAttribute('tabindex', '0');
+    fireEvent.click(buttons('Approve translation')[0]);
+    expect(screen.getByText('Approved', { exact: true })).toBeInTheDocument();
+  });
   it('lets reviewers skip a string without losing their correction', async () => {
     await ready();
     edit(0, 'Hallo {{name}}');
@@ -140,7 +160,7 @@ describe('proofreading and improvements', () => {
     current.entries[1].suggestion = 'Guten Tag';
     current.entries[1].needsReview = true;
     await ready();
-    expect(screen.getByText('Published: Hallo')).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: 'Hallo' })).toBeInTheDocument();
   });
   it('supports search, language and section selection, published improvements, validation and approval', async () => {
     await ready();

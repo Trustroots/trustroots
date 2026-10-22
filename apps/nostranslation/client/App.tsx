@@ -335,72 +335,121 @@ export default function App() {
               improvement, or return when new AI drafts are ready.
             </p>
           )}
-          {visible.map(entry => {
-            const value = valueFor(entry);
-            const error = validateTranslation(entry.source, value);
-            const isApproved = Boolean(drafts[entry.id]?.approved);
-            return (
-              <article key={entry.id} className={isApproved ? 'approved' : ''}>
-                <div className="entry-meta">
-                  <span>{entry.namespace}</span>
-                  <span>
-                    {entry.model
-                      ? 'AI draft · ' + entry.model
-                      : entry.original
-                        ? 'Published translation'
-                        : 'Awaiting translation'}
-                  </span>
-                </div>
-                <p className="source" dir="auto">
-                  {entry.source}
-                </p>
-                {entry.original && entry.suggestion !== undefined && (
-                  <p className="previous" dir="auto">
-                    Published: {entry.original}
-                  </p>
-                )}
-                <label>
-                  Your proposed translation
-                  <textarea
-                    dir="auto"
-                    value={value}
-                    disabled={busy}
-                    onChange={event => update(entry, event.target.value, false)}
-                  />
-                </label>
-                {error && value && <p className="validation">{error}</p>}
-                <div className="entry-actions">
-                  <button
-                    disabled={busy || Boolean(error)}
-                    onClick={() => update(entry, value, !isApproved)}
-                  >
-                    {isApproved ? 'Undo approval' : 'Approve translation'}
-                  </button>
-                  <button
-                    disabled={busy}
-                    onClick={() =>
-                      update(
-                        entry,
-                        entry.suggestion ?? entry.original ?? '',
-                        false,
-                      )
-                    }
-                  >
-                    Reset
-                  </button>
-                  <button
-                    disabled={busy}
-                    onClick={() => {
-                      update(entry, value, false);
-                      setSkipped(previous => new Set(previous).add(entry.id));
-                    }}
-                  >
-                    Skip for now
-                  </button>
-                </div>
-              </article>
-            );
-          })}
+          <p id="translation-table-help" className="table-help">
+            Compare wording side by side. Scroll the table sideways on smaller
+            screens to reach the editor and review actions.
+          </p>
+          <div
+            className="table-scroll"
+            role="region"
+            aria-label="Translation table"
+            aria-describedby="translation-table-help"
+            tabIndex={0}
+          >
+            <table className="translation-table">
+              <caption className="visually-hidden">
+                Translation proofreading
+              </caption>
+              <colgroup>
+                <col className="source-column" />
+                <col className="published-column" />
+                <col className="proposal-column" />
+                <col className="review-column" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">English source</th>
+                  <th scope="col">Published translation</th>
+                  <th scope="col">Your proposed translation</th>
+                  <th scope="col">Review</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(entry => {
+                  const value = valueFor(entry);
+                  const error = validateTranslation(entry.source, value);
+                  const isApproved = Boolean(drafts[entry.id]?.approved);
+                  return (
+                    <tr key={entry.id} className={isApproved ? 'approved' : ''}>
+                      <td>
+                        <span className="entry-section">{entry.namespace}</span>
+                        <p className="source" dir="auto">
+                          {entry.source}
+                        </p>
+                      </td>
+                      <td>
+                        <p className="previous" dir="auto">
+                          {entry.original ?? 'Not translated'}
+                        </p>
+                      </td>
+                      <td>
+                        <label>
+                          <span className="visually-hidden">
+                            Your proposed translation
+                          </span>
+                          <textarea
+                            dir="auto"
+                            value={value}
+                            disabled={busy}
+                            onChange={event =>
+                              update(entry, event.target.value, false)
+                            }
+                          />
+                        </label>
+                        {error && value && (
+                          <p className="validation">{error}</p>
+                        )}
+                      </td>
+                      <td>
+                        <p className="review-status">
+                          {isApproved
+                            ? 'Approved'
+                            : entry.model
+                              ? 'AI draft'
+                              : entry.original
+                                ? 'Published translation'
+                                : 'Awaiting translation'}
+                        </p>
+                        <div className="entry-actions">
+                          <button
+                            disabled={busy || Boolean(error)}
+                            onClick={() => update(entry, value, !isApproved)}
+                          >
+                            {isApproved
+                              ? 'Undo approval'
+                              : 'Approve translation'}
+                          </button>
+                          <button
+                            disabled={busy}
+                            onClick={() =>
+                              update(
+                                entry,
+                                entry.suggestion ?? entry.original ?? '',
+                                false,
+                              )
+                            }
+                          >
+                            Reset
+                          </button>
+                          <button
+                            disabled={busy}
+                            onClick={() => {
+                              update(entry, value, false);
+                              setSkipped(previous =>
+                                new Set(previous).add(entry.id),
+                              );
+                            }}
+                          >
+                            Skip for now
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
           {!reviewing && (
             <nav aria-label="Queue pages">
               <button

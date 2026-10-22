@@ -53,6 +53,14 @@ Retries SHALL recover the same PR, and all publication SHALL use normal CI and
 maintainer merge controls. The frontend SHALL support local draft recovery,
 search, missing-string filtering and mobile proofreading.
 
+#### Scenario: A contributor compares and corrects translations
+
+- **WHEN** the contributor opens the proofreading queue or batch review
+- **THEN** a semantic table SHALL align English source, published translation,
+  editable proposed translation and labelled review status/actions in columns
+- **AND** table headers SHALL remain visible while scrolling through strings
+- **AND** small screens SHALL support horizontal table scrolling without page overflow
+
 #### Scenario: GitHub returns an uncertain submission outcome
 
 - **WHEN** the contributor retries a previously submitted batch

@@ -30,6 +30,91 @@ function catalogue(): Catalogue {
   };
 }
 
+test('compare translations in a table and reach inline controls on small screens', async ({
+  page,
+}, testInfo) => {
+  const current = catalogue();
+  await page.route('https://translation-api.example/**', route =>
+    route.fulfill({
+      json: route.request().url().includes('/languages')
+        ? [{ code: 'de', label: 'Deutsch', english: 'German' }]
+        : current,
+      headers: { 'Access-Control-Allow-Origin': '*' },
+    }),
+  );
+  await page.goto('');
+  await page.getByLabel('Show').selectOption('all');
+  const table = page.getByRole('table', { name: 'Translation proofreading' });
+  await expect(table.getByRole('columnheader')).toHaveText([
+    'English source',
+    'Published translation',
+    'Your proposed translation',
+    'Review',
+  ]);
+  await expect(table.locator('tbody tr')).toHaveCount(2);
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: `/tmp/nostranslation-table-${testInfo.project.name}.png`,
+    fullPage: true,
+  });
+  const published = table
+    .getByRole('row')
+    .filter({ has: page.getByText('Hello', { exact: true }) });
+  await published.getByLabel('Your proposed translation').fill('Guten Tag');
+  await published
+    .getByRole('button', { name: 'Approve translation', exact: true })
+    .click();
+  await expect(published.getByText('Approved', { exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        document.documentElement.scrollWidth <=
+        document.documentElement.clientWidth,
+    ),
+  ).toBe(true);
+  const region = page.getByRole('region', { name: 'Translation table' });
+  if (testInfo.project.name === 'mobile') {
+    expect(
+      await region.evaluate(
+        element => element.scrollWidth > element.clientWidth,
+      ),
+    ).toBe(true);
+    expect(
+      await region.evaluate(element => element.scrollLeft),
+    ).toBeGreaterThan(0);
+  }
+  current.entries.push(
+    ...Array.from({ length: 20 }, (_, index) => ({
+      ...current.entries[0],
+      id: `users:Example ${index}`,
+      key: `Example ${index}`,
+      source: `Example ${index} {{name}}`,
+    })),
+  );
+  await page.getByRole('button', { name: 'Refresh translations' }).click();
+  await expect(table.locator('tbody tr')).toHaveCount(20);
+  await region.evaluate(element => {
+    element.scrollTop = 200;
+  });
+  expect(await region.evaluate(element => element.scrollTop)).toBeGreaterThan(
+    0,
+  );
+  const headerTop = await table
+    .getByRole('columnheader')
+    .first()
+    .evaluate(element => element.getBoundingClientRect().top);
+  const regionTop = await region.evaluate(
+    element => element.getBoundingClientRect().top,
+  );
+  expect(Math.abs(headerTop - regionTop)).toBeLessThan(3);
+});
+
 test('proofread an AI draft and submit a correction through a Nostr signer', async ({
   page,
 }, testInfo) => {
@@ -137,7 +222,7 @@ test('improve published text and require renewed approval after every edit', asy
   await page.goto('');
   await page.getByLabel('Show').selectOption('all');
   const published = page
-    .locator('article')
+    .locator('tbody tr')
     .filter({ has: page.getByText('Hello', { exact: true }) });
   await published.getByLabel('Your proposed translation').fill('Guten Tag');
   await published
@@ -149,12 +234,12 @@ test('improve published text and require renewed approval after every edit', asy
     page.getByRole('button', { name: 'Review approved translations' }),
   ).toBeDisabled();
   await page.getByLabel('Search').fill('guten morgen');
-  await expect(page.locator('article')).toHaveCount(1);
+  await expect(page.locator('tbody tr')).toHaveCount(1);
   await expect(
     published.getByLabel('Your proposed translation'),
   ).toHaveAttribute('dir', 'auto');
   await published.getByRole('button', { name: 'Skip for now' }).click();
-  await expect(page.locator('article')).toHaveCount(0);
+  await expect(page.locator('tbody tr')).toHaveCount(0);
   await page.getByRole('button', { name: 'Refresh translations' }).click();
   await expect(published.getByLabel('Your proposed translation')).toHaveValue(
     'Guten Morgen',

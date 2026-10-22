@@ -77,6 +77,9 @@ member records or credentials. See the [Structured Outputs documentation](https:
 
 ## Proofreading and corrections
 
+- Proofread in a table comparing English source, published wording and your
+  proposed translation, with status and review actions on each row. Headers stay
+  visible while scrolling; on small screens scroll the table sideways to edit.
 - Select a language and review the queue, or choose **All translations** to
   improve published wording. Editing clears approval. Drafts stay in this
   browser; clearing browser storage removes them. **Skip for now** hides a string
