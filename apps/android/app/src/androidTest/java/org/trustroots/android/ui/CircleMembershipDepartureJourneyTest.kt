@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -48,7 +49,7 @@ class CircleMembershipDepartureJourneyTest {
         waitForEnabledText("Leave circle")
 
         assertEquals(
-            listOf("GET" to "/api/tribes?limit=150", "GET" to "/api/users/memberships", "DELETE" to "/api/users/memberships/circle-harbour"),
+            listOf("GET" to "/api/tribes?limit=150", "GET" to "/api/users/memberships", "GET" to "/api/tribes/quiet-harbour", "GET" to "/api/users/memberships", "DELETE" to "/api/users/memberships/circle-harbour"),
             local.requests.map { it.method to it.path },
         )
         val delete = local.requests.last()
@@ -73,7 +74,7 @@ class CircleMembershipDepartureJourneyTest {
         }
 
         assertEquals(
-            listOf("GET" to "/api/tribes?limit=150", "GET" to "/api/users/memberships", "DELETE" to "/api/users/memberships/circle-harbour"),
+            listOf("GET" to "/api/tribes?limit=150", "GET" to "/api/users/memberships", "GET" to "/api/tribes/quiet-harbour", "GET" to "/api/users/memberships", "DELETE" to "/api/users/memberships/circle-harbour"),
             local.requests.map { it.method to it.path },
         )
         assertEquals(TEST_SESSION.cookieHeader, local.requests.last().cookie)
@@ -111,6 +112,7 @@ class CircleMembershipDepartureJourneyTest {
     private fun membershipChangeFixture(deleteStatus: Int): LocalTransportFixture = LocalTransportFixture { request ->
         when (request.method to request.path) {
             "GET" to "/api/tribes?limit=150" -> LocalTransportFixture.Response(CIRCLES)
+            "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response(CIRCLE_DETAIL)
             "GET" to "/api/users/memberships" ->
                 LocalTransportFixture.Response("""[{"tribe":{"_id":"circle-harbour"}}]""")
             "DELETE" to "/api/users/memberships/circle-harbour" -> LocalTransportFixture.Response(
@@ -127,6 +129,7 @@ class CircleMembershipDepartureJourneyTest {
             MobileMember("steady-heron", "Steady Heron"),
         )
         const val CIRCLES = """[{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","count":4,"description":"A fictional circle for coastal travellers.","image":false}]"""
+        const val CIRCLE_DETAIL = """{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","count":4,"description":"A fictional circle for coastal travellers.","image":false}"""
         const val MEMBERSHIP_ERROR = """{"message":"Circle membership could not be changed."}"""
     }
 }

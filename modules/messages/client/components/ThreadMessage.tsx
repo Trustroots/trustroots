@@ -54,7 +54,11 @@ export default function ThreadMessage({ message, user }: ThreadMessageProps) {
           <TimeAgo date={new Date(message.created)} />
         </div>
         <div className="panel panel-default">
-          <RichText className="panel-body" content={message.content} />
+          <RichText
+            className="panel-body"
+            content={message.content}
+            allowTrustrootsLinks
+          />
         </div>
       </div>
       <div className="message-author">

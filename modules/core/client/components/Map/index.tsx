@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import ReactMapGL from 'react-map-gl';
-import { reactMapGLDefaultProps } from './reactMapGLDefaultProps';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactMapGL, { type ViewStateChangeEvent } from 'react-map-gl/mapbox';
+import type { StyleSpecification } from 'mapbox-gl';
 
 // Internal dependencies
 import './map.less';
@@ -9,7 +9,7 @@ import MapNavigationControl from './MapNavigationControl';
 import MapScaleControl from './MapScaleControl';
 import MapStyleControl from './MapStyleControl';
 import LeafletMap from './LeafletMap';
-import WheelMapController from './WheelMapController';
+import usePageWheel from './use-page-wheel';
 import { getMapBoxToken, isWebGLSupported } from '../../utils/map';
 
 type MapProps = React.ComponentProps<typeof ReactMapGL> & {
@@ -19,6 +19,9 @@ type MapProps = React.ComponentProps<typeof ReactMapGL> & {
   onLocationChange?: (location: [number, number]) => void;
   preferRaster?: boolean;
   showMapStyles?: boolean;
+  height?: number | string;
+  width?: number | string;
+  className?: string;
 };
 export default function Map(props: MapProps) {
   const {
@@ -28,13 +31,20 @@ export default function Map(props: MapProps) {
     onLocationChange,
     location = [48.6908333333, 9.14055555556], // Default location to Europe when not set
     zoom = 6,
+    height = 320,
+    width = '100%',
+    showMapStyles: requestedMapStyles,
+    className,
     ...overrideProps // anything else will be passed down to <ReactMapGL> as props
   } = props;
 
   const [mapStyle, setMapstyle] = useState<string | typeof MAP_STYLE_OSM>(
     MAP_STYLE_DEFAULT,
   );
-  const [mapController] = useState(() => new WheelMapController());
+  const [mapboxToken] = useState(() => getMapBoxToken() || undefined);
+  const [useWebGL] = useState(() => isWebGLSupported() && Boolean(mapboxToken));
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  usePageWheel(surfaceRef, useWebGL && !preferRaster);
   const [viewport, setViewport] = useState({
     latitude: location[0],
     longitude: location[1],
@@ -48,69 +58,65 @@ export default function Map(props: MapProps) {
     }));
   }, [location[0], location[1]]);
 
-  function handleViewportChange(
-    nextViewport: {
-      latitude: number;
-      longitude: number;
-      zoom: number;
-    },
-    interactionState?: { isPanning?: boolean; isZooming?: boolean },
-  ) {
-    setViewport(nextViewport);
-    // Zoom controls and external place searches also change the viewport.
-    // Only a deliberate pan should choose a new offer location.
-    if (
-      onLocationChange &&
-      interactionState?.isPanning &&
-      !interactionState.isZooming
-    ) {
-      onLocationChange([nextViewport.latitude, nextViewport.longitude]);
-    }
+  function handleViewportChange(event: ViewStateChangeEvent) {
+    const { viewState } = event;
+    setViewport(viewState);
   }
-  const MAPBOX_TOKEN = getMapBoxToken();
-  const showMapStyles =
-    props.showMapStyles &&
-    (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
+  const showMapStyles = requestedMapStyles && useWebGL;
 
-  if (preferRaster || !isWebGLSupported()) {
+  if (preferRaster || !useWebGL) {
     return (
       <LeafletMap
         ariaHidden={props['aria-hidden']}
         className={props.className}
-        height={props.height || 320}
+        height={height}
         location={location}
         marker={fallbackMarker}
         onLocationChange={onLocationChange}
         scrollZoom={props.scrollZoom as boolean | undefined}
-        width={props.width || '100%'}
+        width={width}
         zoom={zoom}
       />
     );
   }
 
   return (
-    <ReactMapGL
-      {...reactMapGLDefaultProps}
-      reuseMaps
-      controller={mapController}
-      dragRotate={false}
-      height={320}
-      mapboxApiAccessToken={MAPBOX_TOKEN as string}
-      mapStyle={mapStyle}
-      onViewportChange={handleViewportChange}
-      touchRotate={false}
-      {...viewport}
-      width={
-        '100%' /* this must come after viewport, or width gets set to fixed size via onViewportChange */
-      }
-      {...overrideProps}
+    <div
+      ref={surfaceRef}
+      className={className}
+      aria-hidden={props['aria-hidden']}
+      style={{ width, height }}
     >
-      <MapNavigationControl />
-      <MapScaleControl />
-      {showMapStyles && (
-        <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
-      )}
-      {children}
-    </ReactMapGL>
+      <ReactMapGL
+        reuseMaps
+        dragRotate={false}
+        mapboxAccessToken={mapboxToken}
+        mapStyle={mapStyle as string | StyleSpecification}
+        onMove={handleViewportChange}
+        onDrag={event => {
+          // Zoom controls and place searches must not choose an offer location.
+          if (!event.target.isZooming()) {
+            onLocationChange?.([
+              event.viewState.latitude,
+              event.viewState.longitude,
+            ]);
+          }
+        }}
+        onLoad={event => {
+          event.target.touchZoomRotate.disableRotation();
+          event.target.scrollZoom.setWheelZoomRate(1 / 100);
+        }}
+        {...viewport}
+        style={{ width, height }}
+        {...overrideProps}
+      >
+        <MapNavigationControl />
+        <MapScaleControl />
+        {showMapStyles && (
+          <MapStyleControl mapStyle={mapStyle} setMapstyle={setMapstyle} />
+        )}
+        {children}
+      </ReactMapGL>
+    </div>
   );
 }

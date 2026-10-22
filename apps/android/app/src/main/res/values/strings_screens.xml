@@ -37,13 +37,20 @@
     <string name="screen_send_message_error">Could not send message.</string>
     <string name="screen_load_conversation_error">Could not load conversation.</string>
     <string name="screen_view_profile">View profile</string>
-    <string name="screen_host_result_guest_count">Up to %1$d guests</string>
+    <plurals name="screen_host_result_guest_count">
+        <item quantity="one">Up to %1$d guest</item>
+        <item quantity="other">Up to %1$d guests</item>
+    </plurals>
 
     <string name="screen_travellers_community">Travellers’ community</string>
     <string name="screen_brand_name">Trustroots</string>
     <string name="screen_welcome_name">Hi %1$s</string>
     <string name="screen_build_date">Build: %1$s</string>
     <string name="screen_session_expired">Your session expired or is no longer valid. Please sign in again.</string>
+    <string name="api_sign_in_rejected">Sign-in was not accepted.</string>
+    <string name="api_missing_session">Trustroots did not return a member session.</string>
+    <string name="api_request_rejected">The request was not accepted.</string>
+    <string name="screen_sign_in_session_expired">Your session expired or is no longer valid. Please sign in again.</string>
     <string name="screen_could_not_reach_trustroots">Could not reach Trustroots.</string>
     <string name="screen_sign_in_description">Sharing, hosting and getting people together.</string>
     <string name="screen_sign_in">Sign in</string>
@@ -130,9 +137,19 @@
     <string name="screen_place_search_error">Could not find that place.</string>
     <string name="screen_load_host_error">Could not load host.</string>
     <string name="screen_potential_host">Potential host</string>
-    <string name="screen_offers_count">%1$d offers</string>
+    <plurals name="screen_offers_count">
+        <item quantity="one">%1$d offer</item>
+        <item quantity="other">%1$d offers</item>
+    </plurals>
     <string name="screen_community_note">Community note</string>
-    <string name="screen_community_notes_count">%1$d community notes</string>
+    <plurals name="screen_community_notes_count">
+        <item quantity="one">%1$d community note</item>
+        <item quantity="other">%1$d community notes</item>
+    </plurals>
+    <plurals name="screen_nostroots_notes_count">
+        <item quantity="one">%1$d Nostroots note</item>
+        <item quantity="other">%1$d Nostroots notes</item>
+    </plurals>
     <string name="screen_hide_filters">Hide filters</string>
     <string name="screen_show_filters">Show filters</string>
     <string name="screen_hosting">Hosting</string>
@@ -142,14 +159,17 @@
     <string name="screen_last_active_any_time">Last active: any time</string>
     <string name="screen_all_circles">All circles</string>
     <string name="screen_one_circle">1 circle</string>
-    <string name="screen_circles_count">%1$d circles</string>
+    <plurals name="screen_circles_count">
+        <item quantity="one">%1$d circle</item>
+        <item quantity="other">%1$d circles</item>
+    </plurals>
     <string name="screen_spoken_languages">Spoken languages</string>
     <string name="screen_any_language">Any language</string>
     <string name="screen_community_notes_via_nostroots">Community notes via Nostroots</string>
     <string name="screen_close">Close</string>
     <string name="screen_nostroots_notes_unavailable">Nostroots notes are temporarily unavailable.</string>
     <string name="screen_searching_area">Searching this area…</string>
-    <string name="screen_map_statistics">%1$d offers · %2$d Nostroots notes in this area</string>
+    <string name="screen_map_statistics">%1$s · %2$s in this area</string>
     <string name="screen_openstreetmap_attribution">© OpenStreetMap contributors</string>
     <string name="screen_mapbox_attribution">© Mapbox · © OpenStreetMap contributors</string>
     <string name="screen_languages">Languages</string>
@@ -160,7 +180,10 @@
     <string name="screen_self_hosted_analytics">Umami analytics, self-hosted by Trustroots.</string>
     <string name="screen_privacy_policy">Privacy policy</string>
     <string name="screen_username_handle">@%1$s</string>
-    <string name="screen_circle_member_count">%1$d members</string>
+    <plurals name="screen_circle_member_count">
+        <item quantity="one">%1$d member</item>
+        <item quantity="other">%1$d members</item>
+    </plurals>
     <string name="screen_quick_reply_host_yes_html">&lt;p data-hosting=\"yes\"&gt;&lt;b&gt;&lt;i&gt;Yes, I can host!&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;</string>
     <string name="screen_quick_reply_host_no_html">&lt;p data-hosting=\"no\"&gt;&lt;b&gt;&lt;i&gt;Sorry I can\'t host&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;</string>
     <plurals name="screen_destination_unread_count">

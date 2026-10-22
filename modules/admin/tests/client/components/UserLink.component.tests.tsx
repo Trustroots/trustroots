@@ -23,7 +23,7 @@ describe('<UserLink />', () => {
     expect(screen.getByRole('link')).toHaveAttribute(
       'href',
       roles?.includes('support-team') && !roles.includes('admin')
-        ? '/admin/support/member/member-id'
+        ? '/admin/support/member/river'
         : '/admin/user/river',
     );
   });
@@ -46,6 +46,15 @@ describe('<UserLink />', () => {
     render(<UserLink user={{ username: 'missing-id' }} />);
 
     expect(screen.getByText('Unknown').tagName).toBe('EM');
+  });
+
+  it('keeps the legacy id fallback for support links without a username', () => {
+    window.user = { roles: ['support-team'] };
+    render(<UserLink user={{ _id: 'legacy-member-id' }} />);
+
+    expect(
+      screen.getByRole('link', { name: 'Unknown member' }),
+    ).toHaveAttribute('href', '/admin/support/member/legacy-member-id');
   });
 
   it('prefers username, includes display name, and avoids id link text', () => {

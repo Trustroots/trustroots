@@ -18,13 +18,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.theme.TrustrootsTheme
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.contacts.ContactsScreen
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class MessageTransportFailureJourneysTest {
@@ -62,18 +60,23 @@ class MessageTransportFailureJourneysTest {
 
     @Test fun conversationTransportFailureStopsLoadingAndLeavesComposerAvailable() {
         val local = startFixture { request ->
-            if (request.method == "GET" && request.path == "/api/messages/fictional-contact?limit=100") null
-            else LocalTransportFixture.Response("{}", status = 404)
+            when {
+                request.method == "GET" && request.path == "/api/users/mini/fictional-contact" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"fictional-contact","username":"fictional-contact","displayName":"Fictional Contact"}""",
+                    )
+                request.method == "GET" && request.path == "/api/messages/fictional-contact?limit=100" -> null
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
         }
         var invalidations = 0
         compose.setContent {
             TrustrootsTheme {
-                ConversationScreen(
+                ConversationRouteTestHarness(
                     api = MobileApiClient(local.baseURL),
                     session = session(),
-                    member = MessageMember("fictional-contact", "fictional-contact", "Fictional Contact"),
+                    memberID = "fictional-contact",
                     onSessionInvalidated = { invalidations++ },
-                    onBack = {},
                 )
             }
         }
@@ -103,6 +106,7 @@ class MessageTransportFailureJourneysTest {
                     session = session(),
                     onSessionInvalidated = { invalidations++ },
                     onBack = {},
+                    onOpenProfile = {},
                 )
             }
         }

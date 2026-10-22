@@ -9,7 +9,9 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import AdminUser from '@/modules/admin/client/components/AdminUser.component';
+import AdminUser, {
+  InfoTable,
+} from '@/modules/admin/client/components/AdminUser.component';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
@@ -190,6 +192,11 @@ function submitMemberSearch(value: string) {
 }
 
 describe('<AdminUser />', () => {
+  it('omits an information table when it has no visible rows', () => {
+    const { container } = render(<InfoTable rows={[]} />);
+    expect(container).toBeEmptyDOMElement();
+  });
+
   it('handles role helpers safely before a profile has loaded', () => {
     const component = new AdminUser({});
 
@@ -335,7 +342,7 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('raw data')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: '5 threads total' }),
-    ).toHaveAttribute('href', `/admin/threads?userId=${userId}`);
+    ).toHaveAttribute('href', '/admin/threads?username=alice');
     expect(screen.getByRole('link', { name: '2 positive' })).toHaveAttribute(
       'href',
       '#thread-votes-received-positive',
@@ -348,16 +355,10 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('Negative votes gave')).toBeInTheDocument();
     expect(
       screen.getAllByRole('link', { name: 'Read messages' })[0],
-    ).toHaveAttribute(
-      'href',
-      `/admin/messages?userId1=${otherUserId}&userId2=${userId}`,
-    );
+    ).toHaveAttribute('href', '/admin/messages?username1=bob&username2=alice');
     expect(
       screen.getAllByRole('link', { name: 'Read messages' })[1],
-    ).toHaveAttribute(
-      'href',
-      `/admin/messages?userId1=${userId}&userId2=${otherUserId}`,
-    );
+    ).toHaveAttribute('href', '/admin/messages?username1=alice&username2=bob');
     expect(
       screen.getByText('Notes for 111111111111111111111111'),
     ).toBeInTheDocument();
@@ -965,7 +966,7 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('alice-similar')).toBeInTheDocument();
     expect(screen.getByText(/similar@example\.org/)).toBeInTheDocument();
     expect(screen.getByText(/pending@example\.org/)).toBeInTheDocument();
-    expect(screen.getByText('2024-02-03')).toBeInTheDocument();
+    expect(screen.getByText('2024-02-03 04:05')).toBeInTheDocument();
     expect(screen.queryByText('ID')).not.toBeInTheDocument();
     expect(
       screen.queryByText(/Hot Daria Wants To Date/),
@@ -1297,7 +1298,7 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('0 received')).toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: '0 threads total' }),
-    ).toHaveAttribute('href', `/admin/threads?userId=${userId}`);
+    ).toHaveAttribute('href', '/admin/threads?username=alice');
 
     unmount();
     window.history.pushState({}, '', '/');

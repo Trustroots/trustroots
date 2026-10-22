@@ -43,6 +43,10 @@ class InboxParticipantWithoutUsernameJourneyTest {
                     LocalTransportFixture.Response(
                         """[{"_id":"fictional-thread-id","userFrom":{"_id":"$participantID","displayName":"Fictional Neighbour"},"userTo":{"_id":"fictional-self-id","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional message preview."},"read":false}]""",
                     )
+                request.method == "GET" && request.path == "/api/users/mini/$participantID" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"$participantID","username":"fictional-neighbour","displayName":"Fictional Neighbour"}""",
+                    )
                 request.method == "GET" && request.path == "/api/messages/$participantID?limit=100" ->
                     LocalTransportFixture.Response(
                         """[{"_id":"fictional-message-id","content":"A fictional note from the neighbour.","created":"${Instant.parse("2025-02-03T04:05:06Z")}","userFrom":{"_id":"$participantID","displayName":"Fictional Neighbour"}}]""",
@@ -84,8 +88,10 @@ class InboxParticipantWithoutUsernameJourneyTest {
         compose.onNodeWithText("A fictional note from the neighbour.").assertIsDisplayed()
 
         val inboxRequest = local.requests.single { it.path == "/api/messages?page=1&limit=50" }
+        val memberRequest = local.requests.single { it.path == "/api/users/mini/$participantID" }
         val threadRequest = local.requests.single { it.path == "/api/messages/$participantID?limit=100" }
         assertEquals(session.cookieHeader, inboxRequest.cookie)
+        assertEquals(session.cookieHeader, memberRequest.cookie)
         assertEquals(session.cookieHeader, threadRequest.cookie)
         assertTrue(local.requests.all { it.method == "GET" })
     }

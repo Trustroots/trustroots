@@ -18,6 +18,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 
 @RunWith(AndroidJUnit4::class)
 class CirclesDescriptionFilterJourneyTest {
@@ -38,7 +39,7 @@ class CirclesDescriptionFilterJourneyTest {
 
     @Test fun searchesFormattedDescriptionsAndOpensCircleWithoutArtwork() {
         responder = thread(isDaemon = true) {
-            repeat(2) {
+            repeat(4) {
                 val socket = acceptOrStop() ?: return@thread
                 socket.use {
                     val input = socket.getInputStream().bufferedReader()
@@ -53,6 +54,7 @@ class CirclesDescriptionFilterJourneyTest {
                         ?.substringAfter(':')?.trim()?.toIntOrNull() ?: 0
                     repeat(length) { input.read() }
                     val payload = when {
+                        request.startsWith("GET /api/tribes/mountain ") -> """{"_id":"circle-mountain","slug":"mountain","label":"Mountain Circle","count":7,"image":false}"""
                         request.startsWith("GET /api/tribes") -> """[
                             {"_id":"circle-harbour","slug":"harbour","label":"Harbour Circle","description":"<p>Quiet <b>sea</b> routes</p>","count":3,"image":false,"color":"not-a-colour"},
                             {"_id":"circle-mountain","slug":"mountain","label":"Mountain Circle","count":7,"image":false}

@@ -7,6 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,11 +36,14 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -50,6 +56,7 @@ import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -76,6 +83,12 @@ class RichMemberProfileJourneyTest {
     private val requests = CopyOnWriteArrayList<String>()
     private var responder: Thread? = null
     @Volatile private var activeSocket: Socket? = null
+
+    @Before fun useRealEdgeToEdgeWindowInsets() {
+        compose.activityRule.scenario.onActivity { activity ->
+            WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+        }
+    }
 
     @After fun closeFixture() {
         runCatching { activeSocket?.close() }
@@ -141,6 +154,7 @@ class RichMemberProfileJourneyTest {
         compose.onNodeWithText("A busy season, but happy to share local tips.").performScrollTo().assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Space for up to 4 guests").fetchSemanticsNodes().isEmpty())
 
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").performClick()
         compose.onNodeWithText("A thoughtful visit with kind company.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Response: We would happily welcome them again.").performScrollTo().assertIsDisplayed()
@@ -158,7 +172,7 @@ class RichMemberProfileJourneyTest {
     }
 
     @Test fun keepsSharedProfileFrameVisibleWhileScrollingAndSwipingSections() {
-        startResponder(ROOT_MAYBE_OFFER, profileWithManyCircles())
+        startResponder(ROOT_MAYBE_OFFER, profileWithManyCircles(circleCount = 30))
         showProfile("quiet-fox")
 
         waitForText("Quiet Fox")
@@ -169,26 +183,81 @@ class RichMemberProfileJourneyTest {
         assertTrue("Profile tabs should remain inside the artwork", tabsBounds.bottom <= heroBounds.bottom)
         captureUsabilityScreenshot(compose, "android_profile_shared_header")
         compose.onNodeWithText("Fictional Circle 14").assertIsNotDisplayed()
-        val firstCircleTopBeforeScroll = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().boundsInRoot.top
+        val firstCircleTopBeforeScroll = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().positionInRoot.y
         scrollProfileSection()
-        val firstCircleTopAfterSwipe = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().boundsInRoot.top
-        assertTrue("The section should scroll independently", firstCircleTopAfterSwipe < firstCircleTopBeforeScroll)
-        compose.onNodeWithText("Fictional Circle 14").performScrollTo().assertIsDisplayed()
+        val collapsedHeroBounds = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
+        captureUsabilityScreenshot(compose, "android_member_profile_header_collapsed")
+        assertCompactProfileHeader("Quiet Fox", ownProfile = false)
 
         assertEquals(actionsBounds, compose.onNodeWithTag("profileActions").fetchSemanticsNode().boundsInRoot)
-        assertEquals(heroBounds, compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot)
-        assertEquals(tabsBounds, compose.onNodeWithTag("profileSections").fetchSemanticsNode().boundsInRoot)
+        assertEquals(heroBounds.top, collapsedHeroBounds.top, 1f)
+        assertTrue("Profile artwork should collapse as the section scrolls", collapsedHeroBounds.height < heroBounds.height)
         compose.onNodeWithTag("profileActions").assertIsDisplayed()
         compose.onNodeWithTag("profileHero").assertIsDisplayed()
-        compose.onNodeWithTag("profileSections").assertIsDisplayed()
+        compose.onNodeWithTag("profileSections").assertDoesNotExist()
+
+        // Clipped bounds stop at the viewport edge once Circle 1 scrolls out of view.
+        // Its layout position continues to measure the section's actual movement.
+        compose.onNodeWithText("Fictional Circle 30").assertIsNotDisplayed()
+        val firstCircleTopAfterCollapse = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().positionInRoot.y
+        scrollProfileSection()
+        val firstCircleTopAfterContentSwipe = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().positionInRoot.y
+        assertTrue("The profile section should keep scrolling after the header collapses", firstCircleTopAfterContentSwipe < firstCircleTopAfterCollapse)
+        assertTrue("The first swipe should move the expanded content area", firstCircleTopAfterCollapse <= firstCircleTopBeforeScroll)
+        compose.onNodeWithText("Fictional Circle 30").performScrollTo().assertIsDisplayed()
 
         compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
-        compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
         compose.onNodeWithText("People you connect with on Trustroots will appear here.")
             .performScrollTo().assertIsDisplayed()
         assertEquals(1, compose.onAllNodesWithTag("profileHero").fetchSemanticsNodes().size)
-        assertEquals(heroBounds, compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot)
-        assertEquals(tabsBounds, compose.onNodeWithTag("profileSections").fetchSemanticsNode().boundsInRoot)
+        assertBoundsWithinOnePixel(
+            collapsedHeroBounds,
+            compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot,
+            "The collapsed artwork frame should stay in place across pager pages",
+        )
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        assertTrue(
+            "A downward gesture should expand the artwork header",
+            compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.height > collapsedHeroBounds.height,
+        )
+        compose.onNodeWithTag("profileCompactTitle").assertIsNotDisplayed()
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
+        compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
+        compose.onNodeWithText("People you connect with on Trustroots will appear here.").assertIsDisplayed()
+    }
+
+    @Test fun capturesOwnProfileHeaderBaselineWhileItsSectionScrolls() {
+        startResponder(ROOT_MAYBE_OFFER, profileWithManyCircles())
+        val ownSession = MemberSession(
+            "connect.sid=fictional-own-profile-session",
+            MobileMember("quiet-fox", "Quiet Fox"),
+        )
+        showProfile("quiet-fox", session = ownSession)
+        waitForText("Quiet Fox")
+
+        val actionsBounds = compose.onNodeWithTag("profileActions").fetchSemanticsNode().boundsInRoot
+        val heroBounds = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
+        compose.onNodeWithTag("profileEditAction").assertIsDisplayed()
+        compose.onNodeWithTag("profileCompactTitle").assertIsNotDisplayed()
+        captureUsabilityScreenshot(compose, "android_own_profile_header_expanded_baseline")
+
+        scrollProfileSection()
+        compose.onNodeWithText("Fictional Circle 14").performScrollTo().assertIsDisplayed()
+
+        assertEquals(actionsBounds, compose.onNodeWithTag("profileActions").fetchSemanticsNode().boundsInRoot)
+        val collapsedHeroBounds = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
+        assertTrue(heroBounds.height > collapsedHeroBounds.height)
+        assertCompactProfileHeader("Quiet Fox", ownProfile = true)
+        captureUsabilityScreenshot(compose, "android_own_profile_header_scrolled_baseline")
+        compose.onNodeWithTag("profileSections").assertDoesNotExist()
+        compose.onNodeWithTag("profileEditAction").assertIsDisplayed()
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        assertTrue(compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.height > collapsedHeroBounds.height)
+        compose.onNodeWithTag("profileCompactTitle").assertIsNotDisplayed()
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
+        compose.onNodeWithTag("profileSection-about").assertIsSelected()
+        compose.onNodeWithText("Fictional Circle 1").assertIsDisplayed()
+        compose.onNodeWithTag("profileEditAction").assertIsDisplayed()
     }
 
     @Test fun profileActionsStayOnArtworkWithAccessibleTargetsAfterTopInset() {
@@ -322,7 +391,6 @@ class RichMemberProfileJourneyTest {
             "Compact profile should retain at least 96dp after bottom padding, got $sectionHeightAfterInset",
             sectionHeightAfterInset >= 96.dp,
         )
-        captureUsabilityScreenshot(compose, "android_profile_compact_header")
         compose.onNodeWithText("Fictional Circle 14").assertIsNotDisplayed()
         compose.onNodeWithText("Fictional Circle 1").performScrollTo().assertIsDisplayed()
         val firstCircleTopBeforeScroll = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().boundsInRoot.top
@@ -330,7 +398,48 @@ class RichMemberProfileJourneyTest {
         val firstCircleTopAfterSwipe = compose.onNodeWithText("Fictional Circle 1").fetchSemanticsNode().boundsInRoot.top
         assertTrue("Compact section content should scroll", firstCircleTopAfterSwipe < firstCircleTopBeforeScroll)
         compose.onNodeWithText("Fictional Circle 14").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileSections").assertDoesNotExist()
+        assertCompactProfileHeader("Quiet Fox", ownProfile = false)
+        val insetPx = with(compose.density) { 24.dp.toPx() }
+        val heroBounds = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
+        for (tag in listOf("profileMessageAction", "profileActionsMenuButton")) {
+            val bounds = compose.onNodeWithTag(tag).fetchSemanticsNode().boundsInRoot
+            assertTrue("$tag stays below the top inset", bounds.top >= insetPx)
+            assertTrue(
+                "$tag stays inside the compact artwork",
+                bounds.top >= heroBounds.top && bounds.bottom <= heroBounds.bottom,
+            )
+        }
+        val backBounds = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
+        assertTrue("Back stays below the top inset", backBounds.top >= insetPx)
+        assertTrue(
+            "Back stays inside the compact artwork",
+            backBounds.top >= heroBounds.top && backBounds.bottom <= heroBounds.bottom,
+        )
+        captureUsabilityScreenshot(compose, "android_profile_compact_header")
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
         compose.onNodeWithTag("profileSections").assertIsDisplayed()
+    }
+
+    @Test fun collapsedPagerCanChangePageThroughAccessibilityScrollAction() {
+        startResponder(ROOT_MAYBE_OFFER, profileWithManyCircles())
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        scrollProfileSection()
+        compose.onNodeWithText("Fictional Circle 14").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileSections").assertDoesNotExist()
+
+        val pagerWidth = compose.onNodeWithTag("profilePager").fetchSemanticsNode().boundsInRoot.width
+        compose.onNodeWithTag("profilePager").performSemanticsAction(SemanticsActions.ScrollBy) { scrollBy ->
+            assertTrue("Accessibility scroll action should advance the pager", scrollBy(pagerWidth, 0f))
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("profileSections").assertDoesNotExist()
+
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
+        compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
     }
 
     @Test fun shorterCompactProfileKeepsSectionContentReachable() {
@@ -358,8 +467,8 @@ class RichMemberProfileJourneyTest {
         compose.onNodeWithText("Fictional Circle 14").performScrollTo().assertIsDisplayed()
     }
 
-    private fun profileWithManyCircles(): String {
-        val circles = (1..14).joinToString(",") { index ->
+    private fun profileWithManyCircles(circleCount: Int = 14): String {
+        val circles = (1..circleCount).joinToString(",") { index ->
             """{"tribe":{"_id":"circle-$index","slug":"circle-$index","label":"Fictional Circle $index","count":1,"image":false}}"""
         }
         val existingMember = "\"member\":[{\"tribe\":{\"_id\":\"circle-silver\",\"slug\":\"silver-coast\",\"label\":\"Silver Coast Circle\",\"count\":8,\"image\":true}}]"
@@ -374,10 +483,20 @@ class RichMemberProfileJourneyTest {
         }
     }
 
+    private fun revealProfileTabsIfClipped() {
+        val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
+        val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
+        if (tabs == null || tabs.boundsInRoot.bottom > heroBottom + 1f) {
+            compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        }
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
+    }
+
     private fun showProfile(
         username: String,
         availableHeight: Dp? = null,
-        contentPadding: PaddingValues = PaddingValues.Zero,
+        contentPadding: PaddingValues? = null,
+        session: MemberSession = this.session,
     ) {
         compose.setContent {
             TrustrootsTheme {
@@ -388,13 +507,52 @@ class RichMemberProfileJourneyTest {
                         username = username,
                         onSessionInvalidated = {},
                         onBack = {},
-                        contentPadding = contentPadding,
+                        contentPadding = contentPadding ?: WindowInsets.safeDrawing.asPaddingValues(),
                     )
                 }
                 if (availableHeight == null) screen() else {
                     Box(Modifier.fillMaxWidth().requiredHeight(availableHeight)) { screen() }
                 }
             }
+        }
+    }
+
+    private fun assertCompactProfileHeader(title: String, ownProfile: Boolean) {
+        val hero = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot
+        val actionScrim = compose.onNodeWithTag("profileActionsScrim").fetchSemanticsNode().boundsInRoot
+        val titleBounds = compose.onNodeWithTag("profileCompactTitle").fetchSemanticsNode().boundsInRoot
+        assertEquals("Collapsed header is one inset-aware action row", actionScrim.height, hero.height, with(compose.density) { 2.dp.toPx() })
+        assertTrue("Compact title remains in the action row", titleBounds.top >= actionScrim.top && titleBounds.bottom <= actionScrim.bottom)
+        compose.onNodeWithTag("profileSections").assertDoesNotExist()
+        compose.onNodeWithTag("profileCompactTitle").assertIsDisplayed()
+        compose.onNodeWithText(title).assertIsDisplayed()
+        compose.onNodeWithTag("profileHero-identity").assertIsNotDisplayed()
+
+        val actionTag = if (ownProfile) "profileEditAction" else "profileMessageAction"
+        val action = compose.onNodeWithTag(actionTag).fetchSemanticsNode().boundsInRoot
+        val back = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
+        for ((label, bounds) in listOf("Back" to back, "Primary action" to action)) {
+            val width = with(compose.density) { (bounds.right - bounds.left).toDp() }
+            val height = with(compose.density) { (bounds.bottom - bounds.top).toDp() }
+            assertTrue("$label target should remain at least 48dp wide", width >= 48.dp)
+            assertTrue("$label target should remain at least 48dp tall", height >= 48.dp)
+            assertTrue("$label remains visible within the compact header", bounds.top >= hero.top && bounds.bottom <= hero.bottom)
+        }
+        if (!ownProfile) {
+            val overflow = compose.onNodeWithTag("profileActionsMenuButton").fetchSemanticsNode().boundsInRoot
+            assertTrue("Overflow remains at least 48dp wide", with(compose.density) { (overflow.right - overflow.left).toDp() } >= 48.dp)
+            assertTrue("Overflow remains at least 48dp tall", with(compose.density) { (overflow.bottom - overflow.top).toDp() } >= 48.dp)
+        }
+    }
+
+    private fun assertBoundsWithinOnePixel(expected: androidx.compose.ui.geometry.Rect, actual: androidx.compose.ui.geometry.Rect, message: String) {
+        for ((edge, expectedValue, actualValue) in listOf(
+            Triple("left", expected.left, actual.left),
+            Triple("top", expected.top, actual.top),
+            Triple("right", expected.right, actual.right),
+            Triple("bottom", expected.bottom, actual.bottom),
+        )) {
+            assertEquals("$message ($edge)", expectedValue, actualValue, 1f)
         }
     }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader.component';
+import { getAdminUserHref } from '../utils/member-url';
 import { getStaffBlockers } from '../api/staff-blockers.api';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 import type { StaffBlocker } from '../../shared/staff-blockers';
@@ -41,14 +42,18 @@ export default function AdminStaffBlockers() {
             .map(member => (
               <section key={member._id}>
                 <h3>
-                  {member.displayName || member.username || 'Staff member'}
-                  {member.username && ` (@${member.username})`}
+                  <a href={getAdminUserHref(member)}>
+                    {member.displayName || member.username || 'Staff member'}
+                    {member.username && ` (@${member.username})`}
+                  </a>
                 </h3>
                 <ul>
                   {member.blockedBy.map(blocker => (
                     <li key={blocker._id}>
-                      {blocker.displayName || blocker.username || 'Member'}
-                      {blocker.username && ` (@${blocker.username})`}
+                      <a href={getAdminUserHref(blocker)}>
+                        {blocker.displayName || blocker.username || 'Member'}
+                        {blocker.username && ` (@${blocker.username})`}
+                      </a>
                     </li>
                   ))}
                 </ul>

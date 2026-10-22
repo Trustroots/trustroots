@@ -181,15 +181,21 @@ const RASTER_TILE_PNG = Buffer.from(
   'base64',
 );
 
-export async function disableWebGL(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+export async function disableWebGL(
+  page: Page,
+  webgl2Only = false,
+): Promise<void> {
+  await page.addInitScript(webgl2Only => {
     const getContext = window.HTMLCanvasElement.prototype.getContext;
     const replacement = function (
       this: HTMLCanvasElement,
       type: string,
       ...args: unknown[]
     ): unknown {
-      if (type === 'webgl' || type === 'experimental-webgl') {
+      if (
+        type === 'webgl2' ||
+        (!webgl2Only && (type === 'webgl' || type === 'experimental-webgl'))
+      ) {
         return null;
       }
       return Reflect.apply(getContext, this, [type, ...args]);
@@ -199,7 +205,7 @@ export async function disableWebGL(page: Page): Promise<void> {
       writable: true,
       value: replacement,
     });
-  });
+  }, webgl2Only);
 }
 
 export async function routeRasterMapTiles(

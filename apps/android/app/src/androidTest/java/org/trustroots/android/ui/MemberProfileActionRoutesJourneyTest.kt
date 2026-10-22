@@ -207,6 +207,11 @@ class MemberProfileActionRoutesJourneyTest {
             "OK",
             """{"_id":"member-two","username":"quiet-fox","displayName":"Quiet Fox"}""",
         )
+        path == "/api/users/mini/member-two" -> FixtureReply(
+            200,
+            "OK",
+            """{"_id":"member-two","username":"quiet-fox","displayName":"Quiet Fox"}""",
+        )
         path == "/api/offers-by/member-two?types=host" -> FixtureReply(200, "OK", "[]")
         path == "/api/contacts/member-two" -> FixtureReply(200, "OK", "[]")
         path == "/api/experiences?userTo=member-two" -> FixtureReply(200, "OK", "[]")

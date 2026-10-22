@@ -60,4 +60,5 @@
     <color name="map_marker_host">#58BA58</color>
     <color name="map_marker_community_note">#1565C0</color>
     <color name="map_marker_white">#FFFFFF</color>
+    <color name="search_overlay_scrim">#52000000</color>
 </resources>

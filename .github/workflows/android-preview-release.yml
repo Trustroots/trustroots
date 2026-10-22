@@ -53,6 +53,9 @@ jobs:
           test -n "$ANDROID_KEY_ALIAS"
           test -n "$ANDROID_KEY_PASSWORD"
           ./gradlew testDebugUnitTest lintDebug assembleRelease -PtrustrootsPreviewUpdateAlerts=true
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
       - name: Verify and prepare APK
         run: |
           apk="apps/android/app/build/outputs/apk/release/app-release.apk"
@@ -60,6 +63,8 @@ jobs:
           mkdir -p release
           cp "$apk" "release/trustroots-android-${ANDROID_VERSION_NAME}.apk"
           (cd release && sha256sum *.apk > "trustroots-android-${ANDROID_VERSION_NAME}.apk.sha256")
+      - name: Prepare browser publishing metadata
+        run: node scripts/android/release-descriptor.mts "release/trustroots-android-${ANDROID_VERSION_NAME}.apk" "release/trustroots-android-${ANDROID_VERSION_NAME}.json"
       - name: Publish GitHub prerelease
         env:
           GH_TOKEN: ${{ github.token }}

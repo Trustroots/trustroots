@@ -1,132 +1,184 @@
-// External dependencies
 import classnames from 'classnames';
-import React, { useCallback, useEffect, useState } from 'react';
-
-// Internal dependencies
-import { getThreads } from '../api/threads.api';
+import React, { useEffect, useState } from 'react';
+import { getThreads, type AdminThread } from '../api/threads.api';
+import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
-import Json from './Json.component';
 import UserLink from './UserLink.component';
-import {
-  MONGO_OBJECT_ID_LENGTH,
-  isMongoObjectId,
-  normalizeAdminQuery,
-} from './userSearch.helpers';
-import TimeAgo from '@/modules/core/client/components/TimeAgo';
+import { isMongoObjectId } from './userSearch.helpers';
+import { formatAdminDateTime } from '../utils/admin-date';
+
+function MessageTime({ value }: { value?: string | null }) {
+  if (!value || Number.isNaN(new Date(value).getTime())) return <>—</>;
+  const date = new Date(value).toISOString();
+  return <time dateTime={date}>{formatAdminDateTime(value)}</time>;
+}
 
 export default function AdminThreads() {
-  // @TODO: replace with useLocation of react-router or similar.
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlUserId = urlParams.get('userId');
-  const initialQuery = urlUserId || urlParams.get('username') || '';
-
-  const [queried, setQueried] = useState(false);
-  const [query, setQuery] = useState(initialQuery);
-  const [threads, setThreads] = useState<
-    Awaited<ReturnType<typeof getThreads>>
-  >([]);
-
-  const runQuery = useCallback(async (queryValue: string) => {
-    const trimmedQuery = normalizeAdminQuery(queryValue);
-    const userId = isMongoObjectId(trimmedQuery) ? trimmedQuery : '';
-    const username = userId ? '' : trimmedQuery;
-
-    const result = await getThreads({ userId, username });
-    setQueried(true);
-    if (result) {
-      setThreads(result);
-    }
-  }, []);
+  const [params] = useState(() => new URLSearchParams(window.location.search));
+  const [username, setUsername] = useState(params.get('username') || '');
+  const [threads, setThreads] = useState<AdminThread[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const requestedUsername = params.get('username');
+  const legacyId = params.get('userId');
 
   useEffect(() => {
-    if (initialQuery) {
-      void runQuery(initialQuery);
+    if (!requestedUsername && !legacyId) return;
+    let active = true;
+    setLoading(true);
+    setFailed(false);
+    async function load() {
+      try {
+        let name = requestedUsername;
+        if (!name) {
+          if (!isMongoObjectId(legacyId)) throw new Error('Invalid member.');
+          const member = await getUser(legacyId!);
+          name = member.profile?.username;
+          if (!name) throw new Error('Member not found.');
+          if (!active) return;
+          const url = new URL(window.location.href);
+          url.searchParams.delete('userId');
+          url.searchParams.set('username', name);
+          window.history.replaceState(window.history.state, '', url);
+        }
+        const result = await getThreads({ username: name });
+        if (active) {
+          setUsername(name);
+          setThreads(result || []);
+        }
+      } catch {
+        if (active) setFailed(true);
+      } finally {
+        if (active) setLoading(false);
+      }
     }
-  }, [initialQuery, runQuery]);
-
-  function onQueryChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const { value } = event.target;
-    setQuery(value);
-    if (value.trim()) {
-      void runQuery(value);
-    } else {
-      setQueried(false);
-      setThreads([]);
-    }
-  }
-
-  function renderResults() {
-    if (!queried && threads.length === 0) {
-      return null;
-    }
-
-    if (queried && threads.length === 0) {
-      return (
-        <div className="alert alert-info">
-          <em>Nothing found…</em>
-        </div>
-      );
-    }
-
-    return (
-      <>
-        <h3>Messages from/to them</h3>
-        {threads.map(thread => {
-          const { _id } = thread;
-          return (
-            <div className="panel panel-default" key={_id}>
-              <div className="panel-body">
-                <p>
-                  <UserLink user={thread.userFromProfile[0]} />
-                  {' → '}
-                  <UserLink user={thread.userToProfile[0]} />
-                  <span
-                    className={classnames('label pull-right', {
-                      'label-success': thread.read,
-                      'label-warning': !thread.read,
-                    })}
-                  >
-                    {thread.read ? 'Read' : 'Unread'}
-                  </span>
-                </p>
-                <p>
-                  <TimeAgo date={new Date(thread.updated)} />
-                  {` (${thread.updated}) `}
-                  <a
-                    href={`/admin/messages?userId1=${thread.userFromProfile[0]?._id}&userId2=${thread.userToProfile[0]?._id}`}
-                  >
-                    Read thread
-                  </a>
-                </p>
-                <details>
-                  <summary>Thread details</summary>
-                  <Json content={thread} />
-                </details>
-              </div>
-            </div>
-          );
-        })}
-      </>
-    );
-  }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [requestedUsername, legacyId]);
 
   return (
     <>
       <AdminHeader />
       <div className="container">
         <h2>Threads</h2>
-        <input
-          aria-label="Member username or ID"
-          className="form-control input-lg"
-          name="query"
-          onChange={onQueryChange}
-          placeholder="Member username or ID"
-          size={MONGO_OBJECT_ID_LENGTH + 2}
-          type="text"
-          value={query}
-        />
-        <br />
-        {renderResults()}
+        {username && (
+          <p>
+            Messages from/to <strong>{username}</strong>
+          </p>
+        )}
+        {!requestedUsername && !legacyId && (
+          <p>Open a member’s threads from their account page.</p>
+        )}
+        {loading && <p role="status">Loading threads…</p>}
+        {failed && (
+          <p role="alert">Unable to load threads. Please try again.</p>
+        )}
+        {!loading &&
+          !failed &&
+          (requestedUsername || legacyId) &&
+          (threads.length === 0 ? (
+            <p>Nothing found…</p>
+          ) : (
+            <>
+              <p className="text-muted">Times in UTC.</p>
+              <div className="table-responsive">
+                <table
+                  className="table table-striped admin-threads-table"
+                  aria-label="Threads"
+                >
+                  <thead>
+                    <tr>
+                      <th scope="col">From</th>
+                      <th scope="col">To</th>
+                      <th scope="col">Status</th>
+                      <th scope="col">Thread votes</th>
+                      <th scope="col">First message</th>
+                      <th scope="col">Last message</th>
+                      <th scope="col">Conversation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {threads.map(thread => {
+                      const from = thread.userFromProfile[0];
+                      const to = thread.userToProfile[0];
+                      return (
+                        <tr key={thread._id}>
+                          <td>
+                            <UserLink user={from} />
+                          </td>
+                          <td>
+                            <UserLink user={to} />
+                          </td>
+                          <td>
+                            <span
+                              className={classnames('label', {
+                                'label-success': thread.read,
+                                'label-warning': !thread.read,
+                              })}
+                            >
+                              {thread.read ? 'Read' : 'Unread'}
+                            </span>
+                          </td>
+                          <td>
+                            {thread.votes?.length ? (
+                              <ul className="list-unstyled">
+                                {thread.votes.map(vote => {
+                                  const author = [from, to].find(
+                                    member => member?._id === vote.userFrom,
+                                  );
+                                  const recipient = [from, to].find(
+                                    member => member?._id === vote.userTo,
+                                  );
+                                  return (
+                                    <li key={vote._id}>
+                                      {author?.username || 'Deleted member'} →{' '}
+                                      {recipient?.username || 'Deleted member'}:{' '}
+                                      <span
+                                        className={
+                                          vote.reference === 'yes'
+                                            ? 'text-success'
+                                            : 'text-danger'
+                                        }
+                                      >
+                                        {vote.reference === 'yes'
+                                          ? 'positive'
+                                          : 'negative'}
+                                      </span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td>
+                            <MessageTime value={thread.firstMessage} />
+                          </td>
+                          <td>
+                            <MessageTime value={thread.lastMessage} />
+                          </td>
+                          <td>
+                            {from?.username && to?.username ? (
+                              <a
+                                href={`/admin/messages?username1=${encodeURIComponent(from.username)}&username2=${encodeURIComponent(to.username)}`}
+                              >
+                                Read thread
+                              </a>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ))}
       </div>
     </>
   );

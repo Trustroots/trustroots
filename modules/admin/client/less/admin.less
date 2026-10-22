@@ -13,21 +13,6 @@
     gap: 12px;
   }
 
-  .navbar-header {
-    float: none;
-  }
-
-  .navbar-brand {
-    float: none;
-    display: inline-block;
-    height: auto;
-    margin: 0;
-    padding: 0;
-    font-size: 22px;
-    font-weight: 600;
-    line-height: 1.4;
-  }
-
   .navbar-nav {
     float: none;
     display: flex;
@@ -37,6 +22,28 @@
     margin: 0;
     padding: 0;
     list-style: none;
+  }
+
+  .admin-nav-groups {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 24px;
+  }
+
+  .admin-nav-group {
+    flex: 1 1 260px;
+    min-width: 0;
+    padding-top: 10px;
+    border-top: 1px solid @gray-lighter;
+  }
+
+  .admin-nav-group__label {
+    margin: 0 0 6px;
+    padding: 0 12px;
+    color: @gray;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.5;
   }
 
   .navbar-nav > li > a {
@@ -72,6 +79,109 @@
 
   + .container > h2:first-child {
     margin-top: 0;
+  }
+}
+
+.admin-hackerspaces-sort {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid darken(@brand-primary, 10%);
+    outline-offset: 3px;
+  }
+}
+
+.admin-hackerspaces-signer {
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid @gray-lighter;
+  border-radius: 6px;
+
+  h3 {
+    margin-top: 0;
+  }
+
+  .btn {
+    margin-bottom: 12px;
+  }
+}
+
+.admin-hackerspaces-page code {
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: @screen-md-min) {
+  .navbar-admin {
+    position: fixed;
+    top: var(--tr-header-height, @navbar-height);
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    display: block;
+    width: 232px;
+    margin: 0;
+    padding: 16px 12px;
+    overflow-y: auto;
+    border: 0;
+    border-right: 1px solid @gray-lighter;
+
+    > .container {
+      width: 100%;
+      padding: 0;
+    }
+
+    .admin-nav-groups {
+      flex-direction: column;
+      flex-wrap: nowrap;
+      gap: 14px;
+    }
+
+    .admin-nav-group {
+      flex: 0 0 auto;
+      padding: 0;
+      border: 0;
+    }
+
+    .navbar-nav {
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .admin-nav-group__label {
+      margin-bottom: 4px;
+    }
+
+    .navbar-nav > li {
+      float: none;
+    }
+
+    .navbar-nav > li > a {
+      padding: 5px 12px;
+    }
+
+    + .container,
+    + .container.admin-user-page {
+      width: calc(100% - 264px);
+      max-width: none;
+      margin-right: 16px;
+      margin-left: 248px;
+      padding-top: calc(var(--tr-header-height, @navbar-height) + 24px);
+    }
+  }
+}
+
+@media (min-width: @screen-md-min) {
+  body:has(.navbar-admin) #tr-footer {
+    width: calc(100% - 264px);
+    max-width: none;
+    margin-right: 16px;
+    margin-left: 248px;
   }
 }
 
@@ -1005,7 +1115,6 @@ td:hover .admin-hidden-until-hover {
 
 // Member reports use the available desktop width; public profiles stay contained.
 @media (min-width: 1200px) {
-  .navbar-admin > .container,
   .container.admin-user-page {
     width: 100%;
     max-width: none;
@@ -1137,5 +1246,94 @@ td:hover .admin-hidden-until-hover {
     margin-top: 0;
     font-size: 15px;
     font-weight: 600;
+  }
+}
+
+.admin-circles-table {
+  min-width: 460px;
+  background: #fff;
+
+  > thead > tr > th,
+  > tbody > tr > td {
+    vertical-align: middle;
+    text-align: left;
+  }
+
+  th button {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: 600;
+    text-align: inherit;
+  }
+
+  th:last-child,
+  td:last-child {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  td:nth-child(2) {
+    overflow-wrap: anywhere;
+  }
+
+  .admin-circles-table__name {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+
+    > span:last-child {
+      min-width: 90px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  img,
+  .admin-circles-table__placeholder {
+    flex: 0 0 40px;
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    object-fit: cover;
+  }
+
+  .admin-circles-table__placeholder {
+    background: @gray-lighter;
+  }
+
+  .admin-circles-table__hidden {
+    display: block;
+    font-size: 12px;
+  }
+
+  button:focus-visible {
+    outline: 2px solid darken(@brand-primary, 10%);
+    outline-offset: 3px;
+  }
+
+  .admin-circles-table__name:hover {
+    color: darken(@brand-primary, 15%);
+  }
+}
+
+.admin-threads-table {
+  th,
+  td {
+    vertical-align: middle;
+  }
+  time {
+    white-space: nowrap;
+  }
+  ul {
+    margin: 0;
   }
 }

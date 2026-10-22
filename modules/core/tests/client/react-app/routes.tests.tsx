@@ -6,7 +6,6 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import {
   createAppRouter,
   findRoute,
-  isReactRoute,
   parseLegacySearch,
   routes,
   stringifyLegacySearch,
@@ -40,6 +39,10 @@ jest.mock(
 jest.mock(
   '@/modules/admin/client/components/AdminAuditLog.component',
   () => () => <main>Admin audit log</main>,
+);
+jest.mock(
+  '@/modules/admin/client/components/AdminUsernameChanges.component',
+  () => () => <main>Admin username changes</main>,
 );
 jest.mock(
   '@/modules/admin/client/components/AdminCircles.component',
@@ -429,7 +432,6 @@ describe('React route ownership', () => {
 
   it('normalizes paths before ownership checks', () => {
     expect(normalizePath('/support/?report=alice')).toBe('/support');
-    expect(isReactRoute('/support/?report=alice')).toBe(true);
     expect(findRoute('/support/?report=alice')?.title).toBe('Support');
   });
 
@@ -514,6 +516,18 @@ describe('React route ownership', () => {
       title: 'Admin - Audit log',
     });
     expect(adminRoute.render).toEqual(expect.any(Function));
+
+    const usernameChangesRoute = findRoute('/admin/username-changes')!;
+    expect(usernameChangesRoute).toMatchObject({
+      footerVariant: 'admin',
+      path: '/admin/username-changes',
+      requiresAuth: true,
+      requiresRole: ['admin'],
+      title: 'Admin - Username changes',
+    });
+    expect(
+      renderRoute(usernameChangesRoute).getByText('Admin username changes'),
+    ).toBeInTheDocument();
   });
 
   it('renders the admin circles route with admin metadata', () => {
@@ -597,7 +611,6 @@ describe('React route ownership', () => {
   });
 
   it('does not claim legacy profile-edit paths', () => {
-    expect(isReactRoute('/profile-edit/about')).toBe(false);
     expect(findRoute('/profile-edit/about')).toBe(undefined);
   });
 

@@ -54,6 +54,10 @@ function imageUrl(circle: AdminCircle) {
 }
 
 export default function AdminCircles() {
+  const [sort, setSort] = useState<{
+    key: 'label' | 'description' | 'count';
+    descending: boolean;
+  }>({ key: 'label', descending: false });
   const [circles, setCircles] = useState<AdminCircle[]>([]);
   const [circle, setCircle] = useState<AdminCircle>(emptyCircle);
   const [image, setImage] = useState<File | null>(null);
@@ -125,6 +129,25 @@ export default function AdminCircles() {
     }));
   };
 
+  const sortedCircles = [...circles].sort((left, right) => {
+    const comparison =
+      sort.key === 'count'
+        ? (left.count ?? 0) - (right.count ?? 0)
+        : (left[sort.key] || '').localeCompare(right[sort.key] || '', 'en', {
+            sensitivity: 'base',
+            numeric: true,
+          });
+    return (
+      (sort.descending ? -comparison : comparison) ||
+      left.label.localeCompare(right.label)
+    );
+  });
+  const columns = [
+    { key: 'label', label: 'Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'count', label: 'Members' },
+  ] as const;
+
   return (
     <>
       <AdminHeader />
@@ -147,24 +170,93 @@ export default function AdminCircles() {
         {message && <p className="text-success">{message}</p>}
         {error && <p className="text-danger">{error}</p>}
         <div className="row">
-          <div className="col-sm-5">
-            <div className="list-group" aria-label="Circles">
-              {circles.map(item => (
-                <button
-                  className="list-group-item"
-                  key={item._id}
-                  onClick={() => editCircle(item)}
-                  type="button"
-                >
-                  {item.label}
-                  <span className="pull-right text-muted">
-                    {item.public ? `${item.count} members` : 'Hidden'}
-                  </span>
-                </button>
-              ))}
+          <div className="col-md-7">
+            <div className="table-responsive">
+              <table className="table admin-circles-table" aria-label="Circles">
+                <thead>
+                  <tr>
+                    {columns.map(column => (
+                      <th
+                        key={column.key}
+                        scope="col"
+                        aria-sort={
+                          sort.key === column.key
+                            ? sort.descending
+                              ? 'descending'
+                              : 'ascending'
+                            : 'none'
+                        }
+                      >
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSort(current => ({
+                              key: column.key,
+                              descending:
+                                current.key === column.key
+                                  ? !current.descending
+                                  : false,
+                            }))
+                          }
+                        >
+                          {column.label}
+                          <span aria-hidden="true">
+                            {sort.key === column.key
+                              ? sort.descending
+                                ? ' ↓'
+                                : ' ↑'
+                              : ' ↕'}
+                          </span>
+                        </button>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedCircles.map(item => (
+                    <tr
+                      key={item._id}
+                      className={circle._id === item._id ? 'active' : undefined}
+                    >
+                      <td>
+                        <button
+                          className="admin-circles-table__name"
+                          onClick={() => editCircle(item)}
+                          type="button"
+                        >
+                          {imageUrl(item) ? (
+                            <img
+                              src={imageUrl(item)}
+                              alt=""
+                              width="40"
+                              height="40"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span
+                              className="admin-circles-table__placeholder"
+                              aria-hidden="true"
+                            />
+                          )}
+                          <span>
+                            {item.label}
+                            {!item.public && (
+                              <span className="admin-circles-table__hidden text-muted">
+                                Hidden
+                              </span>
+                            )}
+                          </span>
+                        </button>
+                      </td>
+                      <td>{item.description || '—'}</td>
+                      <td>{item.count ?? 0}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          <div className="col-sm-7">
+          <div className="col-md-5">
             <form onSubmit={submit}>
               <div className="form-group">
                 <label htmlFor="circle-label">Name</label>

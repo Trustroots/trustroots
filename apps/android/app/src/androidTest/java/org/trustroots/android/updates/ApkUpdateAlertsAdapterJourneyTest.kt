@@ -28,6 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.BuildConfig
+import org.trustroots.android.R
 
 @RunWith(AndroidJUnit4::class)
 class ApkUpdateAlertsAdapterJourneyTest {
@@ -77,16 +78,16 @@ class ApkUpdateAlertsAdapterJourneyTest {
         editor.commit()
     }
 
-    @Test fun checkFetchesAndPublishesAnUpdateFromLocalReleaseFixture(): Unit = runBlocking {
+    @Test fun checkFetchesAndPublishesLocalizedFallbackWhenReleaseNameIsBlank(): Unit = runBlocking {
         assumeTrue("Device notifications must be enabled for this adapter journey", notifications.areNotificationsEnabled())
         assumeTrue("Permission-denial handling is available on Android 13 and newer", Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU)
         val fixtureServer = ServerSocket(0).also { server = it }
         val versionCode = BuildConfig.VERSION_CODE + 1
-        val versionName = "Offline preview $versionCode"
+        val versionName = context.getString(R.string.android_preview_version, versionCode)
         val tag = "android-preview-$versionCode"
         fun payload(version: Int, name: String) =
             """[{"tag_name":"android-preview-$version","body":"Build $version.","name":"$name","draft":false,"prerelease":true,"assets":[{"name":"trustroots-android-$version.apk","size":123}]}]"""
-        val fixtures = listOf(payload(versionCode, versionName), payload(versionCode + 1, "Next offline preview"))
+        val fixtures = listOf(payload(versionCode, "   "), payload(versionCode + 1, "Next offline preview"))
         var requestLine = ""
         var headers = ""
         responder = thread(isDaemon = true) {

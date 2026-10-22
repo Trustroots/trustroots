@@ -1,9 +1,10 @@
 package org.trustroots.android.ui
 
+import java.io.File
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import java.io.File
+import org.trustroots.android.ui.common.SharedNavigationLinks
 
 /**
  * Verifies that the checked-in `SharedNavigationLinks` mirror stays in sync

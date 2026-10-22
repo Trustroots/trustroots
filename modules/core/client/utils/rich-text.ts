@@ -29,11 +29,31 @@ export function sanitiseRichText(content: string): string {
 }
 
 /** Remove clickable destinations from already sanitised user-written HTML. */
-export function disableUserContentLinks(content: string): string {
+export function disableUserContentLinks(
+  content: string,
+  allowTrustrootsLinks = false,
+): string {
   const template = document.createElement('template');
   template.innerHTML = content;
 
   for (const link of Array.from(template.content.querySelectorAll('a'))) {
+    if (allowTrustrootsLinks) {
+      try {
+        const href = link.getAttribute('href');
+        if (href) {
+          const url = new URL(href, window.location.href);
+          if (
+            ['http:', 'https:'].includes(url.protocol) &&
+            (url.origin === window.location.origin ||
+              ['trustroots.org', 'www.trustroots.org'].includes(url.hostname))
+          ) {
+            continue;
+          }
+        }
+      } catch {
+        // Invalid destinations remain plain text.
+      }
+    }
     link.replaceWith(...Array.from(link.childNodes));
   }
 

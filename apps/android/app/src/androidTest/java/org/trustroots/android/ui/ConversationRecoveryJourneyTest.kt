@@ -32,11 +32,8 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.ui.theme.TrustrootsTheme
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class ConversationRecoveryJourneyTest {
@@ -77,15 +74,12 @@ class ConversationRecoveryJourneyTest {
         preferences.edit().putString(draftKey, draft).commit()
         startResponder()
         compose.setContent {
-            TrustrootsTheme {
-                ConversationScreen(
-                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                    session = session,
-                    member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
-                    onSessionInvalidated = {},
-                    onBack = {},
-                )
-            }
+            ConversationRouteTestHarness(
+                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                session = session,
+                memberID = "member-one",
+                onSessionInvalidated = {},
+            )
         }
 
         compose.waitUntil(10_000) {
@@ -158,6 +152,10 @@ class ConversationRecoveryJourneyTest {
                     requests += CapturedRequest(requestLine, body)
                     val response = when {
                         requestLine.contains("/avatar?") -> FixtureResponse("404 Not Found", "")
+                        requestLine.startsWith("GET /api/users/mini/member-one") -> FixtureResponse(
+                            "200 OK",
+                            """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}""",
+                        )
                         requestLine.startsWith("GET /api/messages/member-one?") -> FixtureResponse(
                             "200 OK",
                             """[{"_id":"message-in","content":"<p>A note from a neighbour.</p>","created":"${Instant.parse("2025-02-03T04:05:06Z")}","userFrom":{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}}]""",

@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Brush
 import java.net.HttpURLConnection
@@ -102,6 +103,8 @@ internal fun ArtworkHero(
     showTitle: Boolean = true,
     heroHeight: Dp = 250.dp,
     compact: Boolean = false,
+    showCompactIdentity: Boolean = true,
+    expandedTitleStyle: TextStyle = MaterialTheme.typography.headlineMedium,
     bottomContent: (@Composable () -> Unit)? = null,
     onProfileImageClick: (() -> Unit)? = null,
 ) {
@@ -132,7 +135,7 @@ internal fun ArtworkHero(
         ))
         if (compact) {
             Column(Modifier.align(Alignment.BottomStart).fillMaxWidth()) {
-                Row(
+                if (showCompactIdentity) Row(
                     Modifier.fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = if (onProfileImageClick == null) 6.dp else 2.dp)
                         .testTag("$testTag-identity"),
@@ -181,7 +184,7 @@ internal fun ArtworkHero(
                         imageDescription = profileImageDescription,
                     )
                     if (showTitle) {
-                        Text(label, color = colorResource(R.color.artwork_on_scrim), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.headlineMedium)
+                        Text(label, color = colorResource(R.color.artwork_on_scrim), style = expandedTitleStyle)
                     }
                     Text(subtitle, color = colorResource(R.color.artwork_on_scrim), style = MaterialTheme.typography.bodyMedium)
                 }

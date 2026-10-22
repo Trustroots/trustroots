@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
@@ -8,11 +9,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsAtLeast
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -40,7 +44,7 @@ class SearchFieldLayoutJourneyTest {
         compose.setContent {
             TrustrootsTheme {
                 var query by remember { mutableStateOf("") }
-                Box(Modifier.width(320.dp)) {
+                Box(Modifier.width(320.dp).background(Color(0xFF00FF00))) {
                     LiveFilterField(
                         value = query,
                         onValueChange = { query = it },
@@ -61,6 +65,7 @@ class SearchFieldLayoutJourneyTest {
             .assertIsDisplayed()
             .assertWidthIsAtLeast(48.dp)
             .assertHeightIsAtLeast(48.dp)
+        assertRoundedCornerShowsContrastingBackground("liveFilterField")
         assertWithinCompactField("liveFilterField", "Clear circle filter")
         hideTestKeyboard()
         captureUsabilityScreenshot(compose, "android_live_search_control")
@@ -76,7 +81,7 @@ class SearchFieldLayoutJourneyTest {
             TrustrootsTheme {
                 var query by remember { mutableStateOf("") }
                 val enabled = query.length >= 3
-                Box(Modifier.width(320.dp)) {
+                Box(Modifier.width(320.dp).background(Color(0xFF00FF00))) {
                     SubmittedSearchField(
                         value = query,
                         onValueChange = { query = it },
@@ -106,6 +111,7 @@ class SearchFieldLayoutJourneyTest {
         compose.onNodeWithContentDescription("Clear member search")
             .assertWidthIsAtLeast(48.dp)
             .assertHeightIsAtLeast(48.dp)
+        assertRoundedCornerShowsContrastingBackground("submittedSearchField")
         assertWithinCompactField(
             fieldTag = "submittedSearchField",
             clearLabel = "Clear member search",
@@ -155,5 +161,25 @@ class SearchFieldLayoutJourneyTest {
             )
             assertTrue("Leading mode should not overlap the clear action", mode.right <= clear.left)
         }
+    }
+
+    private fun assertRoundedCornerShowsContrastingBackground(fieldTag: String) {
+        val pixels = compose.onNodeWithTag(fieldTag).captureToImage().toPixelMap()
+        val corner = pixels[1, 1]
+        val interior = pixels[pixels.width / 2, pixels.height - 2]
+        val contrastingGreen = Color(0xFF00FF00)
+
+        assertTrue("$fieldTag should reveal the contrasting box at its rounded corner", corner.green > 0.9f)
+        assertTrue(
+            "$fieldTag should paint an interior distinct from the contrasting background",
+            colorDistanceSquared(interior, contrastingGreen) > 0.25f,
+        )
+    }
+
+    private fun colorDistanceSquared(first: Color, second: Color): Float {
+        val red = first.red - second.red
+        val green = first.green - second.green
+        val blue = first.blue - second.blue
+        return red * red + green * green + blue * blue
     }
 }

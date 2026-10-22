@@ -91,3 +91,9 @@ trustroots.tar.gz*
 /test-results/
 /tests/e2e/.auth/
 .turbo
+
+# APK prepared for the GitHub Pages deployment
+/docs/assets/downloads/
+
+# Browser scripts generated from docs/src TypeScript
+/docs/assets/js/

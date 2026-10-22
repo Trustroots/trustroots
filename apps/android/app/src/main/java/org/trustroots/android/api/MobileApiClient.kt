@@ -52,9 +52,7 @@ data class ProfileUpdate(
     val languages: List<String>,
 )
 
-data class MessageMember(val id: String?, val username: String?, val displayName: String) {
-    val label: String get() = displayName.ifBlank { username ?: "Trustroots member" }
-}
+data class MessageMember(val id: String?, val username: String?, val displayName: String)
 
 data class MessageThread(
     val id: String,
@@ -131,10 +129,13 @@ data class TrustrootsCircle(
     val color: String?,
 )
 
+enum class ApiFailureKind { SIGN_IN_REJECTED, MISSING_SESSION, REQUEST_REJECTED }
+
 class MobileApiException(
     val statusCode: Int,
-    override val message: String,
-) : Exception(message) {
+    val serverMessage: String? = null,
+    val failureKind: ApiFailureKind? = null,
+) : Exception(serverMessage?.takeIf(String::isNotBlank)) {
     val isAuthenticationFailure: Boolean
         get() = statusCode == HttpURLConnection.HTTP_UNAUTHORIZED
 }
@@ -144,7 +145,8 @@ class MobileApiClient(
     private val responseCache: SecureResponseCache? = null,
     private val cacheAccount: String? = null,
 ) {
-    private val baseURL = secureApiBaseURL(baseURL)
+    internal val backendURL = secureApiBaseURL(baseURL)
+    private val baseURL get() = backendURL
     private val mutableOfflineSavedAt = MutableStateFlow<Long?>(null)
     val offlineSavedAt = mutableOfflineSavedAt.asStateFlow()
 
@@ -169,12 +171,13 @@ class MobileApiClient(
                         path = "/api/auth/signin",
                         method = "POST",
                         body = request,
-                        rejectedMessage = "Sign-in was not accepted.",
+                        failureKind = ApiFailureKind.SIGN_IN_REJECTED,
                     )
                 MemberSession(
-                    cookieHeader = requireNotNull(response.sessionCookie) {
-                        "Trustroots did not return a member session."
-                    },
+                    cookieHeader = response.sessionCookie ?: throw MobileApiException(
+                        statusCode = HttpURLConnection.HTTP_OK,
+                        failureKind = ApiFailureKind.MISSING_SESSION,
+                    ),
                     member = mobileMemberFrom(JSONObject(response.body)),
                 )
             }
@@ -362,6 +365,19 @@ class MobileApiClient(
             }
         }
 
+    /** Resolves the small, authenticated member record needed by an alert-opened conversation. */
+    suspend fun messageMember(session: MemberSession, memberID: String): Result<MessageMember> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                require(memberID.isNotBlank())
+                val member = parseMessageMember(JSONObject(jsonRequest(
+                    "/api/users/mini/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
+                ).body))
+                require(!member.id.isNullOrBlank())
+                member
+            }
+        }
+
     suspend fun updateProfile(session: MemberSession, update: ProfileUpdate): Result<MemberProfile> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -513,6 +529,15 @@ class MobileApiClient(
             }
         }
 
+    suspend fun circle(session: MemberSession, slug: String): Result<TrustrootsCircle> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                parseCircle(JSONObject(jsonRequest(
+                    "/api/tribes/${encode(slug)}", "GET", sessionCookie = session.cookieHeader,
+                ).body))
+            }
+        }
+
     suspend fun circleMemberships(session: MemberSession): Result<Set<String>> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -553,7 +578,7 @@ class MobileApiClient(
         body: String? = null,
         sessionCookie: String? = null,
         requestHeaders: Map<String, String> = emptyMap(),
-        rejectedMessage: String = "The request was not accepted.",
+        failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -584,7 +609,8 @@ class MobileApiClient(
                     .orEmpty()
                 throw MobileApiException(
                     statusCode = connection.responseCode,
-                    message = message.ifBlank { rejectedMessage },
+                    serverMessage = message.takeIf(String::isNotBlank),
+                    failureKind = failureKind,
                 )
             }
             if (method == "GET" && sessionCookie != null && cacheAccount != null) {
@@ -683,8 +709,7 @@ internal fun parseMember(value: JSONObject): MemberProfile {
         displayName = value.optionalText("displayName") ?: username,
         tagline = value.optionalText("tagline"),
         description = value.optionalText("description"),
-        location = value.optionalText("locationLiving")
-            ?: value.optionalText("locationFrom")?.let { "From $it" },
+        location = value.optionalText("locationLiving") ?: value.optionalText("locationFrom"),
         locationLiving = value.optionalText("locationLiving"),
         locationFrom = value.optionalText("locationFrom"),
         languages = if (languages == null) emptyList() else (0 until languages.length())
@@ -799,6 +824,9 @@ internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer {
 
 internal fun parseCircles(values: JSONArray): List<TrustrootsCircle> =
     (0 until values.length()).mapNotNull { parseCircleOrNull(values.getJSONObject(it)) }
+
+internal fun parseCircle(value: JSONObject): TrustrootsCircle =
+    requireNotNull(parseCircleOrNull(value)) { "Circle response is missing its public identity." }
 
 private fun parseCircleOrNull(value: JSONObject): TrustrootsCircle? {
     val id = value.optionalText("_id") ?: value.optionalText("id") ?: return null

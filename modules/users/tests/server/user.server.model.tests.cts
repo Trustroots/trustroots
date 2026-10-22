@@ -216,6 +216,18 @@ describe('User Model Unit Tests:', function () {
         })
         .catch(done);
     });
+    it('generates a clean displayName without a surname', async function () {
+      for (const surname of [undefined, '', '   ']) {
+        const member = new User({
+          ...utils.generateUsers(1)[0],
+          firstName: 'Single',
+          lastName: surname,
+        });
+        await member.save();
+        present(member.displayName).should.equal('Single');
+        await member.deleteOne();
+      }
+    });
     it('should be able to show an error when try to save without first name', function (done) {
       const _user = new User(user);
       _user.firstName = '';

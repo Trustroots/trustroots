@@ -17,7 +17,11 @@ internal class LocalTransportFixture(
     private val respond: (Request) -> Response?,
 ) : Closeable {
     data class Request(val method: String, val path: String, val body: String, val cookie: String?)
-    data class Response(val body: String, val status: Int = 200)
+    data class Response(
+        val body: String,
+        val status: Int = 200,
+        val headers: Map<String, String> = emptyMap(),
+    )
 
     private val server = ServerSocket(0).apply { soTimeout = 250 }
     private val activeSocket = AtomicReference<Socket?>()
@@ -70,7 +74,11 @@ internal class LocalTransportFixture(
                         if (response != null) {
                             val body = response.body.toByteArray(Charsets.UTF_8)
                             connection.getOutputStream().apply {
-                                write("HTTP/1.1 ${response.status} Fixture\r\nContent-Type: application/json\r\nContent-Length: ${body.size}\r\nConnection: close\r\n\r\n".toByteArray(Charsets.US_ASCII))
+                                write("HTTP/1.1 ${response.status} Fixture\r\nContent-Type: application/json\r\nContent-Length: ${body.size}\r\nConnection: close\r\n".toByteArray(Charsets.US_ASCII))
+                                response.headers.forEach { (name, value) ->
+                                    write("$name: $value\r\n".toByteArray(Charsets.US_ASCII))
+                                }
+                                write("\r\n".toByteArray(Charsets.US_ASCII))
                                 write(body)
                                 flush()
                             }

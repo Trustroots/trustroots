@@ -153,7 +153,6 @@
   "More reading:": "More reading:",
   "More…": "More…",
   "Trustroots itself does not currently have a mobile app, but we have new features that are available through the <2>Nostroots mobile app</2>.": "Trustroots itself does not currently have a mobile app, but we have new features that are available through the <2>Nostroots mobile app</2>.",
-  "No. Trustroots is for everyone.": "No. Trustroots is for everyone.",
   "Nobody can do everything, but everyone can do something.": "Nobody can do everything, but everyone can do something.",
   "No greeters to show right now.": "No greeters to show right now.",
   "Non-profit & open source": "Non-profit & open source",
@@ -247,7 +246,6 @@
   "Trustroots profile": "Trustroots profile",
   "Trustroots seeks to be a platform for sharing and getting people\n                together. We aim to connect likeminded people together. We encourage\n                trust, adventure and intercultural connections.": "Trustroots seeks to be a platform for sharing and getting people\n                together. We aim to connect likeminded people together. We encourage\n                trust, adventure and intercultural connections.",
   "Trustroots uses <2>Google Analytics</2> to collect usage, device and browser statistics.": "Trustroots uses <2>Google Analytics</2> to collect usage, device and browser statistics.",
-  "Trustroots was initially built with hitchhikers in mind but anyone has always been welcome to sign up even if they've never hitchhiked.": "Trustroots was initially built with hitchhikers in mind but anyone has always been welcome to sign up even if they've never hitchhiked.",
   "UK Companies House: incorporation and names (pdf)": "UK Companies House: incorporation and names (pdf)",
   "Until then, be patient. Please help stop the spread of the virus. Consider not traveling, especially internationally. Consider not hosting people, especially if you live with <2>people at higher risk</2>": "Until then, be patient. Please help stop the spread of the virus. Consider not traveling, especially internationally. Consider not hosting people, especially if you live with <2>people at higher risk</2>",
   "Using Analytics we automatically collect information such as usage times, browser details, screen size, network location (IP), country, language etc. This information is anonymized and never published so that individual users cannot be recognized.": "Using Analytics we automatically collect information such as usage times, browser details, screen size, network location (IP), country, language etc. This information is anonymized and never published so that individual users cannot be recognized.",
@@ -409,5 +407,9 @@
   "Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.": "Volunteer with the team that runs Trustroots, helping with development, design, translation, community support or organisation. This form is not for finding farm work, jobs, or work in exchange for food and accommodation.",
   "No questions match your search.": "No questions match your search.",
   "Search all frequently asked questions": "Search all frequently asked questions",
-  "You can follow F-Droid availability in the open <2>React Native app issue</2> and <6>Expo app issue</6>. See also the <9>related open pull requests</9>.": "You can follow F-Droid availability in the open <2>React Native app issue</2> and <6>Expo app issue</6>. See also the <9>related open pull requests</9>."
+  "You can follow F-Droid availability in the open <2>React Native app issue</2> and <6>Expo app issue</6>. See also the <9>related open pull requests</9>.": "You can follow F-Droid availability in the open <2>React Native app issue</2> and <6>Expo app issue</6>. See also the <9>related open pull requests</9>.",
+  "No. Trustroots is for everyone aged 18 or older.": "No. Trustroots is for everyone aged 18 or older.",
+  "Trustroots was initially built with hitchhikers in mind, but anyone aged 18 or older is welcome to sign up even if they've never hitchhiked.": "Trustroots was initially built with hitchhikers in mind, but anyone aged 18 or older is welcome to sign up even if they've never hitchhiked.",
+  "What is the minimum age to use Trustroots?": "What is the minimum age to use Trustroots?",
+  "You must be 18 years old or older to use Trustroots.": "You must be 18 years old or older to use Trustroots."
 }

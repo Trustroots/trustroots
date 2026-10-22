@@ -66,7 +66,7 @@ describe('Username selection and existing identities', function () {
     it('rejects selection consistently: ' + username, async function () {
       const signup = await request(app)
         .post('/api/auth/signup')
-        .send({ ...member(), username })
+        .send({ ...member(), ageConfirmed: true, username })
         .expect(400);
       signup.body.message.should.equal(formatMessage);
       const validation = await request(app)
@@ -95,7 +95,7 @@ describe('Username selection and existing identities', function () {
       async function () {
         await request(app)
           .post('/api/auth/signup')
-          .send({ ...member(), username })
+          .send({ ...member(), ageConfirmed: true, username })
           .expect(400);
         const validation = await request(app)
           .post('/api/auth/signup/validate')
@@ -173,6 +173,7 @@ describe('Username selection and existing identities', function () {
       .send({ username: ' NewMember42 ' })
       .expect(200);
     changed.body.username.should.equal('newmember42');
+    should.not.exist(changed.body.usernameHistory);
     const first = await findUser(user._id);
     assertPresent(first.usernameUpdated);
     await agent
@@ -190,6 +191,32 @@ describe('Username selection and existing identities', function () {
     assertPresent(savedUsernameUpdated);
     assertPresent(firstUsernameUpdated);
     savedUsernameUpdated.getTime().should.equal(firstUsernameUpdated.getTime());
+
+    // A successful later rename appends to the same persisted history.
+    await User.collection.updateOne(
+      { _id: user._id },
+      { $set: { usernameUpdated: new Date('2020-01-01') } },
+    );
+    await agent
+      .put('/api/users')
+      .send({ username: 'thirdmember42' })
+      .expect(200);
+    const historyOwner = await User.findById(user._id).select(
+      '+usernameHistory',
+    );
+    assertPresent(historyOwner);
+    historyOwner
+      .usernameHistory!.map(({ oldUsername, newUsername }) => ({
+        oldUsername,
+        newUsername,
+      }))
+      .should.deepEqual([
+        { oldUsername: 'samplemember', newUsername: 'newmember42' },
+        { oldUsername: 'newmember42', newUsername: 'thirdmember42' },
+      ]);
+    historyOwner
+      .usernameHistory!.every(entry => entry.changedAt instanceof Date)
+      .should.be.true();
   });
 
   it('rejects reserved username changes before changing the timestamp', async function () {
@@ -201,6 +228,9 @@ describe('Username selection and existing identities', function () {
       .send({ username: 'nostr' })
       .expect(400);
     response.body.message.should.equal('Username is not available.');
-    should.not.exist((await findUser(user._id)).usernameUpdated);
+    const saved = await User.findById(user._id).select('+usernameHistory');
+    assertPresent(saved);
+    should.not.exist(saved.usernameUpdated);
+    (saved.usernameHistory || []).length.should.equal(0);
   });
 });

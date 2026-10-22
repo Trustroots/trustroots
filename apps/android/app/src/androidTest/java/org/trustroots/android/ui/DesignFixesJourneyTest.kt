@@ -7,8 +7,8 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -35,9 +35,13 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
-import org.trustroots.android.ui.theme.TrustrootsTheme
-import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.circles.CirclesScreen
+import org.trustroots.android.ui.common.MemberNavigationBar
 import org.trustroots.android.ui.common.horizontalInset
+import org.trustroots.android.ui.hostoffer.HostOfferScreen
+import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.search.SearchHubScreen
+import org.trustroots.android.ui.theme.TrustrootsTheme
 
 /** Native end-to-end journeys use a local HTTP API and real map/view lifecycles. */
 @RunWith(AndroidJUnit4::class)
@@ -97,7 +101,9 @@ class DesignFixesJourneyTest {
             request.contains("/api/users/quiet-fox") -> """{"username":"quiet-fox","displayName":"Quiet Fox"}"""
             else -> "[]"
         } }
-        compose.setContent { TrustrootsTheme { HostMapScreen(api, session, {}, contentPadding = insets) } }
+        compose.setContent { frame(Destination.Search) { _ ->
+            SearchHubScreen(api, session, {}, contentPadding = insets)
+        } }
         val field = compose.onNodeWithTag("placeSearchField").fetchSemanticsNode().boundsInRoot
         val statistics = compose.onNodeWithTag("mapStatistics").fetchSemanticsNode().boundsInRoot
         val root = compose.onRoot().fetchSemanticsNode().boundsInRoot
@@ -114,9 +120,12 @@ class DesignFixesJourneyTest {
         compose.onRoot().performTouchInput { click(center) }
         compose.waitUntil(10_000) { compose.onAllNodesWithTag("hostResultCard").fetchSemanticsNodes().isNotEmpty() }
         val card = compose.onNodeWithTag("hostResultCard").fetchSemanticsNode().boundsInRoot
+        val sheet = compose.onNodeWithTag("hostDetailSheet").fetchSemanticsNode().boundsInRoot
         with(compose.density) {
-            assertEquals(24.dp.toPx(), card.left, 1f)
-            assertEquals(root.right - 40.dp.toPx(), card.right, 1f)
+            assertEquals(24.dp.toPx(), sheet.left, 1f)
+            assertEquals(root.right - 40.dp.toPx(), sheet.right, 1f)
+            assertEquals(sheet.left + 12.dp.toPx(), card.left, 1f)
+            assertEquals(sheet.right - 12.dp.toPx(), card.right, 1f)
             assertTrue(card.bottom <= root.bottom - 96.dp.toPx())
         }
     }
@@ -181,7 +190,15 @@ class DesignFixesJourneyTest {
         assertTrue(last.bottom <= navigation.top)
         compose.onNodeWithText("Traveller 30").performClick()
         compose.onNodeWithTag("messageComposer").assertIsDisplayed()
+        compose.waitForIdle()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        compose.onNodeWithText("Traveller 30").assertIsDisplayed()
+        compose.onNode(hasScrollToIndexAction()).performScrollToIndex(0)
+        compose.waitForIdle()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithText("Filter conversations").fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithText("Filter conversations").performTextInput("traveller-30")
         compose.onNodeWithText("Traveller 30").assertIsDisplayed()
         compose.onNodeWithText("Traveller 1").assertDoesNotExist()
@@ -191,7 +208,13 @@ class DesignFixesJourneyTest {
         val circles = (1..30).joinToString(",", "[", "]") { index ->
             """{"_id":"circle-$index","slug":"circle-$index","label":"Circle ${index.toString().padStart(2, '0')}","count":1,"description":"<p>Fictional circle <strong>$index</strong> description</p>"}"""
         }
-        serve { request -> if (request.contains("/api/tribes")) circles else "[]" }
+        serve { request ->
+            when {
+                request.startsWith("GET /api/tribes/circle-30 ") -> """{"_id":"circle-30","slug":"circle-30","label":"Circle 30","count":1,"description":"<p>Fictional circle <strong>30</strong> description</p>"}"""
+                request.startsWith("GET /api/tribes") -> circles
+                else -> "[]"
+            }
+        }
         compose.setContent { frame(Destination.Circles) { padding ->
             CirclesScreen(api, session, {}, contentPadding = padding)
         } }

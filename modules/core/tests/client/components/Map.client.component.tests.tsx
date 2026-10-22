@@ -1,4 +1,5 @@
 import React from 'react';
+import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -11,20 +12,22 @@ type MapStyleControlProps = React.ComponentProps<typeof MapStyleControl>;
 type LeafletMapProps = React.ComponentProps<typeof LeafletMap>;
 
 const mockIsWebGLSupported = jest.fn<boolean, []>();
+const mockGetMapBoxToken = jest.mocked(getMapBoxToken);
+beforeEach(() => mockGetMapBoxToken.mockReturnValue('test-token'));
 jest.mock('@/modules/core/client/utils/map', () => ({
   ...jest.requireActual<typeof import('@/modules/core/client/utils/map')>(
     '@/modules/core/client/utils/map',
   ),
   isWebGLSupported: () => mockIsWebGLSupported(),
+  getMapBoxToken: jest.fn(() => 'test-token'),
 }));
 
 const mockMapGL = jest.fn<void, [props: MapProps]>();
 const mockMapStyleControl = jest.fn<void, [props: MapStyleControlProps]>();
-jest.mock('react-map-gl', () => {
+jest.mock('react-map-gl/mapbox', () => {
   const React = jest.requireActual<typeof import('react')>('react');
   return {
     __esModule: true,
-    MapController: jest.requireActual('react-map-gl').MapController,
     default: function MockMapGL(props: MapProps) {
       mockMapGL(props);
       return <div data-testid="react-map">{props.children}</div>;
@@ -68,6 +71,17 @@ describe('<Map />', () => {
     );
 
     expect(screen.getByText('Map child')).toBeInTheDocument();
+    expect(latestReactMapProps().mapboxAccessToken).toBe('test-token');
+    const disableRotation = jest.fn();
+    act(() =>
+      latestReactMapProps().onLoad!({
+        target: {
+          touchZoomRotate: { disableRotation },
+          scrollZoom: { setWheelZoomRate: jest.fn() },
+        },
+      } as unknown as Parameters<NonNullable<MapProps['onLoad']>>[0]),
+    );
+    expect(disableRotation).toHaveBeenCalled();
     expect(screen.getByTestId('map-navigation-control')).toBeInTheDocument();
     expect(screen.getByTestId('map-scale-control')).toBeInTheDocument();
     expect(screen.queryByTestId('map-style-control')).not.toBeInTheDocument();
@@ -108,6 +122,13 @@ describe('<Map />', () => {
     );
   });
 
+  it('uses raster tiles without a token even when WebGL is supported', () => {
+    mockGetMapBoxToken.mockReturnValue(undefined);
+    render(<Map />);
+    expect(screen.getByTestId('leaflet-map')).toBeInTheDocument();
+    expect(screen.queryByTestId('react-map')).not.toBeInTheDocument();
+  });
+
   it('can prefer raster tiles even when WebGL is supported', () => {
     mockIsWebGLSupported.mockReturnValue(true);
     render(
@@ -138,23 +159,19 @@ type Viewport = {
   zoom: number;
 };
 type InteractionState = { isPanning?: boolean; isZooming?: boolean };
-type ViewportChangeHandler = (
-  viewport: Viewport,
-  interactionState?: InteractionState,
-) => void;
-
 function changeMapViewport(
   viewport: Viewport = { latitude: 51, longitude: 11, zoom: 15 },
   interactionState?: InteractionState,
 ): void {
-  const onViewportChange = latestReactMapProps().onViewportChange as
-    ViewportChangeHandler | undefined;
-  if (!onViewportChange) {
-    throw new Error('Expected the map viewport callback to be provided');
-  }
-  // ReactMapGL supplies a richer view state; these tests exercise the fields
-  // consumed by Map and preserve the original three-field callback payload.
-  act(() => onViewportChange(viewport, interactionState));
+  const props = latestReactMapProps();
+  const event = {
+    viewState: viewport,
+    target: { isZooming: () => interactionState?.isZooming ?? false },
+  } as unknown as Parameters<NonNullable<MapProps['onMove']>>[0];
+  act(() => {
+    props.onMove!(event);
+    if (interactionState?.isPanning) props.onDrag!(event);
+  });
 }
 
 it('synchronises panning and external place searches while retaining zoom', () => {

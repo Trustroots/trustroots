@@ -1,0 +1,19 @@
+{
+  "appId": "org.trustroots.android",
+  "version": "0.1-20261021-2250",
+  "versionCode": 100039,
+  "filename": "trustroots-android-0.1-20261021-2250.apk",
+  "url": "https://github.com/Trustroots/trustroots/releases/download/android-preview-100039-v0.1-20261021-2250/trustroots-android-0.1-20261021-2250.apk",
+  "sha256": "c61a56b51ae71be1cdf4c1aac61b9a2e634af0bac2bc9ec4f42bb8c8f749fb2f",
+  "size": 2546717,
+  "certificate": "09172995e8abe0c2e0998c08d8795e093f416b728185c16b16b25ebe7968ff46",
+  "minSdk": 26,
+  "targetSdk": 37,
+  "platforms": [
+    "android-arm64-v8a",
+    "android-armeabi-v7a",
+    "android-x86",
+    "android-x86_64"
+  ],
+  "published": "2026-10-21T22:58:11.000Z"
+}

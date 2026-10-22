@@ -1,15 +1,14 @@
 // External dependencies
-import { useDebouncedCallback } from 'use-debounce';
-import React, { createRef, useEffect, useRef, useState } from 'react';
-import ReactMapGL, {
-  FlyToInterpolator,
-  Layer,
-  Source,
-  WebMercatorViewport,
-} from 'react-map-gl';
-import { reactMapGLDefaultProps } from '@/modules/core/client/components/Map/reactMapGLDefaultProps';
+import useDebouncedCallback from '../hooks/use-debounced-callback';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactMapGL, { Layer, Source, type MapRef } from 'react-map-gl/mapbox';
 import type { Event as NostrEvent } from 'nostr-tools';
-import type { Map as MapboxMap, MapboxGeoJSONFeature } from 'mapbox-gl';
+import type {
+  GeoJSONSource,
+  Map as MapboxMap,
+  MapboxGeoJSONFeature,
+  StyleSpecification,
+} from 'mapbox-gl';
 import type { SearchFilters } from '../utils/search-filters';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import type { OfferSearchFeatureCollection } from '@/modules/offers/shared/offer';
@@ -28,7 +27,7 @@ import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
-import WheelMapController from '@/modules/core/client/components/Map/WheelMapController';
+import usePageWheel from '@/modules/core/client/components/Map/use-page-wheel';
 import SearchMapNoContent from './SearchMapNoContent';
 import LeafletSearchMap from './LeafletSearchMap';
 import { ensureValidLat, ensureValidLng } from '../utils';
@@ -89,8 +88,6 @@ interface MapViewport {
   latitude: number;
   longitude: number;
   zoom: number;
-  transitionDuration?: number | 'auto';
-  transitionInterpolator?: InstanceType<typeof FlyToInterpolator>;
 }
 
 type MapFeature = MapboxGeoJSONFeature & {
@@ -338,16 +335,23 @@ export default function SearchMap({
     { maxWait: 3000 },
   );
 
-  const [viewport, setViewport] = useState<MapViewport>(persistentMapLocation);
-  const viewportRef = useRef<MapViewport>(persistentMapLocation);
+  const [viewport, setViewport] = useState<MapViewport>(() => ({
+    latitude: persistentMapLocation.latitude ?? DEFAULT_LOCATION.lat,
+    longitude: persistentMapLocation.longitude ?? DEFAULT_LOCATION.lng,
+    zoom: persistentMapLocation.zoom ?? DEFAULT_LOCATION.zoom,
+  }));
+  const viewportRef = useRef<MapViewport>(viewport);
   // Place searches, offer links and cluster clicks also update the viewport
   // directly. Pinch input must start from that displayed camera, not just the
   // last viewport reported by a map interaction.
   viewportRef.current = viewport;
   const gestureSurfaceRef = useRef<HTMLDivElement | null>(null);
   const viewportChangeRef = useRef<((next: MapViewport) => void) | null>(null);
-  const [webGLSupported] = useState(isWebGLSupported);
-  const [mapController] = useState(() => new WheelMapController());
+  // Mapbox GL v3 requires a token even for a third-party raster style.
+  // Tokenless installations use Leaflet with OpenStreetMap tiles.
+  const [mapboxToken] = useState(() => getMapBoxToken() || undefined);
+  const [useWebGL] = useState(() => isWebGLSupported() && Boolean(mapboxToken));
+  usePageWheel(gestureSurfaceRef, useWebGL);
   const [mapStyle, setMapstyle] = usePersistentMapStyle(MAP_STYLE_DEFAULT);
   const [map, setMap] = useState<MapboxMap | undefined>();
   const [hoveredOffer, setHoveredOffer] = useState<MapFeature | false>(false);
@@ -374,21 +378,19 @@ export default function SearchMap({
     ? JSON.parse(filters)
     : {};
   const communityNotesEnabled = parsedFilters.communityNotes || false;
-  const MAPBOX_TOKEN = getMapBoxToken();
   // A Mapbox style can be persisted in localStorage from a session that had a
   // token configured. Without a token, mapbox-gl can't load it and the map
   // renders blank, so fall back to the tokenless OSM style.
   const isMapboxStyle =
     typeof mapStyle === 'string' && mapStyle.startsWith('mapbox://');
   const effectiveMapStyle =
-    !MAPBOX_TOKEN && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
+    !mapboxToken && isMapboxStyle ? MAP_STYLE_OSM : mapStyle;
   const isOsmStyle =
     typeof effectiveMapStyle !== 'string' &&
     effectiveMapStyle?.name === MAP_STYLE_OSM.name;
-  // If no mapbox token, and we're in production, don't show the style switcher
-  const showMapStyles =
-    webGLSupported && (!!MAPBOX_TOKEN || process.env.NODE_ENV !== 'production');
-  const mapRef = createRef<React.ComponentRef<typeof ReactMapGL>>();
+  // The style switcher only applies while rendering the Mapbox map.
+  const showMapStyles = useWebGL;
+  const mapRef = useRef<MapRef>(null);
 
   // Get the Mapbox object for direct map manipulation
   const getMapRef = () => map || mapRef?.current?.getMap();
@@ -403,26 +405,29 @@ export default function SearchMap({
    *   southWest.lng;
    */
   const zoomToBounds = ({ northEast, southWest }: MapBounds) => {
-    const newViewport = new WebMercatorViewport(
-      viewport as ConstructorParameters<typeof WebMercatorViewport>[0],
-    );
-    const { longitude, latitude, zoom } = newViewport.fitBounds(
+    const camera = getMapRef()?.cameraForBounds(
       [
         // [minLng, minLat],
         // [maxLng, maxLat],
-        [northEast.lng, northEast.lat],
         [southWest.lng, southWest.lat],
+        [northEast.lng, northEast.lat],
       ],
       {
         padding: 40,
       },
     );
 
+    if (!camera?.center) return;
+    // cameraForBounds returns its calculated centre as a Mapbox LngLat.
+    const { lng: longitude, lat: latitude } = camera.center as {
+      lng: number;
+      lat: number;
+    };
     setViewport({
       ...viewport,
       longitude,
       latitude,
-      zoom,
+      zoom: camera.zoom ?? viewport.zoom,
     });
   };
 
@@ -482,7 +487,7 @@ export default function SearchMap({
   useEffect(() => {
     const surface = gestureSurfaceRef.current;
 
-    if (!webGLSupported || !surface) {
+    if (!useWebGL || !surface) {
       return undefined;
     }
 
@@ -511,7 +516,7 @@ export default function SearchMap({
     });
 
     return () => surface.removeEventListener('wheel', handlePinchWheel, true);
-  }, [webGLSupported]);
+  }, [useWebGL]);
 
   /**
    * Debounce getting fresh offers for new map state to avoid performance issues
@@ -539,6 +544,7 @@ export default function SearchMap({
   ) => {
     const map = getMapRef();
     const { source, id } = feature;
+    if (!map || !source) return;
     const previousState = map.getFeatureState({
       source,
       id,
@@ -603,8 +609,8 @@ export default function SearchMap({
     // - feature doesn't have ID for some reason, or
     // - we're just hovering previously hovered feature
     if (
-      (feature.layer.id !== unclusteredPointLayer.id &&
-        feature.layer.id !== communityNotesLayer.id) ||
+      (feature.layer?.id !== unclusteredPointLayer.id &&
+        feature.layer?.id !== communityNotesLayer.id) ||
       !feature.id ||
       (hoveredOffer && feature.id === hoveredOffer.id)
     ) {
@@ -618,7 +624,6 @@ export default function SearchMap({
 
   /**
    * Zoom to cluster of features
-   * @link https://github.com/visgl/react-map-gl/blob/5.2-release/examples/zoom-to-bounds/src/app.js
    */
   const zoomToCluster = (cluster: MapFeature) => {
     const clusterId = cluster?.properties?.cluster_id;
@@ -630,14 +635,9 @@ export default function SearchMap({
     const newLocation = {
       latitude: cluster.geometry.coordinates[1],
       longitude: cluster.geometry.coordinates[0],
-      transitionDuration: 'auto' as const,
-      transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
     };
 
-    // react-map-gl v5's <Source> is a plain function component and does not
-    // forward refs (React 19 would pass `ref` into the source options), so read
-    // the clustered source straight from the live map.
-    const source = getMapRef()?.getSource(SOURCE_OFFERS);
+    const source = getMapRef()?.getSource<GeoJSONSource>(SOURCE_OFFERS);
 
     if (!source) {
       // At least center the group if the source isn't ready yet.
@@ -649,21 +649,18 @@ export default function SearchMap({
       return;
     }
 
-    source.getClusterExpansionZoom(
-      clusterId,
-      (err: Error | null, zoom?: number) => {
-        if (err || zoom === undefined) {
-          return;
-        }
+    source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+      if (err || zoom == null) {
+        return;
+      }
 
-        // Transition map to show offers in the cluster
-        setViewport({
-          ...viewport,
-          ...newLocation,
-          zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
-        });
-      },
-    );
+      // Transition map to show offers in the cluster
+      getMapRef()?.flyTo({
+        center: [newLocation.longitude, newLocation.latitude],
+        zoom: Math.min(zoom + 1, CLUSTER_MAX_ZOOM),
+        speed: 3,
+      });
+    });
   };
 
   /**
@@ -700,13 +697,10 @@ export default function SearchMap({
       return;
     }
 
-    setViewport({
-      ...viewport,
-      latitude: cluster.geometry.coordinates[1],
-      longitude: cluster.geometry.coordinates[0],
+    getMapRef()?.flyTo({
+      center: cluster.geometry.coordinates,
       zoom: Math.min((viewport.zoom || 2) + 3, CLUSTER_MAX_ZOOM),
-      transitionDuration: 'auto',
-      transitionInterpolator: new FlyToInterpolator({ speed: 3.0 }),
+      speed: 3,
     });
   };
 
@@ -717,7 +711,9 @@ export default function SearchMap({
       return;
     }
 
-    const source = getMapRef()?.getSource(SOURCE_COMMUNITY_NOTES);
+    const source = getMapRef()?.getSource<GeoJSONSource>(
+      SOURCE_COMMUNITY_NOTES,
+    );
     if (!source) {
       zoomToCommunityNotesCluster(cluster);
       return;
@@ -727,12 +723,13 @@ export default function SearchMap({
       clusterId,
       Number(cluster.properties.point_count) || 0,
       0,
-      (error: Error | null, leaves: MapFeature[]) => {
+      (error, sourceLeaves) => {
         if (error) {
           zoomToCommunityNotesCluster(cluster);
           return;
         }
 
+        const leaves = sourceLeaves as MapFeature[];
         const plusCode = getPlusCodeFromEvent(
           leaves[0].properties as unknown as OfferFeatureProperties,
         );
@@ -857,7 +854,7 @@ export default function SearchMap({
   // available while panning. The Results pane lists only pins and
   // author-visible community notes inside the actual map viewport.
   useEffect(() => {
-    const mapBounds = webGLSupported
+    const mapBounds = useWebGL
       ? getMapRef()?.getBounds()
       : leafletMapState?.bounds;
     const corners = mapBounds ? normalizeBoundsCorners(mapBounds) : undefined;
@@ -921,12 +918,12 @@ export default function SearchMap({
     onVisibleCommunityNoteThreadsChange,
     onVisibleOffersChange,
     viewport,
-    webGLSupported,
+    useWebGL,
   ]);
 
   // Load and store Mapbox object for quick reference on render
   useEffect(() => {
-    if (webGLSupported) {
+    if (useWebGL) {
       setMap(getMapRef());
     }
   }, []);
@@ -934,10 +931,10 @@ export default function SearchMap({
   // Apply externally changed bounds object
   // Changed by the search sidebar
   useEffect(() => {
-    if (webGLSupported && bounds?.northEast && bounds?.southWest) {
+    if (useWebGL && bounds?.northEast && bounds?.southWest) {
       zoomToBounds(bounds as MapBounds);
     }
-  }, [bounds, webGLSupported]);
+  }, [bounds, useWebGL, map]);
 
   // Apply externally changed filters object
   // Changed by the search sidebar
@@ -954,7 +951,7 @@ export default function SearchMap({
 
     // Update map offers
     setOffers({ features: [], type: 'FeatureCollection' });
-    updateOffers(webGLSupported ? undefined : leafletMapState);
+    updateOffers(useWebGL ? undefined : leafletMapState);
   }, [filters]);
 
   // Subscribe/unsubscribe to community notes based on toggle
@@ -1056,9 +1053,9 @@ export default function SearchMap({
         zoom: location?.zoom || DEFAULT_LOCATION.zoom,
       });
     }
-  }, [location]);
+  }, [location, map]);
 
-  if (!webGLSupported) {
+  if (!useWebGL) {
     const leafletOffers = {
       features: offers.features.map(feature => ({
         type: 'Feature' as const,
@@ -1086,19 +1083,19 @@ export default function SearchMap({
   }
 
   return (
-    <div data-map-zoom={viewport.zoom} ref={gestureSurfaceRef}>
+    <div
+      className="search-map"
+      data-map-zoom={viewport.zoom}
+      ref={gestureSurfaceRef}
+    >
       <TypedReactMapGL
-        {...reactMapGLDefaultProps}
         reuseMaps
-        controller={mapController}
-        className="search-map"
         dragRotate={false}
         /*
          * Pointer event callbacks will only query the features under the pointer
-         * of `interactiveLayerIds` layers. The getCursor callback will receive
-         * `isHovering:true` when hover over features of these layers.
+         * of `interactiveLayerIds` layers.
          *
-         * https://visgl.github.io/react-map-gl/docs/api-reference/interactive-map#interactivelayerids
+         * https://visgl.github.io/react-map-gl/docs/api-reference/mapbox/map#interactivelayerids
          */
         interactiveLayerIds={[
           clusterLayer.id,
@@ -1107,24 +1104,25 @@ export default function SearchMap({
             ? [communityNotesLayer.id, communityNotesClusterLayer.id]
             : []),
         ]}
-        location={[
-          persistentMapLocation?.latitude ?? DEFAULT_LOCATION.lat,
-          persistentMapLocation?.longitude ?? DEFAULT_LOCATION.lng,
-        ]}
-        mapboxApiAccessToken={MAPBOX_TOKEN || undefined}
-        mapStyle={effectiveMapStyle}
-        onClick={onClickMap}
+        mapboxAccessToken={mapboxToken}
+        mapStyle={effectiveMapStyle as string | StyleSpecification}
+        onClick={event => onClickMap(event as unknown as MapMouseEvent)}
         onError={event => handleMapError(event)}
-        onHover={onHover}
-        onInteractionStateChange={debouncedUpdateOffers}
+        onMouseMove={event => onHover(event as unknown as MapMouseEvent)}
+        onMoveEnd={() => debouncedUpdateOffers()}
         onMouseLeave={clearPreviouslyHoveredState}
-        onViewportChange={onViewPortChange}
+        onMove={event => onViewPortChange(event.viewState)}
+        onLoad={() => {
+          const loadedMap = mapRef.current!.getMap();
+          loadedMap.touchZoomRotate.disableRotation();
+          loadedMap.scrollZoom.setWheelZoomRate(1 / 100);
+          setMap(loadedMap);
+          updateOffers();
+        }}
         ref={mapRef}
-        touchRotate={false}
         {...viewport}
         /* Keep viewport pixel dimensions from overriding responsive sizing. */
-        height="100%"
-        width="100%"
+        style={{ width: '100%', height: '100%' }}
       >
         {viewport.zoom <= MIN_ZOOM && <SearchMapNoContent />}
         <MapScaleControl />

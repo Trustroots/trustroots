@@ -108,6 +108,7 @@ describe('SignupPage', () => {
 
   function fillStepOne({
     acquisitionStory = '',
+    ageConfirmed = true,
     email = 'ada@example.test',
     firstName = 'Ada',
     lastName = 'Lovelace',
@@ -116,6 +117,7 @@ describe('SignupPage', () => {
     username = 'ada',
   }: {
     acquisitionStory?: string;
+    ageConfirmed?: boolean;
     email?: string;
     firstName?: string;
     lastName?: string;
@@ -126,7 +128,7 @@ describe('SignupPage', () => {
     fireEvent.change(screen.getByLabelText('First Name'), {
       target: { value: firstName },
     });
-    fireEvent.change(screen.getByLabelText('Last Name'), {
+    fireEvent.change(screen.getByLabelText('Last name (optional)'), {
       target: { value: lastName },
     });
     fireEvent.change(screen.getByLabelText('Email'), {
@@ -139,6 +141,10 @@ describe('SignupPage', () => {
       target: { value: password },
     });
 
+    if (ageConfirmed) {
+      fireEvent.click(screen.getByLabelText('I am 18 years old or older.'));
+    }
+
     if (newsletter) {
       fireEvent.click(screen.getByLabelText('Subscribe to community news'));
     }
@@ -150,6 +156,41 @@ describe('SignupPage', () => {
     }
   }
 
+  it('requires explicit adult confirmation before submitting', async () => {
+    signup.mockResolvedValue({ _id: 'adult-member', username: 'ada' });
+    const { container } = renderPage();
+    const checkbox = screen.getByRole('checkbox', {
+      name: 'I am 18 years old or older.',
+    });
+    expect(checkbox).not.toBeChecked();
+    expect(checkbox).toBeRequired();
+    fireEvent.click(checkbox);
+    fireEvent.submit(container.querySelector('form')!);
+    expect(signup).not.toHaveBeenCalled();
+    fireEvent.click(checkbox);
+    fillStepOne({ ageConfirmed: false });
+    expect(
+      screen.getByRole('button', { name: 'Please fill in the form' }),
+    ).toBeDisabled();
+    fireEvent.submit(container.querySelector('form')!);
+    expect(signup).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'You must confirm that you are 18 years old or older to sign up.',
+    );
+    fireEvent.click(checkbox);
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(checkbox).toBeDisabled();
+    fireEvent.submit(container.querySelector('form')!);
+    expect(signup).toHaveBeenCalledTimes(1);
+    await screen.findByRole('button', { name: 'Skip' });
+    expect(signup).toHaveBeenCalledWith(
+      expect.objectContaining({ ageConfirmed: true }),
+    );
+    fireEvent.submit(container.querySelector('form')!);
+    expect(signup).toHaveBeenCalledTimes(1);
+  });
+
   it('renders the signup form with step indicators', () => {
     renderPage();
 
@@ -160,6 +201,34 @@ describe('SignupPage', () => {
     expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute(
       'href',
       '/signin',
+    );
+  });
+
+  it('allows signing up without a last name', async () => {
+    signup.mockResolvedValue({
+      _id: 'member-without-surname',
+      username: 'ada',
+    });
+    renderPage();
+    fillStepOne({ lastName: '' });
+
+    const lastName = screen.getByLabelText('Last name (optional)');
+    expect(lastName).not.toBeRequired();
+    expect(lastName).toHaveAccessibleDescription(
+      'You can use a nickname. You don’t need to share your full name.',
+    );
+    expect(screen.getByLabelText('First Name')).toBeRequired();
+    expect(
+      screen.getByText(
+        'You can use a nickname. You don’t need to share your full name.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('button', { name: 'Skip' });
+    expect(signup).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Ada', lastName: '' }),
     );
   });
 

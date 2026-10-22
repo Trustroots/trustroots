@@ -2,14 +2,16 @@ package org.trustroots.android.ui
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -18,8 +20,8 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
-import org.junit.Before
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -27,6 +29,8 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.testing.KeyboardTestSupport
+import org.trustroots.android.testing.foregroundActivityTask
+import org.trustroots.android.ui.experience.CreateExperienceScreen
 
 @RunWith(AndroidJUnit4::class)
 class CreateExperienceScreenTest {
@@ -95,6 +99,8 @@ class CreateExperienceScreenTest {
             )
         }
         compose.onNodeWithText("Experience with Calm Lynx").assertIsDisplayed()
+        compose.onNodeWithText("We met in person").assertIsOn().performClick().assertIsOff().performClick().assertIsOn()
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
         compose.onNodeWithText("Public experience (optional)").performScrollTo().performClick()
         compose.onNodeWithText("Public experience (optional)").performTextInput("A fictional account of a kind visit.")
         keyboardTestSupport.awaitShown(compose)

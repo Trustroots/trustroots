@@ -4,9 +4,6 @@ import _ from 'lodash';
 import fs from 'fs';
 import { globSync } from 'node:fs';
 import defaultAssets from './assets/default.mts';
-import developmentAssets from './assets/development.mts';
-import productionAssets from './assets/production.mts';
-import testAssets from './assets/test.mts';
 import defaultConfig from './env/default.mts';
 import developmentConfig from './env/development.mts';
 import productionConfig from './env/production.mts';
@@ -20,11 +17,6 @@ import type {
 export type { Config } from './types.mts';
 type Environment = 'development' | 'production' | 'test';
 type EnvironmentConfig = ConfigOverrides & { db: DatabaseConfig };
-const environmentAssetsByName = {
-  development: developmentAssets,
-  production: productionAssets,
-  test: testAssets,
-};
 const environmentConfigByName: Record<Environment, EnvironmentConfig> = {
   development: developmentConfig,
   production: productionConfig,
@@ -127,15 +119,8 @@ const initGlobalConfig = function (): Config {
   // Validate NDOE_ENV existance
   validateEnvironmentVariable();
 
-  // Get the default assets
-
-  // Get the current assets
   const environment = process.env
     .NODE_ENV as keyof typeof environmentConfigByName;
-  const environmentAssets = environmentAssetsByName[environment] || {};
-
-  // Merge assets
-  const assets = _.extend(defaultAssets, environmentAssets);
 
   /**
    * Resolve environment configuration by extending each env configuration file,
@@ -151,7 +136,7 @@ const initGlobalConfig = function (): Config {
   );
 
   return Object.assign(config, {
-    files: getGlobalConfigFiles(assets),
+    files: getGlobalConfigFiles(defaultAssets),
     utils: { getGlobbedPaths },
   });
 };

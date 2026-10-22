@@ -33,6 +33,8 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.NostrootsNotesClient
+import org.trustroots.android.ui.hostmap.HostMapNotesConnection
+import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
 class HostMapMeetOfferJourneyTest {
@@ -86,16 +88,19 @@ class HostMapMeetOfferJourneyTest {
         }
 
         compose.setContent {
-            HostMapScreen(
-                api = MobileApiClient(local.baseURL),
-                session = session,
-                onSessionInvalidated = { invalidations.incrementAndGet() },
-                geocoderLookup = { _, _, _ -> emptyList() },
-                notesClientFactory = { onNote, onError ->
-                    NostrootsNotesClient(onNote, onError, InertSocketFactory, "ws://127.0.0.1:1/relay")
-                },
-                mapViewFactory = offlineMapViewFactory,
-            )
+            NativeTestAppFrame(Destination.Search) {
+                SearchHubScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = session,
+                    onSessionInvalidated = { invalidations.incrementAndGet() },
+                    geocoderLookup = { _, _, _ -> emptyList() },
+                    notesClientFactory = { onNote, onError ->
+                        val client = NostrootsNotesClient(onNote, onError, InertSocketFactory, "ws://127.0.0.1:1/relay")
+                        HostMapNotesConnection { client.close() }
+                    },
+                    mapViewFactory = offlineMapViewFactory,
+                )
+            }
         }
 
         val mapReady = AtomicReference(false)

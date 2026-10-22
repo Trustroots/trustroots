@@ -123,7 +123,19 @@ describe('ProfileEditAbout', () => {
     renderPage();
 
     expect(screen.getByLabelText('First name')).toHaveValue('Ada');
-    expect(screen.getByLabelText('Last name')).toHaveValue('Lovelace');
+    expect(screen.getByLabelText('Last name (optional)')).toHaveValue(
+      'Lovelace',
+    );
+    expect(
+      screen.getByLabelText('Last name (optional)'),
+    ).toHaveAccessibleDescription(
+      'You can use a nickname. You don’t need to share your full name.',
+    );
+    expect(
+      screen.getByText(
+        'You can use a nickname. You don’t need to share your full name.',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Save' })[0]).toBeDisabled();
   });
 
@@ -145,6 +157,22 @@ describe('ProfileEditAbout', () => {
       );
     });
     expect(await screen.findByText('Profile updated.')).toBeVisible();
+  });
+
+  it('saves a cleared last name for an existing profile', async () => {
+    updateUser.mockResolvedValue({ ...user, lastName: '' });
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Last name (optional)'), {
+      target: { value: '' },
+    });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]);
+
+    await waitFor(() => {
+      expect(usersApi.update).toHaveBeenCalledWith(
+        expect.objectContaining({ lastName: '' }),
+      );
+    });
   });
 
   it('warns when the description is shorter than the minimum length', () => {
@@ -199,7 +227,7 @@ describe('ProfileEditAbout', () => {
 
     expect(screen.getByLabelText('Describe Yourself')).toHaveValue('');
     expect(screen.getByLabelText('First name')).toHaveValue('');
-    expect(screen.getByLabelText('Last name')).toHaveValue('');
+    expect(screen.getByLabelText('Last name (optional)')).toHaveValue('');
     expect(screen.getByLabelText('Short tagline')).toHaveValue('');
   });
 
@@ -243,7 +271,7 @@ describe('ProfileEditAbout', () => {
     fireEvent.change(screen.getByLabelText('First name'), {
       target: { value: 'Grace' },
     });
-    fireEvent.change(screen.getByLabelText('Last name'), {
+    fireEvent.change(screen.getByLabelText('Last name (optional)'), {
       target: { value: 'Hopper' },
     });
     fireEvent.change(screen.getByLabelText('Birthdate'), {

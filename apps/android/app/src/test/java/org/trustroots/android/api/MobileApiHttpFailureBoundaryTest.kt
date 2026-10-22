@@ -17,7 +17,7 @@ class MobileApiHttpFailureBoundaryTest {
         MobileMember("quiet-fox", "Quiet Fox"),
     )
 
-    @Test fun emptyServiceErrorBodyRetainsStatusAndUsesTheFallbackMessage() {
+    @Test fun emptyServiceErrorBodyRetainsStatusAndUsesAContextFreeFailureKind() {
         MockWebServer().use { server ->
             server.enqueue(MockResponse(code = 503, body = ""))
             server.start()
@@ -30,7 +30,9 @@ class MobileApiHttpFailureBoundaryTest {
 
             assertEquals("/api/users/quiet-fox", request.url.encodedPath)
             assertEquals(503, error.statusCode)
-            assertEquals("The request was not accepted.", error.message)
+            assertNull(error.serverMessage)
+            assertEquals(ApiFailureKind.REQUEST_REJECTED, error.failureKind)
+            assertNull(error.message)
         }
     }
 

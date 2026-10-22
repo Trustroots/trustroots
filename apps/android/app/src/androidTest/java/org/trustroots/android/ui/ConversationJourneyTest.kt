@@ -1,8 +1,10 @@
 package org.trustroots.android.ui
 
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -18,75 +20,76 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.json.JSONObject
+import org.junit.Before
+import org.junit.Assert.assertEquals
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class ConversationJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
 
+    @Before fun resizeForKeyboardLikeTheMainActivity() {
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+    }
+
     @After fun closeServer() = server.close()
 
     @Test fun multilineComposerSendsMessage() {
-        val posted = AtomicBoolean(false)
-        val returnedToInbox = AtomicBoolean(false)
-        val responder = thread(isDaemon = true) {
-            repeat(6) {
-                val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
-                connection.use { socket ->
-                    val input = socket.getInputStream().bufferedReader()
-                    val request = input.readLine()
-                    if (request.startsWith("POST")) posted.set(true)
-                    while (!input.readLine().isNullOrEmpty()) Unit
-                    val payload = if (request.startsWith("POST")) {
-                        """{"_id":"message-one","content":"Hello there","created":"${Instant.now()}","userFrom":{"_id":"mine","username":"steady-heron"}}"""
-                    } else "[]"
-                    val bytes = if (request.contains("/avatar?")) {
-                        ByteArrayOutputStream().also { output ->
-                            Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-                                .compress(Bitmap.CompressFormat.PNG, 100, output)
-                        }.toByteArray()
-                    } else payload.toByteArray()
-                    socket.getOutputStream().write(
-                        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
-                    )
-                    socket.getOutputStream().write(bytes)
-                    socket.getOutputStream().flush()
-                }
+        val message = "Hello there\nA fictional follow-up."
+        val postedResponse = JSONObject()
+            .put("_id", "message-one")
+            .put("content", message)
+            .put("created", Instant.now().toString())
+            .put("userFrom", JSONObject().put("_id", "mine").put("username", "steady-heron"))
+            .toString()
+        LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path == "/api/messages?page=1&limit=50" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/messages/member-one?limit=100" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/users/mini/member-one" ->
+                    LocalTransportFixture.Response("""{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}""")
+                request.method == "POST" && request.path == "/api/messages" ->
+                    LocalTransportFixture.Response(postedResponse)
+                request.method == "GET" && request.path.startsWith("/api/users/member-one/avatar?") ->
+                    LocalTransportFixture.Response("{}", status = 404)
+                else -> error("Unexpected conversation request: ${request.method} ${request.path}")
             }
-        }
-        compose.setContent {
-            NativeTestAppFrame(Destination.Messages) {
-                ConversationScreen(
-                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+        }.use { local ->
+            compose.setContent {
+                ConversationRouteTestHarness(
+                    api = MobileApiClient(local.baseURL),
                     session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                    member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
+                    memberID = "member-one",
                     onSessionInvalidated = {},
-                    onBack = { returnedToInbox.set(true) },
                 )
             }
+            compose.onNodeWithTag("messageComposer").performTextInput(message)
+            compose.onNodeWithContentDescription("Send").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Send").performClick()
+            compose.waitUntil(10_000) {
+                local.requests.any { it.method == "POST" && it.path == "/api/messages" } &&
+                    compose.onAllNodesWithTag("outgoingMessage").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Just now").assertIsDisplayed()
+            hideTestKeyboard()
+            captureUsabilityScreenshot(compose, "android_conversation")
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.onNodeWithText("Messages").assertIsDisplayed()
+            val postedRequest = local.requests.single { it.method == "POST" && it.path == "/api/messages" }
+            assertEquals(message, JSONObject(postedRequest.body).getString("content"))
         }
-        compose.onNodeWithTag("messageComposer").performTextInput("Hello there")
-        compose.onNodeWithContentDescription("Send").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Send").performClick()
-        compose.waitUntil(10_000) {
-            posted.get() && compose.onAllNodesWithText("Hello there").fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithText("Just now").assertIsDisplayed()
-        hideTestKeyboard()
-        captureUsabilityScreenshot(compose, "android_conversation")
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        assertTrue(returnedToInbox.get())
-        responder.join(1_000)
     }
 
     @Test fun quickReplySendsHostingYes() {
@@ -116,6 +119,8 @@ class ConversationJourneyTest {
                         postedBody.set(body.concatToString(0, offset))
                     }
                     val payload = when {
+                        request.startsWith("GET /api/users/mini/member-one") ->
+                            """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}"""
                         request.startsWith("POST") ->
                             """{"_id":"message-two","content":"Yes, I can host!","created":"${Instant.now()}","userFrom":{"_id":"mine","username":"steady-heron"}}"""
                         request.contains("/api/messages/") ->
@@ -137,12 +142,11 @@ class ConversationJourneyTest {
             }
         }
         compose.setContent {
-            ConversationScreen(
+            ConversationRouteTestHarness(
                 api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
                 session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                member = MessageMember("member-one", "quiet-fox", "Quiet Fox"),
+                memberID = "member-one",
                 onSessionInvalidated = {},
-                onBack = {},
             )
         }
         compose.waitUntil(10_000) {

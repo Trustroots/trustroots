@@ -13,6 +13,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.circles.CirclesScreen
 
 @RunWith(AndroidJUnit4::class)
 class CircleDescriptionJourneyTest {
@@ -28,6 +29,9 @@ class CircleDescriptionJourneyTest {
             when (request.path) {
                 "/api/tribes?limit=150" -> LocalTransportFixture.Response(
                     """[{"_id":"circle-fictional","slug":"harbour","label":"Harbour Circle","count":4,"description":"<p>Meet <strong>local walkers</strong>.</p><ul><li>Share routes</li></ul><p>See <a href='https://example.invalid/'>the guide</a>.</p>"}]""",
+                )
+                "/api/tribes/harbour" -> LocalTransportFixture.Response(
+                    """{"_id":"circle-fictional","slug":"harbour","label":"Harbour Circle","count":4,"description":"<p>Meet <strong>local walkers</strong>.</p><ul><li>Share routes</li></ul><p>See <a href='https://example.invalid/'>the guide</a>.</p>"}""",
                 )
                 "/api/users/memberships" -> LocalTransportFixture.Response("[]")
                 else -> error("Unexpected circle fixture request: ${request.method} ${request.path}")

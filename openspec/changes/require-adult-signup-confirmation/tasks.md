@@ -1,0 +1,5 @@
+- [ ] Update rules, FAQ, privacy and English translation resources.
+- [ ] Require adult confirmation in the signup client and API.
+- [ ] Update fixtures and add client, server and end-to-end regression coverage.
+- [ ] Run checks and coverage without reducing thresholds or existing scenarios.
+- [ ] Update living specifications and archive the change.

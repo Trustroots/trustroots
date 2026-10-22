@@ -24,6 +24,7 @@ async function globalSetup(): Promise<void> {
       try {
         response = await context.post('/api/auth/signup', {
           data: {
+            ageConfirmed: true,
             firstName: 'Warmup',
             lastName: 'User',
             username: `warmup${unique}`,

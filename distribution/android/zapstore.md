@@ -73,6 +73,29 @@ The script also works when invoked by its absolute path from another directory.
    and an update from an existing project-signed APK. Record the verified listing
    URL on the public apps page.
 
+## Publish from the apps page
+
+The [apps page](https://team.trustroots.org/apps/) has a maintainer section for
+publishing the prepared signed preview with a NIP-07 browser extension. Review
+the displayed version and APK digest, select the existing Trustroots publisher
+identity in your extension, and choose **Publish preview to Zapstore**. Approve
+the upload and release signatures when prompted. The page confirms the APK is
+available and the relay accepted the release before reporting success.
+
+This publishes the existing APK; it does not build a new Android version. The
+Android release workflow produces a public descriptor and the docs deployment
+verifies and copies that APK into the site. Completion of the Android workflow
+refreshes the docs without rerunning application tests. If the prepared version trails the
+GitHub release, wait for the docs deployment to complete. First publication and
+certificate linking still use the CLI above. The existing CLI and optional
+remote signer remain supported.
+
+The docs browser code lives in `docs/src/*.mts` and is checked with
+`tsconfig.docs.json` as part of `pnpm typecheck`. `pnpm build:docs` generates the
+browser `.mjs` assets using Node 24 type stripping; generated JavaScript is not
+committed. `pnpm test:docs` builds those assets and runs the unit and browser
+publishing tests.
+
 ## Enable automated updates
 
 After the first publication and certificate link are verified, configure GitHub:

@@ -1,3 +1,6 @@
+const mongoose = require('mongoose');
+const sinon = require('sinon');
+const { nip19 } = require('nostr-tools');
 const assert = require('node:assert/strict');
 
 type CollectorOptions =
@@ -296,7 +299,7 @@ describe('SpaceAPI Collector import service', () => {
 describe('SpaceAPI import preview controller', () => {
   type PreviewController = Pick<
     typeof import('../../server/controllers/admin.hackerspaces.server.controller.mts'),
-    'preview'
+    'preview' | 'signerIdentity'
   >;
   let controller: PreviewController;
   const originalFetch = global.fetch;
@@ -306,6 +309,7 @@ describe('SpaceAPI import preview controller', () => {
   });
   afterEach(() => {
     global.fetch = originalFetch;
+    sinon.restore();
   });
   function response(): PreviewResponse {
     const res: PreviewResponse = {
@@ -330,6 +334,58 @@ describe('SpaceAPI import preview controller', () => {
     await controller.preview({}, res);
     assert.equal(res.statusCode, 200);
     assert.deepEqual(res.body, []);
+  });
+  it('looks up only an eligible public Trustroots identity by the stored npub', async () => {
+    const exec = sinon.stub().resolves({ username: 'fictional-workshop' });
+    const select = sinon.stub().returns({ lean: () => ({ exec }) });
+    const findOne = sinon.stub().returns({ select });
+    sinon.stub(mongoose, 'model').withArgs('User').returns({ findOne });
+    const res = response();
+    await controller.signerIdentity(
+      { query: { publicKey: 'A'.repeat(64) } },
+      res,
+    );
+    assert.deepEqual(res.body, { nip05: 'fictional-workshop@trustroots.org' });
+    assert.deepEqual(findOne.firstCall.args[0], {
+      nostrNpub: nip19.npubEncode('a'.repeat(64)),
+      public: true,
+      email: { $exists: true, $nin: ['', null] },
+      roles: { $nin: ['suspended', 'shadowban'] },
+    });
+    assert.equal(select.firstCall.args[0], 'username -_id');
+    exec.resolves(null);
+    await controller.signerIdentity(
+      { query: { publicKey: 'a'.repeat(64) } },
+      res,
+    );
+    assert.deepEqual(res.body, { nip05: null });
+    exec.rejects(new Error('Database unavailable'));
+    await controller.signerIdentity(
+      { query: { publicKey: 'a'.repeat(64) } },
+      res,
+    );
+    assert.equal(res.statusCode, 500);
+    assert.equal(
+      previewErrorMessage(res),
+      'Could not look up the signing identity.',
+    );
+  });
+
+  it('rejects malformed and structured public-key inputs before querying MongoDB', async () => {
+    const model = sinon.stub(mongoose, 'model');
+    for (const publicKey of [
+      undefined,
+      null,
+      [],
+      {},
+      'short',
+      'z'.repeat(64),
+    ]) {
+      const res = response();
+      await controller.signerIdentity({ query: { publicKey } }, res);
+      assert.equal(res.statusCode, 400);
+    }
+    assert.equal(model.called, false);
   });
   it('reports upstream failures and handles missing error messages', async () => {
     for (const error of [new Error('Collector unavailable'), null]) {

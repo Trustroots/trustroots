@@ -125,6 +125,7 @@ export interface MiniProfile<Id = string, Timestamp = string> {
 /** Fields accepted by PUT /api/users. Values are still validated by the server. */
 export interface UpdateProfileRequest {
   firstName?: string;
+  /** Empty string clears the surname. */
   lastName?: string;
   tagline?: string;
   description?: string;

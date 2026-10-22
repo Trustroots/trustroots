@@ -34,7 +34,11 @@ export default function UserLink({
   }
   const roles = getCurrentUser()?.roles || [];
   if (roles.includes('support-team') && !roles.includes('admin')) {
-    return (
+    return username ? (
+      <a href={`/admin/support/member/${encodeURIComponent(username)}`}>
+        {label}
+      </a>
+    ) : (
       <a href={`/admin/support/member/${encodeURIComponent(_id)}`}>{label}</a>
     );
   }

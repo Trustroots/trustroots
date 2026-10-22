@@ -8,16 +8,21 @@ export default function FaqGeneralQuestions() {
 
   return (
     <>
+      <div className="faq-question" id="what-is-the-minimum-age">
+        <h3>{t('What is the minimum age to use Trustroots?')}</h3>
+        <p>{t('You must be 18 years old or older to use Trustroots.')}</p>
+      </div>
+
       <div
         className="faq-question"
         id="is-trustroots-exclusively-for-hitchhikers"
       >
         <h3>{t('Is Trustroots exclusively for hitchhikers?')}</h3>
-        {t('No. Trustroots is for everyone.')}
+        {t('No. Trustroots is for everyone aged 18 or older.')}
         <br />
         <br />
         {t(
-          "Trustroots was initially built with hitchhikers in mind but anyone has always been welcome to sign up even if they've never hitchhiked.",
+          "Trustroots was initially built with hitchhikers in mind, but anyone aged 18 or older is welcome to sign up even if they've never hitchhiked.",
         )}
         <br />
         <br />

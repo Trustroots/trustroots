@@ -77,6 +77,10 @@ export const invokeRolesPolicies = () => {
           permissions: ['get'],
         },
         {
+          resources: '/api/admin/hackerspaces/signer',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
@@ -88,6 +92,7 @@ export const invokeRolesPolicies = () => {
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
         { resources: '/api/admin/audit-log', permissions: ['get'] },
         { resources: '/api/admin/audit-log/actors', permissions: ['get'] },
+        { resources: '/api/admin/username-changes', permissions: ['get'] },
         { resources: '/api/admin/dashboard', permissions: ['get'] },
         { resources: '/api/admin/messages', permissions: ['post'] },
         {

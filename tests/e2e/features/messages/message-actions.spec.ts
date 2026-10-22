@@ -145,7 +145,7 @@ test.describe.serial('message action feature coverage', () => {
       const selectedHeight = await page
         .locator('#message-reply')
         .evaluate(el => el.style.height);
-      const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a></p>`;
+      const draft = `<p><strong>Fictional preview ${Date.now()}</strong></p><p><a href="https://outside.example/">External label</a> <a href="/profile/fictional">Internal label</a> <a href="https://www.trustroots.org/safety">Safety guidance</a> <a href="https://trustroots.org/circles">Circles</a></p>`;
       await editor.evaluate((element, content) => {
         element.innerHTML = content;
         element.dispatchEvent(new Event('input', { bubbles: true }));
@@ -165,7 +165,15 @@ test.describe.serial('message action feature coverage', () => {
         preview.getByRole('link', { name: 'External label' }),
       ).toHaveCount(0);
       await expect(preview).toContainText('Internal label');
-      await expect(preview.locator('a')).toHaveCount(0);
+      await expect(
+        preview.getByRole('link', { name: 'Internal label' }),
+      ).toHaveAttribute('href', '/profile/fictional');
+      await expect(
+        preview.getByRole('link', { name: 'Safety guidance' }),
+      ).toHaveAttribute('href', 'https://www.trustroots.org/safety');
+      await expect(
+        preview.getByRole('link', { name: 'Circles', exact: true }),
+      ).toHaveAttribute('href', 'https://trustroots.org/circles');
       expect(sends).toHaveLength(0);
       await expect(
         page.getByRole('button', { name: 'Edit', exact: true }),
@@ -197,6 +205,19 @@ test.describe.serial('message action feature coverage', () => {
       await expect(page.locator('.message .panel-body b').last()).toContainText(
         'Fictional preview',
       );
+      await page.reload();
+      const body = page
+        .locator('.message .panel-body')
+        .filter({ hasText: draft.match(/Fictional preview \d+/)![0] });
+      await expect(
+        body.getByRole('link', { name: 'Safety guidance' }),
+      ).toHaveAttribute('href', 'https://www.trustroots.org/safety');
+      await expect(
+        body.getByRole('link', { name: 'Circles', exact: true }),
+      ).toHaveAttribute('href', 'https://trustroots.org/circles');
+      await expect(
+        body.getByRole('link', { name: 'External label' }),
+      ).toHaveCount(0);
     });
   }
 
@@ -299,31 +320,34 @@ test.describe.serial('message action feature coverage', () => {
     await expect(editor).toBeFocused();
   });
 
-  test('all links in messages are displayed as plain text', async ({
+  test('external message links are plain text while Trustroots links stay clickable', async ({
     page,
     request,
   }, testInfo) => {
     annotateFeature(testInfo, 'messages.external-links', [
-      'External message links are visible but cannot be clicked.',
+      'External message links are visible but cannot be clicked; Trustroots links remain clickable.',
     ]);
 
+    const marker = `Message link check ${Date.now()}-${testInfo.retry}`;
     const recipientId = await fetchUserIdByUsername(request, portland.username);
     const message = await page.request.post('/api/messages', {
       data: {
         userTo: recipientId,
-        content:
-          'Here is my scam link <a href="https://scammetyscammetyscam.example.com/">scammetyscammetyscam.example.com</a> <a href="/safety">Internal label</a>',
+        content: `${marker} <a href="https://outside.example.test/">outside.example.test</a> <a href="/safety">Internal label</a>`,
       },
     });
     expect(message.ok()).toBeTruthy();
 
     await page.goto(`/messages/${portland.username}`);
     const body = page.locator('.message .panel-body').filter({
-      hasText: 'scammetyscammetyscam.example.com',
+      hasText: marker,
     });
     await expect(body).toBeVisible();
-    await expect(body.locator('a')).toHaveCount(0);
-    await expect(body).toContainText('Internal label');
+    await expect(body).toContainText('outside.example.test');
+    await expect(body.getByRole('link')).toHaveCount(1);
+    await expect(
+      body.getByRole('link', { name: 'Internal label' }),
+    ).toHaveAttribute('href', '/safety');
   });
 
   test('direct conversation links change the recipient and clear the previous draft', async ({
@@ -370,13 +394,15 @@ test.describe.serial('message action feature coverage', () => {
         response.url().endsWith(`/api/users/${recipient.username}`) &&
         response.ok(),
     );
-    await expect(
-      page.getByText(conversationLabel, { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByRole('link', { name: conversationLabel, exact: true }),
-    ).toHaveCount(0);
-    await page.goto(`/messages/${recipient.username}`);
+    const conversationAnchor = page.getByRole('link', {
+      name: conversationLabel,
+      exact: true,
+    });
+    await expect(conversationAnchor).toHaveAttribute(
+      'href',
+      `/messages/${recipient.username}`,
+    );
+    await conversationAnchor.click();
     await loadedRecipient;
     await expect(editor).toBeVisible();
     await expect(editor).toHaveText('');

@@ -46,4 +46,44 @@ describe('<AdminReferenceVoteItem />', () => {
     expect(screen.getByText('negative')).toBeInTheDocument();
     expect(screen.getAllByText('Unknown')).toHaveLength(2);
   });
+
+  it('opens message history by username when both identities are available', () => {
+    render(
+      <ul>
+        <AdminReferenceVoteItem
+          referenceThread={{
+            reference: 'yes',
+            userFrom: { _id: 'member-1', username: 'alice' },
+            userTo: { _id: 'member-2', username: 'bob' },
+          }}
+          showBadge
+          showMessagesLink
+        />
+      </ul>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Read messages' })).toHaveAttribute(
+      'href',
+      '/admin/messages?username1=alice&username2=bob',
+    );
+  });
+
+  it('omits a message link when a deleted member has no identifier', () => {
+    render(
+      <ul>
+        <AdminReferenceVoteItem
+          referenceThread={{
+            reference: 'yes',
+            userFrom: { _id: 'member-1', username: 'alice' },
+          }}
+          showBadge
+          showMessagesLink
+        />
+      </ul>,
+    );
+
+    expect(
+      screen.queryByRole('link', { name: 'Read messages' }),
+    ).not.toBeInTheDocument();
+  });
 });

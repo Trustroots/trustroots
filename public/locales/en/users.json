@@ -37,6 +37,7 @@
   "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.": "If you didn’t receive the message, check your spam folder or resend it via <1>email settings</1>.",
   "Interface language": "Interface language",
   "Languages": "Languages",
+  "Last name (optional)": "Last name (optional)",
   "Lives in <2>{{locationLiving}}</2>": "Lives in <2>{{locationLiving}}</2>",
   "Male": "Male",
   "Map search": "Map search",
@@ -70,6 +71,7 @@
   "Unblock member": "Unblock member",
   "Unblock member \"{{username}}\"": "Unblock member \"{{username}}\"",
   "You can help us out!": "You can help us out!",
+  "You can use a nickname. You don’t need to share your full name.": "You can use a nickname. You don’t need to share your full name.",
   "You have blocked this member.": "You have blocked this member.",
   "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.",
   "Your profile description should be longer so that you can send messages.": "Your profile description should be longer so that you can send messages.",
@@ -85,5 +87,7 @@
   "Read the account removal FAQ": "Read the account removal FAQ",
   "Your data": "Your data",
   "This downloads a JSON file of your profile, the circles you belong to, your contacts (including requests that are still waiting), your hosting and meet offers (including ones that have expired), and the messages and experiences you have written. The filename includes your username and the UTC time of the download, for example trustroots-data-username-20261014-0931.json.": "This downloads a JSON file of your profile, the circles you belong to, your contacts (including requests that are still waiting), your hosting and meet offers (including ones that have expired), and the messages and experiences you have written. The filename includes your username and the UTC time of the download, for example trustroots-data-username-20261014-0931.json.",
-  "It does not include your password, your profile photo file, or messages and experiences written by other members.": "It does not include your password, your profile photo file, or messages and experiences written by other members."
+  "It does not include your password, your profile photo file, or messages and experiences written by other members.": "It does not include your password, your profile photo file, or messages and experiences written by other members.",
+  "I am 18 years old or older.": "I am 18 years old or older.",
+  "You must confirm that you are 18 years old or older to sign up.": "You must confirm that you are 18 years old or older to sign up."
 }

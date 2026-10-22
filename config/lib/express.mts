@@ -17,7 +17,6 @@ import validateApiInput from '../../modules/core/server/middleware/api-input.ser
 import mongoStore from 'connect-mongo';
 import favicon from 'serve-favicon';
 import compress from 'compression';
-import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
 import nunjucks from 'nunjucks';
 import buildMetadata from './build-metadata.mjs';
@@ -201,8 +200,6 @@ function initMiddleware(app: Express) {
       ],
     }),
   );
-  // Add the cookie parser middleware.
-  app.use(cookieParser());
 }
 
 /**

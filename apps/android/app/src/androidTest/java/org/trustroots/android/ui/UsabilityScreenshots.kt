@@ -10,22 +10,23 @@ import android.view.WindowInsetsController
 import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.junit4.ComposeTestRule
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
-import androidx.test.platform.app.InstrumentationRegistry
 import java.io.File
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.trustroots.android.ui.common.MemberNavigationBar
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @Composable
@@ -87,8 +88,15 @@ internal fun captureUsabilityScreenshot(compose: ComposeTestRule, name: String) 
     val directory = File(context.getExternalFilesDir(null), "usability-screenshots").also { it.mkdirs() }
     compose.waitForIdle()
     awaitCommittedFrame()
-    val image = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
-    File(directory, "$name.png").outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    var image: Bitmap? = null
+    // UiAutomation can return null while the emulator compositor finishes a frame.
+    compose.waitUntil(timeoutMillis = 5_000) {
+        image = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
+        image != null
+    }
+    File(directory, "$name.png").outputStream().use {
+        checkNotNull(image).compress(Bitmap.CompressFormat.PNG, 100, it)
+    }
 }
 
 internal fun hideTestKeyboard() {

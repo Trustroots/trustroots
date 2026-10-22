@@ -86,6 +86,20 @@ it('groups blockers by staff account for administrators and omits empty groups',
   ).toBeInTheDocument();
   expect(screen.getByText('Member', { exact: true })).toBeInTheDocument();
   expect(
+    screen.getByRole('link', { name: 'support-admin (@support-admin)' }),
+  ).toHaveAttribute('href', '/admin/user/support-admin');
+  expect(
+    screen.getByRole('link', { name: 'sample-member (@sample-member)' }),
+  ).toHaveAttribute('href', '/admin/user/sample-member');
+  expect(screen.getByRole('link', { name: 'Staff member' })).toHaveAttribute(
+    'href',
+    '/admin/user?id=staff-2',
+  );
+  expect(screen.getByRole('link', { name: 'Member' })).toHaveAttribute(
+    'href',
+    '/admin/user?id=member-2',
+  );
+  expect(
     screen.queryByText('no-blockers', { exact: false }),
   ).not.toBeInTheDocument();
 });

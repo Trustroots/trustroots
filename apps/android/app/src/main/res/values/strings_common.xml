@@ -9,6 +9,7 @@
     <string name="saving">Saving…</string>
     <string name="save_changes">Save changes</string>
     <string name="artwork_image_description">%1$s image</string>
+    <string name="member_location_from">From %1$s</string>
     <string name="message_time_just_now">Just now</string>
     <plurals name="message_time_minutes_ago">
         <item quantity="one">1 min ago</item>

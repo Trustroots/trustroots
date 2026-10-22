@@ -4,11 +4,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
@@ -60,8 +63,10 @@ class MemberProfileStatesJourneyTest {
         assertTrue(compose.onAllNodesWithText("Languages:").fetchSemanticsNodes().isEmpty())
         assertTrue(compose.onAllNodesWithText("Circles").fetchSemanticsNodes().isEmpty())
 
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").performClick()
         compose.onNodeWithText("No experiences shared yet.").performScrollTo().assertIsDisplayed()
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-contacts").performClick()
         compose.onNodeWithText("People you connect with on Trustroots will appear here.")
             .performScrollTo().assertIsDisplayed()
@@ -81,31 +86,43 @@ class MemberProfileStatesJourneyTest {
 
         awaitProfileRequests()
         compose.onNodeWithTag("profileSection-contacts").performClick()
-        compose.onNodeWithText("More contacts (1)").performScrollTo().performClick()
+        compose.onNodeWithText("1 more contact").performScrollTo().performClick()
         compose.onNodeWithText("Contact Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Contact Seven").performClick()
         awaitRelatedProfile()
         compose.onNodeWithText("Related Traveller").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
 
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
         compose.onNodeWithText("Contact Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Show fewer").performScrollTo().assertIsDisplayed()
 
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").performClick()
-        compose.onNodeWithText("More experiences (1)").performScrollTo().performClick()
+        compose.onNodeWithText("1 more experience").performScrollTo().performClick()
         compose.onNodeWithText("Reference Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Reference Seven").performClick()
         awaitRelatedProfile()
         compose.onNodeWithText("Related Traveller").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
 
+        revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").assertIsSelected()
         compose.onNodeWithText("Reference Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Show fewer").performScrollTo().assertIsDisplayed()
     }
 
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
+
+    private fun revealProfileTabsIfClipped() {
+        val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
+        val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
+        if (tabs == null || tabs.boundsInRoot.bottom > heroBottom + 1f) {
+            compose.onNodeWithTag("profilePager").performTouchInput { swipeDown() }
+        }
+        compose.onNodeWithTag("profileSections").assertIsDisplayed()
+    }
 
     private fun awaitProfileRequests() {
         val expected = listOf(

@@ -1,10 +1,15 @@
 package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
+import android.view.WindowManager
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -23,6 +28,7 @@ import kotlin.concurrent.thread
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -41,6 +47,12 @@ import org.trustroots.android.ui.common.languageName
 @RunWith(AndroidJUnit4::class)
 class ProfileLanguageAndFailureJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Before fun resizeForKeyboardLikeTheMainActivity() {
+        compose.activityRule.scenario.onActivity { activity ->
+            activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
+    }
 
     private val session = MemberSession(
         "connect.sid=fictional-session",
@@ -76,13 +88,17 @@ class ProfileLanguageAndFailureJourneyTest {
         }
 
         compose.onNodeWithText("English, ${languageName(UNKNOWN_LANGUAGE)}").performClick()
-        compose.onNodeWithText("✓ ${languageName(UNKNOWN_LANGUAGE)}").performScrollTo().performClick()
+        compose.onNodeWithTag("editProfileLanguageOption-eng").assertIsSelected()
+        compose.onNodeWithTag("editProfileLanguageOption-$UNKNOWN_LANGUAGE").assertIsSelected()
+        compose.onNodeWithTag("editProfileLanguageOption-spa").assertIsNotSelected()
+        compose.onNodeWithTag("editProfileLanguageOption-$UNKNOWN_LANGUAGE").performScrollTo().performClick()
         compose.onNodeWithText("Spanish").performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("✓ Spanish").assertIsDisplayed()
+        compose.onNodeWithTag("editProfileLanguageOption-spa").assertIsSelected()
+        compose.onNodeWithTag("editProfileLanguageOption-$UNKNOWN_LANGUAGE").assertDoesNotExist()
         pressBackFromNonActivityRoot(compose.activity)
         compose.waitUntil(5_000) {
-            compose.onAllNodesWithText("✓ Spanish").fetchSemanticsNodes().isEmpty()
+            compose.onAllNodesWithTag("editProfileLanguageOption-spa").fetchSemanticsNodes().isEmpty()
         }
         compose.onNodeWithText("Save changes").performClick()
 

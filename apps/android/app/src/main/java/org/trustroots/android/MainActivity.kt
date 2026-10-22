@@ -7,10 +7,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.TrustrootsApp
 import org.trustroots.android.ui.theme.TrustrootsTheme
 import org.trustroots.android.updates.ApkUpdateAlerts
-import org.trustroots.android.notifications.MessageAlerts
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

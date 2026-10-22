@@ -23,6 +23,7 @@ import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspac
 import AdminStaffBlockers from '@/modules/admin/client/components/AdminStaffBlockers.component';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import AdminAuditLog from '@/modules/admin/client/components/AdminAuditLog.component';
+import AdminUsernameChanges from '@/modules/admin/client/components/AdminUsernameChanges.component';
 import AdminMessages from '@/modules/admin/client/components/AdminMessages.component';
 import AdminLocationCorrections from '@/modules/admin/client/components/AdminLocationCorrections.component';
 import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
@@ -231,14 +232,15 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/about': renderWithUser(HomeRoute),
     '/admin': () => <Admin />,
     '/admin/support': () => <SupportInbox />,
-    '/admin/support/member/:memberId': ({ params }) => (
-      <SupportMemberPage id={params.memberId} />
+    '/admin/support/member/:username': ({ params }) => (
+      <SupportMemberPage id={params.username} />
     ),
     '/admin/circles': () => <AdminCircles />,
     '/admin/hackerspaces': () => <AdminHackerspaces />,
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
     '/admin/audit-log': () => <AdminAuditLog />,
+    '/admin/username-changes': () => <AdminUsernameChanges />,
     '/admin/messages': () => <AdminMessages />,
     '/admin/location-corrections': () => <AdminLocationCorrections />,
     '/admin/experience-changes': () => <AdminExperienceChanges />,
@@ -411,6 +413,7 @@ export function createAppRouter() {
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,
+    scrollRestoration: () => false,
     stringifySearch: stringifyLegacySearch,
   });
 }
@@ -427,10 +430,6 @@ export function findRoute(path: string) {
     params: matched.params,
     render: renderByPath[matched.policy.path],
   };
-}
-
-export function isReactRoute(path: string): boolean {
-  return Boolean(matchReactRoute(path));
 }
 
 export { normalizePath };

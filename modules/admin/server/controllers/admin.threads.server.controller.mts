@@ -89,10 +89,64 @@ export const getThreads = async (
       },
     },
     {
+      $lookup: {
+        from: 'messages',
+        let: { from: '$userFrom', to: '$userTo' },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $or: [
+                  {
+                    $and: [
+                      { $eq: ['$userFrom', '$$from'] },
+                      { $eq: ['$userTo', '$$to'] },
+                    ],
+                  },
+                  {
+                    $and: [
+                      { $eq: ['$userFrom', '$$to'] },
+                      { $eq: ['$userTo', '$$from'] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              firstMessage: { $min: '$created' },
+              lastMessage: { $max: '$created' },
+            },
+          },
+        ],
+        as: 'messageDates',
+      },
+    },
+    {
+      $lookup: {
+        from: 'referencethreads',
+        localField: '_id',
+        foreignField: 'thread',
+        as: 'votes',
+      },
+    },
+    {
       $project: {
         _id: 1,
         read: 1,
         updated: 1,
+        firstMessage: {
+          $ifNull: [{ $arrayElemAt: ['$messageDates.firstMessage', 0] }, null],
+        },
+        lastMessage: {
+          $ifNull: [{ $arrayElemAt: ['$messageDates.lastMessage', 0] }, null],
+        },
+        'votes._id': 1,
+        'votes.userFrom': 1,
+        'votes.userTo': 1,
+        'votes.reference': 1,
         'userToProfile._id': 1,
         'userToProfile.username': 1,
         'userToProfile.displayName': 1,

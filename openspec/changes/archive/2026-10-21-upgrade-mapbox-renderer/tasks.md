@@ -1,0 +1,7 @@
+- [x] Validate the proposal before implementation.
+- [x] Align React Map GL and Mapbox dependencies and remove external types.
+- [x] Migrate shared controls, location editing and search map interactions.
+- [x] Use WebGL2 detection and preserve Leaflet fallback behaviour.
+- [x] Adapt unit tests and verify rendered-map and fallback end-to-end tests.
+- [x] Run checks, production build and coverage without lowering thresholds.
+- [x] Update living specifications and archive the completed proposal.

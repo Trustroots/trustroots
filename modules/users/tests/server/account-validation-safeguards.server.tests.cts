@@ -94,6 +94,7 @@ describe('Account validation safeguards', function () {
         await request(app)
           .post('/api/auth/signup')
           .send({
+            ageConfirmed: true,
             ...member(),
             username,
           })

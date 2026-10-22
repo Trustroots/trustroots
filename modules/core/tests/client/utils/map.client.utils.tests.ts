@@ -31,24 +31,24 @@ describe('map utilities', () => {
 
   it('detects an available WebGL context', () => {
     const getContext = jest.fn((type: string) =>
-      type === 'webgl' ? {} : null,
+      type === 'webgl2' ? {} : null,
     );
     createElement.mockReturnValue(canvasElement(getContext));
 
     expect(isWebGLSupported()).toBe(true);
     expect(createElement).toHaveBeenCalledWith('canvas');
-    expect(getContext).toHaveBeenCalledWith('webgl');
+    expect(getContext).toHaveBeenCalledWith('webgl2');
   });
 
-  it('uses the legacy WebGL context when necessary', () => {
+  it('uses raster rendering when only WebGL1 is available', () => {
     const getContext = jest.fn(type =>
-      type === 'experimental-webgl' ? {} : null,
+      type === 'webgl' || type === 'experimental-webgl' ? {} : null,
     );
     createElement.mockReturnValue(canvasElement(getContext));
 
-    expect(isWebGLSupported()).toBe(true);
-    expect(getContext).toHaveBeenNthCalledWith(1, 'webgl');
-    expect(getContext).toHaveBeenNthCalledWith(2, 'experimental-webgl');
+    expect(isWebGLSupported()).toBe(false);
+    expect(getContext).toHaveBeenCalledWith('webgl2');
+    expect(getContext).toHaveBeenCalledTimes(1);
   });
 
   it('returns false when the browser blocks WebGL', () => {
@@ -68,6 +68,7 @@ describe('map utilities', () => {
   });
 
   it('falls back to OpenStreetMap raster tiles without a Mapbox token', () => {
+    expect(getRasterMapTiles().url).toContain('openstreetmap.org');
     expect(
       // Preserve the original null token beyond the public optional-token type.
       invokeMalformed(getRasterMapTiles, null),

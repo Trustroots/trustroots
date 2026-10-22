@@ -110,7 +110,11 @@ export default function NavigationLoggedIn({
                   ? '/admin/acquisition-stories'
                   : '/admin'
             }
-            className="hidden-xs"
+            className={
+              currentPath === '/admin' || currentPath.startsWith('/admin/')
+                ? 'hidden-xs active'
+                : 'hidden-xs'
+            }
           >
             Admin
           </MenuItem>

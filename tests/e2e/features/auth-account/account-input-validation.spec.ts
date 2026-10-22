@@ -37,6 +37,7 @@ test('registration initialises only supported account fields', async ({
   const user = createUser();
   const response = await request.post('/api/auth/signup', {
     data: {
+      ageConfirmed: true,
       ...user,
       authVersion: 99,
       roles: ['admin'],

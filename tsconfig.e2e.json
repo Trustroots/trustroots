@@ -16,6 +16,7 @@
   },
   "include": [
     "config/untyped-modules.d.mts",
+    "tests/docs/**/*.mts",
     "tests/e2e/**/*.ts",
     "tests/e2e/**/*.mts",
     "scripts/e2e/**/*.mts",

@@ -65,6 +65,7 @@ export interface SanitizedProfileRecord {
   updated?: Date;
   passwordUpdated?: Date;
   usernameUpdated?: Date;
+  usernameHistory?: import('../models/user.server.types.mts').UsernameHistoryRecord[];
 }
 
 export interface ProfileMembershipResponse {

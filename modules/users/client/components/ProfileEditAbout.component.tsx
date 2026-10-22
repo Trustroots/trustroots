@@ -130,18 +130,24 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
                   htmlFor="lastname"
                   className="col-sm-3 text-right control-label"
                 >
-                  {t('Last name')}
+                  {t('Last name (optional)')}
                 </label>
                 <div className="col-sm-9 col-md-7 col-lg-6">
                   <input
                     type="text"
                     className="form-control"
                     id="lastname"
+                    aria-describedby="lastNameHelp"
                     value={draftUser.lastName || ''}
                     onChange={event =>
                       updateDraft({ lastName: event.target.value })
                     }
                   />
+                  <p className="help-block" id="lastNameHelp">
+                    {t(
+                      'You can use a nickname. You don’t need to share your full name.',
+                    )}
+                  </p>
                 </div>
               </div>
               <div className="form-group">

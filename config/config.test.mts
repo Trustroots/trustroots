@@ -70,7 +70,14 @@ function load(environment: string, local?: string, skipLocal = false) {
         mailer: {
           options: { jsonTransport?: boolean; service?: string | false };
         };
-        files: { server: { routes: string[] } };
+        files: {
+          server: {
+            models: string[];
+            routes: string[];
+            configs: string[];
+            policies: string[];
+          };
+        };
         db: { uri: string };
       };
       paths: string[];
@@ -88,6 +95,17 @@ test('runtime configuration discovers TypeScript routes once and deduplicates gl
     'modules/example/server/routes/example.mts',
   ]);
   assert.deepEqual(result.paths, ['https://example.org/file']);
+});
+
+test('asset discovery is equivalent in development, test, and production', () => {
+  const [development, testEnvironment, production] = [
+    'development',
+    'test',
+    'production',
+  ].map(environment => load(environment));
+
+  assert.deepEqual(testEnvironment.config.files, development.config.files);
+  assert.deepEqual(production.config.files, development.config.files);
 });
 
 test('CommonJS local configuration deep-merges nested environment settings', () => {

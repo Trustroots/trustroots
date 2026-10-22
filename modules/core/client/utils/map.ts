@@ -33,7 +33,7 @@ export const getRasterMapTiles = (mapboxToken = getMapBoxToken()) =>
       };
 
 /**
- * Mapbox GL needs a WebGL context, so callers choose a raster renderer before
+ * Mapbox GL v3 needs WebGL2, so callers choose a raster renderer before
  * mounting it when the browser cannot create one.
  */
 const getBrowserDocument = () => {
@@ -48,9 +48,7 @@ export const isWebGLSupported = (browserDocument = getBrowserDocument()) => {
 
   try {
     const canvas = browserDocument.createElement('canvas');
-    return Boolean(
-      canvas.getContext?.('webgl') || canvas.getContext?.('experimental-webgl'),
-    );
+    return Boolean(canvas.getContext?.('webgl2'));
   } catch {
     return false;
   }

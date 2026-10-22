@@ -26,13 +26,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.theme.TrustrootsTheme
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
-import org.trustroots.android.ui.conversation.ConversationScreen
 
 @RunWith(AndroidJUnit4::class)
 class SearchProfileAndSendTransportJourneysTest {
@@ -150,6 +148,10 @@ class SearchProfileAndSendTransportJourneysTest {
         val draft = "A fictional reply after a transport interruption."
         val local = startFixture { request ->
             when {
+                request.method == "GET" && request.path == "/api/users/mini/fictional-recipient-id" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"fictional-recipient-id","username":"$recipient","displayName":"Fictional Recipient"}""",
+                    )
                 request.method == "GET" && request.path == "/api/messages/fictional-recipient-id?limit=100" ->
                     LocalTransportFixture.Response("[]")
                 request.method == "POST" && request.path == "/api/messages" -> {
@@ -167,12 +169,11 @@ class SearchProfileAndSendTransportJourneysTest {
         val invalidations = AtomicInteger()
         compose.setContent {
             TrustrootsTheme {
-                ConversationScreen(
+                ConversationRouteTestHarness(
                     api = MobileApiClient(local.baseURL),
                     session = session(author),
-                    member = MessageMember("fictional-recipient-id", recipient, "Fictional Recipient"),
+                    memberID = "fictional-recipient-id",
                     onSessionInvalidated = { invalidations.incrementAndGet() },
-                    onBack = {},
                 )
             }
         }

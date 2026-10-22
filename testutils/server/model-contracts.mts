@@ -19,6 +19,11 @@ export interface UserRecord {
   emailHash?: string;
   username: string;
   usernameUpdated?: Date;
+  usernameHistory?: Array<{
+    oldUsername: string;
+    newUsername: string;
+    changedAt: Date;
+  }>;
   seen?: Date;
   lastIpAddress?: string;
   created?: Date;
