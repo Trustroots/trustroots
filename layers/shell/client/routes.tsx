@@ -3,6 +3,7 @@ import {
   createRoute,
   createRouter,
   useParams,
+  useNavigate,
   useRouterState,
   useSearch,
 } from '@tanstack/react-router';
@@ -93,6 +94,7 @@ type RouteContext = {
   user: RouteUser | null;
   currentPath: string;
   params: Record<string, string>;
+  navigate?: (path: string) => void;
 };
 type ClientRoute = {
   path: string;
@@ -235,7 +237,10 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/support/member/:username': ({ params }) => (
       <SupportMemberPage id={params.username} />
     ),
-    '/admin/circles': () => <AdminCircles />,
+    '/admin/circles': ({ navigate }) => <AdminCircles onNavigate={navigate} />,
+    '/admin/circles/:circle': ({ params, navigate }) => (
+      <AdminCircles circleSlug={params.circle} onNavigate={navigate} />
+    ),
     '/admin/hackerspaces': () => <AdminHackerspaces />,
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
@@ -319,6 +324,7 @@ export const routes = (REACT_ROUTE_POLICIES as RoutePolicy[]).map(route => ({
 
 function createClientRouteComponent(clientRoute: ClientRoute) {
   function ClientRouteComponent() {
+    const navigate = useNavigate();
     const { user } = useAuth();
     const params = useParams({ strict: false });
     const search = useSearch({ strict: false });
@@ -334,7 +340,14 @@ function createClientRouteComponent(clientRoute: ClientRoute) {
 
     return (
       <React.Fragment key={JSON.stringify({ params, search: remountSearch })}>
-        {clientRoute.render({ currentPath, params, user })}
+        {clientRoute.render({
+          currentPath,
+          params,
+          user,
+          navigate: path => {
+            void navigate({ to: path });
+          },
+        })}
       </React.Fragment>
     );
   }

@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import sharp from 'sharp';
 
 import config from '../../../../config/config.mts';
+import log from '../../../../config/lib/logger.mjs';
 import errorService, {
   type ValidationFailure,
 } from '../../../core/server/services/error.server.service.mts';
@@ -90,6 +91,19 @@ function assertSlug(slug: string | undefined): asserts slug is string {
   }
 }
 
+function invalidCircleImageError(err: unknown) {
+  return /unsupported image format|corrupt header|premature end of input|exceeds pixel limit|invalid image/i.test(
+    String(err),
+  );
+}
+
+function invalidCircleImage() {
+  return validationError(
+    'image',
+    'Upload a valid JPEG, PNG, or GIF image with no more than 50 million pixels.',
+  );
+}
+
 function circleData(body: Record<string, unknown>, existing?: TribeRecord) {
   const data: Partial<Omit<TribeRecord, 'label'>> & { label: unknown } = {
     label: body.label,
@@ -157,6 +171,10 @@ async function lockAge(file: string) {
 }
 
 async function acquireSlugLock(slug: string) {
+  // The lock is the first filesystem operation for an upload. In a fresh
+  // checkout or an empty persistent mount, the configured image root may not
+  // exist yet, so create it before opening the lock file.
+  await fs.promises.mkdir(imageRoot(), { recursive: true });
   const file = lockPath(slug);
   const deadline = Date.now() + lockWaitMs;
   for (;;) {
@@ -199,6 +217,24 @@ async function restorePrevious(state: PublicationState) {
 
 async function processCircleImage(filePath: string, slug: string | undefined) {
   assertSlug(slug);
+  const inputOptions = {
+    animated: false,
+    limitInputPixels: maxImagePixels,
+  } as const;
+  let metadata: import('sharp').Metadata;
+  try {
+    metadata = await sharp(filePath, inputOptions).metadata();
+  } catch (err) {
+    if (invalidCircleImageError(err)) throw invalidCircleImage();
+    throw err;
+  }
+  if (
+    metadata.width &&
+    metadata.height &&
+    metadata.width * metadata.height > maxImagePixels
+  ) {
+    throw invalidCircleImage();
+  }
   const staging = path.join(
     imageRoot(),
     `.staging-${slug}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
@@ -216,13 +252,15 @@ async function processCircleImage(filePath: string, slug: string | undefined) {
   try {
     await fs.promises.mkdir(variantsStage, { recursive: true, mode: 0o700 });
     const canonicalStage = path.join(staging, 'canonical.jpg');
-    await sharp(filePath, {
-      animated: false,
-      limitInputPixels: maxImagePixels,
-    })
-      .rotate()
-      .jpeg({ quality: 85 })
-      .toFile(canonicalStage);
+    try {
+      await sharp(filePath, inputOptions)
+        .rotate()
+        .jpeg({ quality: 85 })
+        .toFile(canonicalStage);
+    } catch (err) {
+      if (invalidCircleImageError(err)) throw invalidCircleImage();
+      throw err;
+    }
     await Promise.all(
       imageSizes.flatMap(size =>
         ['jpg', 'webp'].map(async extension => {
@@ -272,6 +310,11 @@ async function processCircleImage(filePath: string, slug: string | undefined) {
 }
 
 function sendError(res: CircleResponse, err: unknown) {
+  if (!(err && typeof err === 'object' && 'errors' in err)) {
+    log('error', 'Failed to process circle administration request.', {
+      error: err,
+    });
+  }
   return res
     .status(400)
     .send({ message: errorService.getErrorMessage(err as ValidationFailure) });

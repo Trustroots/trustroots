@@ -113,6 +113,51 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     getMock.mockResolvedValue(tribe);
   });
 
+  it.each([undefined, ['user'], ['support-team'], ['admin']])(
+    'shows the editor only to circle administrators (%j)',
+    async roles => {
+      render(
+        <TribeDetailPage
+          circle="hitchhikers"
+          user={
+            roles
+              ? {
+                  _id: 'member',
+                  username: 'example-member',
+                  displayName: 'Example Member',
+                  roles,
+                }
+              : undefined
+          }
+          onMembershipUpdated={jest.fn()}
+        />,
+      );
+      await screen.findByText('Hitchhikers');
+      const link = screen.queryByRole('link', { name: 'Edit circle' });
+      if (roles?.includes('admin')) {
+        expect(link).toHaveAttribute('href', '/admin/circles/hitchhikers');
+      } else {
+        expect(link).not.toBeInTheDocument();
+      }
+    },
+  );
+
+  it('preserves safe links in the circle description', async () => {
+    getMock.mockResolvedValue({
+      ...tribe,
+      description:
+        '<p>Read the <a href="https://example.org/">circle guide</a> <a href="javascript:alert(1)">unsafe link</a>.</p>',
+    });
+    render(
+      <TribeDetailPage circle="hitchhikers" onMembershipUpdated={jest.fn()} />,
+    );
+    const link = await screen.findByRole('link', { name: 'circle guide' });
+    expect(link).toHaveAttribute('href', 'https://example.org/');
+    expect(
+      screen.queryByRole('link', { name: 'unsafe link' }),
+    ).not.toBeInTheDocument();
+  });
+
   it.each([
     ['hitchhikers', 'Recent Hitchwiki locations'],
     ['hackers', 'Reported hackerspaces'],

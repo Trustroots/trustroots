@@ -30,7 +30,6 @@ describe('<AdminHeader />', () => {
         ['Support inbox', 'Staff blockers', 'Location corrections'],
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
-      ['Conversations', ['Messages', 'Threads']],
       ['Experiences', ['Reference threads', 'Experience changes']],
       ['Outreach', ['Acquisition stories', 'Newsletter']],
       ['Audit', ['Audit log', 'Username changes']],
@@ -103,30 +102,23 @@ describe('<AdminHeader />', () => {
     ).toHaveAttribute('href', '/admin/staff-blockers');
   });
 
-  it('marks the current admin page as active', () => {
+  it('omits conversation navigation while on a conversation route', () => {
     window.history.pushState({}, '', '/admin/messages');
 
     render(<AdminHeader />);
 
     expect(
-      screen.queryByRole('link', { name: /^Admin$/ }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Messages' }).closest('li'),
-    ).toHaveClass('active');
-    expect(
       screen.getByRole('navigation', { name: 'Administration' }),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Messages' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    expect(screen.getByRole('link', { name: 'Threads' })).not.toHaveAttribute(
-      'aria-current',
-    );
     expect(
-      screen.getByRole('link', { name: 'Threads' }).closest('li'),
-    ).not.toHaveClass('active');
+      screen.queryByRole('list', { name: 'Conversations' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Messages' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Threads' }),
+    ).not.toBeInTheDocument();
   });
 
   it('marks acquisition stories as active', () => {

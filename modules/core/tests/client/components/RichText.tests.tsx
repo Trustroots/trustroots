@@ -24,6 +24,27 @@ test('allows Trustroots links only when requested and sanitises their markup', (
   expect(screen.queryByRole('link')).not.toBeInTheDocument();
 });
 
+test('allows sanitised links when explicitly requested', () => {
+  render(
+    <RichText
+      content={
+        '<a href="https://outside.example/" onclick="alert(1)">External</a><a href="javascript:alert(1)">Unsafe</a>'
+      }
+      allowLinks
+    />,
+  );
+  expect(screen.getByRole('link', { name: 'External' })).toHaveAttribute(
+    'href',
+    'https://outside.example/',
+  );
+  expect(screen.getByRole('link', { name: 'External' })).not.toHaveAttribute(
+    'onclick',
+  );
+  expect(
+    screen.queryByRole('link', { name: 'Unsafe' }),
+  ).not.toBeInTheDocument();
+});
+
 test('retains supported formatting and attributes on their supported elements', () => {
   const { container, rerender } = render(
     <RichText

@@ -7,17 +7,20 @@ type RichTextProps = Omit<
 > & {
   content: string;
   allowTrustrootsLinks?: boolean;
+  allowLinks?: boolean;
 };
 
 export default function RichText({
   content,
   allowTrustrootsLinks = false,
+  allowLinks = false,
   ...props
 }: RichTextProps) {
-  const html = useMemo(
-    () =>
-      disableUserContentLinks(sanitiseRichText(content), allowTrustrootsLinks),
-    [content, allowTrustrootsLinks],
-  );
+  const html = useMemo(() => {
+    const sanitised = sanitiseRichText(content);
+    return allowLinks
+      ? sanitised
+      : disableUserContentLinks(sanitised, allowTrustrootsLinks);
+  }, [content, allowLinks, allowTrustrootsLinks]);
   return <div {...props} dangerouslySetInnerHTML={{ __html: html }} />;
 }

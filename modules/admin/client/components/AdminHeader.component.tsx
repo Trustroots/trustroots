@@ -39,14 +39,6 @@ export default function AdminHeader() {
       ],
     },
     {
-      id: 'conversations',
-      label: 'Conversations',
-      pages: [
-        { path: 'messages', label: 'Messages' },
-        { path: 'threads', label: 'Threads' },
-      ],
-    },
-    {
       id: 'experiences',
       label: 'Experiences',
       pages: [

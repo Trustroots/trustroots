@@ -541,6 +541,16 @@ describe('React route ownership', () => {
     expect(renderRoute(route).getByText('Admin circles')).toBeInTheDocument();
   });
 
+  it('protects and renders the selected circle editor route', () => {
+    const route = findRoute('/admin/circles/walkers')!;
+    expect(route).toMatchObject({
+      path: '/admin/circles/:circle',
+      requiresAuth: true,
+      requiresRole: 'admin',
+    });
+    expect(renderRoute(route).getByText('Admin circles')).toBeInTheDocument();
+  });
+
   it('returns access redirects for protected route policies', () => {
     const route = getReactRoutePolicy('/admin');
 

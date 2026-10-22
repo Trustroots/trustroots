@@ -58,7 +58,9 @@ describe('Admin circles controller', () => {
   let Tribe: TribeStub;
   let fs: FileSystem;
   let sharp: Stub;
-  let image: Record<'rotate' | 'jpeg' | 'webp' | 'resize' | 'toFile', Stub>;
+  let image: Record<'rotate' | 'jpeg' | 'webp' | 'resize' | 'toFile', Stub> & {
+    metadata: Stub;
+  };
   let lockHandle: Record<'writeFile' | 'close', Stub>;
   let uploadFile: Stub;
   let circle: Circle;
@@ -115,6 +117,7 @@ describe('Admin circles controller', () => {
       stat: sinon.stub().resolves({ mtimeMs: 0 }),
     };
     image = {
+      metadata: sinon.stub().resolves({ width: 8, height: 8 }),
       rotate: sinon.stub().returnsThis(),
       jpeg: sinon.stub().returnsThis(),
       webp: sinon.stub().returnsThis(),
@@ -274,6 +277,75 @@ describe('Admin circles controller', () => {
     });
   }
 
+  it('explains how to correct an unsupported or corrupt image upload', async () => {
+    image.metadata.callsFake(() =>
+      Promise.reject('Input file contains unsupported image format'),
+    );
+    await controller.create(
+      { body: { label: 'Walkers' }, file: { path: '/upload.bin' } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.match(res.body.message || '', /valid JPEG, PNG, or GIF/i);
+    assert.match(res.body.message || '', /50 million pixels/i);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.notCalled(fs.rename);
+  });
+
+  it('keeps unexpected image metadata failures generic and creates no staging files', async () => {
+    image.metadata.rejects(failure);
+    await controller.create(
+      { body: { label: 'Walkers' }, file: { path: '/upload.png' } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(res.body.message, failure.message);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.calledOnceWithExactly(fs.mkdir, '/circle-images', {
+      recursive: true,
+    });
+    sinon.assert.notCalled(fs.rename);
+  });
+
+  it('converts decoder failures during canonical output into an image error', async () => {
+    image.toFile.rejects(new Error('Input buffer has corrupt header'));
+    await controller.create(
+      { body: { label: 'Walkers' }, file: { path: '/corrupt.png' } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.match(res.body.message || '', /valid JPEG, PNG, or GIF/i);
+    assert.match(res.body.message || '', /50 million pixels/i);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.notCalled(fs.rename);
+  });
+
+  it('rejects images whose dimensions exceed the pixel limit before publication', async () => {
+    image.metadata.resolves({ width: 7100, height: 7100 });
+    await controller.create(
+      { body: { label: 'Walkers' }, file: { path: '/large.png' } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 400);
+    assert.match(res.body.message || '', /50 million pixels/i);
+    sinon.assert.notCalled(circle.save);
+    sinon.assert.notCalled(fs.rename);
+  });
+
+  it('continues to bounded decoding when metadata does not report dimensions', async () => {
+    image.metadata.resolves({});
+    await controller.create(
+      { body: { label: 'Walkers' }, file: { path: '/upload.png' } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 201);
+    assert.strictEqual(res.body.image, true);
+    sinon.assert.calledWith(sharp, '/upload.png', {
+      animated: false,
+      limitInputPixels: 50_000_000,
+    });
+  });
+
   it('publishes real image variants with web-server traversal permissions', async () => {
     const directory = await realFs.promises.mkdtemp(
       path.join(os.tmpdir(), 'circle-images-'),
@@ -312,6 +384,40 @@ describe('Admin circles controller', () => {
       }
     } finally {
       await realFs.promises.rm(directory, { recursive: true, force: true });
+    }
+  });
+
+  it('creates a missing image root before acquiring the upload lock', async () => {
+    const parent = await realFs.promises.mkdtemp(
+      path.join(os.tmpdir(), 'circle-image-root-'),
+    );
+    const directory = path.join(parent, 'uploads-circle');
+    config.circleImagesDir = directory;
+    for (const name of Object.keys(fs) as Array<keyof FileSystem>) {
+      fs[name].callsFake((...args: unknown[]) =>
+        Reflect.apply(realFs.promises[name], realFs.promises, args),
+      );
+    }
+    sharp.callsFake(realSharp);
+    const upload = path.join(parent, 'upload.png');
+    try {
+      await realSharp({
+        create: { width: 8, height: 8, channels: 3, background: '#123456' },
+      })
+        .png()
+        .toFile(upload);
+      await controller.create(
+        { body: { label: 'Walkers' }, file: { path: upload } },
+        res,
+      );
+      assert.strictEqual(res.statusCode, 201);
+      assert(
+        (
+          await realFs.promises.stat(path.join(directory, 'walkers.jpg'))
+        ).isFile(),
+      );
+    } finally {
+      await realFs.promises.rm(parent, { recursive: true, force: true });
     }
   });
 
