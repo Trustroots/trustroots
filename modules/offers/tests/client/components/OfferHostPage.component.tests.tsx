@@ -135,6 +135,70 @@ describe('OfferHostPage', () => {
     ).toBeDisabled();
   });
 
+  it.each(['yes', 'maybe', 'no'] as const)(
+    'saves meeting availability independently for hosting status %s',
+    async status => {
+      offersApiMock.getOffers.mockResolvedValue([
+        { ...hostOffer, status, happyToMeet: true },
+      ]);
+      render(<OfferHostPage user={user} />);
+      const meeting = await screen.findByRole('checkbox', {
+        name: 'Happy to meet',
+      });
+      expect(meeting).toBeChecked();
+      fireEvent.click(meeting);
+      fireEvent.submit(document.querySelector('form')!);
+      await waitFor(() =>
+        expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+          'offer-1',
+          expect.objectContaining({ status, happyToMeet: false }),
+        ),
+      );
+    },
+  );
+
+  it('lets a non-host opt into meetings and change location without a description', async () => {
+    offersApiMock.getOffers.mockResolvedValue([
+      { ...hostOffer, status: 'no', description: '' },
+    ]);
+    render(<OfferHostPage user={user} />);
+    const meeting = await screen.findByRole('checkbox', {
+      name: 'Happy to meet',
+    });
+    expect(meeting).not.toBeChecked();
+    expect(screen.getByText(/You will not appear on the map/)).toBeVisible();
+    fireEvent.click(meeting);
+    expect(screen.getByText(/for meetings, but not as a host/)).toBeVisible();
+    expect(
+      screen.getByLabelText(/People that are not in any of my circles/),
+    ).toBeVisible();
+    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
+    fireEvent.submit(document.querySelector('form')!);
+    await waitFor(() =>
+      expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+        'offer-1',
+        expect.objectContaining({
+          status: 'no',
+          happyToMeet: true,
+          location: [52, 4],
+        }),
+      ),
+    );
+  });
+
+  it('explains hosting and meeting visibility together', async () => {
+    render(<OfferHostPage user={user} />);
+    const meeting = await screen.findByRole('checkbox', {
+      name: 'Happy to meet',
+    });
+    expect(
+      screen.getByText(/You will appear on the map for hosting\./),
+    ).toBeVisible();
+    fireEvent.click(meeting);
+    expect(screen.getByText(/for hosting and meetings/)).toBeVisible();
+  });
+
   it('loads the host offer editor with availability controls', async () => {
     render(<OfferHostPage user={user} />);
 
