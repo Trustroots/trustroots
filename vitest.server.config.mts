@@ -40,11 +40,23 @@ const commonJsTypeScript = {
   },
 };
 
+const explicitFiles = process.env.SERVER_TEST_FILES?.split(',').filter(Boolean);
+
 // Vitest otherwise orders files by size and past duration. The files share
-// process state, so keep the alphabetical order they always ran in.
+// process state, so keep the order they always ran in: the order given in
+// SERVER_TEST_FILES, otherwise sorted by code unit like the old glob runner.
 class PathSequencer extends BaseSequencer {
   async sort(files: TestSpecification[]) {
-    return [...files].sort((a, b) => a.moduleId.localeCompare(b.moduleId));
+    const rank = (file: TestSpecification) => {
+      const index = explicitFiles?.findIndex(
+        entry => file.moduleId === entry || file.moduleId.endsWith(`/${entry}`),
+      );
+      return index ?? -1;
+    };
+    return [...files].sort((a, b) => {
+      if (explicitFiles) return rank(a) - rank(b);
+      return a.moduleId < b.moduleId ? -1 : a.moduleId > b.moduleId ? 1 : 0;
+    });
   }
 }
 
@@ -53,9 +65,7 @@ class PathSequencer extends BaseSequencer {
 export default defineConfig({
   plugins: [commonJsTypeScript],
   test: {
-    include: process.env.SERVER_TEST_FILES
-      ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-      : ['modules/*/tests/server/**/*.{js,cts,mts}'],
+    include: explicitFiles ?? ['modules/*/tests/server/**/*.{js,cts,mts}'],
     globals: true,
     pool: 'forks',
     maxWorkers: 1,

@@ -32,15 +32,26 @@ function promisify(fn: MochaStyleFunction | undefined) {
     });
 }
 
-function wrapRegister<T extends Wrapped>(register: T): T {
-  return ((name: unknown, fn?: MochaStyleFunction, ...rest: unknown[]) =>
-    register(name, promisify(fn), ...rest)) as T;
-}
-
-function wrapTest(register: Wrapped & { skip: Wrapped; only: Wrapped }) {
-  return Object.assign(wrapRegister(register), {
-    skip: wrapRegister(register.skip),
-    only: wrapRegister(register.only),
+// Wraps the whole chainable API (`it.skip`, `it.skipIf(x)`, `it.todo`, …) and
+// converts the callback wherever it sits: `it(name, fn)` or
+// `it(name, { timeout }, fn)`. `each` rows are parameters, not `done`.
+function wrapTest<T extends Wrapped>(register: T): T {
+  return new Proxy(register, {
+    apply(target, thisArg, args: unknown[]) {
+      const index = args.findIndex(arg => typeof arg === 'function');
+      const converted = args.map((arg, i) =>
+        i === index ? promisify(arg as MochaStyleFunction) : arg,
+      );
+      const result = Reflect.apply(target, thisArg, converted);
+      return typeof result === 'function'
+        ? wrapTest(result as Wrapped)
+        : result;
+    },
+    get(target, property, receiver) {
+      const value = Reflect.get(target, property, receiver);
+      if (property === 'each' || typeof value !== 'function') return value;
+      return wrapTest(value.bind(target) as Wrapped);
+    },
   });
 }
 
@@ -49,9 +60,7 @@ function wrapHook(register: (fn: () => unknown) => void) {
 }
 
 const mocha = globalThis as unknown as Record<string, unknown>;
-mocha.it = wrapTest(
-  it as unknown as Wrapped & { skip: Wrapped; only: Wrapped },
-);
+mocha.it = wrapTest(it as unknown as Wrapped);
 
 mocha.test = mocha.it;
 mocha.context = describe;
