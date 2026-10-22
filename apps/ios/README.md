@@ -5,6 +5,9 @@ experience is native Profile, Discover, Messages, and More navigation. A
 bounded `WKWebView` fallback opens selected Trustroots website routes that are
 not yet implemented natively.
 
+See the [shared Kotlin and Compose UI assessment](../compose-assessment.md)
+for the plan to embed shared Compose journeys within this existing app.
+
 The checked-in Xcode project has the Trustroots bundle identifier and Apple
 Developer Team configured for release. The project generator creates an
 unsigned project for simulator development; review signing settings before

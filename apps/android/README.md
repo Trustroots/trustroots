@@ -4,6 +4,9 @@ This is the native Kotlin and Jetpack Compose sibling of the Trustroots iOS
 member app. It intentionally shares the existing policy-protected Trustroots
 JSON routes with iOS while keeping its UI and lifecycle Android-native.
 
+See the [shared Kotlin and Compose UI assessment](../compose-assessment.md)
+for the proposed incremental migration within the existing mobile apps.
+
 ## Open in Android Studio
 
 Open `apps/android`, select a JDK 17 runtime and install Android SDK 37 when
