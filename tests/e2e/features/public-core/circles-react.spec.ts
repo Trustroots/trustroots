@@ -564,7 +564,7 @@ test('administrators can review a SpaceAPI import preview', async ({
   const adminNavigation = page.getByRole('navigation', {
     name: 'Administration',
   });
-  await expect(adminNavigation.getByRole('list')).toHaveCount(6);
+  await expect(adminNavigation.getByRole('list')).toHaveCount(5);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(
     await adminNavigation.evaluate(
