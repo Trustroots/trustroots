@@ -1,15 +1,17 @@
 ## Implementation
 
-- [ ] Validate this proposal and get maintainer agreement on the target layout and sequence.
-- [ ] Workspace in place plus Turborepo (separate pull request).
+- [x] Land the initial proposal and migration direction (#3250). Remaining layout decisions stay open in `design.md`.
+- [x] Workspace in place plus Turborepo (#3251).
 - [ ] Shared root code into `packages/*` with re-export shims (separate pull request).
 - [ ] `packages/ui` with design tokens (separate pull request).
 - [ ] Tier guards in `tooling/guards` (separate pull request).
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
-- [ ] `layers/shell` composition (separate pull request).
+- [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation and remaining composition are still pending.
 - [ ] `apps/web` move (separate pull request, needs a production-image check).
 - [ ] Untangling and shim removal, one module at a time.
+
+Progress and follow-up PRs are tracked in [#3358](https://github.com/Trustroots/trustroots/issues/3358). The overall proposal remains open until the agreed migration is complete.
 
 ## Verification
 

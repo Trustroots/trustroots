@@ -165,6 +165,7 @@ jobs:
           done
       - name: Check module graph
         run: |
+          pnpm run test:affected
           pnpm run lint:modules:test
           pnpm run lint:modules
           pnpm run lint:packages:test

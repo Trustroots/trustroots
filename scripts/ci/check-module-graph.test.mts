@@ -49,6 +49,52 @@ test('diffGraphs reports added and removed links', () => {
   });
 });
 
+test('workspace imports preserve edges across import forms and reject new links', t => {
+  t.mock.method(console, 'log', () => {});
+  const error = t.mock.method(console, 'error', () => {});
+  const root = makeRepo({
+    'modules/a/client/one.ts': [
+      "import b from '@trustroots/b';",
+      "export { value } from '@trustroots/c/shared/value';",
+      "const d = import('@trustroots/d/client/value');",
+      "const e = require('@trustroots/e/server/value');",
+      "type F = import('@trustroots/f/shared/value').Value;",
+      "require.resolve('@trustroots/g/shared/value');",
+      "vi.mock('@trustroots/h/client/value');",
+      "vi.importActual('@trustroots/i/shared/value');",
+      "import self from '@trustroots/a/shared/value';",
+      "import external from '@trustroots/unknown';",
+      "import unrelated from '@another/b';",
+      "import similarlyNamed from '@trustroots/b-extra';",
+    ].join('\n'),
+    ...Object.fromEntries(
+      'bcdefghi'
+        .split('')
+        .map(name => [
+          `modules/${name}/shared/value.ts`,
+          'export const value = 1;',
+        ]),
+    ),
+    'module-graph-baseline.json': JSON.stringify({ imports: {}, models: {} }),
+  });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const expected = { imports: { a: 'bcdefghi'.split('') }, models: {} };
+  assert.deepEqual(analyze(root), expected);
+  assert.equal(main([], root), 1);
+  assert.match(error.mock.calls.at(-1)!.arguments[0], /imports: a -> b/);
+  fs.writeFileSync(
+    path.join(root, 'module-graph-baseline.json'),
+    JSON.stringify(expected),
+  );
+  assert.equal(main([], root), 0);
+  const file = path.join(root, 'modules/a/client/one.ts');
+  fs.writeFileSync(
+    file,
+    fs.readFileSync(file, 'utf8').replaceAll('@trustroots/', '@/modules/'),
+  );
+  assert.deepEqual(analyze(root), expected);
+});
+
 test('records cross-module imports in .mts source files', () => {
   const root = makeRepo({
     'modules/a/shared/one.mts':
