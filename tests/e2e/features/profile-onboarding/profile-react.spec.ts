@@ -7,6 +7,51 @@ declare global {
   }
 }
 
+for (const viewport of [
+  { width: 1280, height: 900 },
+  { width: 1024, height: 400 },
+  { width: 390, height: 844 },
+]) {
+  test(`enlarged profile photo fits its modal at ${viewport.width}×${viewport.height}`, async ({
+    page,
+    request,
+  }) => {
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(`/profile/${SEEDED_MEMBERS[1].username}`);
+    await page.locator('.profile-overview .avatar').click();
+
+    const modal = page.locator('.modal-avatar');
+    const photo = modal.locator('.avatar');
+    await expect(photo).toBeVisible();
+    // The desktop modal must also fit if the window becomes narrow while open.
+    await page.setViewportSize(viewport);
+    await expect(async () => {
+      const content = await modal.locator('.modal-content').boundingBox();
+      const image = await photo.boundingBox();
+      expect(content).not.toBeNull();
+      expect(image).not.toBeNull();
+      expect(image!.x).toBeGreaterThanOrEqual(content!.x);
+      expect(image!.y).toBeGreaterThanOrEqual(content!.y);
+      expect(image!.x + image!.width).toBeLessThanOrEqual(
+        content!.x + content!.width,
+      );
+      expect(image!.y + image!.height).toBeLessThanOrEqual(
+        content!.y + content!.height,
+      );
+      expect(content!.y).toBeGreaterThanOrEqual(0);
+      expect(content!.y + content!.height).toBeLessThanOrEqual(viewport.height);
+      expect(
+        Math.abs(content!.x + content!.width / 2 - viewport.width / 2),
+      ).toBeLessThanOrEqual(1);
+      expect(Math.abs(image!.width - image!.height)).toBeLessThanOrEqual(1);
+    }).toPass();
+
+    await photo.click();
+    await expect(modal).toBeHidden();
+  });
+}
+
 test('profile descriptions retain supported formatting in collapsed and expanded views', async ({
   page,
   request,

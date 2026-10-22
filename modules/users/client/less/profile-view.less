@@ -140,15 +140,25 @@
   }
 }
 
-// Big avatar opened in a modal
-// Content tends to be 598px, so when it's shrinked to 512px,
-// 86px is left out. Move modal to the left half of that (43px).
-.modal-avatar .modal-content {
-  max-width: 512px;
-  max-height: 512px;
-  margin-left: 43px;
-  .avatar {
-    cursor: zoom-out;
+// Keep the enlarged photo centred and within the viewport, including short screens.
+.modal-avatar {
+  .modal-dialog {
+    width: min(514px, calc(100vw - 32px), calc(100vh - 64px));
+    max-width: none;
+    margin: 32px auto;
+  }
+
+  .modal-content {
+    padding: 0;
+
+    .avatar {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 100%;
+      max-height: none;
+      cursor: zoom-out;
+    }
   }
 }
 
