@@ -54,6 +54,8 @@ Use named authors as well as relative labels where needed. Render separate
 accounts even when they disagree.
 
 The profile shows the section for an eligible signed-in viewer of another member.
+Its dedicated Experience list and writing tabs retain their existing flows
+without duplicating the account panel or adding competing pair reads.
 The thread offers a labelled, keyboard-accessible disclosure near the member
 header on all screen sizes. Its expanded contents must scroll without hiding
 the composer or trapping focus. A responsive disclosure may differ in layout,
@@ -105,5 +107,9 @@ recommendation. Add translations through the existing extraction workflow.
 4. Validate the completed change, archive the proposal and update the living
    specification only after implementation is complete.
 
-No new e2e test is appropriate in this proposal-only PR because it changes no
-application behaviour. Implementation tests are required in `tasks.md`.
+Implementation tests cover the adapter and shared component under
+`modules/contacts/tests/client/`, both mounting surfaces, and five new browser
+journeys in `tests/e2e/features/relationships-safety/your-connection.spec.ts`.
+The existing contact journey also checks guidance before sending and accepting.
+Existing server contract regressions already establish visibility, eligibility,
+viewer-only reads and feedback history; the server rules are unchanged.
