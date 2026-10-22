@@ -533,11 +533,13 @@ export default function ProfilePage({
 
         {!isLoading && profile?.username && profile.$resolved && (
           <>
-            <YourConnection
-              viewer={authUser}
-              member={profile}
-              onContactRemoved={removeContact}
-            />
+            {tab !== 'experiences' && tab !== 'experiences-new' && (
+              <YourConnection
+                viewer={authUser}
+                member={profile}
+                onContactRemoved={removeContact}
+              />
+            )}
             {pendingIncomingContact && (
               <div
                 className="row"

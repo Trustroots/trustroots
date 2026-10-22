@@ -340,6 +340,16 @@ describe('ProfilePage', () => {
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
   });
 
+  it.each(['experiences', 'experiences/new'])(
+    'keeps the dedicated %s flow free of duplicate private account panels',
+    async tab => {
+      renderPage(authUser, `/profile/bob/${tab}`, { referencesEnabled: true });
+      await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledWith('bob'));
+      expect(await screen.findByTestId('profile-tabs')).toBeVisible();
+      expect(screen.queryByTestId('your-connection')).not.toBeInTheDocument();
+    },
+  );
+
   it('renders an embedded profile for its explicit subject without page navigation', async () => {
     fetchProfile.mockResolvedValue({ ...profile, username: 'alice' });
     const mobileRedirect = jest.spyOn(

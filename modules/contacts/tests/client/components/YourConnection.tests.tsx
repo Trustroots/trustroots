@@ -189,6 +189,60 @@ it('reports rejected contact changes and refreshes the section', async () => {
   await waitFor(() => expect(getContact).toHaveBeenCalledTimes(2));
 });
 
+it.each([403, 404])(
+  'does not offer new contact actions after a %s mutation rejection, even when the refreshed contact is absent',
+  async status => {
+    getContact.mockResolvedValueOnce({
+      _id: 'contact',
+      userFrom: viewer._id,
+      confirmed: true,
+      created: '2026-01-01',
+    });
+    remove.mockRejectedValue({ response: { status } });
+    mount();
+    await loaded();
+    fireEvent.click(
+      section('Connection').getByRole('button', { name: 'Remove contact' }),
+    );
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Yes, remove contact' }),
+    );
+    expect(await section('Connection').findByText('No contact')).toBeVisible();
+    expect(section('Connection').getByRole('alert')).toBeVisible();
+    expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
+    expect(
+      section('Private message feedback').queryByRole('button'),
+    ).not.toBeInTheDocument();
+  },
+);
+
+it.each([403, 404])(
+  'preserves answered feedback without re-enabling mutations after a %s rejection',
+  async status => {
+    getFeedback.mockResolvedValue({ reference: 'yes', created: '2026-01-01' });
+    sendFeedback.mockRejectedValue({ response: { status } });
+    mount();
+    await loaded();
+    fireEvent.click(
+      section('Private message feedback').getByRole('button', {
+        name: 'Change',
+      }),
+    );
+    fireEvent.click(
+      section('Private message feedback').getByRole('button', { name: 'No' }),
+    );
+    expect(
+      await section('Private message feedback').findByRole('alert'),
+    ).toBeVisible();
+    await waitFor(() => expect(getFeedback).toHaveBeenCalledTimes(2));
+    expect(section('Private message feedback').getByText('Yes')).toBeVisible();
+    expect(
+      section('Private message feedback').queryByRole('button'),
+    ).not.toBeInTheDocument();
+    expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
+  },
+);
+
 it('keeps authored accounts separate and does not invent reciprocal publication status', async () => {
   readMine.mockResolvedValue(experience);
   mount();
@@ -260,6 +314,20 @@ it('shows public other accounts and explicit author hosting roles', async () => 
   ).toBeVisible();
   expect(
     section('Your account').getByText('No account shared yet.'),
+  ).toBeVisible();
+});
+
+it('names authors by username when a display name is unavailable', async () => {
+  readMine.mockResolvedValue(experience);
+  mount({
+    viewer: { ...viewer, displayName: undefined },
+    member: { ...member, displayName: undefined },
+  });
+  await loaded();
+  expect(section('Your account').getByText('cedar')).toBeVisible();
+  expect(section('Their account').getByText('rowan')).toBeVisible();
+  expect(
+    section('Your account').getByText(/when rowan shares their experience/),
   ).toBeVisible();
 });
 
