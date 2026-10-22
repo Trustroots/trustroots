@@ -1243,10 +1243,14 @@ service.sanitizeOwnProfile = function (
   return sanitizeProfile(profile, true, profile);
 };
 
-/**
- * Join tribe
- */
-service.joinTribe = function (req, res) {
+type TribeMembershipAction = 'join' | 'leave';
+
+function changeTribeMembership(
+  req: Parameters<UserProfileController['joinTribe']>[0],
+  res: Parameters<UserProfileController['joinTribe']>[1],
+  action: TribeMembershipAction,
+) {
+  const isJoining = action === 'join';
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
@@ -1259,12 +1263,14 @@ service.joinTribe = function (req, res) {
   }
   async.waterfall(
     [
-      // Check user is a member of this tribe
+      // Check the user's current membership before changing it.
       function (done: ErrorDone) {
-        // Return if user is already a member
-        if (isUserMemberOfTribe(authenticatedUser, tribeId)) {
+        const isMember = isUserMemberOfTribe(authenticatedUser, tribeId);
+        if (isMember === isJoining) {
           return res.status(409).send({
-            message: 'You are already a member of this tribe.',
+            message: isJoining
+              ? 'You are already a member of this tribe.'
+              : 'You are not a member of this tribe.',
           });
         }
         done(null);
@@ -1275,7 +1281,7 @@ service.joinTribe = function (req, res) {
       ) {
         tribesHandler.updateCount(
           tribeId,
-          1,
+          isJoining ? 1 : -1,
           true,
           function (err: Error | null, tribe?: TribeCountResult | null) {
             // Tribe by id `req.body.id` didn't exist
@@ -1288,7 +1294,7 @@ service.joinTribe = function (req, res) {
           },
         );
       },
-      // Add tribe to user's object
+      // Update the user's membership array.
       function (
         tribe: PopulatedTribeDocument,
         done: (
@@ -1297,22 +1303,27 @@ service.joinTribe = function (req, res) {
           user: UserServerDocument | null,
         ) => void,
       ) {
-        User.findByIdAndUpdate(
-          authenticatedUser._id,
-          {
-            $push: {
-              member: {
-                tribe: tribe._id,
-                since: Date.now(),
+        const memberUpdate = isJoining
+          ? {
+              $push: {
+                member: {
+                  tribe: tribe._id,
+                  since: Date.now(),
+                },
               },
-            },
-          },
-          {
-            safe: true,
-            // @link http://stackoverflow.com/a/4975054/1984644
-            new: true, // get the updated document in return
-          },
-        )
+            }
+          : {
+              $pull: {
+                member: {
+                  tribe: tribeId,
+                },
+              },
+            };
+        User.findByIdAndUpdate(authenticatedUser._id, memberUpdate, {
+          safe: true,
+          // @link http://stackoverflow.com/a/4975054/1984644
+          new: true, // get the updated document in return
+        })
           .exec()
           .then(
             function (user) {
@@ -1323,7 +1334,7 @@ service.joinTribe = function (req, res) {
             },
           );
       },
-      // Done, output new tribe + user objects
+      // Return the updated tribe and user, and record the membership change.
       function (
         tribe: PopulatedTribeDocument,
         user: UserServerDocument | null,
@@ -1339,7 +1350,7 @@ service.joinTribe = function (req, res) {
           {
             namespace: 'tagAction',
             counts: {
-              count: 1,
+              count: isJoining ? 1 : -1,
             },
             tags: {
               type: 'tribe',
@@ -1351,7 +1362,7 @@ service.joinTribe = function (req, res) {
           function () {
             // Send response to API
             res.send({
-              message: 'Joined tribe.',
+              message: isJoining ? 'Joined tribe.' : 'Left tribe.',
               tribe: pickedTribe,
               user: sanitizedUser,
             });
@@ -1365,139 +1376,23 @@ service.joinTribe = function (req, res) {
     function (err?: Error | null) {
       if (err) {
         return res.status(400).send({
-          message: 'Failed to join tribe.',
+          message: isJoining
+            ? 'Failed to join tribe.'
+            : 'Failed to leave tribe.',
         });
       }
     },
   );
+}
+
+/** Join tribe. */
+service.joinTribe = function (req, res) {
+  return changeTribeMembership(req, res, 'join');
 };
 
-/**
- * Leave tribe
- */
+/** Leave tribe. */
 service.leaveTribe = function (req, res) {
-  if (!req.user) {
-    return errorService.sendForbidden(res);
-  }
-  const authenticatedUser = req.user;
-  const tribeId = req.params.tribeId;
-
-  // Not a valid ObjectId
-  if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
-    return errorService.sendInvalidId(res);
-  }
-  async.waterfall(
-    [
-      // Check user is a member of this tribe
-      function (done: ErrorDone) {
-        // Return if isn't a member anymore
-        if (!isUserMemberOfTribe(authenticatedUser, tribeId)) {
-          return res.status(409).send({
-            message: 'You are not a member of this tribe.',
-          });
-        }
-        done(null);
-      },
-      // Update tribe counter
-      function (
-        done: (error: Error | null, tribe: PopulatedTribeDocument) => void,
-      ) {
-        tribesHandler.updateCount(
-          tribeId,
-          -1,
-          true,
-          function (err: Error | null, tribe?: TribeCountResult | null) {
-            // Tribe by id `req.body.id` didn't exist
-            if (!hasTribeId(tribe)) {
-              return res.status(400).send({
-                message: errorService.getErrorMessageByKey('bad-request'),
-              });
-            }
-            done(err, tribe);
-          },
-        );
-      },
-      // Remove tribe from user's object
-      function (
-        tribe: PopulatedTribeDocument,
-        done: (
-          error: Error | null,
-          tribe: PopulatedTribeDocument,
-          user: UserServerDocument | null,
-        ) => void,
-      ) {
-        User.findByIdAndUpdate(
-          authenticatedUser._id,
-          {
-            $pull: {
-              member: {
-                tribe: tribeId,
-              },
-            },
-          },
-          {
-            safe: true,
-            // @link http://stackoverflow.com/a/4975054/1984644
-            new: true, // get the updated document in return
-          },
-        )
-          .exec()
-          .then(
-            function (user) {
-              done(null, tribe, user);
-            },
-            function (err) {
-              done(err, tribe, null);
-            },
-          );
-      },
-      // Done, output new tribe + user objects
-      function (
-        tribe: PopulatedTribeDocument,
-        user: UserServerDocument | null,
-        done: ErrorDone,
-      ) {
-        // Preserver only public fields
-        // Array of keys to preserve in tribe before sending it to the frontend
-        const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
-
-        // Sanitize user profile
-        const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
-        statService.stat(
-          {
-            namespace: 'tagAction',
-            counts: {
-              count: -1,
-            },
-            tags: {
-              type: 'tribe',
-            },
-            meta: {
-              slug: tribe.slug,
-            },
-          },
-          function () {
-            // Send response to API
-            res.send({
-              message: 'Left tribe.',
-              tribe: pickedTribe,
-              user: sanitizedUser,
-            });
-            done();
-          },
-        );
-      },
-
-      // Catch errors
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        return res.status(400).send({
-          message: 'Failed to leave tribe.',
-        });
-      }
-    },
-  );
+  return changeTribeMembership(req, res, 'leave');
 };
 
 /**
