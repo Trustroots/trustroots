@@ -13,7 +13,7 @@ import { rtlStylesheetPlugin } from './config/vite/rtl-stylesheet.mts';
 const require = createRequire(import.meta.url);
 const inject =
   require('@rollup/plugin-inject') as typeof import('@rollup/plugin-inject').default;
-const { aliases, commonJsAliases, browserFallbacks } = clientAliases;
+const { aliases, commonJsAliases } = clientAliases;
 const root = fileURLToPath(new URL('.', import.meta.url));
 const apiTarget = process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
 const port = Number(process.env.PORT) || 3000;
@@ -142,7 +142,6 @@ export default defineConfig({
       '~modules': aliases.modules,
       '~bootstrap': resolve(root, 'node_modules/bootstrap'),
       ...commonJsAliases,
-      ...browserFallbacks,
     },
   },
   optimizeDeps: {

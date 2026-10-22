@@ -9,7 +9,6 @@ import { ESLint } from 'eslint';
 const require = createRequire(import.meta.url);
 const { resolve: resolveImport } = require('eslint-import-resolver-typescript');
 const {
-  browserFallbacks,
   commonJsAliases,
   jsExtensionAlias,
   resolverAliases,
@@ -122,10 +121,7 @@ test('ESLint still rejects an unresolved aliased import', async () => {
 
 test('bundler package aliases are real CommonJS entry files', () => {
   assert.deepEqual(jsExtensionAlias, ['.js', '.ts', '.tsx']);
-  for (const filename of [
-    ...Object.values(commonJsAliases),
-    ...Object.values(browserFallbacks),
-  ]) {
+  for (const filename of Object.values(commonJsAliases)) {
     assert.equal(existsSync(filename), true, filename);
     assert.equal(dirname(filename).includes('node_modules'), true, filename);
   }

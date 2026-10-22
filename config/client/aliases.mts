@@ -28,21 +28,12 @@ function resolverAliases() {
 }
 
 let commonJsAliases;
-let browserFallbacks;
 
 function loadCommonJsAliases() {
   // Preserve the CommonJS entries expected by the existing client dependencies.
   return {
     'nostr-tools/relay': require.resolve('nostr-tools/relay'),
     'nostr-tools/nip19': require.resolve('nostr-tools/nip19'),
-    'tiny-warning': require.resolve('tiny-warning'),
-  };
-}
-
-function loadBrowserFallbacks() {
-  return {
-    querystring: require.resolve('querystring-es3'),
-    url: require.resolve('url/'),
   };
 }
 
@@ -55,10 +46,6 @@ const aliasesConfig = {
   get commonJsAliases() {
     commonJsAliases ??= loadCommonJsAliases();
     return commonJsAliases;
-  },
-  get browserFallbacks() {
-    browserFallbacks ??= loadBrowserFallbacks();
-    return browserFallbacks;
   },
 };
 
