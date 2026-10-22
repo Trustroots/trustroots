@@ -89,7 +89,9 @@ export default defineConfig({
         'modules/users/server/jobs/user-welcome-sequence-second.server.job.{mjs,mts}',
         'modules/users/server/jobs/user-welcome-sequence-third.server.job.{mjs,mts}',
       ],
-      reportsDirectory: 'coverage/server',
+      // Parallel workers must not clean or read each other's raw coverage data.
+      reportsDirectory:
+        process.env.SERVER_TEST_COVERAGE_OUTPUT ?? 'coverage/server',
       reporter: ['text-summary', 'html', 'json-summary', 'lcov'],
     },
   },

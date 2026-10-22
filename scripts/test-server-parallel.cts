@@ -154,6 +154,14 @@ async function runWorkers(
                           ),
                         }
                       : {}),
+                    ...(env.SERVER_TEST_COVERAGE_DIR
+                      ? {
+                          SERVER_TEST_COVERAGE_OUTPUT: path.join(
+                            env.SERVER_TEST_COVERAGE_DIR,
+                            `worker-${index + 1}`,
+                          ),
+                        }
+                      : {}),
                     ...(env.SERVER_TEST_TIMINGS_DIR
                       ? {
                           SERVER_TEST_TIMINGS_OUTPUT: path.join(
@@ -225,9 +233,15 @@ async function main(): Promise<void> {
     return;
   }
   const blobDirectory = path.join(root, 'coverage/server-blobs');
+  const workerCoverageDirectory = path.join(root, 'coverage/server-workers');
   rmSync(blobDirectory, { recursive: true, force: true });
+  rmSync(workerCoverageDirectory, { recursive: true, force: true });
   const exitCode = await runWorkers(plan, {
-    env: { ...process.env, SERVER_TEST_BLOB_DIR: blobDirectory },
+    env: {
+      ...process.env,
+      SERVER_TEST_BLOB_DIR: blobDirectory,
+      SERVER_TEST_COVERAGE_DIR: workerCoverageDirectory,
+    },
   });
   if (exitCode !== 0) {
     process.exitCode = exitCode;
