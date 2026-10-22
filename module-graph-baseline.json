@@ -1,10 +1,10 @@
 {
   "imports": {
     "admin": ["core", "messages", "search", "support", "tribes", "users"],
-    "contacts": ["core", "users"],
+    "contacts": ["core", "experiences", "references-thread", "users"],
     "core": ["messages", "support", "tribes", "users"],
     "experiences": ["core", "support", "users"],
-    "messages": ["core", "references-thread", "stats", "support", "users"],
+    "messages": ["contacts", "core", "stats", "support", "users"],
     "offers": ["core", "search", "tribes", "users"],
     "pages": ["core", "support", "tribes", "users"],
     "references-thread": ["core", "stats", "users"],
