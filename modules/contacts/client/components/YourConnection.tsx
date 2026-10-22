@@ -131,7 +131,8 @@ function ConnectionPair({
   const [removeError, setRemoveError] = useState(false);
   const [changing, setChanging] = useState(false);
   const [feedbackAllowed, setFeedbackAllowed] = useState(true);
-  const canConnect = !viewer.blocked?.includes(member._id);
+  const [mutationsAllowed, setMutationsAllowed] = useState(true);
+  const canConnect = mutationsAllowed && !viewer.blocked?.includes(member._id);
   const record = contact.state.status === 'ready' ? contact.state.data : null;
   const accounts =
     experience.state.status === 'ready'
@@ -153,7 +154,10 @@ function ConnectionPair({
       });
       setChanging(false);
       setPendingAnswer(null);
-    } catch {
+    } catch (error) {
+      if ([403, 404].includes(readApiError(error).status || 0)) {
+        setMutationsAllowed(false);
+      }
       setMutationError(true);
       // Recheck server eligibility while retaining the last confirmed answer.
       try {
@@ -173,7 +177,10 @@ function ConnectionPair({
       onContactRemoved?.(record!);
       setShowRemove(false);
       contact.retry();
-    } catch {
+    } catch (error) {
+      if ([403, 404].includes(readApiError(error).status || 0)) {
+        setMutationsAllowed(false);
+      }
       setShowRemove(false);
       setRemoveError(true);
       contact.retry();
@@ -205,7 +212,11 @@ function ConnectionPair({
     const met = account.interactions?.met;
     return (
       <>
-        <p>{yours ? viewer.displayName : member.displayName}</p>
+        <p>
+          {yours
+            ? viewer.displayName || viewer.username
+            : member.displayName || member.username}
+        </p>
         {typeof account.public === 'boolean' && (
           <p>
             {account.public
@@ -217,7 +228,10 @@ function ConnectionPair({
           <p>
             {te<string>(
               'Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.',
-              { name: member.displayName, count: DAYS_TO_REPLY },
+              {
+                name: member.displayName || member.username,
+                count: DAYS_TO_REPLY,
+              },
             )}
           </p>
         )}
