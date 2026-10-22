@@ -425,7 +425,7 @@ describe('Core CRUD tests', function () {
           done(error instanceof Error ? error : new Error(String(error)));
         });
     }
-    function expectEmptyNames(username: string, done: Mocha.Done): void {
+    function expectEmptyNames(username: string, done: TestDone): void {
       agent
         .get('/.well-known/nostr.json?name=' + username)
         .expect(200)

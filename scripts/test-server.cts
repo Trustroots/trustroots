@@ -1,79 +1,37 @@
 #!/usr/bin/env node
 
-const { globSync } = require('node:fs') as typeof import('node:fs');
-const Mocha: typeof import('mocha') = require('mocha');
+const { spawnSync } =
+  require('node:child_process') as typeof import('node:child_process');
 const path = require('node:path') as typeof import('node:path');
-const { recordTimings } = require('./server-test-timings.cts');
 
-interface MongooseService {
-  connect(callback: (connection: import('mongoose').Connection) => void): void;
-  dropDatabase(
-    connection: import('mongoose').Connection,
-    callback: (error?: Error) => void,
-  ): void;
-  loadModels(callback: () => void): Promise<void>;
-  ensureIndexes(modelNames: string[]): Promise<void>;
-  disconnect(callback: (error?: Error) => void): void;
+const root = path.resolve(__dirname, '..');
+const vitest = path.join(
+  path.dirname(require.resolve('vitest/package.json')),
+  'vitest.mjs',
+);
+
+const result = spawnSync(
+  process.execPath,
+  [
+    vitest,
+    'run',
+    '--config',
+    path.join(root, 'vitest.server.config.mts'),
+    ...(process.env.SERVER_TEST_COVERAGE ? ['--coverage'] : []),
+    ...process.argv.slice(2),
+  ],
+  // An inherited VITEST_MAX_WORKERS would run files concurrently against one
+  // database.
+  {
+    cwd: root,
+    stdio: 'inherit',
+    env: { ...process.env, VITEST_MAX_WORKERS: '1' },
+  },
+);
+
+if (result.error) {
+  console.error(result.error.message);
+  process.exit(1);
 }
 
-interface AgendaService {
-  close(): Promise<void>;
-}
-
-const mongooseService =
-  require('./../config/lib/mongoose.mjs') as MongooseService;
-const agenda = require('./../config/lib/agenda.mjs') as AgendaService;
-const configuredTestFiles = process.env.SERVER_TEST_FILES
-  ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-  : [];
-const testFiles =
-  configuredTestFiles.length > 0
-    ? configuredTestFiles
-    : globSync('modules/*/tests/server/**/*.{js,cts,mts}').sort();
-
-async function finish(error: unknown): Promise<void> {
-  try {
-    await agenda.close();
-  } catch (closeError) {
-    error = error || closeError;
-  }
-  mongooseService.disconnect(() => {
-    if (error) {
-      console.error(error);
-      process.exitCode = 1;
-    }
-  });
-}
-
-mongooseService.connect((db: import('mongoose').Connection) => {
-  mongooseService.dropDatabase(db, () => {
-    mongooseService.loadModels(async () => {
-      const modelNames = (
-        require('mongoose') as typeof import('mongoose')
-      ).connection.modelNames();
-
-      mongooseService
-        .ensureIndexes(modelNames)
-        .then(async () => {
-          const mochaRunner = new Mocha({ reporter: 'spec', timeout: 10000 });
-
-          testFiles.forEach((testFile: string) =>
-            mochaRunner.addFile(path.resolve(testFile)),
-          );
-
-          await mochaRunner.loadFilesAsync();
-          const runner = mochaRunner.run((failures: number) => {
-            if (typeof mochaRunner.unloadFiles === 'function') {
-              mochaRunner.unloadFiles();
-            }
-
-            finish(failures ? `${failures} server test(s) failed.` : null);
-          });
-          if (process.env.SERVER_TEST_TIMINGS_OUTPUT) {
-            recordTimings(runner, process.env.SERVER_TEST_TIMINGS_OUTPUT);
-          }
-        })
-        .catch(finish);
-    });
-  });
-});
+process.exit(result.status ?? 1);

@@ -245,13 +245,15 @@ describe('Worker tests', function () {
 
     try {
       await new Promise<void>(function (resolve, reject) {
-        worker.start(workerOptions, function (err?: Error) {
-          if (err !== scheduleError) {
-            reject(err || new Error('Expected the scheduling failure'));
-          } else {
-            resolve();
-          }
-        });
+        worker
+          .start(workerOptions, function (err?: Error) {
+            if (err !== scheduleError) {
+              reject(err || new Error('Expected the scheduling failure'));
+            } else {
+              resolve();
+            }
+          })
+          .catch(function () {});
       });
       startStub.calledTwice.should.equal(true);
     } finally {

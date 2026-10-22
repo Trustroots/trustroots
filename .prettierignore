@@ -3,7 +3,6 @@
 node_modules/
 coverage/
 coverage-report/
-.nyc_output/
 playwright-report/
 test-results/
 tests/e2e/.auth/

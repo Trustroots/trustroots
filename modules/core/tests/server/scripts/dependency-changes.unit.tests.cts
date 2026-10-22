@@ -5,7 +5,6 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { createRequire } = require('module');
 const {
   summariseDependencies,
   collectDependencyChanges,
@@ -50,31 +49,6 @@ interface WorkflowJob {
 }
 
 describe('PR dependency summaries', () => {
-  it('loads JSON and YAML NYC configuration with the shared YAML 4 dependency', async () => {
-    const loaderRequire = createRequire(
-      require.resolve('@istanbuljs/load-nyc-config'),
-    );
-    assert.strictEqual(loaderRequire('js-yaml/package.json').version, '4.3.2');
-    const { loadNycConfig } = require('@istanbuljs/load-nyc-config');
-    const root = path.resolve(__dirname, '../../../../..');
-    const config = await loadNycConfig({
-      cwd: root,
-      nycrcPath: '.nycrc-server',
-    });
-    assert.deepStrictEqual(config.include, ['modules/*/server/**/*.{mjs,mts}']);
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'fictional-nyc-'));
-    try {
-      fs.writeFileSync(
-        path.join(directory, '.nycrc.yml'),
-        'all: true\ninclude:\n  - src/**/*.js\n',
-      );
-      const yamlConfig = await loadNycConfig({ cwd: directory });
-      assert.strictEqual(yamlConfig.all, true);
-      assert.deepStrictEqual(yamlConfig.include, ['src/**/*.js']);
-    } finally {
-      fs.rmSync(directory, { recursive: true, force: true });
-    }
-  });
   const before = {
     manifest: {
       dependencies: { fictional: '^1', removed: '1' },
@@ -456,8 +430,7 @@ describe('PR dependency summaries', () => {
         '../../../../../scripts/ci/production-dependencies.cts',
       );
       // These subprocesses test the executable's plain Node CLI modes. Avoid
-      // inheriting NYC's ESM preload so each child does not load the coverage
-      // instrumentation again while this synchronous test is running.
+      // inheriting preloaded modules so each child starts quickly.
       const childEnv = { ...process.env, NODE_OPTIONS: '' };
       assert.deepStrictEqual(
         JSON.parse(

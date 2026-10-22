@@ -37,13 +37,15 @@ const modules = [
 ];
 
 describe('ESM interoperability: identity-platform', () => {
-  it('honours HTTPS and ImageMagick configuration at process startup', function () {
-    this.timeout(10000);
-    execFileSync(
-      process.execPath,
-      [
-        '-e',
-        `
+  it(
+    'honours HTTPS and ImageMagick configuration at process startup',
+    { timeout: 10000 },
+    function () {
+      execFileSync(
+        process.execPath,
+        [
+          '-e',
+          `
       (async () => {
       const assert = require('node:assert/strict');
       const config = require('./config/config.mts');
@@ -74,10 +76,11 @@ describe('ESM interoperability: identity-platform', () => {
       process.exit(0);
       })().catch(error => { console.error(error); process.exit(1); });
     `,
-      ],
-      { cwd: root, stdio: 'pipe' },
-    );
-  });
+        ],
+        { cwd: root, stdio: 'pipe' },
+      );
+    },
+  );
 
   for (const relativePath of modules) {
     it(`preserves the CommonJS API for ${relativePath}`, async () => {
