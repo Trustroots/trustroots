@@ -19,5 +19,6 @@ export interface OfferServerRecord {
   validUntil?: Date;
   user?: Types.ObjectId;
   reactivateReminderSent?: Date;
+  happyToMeet?: boolean;
   showOnlyInMyCircles?: boolean;
 }

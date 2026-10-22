@@ -210,6 +210,7 @@ export interface OfferRecord {
   validUntil?: Date;
   user?: Types.ObjectId;
   reactivateReminderSent?: Date;
+  happyToMeet?: boolean;
   showOnlyInMyCircles?: boolean;
 }
 

@@ -2,10 +2,10 @@ const assert: typeof import('assert/strict') = require('assert/strict');
 const { ObjectId } = require('mongoose').Types;
 const {
   prepareNewOffer,
+  prepareOfferMutationResponse,
   prepareOfferPayload,
   prepareOfferSearchResults,
   prepareOfferUpdate,
-  prepareOfferUpdateInput,
 } = require('../../server/services/offer-payload.server.service.mts');
 
 describe('Offer API payload construction', () => {
@@ -14,6 +14,7 @@ describe('Offer API payload construction', () => {
       _id: new ObjectId('111111111111111111111111'),
       type: 'host',
       status: 'yes',
+      happyToMeet: true,
       user: new ObjectId('222222222222222222222222'),
       description: 'A fictional offer.',
       noOfferDescription: 'A fictional status note.',
@@ -31,6 +32,7 @@ describe('Offer API payload construction', () => {
       _id: offer._id,
       type: offer.type,
       status: offer.status,
+      happyToMeet: true,
       user: offer.user,
       description: offer.description,
       noOfferDescription: offer.noOfferDescription,
@@ -106,6 +108,36 @@ describe('Offer API payload construction', () => {
     });
   });
 
+  it('preserves explicit opt-in and opt-out through all payload builders', () => {
+    for (const happyToMeet of [true, false]) {
+      const request = {
+        type: 'host' as const,
+        status: 'no' as const,
+        location: [12, 34] as [number, number],
+        happyToMeet,
+      };
+      assert.equal(prepareNewOffer(request).happyToMeet, happyToMeet);
+      assert.equal(prepareOfferUpdate(request).happyToMeet, happyToMeet);
+      assert.equal(
+        prepareOfferPayload({ ...request, _id: 'offer', user: 'member' })
+          .happyToMeet,
+        happyToMeet,
+      );
+    }
+  });
+
+  it('constructs the existing mutation response messages', () => {
+    assert.deepEqual(prepareOfferMutationResponse('Offer saved.'), {
+      message: 'Offer saved.',
+    });
+    assert.deepEqual(prepareOfferMutationResponse('Offer updated.'), {
+      message: 'Offer updated.',
+    });
+    assert.deepEqual(prepareOfferMutationResponse('Offer removed.'), {
+      message: 'Offer removed.',
+    });
+  });
+
   it('returns search results as GeoJSON with longitude before latitude', () => {
     assert.deepEqual(
       prepareOfferSearchResults([
@@ -158,27 +190,5 @@ describe('Offer API payload construction', () => {
         ],
       },
     );
-  });
-
-  it('copies only the writable fields that the request carries', () => {
-    const update = prepareOfferUpdateInput({
-      description: 'A fictional offer.',
-      maxGuests: 0,
-      showOnlyInMyCircles: false,
-      type: 'meet',
-      user: 'someone-else',
-    });
-
-    assert.deepEqual(Object.keys(update), [
-      'description',
-      'maxGuests',
-      'showOnlyInMyCircles',
-    ]);
-    assert.deepEqual(update, {
-      description: 'A fictional offer.',
-      maxGuests: 0,
-      showOnlyInMyCircles: false,
-    });
-    assert.deepEqual(Object.keys(prepareOfferUpdateInput({})), []);
   });
 });
