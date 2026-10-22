@@ -258,6 +258,85 @@ describe('User signup and authentication CRUD tests', function () {
       present(response.body.username).should.equal(username.toLowerCase());
     });
   }
+  it('allows signup without a surname and builds a clean display name', async function () {
+    await agent
+      .post('/api/auth/signup')
+      .send({
+        ageConfirmed: true,
+        firstName: 'Amina',
+        username: 'singlemember',
+        email: 'single-member@example.test',
+        password: 'Password123!',
+      })
+      .expect(200);
+    const stored = await User.findOne({ username: 'singlemember' });
+    assertPresent(stored);
+    should.not.exist(stored.lastName);
+    present(stored.displayName).should.equal('Amina');
+  });
+  it('allows an empty surname on signup', async function () {
+    await agent
+      .post('/api/auth/signup')
+      .send({
+        ageConfirmed: true,
+        firstName: 'Amina',
+        lastName: '',
+        username: 'emptysurname',
+        email: 'empty-surname@example.test',
+        password: 'Password123!',
+      })
+      .expect(200);
+    const stored = await User.findOne({ username: 'emptysurname' });
+    assertPresent(stored);
+    present(stored.displayName).should.equal('Amina');
+  });
+  for (const [index, lastName] of [null, 42, {}, []].entries()) {
+    it(
+      'rejects a non-string surname on signup: ' + JSON.stringify(lastName),
+      async function () {
+        await agent
+          .post('/api/auth/signup')
+          .send({
+            ageConfirmed: true,
+            firstName: 'Amina',
+            lastName,
+            username: `invalidsurname${index}`,
+            email: `invalid-surname-${index}@example.test`,
+            password: 'Password123!',
+          })
+          .expect(400);
+        should.not.exist(
+          await User.findOne({ username: `invalidsurname${index}` }),
+        );
+        emails.should.have.length(0);
+        jobs.length.should.equal(0);
+      },
+    );
+  }
+  for (const firstName of [undefined, '']) {
+    it(
+      'still requires a first name on signup: ' + String(firstName),
+      async function () {
+        const username =
+          firstName === undefined ? 'missingfirstname' : 'emptyfirstname';
+        const payload: Record<string, unknown> = {
+          ageConfirmed: true,
+          lastName: '',
+          username,
+          email:
+            firstName === undefined
+              ? 'missing-first-name@example.test'
+              : 'empty-first-name@example.test',
+          password: 'Password123!',
+        };
+        if (firstName !== undefined) payload.firstName = firstName;
+        await agent.post('/api/auth/signup').send(payload).expect(400);
+        should.not.exist(await User.findOne({ username }));
+        emails.should.have.length(0);
+        jobs.length.should.equal(0);
+      },
+    );
+  }
   it('initialises only the supported signup fields', async function () {
     const payload = {
       firstName: 'Sample',

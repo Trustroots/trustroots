@@ -54,7 +54,7 @@ type WaterfallCallback = (error?: Error | null, ...results: unknown[]) => void;
 
 interface SignupRequiredFields extends Record<string, unknown> {
   firstName: string;
-  lastName: string;
+  lastName?: string;
   username: string;
   password: string;
   email: string;
@@ -65,9 +65,10 @@ function hasSignupRequiredFields(
 ): body is SignupRequiredFields {
   return (
     !!body &&
-    ['firstName', 'lastName', 'username', 'password', 'email'].every(
+    ['firstName', 'username', 'password', 'email'].every(
       field => typeof body[field] === 'string' && body[field],
-    )
+    ) &&
+    (body.lastName === undefined || typeof body.lastName === 'string')
   );
 }
 
@@ -177,7 +178,7 @@ service.signup = function (req, res) {
       function (done: WaterfallCallback) {
         const body = validatedSignupBody!;
         const { firstName, lastName, username } = body;
-        if (isNameSpam(firstName) || isNameSpam(lastName)) {
+        if (isNameSpam(firstName) || (lastName && isNameSpam(lastName))) {
           return done(new Error('Invalid signup attempt'));
         }
 
@@ -221,7 +222,10 @@ service.signup = function (req, res) {
         // Add missing user fields
         user.public = false;
         user.provider = 'local';
-        user.displayName = user.firstName.trim() + ' ' + user.lastName.trim();
+        user.displayName = [user.firstName, user.lastName]
+          .filter((name): name is string => Boolean(name?.trim()))
+          .map(name => name.trim())
+          .join(' ');
 
         // Just to simplify email confirm process later
         // This field is normally needed when changing email after the signup process

@@ -420,6 +420,25 @@ describe('User profile CRUD tests', function () {
       })
       .catch(done);
   });
+  it('preserves an omitted surname and allows clearing it', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const unchanged = await agent
+      .put('/api/users')
+      .send({ tagline: 'A short note' })
+      .expect(200);
+    unchanged.body.lastName.should.equal('Name');
+    const cleared = await agent
+      .put('/api/users')
+      .send({ lastName: '' })
+      .expect(200);
+    cleared.body.lastName.should.equal('');
+    cleared.body.displayName.should.equal('Full');
+    const malformed = await agent
+      .put('/api/users')
+      .send({ lastName: { value: 'Nope' } })
+      .expect(400);
+    malformed.body.message.should.equal('Please enter a valid last name.');
+  });
   it('retains and removes existing deprecated languages but rejects new ones', async function () {
     user.languages = ['enm'];
     await user.save();

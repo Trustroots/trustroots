@@ -134,6 +134,14 @@ service.update = function (req, res) {
     return errorService.sendForbidden(res);
   }
   if (
+    Object.prototype.hasOwnProperty.call(req.body, 'lastName') &&
+    typeof req.body.lastName !== 'string'
+  ) {
+    return res.status(400).send({
+      message: 'Please enter a valid last name.',
+    });
+  }
+  if (
     Object.prototype.hasOwnProperty.call(req.body, 'email') &&
     (typeof req.body.email !== 'string' ||
       (req.body.email !== '' && !validator.isEmail(req.body.email)))

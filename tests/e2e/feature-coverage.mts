@@ -827,11 +827,17 @@ const features = [
     requiredScenarios: [
       'Signup form validates required fields.',
       'Signup succeeds for a unique user.',
+      'Signup succeeds when the optional last name is empty.',
+      'A member without a surname has a clean display name.',
       'Signup requires explicit adult confirmation.',
       'Signup can preload suggested circles from the tribe query parameter.',
     ],
     relatedSpecs: [
       spec('auth-smoke.spec.js', 'signup submits a unique user through the UI'),
+      spec(
+        'auth-smoke.spec.js',
+        'signup succeeds without a surname and shows a clean profile name',
+      ),
       spec(
         'auth-smoke.spec.js',
         'signup requires adult confirmation before creating an account',
@@ -1384,12 +1390,18 @@ const features = [
       'Valid profile changes persist and are visible on profile view.',
       'Validation errors are visible for invalid content.',
       'Deprecated languages cannot be added to a profile.',
+      'Members can clear an existing surname.',
+      'A cleared surname is saved and omitted from the display name.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit "about" form is reachable'),
       spec(
         'authenticated.spec.js',
         'deprecated languages cannot be added to a profile',
+      ),
+      spec(
+        'auth-smoke.spec.js',
+        'member can clear their surname and keep a clean profile name',
       ),
     ],
   },

@@ -128,7 +128,7 @@ describe('SignupPage', () => {
     fireEvent.change(screen.getByLabelText('First Name'), {
       target: { value: firstName },
     });
-    fireEvent.change(screen.getByLabelText('Last Name'), {
+    fireEvent.change(screen.getByLabelText('Last name (optional)'), {
       target: { value: lastName },
     });
     fireEvent.change(screen.getByLabelText('Email'), {
@@ -201,6 +201,34 @@ describe('SignupPage', () => {
     expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute(
       'href',
       '/signin',
+    );
+  });
+
+  it('allows signing up without a last name', async () => {
+    signup.mockResolvedValue({
+      _id: 'member-without-surname',
+      username: 'ada',
+    });
+    renderPage();
+    fillStepOne({ lastName: '' });
+
+    const lastName = screen.getByLabelText('Last name (optional)');
+    expect(lastName).not.toBeRequired();
+    expect(lastName).toHaveAccessibleDescription(
+      'You can use a nickname. You don’t need to share your full name.',
+    );
+    expect(screen.getByLabelText('First Name')).toBeRequired();
+    expect(
+      screen.getByText(
+        'You can use a nickname. You don’t need to share your full name.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('button', { name: 'Skip' });
+    expect(signup).toHaveBeenCalledWith(
+      expect.objectContaining({ firstName: 'Ada', lastName: '' }),
     );
   });
 

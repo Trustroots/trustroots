@@ -125,6 +125,71 @@ test.describe.serial('authentication smoke', () => {
     await signUp(page, signupUser);
   });
 
+  test('signup succeeds without a surname and shows a clean profile name', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.signup', [
+      'Signup succeeds when the optional last name is empty.',
+      'A member without a surname has a clean display name.',
+    ]);
+
+    const signupUser = createUser({ lastName: '' });
+    await signUp(page, signupUser);
+
+    const stored = await findUserByUsername(signupUser.username);
+    expect(stored?.firstName).toBe(signupUser.firstName);
+    expect(stored?.lastName || '').toBe('');
+    expect(stored?.displayName).toBe(signupUser.firstName);
+
+    await page.goto(`/profile/${signupUser.username}`);
+    await expect(
+      page.locator('.profile-name:visible').getByText(signupUser.firstName, {
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
+  test('member can clear their surname and keep a clean profile name', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'Members can clear an existing surname.',
+      'A cleared surname is saved and omitted from the display name.',
+    ]);
+
+    const member = createUser();
+    await registerViaApi(request, member);
+    await signIn(page, member);
+    await page.goto('/profile/edit');
+    await page.locator('#lastname').fill('');
+
+    const saveResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/users') &&
+        response.request().method() === 'PUT',
+    );
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .first()
+      .click();
+    expect((await saveResponse).ok()).toBeTruthy();
+    await expect(
+      page.getByText('Profile updated.', { exact: true }),
+    ).toBeVisible();
+
+    const stored = await findUserByUsername(member.username);
+    expect(stored?.lastName || '').toBe('');
+    expect(stored?.displayName).toBe(member.firstName);
+
+    await page.goto(`/profile/${member.username}`);
+    await expect(
+      page.locator('.profile-name:visible').getByText(member.firstName, {
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
   test('signup requires adult confirmation before creating an account', async ({
     page,
   }, testInfo) => {

@@ -103,7 +103,7 @@ test.describe('admin circles feature coverage', () => {
         .getByRole('heading', { name: 'Circles' }),
     ).toBeVisible();
     await page.getByRole('button', { name: 'New circle' }).click();
-    await page.getByLabel('Name').fill(label);
+    await page.getByLabel('Name', { exact: true }).fill(label);
     await page.getByLabel('Public').uncheck();
     const saved = page.waitForResponse(
       response =>
