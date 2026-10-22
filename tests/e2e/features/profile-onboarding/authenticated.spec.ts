@@ -263,6 +263,51 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
+  test('profile language levels persist, display and can be cleared', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'Language levels persist and can be cleared.',
+    ]);
+    await page.request.put('/api/users', {
+      data: { languages: ['eng', 'fre'], languageLevels: {} },
+    });
+    await page.goto('/profile/edit');
+    await page
+      .getByRole('combobox', { name: 'Level for English' })
+      .selectOption('native');
+    await page
+      .getByRole('combobox', { name: 'Level for French' })
+      .selectOption('basic');
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .last()
+      .click();
+    await expect(page.getByRole('status')).toHaveText('Profile updated.');
+    await page.reload();
+    await expect(
+      page.getByRole('combobox', { name: 'Level for English' }),
+    ).toHaveValue('native');
+    await page.goto('/profile/' + authenticatedMember!.username);
+    await expect(page.getByText('English — Native')).toBeVisible();
+    await expect(page.getByText('French — Basic')).toBeVisible();
+    await page.goto('/profile/edit');
+    await page
+      .getByRole('combobox', { name: 'Level for English' })
+      .selectOption('');
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .last()
+      .click();
+    await expect(page.getByRole('status')).toHaveText('Profile updated.');
+    await page.reload();
+    await expect(
+      page.getByRole('combobox', { name: 'Level for English' }),
+    ).toHaveValue('');
+    await expect(
+      page.getByRole('combobox', { name: 'Level for French' }),
+    ).toHaveValue('basic');
+  });
   test('deprecated languages cannot be added to a profile', async ({
     page,
   }, testInfo) => {

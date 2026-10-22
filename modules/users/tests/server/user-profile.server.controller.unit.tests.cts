@@ -221,6 +221,17 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
+    it('rejects a level for an unselected language on a legacy profile without languages', async () => {
+      userDoc.languages = undefined;
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { languageLevels: { eng: 'basic' } } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('rejects an invalid locale', async () => {
       const { res } = await runHandler(res =>
         profileController.update(

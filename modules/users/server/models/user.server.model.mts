@@ -1,3 +1,4 @@
+import { validLanguageLevels } from '../../shared/language-levels.ts';
 import _ from 'lodash';
 import textService from '../../../core/server/services/text.server.service.mjs';
 import { readFileSync } from 'node:fs';
@@ -225,6 +226,16 @@ const UserSchema = new Schema<
       },
     ],
     default: [],
+  },
+  languageLevels: {
+    type: Object,
+    default: {},
+    validate: {
+      validator(this: UserServerDocument, value: unknown) {
+        return validLanguageLevels(value, this.languages || []);
+      },
+      message: 'Please select valid levels for your profile languages.',
+    },
   },
   locationLiving: {
     type: String,

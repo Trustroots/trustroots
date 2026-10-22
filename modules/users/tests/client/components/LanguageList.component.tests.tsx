@@ -118,3 +118,17 @@ describe('<LanguageList />', () => {
     expect(container).toBeEmptyDOMElement();
   });
 });
+
+it('shows levels beside languages and leaves unspecified levels blank', () => {
+  useLanguagesQueryMock.mockReturnValue(
+    queryResult({ eng: 'English', fra: 'French' }, false),
+  );
+  render(
+    <LanguageList
+      languages={['eng', 'fra']}
+      languageLevels={{ eng: 'advanced' }}
+    />,
+  );
+  expect(screen.getByText('English — Advanced')).toBeInTheDocument();
+  expect(screen.getByText('French')).toBeInTheDocument();
+});

@@ -1,3 +1,4 @@
+import { validLanguageLevels } from '../../shared/language-levels.ts';
 import {
   hashToken,
   matchToken,
@@ -202,6 +203,27 @@ service.update = function (req, res) {
         message: 'This language can no longer be added to profiles.',
       });
     }
+  }
+
+  const selectedLanguages = Object.hasOwn(req.body, 'languages')
+    ? req.body.languages
+    : authenticatedUser.languages || [];
+  if (Object.hasOwn(req.body, 'languageLevels')) {
+    if (
+      !Array.isArray(selectedLanguages) ||
+      !validLanguageLevels(req.body.languageLevels, selectedLanguages)
+    ) {
+      return res.status(400).send({
+        message: 'Please select valid levels for your profile languages.',
+      });
+    }
+  } else if (Array.isArray(req.body.languages)) {
+    // Older clients can remove languages without knowing about levels.
+    req.body.languageLevels = Object.fromEntries(
+      Object.entries(authenticatedUser.languageLevels || {}).filter(([code]) =>
+        (selectedLanguages as unknown[]).includes(code),
+      ),
+    );
   }
 
   // Validate nostr npub - must be a public key, not nsec (secret key)

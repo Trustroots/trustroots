@@ -122,7 +122,11 @@ export default function ProfileViewBasics({
   const renderLanguages = (languages: string[]) => (
     <div className="profile-sidebar-section">
       <h4>{t('Languages')}</h4>
-      <LanguageList className="list-unstyled" languages={languages} />
+      <LanguageList
+        className="list-unstyled"
+        languages={languages}
+        languageLevels={profile.languageLevels}
+      />
     </div>
   );
 
