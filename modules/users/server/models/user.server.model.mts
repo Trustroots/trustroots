@@ -274,6 +274,15 @@ const UserSchema = new Schema<
     trim: true,
     set: setPlainTextField,
   },
+  // Servas profile path (household or address)
+  extSitesServas: {
+    type: String,
+    trim: true,
+    match: [
+      /^(?:(?:household|address)\/[^\s?#\\]+)?$/,
+      'Please provide a Servas household/ or address/ profile path.',
+    ],
+  },
   // nostr npub
   nostrNpub: {
     type: String,

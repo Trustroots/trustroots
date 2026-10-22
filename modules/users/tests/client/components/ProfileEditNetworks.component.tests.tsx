@@ -58,6 +58,36 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 }
 
 describe('ProfileEditNetworks', () => {
+  it.each(['household/fictional-host', 'address/fictional-host', ''])(
+    'saves the Servas path %s and previews non-empty links',
+    async path => {
+      mockedUsersApi.update.mockResolvedValue({
+        ...user,
+        extSitesServas: path,
+      });
+      renderPage({ extSitesServas: 'household/previous-host' });
+      fireEvent.change(screen.getByLabelText('servas.org/'), {
+        target: { value: path },
+      });
+      if (path) {
+        expect(screen.getByRole('link', { name: 'Test' })).toHaveAttribute(
+          'href',
+          `https://servas.org/${path}`,
+        );
+      } else {
+        expect(
+          screen.queryByRole('link', { name: 'Test' }),
+        ).not.toBeInTheDocument();
+      }
+      fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+      await waitFor(() =>
+        expect(mockedUsersApi.update).toHaveBeenCalledWith(
+          expect.objectContaining({ extSitesServas: path }),
+        ),
+      );
+    },
+  );
+
   beforeEach(() => {
     jest.clearAllMocks();
     delete window.nostr;

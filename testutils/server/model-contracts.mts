@@ -45,6 +45,7 @@ export interface UserRecord {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;
   avatarVersion?: string;

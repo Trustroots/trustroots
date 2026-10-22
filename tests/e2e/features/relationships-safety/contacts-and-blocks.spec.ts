@@ -181,6 +181,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
           extSitesCS: 'fictional-member',
           extSitesCouchers: 'fictional-member',
           extSitesWS: 'fictional-member',
+          extSitesServas: 'household/fictional-host',
           additionalProvidersData: {
             github: { login: 'fictional-member' },
           },
@@ -228,6 +229,7 @@ test.describe.serial('contacts and safety feature coverage', () => {
       expect(profile.extSitesCS).toBeUndefined();
       expect(profile.extSitesCouchers).toBeUndefined();
       expect(profile.extSitesWS).toBeUndefined();
+      expect(profile.extSitesServas).toBeUndefined();
 
       const offerResponse = await shadowContext.request.get(
         `/api/offers/${offerId}`,

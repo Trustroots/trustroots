@@ -1767,6 +1767,7 @@ describe('Profile controller unit tests', () => {
       profile.extSitesCS = 'fictional-member';
       profile.extSitesCouchers = 'fictional-member';
       profile.extSitesWS = 'fictional-member';
+      profile.extSitesServas = 'household/fictional-host';
       profile.nostrNpub =
         'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq0l7z9';
       profile.additionalProvidersData = {
@@ -1784,6 +1785,7 @@ describe('Profile controller unit tests', () => {
       (sanitized.extSitesCS === undefined).should.be.true();
       (sanitized.extSitesCouchers === undefined).should.be.true();
       (sanitized.extSitesWS === undefined).should.be.true();
+      (sanitized.extSitesServas === undefined).should.be.true();
       (sanitized.nostrNpub === undefined).should.be.true();
     });
 

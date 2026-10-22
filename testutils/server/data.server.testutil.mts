@@ -40,6 +40,7 @@ interface UserFixtureExtraFields {
   extSitesBW?: string;
   extSitesCS?: string;
   extSitesWS?: string;
+  extSitesServas?: string;
   lastIpAddress?: string;
   providerData?: Record<string, unknown> | Array<Record<string, unknown>>;
   removeProfileToken?: string;

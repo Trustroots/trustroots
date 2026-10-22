@@ -53,6 +53,25 @@ const makeProfile = (overrides: Partial<UserProfile> = {}): UserProfile => ({
 });
 
 describe('<ProfileViewBasics />', () => {
+  it.each(['household/fictional-host', 'address/fictional-host'])(
+    'renders Servas as the only network and removes it when cleared: %s',
+    path => {
+      const { rerender } = render(
+        <ProfileViewBasics profile={makeProfile({ extSitesServas: path })} />,
+      );
+      expect(screen.getByRole('link', { name: 'Servas' })).toHaveAttribute(
+        'href',
+        `https://servas.org/${path}`,
+      );
+      rerender(
+        <ProfileViewBasics profile={makeProfile({ extSitesServas: '' })} />,
+      );
+      expect(
+        screen.queryByRole('link', { name: 'Servas' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
   it('shows the greeter badge alongside volunteer recognition and removes it when revoked', () => {
     const profile = {
       _id: 'fictional-member',
