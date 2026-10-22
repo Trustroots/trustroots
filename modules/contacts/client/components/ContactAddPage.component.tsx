@@ -11,6 +11,7 @@ import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import type { UserProfile } from '@/modules/users/client/types';
+import ContactGuidance from './ContactGuidance';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 import { Alert } from '@trustroots/ui/Alert';
 import { readOutreachSource, useAnalytics } from '@trustroots/analytics/client';
@@ -155,13 +156,7 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
               </div>
             )}
 
-            {!isConnected && friend?._id && (
-              <Alert intent="info" role="note">
-                {t(
-                  "You don't need to add someone as a contact to message them. Only add someone as a contact if you have met them or plan to meet them.",
-                )}
-              </Alert>
-            )}
+            {!isConnected && friend?._id && <ContactGuidance />}
 
             {!isConnected && friend?._id && (
               <div className="panel panel-default">

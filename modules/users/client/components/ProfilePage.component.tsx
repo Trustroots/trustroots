@@ -38,6 +38,7 @@ import {
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
+import YourConnection from '@/modules/contacts/client/components/YourConnection';
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
@@ -591,6 +592,11 @@ export default function ProfilePage({
 
         {!isLoading && profile?.username && profile.$resolved && (
           <>
+            <YourConnection
+              viewer={authUser}
+              member={profile}
+              onContactRemoved={removeContact}
+            />
             {pendingIncomingContact && (
               <div
                 className="row"
