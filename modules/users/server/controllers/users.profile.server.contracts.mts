@@ -88,6 +88,7 @@ export interface SanitizedProfileRequest extends Omit<
 
 export type ProfileResponseBody =
   | undefined
+  | { pending: boolean }
   | ProfileErrorResponse
   | Record<string, never>
   | ProfileResponseDto<import('mongoose').Types.ObjectId, Date>
@@ -102,6 +103,7 @@ export type ProfileResponseBody =
     >;
 
 export interface ProfileResponse {
+  set(field: string, value: string): ProfileResponse;
   status(code: number): ProfileResponse;
   send(body: ProfileResponseBody): unknown;
   json(body: ProfileResponseBody): unknown;
@@ -115,6 +117,8 @@ export interface UserProfileController {
   userListingProfileFields: string;
   userSearchProfileFields: string;
   update(req: ProfileRequest, res: ProfileResponse): unknown;
+  getProfileRemovalStatus(req: ProfileRequest, res: ProfileResponse): unknown;
+  cancelProfileRemoval(req: ProfileRequest, res: ProfileResponse): unknown;
   initializeRemoveProfile(req: ProfileRequest, res: ProfileResponse): unknown;
   removeProfile(req: ProfileRequest, res: ProfileResponse): unknown;
   getUser(req: SanitizedProfileRequest, res: ProfileResponse): unknown;

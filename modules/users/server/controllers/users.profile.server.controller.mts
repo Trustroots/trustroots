@@ -559,6 +559,41 @@ service.initializeRemoveProfile = function (req, res) {
   );
 };
 
+/** Return only the current member's pending deletion status. */
+service.getProfileRemovalStatus = async function (req, res) {
+  res.set('Cache-Control', 'no-store');
+  if (!req.user) {
+    return errorService.sendForbidden(res);
+  }
+  try {
+    const pending = await User.exists({
+      _id: req.user._id,
+      removeProfileToken: { $type: 'string', $ne: '' },
+      removeProfileExpires: { $gt: new Date() },
+    });
+    return res.json({ pending: Boolean(pending) });
+  } catch (error) {
+    return errorService.sendBadRequest(res, error);
+  }
+};
+
+/** Withdraw the authenticated member's deletion request, including expired ones. */
+service.cancelProfileRemoval = async function (req, res) {
+  res.set('Cache-Control', 'no-store');
+  if (!req.user) {
+    return errorService.sendForbidden(res);
+  }
+  try {
+    await User.updateOne(
+      { _id: req.user._id },
+      { $unset: { removeProfileToken: 1, removeProfileExpires: 1 } },
+    );
+    return res.json({ pending: false });
+  } catch (error) {
+    return errorService.sendBadRequest(res, error);
+  }
+};
+
 /**
  * Remove profile DELETE from email token
  */
@@ -1617,4 +1652,6 @@ export const userMiniByID = defaultExport.userMiniByID;
 export const userMiniProfileFields = defaultExport.userMiniProfileFields;
 export const userProfileFields = defaultExport.userProfileFields;
 export const userSearchProfileFields = defaultExport.userSearchProfileFields;
+export const getProfileRemovalStatus = defaultExport.getProfileRemovalStatus;
+export const cancelProfileRemoval = defaultExport.cancelProfileRemoval;
 export { defaultExport as 'module.exports' };

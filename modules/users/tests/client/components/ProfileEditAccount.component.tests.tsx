@@ -21,6 +21,8 @@ const updateUser = jest.mocked(usersApi.update);
 const changePassword = jest.mocked(usersApi.changePassword);
 const resendConfirmation = jest.mocked(usersApi.resendEmailConfirmation);
 const removeProfile = jest.mocked(usersApi.removeProfile);
+const getProfileRemovalStatus = jest.mocked(usersApi.getProfileRemovalStatus);
+const cancelProfileRemoval = jest.mocked(usersApi.cancelProfileRemoval);
 jest.mock(
   '@/modules/users/client/components/ProfileEditPage.component',
   () => ({
@@ -30,8 +32,8 @@ jest.mock(
     ),
   }),
 );
-jest.mock('react-i18next', () => ({
-  useTranslation: () => ({
+jest.mock('react-i18next', () => {
+  const translation = {
     t: (key: string, values?: Record<string, unknown>) => {
       if (values?.email) {
         return key.replace('{{email}}', String(values.email));
@@ -39,8 +41,9 @@ jest.mock('react-i18next', () => ({
 
       return key;
     },
-  }),
-}));
+  };
+  return { useTranslation: () => translation };
+});
 
 const user: UserProfile = {
   _id: 'user-1',
@@ -80,6 +83,7 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 describe('ProfileEditAccount', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    getProfileRemovalStatus.mockResolvedValue({ pending: false });
   });
 
   it('renders account settings sections', () => {
@@ -269,9 +273,17 @@ describe('ProfileEditAccount', () => {
     renderPage();
 
     fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Remove profile' }),
+      ).toBeEnabled(),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Remove profile' }));
 
     expect(await screen.findByText('Removal started.')).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Cancel account deletion' }),
+    ).toBeVisible();
   });
 
   it('reports email change failures', async () => {
@@ -357,6 +369,11 @@ describe('ProfileEditAccount', () => {
     renderPage();
 
     fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Remove profile' }),
+      ).toBeEnabled(),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Remove profile' }));
 
     expect(await screen.findByText('Removal failed.')).toBeVisible();
@@ -407,6 +424,11 @@ describe('ProfileEditAccount', () => {
     expect(screen.getByLabelText('Username')).toHaveValue('');
 
     fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Remove profile' }),
+      ).toBeEnabled(),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Remove profile' }));
 
     expect(await screen.findByText('Success.')).toBeVisible();
@@ -417,6 +439,11 @@ describe('ProfileEditAccount', () => {
     renderPage();
 
     fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Remove profile' }),
+      ).toBeEnabled(),
+    );
     fireEvent.click(screen.getByRole('button', { name: 'Remove profile' }));
 
     expect(
@@ -458,3 +485,102 @@ it.each([true, false])(
     }
   },
 );
+
+describe('pending account deletion', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getProfileRemovalStatus.mockResolvedValue({ pending: true });
+  });
+
+  it('shows an existing request and cancels it explicitly', async () => {
+    let complete!: (status: usersApi.ProfileRemovalStatus) => void;
+    cancelProfileRemoval.mockReturnValue(
+      new Promise(resolve => {
+        complete = resolve;
+      }),
+    );
+    renderPage();
+    const cancel = await screen.findByRole('button', {
+      name: 'Cancel account deletion',
+    });
+    expect(usersApi.cancelProfileRemoval).not.toHaveBeenCalled();
+    fireEvent.click(cancel);
+    expect(cancel).toBeDisabled();
+    complete({ pending: false });
+    expect(
+      await screen.findByText(
+        'Account deletion cancelled. Your account will be kept.',
+      ),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel account deletion' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText('Yes, I want to remove my profile'),
+    ).not.toBeChecked();
+    fireEvent.click(screen.getByLabelText('Yes, I want to remove my profile'));
+    expect(
+      screen.getByRole('button', { name: 'Remove profile' }),
+    ).toBeEnabled();
+  });
+
+  it.each([
+    [
+      { response: { data: { message: 'Please retry cancellation.' } } },
+      'Please retry cancellation.',
+    ],
+    [
+      new Error('network'),
+      'Could not cancel account deletion. Please try again.',
+    ],
+  ])(
+    'retains the pending request on cancellation failure (%s)',
+    async (error, message) => {
+      cancelProfileRemoval.mockRejectedValue(error);
+      renderPage();
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Cancel account deletion' }),
+      );
+      expect(await screen.findByText(message)).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Cancel account deletion' }),
+      ).toBeEnabled();
+    },
+  );
+
+  it('reports unavailable status', async () => {
+    getProfileRemovalStatus.mockRejectedValue(new Error('network'));
+    renderPage();
+    expect(
+      await screen.findByText(
+        'Could not check pending account deletion. Please reload to try again.',
+      ),
+    ).toBeVisible();
+  });
+
+  it('ignores status responses after unmounting', async () => {
+    let complete!: (status: usersApi.ProfileRemovalStatus) => void;
+    getProfileRemovalStatus.mockReturnValue(
+      new Promise(resolve => {
+        complete = resolve;
+      }),
+    );
+    const { unmount } = renderPage();
+    unmount();
+    complete({ pending: true });
+    await Promise.resolve();
+  });
+
+  it('ignores status failures after unmounting', async () => {
+    let fail!: (error: Error) => void;
+    getProfileRemovalStatus.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        fail = reject;
+      }),
+    );
+    const { unmount } = renderPage();
+    unmount();
+    fail(new Error('network'));
+    await Promise.resolve();
+  });
+});

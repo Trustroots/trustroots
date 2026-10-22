@@ -1232,7 +1232,7 @@ const features = [
     id: 'account.profile-removal',
     area: AREA.authAccount,
     status: STATUS.active,
-    description: 'Members can request and confirm profile removal.',
+    description: 'Members can request, cancel and confirm profile removal.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1243,12 +1243,16 @@ const features = [
       apiRoutes: [
         apiRoute('DELETE', '/api/users', source.usersServer),
         apiRoute('DELETE', '/api/users/remove/:token', source.usersServer),
+        apiRoute('GET', '/api/users/removal/pending', source.usersServer),
+        apiRoute('DELETE', '/api/users/removal/pending', source.usersServer),
       ],
     },
     requiredScenarios: [
       'Removal request sends a deterministic confirmation email/stub.',
       'Valid removal token removes the profile.',
       'Invalid removal token is rejected.',
+      'Pending removal is visible after reloading Account settings.',
+      'Cancellation invalidates the old removal link and allows a fresh request.',
     ],
     relatedSpecs: [],
   },

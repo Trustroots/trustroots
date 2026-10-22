@@ -189,6 +189,81 @@ describe('User removal CRUD tests', function () {
           .catch(done);
       });
   });
+  for (const method of ['get', 'delete'] as const) {
+    it(`denies anonymous deletion ${method} requests`, async () => {
+      await request(app)
+        [method]('/api/users/removal/pending')
+        .set('X-Trustroots-Request', '1')
+        .expect(403);
+    });
+  }
+
+  it('cancels only the signed-in member request and rejects the old confirmation', async () => {
+    const token = 'fictional-cancelled-removal';
+    for (const user of [userA, userB]) {
+      user.removeProfileToken = hashToken(token);
+      user.removeProfileExpires = new Date(Date.now() + 3600000);
+      await user.save();
+    }
+    await agent.post('/api/auth/signin').send(credentialsA).expect(200);
+    const status = await agent.get('/api/users/removal/pending').expect(200);
+    status.body.should.deepEqual({ pending: true });
+    status.headers['cache-control'].should.equal('no-store');
+    const cancelled = await agent
+      .delete('/api/users/removal/pending')
+      .set('X-Trustroots-Request', '1')
+      .send({ userId: userB.id })
+      .expect(200);
+    cancelled.body.should.deepEqual({ pending: false });
+    cancelled.headers['cache-control'].should.equal('no-store');
+    const stored = requireUserDocument(await User.findById(userA.id));
+    should.not.exist(stored.removeProfileToken);
+    should.not.exist(stored.removeProfileExpires);
+    requireUserDocument(
+      await User.findById(userB.id),
+    ).removeProfileToken!.should.equal(hashToken(token));
+    await agent
+      .delete('/api/users/remove/' + token)
+      .set('X-Trustroots-Request', '1')
+      .expect(400);
+    await agent
+      .delete('/api/users/removal/pending')
+      .set('X-Trustroots-Request', '1')
+      .expect(200);
+    (
+      await agent.get('/api/users/removal/pending').expect(200)
+    ).body.should.deepEqual({
+      pending: false,
+    });
+  });
+
+  it('does not report missing or expired tokens as pending and clears expired state', async () => {
+    await agent.post('/api/auth/signin').send(credentialsA).expect(200);
+    for (const fields of [
+      { removeProfileExpires: new Date(Date.now() + 3600000) },
+      {
+        removeProfileToken: hashToken('fictional-expired-removal'),
+        removeProfileExpires: new Date(Date.now()),
+      },
+      {
+        removeProfileToken: hashToken('fictional-expired-removal'),
+        removeProfileExpires: new Date(Date.now() - 1),
+      },
+    ]) {
+      await User.updateOne({ _id: userA.id }, { $set: fields });
+      (
+        await agent.get('/api/users/removal/pending').expect(200)
+      ).body.should.deepEqual({ pending: false });
+    }
+    await agent
+      .delete('/api/users/removal/pending')
+      .set('X-Trustroots-Request', '1')
+      .expect(200);
+    const stored = requireUserDocument(await User.findById(userA.id));
+    should.not.exist(stored.removeProfileToken);
+    should.not.exist(stored.removeProfileExpires);
+  });
+
   it('Signin in should not reveal profile removal tokens', function (done: DoneCallback) {
     userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
     userA.removeProfileExpires = new Date();

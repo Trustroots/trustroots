@@ -33,6 +33,12 @@ const defaultExport = function (app: RouteApplication) {
     .delete(userProfile.initializeRemoveProfile)
     .put(userProfile.update);
 
+  app
+    .route('/api/users/removal/pending')
+    .all(usersPolicy.isAllowed)
+    .get(userProfile.getProfileRemovalStatus)
+    .delete(userProfile.cancelProfileRemoval);
+
   // Confirm user removal
   app
     .route('/api/users/remove/:token')
