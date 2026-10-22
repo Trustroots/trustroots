@@ -16,15 +16,39 @@ import {
 } from '../../support/helpers.mts';
 import { installNostrRelayStub } from '../../support/nostr.mts';
 
-// `npub1qqq…zqujme` decodes to an all-zero 32-byte public key, which is the
-// canonical "valid but empty" key the server-side tests reuse.
-const VALID_NPUB =
-  'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
-const PUBLIC_MEMBER_NPUB =
-  'npub1yg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3zyg3q2pw2gm';
-// Generate this per worker so Playwright's serial-group retries cannot collide
-// with an npub saved by an earlier worker attempt.
-const FORM_NPUB = nip19.npubEncode(getPublicKey(generateSecretKey()));
+const PRIVATE_MEMBER_KEY = generateSecretKey();
+const PUBLIC_MEMBER_KEY = generateSecretKey();
+const FORM_KEY = generateSecretKey();
+const VALID_NPUB = nip19.npubEncode(getPublicKey(PRIVATE_MEMBER_KEY));
+const PUBLIC_MEMBER_NPUB = nip19.npubEncode(getPublicKey(PUBLIC_MEMBER_KEY));
+const FORM_NPUB = nip19.npubEncode(getPublicKey(FORM_KEY));
+
+async function proof(
+  request: import('@playwright/test').APIRequestContext,
+  key: Uint8Array,
+) {
+  const response = await request.post('/api/users/nostr/challenge', {
+    data: { nostrNpub: nip19.npubEncode(getPublicKey(key)) },
+  });
+  expect(response.ok()).toBeTruthy();
+  return finalizeEvent((await response.json()).event, key);
+}
+async function externalFormProof(
+  page: import('@playwright/test').Page,
+  key: Uint8Array,
+) {
+  await page.getByLabel('Signing method').selectOption('external');
+  await page.getByRole('button', { name: 'Create signing challenge' }).click();
+  const challenge = page.getByLabel('Challenge to sign');
+  await expect(challenge).toBeVisible();
+  await page
+    .getByLabel('Signed event JSON')
+    .fill(
+      JSON.stringify(
+        finalizeEvent(JSON.parse(await challenge.inputValue()), key),
+      ),
+    );
+}
 // A secret key (nsec) must never be accepted in place of a public key.
 const NSEC = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 
@@ -89,7 +113,10 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     // Save the npub through the authenticated API (page.request shares the
     // signed-in session cookie), avoiding a second slow trip through the form.
     const update = await page.request.put('/api/users', {
-      data: { nostrNpub: VALID_NPUB },
+      data: {
+        nostrNpub: VALID_NPUB,
+        nostrProof: await proof(page.request, PRIVATE_MEMBER_KEY),
+      },
     });
     expect(update.ok()).toBeTruthy();
     expect((await update.json()).nostrNpub).toBe(VALID_NPUB);
@@ -114,7 +141,10 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     await signInViaApi(page, request, host);
 
     const update = await page.request.put('/api/users', {
-      data: { nostrNpub: PUBLIC_MEMBER_NPUB },
+      data: {
+        nostrNpub: PUBLIC_MEMBER_NPUB,
+        nostrProof: await proof(page.request, PUBLIC_MEMBER_KEY),
+      },
     });
     expect(update.ok()).toBeTruthy();
     expect((await update.json()).nostrNpub).toBe(PUBLIC_MEMBER_NPUB);
@@ -126,8 +156,7 @@ test.describe('nostr NIP-05 .well-known endpoint', () => {
     expect(response.status()).toBe(200);
     expect(await response.json()).toEqual({
       names: {
-        [host.username]:
-          '2222222222222222222222222222222222222222222222222222222222222222',
+        [host.username]: getPublicKey(PUBLIC_MEMBER_KEY),
       },
     });
   });
@@ -175,6 +204,7 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await expect(input).toBeVisible();
 
     await input.fill(FORM_NPUB);
+    await externalFormProof(page, FORM_KEY);
     await page.locator('.profile-editor-save').click();
 
     await expect(page.getByText(/networks updated/i)).toBeVisible();
@@ -221,6 +251,7 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await expect(input).toBeVisible();
 
     await input.fill(FORM_NPUB);
+    await externalFormProof(page, FORM_KEY);
     await page.locator('.profile-editor-save').click();
 
     await expect(
@@ -297,7 +328,10 @@ test.describe('nostr community notes badge on the profile view', () => {
     await signInViaApi(page, request, user);
 
     const update = await page.request.put('/api/users', {
-      data: { nostrNpub: npub },
+      data: {
+        nostrNpub: npub,
+        nostrProof: await proof(page.request, secretKey),
+      },
     });
     expect(update.ok()).toBeTruthy();
 
@@ -316,4 +350,45 @@ test.describe('nostr community notes badge on the profile view', () => {
       page.getByText('E2E profile note: quiet park, perfect for reading.'),
     ).toBeVisible();
   });
+});
+
+test('verifies a new npub through a browser signer and rejects unsigned API changes', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'profile.edit-networks', [
+    'Networks edit form is reachable.',
+    'Valid npub is saved and shown on profile view.',
+  ]);
+  const member = createUser();
+  await registerViaApi(request, member);
+  await signIn(page, member);
+  const key = generateSecretKey();
+  const pubkey = getPublicKey(key);
+  const npub = nip19.npubEncode(pubkey);
+  await page.exposeFunction(
+    'signOwnershipEvent',
+    (event: import('nostr-tools').EventTemplate) => finalizeEvent(event, key),
+  );
+  await page.addInitScript(publicKey => {
+    const browser = window as unknown as {
+      nostr: unknown;
+      signOwnershipEvent: (event: unknown) => Promise<unknown>;
+    };
+    browser.nostr = {
+      getPublicKey: async () => publicKey,
+      signEvent: (event: unknown) => browser.signOwnershipEvent(event),
+    };
+  }, pubkey);
+  expect(
+    (
+      await page.request.put('/api/users', { data: { nostrNpub: npub } })
+    ).status(),
+  ).toBe(400);
+  await page.goto('/profile/edit/networks');
+  await page.locator('#nostrNpub').fill(npub);
+  await page.locator('.profile-editor-save').click();
+  await expect(page.getByText(/networks updated/i)).toBeVisible();
+  await page.reload();
+  await expect(page.locator('#nostrNpub')).toHaveValue(npub);
 });

@@ -17,8 +17,13 @@ type ProfileUserDocument = UserDocument & {
 type Credentials =
   import('../../../../testutils/server/model-contracts.mts').Credentials;
 const User = mongoose.model<UserRecord, UserModel>('User');
-const validNpub =
-  'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
+const {
+  finalizeEvent,
+  getPublicKey,
+  nip19,
+}: typeof import('nostr-tools') = require('nostr-tools');
+const secretKey = new Uint8Array(32).fill(1);
+const validNpub = nip19.npubEncode(getPublicKey(secretKey));
 const nsec = 'nsec1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqwkhnav';
 /**
  * Globals
@@ -36,11 +41,6 @@ let _unConfirmedUser: UserRecord;
 type ProfileUpdatePayload = Omit<UserRecord, 'email'> & {
   email?: string;
 };
-type CookieHeader = string | string[] | undefined;
-function responseCookies(header: CookieHeader): string[] {
-  if (Array.isArray(header)) return header;
-  return header ? [header] : [];
-}
 /**
  * User routes tests
  */
@@ -481,90 +481,59 @@ describe('User profile CRUD tests', function () {
     const stored = await User.findById(user._id);
     Array.from(stored!.languages!).should.deepEqual(['eng']);
   });
-  it('should be able to update own nostr npub', function (done) {
-    user.roles = ['user'];
-    user
-      .save()
-      .then(() => {
-        should.not.exist(null);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr, signinRes) {
-            if (signinErr) {
-              return done(signinErr);
-            }
-            const signinSessionCookie = responseCookies(
-              signinRes.headers['set-cookie'],
-            ).find(cookie => cookie.startsWith('connect.sid='));
-            agent
-              .put('/api/users')
-              .send({
-                nostrNpub: validNpub,
-              })
-              .expect(200)
-              .end(function (userInfoErr, userInfoRes) {
-                if (userInfoErr) {
-                  return done(userInfoErr);
-                }
-                userInfoRes.body.nostrNpub.should.equal(validNpub);
-                const updateSessionCookie = responseCookies(
-                  userInfoRes.headers['set-cookie'],
-                ).find(cookie => cookie.startsWith('connect.sid='));
-                if (updateSessionCookie) {
-                  updateSessionCookie
-                    .split(';')[0]
-                    .should.equal(signinSessionCookie!.split(';')[0]);
-                }
-                User.findById(user._id)
-                  .then((userFindRes: UserDocument | null) => {
-                    should.not.exist(null);
-                    userFindRes!.nostrNpub!.should.equal(validNpub);
-                    return done();
-                  })
-                  .catch(done);
-              });
-          });
+  it('requires signed proof to update own nostr npub and retains the session', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent.put('/api/users').send({ nostrNpub: validNpub }).expect(400);
+    const challenge = await agent
+      .post('/api/users/nostr/challenge')
+      .send({ nostrNpub: validNpub })
+      .expect(200);
+    const saved = await agent
+      .put('/api/users')
+      .send({
+        nostrNpub: validNpub,
+        nostrProof: finalizeEvent(challenge.body.event, secretKey),
       })
-      .catch(done);
+      .expect(200);
+    saved.body.nostrNpub.should.equal(validNpub);
+    should.not.exist(saved.body.nostrChallenge);
+    should.not.exist(saved.body.nostrChallengeExpiresAt);
+    (await User.findById(user._id))!.nostrNpub!.should.equal(validNpub);
+    await agent.put('/api/users').send({ firstName: 'Fictional' }).expect(200);
   });
-  it('should trim and canonicalize nostr npub when updating own profile', function (done) {
-    user.roles = ['user'];
-    user
-      .save()
-      .then(() => {
-        should.not.exist(null);
-        agent
-          .post('/api/auth/signin')
-          .send(credentials)
-          .expect(200)
-          .end(function (signinErr) {
-            if (signinErr) {
-              return done(signinErr);
-            }
-            agent
-              .put('/api/users')
-              .send({
-                nostrNpub: '  ' + validNpub.toUpperCase() + '  ',
-              })
-              .expect(200)
-              .end(function (userInfoErr, userInfoRes) {
-                if (userInfoErr) {
-                  return done(userInfoErr);
-                }
-                userInfoRes.body.nostrNpub.should.equal(validNpub);
-                User.findById(user._id)
-                  .then((userFindRes: UserDocument | null) => {
-                    should.not.exist(null);
-                    userFindRes!.nostrNpub!.should.equal(validNpub);
-                    return done();
-                  })
-                  .catch(done);
-              });
-          });
+  it('preserves the Nostroots bridge database write and NIP-05 lookup without profile API proof', async function () {
+    // Match nr-bridge/src/db/mongodb.ts: setNpubForUsername writes directly.
+    await User.collection.updateOne(
+      { username: user.username.toLowerCase() },
+      { $set: { nostrNpub: validNpub, updated: new Date() } },
+    );
+    const lookup = await agent
+      .get('/.well-known/nostr.json')
+      .query({ name: user.username })
+      .expect(200);
+    lookup.body.names[user.username].should.equal(getPublicKey(secretKey));
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const saved = await agent
+      .put('/api/users')
+      .send({ nostrNpub: validNpub, extSitesBW: 'fictional-member' })
+      .expect(200);
+    saved.body.nostrNpub.should.equal(validNpub);
+    saved.body.extSitesBW.should.equal('fictional-member');
+  });
+  it('trims and canonicalises nostr npub when updating own profile', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const challenge = await agent
+      .post('/api/users/nostr/challenge')
+      .send({ nostrNpub: validNpub.toUpperCase() })
+      .expect(200);
+    const saved = await agent
+      .put('/api/users')
+      .send({
+        nostrNpub: '  ' + validNpub.toUpperCase() + '  ',
+        nostrProof: finalizeEvent(challenge.body.event, secretKey),
       })
-      .catch(done);
+      .expect(200);
+    saved.body.nostrNpub.should.equal(validNpub);
   });
   it('should allow saving own existing nostr npub', function (done) {
     user.roles = ['user'];
