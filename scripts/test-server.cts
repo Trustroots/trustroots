@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
-const { spawnSync } =
+const { spawn } =
   require('node:child_process') as typeof import('node:child_process');
+const os = require('node:os') as typeof import('node:os');
 const path = require('node:path') as typeof import('node:path');
 
 const root = path.resolve(__dirname, '..');
@@ -10,7 +11,7 @@ const vitest = path.join(
   'vitest.mjs',
 );
 
-const result = spawnSync(
+const child = spawn(
   process.execPath,
   [
     vitest,
@@ -25,13 +26,29 @@ const result = spawnSync(
   {
     cwd: root,
     stdio: 'inherit',
+    // Own process group, so a signal reaches the forked test processes too.
+    detached: true,
     env: { ...process.env, VITEST_MAX_WORKERS: '1' },
   },
 );
 
-if (result.error) {
-  console.error(result.error.message);
-  process.exit(1);
+// Exit only once Vitest and its forked tests have stopped, so a parent that
+// cleans up databases after cancelling does not race orphaned tests.
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+  process.on(signal, () => {
+    try {
+      process.kill(-(child.pid as number), signal);
+    } catch {
+      // The group is already gone.
+    }
+  });
 }
 
-process.exit(result.status ?? 1);
+child.on('error', error => {
+  console.error(error.message);
+  process.exit(1);
+});
+
+child.on('close', (code, signal) => {
+  process.exit(code ?? (signal ? 128 + os.constants.signals[signal] : 1));
+});
