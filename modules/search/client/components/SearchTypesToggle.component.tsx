@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from 'react';
-
+import React from 'react';
 import { normalizeTypes } from '../utils/search-filters';
 
 export default function SearchTypesToggle({
@@ -9,31 +8,31 @@ export default function SearchTypesToggle({
   types: Array<string | { id: string }>;
   onChange: (types: string[]) => void;
 }) {
-  const [hostsEnabled, setHostsEnabled] = useState(
-    normalizeTypes(types).includes('host'),
-  );
-
-  useEffect(() => {
-    setHostsEnabled(normalizeTypes(types).includes('host'));
-  }, [types]);
-
+  const selected = normalizeTypes(types);
   return (
     <ul className="list-unstyled">
-      <li className="form-group">
-        <label className="tr-switch tr-switch-side-left">
-          <input
-            checked={hostsEnabled}
-            onChange={() => {
-              const nextTypes = hostsEnabled ? ['meet'] : ['host', 'meet'];
-              setHostsEnabled(!hostsEnabled);
-              onChange(nextTypes);
-            }}
-            type="checkbox"
-          />
-          <div className="toggle"></div>
-          Hosts
-        </label>
-      </li>
+      {(['host', 'meet'] as const).map(type => (
+        <li className="form-group" key={type}>
+          <label className="tr-switch tr-switch-side-left">
+            <input
+              checked={selected.includes(type)}
+              disabled={selected.length === 1 && selected.includes(type)}
+              onChange={() =>
+                onChange(
+                  normalizeTypes(
+                    selected.includes(type)
+                      ? selected.filter(value => value !== type)
+                      : [...selected, type],
+                  ),
+                )
+              }
+              type="checkbox"
+            />
+            <div className="toggle"></div>
+            {type === 'host' ? 'Hosts' : 'Meetings'}
+          </label>
+        </li>
+      ))}
     </ul>
   );
 }

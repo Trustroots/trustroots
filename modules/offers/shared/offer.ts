@@ -11,6 +11,7 @@ export interface OfferEditableFields {
   maxGuests?: number;
   location?: OfferLocation;
   validUntil?: string | number | Date;
+  happyToMeet?: boolean;
   showOnlyInMyCircles?: boolean;
 }
 
@@ -57,6 +58,7 @@ export interface OfferPayload<Id = string, Timestamp = string> {
   maxGuests?: number;
   updated?: Timestamp;
   validUntil?: Timestamp;
+  happyToMeet?: boolean;
   showOnlyInMyCircles?: boolean;
 }
 

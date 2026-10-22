@@ -30,7 +30,7 @@ describe('search-filters utils', () => {
     expect(getSearchFilters('user-1')).toEqual(DEFAULT_FILTERS);
   });
 
-  it('normalises host-only cached types to include meetups', () => {
+  it('preserves host-only cached types', () => {
     window.localStorage.setItem(
       'search.filters.user-1',
       JSON.stringify({
@@ -38,7 +38,7 @@ describe('search-filters utils', () => {
       }),
     );
 
-    expect(getSearchFilters('user-1').types).toEqual(['host', 'meet']);
+    expect(getSearchFilters('user-1').types).toEqual(['host']);
   });
 
   it('persists single filter updates', () => {
@@ -63,8 +63,8 @@ describe('search-filters utils', () => {
     expect(normalizeTypes(['meet'])).toEqual(['meet']);
   });
 
-  it('normalises host object filters to include meetups', () => {
-    expect(normalizeTypes([{ id: 'host' }])).toEqual(['host', 'meet']);
+  it('preserves host-only object filters', () => {
+    expect(normalizeTypes([{ id: 'host' }])).toEqual(['host']);
   });
 
   it('returns default filters when cached JSON is invalid', () => {

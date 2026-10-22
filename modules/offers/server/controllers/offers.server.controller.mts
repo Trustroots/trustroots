@@ -312,6 +312,12 @@ function update(
   if (!req.user || !owner._id.equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
+  if (
+    body.happyToMeet !== undefined &&
+    typeof body.happyToMeet !== 'boolean'
+  ) {
+    return res.status(400).send({ message: 'Invalid meeting availability.' });
+  }
   if (!body.location) {
     return res.status(400).send({ message: 'Missing offer location.' });
   }

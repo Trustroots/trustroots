@@ -25,6 +25,7 @@ interface HostOffer {
   noOfferDescription: string;
   location: [number, number] | null;
   maxGuests: number;
+  happyToMeet: boolean;
   showOnlyInMyCircles: boolean;
 }
 
@@ -40,6 +41,7 @@ function defaultHostOffer(): HostOffer {
     noOfferDescription: '',
     location: null,
     maxGuests: 1,
+    happyToMeet: false,
     showOnlyInMyCircles: false,
   };
 }
@@ -150,6 +152,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         description: offer.description,
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
+        happyToMeet: offer.happyToMeet,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
         location: offer.location!,
       };
@@ -263,6 +266,55 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       </ButtonGroup>
                     </fieldset>
 
+                    <div className="checkbox">
+                      <label>
+                        <input
+                          checked={offer.happyToMeet}
+                          onChange={({ target: { checked } }) =>
+                            setOffer(current => ({
+                              ...current,
+                              happyToMeet: checked,
+                            }))
+                          }
+                          type="checkbox"
+                        />
+                        Happy to meet
+                      </label>
+                    </div>
+                    <p role="status">
+                      {offer.status === 'no'
+                        ? offer.happyToMeet
+                          ? 'You will appear on the map for meetings, but not as a host.'
+                          : 'You will not appear on the map for hosting or ongoing meetings.'
+                        : offer.happyToMeet
+                          ? 'You will appear on the map for hosting and meetings.'
+                          : 'You will appear on the map for hosting.'}{' '}
+                      Meetings use this same approximate location and circle
+                      visibility setting. Dated meetups keep their own locations
+                      and dates.
+                    </p>
+                    <fieldset>
+                      <legend>
+                        <h4>Available only in my circles?</h4>
+                      </legend>
+                      <div className="checkbox">
+                        <label>
+                          <input
+                            checked={offer.showOnlyInMyCircles}
+                            onChange={({ target: { checked } }) =>
+                              setOffer(current => ({
+                                ...current,
+                                showOnlyInMyCircles: checked,
+                              }))
+                            }
+                            type="checkbox"
+                          />
+                          People that are not in any of my circles should not
+                          find me.
+                        </label>
+                      </div>
+                    </fieldset>
+
                     {offer.status !== 'no' && (
                       <>
                         <br />
@@ -334,28 +386,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
 
                         <br />
                         <br />
-
-                        <fieldset>
-                          <legend>
-                            <h4>Available only in my circles?</h4>
-                          </legend>
-                          <div className="checkbox">
-                            <label>
-                              <input
-                                checked={offer.showOnlyInMyCircles}
-                                onChange={({ target: { checked } }) =>
-                                  setOffer(current => ({
-                                    ...current,
-                                    showOnlyInMyCircles: checked,
-                                  }))
-                                }
-                                type="checkbox"
-                              />
-                              People that are not in any of my circles should
-                              not find me.
-                            </label>
-                          </div>
-                        </fieldset>
                       </>
                     )}
                   </div>
