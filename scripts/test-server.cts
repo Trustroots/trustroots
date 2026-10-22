@@ -3,6 +3,8 @@
 const { spawn } =
   require('node:child_process') as typeof import('node:child_process');
 const os = require('node:os') as typeof import('node:os');
+const { randomBytes } = require('node:crypto') as typeof import('node:crypto');
+const { MongoClient } = require('mongodb') as typeof import('mongodb');
 const path = require('node:path') as typeof import('node:path');
 
 const root = path.resolve(__dirname, '..');
@@ -10,6 +12,30 @@ const vitest = path.join(
   path.dirname(require.resolve('vitest/package.json')),
   'vitest.mjs',
 );
+
+// The suite drops its database on start, so two runs sharing the default
+// database wipe each other's data mid-test. Give each run its own.
+const ownDatabase =
+  process.env.NODE_ENV === 'test' &&
+  !process.env.TRUSTROOTS_SERVER_TEST_DATABASE
+    ? `trustroots-test-worker-${randomBytes(6).toString('hex')}-1`
+    : undefined;
+
+async function dropOwnDatabase(): Promise<void> {
+  if (!ownDatabase) return;
+  const host = process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost';
+  const client = new MongoClient(`mongodb://${host}`, {
+    serverSelectionTimeoutMS: 5000,
+  });
+  try {
+    await client.connect();
+    await client.db(ownDatabase).dropDatabase();
+  } catch {
+    // The run never reached the database, or it is already gone.
+  } finally {
+    await client.close();
+  }
+}
 
 const child = spawn(
   process.execPath,
@@ -28,7 +54,11 @@ const child = spawn(
     stdio: 'inherit',
     // Own process group, so a signal reaches the forked test processes too.
     detached: true,
-    env: { ...process.env, VITEST_MAX_WORKERS: '1' },
+    env: {
+      ...process.env,
+      VITEST_MAX_WORKERS: '1',
+      ...(ownDatabase ? { TRUSTROOTS_SERVER_TEST_DATABASE: ownDatabase } : {}),
+    },
   },
 );
 
@@ -49,6 +79,7 @@ child.on('error', error => {
   process.exit(1);
 });
 
-child.on('close', (code, signal) => {
+child.on('close', async (code, signal) => {
+  await dropOwnDatabase();
   process.exit(code ?? (signal ? 128 + os.constants.signals[signal] : 1));
 });
