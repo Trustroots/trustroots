@@ -886,6 +886,12 @@ describe('Service: email', function () {
         'Confirm removing your Trustroots profile',
       );
       job(0).data.html!.should.containEql('Review account deletion');
+      job(0).data.html!.should.containEql('Cancel account deletion');
+      job(0).data.html!.should.containEql('/profile/edit/account#remove');
+      job(0).data.text.should.containEql('Cancel account deletion');
+      job(0).data.text.should.containEql('/profile/edit/account#remove');
+      job(0).data.html!.should.containEql('Deletion is permanent');
+      job(0).data.text.should.containEql('Deletion is permanent');
       job(0).data.html!.should.containEql(
         'Your account will not be deleted unless you confirm there.',
       );

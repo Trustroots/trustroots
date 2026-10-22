@@ -255,6 +255,7 @@ function sendRemoveProfile(user: MailUser, callback: MailCallback) {
   const campaign = 'remove-profile';
   const params = service.addEmailBaseTemplateParams({
     subject: 'Confirm removing your Trustroots profile',
+    urlCancel: url + '/profile/edit/account#remove',
     name: user.displayName,
     email: user.email,
     utmCampaign: campaign,
