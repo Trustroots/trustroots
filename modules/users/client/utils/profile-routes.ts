@@ -95,7 +95,8 @@ export function getProfileEditTabPath(tab: ProfileEditTab): string {
 }
 
 export function isMobileProfileViewport() {
-  return window.innerWidth <= 480;
+  // Match the visible-xs profile navigation and hidden-xs desktop content.
+  return window.innerWidth < 768;
 }
 
 export function getMobileProfileRedirect(
