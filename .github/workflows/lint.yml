@@ -14,13 +14,37 @@ permissions:
 jobs:
   docs-apps:
     name: Check Android download pages
+    timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: '.nvmrc'
-      - run: node --test scripts/ci/latest-apk.test.mts
+      - run: node scripts/ci/build-docs-scripts.mts
+      - run: node --test scripts/ci/latest-apk.test.mts scripts/ci/zapstore-publisher.test.mts
+      - name: Check whether docs browser tests are needed
+        id: browser
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git fetch --no-tags --depth=1 origin "$BASE_SHA"
+          if git diff --quiet FETCH_HEAD HEAD -- docs scripts/android scripts/ci/latest-apk.test.mts scripts/ci/zapstore-publisher.test.mts scripts/ci/android-release-metadata.mts scripts/ci/docs-playwright.config.mts scripts/ci/build-docs-scripts.mts tsconfig.docs.json tests/docs .github/workflows/lint.yml; then
+            echo 'run=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'run=true' >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+        if: steps.browser.outputs.run == 'true'
+      - name: Install docs browser test dependencies
+        if: steps.browser.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install Chromium
+        if: steps.browser.outputs.run == 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Test browser publishing
+        if: steps.browser.outputs.run == 'true'
+        run: pnpm exec playwright test --config scripts/ci/docs-playwright.config.mts
 
   changes:
     uses: ./.github/workflows/ci-changes.yml
