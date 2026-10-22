@@ -67,7 +67,7 @@ const load: LoadHook = (url, context, nextLoad) => {
           typeof loaded.source === 'string'
             ? loaded.source
             : new TextDecoder().decode(loaded.source as ArrayBuffer),
-          { mode: 'strip', sourceUrl: mock.filename },
+          { mode: 'strip', sourceUrl: pathToFileURL(mock.filename).href },
         )
       : loaded.source;
     return { format: 'module', source, shortCircuit: true };

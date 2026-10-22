@@ -95,4 +95,24 @@ describe('Users Passport session configuration', () => {
     );
     should(await restore({ id: 'deleted-id', authVersion: 0 })).equal(null);
   });
+
+  it('reports a failed session lookup without restoring a user', async () => {
+    const failure = new Error('Session lookup failed');
+    sinon.stub(User, 'findOne').rejects(failure);
+    const handlers = await installSessionHandlers();
+    if (!handlers.deserialize)
+      throw new Error('Passport deserialize handler was not installed');
+    const deserialize = handlers.deserialize;
+    const result = await new Promise<{
+      error: Error | null;
+      user: SessionUser | false | null;
+    }>(resolve =>
+      deserialize({ id: 'member-id', authVersion: 1 }, (error, user) =>
+        resolve({ error, user }),
+      ),
+    );
+
+    should(result.error).equal(failure);
+    should(result.user).equal(false);
+  });
 });
