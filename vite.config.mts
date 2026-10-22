@@ -11,8 +11,6 @@ import clientAliases from './config/client/aliases.mts';
 import { rtlStylesheetPlugin } from './config/vite/rtl-stylesheet.mts';
 
 const require = createRequire(import.meta.url);
-const inject =
-  require('@rollup/plugin-inject') as typeof import('@rollup/plugin-inject').default;
 const { aliases, commonJsAliases } = clientAliases;
 const root = fileURLToPath(new URL('.', import.meta.url));
 const apiTarget = process.env.TRUSTROOTS_API_URL || 'http://localhost:3001';
@@ -122,19 +120,7 @@ export default defineConfig({
   root,
   // Express owns public files; copying public/ into public/assets would nest it.
   publicDir: false,
-  plugins: [
-    legacyJsx,
-    legacyCssImports,
-    rtlStylesheetPlugin(),
-    react(),
-    inject({
-      include:
-        /\/(?:modules|config\/client|config\/vite)\/.*\.(?:[cm]?js|[jt]sx?)(?:\?.*)?$/,
-      L: 'leaflet',
-      moment: 'moment',
-      process: 'process/browser',
-    }),
-  ],
+  plugins: [legacyJsx, legacyCssImports, rtlStylesheetPlugin(), react()],
   resolve: {
     alias: {
       ...aliases,
@@ -189,7 +175,8 @@ export default defineConfig({
     sourcemap: true,
     manifest: 'vite-manifest.json',
     cssCodeSplit: false,
-    rollupOptions: {
+    rolldownOptions: {
+      transform: { inject: { process: 'process/browser' } },
       input: {
         'react-main': resolve(root, 'config/vite/react-main.tsx'),
       },
