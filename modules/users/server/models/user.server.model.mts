@@ -170,8 +170,7 @@ const UserSchema = new Schema<
   },
   lastName: {
     type: String,
-    required: true,
-    validate: [validateLocalStrategyProperty, 'Please fill in your last name.'],
+    required: false,
     set: setPlainTextField,
   },
   /* This is generated in Schema pre-save hook below */
@@ -494,7 +493,10 @@ UserSchema.pre(
 
       // Generate `displayName`
       if (user.isModified('firstName') || user.isModified('lastName')) {
-        user.displayName = user.firstName + ' ' + user.lastName;
+        user.displayName = [user.firstName, user.lastName]
+          .filter((name): name is string => Boolean(name?.trim()))
+          .map(name => name.trim())
+          .join(' ');
       }
     }
 

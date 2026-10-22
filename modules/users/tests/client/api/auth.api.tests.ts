@@ -42,6 +42,7 @@ describe('auth.api', () => {
       authApi.signup({
         ageConfirmed: true,
         email: 'ada@example.com',
+        firstName: 'Ada',
         password: 'fictional-password',
         username: 'ada',
       }),

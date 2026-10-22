@@ -248,7 +248,6 @@ export default function SignupPage() {
   const isStepOneValid =
     credentials.ageConfirmed &&
     credentials.firstName &&
-    credentials.lastName &&
     credentials.email &&
     credentials.password.length >= 8 &&
     Object.keys(usernameErrors).length === 0 &&
@@ -405,14 +404,14 @@ export default function SignupPage() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="lastName" className="col-sm-4 control-label">
-                    Last Name
+                    {t('Last name (optional)')}
                   </label>
                   <div className="col-sm-8">
                     <input
                       type="text"
-                      required
                       id="lastName"
                       name="lastName"
+                      aria-describedby="lastNameHelp"
                       className="form-control input-lg"
                       value={credentials.lastName}
                       disabled={isLoading}
@@ -420,6 +419,11 @@ export default function SignupPage() {
                         updateCredential('lastName', event.target.value)
                       }
                     />
+                    <p className="help-block" id="lastNameHelp">
+                      {t(
+                        'You can use a nickname. You don’t need to share your full name.',
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="form-group">

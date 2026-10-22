@@ -8,6 +8,8 @@ export interface SigninCredentials {
 export interface SignupCredentials extends SigninCredentials {
   ageConfirmed: boolean;
   email: string;
+  firstName: string;
+  lastName?: string;
   [key: string]: unknown;
 }
 

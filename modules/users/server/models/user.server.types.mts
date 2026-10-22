@@ -28,7 +28,7 @@ export interface UserProviderData {
 export interface UserServerRecord {
   _id: Types.ObjectId;
   firstName: string;
-  lastName: string;
+  lastName?: string;
   displayName?: string;
   email: string;
   emailTemporary?: string;
