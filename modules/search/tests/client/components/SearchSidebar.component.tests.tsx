@@ -5,11 +5,12 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import SearchSidebar from '@/modules/search/client/components/SearchSidebar.component';
 
-jest.mock('use-debounce', () => {
+jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
   return {
-    useDebouncedCallback: <Callback extends (...args: never[]) => unknown>(
+    __esModule: true,
+    default: <Callback extends (...args: never[]) => unknown>(
       callback: Callback,
     ): Callback => {
       const callbackRef = React.useRef(callback);

@@ -9,6 +9,7 @@ type SessionConfig = { https: boolean; sessionProxy: boolean };
 const config: SessionConfig = require('./../../../../config/config.mts');
 
 type ExpressConfig = {
+  initMiddleware(app: import('express').Application): void;
   initSession(app: import('express').Application, options: object): void;
 };
 type SessionData = Record<string, unknown>;
@@ -78,6 +79,7 @@ describe('Session configuration', function () {
       },
     );
 
+    expressConfig.initMiddleware(app);
     expressConfig.initSession(app, {});
     app.get('/visit', (req, res) => res.send('visited'));
     app.get('/change', (req, res) => {
@@ -86,6 +88,12 @@ describe('Session configuration', function () {
       };
       sessionRequest.session.value = 'saved';
       res.send('changed');
+    });
+    app.get('/read', (req, res) => {
+      const sessionRequest = req as import('express').Request & {
+        session: SessionData;
+      };
+      res.send(sessionRequest.session.value);
     });
     return app;
   }
@@ -112,6 +120,15 @@ describe('Session configuration', function () {
     cookie.should.match(/SameSite=Lax/);
     cookie.should.not.match(/; Secure(?:;|$)/);
     store.setCalls.should.equal(1);
+  });
+
+  it('restores a changed session from its cookie through the middleware stack', async function () {
+    config.https = false;
+    config.sessionProxy = false;
+    const agent = request.agent(createApp());
+    await agent.get('/change').expect(200);
+    const response = await agent.get('/read').expect(200);
+    response.text.should.equal('saved');
   });
 
   it('ignores forwarded HTTPS unless the session proxy is explicitly trusted', async function () {

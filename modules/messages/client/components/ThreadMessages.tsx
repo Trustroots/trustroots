@@ -1,7 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
 import moment from 'moment';
-import { useMediaQuery } from 'react-responsive';
 import { useTranslation } from 'react-i18next';
 
 import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessages';
@@ -21,6 +20,7 @@ const MessagesContainer = styled.div`
 `;
 
 type ThreadMessagesProps = {
+  isExtraSmall: boolean;
   user: MessageUser;
   otherUser: MessageUser;
   messages: Message[];
@@ -29,13 +29,13 @@ type ThreadMessagesProps = {
 };
 
 export default function ThreadMessages({
+  isExtraSmall,
   user,
   otherUser,
   messages,
   onFetchMore,
 }: ThreadMessagesProps) {
   const { t } = useTranslation('messages');
-  const isExtraSmall = useMediaQuery({ maxWidth: 768 - 1 });
   return (
     <InfiniteMessages
       component={

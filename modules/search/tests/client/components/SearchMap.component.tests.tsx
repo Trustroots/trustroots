@@ -135,8 +135,9 @@ jest.mock('@/modules/offers/client/api/offers.api', () => ({
     mockQueryOffers(query),
 }));
 
-jest.mock('use-debounce', () => ({
-  useDebouncedCallback: <Callback extends (...args: never[]) => unknown>(
+jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => ({
+  __esModule: true,
+  default: <Callback extends (...args: never[]) => unknown>(
     callback: Callback,
   ) => callback,
 }));

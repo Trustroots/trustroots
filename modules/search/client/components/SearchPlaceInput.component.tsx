@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
+import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
 import type { MapBounds, MapPoint } from '../utils/location';

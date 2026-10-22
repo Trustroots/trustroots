@@ -205,6 +205,9 @@ jest.mock('@/modules/core/client/react-app/ReactFooter', () => {
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
+jest.mock('@/modules/messages/client/utils/use-extra-small', () => ({
+  useExtraSmall: () => true,
+}));
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock('@/modules/contacts/client/api/contacts.api', () => ({
   getByUserId: jest.fn(async () => null),
