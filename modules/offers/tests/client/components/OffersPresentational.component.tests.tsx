@@ -34,6 +34,19 @@ const hostingOffer: Offer = {
 };
 
 describe('<OffersPresentational />', () => {
+  it('shows meeting availability beside the unavailable hosting state', () => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        offer={{ status: 'no', happyToMeet: true }}
+      />,
+    );
+    expect(screen.getByText('Happy to meet')).toBeVisible();
+    expect(screen.getByText('Cannot host currently')).toBeVisible();
+    expect(screen.queryByText('Can host')).not.toBeInTheDocument();
+  });
+
   it('links the owner directly to the location editor', () => {
     render(
       <OffersPresentational

@@ -149,6 +149,9 @@ export class OffersPresentational extends Component<
       <div className="panel panel-default offer-view">
         <div className="panel-heading">
           {t('Accommodation')}
+          {offer.happyToMeet && (
+            <span className="label btn-offer-meet">{t('Happy to meet')}</span>
+          )}
           <OfferStatusButton
             isOwnOffer={isOwnOffer}
             status={offer?.status}

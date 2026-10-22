@@ -91,6 +91,35 @@ describe('<SearchSidebarResults />', () => {
     );
   });
 
+  it('shows a non-host meeting result without advertising hosting', () => {
+    const meeting: SearchResultOffer = {
+      _id: 'ongoing-meeting',
+      description: 'An old hosting description.',
+      noOfferDescription: 'Available for a walk only.',
+      type: 'host',
+      status: 'no',
+      happyToMeet: true,
+      user: { username: 'fictional-member' },
+    };
+    const { rerender } = render(
+      <SearchSidebarResults offers={[meeting]} onCloseSidebar={jest.fn()} />,
+    );
+    expect(
+      screen.getByRole('button', {
+        name: 'Open meet offer from fictional-member',
+      }),
+    ).toHaveTextContent('Cannot host currently · Happy to meet');
+    rerender(
+      <SearchSidebarResults offer={meeting} onCloseSidebar={jest.fn()} />,
+    );
+    expect(screen.getByText('Happy to meet')).toBeVisible();
+    expect(screen.getByLabelText('Hosting offer: no')).toBeVisible();
+    expect(screen.getByText('Available for a walk only.')).toBeVisible();
+    expect(
+      screen.queryByText('An old hosting description.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('lists visible offers and opens the selected offer details', () => {
     const onOfferSelect = jest.fn();
     const visibleOffer: SearchResultOffer = {

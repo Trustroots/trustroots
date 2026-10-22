@@ -89,6 +89,108 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await signInViaApi(page, request, berlin);
   });
 
+  test('a non-host can update location and opt into ongoing meeting discovery', async ({
+    page,
+  }) => {
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [original] = await findOffersByUser(memberId, { type: 'host' });
+    expectPresent(original);
+    try {
+      const prepare = await page.request.put(`/api/offers/${original._id}`, {
+        data: { status: 'no', happyToMeet: false, location: original.location },
+      });
+      expect(prepare.ok()).toBeTruthy();
+      await page.goto('/offer/host');
+      await expect(
+        page.getByRole('checkbox', { name: 'Happy to meet' }),
+      ).not.toBeChecked();
+      await page.getByRole('checkbox', { name: 'Happy to meet' }).check();
+      await expect(
+        page.getByText(/for meetings, but not as a host/),
+      ).toBeVisible();
+      await page.getByRole('tab', { name: 'Location' }).click();
+      await page.evaluate(() => {
+        Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
+          publicKey: 'test-geocoding-token',
+        });
+      });
+      await page.route('https://api.mapbox.com/geocoding/**', route =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            features: [
+              {
+                id: 'place.fictional',
+                text: 'Example meeting town',
+                center: [12, 51],
+              },
+            ],
+          }),
+        }),
+      );
+      await page
+        .getByLabel('Search places', { exact: true })
+        .fill('Example meeting town');
+      await page.getByRole('button', { name: 'Example meeting town' }).click();
+      const saved = page.waitForResponse(
+        response =>
+          response.url().endsWith(`/api/offers/${original._id}`) &&
+          response.request().method() === 'PUT',
+      );
+      await page.getByRole('button', { name: 'Save and Exit' }).click();
+      expect((await saved).ok()).toBeTruthy();
+      await page.goto(`/profile/${berlin.username}/accommodation`);
+      await expect(
+        page.getByText('Happy to meet', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByText('Cannot host currently', { exact: true }),
+      ).toBeVisible();
+      const own = await page.request.get(`/api/offers/${original._id}`);
+      const ownOffer = await own.json();
+      expect(ownOffer.location[0]).toBeCloseTo(51, 2);
+      expect(ownOffer.location[1]).toBeCloseTo(12, 2);
+      expect(ownOffer.status).toBe('no');
+      const discover = async (types: string[]) => {
+        const result = await page.request.get(
+          `/api/offers${EUROPE_OFFERS_QUERY}`,
+          { params: { filters: JSON.stringify({ types }) } },
+        );
+        expect(result.ok()).toBeTruthy();
+        return (await result.json()).features.find(
+          (feature: { properties: { id: string } }) =>
+            feature.properties.id === original._id.toString(),
+        );
+      };
+      const meeting = await discover(['meet']);
+      expect(meeting.properties).toMatchObject({
+        type: 'meet',
+        status: 'yes',
+        offer: 'meet-yes',
+      });
+      expect(meeting.geometry.coordinates).not.toEqual([
+        ownOffer.location[1],
+        ownOffer.location[0],
+      ]);
+      expect(await discover(['host'])).toBeUndefined();
+      await page.goto('/offer/host');
+      await page.getByRole('checkbox', { name: 'Happy to meet' }).uncheck();
+      const disabled = page.waitForResponse(
+        response =>
+          response.url().endsWith(`/api/offers/${original._id}`) &&
+          response.request().method() === 'PUT',
+      );
+      await page.getByRole('button', { name: 'Save and Exit' }).click();
+      expect((await disabled).ok()).toBeTruthy();
+      expect(await discover(['meet'])).toBeUndefined();
+    } finally {
+      const restored = await page.request.put(`/api/offers/${original._id}`, {
+        data: { ...original, happyToMeet: original.happyToMeet === true },
+      });
+      expect(restored.ok()).toBeTruthy();
+    }
+  });
+
   test('hosting tab deep links preserve edits through browser history', async ({
     page,
   }) => {
