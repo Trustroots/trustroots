@@ -16,6 +16,20 @@ import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
 jest.mock('@/modules/experiences/client/api/experiences.api');
+jest.mock('@/modules/contacts/client/components/YourConnection', () => ({
+  __esModule: true,
+  default: ({
+    viewer,
+    member,
+  }: {
+    viewer: { _id: string };
+    member: { _id: string };
+  }) => (
+    <div data-testid="your-connection">
+      Connection for {viewer._id} and {member._id}
+    </div>
+  ),
+}));
 const fetchProfile = jest.mocked(usersApi.fetch);
 const getContact = jest.mocked(contactsApi.getByUserId);
 const listContacts = jest.mocked(contactsApi.list);
@@ -320,6 +334,9 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('About Bob Example')).toBeVisible();
     expect(screen.getByText('Offers panel')).toBeVisible();
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
+    expect(screen.getByTestId('your-connection')).toHaveTextContent(
+      `Connection for ${authUser._id} and ${profile._id}`,
+    );
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
   });
 

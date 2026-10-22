@@ -20,7 +20,7 @@ import ThreadMessages from '@/modules/messages/client/components/ThreadMessages'
 import QuickReply from '@/modules/messages/client/components/QuickReply';
 import Flashcard from '@/modules/messages/client/components/Flashcard';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import ReferenceThread from '@/modules/references-thread/client/components/ReferenceThread';
+import YourConnection from '@/modules/contacts/client/components/YourConnection';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type { Message, MessageUser, PageParams } from '../api/messages.api';
@@ -387,6 +387,14 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
           {!isFetching && (
             <ThreadContainer>
               {isFetchingMore && <Loading />}
+              {otherUser && !removed && (
+                <details style={{ flexShrink: 0 }}>
+                  <summary>{t<string>('Your connection')}</summary>
+                  <div style={{ maxHeight: '35vh', overflowY: 'auto' }}>
+                    <YourConnection viewer={user} member={otherUser} />
+                  </div>
+                </details>
+              )}
               {messages.length === 0 ? (
                 <>
                   <FlexGrow />
@@ -457,9 +465,6 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 }
               />
             </QueryClientProvider>
-            {messages.length > 0 && (
-              <ReferenceThread userToId={otherUser._id} />
-            )}
             <ReportMember
               className="btn btn-sm btn-default"
               username={otherUser.username as string}

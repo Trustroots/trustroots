@@ -246,7 +246,7 @@ jest.mock(
 );
 jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
 jest.mock(
-  '@/modules/references-thread/client/components/ReferenceThread',
+  '@/modules/contacts/client/components/YourConnection',
   () => () => null,
 );
 jest.mock(
