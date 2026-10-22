@@ -9,6 +9,13 @@ import type { ClientOwnProfile } from '../types.js';
 
 export type UserUpdate = UpdateProfileRequest;
 
+export async function nostrChallenge(nostrNpub: string) {
+  const { data } = await axios.post<{
+    event: import('nostr-tools').EventTemplate;
+  }>('/api/users/nostr/challenge', { nostrNpub });
+  return data.event;
+}
+
 export interface PasswordChangeResult {
   user: ClientOwnProfile;
 }
