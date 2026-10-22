@@ -1,6 +1,6 @@
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';
-import mongoose, { type Types } from 'mongoose';
+import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import moment from 'moment';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
@@ -208,6 +208,28 @@ function visibleMemberMatch(
 
 const DISCOVERY_QUERY_TIMEOUT_MS = 1000;
 
+function visibleMemberStages(
+  req: MemberRequest,
+  excludedIDs: Types.ObjectId[],
+  sort: Record<string, 1 | -1>,
+): PipelineStage[] {
+  return [
+    {
+      $lookup: {
+        from: 'users',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'user',
+      },
+    },
+    { $unwind: '$user' },
+    { $match: visibleMemberMatch(req, excludedIDs, 'user.') },
+    { $sort: sort },
+    { $limit: 20 },
+    { $project: userMiniService.userMiniProjection('$user') },
+  ];
+}
+
 async function listCircleContacts(req: MemberRequest): Promise<MemberView[]> {
   const selfId = req.user._id;
   return Contact.aggregate<MemberView>([
@@ -225,19 +247,7 @@ async function listCircleContacts(req: MemberRequest): Promise<MemberView[]> {
       },
     },
     { $group: { _id: '$userId' } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'user',
-      },
-    },
-    { $unwind: '$user' },
-    { $match: visibleMemberMatch(req, [], 'user.') },
-    { $sort: { 'user.displayName': 1, 'user._id': 1 } },
-    { $limit: 20 },
-    { $project: userMiniService.userMiniProjection('$user') },
+    ...visibleMemberStages(req, [], { 'user.displayName': 1, 'user._id': 1 }),
   ])
     .option({ maxTimeMS: DISCOVERY_QUERY_TIMEOUT_MS })
     .exec();
@@ -261,19 +271,7 @@ async function listCircleRecommenders(
     },
     { $sort: { created: -1 } },
     { $group: { _id: '$userFrom', created: { $first: '$created' } } },
-    {
-      $lookup: {
-        from: 'users',
-        localField: '_id',
-        foreignField: '_id',
-        as: 'user',
-      },
-    },
-    { $unwind: '$user' },
-    { $match: visibleMemberMatch(req, excludedIDs, 'user.') },
-    { $sort: { created: -1, _id: 1 } },
-    { $limit: 20 },
-    { $project: userMiniService.userMiniProjection('$user') },
+    ...visibleMemberStages(req, excludedIDs, { created: -1, _id: 1 }),
   ])
     .option({ maxTimeMS: DISCOVERY_QUERY_TIMEOUT_MS })
     .exec();
