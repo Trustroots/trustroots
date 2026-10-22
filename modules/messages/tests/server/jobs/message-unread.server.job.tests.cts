@@ -540,6 +540,106 @@ describe('Job: message unread', function () {
       .catch(err => done(err));
   });
 
+  context('messages straddling the reminder cutoff', function () {
+    beforeEach(function () {
+      sinon.useFakeTimers({ now: 1800000000000, toFake: ['Date'] });
+    });
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    function runJob(): Promise<void> {
+      return new Promise((resolve, reject) => {
+        messageUnreadJobHandler({}, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+    }
+
+    it('waits for the newest pending message and sends the whole batch only once', async function () {
+      message.created = moment().subtract({ minutes: 11 }).toDate();
+      await message.save();
+      const newer = await new Message({
+        ..._message,
+        created: moment().subtract({ minutes: 6 }).toDate(),
+      }).save();
+
+      await runJob();
+      jobs.length.should.equal(0);
+      required(
+        (await Message.findById(message._id))?.notificationCount,
+      ).should.equal(0);
+
+      sinon.clock.tick(5 * 60 * 1000);
+      await runJob();
+      jobs.length.should.equal(1);
+      for (const id of [message._id, newer._id]) {
+        required((await Message.findById(id))?.notificationCount).should.equal(
+          1,
+        );
+      }
+
+      sinon.clock.tick(5 * 60 * 1000);
+      await runJob();
+      jobs.length.should.equal(1);
+    });
+
+    it('also groups staggered follow-up reminders', async function () {
+      message.created = moment().subtract({ hours: 25 }).toDate();
+      message.notificationCount = 1;
+      await message.save();
+      const newer = await new Message({
+        ..._message,
+        notificationCount: 1,
+        created: moment().subtract({ hours: 23, minutes: 59 }).toDate(),
+      }).save();
+
+      await runJob();
+      jobs.length.should.equal(0);
+      sinon.clock.tick(2 * 60 * 1000);
+      await runJob();
+      jobs.length.should.equal(1);
+      for (const id of [message._id, newer._id]) {
+        required((await Message.findById(id))?.notificationCount).should.equal(
+          2,
+        );
+      }
+      await runJob();
+      jobs.length.should.equal(1);
+    });
+
+    it('does not let read or already notified messages delay the first reminder', async function () {
+      message.created = moment().subtract({ minutes: 11 }).toDate();
+      await message.save();
+      await Message.create([
+        { ..._message, read: true, created: new Date() },
+        { ..._message, notificationCount: 1, created: new Date() },
+      ]);
+
+      await runJob();
+      jobs.length.should.equal(1);
+      required(
+        (await Message.findById(message._id))?.notificationCount,
+      ).should.equal(1);
+    });
+
+    it('does not let fresh messages in another conversation delay a reminder', async function () {
+      message.created = moment().subtract({ minutes: 11 }).toDate();
+      await message.save();
+      await new Message({
+        ..._message,
+        userFrom: userToId,
+        userTo: userFromId,
+        created: new Date(),
+      }).save();
+
+      await runJob();
+      jobs.length.should.equal(1);
+      jobs[0].data.to.address.should.equal(_userTo.email);
+    });
+  });
+
   context('further notifications configured', function () {
     // helpful function to convert readable (momentjs) duration to milliseconds
     function milliseconds(duration: moment.DurationInputArg1) {
