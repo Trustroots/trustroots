@@ -197,6 +197,7 @@ export default function TribeDetailPage({
                   <RichText
                     className="lead tribe-meta"
                     content={tribe.description}
+                    allowLinks
                   />
                 )}
                 {!user && (
@@ -217,6 +218,14 @@ export default function TribeDetailPage({
                 )}
                 {user ? (
                   <div className="tribe-actions-group">
+                    {user.roles?.includes('admin') && (
+                      <a
+                        className="btn btn-default"
+                        href={`/admin/circles/${encodeURIComponent(tribe.slug)}`}
+                      >
+                        {t('Edit circle') as string}
+                      </a>
+                    )}
                     <JoinButton
                       tribe={tribe}
                       user={user}

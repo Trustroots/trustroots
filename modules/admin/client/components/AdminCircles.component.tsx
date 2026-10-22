@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
 import AdminHeader from './AdminHeader.component';
+import RichText from '@/modules/core/client/components/RichText';
 
 const suggestedColours = [
   '1e3a8a',
@@ -53,7 +54,13 @@ function imageUrl(circle: AdminCircle) {
   }`;
 }
 
-export default function AdminCircles() {
+export default function AdminCircles({
+  circleSlug,
+  onNavigate,
+}: {
+  circleSlug?: string;
+  onNavigate?: (path: string) => void;
+}) {
   const [sort, setSort] = useState<{
     key: 'label' | 'description' | 'count';
     descending: boolean;
@@ -72,8 +79,26 @@ export default function AdminCircles() {
   }
 
   useEffect(() => {
-    loadCircles().catch(() => setError('Could not load circles.'));
-  }, []);
+    let active = true;
+    getCircles()
+      .then(data => {
+        if (!active) return;
+        setCircles(data);
+        const selected = circleSlug
+          ? data.find(item => item.slug === circleSlug)
+          : emptyCircle;
+        setCircle(selected ? { ...selected } : emptyCircle);
+        clearSelectedImage();
+        setMessage(null);
+        setError(selected ? null : 'Circle not found.');
+      })
+      .catch(() => {
+        if (active) setError('Could not load circles.');
+      });
+    return () => {
+      active = false;
+    };
+  }, [circleSlug]);
 
   function clearSelectedImage() {
     setImage(null);
@@ -85,6 +110,11 @@ export default function AdminCircles() {
     clearSelectedImage();
     setMessage(null);
     setError(null);
+    onNavigate?.(
+      selected.slug
+        ? `/admin/circles/${encodeURIComponent(selected.slug)}`
+        : '/admin/circles',
+    );
   }
 
   async function submit(event: React.FormEvent<HTMLFormElement>) {
@@ -99,6 +129,9 @@ export default function AdminCircles() {
       setCircle(saved);
       clearSelectedImage();
       setMessage('Circle saved.');
+      if (saved.slug && saved.slug !== circleSlug) {
+        onNavigate?.(`/admin/circles/${encodeURIComponent(saved.slug)}`);
+      }
       try {
         await loadCircles();
       } catch {
@@ -257,6 +290,13 @@ export default function AdminCircles() {
             </div>
           </div>
           <div className="col-md-5">
+            {circle.slug && (
+              <p>
+                <a href={`/circles/${encodeURIComponent(circle.slug)}`}>
+                  View circle
+                </a>
+              </p>
+            )}
             <form onSubmit={submit}>
               <div className="form-group">
                 <label htmlFor="circle-label">Name</label>
@@ -285,6 +325,10 @@ export default function AdminCircles() {
                   value={circle.description || ''}
                 />
                 <p className="help-block">Up to 4000 characters.</p>
+                <section aria-label="Description preview">
+                  <h3>Description preview</h3>
+                  <RichText content={circle.description || ''} allowLinks />
+                </section>
               </div>
               <div className="row">
                 <div className="col-sm-4 form-group">

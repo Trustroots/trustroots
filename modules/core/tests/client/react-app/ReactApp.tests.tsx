@@ -72,8 +72,21 @@ jest.mock(
 jest.mock('@/modules/admin/client/components/AdminCircles.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockAdminCircles() {
-    return <main>Admin circles route</main>;
+  function MockAdminCircles({
+    circleSlug,
+    onNavigate,
+  }: {
+    circleSlug?: string;
+    onNavigate: (path: string) => void;
+  }) {
+    return (
+      <main>
+        Admin circles route <span>{circleSlug}</span>
+        <button onClick={() => onNavigate('/admin/circles/walkers')}>
+          Select Walkers
+        </button>
+      </main>
+    );
   }
 
   return MockAdminCircles;
@@ -456,6 +469,19 @@ describe('<ReactApp />', () => {
     });
     expect(await screen.findByText('Admin circles route')).toBeInTheDocument();
     expect(document.title).toBe('Admin - Circles - Trustroots');
+  });
+
+  it('navigates to the selected circle editor with its slug', async () => {
+    renderApp('/admin/circles', {
+      user: { roles: ['user', 'admin'], username: 'admin' },
+    });
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Select Walkers' }),
+    );
+    expect(await screen.findByText('walkers')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(document.title).toBe('Admin - Circle - Trustroots'),
+    );
   });
 
   it('honors headerHidden and noScrollingTop route metadata', async () => {

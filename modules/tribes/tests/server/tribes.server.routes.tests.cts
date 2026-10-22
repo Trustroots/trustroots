@@ -107,13 +107,17 @@ describe('Tribe CRUD tests', function () {
   });
   afterEach(utils.clearDatabase);
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
-    tribe.description =
-      '<p>Sample <b>formatted</b> text</p><iframe src="about:blank"></iframe>';
+    tribe.description = [
+      '<p>Sample <b>formatted</b> <a href="https://example.org/">linked</a> text</p>',
+      '<a href="javascript:alert(1)">unsafe</a><iframe src="about:blank"></iframe>',
+    ].join('');
     await tribe.save();
     const catalogue = await agent.get('/api/tribes').expect(200);
     const detail = await agent.get(`/api/tribes/${tribe.slug}`).expect(200);
     for (const circle of [catalogue.body[0], detail.body]) {
-      circle.description.should.equal('<p>Sample <b>formatted</b> text</p>');
+      circle.description.should.equal(
+        '<p>Sample <b>formatted</b> <a href="https://example.org/">linked</a> text</p>',
+      );
     }
   });
   it('builds catalogue page links with ordinary nested query fields', async () => {

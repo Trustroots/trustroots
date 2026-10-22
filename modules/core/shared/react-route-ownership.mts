@@ -436,6 +436,11 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     path: '/admin/circles',
     title: 'Admin - Circles',
   },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/circles/:circle',
+    title: 'Admin - Circle',
+  },
 ];
 
 export const REACT_OWNED_PATHS = REACT_ROUTE_POLICIES.map(route => route.path);

@@ -1,6 +1,12 @@
+import sharp from 'sharp';
+
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 
-import { SEEDED_ADMIN, signInViaApi } from '../../support/helpers.mts';
+import {
+  SEEDED_ADMIN,
+  SEEDED_MEMBERS,
+  signInViaApi,
+} from '../../support/helpers.mts';
 
 test.describe('admin circles feature coverage', () => {
   test('admin can compare circles and sort catalogue columns', async ({
@@ -93,9 +99,27 @@ test.describe('admin circles feature coverage', () => {
       'Admin circles page loads.',
       'Admin can create a circle.',
       'Admin can edit an existing circle.',
+      'Admin circle selection follows a reloadable, navigable slug URL.',
+      'Circle descriptions preview and display safe clickable links.',
+      'Admins can move between public circle pages and circle editing.',
     ]);
 
     const label = `E2E Circle ${Date.now()}`;
+    const description =
+      'Read <a href="https://example.test/circle-info" onclick="alert(1)">the circle guide</a>. <a href="javascript:alert(1)">unsafe link</a>';
+    const persistedDescription =
+      'Read <a href="https://example.test/circle-info">the circle guide</a>. ';
+    const circleSlug = label.toLowerCase().replaceAll(' ', '-');
+    const smallPng = await sharp({
+      create: {
+        width: 8,
+        height: 8,
+        channels: 3,
+        background: '#123456',
+      },
+    })
+      .png()
+      .toBuffer();
     await page.goto('/admin/circles');
     await expect(
       page
@@ -104,30 +128,93 @@ test.describe('admin circles feature coverage', () => {
     ).toBeVisible();
     await page.getByRole('button', { name: 'New circle' }).click();
     await page.getByLabel('Name', { exact: true }).fill(label);
-    await page.getByLabel('Public').uncheck();
+    await page.locator('#circle-description').fill(description);
+    await page.getByLabel('Public').check();
+    const preview = page.getByRole('region', { name: 'Description preview' });
+    await expect(
+      preview.getByRole('link', { name: 'the circle guide' }),
+    ).toHaveAttribute('href', 'https://example.test/circle-info');
+    await expect(
+      preview.getByRole('link', { name: 'unsafe link' }),
+    ).toHaveCount(0);
+    await page.screenshot({
+      path: testInfo.outputPath('circle-description-preview.png'),
+      fullPage: true,
+    });
+    await page.locator('#circle-image').setInputFiles({
+      name: 'circle.png',
+      mimeType: 'image/png',
+      buffer: smallPng,
+    });
     const saved = page.waitForResponse(
       response =>
         response.url().includes('/api/admin/circles') &&
         ['POST', 'PUT'].includes(response.request().method()),
     );
     await page.getByRole('button', { name: 'Save circle' }).click();
-    expect((await saved).ok()).toBeTruthy();
-    await expect(page.getByText('Circle saved.')).toBeVisible();
+    const saveResponse = await saved;
+    expect(saveResponse.ok(), await saveResponse.text()).toBeTruthy();
+    await expect(page).toHaveURL(new RegExp(`/admin/circles/${circleSlug}$`));
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue(label);
     await expect(
       page.getByRole('button', { name: new RegExp(label) }),
     ).toBeVisible();
+    await expect(page.getByAltText('Current circle')).toBeVisible();
 
+    // Loading the slug directly selects the same circle. Selection changes
+    // browser history and restores the selected form on back/forward.
+    await page.reload();
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue(label);
+    await expect(page.locator('#circle-description')).toHaveValue(
+      persistedDescription,
+    );
+    await expect(
+      page
+        .getByRole('region', { name: 'Description preview' })
+        .getByRole('link', { name: 'the circle guide' }),
+    ).toHaveAttribute('href', 'https://example.test/circle-info');
+    await page.goto('/admin/circles');
     await page.getByRole('button', { name: new RegExp(label) }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/circles/${circleSlug}$`));
+    await page.goBack();
+    await expect(page).toHaveURL(/\/admin\/circles$/);
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue('');
+    await page.goForward();
+    await expect(page).toHaveURL(new RegExp(`/admin/circles/${circleSlug}$`));
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue(label);
+
+    await page.getByRole('link', { name: 'View circle' }).click();
+    await expect(page).toHaveURL(new RegExp(`/circles/${circleSlug}$`));
+    await expect(
+      page.getByRole('link', { name: 'the circle guide' }),
+    ).toHaveAttribute('href', 'https://example.test/circle-info');
+    await expect(page.getByRole('link', { name: 'unsafe link' })).toHaveCount(
+      0,
+    );
+    await page.getByRole('link', { name: 'Edit circle' }).click();
+    await expect(page).toHaveURL(new RegExp(`/admin/circles/${circleSlug}$`));
+
+    await signInViaApi(page, page.request, SEEDED_MEMBERS[0]);
+    await page.goto(`/circles/${circleSlug}`);
+    await expect(page.getByRole('link', { name: 'Edit circle' })).toHaveCount(
+      0,
+    );
+    await expect(page.getByText('the circle guide')).toBeVisible();
+
+    await signInViaApi(page, page.request, SEEDED_ADMIN);
+    await page.goto(`/admin/circles/${circleSlug}`);
+    await expect(page.locator('#circle-description')).toHaveValue(
+      persistedDescription,
+    );
     await page
-      .getByLabel('Description')
+      .locator('#circle-description')
       .fill('Edited by the administration test.');
     await page.getByRole('button', { name: 'Save circle' }).click();
     await expect(page.getByText('Circle saved.')).toBeVisible();
     await page.reload();
-    await page.getByRole('button', { name: new RegExp(label) }).click();
-    await expect(page.getByLabel('Description')).toHaveValue(
+    await expect(page.locator('#circle-description')).toHaveValue(
       'Edited by the administration test.',
     );
-    await expect(page.getByLabel('Public')).not.toBeChecked();
+    await expect(page.getByLabel('Public')).toBeChecked();
   });
 });

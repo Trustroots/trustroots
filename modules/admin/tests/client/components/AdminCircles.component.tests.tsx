@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -70,6 +71,89 @@ describe('<AdminCircles />', () => {
     await waitFor(() => expect(saveCircleMock).toHaveBeenCalled());
     expect((saveCircleMock.mock.calls[0][0] as CircleFixture).label).toBe(
       'Cyclists',
+    );
+  });
+});
+
+describe('circle editor navigation and preview', () => {
+  const selected = {
+    _id: 'walkers-id',
+    slug: 'walkers',
+    label: 'Walkers',
+    public: true,
+  };
+  beforeEach(() => {
+    jest.clearAllMocks();
+    getCirclesMock.mockResolvedValue([selected]);
+  });
+
+  it.each([false, true])(
+    'ignores catalogue completion after unmount (failure: %s)',
+    async fails => {
+      let complete: () => void = () => undefined;
+      getCirclesMock.mockReturnValue(
+        new Promise((resolve, reject) => {
+          complete = () =>
+            fails ? reject(new Error('Unavailable')) : resolve([selected]);
+        }),
+      );
+      const { unmount } = render(<AdminCircles circleSlug="walkers" />);
+      unmount();
+      await act(async () => {
+        complete();
+      });
+    },
+  );
+
+  it('loads a slug directly, links to its public page and returns to a new circle', async () => {
+    const onNavigate = jest.fn();
+    const { rerender } = render(
+      <AdminCircles circleSlug="walkers" onNavigate={onNavigate} />,
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText('Name')).toHaveValue('Walkers'),
+    );
+    expect(screen.getByRole('link', { name: 'View circle' })).toHaveAttribute(
+      'href',
+      '/circles/walkers',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'New circle' }));
+    expect(onNavigate).toHaveBeenCalledWith('/admin/circles');
+    fireEvent.click(screen.getByRole('button', { name: 'Walkers' }));
+    expect(onNavigate).toHaveBeenCalledWith('/admin/circles/walkers');
+    rerender(<AdminCircles circleSlug="missing" onNavigate={onNavigate} />);
+    expect(await screen.findByText('Circle not found.')).toBeVisible();
+    expect(screen.getByLabelText('Name')).toHaveValue('');
+  });
+
+  it('previews safe links and formatting while editing', async () => {
+    render(<AdminCircles />);
+    await screen.findByRole('button', { name: 'Walkers' });
+    fireEvent.change(screen.getByLabelText('Description'), {
+      target: {
+        value:
+          '<p><strong>Walk together</strong> <a href="https://example.org/walks">Routes</a><script>bad()</script><a href="javascript:bad()">Bad link</a></p>',
+      },
+    });
+    const preview = screen.getByRole('region', { name: 'Description preview' });
+    expect(within(preview).getByText('Walk together').tagName).toBe('STRONG');
+    expect(
+      within(preview).getByRole('link', { name: 'Routes' }),
+    ).toHaveAttribute('href', 'https://example.org/walks');
+    expect(within(preview).getByText('Bad link')).not.toHaveAttribute('href');
+    expect(preview.querySelector('script')).toBeNull();
+  });
+
+  it('navigates to the created circle after saving', async () => {
+    const onNavigate = jest.fn();
+    saveCircleMock.mockResolvedValue(selected);
+    render(<AdminCircles onNavigate={onNavigate} />);
+    await screen.findByRole('button', { name: 'Walkers' });
+    fireEvent.submit(
+      screen.getByRole('button', { name: 'Save circle' }).closest('form')!,
+    );
+    await waitFor(() =>
+      expect(onNavigate).toHaveBeenCalledWith('/admin/circles/walkers'),
     );
   });
 });
