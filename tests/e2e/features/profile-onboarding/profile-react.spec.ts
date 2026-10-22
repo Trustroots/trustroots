@@ -249,3 +249,39 @@ for (const path of ['household/fictional-host', 'address/fictional-host']) {
     ).toHaveCount(0);
   });
 }
+for (const width of [390, 480, 481, 600, 767]) {
+  test(`Overview and Hosting stay reachable at ${width}px`, async ({
+    page,
+    request,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+
+    for (const member of SEEDED_MEMBERS.slice(0, 2)) {
+      const prefix = `/profile/${member.username}`;
+      await page.goto(`${prefix}/about`);
+      const navigation = page.locator('.profile-view-navbar-mobile');
+      await expect(navigation).toBeVisible();
+
+      await navigation
+        .getByRole('tab', { name: 'Overview', exact: true })
+        .click();
+      await expect(page).toHaveURL(`${prefix}/overview`);
+      await expect(
+        page.locator('.profile-view .profile-overview'),
+      ).toBeVisible();
+      await expect(navigation.locator('li.active')).toHaveText('Overview');
+
+      await navigation
+        .getByRole('tab', { name: 'Hosting', exact: true })
+        .click();
+      await expect(page).toHaveURL(`${prefix}/accommodation`);
+      await expect(navigation.locator('li.active')).toHaveText('Hosting');
+      await expect(page.locator('.profile-view .offer-view')).toBeVisible();
+
+      await page.reload();
+      await expect(page).toHaveURL(`${prefix}/accommodation`);
+      await expect(page.locator('.profile-view .offer-view')).toBeVisible();
+    }
+  });
+}

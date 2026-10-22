@@ -147,6 +147,25 @@ describe('profile-routes', () => {
       ).toBe('/profile/alice');
     });
 
+    it.each([390, 480, 481, 600, 767])(
+      'keeps Overview and Hosting reachable at %ipx',
+      width => {
+        Object.defineProperty(window, 'innerWidth', {
+          configurable: true,
+          value: width,
+        });
+
+        for (const tab of ['overview', 'accommodation']) {
+          expect(
+            getMobileProfileRedirect(
+              `/profile/member-one/${tab}`,
+              'member-one',
+            ),
+          ).toBe(null);
+        }
+      },
+    );
+
     it('returns null when no redirect is needed', () => {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
@@ -180,19 +199,22 @@ describe('profile-routes', () => {
       });
     });
 
-    it('treats narrow viewports as mobile profile viewports', () => {
-      Object.defineProperty(window, 'innerWidth', {
-        configurable: true,
-        value: 480,
-      });
+    it.each([390, 480, 481, 600, 767])(
+      'treats %ipx as a mobile profile viewport',
+      width => {
+        Object.defineProperty(window, 'innerWidth', {
+          configurable: true,
+          value: width,
+        });
 
-      expect(isMobileProfileViewport()).toBe(true);
-    });
+        expect(isMobileProfileViewport()).toBe(true);
+      },
+    );
 
     it('treats wider viewports as desktop profile viewports', () => {
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
-        value: 481,
+        value: 768,
       });
 
       expect(isMobileProfileViewport()).toBe(false);
