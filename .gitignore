@@ -84,7 +84,6 @@ trustroots.tar.gz*
 /.jest-cache/
 /coverage/
 /coverage-report/
-/.nyc_output/
 
 # End-to-end test output
 /playwright-report/

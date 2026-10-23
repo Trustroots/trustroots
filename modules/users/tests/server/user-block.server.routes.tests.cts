@@ -43,7 +43,7 @@ let agent: ReturnType<typeof request.agent>;
 /* users of the test */
 let alice: UserFixture;
 let bob: UserFixture;
-function checkError(message: string, done: Mocha.Done) {
+function checkError(message: string, done: TestDone) {
   return (err: Error) => {
     log('error', `Error while >> ${message}`);
     log('error', err);

@@ -277,7 +277,7 @@ export async function saveExperiences(
   }
 }
 
-/** Clear all collections in a database. Usage in mocha: afterEach(clearDatabase). */
+/** Clear all collections in a database. Usage: afterEach(clearDatabase). */
 export async function clearDatabase(): Promise<void> {
   const models = mongoose
     .modelNames()

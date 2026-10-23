@@ -6,7 +6,7 @@ For CI workflow ownership, dependency updates, and secret handling, see [CI secu
 
 ## Tests and coverage
 
-Run `pnpm run test:client` for the Jest client suite and `pnpm run test:server` for the Mocha/Supertest server suite. Jest runs with Watchman disabled so test discovery is consistent on developer machines and CI.
+Run `pnpm run test:client` for the Jest client suite and `pnpm run test:server` for the Vitest/Supertest server suite. Jest runs with Watchman disabled so test discovery is consistent on developer machines and CI.
 
 Run `pnpm run test:coverage` to generate client and server coverage reports. Generated reports live under `coverage/` and are ignored by git. `pnpm run coverage:check` compares the generated summaries against `coverage-baseline.json`; use `pnpm run coverage:update-baseline` after intentionally improving the baseline. `pnpm run coverage:report` writes the browser report shell plus `client.json`, `server.json`, and `e2e.json` under `coverage-report/`.
 

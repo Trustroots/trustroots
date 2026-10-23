@@ -4,9 +4,7 @@ require('should');
 
 const passwordHashing: typeof import('../../../server/services/password-hashing.server.service.mjs') = require('../../../server/services/password-hashing.server.service.mjs');
 
-describe('Service: password hashing', function () {
-  this.timeout(15000);
-
+describe('Service: password hashing', { timeout: 15000 }, function () {
   it('exposes active and queued counts without credential data', function () {
     const state = passwordHashing.getKdfState();
     Object.keys(state).sort().should.deepEqual(['active', 'queued']);

@@ -33,7 +33,7 @@ function validationFailure(
   object: ValidationInput,
   error: string,
   message: string,
-  done: Mocha.Done,
+  done: TestDone,
 ): void {
   agent
     .post('/api/auth/signup/validate')
@@ -50,7 +50,7 @@ function validationFailure(
       done();
     });
 }
-function validationSuccess(object: ValidationInput, done: Mocha.Done): void {
+function validationSuccess(object: ValidationInput, done: TestDone): void {
   agent
     .post('/api/auth/signup/validate')
     .send(object)

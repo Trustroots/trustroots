@@ -12,7 +12,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
-    "types": ["node", "mocha", "should"]
+    "types": ["node", "should"]
   },
   "include": [
     "config/untyped-modules.d.mts",

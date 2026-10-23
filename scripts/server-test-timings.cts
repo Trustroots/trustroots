@@ -30,33 +30,19 @@ function readTimings(directory: string): Durations {
   return durations;
 }
 
-function recordTimings(
-  runner: import('mocha').Runner,
-  output: string,
-  now: () => number = () => performance.now(),
-) {
+interface TestModuleTiming {
+  moduleId: string;
+  diagnostic(): { duration: number };
+}
+
+function recordTimings(modules: Iterable<TestModuleTiming>, output: string) {
   const durations: Durations = {};
-  const starts = new Map<object, number>();
-  const start = (item: import('mocha').Suite | import('mocha').Test) => {
-    if (item.parent?.root && item.file) starts.set(item, now());
-  };
-  const end = (item: import('mocha').Suite | import('mocha').Test) => {
-    const started = starts.get(item);
-    if (started === undefined || !item.file) return;
-    const file = path.relative(process.cwd(), item.file);
-    durations[file] = (durations[file] || 0) + Math.max(1, now() - started);
-    starts.delete(item);
-  };
-  // Top-level suites include before/after hooks and their nested tests. Root
-  // tests are measured separately so nested tests are never counted twice.
-  runner.on('suite', start);
-  runner.on('suite end', end);
-  runner.on('test', start);
-  runner.on('test end', end);
-  runner.once('end', () => {
-    fs.mkdirSync(path.dirname(output), { recursive: true });
-    fs.writeFileSync(output, JSON.stringify(durations, null, 2) + '\n');
-  });
+  for (const module of modules) {
+    const file = path.relative(process.cwd(), module.moduleId);
+    durations[file] = Math.max(1, module.diagnostic().duration);
+  }
+  fs.mkdirSync(path.dirname(output), { recursive: true });
+  fs.writeFileSync(output, JSON.stringify(durations, null, 2) + '\n');
 }
 
 module.exports = { readTimings, recordTimings };

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-const { spawn } =
+const { spawn, spawnSync } =
   require('node:child_process') as typeof import('node:child_process');
 const { randomBytes } = require('node:crypto') as typeof import('node:crypto');
-const { globSync, statSync } = require('node:fs') as typeof import('node:fs');
+const { globSync, rmSync, statSync } =
+  require('node:fs') as typeof import('node:fs');
 const path = require('node:path') as typeof import('node:path');
 const { MongoClient } = require('mongodb') as typeof import('mongodb');
 const { readTimings } = require('./server-test-timings.cts');
@@ -145,6 +146,22 @@ async function runWorkers(
                     TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true',
                     TRUSTROOTS_SERVER_TEST_DATABASE: worker.database,
                     SERVER_TEST_FILES: worker.files.join(','),
+                    ...(env.SERVER_TEST_BLOB_DIR
+                      ? {
+                          SERVER_TEST_BLOB_OUTPUT: path.join(
+                            env.SERVER_TEST_BLOB_DIR,
+                            `worker-${index + 1}.json`,
+                          ),
+                        }
+                      : {}),
+                    ...(env.SERVER_TEST_COVERAGE_DIR
+                      ? {
+                          SERVER_TEST_COVERAGE_OUTPUT: path.join(
+                            env.SERVER_TEST_COVERAGE_DIR,
+                            `worker-${index + 1}`,
+                          ),
+                        }
+                      : {}),
                     ...(env.SERVER_TEST_TIMINGS_DIR
                       ? {
                           SERVER_TEST_TIMINGS_OUTPUT: path.join(
@@ -211,7 +228,42 @@ async function main(): Promise<void> {
     undefined,
     durations,
   );
-  process.exitCode = await runWorkers(plan);
+  if (!process.env.SERVER_TEST_COVERAGE) {
+    process.exitCode = await runWorkers(plan);
+    return;
+  }
+  const blobDirectory = path.join(root, 'coverage/server-blobs');
+  const workerCoverageDirectory = path.join(root, 'coverage/server-workers');
+  rmSync(blobDirectory, { recursive: true, force: true });
+  rmSync(workerCoverageDirectory, { recursive: true, force: true });
+  const exitCode = await runWorkers(plan, {
+    env: {
+      ...process.env,
+      SERVER_TEST_BLOB_DIR: blobDirectory,
+      SERVER_TEST_COVERAGE_DIR: workerCoverageDirectory,
+    },
+  });
+  if (exitCode !== 0) {
+    process.exitCode = exitCode;
+    return;
+  }
+  const merged = spawnSync(
+    process.execPath,
+    [
+      path.join(
+        path.dirname(require.resolve('vitest/package.json')),
+        'vitest.mjs',
+      ),
+      'run',
+      '--config',
+      path.join(root, 'vitest.server.config.mts'),
+      '--merge-reports',
+      blobDirectory,
+      '--coverage',
+    ],
+    { cwd: root, stdio: 'inherit' },
+  );
+  process.exitCode = merged.status ?? 1;
 }
 
 if (require.main === module) {

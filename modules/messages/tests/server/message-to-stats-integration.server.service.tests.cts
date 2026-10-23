@@ -141,10 +141,7 @@ describe('Message to Stats API server service Integration Test', function () {
         );
       });
     });
-    context('when influxdb is disabled', function () {
-      // @TODO possibly test with sinon
-      // we don't see any way to test this
-      // it('saving data to statistics should be silently ignored');
-    });
+    // @TODO test "when influxdb is disabled" with sinon: saving data to
+    // statistics should be silently ignored. We don't see any way to test this.
   });
 });

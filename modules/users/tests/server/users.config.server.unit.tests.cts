@@ -73,20 +73,8 @@ describe('Users Passport session configuration', () => {
     const currentUser = { id: 'member-id', authVersion: 4 };
     const findOne = sinon
       .stub()
-      .callsFake(
-        (
-          query: { _id: string },
-          fields: string,
-          callback: (
-            error: Error | null,
-            user: typeof currentUser | null,
-          ) => void,
-        ) => {
-          if (query._id === 'deleted-id') {
-            return callback(null, null);
-          }
-          return callback(null, currentUser);
-        },
+      .callsFake(async (query: { _id: string }) =>
+        query._id === 'deleted-id' ? null : currentUser,
       );
     sinon.stub(User, 'findOne').callsFake(findOne);
     const handlers = await installSessionHandlers();
@@ -94,32 +82,37 @@ describe('Users Passport session configuration', () => {
     if (!handlers.deserialize)
       throw new Error('Passport deserialize handler was not installed');
     const deserialize = handlers.deserialize;
-    deserialize(
-      { id: 'member-id', authVersion: 3 },
-      (staleErr: Error | null, staleUser: SessionUser | false | null) => {
-        should.not.exist(staleErr);
-        should(staleUser).equal(false);
-        deserialize(
-          { id: 'member-id', authVersion: 4 },
-          (
-            currentErr: Error | null,
-            restoredUser: SessionUser | false | null,
-          ) => {
-            should.not.exist(currentErr);
-            should(restoredUser).equal(currentUser);
-            deserialize(
-              { id: 'deleted-id', authVersion: 0 },
-              (
-                deletedErr: Error | null,
-                deletedUser: SessionUser | false | null,
-              ) => {
-                should.not.exist(deletedErr);
-                should(deletedUser).equal(null);
-              },
-            );
-          },
-        );
-      },
+    const restore = (session: { id: string; authVersion: number }) =>
+      new Promise<SessionUser | false | null>((resolve, reject) =>
+        deserialize(session, (error, user) =>
+          error ? reject(error) : resolve(user),
+        ),
+      );
+
+    should(await restore({ id: 'member-id', authVersion: 3 })).equal(false);
+    should(await restore({ id: 'member-id', authVersion: 4 })).equal(
+      currentUser,
     );
+    should(await restore({ id: 'deleted-id', authVersion: 0 })).equal(null);
+  });
+
+  it('reports a failed session lookup without restoring a user', async () => {
+    const failure = new Error('Session lookup failed');
+    sinon.stub(User, 'findOne').rejects(failure);
+    const handlers = await installSessionHandlers();
+    if (!handlers.deserialize)
+      throw new Error('Passport deserialize handler was not installed');
+    const deserialize = handlers.deserialize;
+    const result = await new Promise<{
+      error: Error | null;
+      user: SessionUser | false | null;
+    }>(resolve =>
+      deserialize({ id: 'member-id', authVersion: 1 }, (error, user) =>
+        resolve({ error, user }),
+      ),
+    );
+
+    should(result.error).equal(failure);
+    should(result.user).equal(false);
   });
 });

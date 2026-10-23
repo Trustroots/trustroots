@@ -1,79 +1,85 @@
 #!/usr/bin/env node
 
-const { globSync } = require('node:fs') as typeof import('node:fs');
-const Mocha: typeof import('mocha') = require('mocha');
+const { spawn } =
+  require('node:child_process') as typeof import('node:child_process');
+const os = require('node:os') as typeof import('node:os');
+const { randomBytes } = require('node:crypto') as typeof import('node:crypto');
+const { MongoClient } = require('mongodb') as typeof import('mongodb');
 const path = require('node:path') as typeof import('node:path');
-const { recordTimings } = require('./server-test-timings.cts');
 
-interface MongooseService {
-  connect(callback: (connection: import('mongoose').Connection) => void): void;
-  dropDatabase(
-    connection: import('mongoose').Connection,
-    callback: (error?: Error) => void,
-  ): void;
-  loadModels(callback: () => void): Promise<void>;
-  ensureIndexes(modelNames: string[]): Promise<void>;
-  disconnect(callback: (error?: Error) => void): void;
-}
+const root = path.resolve(__dirname, '..');
+const vitest = path.join(
+  path.dirname(require.resolve('vitest/package.json')),
+  'vitest.mjs',
+);
 
-interface AgendaService {
-  close(): Promise<void>;
-}
+// The suite drops its database on start, so two runs sharing the default
+// database wipe each other's data mid-test. Give each run its own.
+const ownDatabase =
+  process.env.NODE_ENV === 'test' &&
+  !process.env.TRUSTROOTS_SERVER_TEST_DATABASE
+    ? `trustroots-test-worker-${randomBytes(6).toString('hex')}-1`
+    : undefined;
 
-const mongooseService =
-  require('./../config/lib/mongoose.mjs') as MongooseService;
-const agenda = require('./../config/lib/agenda.mjs') as AgendaService;
-const configuredTestFiles = process.env.SERVER_TEST_FILES
-  ? process.env.SERVER_TEST_FILES.split(',').filter(Boolean)
-  : [];
-const testFiles =
-  configuredTestFiles.length > 0
-    ? configuredTestFiles
-    : globSync('modules/*/tests/server/**/*.{js,cts,mts}').sort();
-
-async function finish(error: unknown): Promise<void> {
+async function dropOwnDatabase(): Promise<void> {
+  if (!ownDatabase) return;
+  const host = process.env.DB_1_PORT_27017_TCP_ADDR || 'localhost';
+  const client = new MongoClient(`mongodb://${host}`, {
+    serverSelectionTimeoutMS: 5000,
+  });
   try {
-    await agenda.close();
-  } catch (closeError) {
-    error = error || closeError;
+    await client.connect();
+    await client.db(ownDatabase).dropDatabase();
+  } catch {
+    // The run never reached the database, or it is already gone.
+  } finally {
+    await client.close();
   }
-  mongooseService.disconnect(() => {
-    if (error) {
-      console.error(error);
-      process.exitCode = 1;
+}
+
+const child = spawn(
+  process.execPath,
+  [
+    vitest,
+    'run',
+    '--config',
+    path.join(root, 'vitest.server.config.mts'),
+    ...(process.env.SERVER_TEST_COVERAGE ? ['--coverage'] : []),
+    ...process.argv.slice(2),
+  ],
+  // An inherited VITEST_MAX_WORKERS would run files concurrently against one
+  // database.
+  {
+    cwd: root,
+    stdio: 'inherit',
+    // Own process group, so a signal reaches the forked test processes too.
+    detached: true,
+    env: {
+      ...process.env,
+      VITEST_MAX_WORKERS: '1',
+      ...(ownDatabase ? { TRUSTROOTS_SERVER_TEST_DATABASE: ownDatabase } : {}),
+    },
+  },
+);
+
+// Exit only once Vitest and its forked tests have stopped, so a parent that
+// cleans up databases after cancelling does not race orphaned tests.
+for (const signal of ['SIGINT', 'SIGTERM', 'SIGHUP'] as const) {
+  process.on(signal, () => {
+    try {
+      process.kill(-(child.pid as number), signal);
+    } catch {
+      // The group is already gone.
     }
   });
 }
 
-mongooseService.connect((db: import('mongoose').Connection) => {
-  mongooseService.dropDatabase(db, () => {
-    mongooseService.loadModels(async () => {
-      const modelNames = (
-        require('mongoose') as typeof import('mongoose')
-      ).connection.modelNames();
+child.on('error', error => {
+  console.error(error.message);
+  process.exit(1);
+});
 
-      mongooseService
-        .ensureIndexes(modelNames)
-        .then(async () => {
-          const mochaRunner = new Mocha({ reporter: 'spec', timeout: 10000 });
-
-          testFiles.forEach((testFile: string) =>
-            mochaRunner.addFile(path.resolve(testFile)),
-          );
-
-          await mochaRunner.loadFilesAsync();
-          const runner = mochaRunner.run((failures: number) => {
-            if (typeof mochaRunner.unloadFiles === 'function') {
-              mochaRunner.unloadFiles();
-            }
-
-            finish(failures ? `${failures} server test(s) failed.` : null);
-          });
-          if (process.env.SERVER_TEST_TIMINGS_OUTPUT) {
-            recordTimings(runner, process.env.SERVER_TEST_TIMINGS_OUTPUT);
-          }
-        })
-        .catch(finish);
-    });
-  });
+child.on('close', async (code, signal) => {
+  await dropOwnDatabase();
+  process.exit(code ?? (signal ? 128 + os.constants.signals[signal] : 1));
 });

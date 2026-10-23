@@ -56,7 +56,7 @@ describe('Admin Thread CRUD tests', () => {
     await message2.save();
   });
   describe("Read user's threads", () => {
-    it('non-authenticated users should not be allowed to read threads', (done: Mocha.Done) => {
+    it('non-authenticated users should not be allowed to read threads', (done: TestDone) => {
       agent
         .post('/api/admin/threads')
         .send({

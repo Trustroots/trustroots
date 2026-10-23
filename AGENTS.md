@@ -9,7 +9,7 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 - `pnpm check`: lint, typecheck and client unit tests. Run it before every commit; it needs no database.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test:client`: the three parts of `pnpm check` on their own.
 - `pnpm check:affected`: Turborepo runs lint and client tests only for the modules your branch changed (compared with `origin/main`, override with `TURBO_SCM_BASE`) and the modules that depend on them, then the typecheck. Each module is a workspace package, so `pnpm --filter @trustroots/<module> run lint` (also `test:client`, `test:server`) works on one module. After changing links between modules, run `pnpm modules:update-baseline` and `pnpm modules:update-packages`. CI still runs the full suite.
-- `pnpm test:server`: the Mocha/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
+- `pnpm test:server`: the Vitest/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
 - `pnpm test:e2e`: the Playwright end-to-end suite.
 - `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `coverage-baseline.json`.
 - `pnpm build`: the production client build.

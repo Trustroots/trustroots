@@ -306,63 +306,67 @@ describe('Admin acquisition stories controller unit tests', () => {
       should(storyList(res)[0].welcomer?._id).eql(saved[1]._id);
     });
 
-    it('yields to I/O while comparing the bounded data sources', async function () {
-      this.timeout(30000);
-      const stories = Array.from({ length: 500 }, (_, index) => ({
-        _id: `visitor-${index}`,
-        roles: ['user'],
-        username: `visitor${index}`,
-        email: `visitor${index}@example.test`,
-        emailTemporary: '',
-        member: [],
-        acquisitionStory: 'An unrelated fictional source with different words.',
-      }));
-      const restrictedUsers = Array.from({ length: 1000 }, (_, index) => ({
-        _id: `restricted-${index}`,
-        roles: ['user', 'suspended'],
-        username: `restricted${index}`,
-        email: `restricted${index}@example.test`,
-        emailTemporary: '',
-      }));
-      const find = sinon.stub(User, 'find');
-      const storyLimit = sinon.stub().returns({ exec: async () => stories });
-      find.onFirstCall().returns({
-        sort: () => ({ limit: storyLimit }),
-      });
-      find.onSecondCall().returns({
-        select: () => ({ exec: async () => [] }),
-      });
-      find.onThirdCall().returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({ exec: async () => restrictedUsers }),
+    it(
+      'yields to I/O while comparing the bounded data sources',
+      { timeout: 30000 },
+      async function () {
+        const stories = Array.from({ length: 500 }, (_, index) => ({
+          _id: `visitor-${index}`,
+          roles: ['user'],
+          username: `visitor${index}`,
+          email: `visitor${index}@example.test`,
+          emailTemporary: '',
+          member: [],
+          acquisitionStory:
+            'An unrelated fictional source with different words.',
+        }));
+        const restrictedUsers = Array.from({ length: 1000 }, (_, index) => ({
+          _id: `restricted-${index}`,
+          roles: ['user', 'suspended'],
+          username: `restricted${index}`,
+          email: `restricted${index}@example.test`,
+          emailTemporary: '',
+        }));
+        const find = sinon.stub(User, 'find');
+        const storyLimit = sinon.stub().returns({ exec: async () => stories });
+        find.onFirstCall().returns({
+          sort: () => ({ limit: storyLimit }),
+        });
+        find.onSecondCall().returns({
+          select: () => ({ exec: async () => [] }),
+        });
+        find.onThirdCall().returns({
+          select: () => ({
+            sort: () => ({
+              limit: () => ({ exec: async () => restrictedUsers }),
+            }),
           }),
-        }),
-      });
-      sinon.stub(Offer, 'find').returns({
-        select: () => ({ sort: () => ({ exec: async () => [] }) }),
-      });
-      sinon.stub(Message, 'aggregate').returns({ exec: async () => [] });
-      let ioTurns = 0;
-      let pending;
-      const heartbeat = () => {
-        ioTurns += 1;
+        });
+        sinon.stub(Offer, 'find').returns({
+          select: () => ({ sort: () => ({ exec: async () => [] }) }),
+        });
+        sinon.stub(Message, 'aggregate').returns({ exec: async () => [] });
+        let ioTurns = 0;
+        let pending;
+        const heartbeat = () => {
+          ioTurns += 1;
+          pending = setImmediate(heartbeat);
+        };
         pending = setImmediate(heartbeat);
-      };
-      pending = setImmediate(heartbeat);
-      const res = mockResponse();
-      try {
-        await adminAcquisitionStories.list({}, res);
-      } finally {
-        clearImmediate(pending);
-      }
-      sinon.assert.calledOnceWithExactly(storyLimit, 500);
-      ioTurns.should.be.aboveOrEqual(5000);
-      storyList(res).should.have.length(500);
-      storyList(res)
-        .every(story => story.restrictedMatches.length === 0)
-        .should.be.true();
-    });
+        const res = mockResponse();
+        try {
+          await adminAcquisitionStories.list({}, res);
+        } finally {
+          clearImmediate(pending);
+        }
+        sinon.assert.calledOnceWithExactly(storyLimit, 500);
+        ioTurns.should.be.aboveOrEqual(5000);
+        storyList(res).should.have.length(500);
+        storyList(res)
+          .every(story => story.restrictedMatches.length === 0)
+          .should.be.true();
+      },
+    );
 
     it('keeps the first ten identifier matches in source order', async () => {
       const users = generateStoryUsers(12);

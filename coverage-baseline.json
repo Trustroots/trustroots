@@ -6,10 +6,10 @@
     "lines": 54.02
   },
   "server": {
-    "statements": 94.74,
-    "branches": 86.15,
-    "functions": 97.26,
-    "lines": 95.24
+    "statements": 100,
+    "branches": 100,
+    "functions": 100,
+    "lines": 100
   },
   "e2e": {
     "tests": 46,

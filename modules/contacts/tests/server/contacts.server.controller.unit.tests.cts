@@ -311,11 +311,9 @@ describe('Contacts controller unit tests', () => {
       sinon
         .stub(emailService, 'sendConfirmContact')
         .callsArgWith(5, new Error('mail failed'));
-      sinon.stub(Contact.prototype, 'deleteOne').returns(
-        Promise.resolve().then(() => {
-          throw new Error('cleanup failed');
-        }) as ReturnType<typeof Contact.prototype.deleteOne>,
-      );
+      sinon
+        .stub(Contact.prototype, 'deleteOne')
+        .rejects(new Error('cleanup failed'));
 
       const { res } = await runHandler(res =>
         contactsController.add(

@@ -1,6 +1,12 @@
 {
   "extends": "./tsconfig.server.json",
-  "include": ["*.cts", "vite.config.mts", "config/**/*.cts", "config/**/*.mts"],
+  "include": [
+    "*.cts",
+    "vite.config.mts",
+    "vitest.server.config.mts",
+    "config/**/*.cts",
+    "config/**/*.mts"
+  ],
   "exclude": [
     "node_modules",
     "config/**/*.test.mts",

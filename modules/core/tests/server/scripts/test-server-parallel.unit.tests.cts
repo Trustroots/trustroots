@@ -109,6 +109,20 @@ describe('Parallel server test orchestration', () => {
     assert.equal(await run.result, 0);
   });
 
+  it('gives each worker its own coverage directory', async () => {
+    const run = fakeWorkers(createPlan(files, 2, token), {
+      env: { SERVER_TEST_COVERAGE_DIR: 'coverage/server-workers' },
+    });
+    run.children.forEach((child, index) => {
+      assert.equal(
+        child.options.env?.SERVER_TEST_COVERAGE_OUTPUT,
+        path.join('coverage/server-workers', `worker-${index + 1}`),
+      );
+      child.emit('exit', 0, null);
+    });
+    assert.equal(await run.result, 0);
+  });
+
   it('discovers and accepts native CommonJS TypeScript server tests', () => {
     const testFile = path.relative(process.cwd(), __filename);
     const discoveredFiles = globSync(
