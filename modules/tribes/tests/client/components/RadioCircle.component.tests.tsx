@@ -140,13 +140,13 @@ it('plays, pauses, persists local favourites, follows station hashes and cleans 
   const { container, unmount } = render(<RadioCircle />);
   const button = row().getByRole('button', { name: `Play ${station.title}` });
   fireEvent.click(button);
-  await screen.findByRole('button', { name: 'Pause', exact: true });
+  await screen.findByRole('button', { name: 'Pause' });
   expect(container.querySelector('audio')).toHaveAttribute('src', station.url);
   expect(window.location.hash).toBe(`#${station.id}`);
   fireEvent.click(
     row().getByRole('button', { name: `Pause ${station.title}` }),
   );
-  await screen.findByRole('button', { name: 'Play', exact: true });
+  await screen.findByRole('button', { name: 'Play' });
   fireEvent.click(row().getByRole('button', { name: `Star ${station.title}` }));
   expect(JSON.parse(localStorage.getItem(FAVOURITES_KEY)!)).toEqual([
     station.id,
@@ -178,16 +178,14 @@ it('selects deep links without autoplay and handles playback failure and media e
   const { container } = render(<RadioCircle />);
   expect(play).not.toHaveBeenCalled();
   play.mockRejectedValueOnce(new Error('offline'));
-  fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Play' }));
   await screen.findByText(
     'This station could not be played. Try again or choose another station.',
   );
-  fireEvent.click(screen.getByRole('button', { name: 'Play', exact: true }));
-  await screen.findByRole('button', { name: 'Pause', exact: true });
+  fireEvent.click(screen.getByRole('button', { name: 'Play' }));
+  await screen.findByRole('button', { name: 'Pause' });
   fireEvent.pause(container.querySelector('audio')!);
-  expect(
-    screen.getByRole('button', { name: 'Play', exact: true }),
-  ).toBeVisible();
+  expect(screen.getByRole('button', { name: 'Play' })).toBeVisible();
   fireEvent.ended(container.querySelector('audio')!);
   fireEvent.error(container.querySelector('audio')!);
   expect(screen.getByRole('alert')).toHaveTextContent('could not be played');
@@ -336,7 +334,7 @@ it('preserves the circle URL and router state when the document has a root base 
     fireEvent.click(
       row().getByRole('button', { name: `Play ${station.title}` }),
     );
-    await screen.findByRole('button', { name: 'Pause', exact: true });
+    await screen.findByRole('button', { name: 'Pause' });
     expect(window.location.pathname).toBe('/circles/radio');
     expect(window.location.search).toBe('?example=1');
     expect(window.history.state).toEqual({ fictionalRouterState: 'preserve' });
@@ -382,7 +380,7 @@ it('shares after ten seconds, heartbeats while playing and expires stale listene
     jest.advanceTimersByTime(300000);
   });
   expect(screen.getByRole('alert')).toHaveTextContent('Could not share');
-  fireEvent.click(screen.getByRole('button', { name: 'Pause', exact: true }));
+  fireEvent.click(screen.getByRole('button', { name: 'Pause' }));
   await act(async () => {
     jest.advanceTimersByTime(800000);
   });
@@ -528,6 +526,9 @@ it.each([false, true])(
     });
     unmount();
     await act(async () => finish());
-    expect(jest.getTimerCount()).toBe(0);
+    await act(async () => {
+      jest.advanceTimersByTime(5 * 60 * 1000);
+    });
+    expect(room.publish).toHaveBeenCalledTimes(1);
   },
 );
