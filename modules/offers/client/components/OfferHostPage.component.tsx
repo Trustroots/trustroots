@@ -294,8 +294,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                           ? 'You will appear on the map for hosting and meetings.'
                           : 'You will appear on the map for hosting.'}{' '}
                       Meetings use this same approximate location and circle
-                      visibility setting. Dated meetups keep their own locations
-                      and dates.
+                      visibility setting.
                     </p>
                     <fieldset>
                       <legend>
