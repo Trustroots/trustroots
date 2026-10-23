@@ -246,7 +246,7 @@ describe('Offer search tests', function () {
     const payload = {
       type: 'host',
       status: 'no',
-      happyToMeet: true,
+      meetingStatus: 'yes',
       location: [51, 12],
     };
     await requestResult(agent.post('/api/offers').send(payload).expect(200));
@@ -254,7 +254,7 @@ describe('Offer search tests', function () {
       agent.get(`/api/offers-by/${user1._id}?types=host`).expect(200),
     );
     const saved = own.body[0];
-    saved.happyToMeet.should.equal(true);
+    saved.meetingStatus.should.equal('yes');
     saved.status.should.equal('no');
     saved.location.should.eql([51, 12]);
     const search = async (types: string[]) => {
@@ -284,7 +284,7 @@ describe('Offer search tests', function () {
     );
     read.body.location.should.eql([...meeting.geometry.coordinates].reverse());
     read.body.status.should.equal('no');
-    read.body.happyToMeet.should.equal(true);
+    read.body.meetingStatus.should.equal('yes');
     for (const status of ['yes', 'maybe']) {
       await requestResult(
         agent
@@ -299,7 +299,7 @@ describe('Offer search tests', function () {
     await requestResult(
       agent
         .put(`/api/offers/${saved._id}`)
-        .send({ ...payload, status: 'yes', happyToMeet: false })
+        .send({ ...payload, status: 'yes', meetingStatus: 'no' })
         .expect(200),
     );
     should.not.exist(await search(['meet']));
@@ -307,21 +307,46 @@ describe('Offer search tests', function () {
     await requestResult(
       agent
         .put(`/api/offers/${saved._id}`)
-        .send({ ...payload, happyToMeet: false })
+        .send({ ...payload, meetingStatus: 'no' })
         .expect(200),
     );
     should.not.exist(await search(['host', 'meet']));
-    for (const happyToMeet of ['true', 1, null]) {
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set']) {
+      await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, meetingStatus })
+          .expect(200),
+      );
+      const result = await search(['meet']);
+      if (meetingStatus === 'yes' || meetingStatus === 'maybe')
+        should.exist(result);
+      else should.not.exist(result);
+      const updated = await requestResult(
+        agent.get(`/api/offers/${saved._id}`).expect(200),
+      );
+      updated.body.meetingStatus.should.equal(meetingStatus);
+      updated.body.status.should.equal('no');
+    }
+    for (const meetingStatus of [
+      'true',
+      true,
+      false,
+      1,
+      null,
+      'unknown',
+      ['yes'],
+    ]) {
       await requestResult(
         agent
           .post('/api/offers')
-          .send({ ...payload, happyToMeet })
+          .send({ ...payload, meetingStatus })
           .expect(400),
       );
       await requestResult(
         agent
           .put(`/api/offers/${saved._id}`)
-          .send({ ...payload, happyToMeet })
+          .send({ ...payload, meetingStatus })
           .expect(400),
       );
     }
@@ -329,7 +354,7 @@ describe('Offer search tests', function () {
 
   it('applies existing visibility restrictions to ongoing meetings', async function () {
     offer2.status = 'no';
-    offer2.happyToMeet = true;
+    offer2.meetingStatus = 'yes';
     await offer2.save();
     await requestResult(
       agent.post('/api/auth/signin').send(credentials).expect(200),

@@ -34,18 +34,72 @@ const hostingOffer: Offer = {
 };
 
 describe('<OffersPresentational />', () => {
-  it('shows meeting availability beside the unavailable hosting state', () => {
+  it('shows meeting availability separately from the unavailable hosting state', () => {
     render(
       <OffersPresentational
         isOwnOffer={false}
         isUserPublic={true}
-        offer={{ status: 'no', happyToMeet: true }}
+        offer={{ status: 'no', meetingStatus: 'yes' }}
       />,
     );
-    expect(screen.getByText('Happy to meet')).toBeVisible();
+    expect(screen.getByText('This member wants to meet people!')).toBeVisible();
     expect(screen.getByText('Cannot host currently')).toBeVisible();
     expect(screen.queryByText('Can host')).not.toBeInTheDocument();
   });
+
+  it.each([
+    ['yes', 'ada wants to meet people!'],
+    ['maybe', 'ada is maybe up for meeting'],
+    ['no', 'ada is too busy to meet people'],
+  ] as const)('shows %s to visitors', (meetingStatus, message) => {
+    render(
+      <OffersPresentational
+        isOwnOffer={false}
+        isUserPublic={true}
+        username="ada"
+        offer={{ ...hostingOffer, meetingStatus }}
+      />,
+    );
+    expect(screen.getByText(message)).toBeVisible();
+    expect(screen.queryByRole('radiogroup')).not.toBeInTheDocument();
+  });
+
+  it.each([undefined, 'not-set'] as const)(
+    'hides unanswered availability from visitors: %s',
+    meetingStatus => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ status: 'no', meetingStatus }}
+        />,
+      );
+      expect(screen.queryByText(/meet people/)).not.toBeInTheDocument();
+    },
+  );
+
+  it.each(['maybe', 'no'] as const)(
+    'uses a generic member label without a username: %s',
+    meetingStatus => {
+      render(
+        <OffersPresentational
+          isOwnOffer={false}
+          isUserPublic={true}
+          offer={{ status: 'no', meetingStatus, location: [51, 4] }}
+        />,
+      );
+      expect(
+        screen.getByText(
+          meetingStatus === 'maybe'
+            ? 'This member is maybe up for meeting'
+            : 'This member is too busy to meet people',
+        ),
+      ).toBeVisible();
+      expect(screen.queryByTestId('hosting-map') !== null).toBe(
+        meetingStatus === 'maybe',
+      );
+    },
+  );
 
   it.each([true, false])(
     'shows a meeting map without the hosting description (owner: %s)',
@@ -56,7 +110,7 @@ describe('<OffersPresentational />', () => {
           isUserPublic={true}
           offer={{
             status: 'no',
-            happyToMeet: true,
+            meetingStatus: 'yes',
             description: 'I can host',
             noOfferDescription: 'I am away from home.',
             location: [51, 4],
@@ -94,7 +148,7 @@ describe('<OffersPresentational />', () => {
         <OffersPresentational
           isOwnOffer={false}
           isUserPublic={true}
-          offer={{ status: 'no', happyToMeet: true, location }}
+          offer={{ status: 'no', meetingStatus: 'yes', location }}
         />,
       );
       expect(screen.queryByTestId('hosting-map')).not.toBeInTheDocument();
@@ -106,7 +160,7 @@ describe('<OffersPresentational />', () => {
       <OffersPresentational
         isOwnOffer={false}
         isUserPublic={true}
-        offer={{ ...hostingOffer, happyToMeet: true, location: [51, 4] }}
+        offer={{ ...hostingOffer, meetingStatus: 'yes', location: [51, 4] }}
       />,
     );
     expect(screen.getByText('Approximate hosting location')).toBeVisible();

@@ -26,7 +26,7 @@ export interface SearchResultOffer {
   user: SearchOfferUser;
   type: OfferType;
   noOfferDescription?: string;
-  happyToMeet?: boolean;
+  meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
   status?: OfferStatus;
   description?: string;
   updated?: string;
@@ -186,7 +186,8 @@ export default function SearchSidebarResults({
                       ? 'Cannot host currently'
                       : 'Hosting'
                     : 'Meet'}
-                  {item.happyToMeet && ' · Happy to meet'}
+                  {item.meetingStatus === 'yes' && ' · Happy to meet'}
+                  {item.meetingStatus === 'maybe' && ' · Maybe up for meeting'}
                   {item.type === 'host' &&
                     item.status &&
                     item.status !== 'no' &&
@@ -314,8 +315,13 @@ export default function SearchSidebarResults({
                   </Badge>
                 </div>
               )}
-              {offer.happyToMeet && (
+              {offer.meetingStatus === 'yes' && (
                 <span className="label btn-offer-meet">Happy to meet</span>
+              )}
+              {offer.meetingStatus === 'maybe' && (
+                <span className="label btn-offer-meet">
+                  Maybe up for meeting
+                </span>
               )}
               <OfferDescription
                 description={

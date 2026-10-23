@@ -14,7 +14,7 @@ const offerUpdateFields = [
   'maxGuests',
   'location',
   'validUntil',
-  'happyToMeet',
+  'meetingStatus',
   'showOnlyInMyCircles',
 ] as const;
 
@@ -31,9 +31,9 @@ export function prepareOfferPayload<Id, Timestamp>(
     type: offer.type,
     user: offer.user,
     location: offer.location,
-    ...(offer.happyToMeet === undefined
+    ...(offer.meetingStatus === undefined
       ? {}
-      : { happyToMeet: offer.happyToMeet }),
+      : { meetingStatus: offer.meetingStatus }),
     ...(offer.status === undefined ? {} : { status: offer.status }),
     ...(offer.description === undefined
       ? {}
@@ -55,9 +55,9 @@ export function prepareOfferUpdate(
   body: UpdateOfferRequest,
 ): UpdateOfferRequest {
   return {
-    ...(body.happyToMeet === undefined
+    ...(body.meetingStatus === undefined
       ? {}
-      : { happyToMeet: body.happyToMeet }),
+      : { meetingStatus: body.meetingStatus }),
     ...(body.status === undefined ? {} : { status: body.status }),
     ...(body.description === undefined
       ? {}
