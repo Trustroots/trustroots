@@ -70,6 +70,8 @@ class DocumentationDetectionTest(unittest.TestCase):
                 self.assertTrue(is_native_app(name))
                 self.assertTrue(skips_web_ci(name))
         self.assertFalse(is_native_app("modules/users/client/app.js"))
+        self.assertFalse(is_native_app("apps/nostranslation/client/App.tsx"))
+        self.assertFalse(skips_web_ci("apps/nostranslation/server/app.mts"))
 
     def test_readme_only_push_skips_tests(self):
         Path("README.md").write_text("Updated documentation\n")

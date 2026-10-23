@@ -62,6 +62,16 @@ describe('PR line-change summaries', () => {
       'apps/ios/TrustrootsTests/View.swift': 'ios-tests',
       'apps/ios/Trustroots/ViewTests.swift': 'ios-tests',
       'apps/ios/Trustroots.xcodeproj/project.pbxproj': 'other',
+      'apps/nostranslation/client/App.tsx': 'nostranslation-code',
+      'apps/nostranslation/server/app.mts': 'nostranslation-code',
+      'apps/nostranslation/client/style.css': 'nostranslation-code',
+      'apps/nostranslation/tests/App.tests.tsx': 'nostranslation-tests',
+      'apps/nostranslation/tests/e2e/proofreading.spec.ts':
+        'nostranslation-tests',
+      'apps/nostranslation/tests/fixtures.ts': 'nostranslation-tests',
+      'apps/nostranslation/vite.config.mts': 'other',
+      'apps/nostranslation/README.md': 'other',
+      'apps/nostranslation/dist/assets/app.js': 'generated',
       'docs/schema.xml': 'other',
       'scripts/report.mts': 'code',
       'scripts/runner.cts': 'code',
@@ -125,6 +135,8 @@ describe('PR line-change summaries', () => {
         ['android-tests', 0, 0, 0],
         ['ios-code', 0, 0, 0],
         ['ios-tests', 0, 0, 0],
+        ['nostranslation-code', 0, 0, 0],
+        ['nostranslation-tests', 0, 0, 0],
         ['other', 0, 0, 0],
         ['generated', 100, 20, 80],
       ],
@@ -148,7 +160,10 @@ describe('PR line-change summaries', () => {
       preferred,
       /Tests and fixtures \| \+9 \| −2 \| 🟢 \*\*\+7\*\*/,
     );
-    assert.doesNotMatch(preferred, /#### Android|#### iOS|#### Docs/);
+    assert.doesNotMatch(
+      preferred,
+      /#### Android|#### iOS|#### Nostranslation|#### Docs/,
+    );
     const opposite = renderLineChanges(
       summariseNumstat('5\t1\tsrc/app.js\0' + '2\t9\ttests/app.test.js\0'),
     );
@@ -192,6 +207,48 @@ describe('PR line-change summaries', () => {
     assert.match(
       renderLineChanges(summariseNumstat('')),
       /No text line changes/,
+    );
+  });
+
+  it('reports Nostranslation separately from web code and shared tooling', () => {
+    const summary = summariseNumstat(
+      '7\t2\tapps/nostranslation/client/App.tsx\0' +
+        '3\t1\tapps/nostranslation/server/app.mts\0' +
+        '8\t2\tapps/nostranslation/tests/App.tests.tsx\0' +
+        '5\t1\tapps/nostranslation/tests/e2e/proofreading.spec.ts\0' +
+        '2\t4\tmodules/widget/client/view.tsx\0' +
+        '1\t0\tscripts/coverage/line-changes.cts\0' +
+        '4\t1\tjest/setup.js\0' +
+        '3\t1\tapps/nostranslation/vite.config.mts\0' +
+        '20\t2\tpnpm-lock.yaml\0',
+    );
+    const result: string = renderLineChanges(summary);
+    const sections = result.split('#### ');
+    const web = sections.find(section =>
+      section.startsWith('Web and shared\n'),
+    )!;
+    const nostranslation = sections.find(section =>
+      section.startsWith('Nostranslation\n'),
+    )!;
+    const other = sections.find(section => section.startsWith('Docs,'))!;
+    assert.match(web, /Application code \| \+3 \| −4 \| 🟢 \*\*−1\*\*/);
+    assert.match(web, /Tests and fixtures \| \+4 \| −1 \| 🟢 \*\*\+3\*\*/);
+    assert.match(
+      nostranslation,
+      /Application code \| \+10 \| −3 \| 🟡 \*\*\+7\*\*/,
+    );
+    assert.match(
+      nostranslation,
+      /Tests and fixtures \| \+13 \| −3 \| 🟢 \*\*\+10\*\*/,
+    );
+    assert.match(other, /Docs, configuration and other \| \+3 \| −1/);
+    assert.match(other, /Generated files and lockfiles \| \+20 \| −2/);
+    assert.doesNotMatch(result, /#### Android|#### iOS/);
+    assert.doesNotMatch(
+      renderLineChanges(
+        summariseNumstat('1\t0\tapps/nostranslation/client/main.tsx\0'),
+      ),
+      /#### Web and shared/,
     );
   });
 

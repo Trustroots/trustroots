@@ -42,3 +42,5 @@ modules/core/server/views/react-layout.server.view.html
 # Generated docs assets
 docs/assets/js/
 docs/assets/downloads/
+
+apps/nostranslation/build/

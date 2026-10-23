@@ -20,7 +20,8 @@ def is_documentation(filename):
 
 def is_native_app(filename):
     path = PurePosixPath(filename)
-    return bool(path.parts) and path.parts[0] == "apps"
+    return (len(path.parts) >= 2 and path.parts[0] == "apps"
+            and path.parts[1] in {"android", "ios"}) or filename == "apps/README.md"
 
 
 def skips_web_ci(filename):

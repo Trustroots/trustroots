@@ -106,6 +106,18 @@ const legacyConfig = {
   },
   overrides: [
     {
+      files: ['apps/nostranslation/**/*.{ts,tsx,mts}'],
+      parser: '@typescript-eslint/parser',
+      extends: ['plugin:@typescript-eslint/recommended', 'prettier'],
+      env: { browser: true, node: true, jest: true },
+      rules: {
+        'react/prop-types': 0,
+        'no-use-before-define': 0,
+        'no-duplicate-imports': ['error', { allowSeparateTypeImports: true }],
+        'import/named': 0,
+      },
+    },
+    {
       files: [
         'modules/*/client/**/*.{js,ts,tsx}',
         'layers/shell/**/*.{js,ts,tsx}',
