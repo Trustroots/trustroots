@@ -97,7 +97,13 @@ test.describe.serial('search offers and circles feature coverage', () => {
     expectPresent(original);
     try {
       const prepare = await page.request.put(`/api/offers/${original._id}`, {
-        data: { status: 'no', happyToMeet: false, location: original.location },
+        data: {
+          status: 'no',
+          happyToMeet: false,
+          location: original.location,
+          description: 'I can host',
+          noOfferDescription: 'I am away from home.',
+        },
       });
       expect(prepare.ok()).toBeTruthy();
       await page.goto('/offer/host');
@@ -146,6 +152,18 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(
         page.getByText('Cannot host currently', { exact: true }),
       ).toBeVisible();
+      await expect(
+        page.getByText('Approximate meeting location', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.locator('.offer-location-section .offer-location'),
+      ).toBeVisible();
+      await expect(
+        page.getByText('I am away from home.', { exact: true }),
+      ).toBeVisible();
+      await expect(page.getByText('I can host', { exact: true })).toHaveCount(
+        0,
+      );
       const own = await page.request.get(`/api/offers/${original._id}`);
       const ownOffer = await own.json();
       expect(ownOffer.location[0]).toBeCloseTo(51, 2);

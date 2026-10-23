@@ -167,22 +167,27 @@ export class OffersPresentational extends Component<
           {/* Hosting: no */}
           {!this.isHosting() && this.renderHostingNo()}
         </div>
-        {this.isHosting() && offer.location?.length === 2 && (
-          <div className="offer-location-section">
-            <div className="offer-location-heading">
-              <span>{t('Approximate hosting location')}</span>
-              {isOwnOffer && (
-                <a href="/offer/host#location">{t('Edit location')}</a>
-              )}
+        {(this.isHosting() || offer.happyToMeet) &&
+          offer.location?.length === 2 && (
+            <div className="offer-location-section">
+              <div className="offer-location-heading">
+                <span>
+                  {this.isHosting()
+                    ? t('Approximate hosting location')
+                    : t('Approximate meeting location')}
+                </span>
+                {isOwnOffer && (
+                  <a href="/offer/host#location">{t('Edit location')}</a>
+                )}
+              </div>
+              <OfferLocation
+                height={220}
+                location={offer.location}
+                offerStatus={this.isHosting() ? offer.status : 'yes'}
+                offerType={this.isHosting() ? 'host' : 'meet'}
+              />
             </div>
-            <OfferLocation
-              height={220}
-              location={offer.location}
-              offerStatus={offer.status}
-              offerType="host"
-            />
-          </div>
-        )}
+          )}
       </div>
     );
   }
