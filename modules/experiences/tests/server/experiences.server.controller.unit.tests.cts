@@ -61,6 +61,22 @@ function deferredResponse<Body = null>(): DeferredResponse<Body> {
 }
 
 describe('Experiences controller unit tests', () => {
+  it('passes reply recipient lookup failures to the error handler', async () => {
+    const error = new Error('lookup failed');
+    sinon.stub(mongoose.model('User'), 'findOne').throws(error);
+    const next = sinon.spy();
+    await experiencesController.readReplyRecipient(
+      {
+        user: { _id: new mongoose.Types.ObjectId() },
+        body: {},
+        query: {},
+        params: { recipientUsername: 'example-member' },
+      },
+      deferredResponse(),
+      next,
+    );
+    sinon.assert.calledOnceWithExactly(next, error);
+  });
   afterEach(() => {
     sinon.restore();
     return utils.clearDatabase();

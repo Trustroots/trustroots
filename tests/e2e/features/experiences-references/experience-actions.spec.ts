@@ -42,6 +42,75 @@ async function createPublicUser(
 }
 
 test.describe.serial('experience and reference feature coverage', () => {
+  test('a blocked recipient can submit an Experience reply through the UI', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.create', [
+      'A block preserves Experience reply access without revealing the full profile.',
+    ]);
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+    try {
+      const author = await createPublicUser(context.request);
+      const recipient = await createPublicUser(context.request);
+      const authorId = await fetchUserIdByUsername(
+        context.request,
+        author.username,
+      );
+      const recipientId = await fetchUserIdByUsername(
+        context.request,
+        recipient.username,
+      );
+      await signInViaApi(page, context.request, author);
+      const incoming = await context.request.post('/api/experiences', {
+        data: {
+          userTo: recipientId,
+          interactions: { met: true },
+          recommend: 'no',
+          feedbackPublic: 'An account of our meeting.',
+        },
+      });
+      expect(incoming.status()).toBe(201);
+      await updateUserByUsername(author.username, {
+        $set: { blocked: [objectId(recipientId)] },
+      });
+      await signInViaApi(page, context.request, recipient);
+      expect(
+        (await context.request.get(`/api/users/${author.username}`)).status(),
+      ).toBe(404);
+      await page.goto(`/profile/${author.username}/experiences/new`);
+      await page.getByRole('checkbox', { name: 'Met in person' }).check();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page.getByText('No', { exact: true }).click();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page.getByRole('textbox').fill('My own account of our meeting.');
+      await page
+        .getByRole('button', { name: 'Save experience', exact: true })
+        .click();
+      await expect(
+        page.getByText('Your experience has been saved.'),
+      ).toBeVisible();
+      const pair = await context.request.get('/api/my-experience', {
+        params: { userWith: authorId },
+      });
+      expect(await pair.json()).toMatchObject({
+        userFrom: recipientId,
+        recommend: 'no',
+        feedbackPublic: 'My own account of our meeting.',
+      });
+      expect(
+        (await context.request.get(`/api/users/${author.username}`)).status(),
+      ).toBe(404);
+    } finally {
+      await context.close();
+    }
+  });
+
   test.beforeEach(async ({ page, request }) => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
   });

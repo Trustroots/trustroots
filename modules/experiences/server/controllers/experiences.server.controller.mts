@@ -41,7 +41,7 @@ type PopulatedExperienceRecord = Omit<
 interface ExperienceRequest {
   body: CreateExperienceRequest & Record<string, unknown>;
   query: { userTo?: string; userWith?: string };
-  params: { experienceId?: string };
+  params: { experienceId?: string; recipientUsername?: string };
   user: ExperienceUserRecord;
   experience?: ExperiencePayload<
     Types.ObjectId,
@@ -78,6 +78,7 @@ type ExperienceHandler = (
 ) => unknown;
 
 interface ExperienceController {
+  readReplyRecipient: ExperienceHandler;
   getSuggestion: ExperienceHandler;
   create: ExperienceHandler;
   readMany: ExperienceHandler;
@@ -106,6 +107,39 @@ const plainText = textService.plainText as (
   content: unknown,
   cleanWhitespace?: boolean,
 ) => string;
+
+// A block must not prevent replying to an existing Experience. Reveal only
+// the author's identity here; normal profile and messaging access still apply.
+service.readReplyRecipient = async function (req, res, next) {
+  try {
+    const recipient = await User.findOne({
+      username: req.params.recipientUsername!.toLowerCase(),
+      public: true,
+      roles: visibleAuthorRoles,
+    })
+      .select('_id username displayName')
+      .exec();
+    const incoming =
+      recipient &&
+      (await Experience.exists({
+        userFrom: recipient._id,
+        userTo: req.user._id,
+        removedAt: { $exists: false },
+      }));
+    if (!incoming) {
+      return res.status(404).json({
+        message: errorService.getErrorMessageByKey('not-found'),
+      });
+    }
+    return res.json({
+      _id: recipient!._id,
+      username: recipient!.username,
+      displayName: recipient!.displayName,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 type ObjectIdInput = Parameters<typeof mongoose.Types.ObjectId.isValid>[0];
 function isValidObjectId(value: unknown): value is ObjectIdInput {
@@ -838,6 +872,7 @@ const create = service.create;
 const experienceById = service.experienceById;
 const getCount = service.getCount;
 const getSuggestion = service.getSuggestion;
+const readReplyRecipient = service.readReplyRecipient;
 const readMany = service.readMany;
 const readMine = service.readMine;
 const readOne = service.readOne;
@@ -846,6 +881,7 @@ export {
   experienceById as experienceById,
   getCount as getCount,
   getSuggestion as getSuggestion,
+  readReplyRecipient as readReplyRecipient,
   readMany as readMany,
   readMine as readMine,
   readOne as readOne,

@@ -7,6 +7,7 @@ import type {
   ExperienceCount,
   ExperienceCountRequest,
   CreateExperienceRequest,
+  ExperienceUser,
 } from '../../shared/experience';
 
 export type { CreateExperienceRequest } from '../../shared/experience';
@@ -17,6 +18,15 @@ interface UserTarget {
 
 interface UserWith {
   userWith: string;
+}
+
+export async function readReplyRecipient(
+  username: string,
+): Promise<ExperienceUser & { displayName: string }> {
+  const { data } = await axios.get<ExperienceUser & { displayName: string }>(
+    `/api/experiences/reply-recipient/${encodeURIComponent(username)}`,
+  );
+  return data;
 }
 
 /**

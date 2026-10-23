@@ -30,6 +30,7 @@ import ContactList from '@/modules/contacts/client/components/ContactList.compon
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
+import { readReplyRecipient } from '@/modules/experiences/client/api/experiences.api';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
@@ -247,10 +248,12 @@ export default function ProfilePage({
     Object.assign([], { $resolved: false }),
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [experienceOnly, setExperienceOnly] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
   const tab = getProfileViewTab(currentPath, username);
   const activePathName = getProfileViewTabStateName(currentPath, username);
+  const canLoadReply = referencesEnabled && tab === 'experiences-new';
   const isSelf = profile?._id === authUser?._id;
 
   const removeContact = useCallback((removedContact: ContactRecord) => {
@@ -296,11 +299,20 @@ export default function ProfilePage({
 
     async function loadProfile() {
       setIsLoading(true);
+      setExperienceOnly(false);
       setContact({ $resolved: false });
       setContacts(Object.assign([], { $resolved: false }));
 
       try {
-        const loadedProfile = await fetchProfile(username);
+        let loadedProfile;
+        let replyOnly = false;
+        try {
+          loadedProfile = await fetchProfile(username);
+        } catch (error) {
+          if (!canLoadReply) throw error;
+          loadedProfile = await readReplyRecipient(username);
+          replyOnly = true;
+        }
 
         if (!isMounted) {
           return;
@@ -318,6 +330,8 @@ export default function ProfilePage({
         }
 
         setProfile({ ...loadedProfile, $resolved: true });
+        setExperienceOnly(replyOnly);
+        if (replyOnly) return;
 
         const viewingOwnProfile = loadedProfile._id === authUser?._id;
         const [loadedContact, loadedContacts] = await Promise.all([
@@ -359,7 +373,7 @@ export default function ProfilePage({
     return () => {
       isMounted = false;
     };
-  }, [authUser?._id, username]);
+  }, [authUser?._id, username, canLoadReply]);
 
   const handleMembershipUpdated = (data: { user?: UserProfile } | null) => {
     if (data?.user) {
@@ -452,6 +466,15 @@ export default function ProfilePage({
     contact._id &&
     !contact.confirmed &&
     contact.userTo === authUser._id;
+
+  if (experienceOnly && !isLoading && profile && canLoadReply) {
+    return (
+      <section className="container container-spacer">
+        <h2>{profile.displayName}</h2>
+        <CreateExperience userFrom={authUser} userTo={profile} />
+      </section>
+    );
+  }
 
   return (
     <>

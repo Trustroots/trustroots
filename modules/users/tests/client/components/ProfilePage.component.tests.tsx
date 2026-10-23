@@ -7,6 +7,7 @@ import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
 import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
 import * as profileRoutes from '@/modules/users/client/utils/profile-routes';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserProfile, UserSummary } from '@/modules/users/client/types';
@@ -14,6 +15,7 @@ import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
+jest.mock('@/modules/experiences/client/api/experiences.api');
 const fetchProfile = jest.mocked(usersApi.fetch);
 const getContact = jest.mocked(contactsApi.getByUserId);
 const listContacts = jest.mocked(contactsApi.list);
@@ -256,6 +258,46 @@ function renderPage(
 }
 
 describe('ProfilePage', () => {
+  it('allows an Experience reply without loading a blocked profile or contacts', async () => {
+    fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
+    jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
+      _id: profile._id,
+      username: profile.username,
+      displayName: profile.displayName,
+    });
+    renderPage(authUser, '/profile/bob/experiences/new', {
+      referencesEnabled: true,
+    });
+    expect(await screen.findByText('New experience form')).toBeVisible();
+    expect(experiencesApi.readReplyRecipient).toHaveBeenCalledWith('bob');
+    expect(getContact).not.toHaveBeenCalled();
+    expect(listContacts).not.toHaveBeenCalled();
+    expect(screen.queryByTestId('profile-tabs')).not.toBeInTheDocument();
+    expect(screen.queryByText('Send a message')).not.toBeInTheDocument();
+    window.history.pushState({}, '', '/profile/bob');
+    fireEvent.popState(window);
+    await waitFor(() =>
+      expect(screen.queryByText('New experience form')).not.toBeInTheDocument(),
+    );
+  });
+
+  it('keeps an unavailable reply recipient unavailable', async () => {
+    fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
+    jest
+      .mocked(experiencesApi.readReplyRecipient)
+      .mockRejectedValueOnce(new Error('unavailable'));
+    renderPage(authUser, '/profile/bob/experiences/new', {
+      referencesEnabled: true,
+    });
+    await waitFor(() =>
+      expect(experiencesApi.readReplyRecipient).toHaveBeenCalled(),
+    );
+    await waitFor(() =>
+      expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument(),
+    );
+    expect(screen.queryByText('New experience form')).not.toBeInTheDocument();
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     fetchProfile.mockResolvedValue(profile);
