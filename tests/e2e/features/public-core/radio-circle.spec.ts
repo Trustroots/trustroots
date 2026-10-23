@@ -1,5 +1,5 @@
 /* global window, HTMLMediaElement */
-import { expect, test } from '../../support/fixtures.mts';
+import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import type { Page } from '@playwright/test';
 import { installNostrRelayStub } from '../../support/nostr.mts';
 import { SEEDED_ADMIN, signInViaApi } from '../../support/helpers.mts';
@@ -95,7 +95,10 @@ async function prepareRadio(page: Page, unavailable = false) {
 
 test('visitors can play radio, save favourites and see a deduplicated count without social identities', async ({
   page,
-}) => {
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.radio', [
+    'Visitors can listen, save favourites and see shared listener counts.',
+  ]);
   await prepareRadio(page);
   await page.goto('/circles/radio#groovesalad');
   const radio = page.getByRole('region', { name: 'Trustroots Radio' });
@@ -134,7 +137,10 @@ test('visitors can play radio, save favourites and see a deduplicated count with
 
 test('a matching Trustroots Nostr signer can chat, share favourites and announce listening', async ({
   page,
-}) => {
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.radio', [
+    'A matching verified signer can publish chat, favourites and listening activity.',
+  ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   const key = generateSecretKey();
   const publicKey = getPublicKey(key);
@@ -208,7 +214,10 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
 
 test('logged-in members can read radio chat but need a matching signer to publish', async ({
   page,
-}) => {
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.radio', [
+    'Chat and listener identities require login.',
+  ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await prepareRadio(page);
   await page.goto('/circles/radio');
@@ -227,7 +236,10 @@ test('logged-in members can read radio chat but need a matching signer to publis
 
 test('radio remains playable when the shared room is unavailable and stops on navigation', async ({
   page,
-}) => {
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.radio', [
+    'Playback survives relay failures and stops when leaving the circle.',
+  ]);
   await prepareRadio(page, true);
   await page.goto('/circles/radio');
   const radio = page.getByRole('region', { name: 'Trustroots Radio' });
