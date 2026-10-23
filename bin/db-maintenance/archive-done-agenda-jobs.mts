@@ -33,7 +33,7 @@ const sourceCollectionName = isReverse ? 'agendaJobsArchived' : 'agendaJobs';
 const targetCollectionName = isReverse ? 'agendaJobs' : 'agendaJobsArchived';
 
 if (isReverse) {
-  console.log('🚨 Reverse action! Movind docs from archive back to live.');
+  console.log('🚨 Reverse action! Moving docs from archive back to live.');
 }
 
 function reportCollectionCounts(

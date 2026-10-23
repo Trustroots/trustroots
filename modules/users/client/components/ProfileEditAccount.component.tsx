@@ -126,7 +126,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     } catch (error: unknown) {
       const { message } = readApiError(error);
       setPasswordMessage(
-        message || t('Password not changed due error, try again.'),
+        message || t('Password not changed due to an error, try again.'),
       );
     }
   }

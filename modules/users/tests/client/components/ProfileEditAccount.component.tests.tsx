@@ -388,7 +388,9 @@ describe('ProfileEditAccount', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Change password' }));
     expect(
-      await screen.findByText('Password not changed due error, try again.'),
+      await screen.findByText(
+        'Password not changed due to an error, try again.',
+      ),
     ).toBeVisible();
   });
 
