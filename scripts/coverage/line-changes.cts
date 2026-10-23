@@ -28,6 +28,8 @@ const categories = [
   ['android-tests', '🧪 Tests and fixtures'],
   ['ios-code', '🧩 Application code'],
   ['ios-tests', '🧪 Tests and fixtures'],
+  ['nostranslation-code', '🧩 Application code'],
+  ['nostranslation-tests', '🧪 Tests and fixtures'],
   ['other', '📄 Docs, configuration and other'],
   ['generated', '⚙️ Generated files and lockfiles'],
 ];
@@ -37,7 +39,9 @@ function categoryForPath(filePath: string): string {
     ? 'android-'
     : filePath.startsWith('apps/ios/')
       ? 'ios-'
-      : '';
+      : filePath.startsWith('apps/nostranslation/')
+        ? 'nostranslation-'
+        : '';
   if (
     /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|yarn\.lock|pnpm-lock\.yaml|Cargo\.lock|Gemfile\.lock)$/.test(
       filePath,
@@ -151,6 +155,7 @@ function renderLineChanges(summary: LineChangesSummary): string {
       ['Web and shared', ['code', 'tests']],
       ['Android / APK', ['android-code', 'android-tests']],
       ['iOS', ['ios-code', 'ios-tests']],
+      ['Nostranslation', ['nostranslation-code', 'nostranslation-tests']],
       ['Docs, configuration and generated files', ['other', 'generated']],
     ] as const
   ).flatMap(([title, ids]) => {
