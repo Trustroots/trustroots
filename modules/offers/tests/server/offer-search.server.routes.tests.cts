@@ -239,6 +239,159 @@ describe('Offer search tests', function () {
     offer1.user = user3Id;
   });
   afterEach(utils.clearDatabase);
+  it('saves non-host meeting availability, shares fuzzy location and filters each state independently', async function () {
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    const payload = {
+      type: 'host',
+      status: 'no',
+      meetingStatus: 'yes',
+      location: [51, 12],
+    };
+    await requestResult(agent.post('/api/offers').send(payload).expect(200));
+    const own = await requestResult(
+      agent.get(`/api/offers-by/${user1._id}?types=host`).expect(200),
+    );
+    const saved = own.body[0];
+    saved.meetingStatus.should.equal('yes');
+    saved.status.should.equal('no');
+    saved.location.should.eql([51, 12]);
+    const search = async (types: string[]) => {
+      const response = await requestResult(
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .query({ filters: JSON.stringify({ types }) })
+          .expect(200),
+      );
+      return (response.body.features as OfferFeature[]).find(
+        feature => feature.properties.id === saved._id,
+      );
+    };
+    const meeting = await search(['meet']);
+    assertPresent(meeting);
+    meeting.properties.type.should.equal('meet');
+    meeting.properties.status.should.equal('yes');
+    meeting.geometry.coordinates.should.not.eql([12, 51]);
+    should.not.exist(await search(['host']));
+    should.exist(await search(['host', 'meet']));
+    const stranger = request.agent(app);
+    await requestResult(
+      stranger.post('/api/auth/signin').send(credentials2).expect(200),
+    );
+    const read = await requestResult(
+      stranger.get(`/api/offers/${saved._id}`).expect(200),
+    );
+    read.body.location.should.eql([...meeting.geometry.coordinates].reverse());
+    read.body.status.should.equal('no');
+    read.body.meetingStatus.should.equal('yes');
+    for (const status of ['yes', 'maybe']) {
+      await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, status })
+          .expect(200),
+      );
+      (await search(['host']))!.properties.status.should.equal(status);
+      (await search(['meet']))!.properties.type.should.equal('meet');
+      (await search(['host', 'meet']))!.properties.type.should.equal('host');
+    }
+    await requestResult(
+      agent
+        .put(`/api/offers/${saved._id}`)
+        .send({ ...payload, status: 'yes', meetingStatus: 'no' })
+        .expect(200),
+    );
+    should.not.exist(await search(['meet']));
+    should.exist(await search(['host']));
+    await requestResult(
+      agent
+        .put(`/api/offers/${saved._id}`)
+        .send({ ...payload, meetingStatus: 'no' })
+        .expect(200),
+    );
+    should.not.exist(await search(['host', 'meet']));
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set']) {
+      await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, meetingStatus })
+          .expect(200),
+      );
+      const result = await search(['meet']);
+      if (meetingStatus === 'yes' || meetingStatus === 'maybe')
+        should.exist(result);
+      else should.not.exist(result);
+      const updated = await requestResult(
+        agent.get(`/api/offers/${saved._id}`).expect(200),
+      );
+      updated.body.meetingStatus.should.equal(meetingStatus);
+      updated.body.status.should.equal('no');
+    }
+    for (const meetingStatus of [
+      'true',
+      true,
+      false,
+      1,
+      null,
+      'unknown',
+      ['yes'],
+    ]) {
+      await requestResult(
+        agent
+          .post('/api/offers')
+          .send({ ...payload, meetingStatus })
+          .expect(400),
+      );
+      await requestResult(
+        agent
+          .put(`/api/offers/${saved._id}`)
+          .send({ ...payload, meetingStatus })
+          .expect(400),
+      );
+    }
+  });
+
+  it('applies existing visibility restrictions to ongoing meetings', async function () {
+    offer2.status = 'no';
+    offer2.meetingStatus = 'yes';
+    await offer2.save();
+    await requestResult(
+      agent.post('/api/auth/signin').send(credentials).expect(200),
+    );
+    const visible = async () => {
+      const response = await requestResult(
+        agent
+          .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+          .query({ filters: JSON.stringify({ types: ['meet'] }) })
+          .expect(200),
+      );
+      return response.body.features.some(
+        (feature: OfferFeature) =>
+          feature.properties.id === offer2._id.toString(),
+      );
+    };
+    (await visible()).should.equal(true);
+    offer2.showOnlyInMyCircles = true;
+    await offer2.save();
+    (await visible()).should.equal(false);
+    user1.member = [{ tribe: tribe2Id, since: new Date() }];
+    await user1.save();
+    (await visible()).should.equal(true);
+    for (const roles of [
+      ['user', 'suspended'],
+      ['user', 'shadowban'],
+    ]) {
+      user2.roles = roles;
+      await user2.save();
+      (await visible()).should.equal(false);
+    }
+    user2.roles = ['user'];
+    user2.public = false;
+    await user2.save();
+    (await visible()).should.equal(false);
+  });
+
   it('should be able to get empty list from an area where there are no offers', function (done) {
     agent
       .post('/api/auth/signin')

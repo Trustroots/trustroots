@@ -2,7 +2,8 @@
 import React, { Component } from 'react';
 
 // Internal dependencies
-import { getOffers, type Offer } from '../api/offers.api';
+import { getOffers, updateOffer, type Offer } from '../api/offers.api';
+import type { MeetingStatus } from '../../shared/offer';
 import OffersPresentational from './OffersPresentational';
 
 interface ProfileSummary {
@@ -22,6 +23,8 @@ interface OffersState {
   isOwnOffer: boolean;
   isUserPublic: boolean;
   isMobile: boolean;
+  isSavingMeeting: boolean;
+  meetingError: boolean;
 }
 
 export class Offers extends Component<OffersProps, OffersState> {
@@ -29,6 +32,8 @@ export class Offers extends Component<OffersProps, OffersState> {
     super(props);
     this.state = {
       offer: {},
+      isSavingMeeting: false,
+      meetingError: false,
       isLoading: true,
       isOwnOffer: false,
       isUserPublic: false,
@@ -60,6 +65,20 @@ export class Offers extends Component<OffersProps, OffersState> {
     }
   }
 
+  saveMeetingStatus = async (meetingStatus: MeetingStatus) => {
+    const { offer, isOwnOffer, isSavingMeeting } = this.state;
+    if (!isOwnOffer || isSavingMeeting || !offer._id || !offer.location) return;
+    this.setState({ isSavingMeeting: true, meetingError: false });
+    try {
+      await updateOffer(offer._id, { meetingStatus, location: offer.location });
+      this.setState({ offer: { ...offer, meetingStatus } });
+    } catch {
+      this.setState({ meetingError: true });
+    } finally {
+      this.setState({ isSavingMeeting: false });
+    }
+  };
+
   render() {
     const { isOwnOffer, isUserPublic, offer } = this.state;
 
@@ -75,6 +94,13 @@ export class Offers extends Component<OffersProps, OffersState> {
         isOwnOffer={isOwnOffer}
         isUserPublic={isUserPublic}
         offer={offer}
+        onMeetingStatusChange={
+          isOwnOffer && offer._id && offer.location
+            ? this.saveMeetingStatus
+            : undefined
+        }
+        isSavingMeeting={this.state.isSavingMeeting}
+        meetingError={this.state.meetingError}
         username={this.props.profile?.username}
       />
     );

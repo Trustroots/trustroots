@@ -14,6 +14,7 @@ describe('Offer API payload construction', () => {
       _id: new ObjectId('111111111111111111111111'),
       type: 'host',
       status: 'yes',
+      meetingStatus: 'yes',
       user: new ObjectId('222222222222222222222222'),
       description: 'A fictional offer.',
       noOfferDescription: 'A fictional status note.',
@@ -31,6 +32,7 @@ describe('Offer API payload construction', () => {
       _id: offer._id,
       type: offer.type,
       status: offer.status,
+      meetingStatus: 'yes',
       user: offer.user,
       description: offer.description,
       noOfferDescription: offer.noOfferDescription,
@@ -104,6 +106,24 @@ describe('Offer API payload construction', () => {
     assert.deepEqual(prepareOfferUpdate({ status: 'yes' }), {
       status: 'yes',
     });
+  });
+
+  it('preserves explicit opt-in and opt-out through all payload builders', () => {
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set'] as const) {
+      const request = {
+        type: 'host' as const,
+        status: 'no' as const,
+        location: [12, 34] as [number, number],
+        meetingStatus,
+      };
+      assert.equal(prepareNewOffer(request).meetingStatus, meetingStatus);
+      assert.equal(prepareOfferUpdate(request).meetingStatus, meetingStatus);
+      assert.equal(
+        prepareOfferPayload({ ...request, _id: 'offer', user: 'member' })
+          .meetingStatus,
+        meetingStatus,
+      );
+    }
   });
 
   it('constructs the existing mutation response messages', () => {

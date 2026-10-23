@@ -9,6 +9,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
+import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import OfferLocationEditor from './OfferLocationEditor.component';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
@@ -28,6 +29,7 @@ interface HostOffer {
   noOfferDescription: string;
   location: [number, number] | null;
   maxGuests: number;
+  meetingStatus: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles: boolean;
 }
 
@@ -43,6 +45,7 @@ function defaultHostOffer(): HostOffer {
     noOfferDescription: '',
     location: null,
     maxGuests: 1,
+    meetingStatus: 'not-set',
     showOnlyInMyCircles: false,
   };
 }
@@ -161,6 +164,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         description: offer.description,
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
+        meetingStatus: offer.meetingStatus,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
         location: offer.location!,
       };
@@ -267,6 +271,46 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       </div>
                     </fieldset>
 
+                    <MeetingAvailabilityControl
+                      value={offer.meetingStatus}
+                      onChange={meetingStatus =>
+                        setOffer(current => ({ ...current, meetingStatus }))
+                      }
+                      disabled={isSaving}
+                    />
+                    <p role="status">
+                      {offer.status === 'no'
+                        ? ['yes', 'maybe'].includes(offer.meetingStatus)
+                          ? 'You will appear on the map for meetings, but not as a host.'
+                          : 'You will not appear on the map for hosting or ongoing meetings.'
+                        : ['yes', 'maybe'].includes(offer.meetingStatus)
+                          ? 'You will appear on the map for hosting and meetings.'
+                          : 'You will appear on the map for hosting.'}{' '}
+                      Meetings use this same approximate location and circle
+                      visibility setting.
+                    </p>
+                    <fieldset>
+                      <legend>
+                        <h4>Available only in my circles?</h4>
+                      </legend>
+                      <div className="checkbox">
+                        <label>
+                          <input
+                            checked={offer.showOnlyInMyCircles}
+                            onChange={({ target: { checked } }) =>
+                              setOffer(current => ({
+                                ...current,
+                                showOnlyInMyCircles: checked,
+                              }))
+                            }
+                            type="checkbox"
+                          />
+                          People that are not in any of my circles should not
+                          find me.
+                        </label>
+                      </div>
+                    </fieldset>
+
                     {offer.status !== 'no' && (
                       <>
                         <br />
@@ -332,28 +376,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
 
                         <br />
                         <br />
-
-                        <fieldset>
-                          <legend>
-                            <h4>Available only in my circles?</h4>
-                          </legend>
-                          <div className="checkbox">
-                            <label>
-                              <input
-                                checked={offer.showOnlyInMyCircles}
-                                onChange={({ target: { checked } }) =>
-                                  setOffer(current => ({
-                                    ...current,
-                                    showOnlyInMyCircles: checked,
-                                  }))
-                                }
-                                type="checkbox"
-                              />
-                              People that are not in any of my circles should
-                              not find me.
-                            </label>
-                          </div>
-                        </fieldset>
                       </>
                     )}
                   </div>

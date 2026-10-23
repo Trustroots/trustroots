@@ -89,6 +89,153 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await signInViaApi(page, request, berlin);
   });
 
+  test('a non-host can update location and opt into ongoing meeting discovery', async ({
+    page,
+  }) => {
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [original] = await findOffersByUser(memberId, { type: 'host' });
+    expectPresent(original);
+    try {
+      const prepare = await page.request.put(`/api/offers/${original._id}`, {
+        data: {
+          status: 'no',
+          meetingStatus: 'not-set',
+          location: original.location,
+          description: 'I can host',
+          noOfferDescription: 'I am away from home.',
+        },
+      });
+      expect(prepare.ok()).toBeTruthy();
+      await page.goto('/offer/host');
+      await expect(
+        page
+          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByRole('radio', { name: 'Not set', exact: true }),
+      ).toBeChecked();
+      await page
+        .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+        .getByText('Yes', { exact: true })
+        .click();
+      await expect(
+        page.getByText(/for meetings, but not as a host/),
+      ).toBeVisible();
+      await page.getByRole('tab', { name: 'Location' }).click();
+      await page.evaluate(() => {
+        Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
+          publicKey: 'test-geocoding-token',
+        });
+      });
+      await page.route('https://api.mapbox.com/geocoding/**', route =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            features: [
+              {
+                id: 'place.fictional',
+                text: 'Example meeting town',
+                center: [12, 51],
+              },
+            ],
+          }),
+        }),
+      );
+      await page
+        .getByLabel('Search places', { exact: true })
+        .fill('Example meeting town');
+      await page.getByRole('button', { name: 'Example meeting town' }).click();
+      const saved = page.waitForResponse(
+        response =>
+          response.url().endsWith(`/api/offers/${original._id}`) &&
+          response.request().method() === 'PUT',
+      );
+      await page.getByRole('button', { name: 'Save and Exit' }).click();
+      expect((await saved).ok()).toBeTruthy();
+      await page.goto(`/profile/${berlin.username}/accommodation`);
+      await expect(
+        page.getByRole('radio', { name: 'Yes', exact: true }),
+      ).toBeChecked();
+      await expect(
+        page.getByText('Cannot host currently', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByText('Approximate meeting location', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.locator('.offer-location-section .offer-location'),
+      ).toBeVisible();
+      await expect(
+        page.getByText('I am away from home.', { exact: true }),
+      ).toBeVisible();
+      await expect(page.getByText('I can host', { exact: true })).toHaveCount(
+        0,
+      );
+      const own = await page.request.get(`/api/offers/${original._id}`);
+      const ownOffer = await own.json();
+      expect(ownOffer.location[0]).toBeCloseTo(51, 2);
+      expect(ownOffer.location[1]).toBeCloseTo(12, 2);
+      expect(ownOffer.status).toBe('no');
+      const discover = async (types: string[]) => {
+        const result = await page.request.get(
+          `/api/offers${EUROPE_OFFERS_QUERY}`,
+          { params: { filters: JSON.stringify({ types }) } },
+        );
+        expect(result.ok()).toBeTruthy();
+        return (await result.json()).features.find(
+          (feature: { properties: { id: string } }) =>
+            feature.properties.id === original._id.toString(),
+        );
+      };
+      const meeting = await discover(['meet']);
+      expect(meeting.properties).toMatchObject({
+        type: 'meet',
+        status: 'yes',
+        offer: 'meet-yes',
+      });
+      expect(meeting.geometry.coordinates).not.toEqual([
+        ownOffer.location[1],
+        ownOffer.location[0],
+      ]);
+      expect(await discover(['host'])).toBeUndefined();
+      for (const [label, status] of [
+        ['Maybe', 'maybe'],
+        ['No', 'no'],
+        ['Not set', 'not-set'],
+      ] as const) {
+        const savedFromProfile = page.waitForResponse(
+          response =>
+            response.url().endsWith(`/api/offers/${original._id}`) &&
+            response.request().method() === 'PUT',
+        );
+        await page
+          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByText(label, { exact: true })
+          .click();
+        expect((await savedFromProfile).ok()).toBeTruthy();
+        await page.reload();
+        await expect(
+          page.getByRole('radio', { name: label, exact: true }),
+        ).toBeChecked();
+        if (status === 'maybe') expect(await discover(['meet'])).toBeDefined();
+        else expect(await discover(['meet'])).toBeUndefined();
+        await expect(
+          page.getByText('Cannot host currently', { exact: true }),
+        ).toBeVisible();
+      }
+      await page.goto('/offer/host');
+      await expect(
+        page.getByRole('radio', { name: 'Not set', exact: true }),
+      ).toBeChecked();
+    } finally {
+      const restored = await page.request.put(`/api/offers/${original._id}`, {
+        data: {
+          ...original,
+          meetingStatus: original.meetingStatus ?? 'not-set',
+        },
+      });
+      expect(restored.ok()).toBeTruthy();
+    }
+  });
+
   test('hosting tab deep links preserve edits through browser history', async ({
     page,
   }) => {

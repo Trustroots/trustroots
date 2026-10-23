@@ -22,6 +22,8 @@ export interface SearchResultOffer {
   location?: [number, number];
   user: SearchOfferUser;
   type: OfferType;
+  noOfferDescription?: string;
+  meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
   status?: OfferStatus;
   description?: string;
   updated?: string;
@@ -166,7 +168,7 @@ export default function SearchSidebarResults({
           {offers.map(item =>
             renderResultButton(
               item._id!,
-              `Open ${item.type === 'host' ? 'hosting' : 'meet'} offer from ${
+              `Open ${item.type === 'host' && item.status !== 'no' ? 'hosting' : 'meet'} offer from ${
                 item.user.displayName || item.user.username
               }`,
               () => onOfferSelect(item),
@@ -176,8 +178,17 @@ export default function SearchSidebarResults({
                   <strong>{item.user.displayName || item.user.username}</strong>
                   <span className="text-muted"> @{item.user.username}</span>
                   <br />
-                  {item.type === 'host' ? 'Hosting' : 'Meet'}
-                  {item.type === 'host' && item.status && ` · ${item.status}`}
+                  {item.type === 'host'
+                    ? item.status === 'no'
+                      ? 'Cannot host currently'
+                      : 'Hosting'
+                    : 'Meet'}
+                  {item.meetingStatus === 'yes' && ' · Happy to meet'}
+                  {item.meetingStatus === 'maybe' && ' · Maybe up for meeting'}
+                  {item.type === 'host' &&
+                    item.status &&
+                    item.status !== 'no' &&
+                    ` · ${item.status}`}
                 </span>
               </>,
             ),
@@ -298,8 +309,20 @@ export default function SearchSidebarResults({
                   <span className="label btn-offer-meet"> Meet </span>
                 </div>
               )}
+              {offer.meetingStatus === 'yes' && (
+                <span className="label btn-offer-meet">Happy to meet</span>
+              )}
+              {offer.meetingStatus === 'maybe' && (
+                <span className="label btn-offer-meet">
+                  Maybe up for meeting
+                </span>
+              )}
               <OfferDescription
-                description={offer.description}
+                description={
+                  offer.type === 'host' && offer.status === 'no'
+                    ? offer.noOfferDescription
+                    : offer.description
+                }
                 offerType={offer.type}
               />
               {offer.type === 'meet' && offer.updated && (
