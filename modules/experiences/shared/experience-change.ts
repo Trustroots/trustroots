@@ -24,7 +24,8 @@ export interface ExperienceChangeAccess<Id = string> {
 }
 
 export type ExperienceChangeRequestKind = 'edit' | 'remove';
-export type ExperienceChangeRequestStatus = 'pending' | 'approved' | 'rejected';
+export type ExperienceChangeRequestStatus =
+  'pending' | 'processing' | 'approved' | 'rejected';
 export type ExperienceChangeStoredRequestStatus =
   ExperienceChangeRequestStatus | 'processing';
 
@@ -39,7 +40,7 @@ export interface ExperienceChangeSubmissionResult<
   createdAt: Timestamp;
 }
 
-/** Processing requests are exposed as pending by the request-status endpoint. */
+/** Request status includes recoverable approvals in progress. */
 export interface ExperienceChangeRequestSummary<
   Id = string,
   Timestamp = string,

@@ -57,6 +57,7 @@ interface AdminExperienceChangeRequestBase<Id = string, Timestamp = string> {
   requester: AdminExperienceChangeMember<Id> | null;
   experience: AdminExperienceChangeQueuedExperience<Id, Timestamp> | null;
   status: 'pending' | 'processing' | 'approved';
+  original?: AdminExperienceChangeProposal;
   canReview?: boolean;
   canApprove?: boolean;
 }

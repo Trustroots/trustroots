@@ -205,6 +205,7 @@ it('shows an error when search, link issuance, or review fails', async () => {
     .mockResolvedValueOnce([experience]);
   apiMock.issueLink.mockRejectedValueOnce(new Error('link failed'));
   apiMock.decide.mockRejectedValueOnce(new Error('review failed'));
+  apiMock.listRequests.mockRejectedValueOnce(new Error('refresh unavailable'));
   render(<AdminExperienceChanges />);
 
   expect(await screen.findByText('Unknown member')).toBeInTheDocument();
@@ -329,4 +330,52 @@ it('explains when approval needs another reviewer while allowing rejection', asy
   ).toBeInTheDocument();
   expect(screen.getByRole('button', { name: 'Approve' })).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Reject' })).toBeEnabled();
+});
+
+it('refreshes an uncertain approval, preserves originals and only offers finishing approval', async () => {
+  const pending = editRequest({
+    original: {
+      feedbackPublic: 'Original snapshot',
+      recommend: 'yes',
+      interactions: { met: true, guest: false, host: false },
+    },
+    proposed: {
+      feedbackPublic: 'Revised feedback',
+      recommend: 'no',
+      interactions: { met: true, guest: false, host: false },
+    },
+  });
+  apiMock.listRequests
+    .mockResolvedValueOnce([pending])
+    .mockResolvedValueOnce([
+      {
+        ...pending,
+        status: 'processing',
+        experience: { ...experience, feedbackPublic: 'Revised feedback' },
+      },
+    ])
+    .mockResolvedValueOnce([]);
+  apiMock.decide
+    .mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { data: { message: 'Temporary write failure.' } },
+    })
+    .mockResolvedValueOnce({ _id: 'request-1', status: 'approved' });
+  render(<AdminExperienceChanges />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Approve' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Temporary write failure.',
+  );
+  const finish = await screen.findByRole('button', { name: 'Finish approval' });
+  expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+  expect(
+    screen.getByRole('heading', { name: 'Original values' }),
+  ).toBeVisible();
+  expect(screen.getByText('Feedback: Original snapshot')).toBeVisible();
+  expect(screen.getByText('Feedback: Revised feedback')).toBeVisible();
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'Approval is in progress',
+  );
+  fireEvent.click(finish);
+  expect(await screen.findByText('No requests awaiting review.')).toBeVisible();
 });

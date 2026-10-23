@@ -7,7 +7,11 @@ import {
   registerViaApi,
   signInViaApi,
 } from '../../support/helpers.mts';
-import { updateUserByUsername } from '../../support/db.mts';
+import {
+  updateUserByUsername,
+  withE2eDb,
+  objectId,
+} from '../../support/db.mts';
 import type { APIRequestContext } from '@playwright/test';
 
 async function createPublicUser(
@@ -190,7 +194,54 @@ for (const reviewerRole of ['admin', 'support-team']) {
       await expect(
         pendingRequest.getByText('An anonymous revised Experience.'),
       ).toBeVisible();
-      await pendingRequest.getByRole('button', { name: 'Approve' }).click();
+      await expect(
+        pendingRequest.getByRole('heading', { name: 'Original values' }),
+      ).toBeVisible();
+      // Recover the persisted state left by an interruption after applying an edit.
+      await withE2eDb(async db => {
+        const change = await db
+          .collection('experiencechangerequests')
+          .findOne({ experience: objectId(experience._id), active: true });
+        const reviewer = await db
+          .collection('users')
+          .findOne({ username: SEEDED_ADMIN.username });
+        if (!change || !reviewer) throw new Error('Missing review fixture');
+        await db.collection('experiencechangerequests').updateOne(
+          { _id: change._id },
+          {
+            $set: {
+              status: 'processing',
+              reviewedAt: new Date(),
+              reviewedBy: reviewer._id,
+            },
+          },
+        );
+        await db.collection('experiences').updateOne(
+          { _id: objectId(experience._id) },
+          {
+            $set: change.proposed,
+            $addToSet: { appliedChangeRequests: change._id },
+          },
+        );
+      });
+      await page.reload();
+      await expect(
+        pendingRequest.getByText(
+          'Feedback: An anonymous original Experience.',
+          { exact: true },
+        ),
+      ).toBeVisible();
+      await expect(
+        pendingRequest.getByRole('button', { name: 'Reject' }),
+      ).toBeDisabled();
+      await memberPage.reload();
+      await expect(memberPage.getByRole('status')).toContainText(
+        'being approved',
+      );
+      await pendingRequest
+        .getByRole('button', { name: 'Finish approval' })
+        .click();
+      await expect(pendingRequest).toHaveCount(0);
       await memberPage.reload();
       await expect(memberPage.getByRole('status')).toContainText('approved');
 

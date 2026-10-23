@@ -18,6 +18,7 @@ export interface ExperienceRecord {
   feedbackPublic?: string;
   removedAt?: Date;
   removedBy?: Types.ObjectId;
+  appliedChangeRequests?: Types.ObjectId[];
 }
 
 /**
@@ -74,6 +75,11 @@ const ExperienceSchema = new Schema<ExperienceRecord>({
   },
   removedAt: Date,
   removedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+  appliedChangeRequests: {
+    type: [Schema.Types.ObjectId],
+    default: undefined,
+    select: false,
+  },
 });
 
 /**

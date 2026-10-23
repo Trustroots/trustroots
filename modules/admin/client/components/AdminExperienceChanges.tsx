@@ -1,3 +1,4 @@
+import { isAxiosError } from 'axios';
 import React, { useEffect, useState } from 'react';
 
 import * as api from '../api/admin-experience-changes.api';
@@ -122,8 +123,13 @@ export default function AdminExperienceChanges(): React.JSX.Element {
     try {
       await api.decide(request._id, decision);
       await refreshRequests();
-    } catch {
-      setError('Could not save the decision.');
+    } catch (error) {
+      setError(
+        (isAxiosError<{ message?: string }>(error) &&
+          error.response?.data.message) ||
+          'Could not save the decision.',
+      );
+      await refreshRequests().catch(() => {});
     } finally {
       setBusy(false);
     }
@@ -212,7 +218,23 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                     <strong>{memberLabel(request.requester)}</strong> requests{' '}
                     {request.kind === 'edit' ? 'an edit' : 'removal'}.
                   </p>
-                  <ExperienceDetails experience={request.experience} />
+                  <h3>
+                    {request.original ? 'Original values' : 'Current values'}
+                  </h3>
+                  <ExperienceDetails
+                    experience={
+                      request.experience && {
+                        ...request.experience,
+                        ...request.original,
+                      }
+                    }
+                  />
+                  {request.status === 'processing' && (
+                    <p role="status">
+                      Approval is in progress. Finish approval to confirm the
+                      result. This request can no longer be rejected.
+                    </p>
+                  )}
                   {request.kind === 'edit' && (
                     <div>
                       <h3>Proposed values</h3>
@@ -247,12 +269,18 @@ export default function AdminExperienceChanges(): React.JSX.Element {
                     disabled={busy || request.canApprove === false}
                     onClick={() => void decide(request, 'approve')}
                   >
-                    Approve
+                    {request.status === 'processing'
+                      ? 'Finish approval'
+                      : 'Approve'}
                   </button>{' '}
                   <button
                     className="btn btn-default"
                     type="button"
-                    disabled={busy || request.canReview === false}
+                    disabled={
+                      busy ||
+                      request.canReview === false ||
+                      request.status === 'processing'
+                    }
                     onClick={() => void decide(request, 'reject')}
                   >
                     Reject
