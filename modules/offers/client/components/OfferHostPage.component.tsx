@@ -10,6 +10,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
+import MeetingAvailabilityControl from './MeetingAvailabilityControl';
 import OfferLocationEditor from './OfferLocationEditor.component';
 import { hostStatusIntent } from './hostStatusIntent';
 
@@ -25,7 +26,7 @@ interface HostOffer {
   noOfferDescription: string;
   location: [number, number] | null;
   maxGuests: number;
-  happyToMeet: boolean;
+  meetingStatus: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles: boolean;
 }
 
@@ -41,7 +42,7 @@ function defaultHostOffer(): HostOffer {
     noOfferDescription: '',
     location: null,
     maxGuests: 1,
-    happyToMeet: false,
+    meetingStatus: 'not-set',
     showOnlyInMyCircles: false,
   };
 }
@@ -152,7 +153,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         description: offer.description,
         noOfferDescription: offer.noOfferDescription,
         maxGuests: offer.maxGuests,
-        happyToMeet: offer.happyToMeet,
+        meetingStatus: offer.meetingStatus,
         showOnlyInMyCircles: offer.showOnlyInMyCircles,
         location: offer.location!,
       };
@@ -266,27 +267,19 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       </ButtonGroup>
                     </fieldset>
 
-                    <div className="checkbox">
-                      <label>
-                        <input
-                          checked={offer.happyToMeet}
-                          onChange={({ target: { checked } }) =>
-                            setOffer(current => ({
-                              ...current,
-                              happyToMeet: checked,
-                            }))
-                          }
-                          type="checkbox"
-                        />
-                        Happy to meet
-                      </label>
-                    </div>
+                    <MeetingAvailabilityControl
+                      value={offer.meetingStatus}
+                      onChange={meetingStatus =>
+                        setOffer(current => ({ ...current, meetingStatus }))
+                      }
+                      disabled={isSaving}
+                    />
                     <p role="status">
                       {offer.status === 'no'
-                        ? offer.happyToMeet
+                        ? ['yes', 'maybe'].includes(offer.meetingStatus)
                           ? 'You will appear on the map for meetings, but not as a host.'
                           : 'You will not appear on the map for hosting or ongoing meetings.'
-                        : offer.happyToMeet
+                        : ['yes', 'maybe'].includes(offer.meetingStatus)
                           ? 'You will appear on the map for hosting and meetings.'
                           : 'You will appear on the map for hosting.'}{' '}
                       Meetings use this same approximate location and circle

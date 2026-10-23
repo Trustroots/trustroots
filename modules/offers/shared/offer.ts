@@ -1,3 +1,4 @@
+export type MeetingStatus = 'yes' | 'maybe' | 'no' | 'not-set';
 export type OfferType = 'host' | 'meet';
 export type OfferStatus = 'yes' | 'maybe' | 'no';
 
@@ -11,7 +12,7 @@ export interface OfferEditableFields {
   maxGuests?: number;
   location?: OfferLocation;
   validUntil?: string | number | Date;
-  happyToMeet?: boolean;
+  meetingStatus?: MeetingStatus;
   showOnlyInMyCircles?: boolean;
 }
 
@@ -58,7 +59,7 @@ export interface OfferPayload<Id = string, Timestamp = string> {
   maxGuests?: number;
   updated?: Timestamp;
   validUntil?: Timestamp;
-  happyToMeet?: boolean;
+  meetingStatus?: MeetingStatus;
   showOnlyInMyCircles?: boolean;
 }
 

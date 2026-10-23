@@ -67,3 +67,46 @@
     color: #fff;
   }
 }
+
+.offer-meeting-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+
+  > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  > a {
+    flex-shrink: 0;
+  }
+}
+
+.meeting-availability-control {
+  min-width: 0;
+  margin: 0;
+
+  legend {
+    margin-bottom: 8px;
+    border: 0;
+    font-size: inherit;
+  }
+
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 8px 12px;
+  }
+
+  .btn:focus-within {
+    outline: 2px solid @gray-dark;
+    outline-offset: 2px;
+    z-index: 1;
+  }
+}

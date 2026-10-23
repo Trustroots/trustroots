@@ -64,6 +64,17 @@ describe('Offer Model Unit Tests:', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+  it('defaults meeting availability to not-set and accepts only explicit choices', async () => {
+    should(offerHost.meetingStatus).equal('not-set');
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set'] as const) {
+      offerHost.meetingStatus = meetingStatus;
+      await offerHost.save();
+      const saved = await Offer.findById(offerHost._id);
+      should(saved?.meetingStatus).equal(meetingStatus);
+    }
+    offerHost.set('meetingStatus', 'unknown');
+    should(offerHost.validateSync()?.errors.meetingStatus).be.ok();
+  });
   describe('Method Save', function () {
     it('should be able to save host offer without problems', function (done) {
       offerHost
