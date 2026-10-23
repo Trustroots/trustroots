@@ -1046,7 +1046,11 @@ export default class AdminUser extends Component<
                             <li>
                               <a
                                 className="text-success"
-                                href="#thread-votes-received-positive"
+                                href={`${
+                                  user.profile.username
+                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                    : `/admin/threads?userId=${user.profile._id}`
+                                }&vote=received-positive`}
                               >
                                 {user.threadReferencesReceivedYes || 0} positive
                               </a>
@@ -1054,7 +1058,11 @@ export default class AdminUser extends Component<
                             <li>
                               <a
                                 className="text-danger"
-                                href="#thread-votes-received-negative"
+                                href={`${
+                                  user.profile.username
+                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                    : `/admin/threads?userId=${user.profile._id}`
+                                }&vote=received-negative`}
                               >
                                 {user.threadReferencesReceivedNo || 0} negative
                               </a>
@@ -1070,7 +1078,11 @@ export default class AdminUser extends Component<
                             <li>
                               <a
                                 className="text-success"
-                                href="#thread-votes-gave-positive"
+                                href={`${
+                                  user.profile.username
+                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                    : `/admin/threads?userId=${user.profile._id}`
+                                }&vote=given-positive`}
                               >
                                 {user.threadReferencesSentYes || 0} positive
                               </a>
@@ -1078,7 +1090,11 @@ export default class AdminUser extends Component<
                             <li>
                               <a
                                 className="text-danger"
-                                href="#thread-votes-gave-negative"
+                                href={`${
+                                  user.profile.username
+                                    ? `/admin/threads?username=${encodeURIComponent(user.profile.username)}`
+                                    : `/admin/threads?userId=${user.profile._id}`
+                                }&vote=given-negative`}
                               >
                                 {user.threadReferencesSentNo || 0} negative
                               </a>

@@ -15,6 +15,17 @@ function MessageTime({ value }: { value?: string | null }) {
 
 export default function AdminThreads() {
   const [params] = useState(() => new URLSearchParams(window.location.search));
+  const [voteFilter, setVoteFilter] = useState(() => {
+    const value = params.get('vote') || '';
+    return [
+      'received-positive',
+      'received-negative',
+      'given-positive',
+      'given-negative',
+    ].includes(value)
+      ? value
+      : '';
+  });
   const [username, setUsername] = useState(params.get('username') || '');
   const [threads, setThreads] = useState<AdminThread[]>([]);
   const [loading, setLoading] = useState(false);
@@ -58,6 +69,20 @@ export default function AdminThreads() {
     };
   }, [requestedUsername, legacyId]);
 
+  const filteredThreads = threads.filter(thread => {
+    if (!voteFilter) return true;
+    const [direction, sentiment] = voteFilter.split('-');
+    const member = [...thread.userFromProfile, ...thread.userToProfile].find(
+      profile => profile.username === username,
+    );
+    return thread.votes?.some(
+      vote =>
+        vote[direction === 'received' ? 'userTo' : 'userFrom'] ===
+          member?._id &&
+        vote.reference === (sentiment === 'positive' ? 'yes' : 'no'),
+    );
+  });
+
   return (
     <>
       <AdminHeader />
@@ -71,6 +96,29 @@ export default function AdminThreads() {
         {!requestedUsername && !legacyId && (
           <p>Open a member’s threads from their account page.</p>
         )}
+        {(requestedUsername || legacyId) && (
+          <label>
+            Filter by thread vote
+            <select
+              className="form-control"
+              value={voteFilter}
+              onChange={event => {
+                const value = event.target.value;
+                setVoteFilter(value);
+                const url = new URL(window.location.href);
+                if (value) url.searchParams.set('vote', value);
+                else url.searchParams.delete('vote');
+                window.history.replaceState(window.history.state, '', url);
+              }}
+            >
+              <option value="">All threads</option>
+              <option value="received-positive">Positive votes received</option>
+              <option value="received-negative">Negative votes received</option>
+              <option value="given-positive">Positive votes given</option>
+              <option value="given-negative">Negative votes given</option>
+            </select>
+          </label>
+        )}
         {loading && <p role="status">Loading threads…</p>}
         {failed && (
           <p role="alert">Unable to load threads. Please try again.</p>
@@ -78,7 +126,7 @@ export default function AdminThreads() {
         {!loading &&
           !failed &&
           (requestedUsername || legacyId) &&
-          (threads.length === 0 ? (
+          (filteredThreads.length === 0 ? (
             <p>Nothing found…</p>
           ) : (
             <>
@@ -100,7 +148,7 @@ export default function AdminThreads() {
                     </tr>
                   </thead>
                   <tbody>
-                    {threads.map(thread => {
+                    {filteredThreads.map(thread => {
                       const from = thread.userFromProfile[0];
                       const to = thread.userToProfile[0];
                       return (
