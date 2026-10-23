@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 
 import Map from '@/modules/core/client/components/Map/index';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
+import useMapDefaultLocation from '@/modules/core/client/utils/use-map-default-location';
+import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
 import OfferLocationOverlay from './OfferLocationOverlay';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
@@ -40,12 +42,19 @@ export default function OfferLocationEditor({
   onLocationChange,
 }: OfferLocationEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const mapLocation = location || [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng];
+  const [approximateLocation, stopDefaultLocation] =
+    useMapDefaultLocation(!location);
+  const mapLocation =
+    location ||
+    (approximateLocation
+      ? [approximateLocation.latitude, approximateLocation.longitude]
+      : [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng]);
 
   function handlePlaceSearch(
     data: MapBounds | MapPoint,
     type: 'center' | 'bounds',
   ) {
+    stopDefaultLocation();
     if (type === 'center' && 'lat' in data && data.lat && data.lng) {
       onLocationChange([data.lat, data.lng]);
     } else if (
@@ -61,6 +70,7 @@ export default function OfferLocationEditor({
   }
 
   function handleMapLocationChange(nextLocation: [number, number]) {
+    stopDefaultLocation();
     // The unchosen map centre is not an offer location.
     if (
       !location &&
@@ -73,7 +83,13 @@ export default function OfferLocationEditor({
   }
 
   return (
-    <div className="panel panel-default offer-panel-map">
+    <div
+      className="panel panel-default offer-panel-map"
+      onPointerDownCapture={stopDefaultLocation}
+      onTouchStartCapture={stopDefaultLocation}
+      onWheelCapture={stopDefaultLocation}
+      onKeyDownCapture={stopDefaultLocation}
+    >
       <div className="panel-body">
         <p className="lead" id="offerLocation">
           <strong>
@@ -82,6 +98,12 @@ export default function OfferLocationEditor({
           </strong>
           <br />
           The location is publicly shown, randomised by a couple hundred metres.
+          {approximateLocation && (
+            <>
+              <br />
+              <MapDefaultAttribution />
+            </>
+          )}
         </p>
         <SearchPlaceInput
           id="offer-search-query"
@@ -112,7 +134,9 @@ export default function OfferLocationEditor({
           width="100%"
           zoom={
             /* istanbul ignore next -- offer editors initialise a two-coordinate location. */
-            location?.length === 2 ? 13 : DEFAULT_LOCATION.zoom
+            location?.length === 2
+              ? 13
+              : (approximateLocation?.zoom ?? DEFAULT_LOCATION.zoom)
           }
         >
           {location?.length === 2 && (

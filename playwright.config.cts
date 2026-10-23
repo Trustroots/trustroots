@@ -214,7 +214,7 @@ const config: PlaywrightTestConfig = defineConfig({
     {
       name: 'search-offers-circles',
       testMatch:
-        /features\/search-offers-circles\/offers-and-circles\.spec\.ts/,
+        /features\/search-offers-circles\/(offers-and-circles|geoip-map-defaults)\.spec\.ts/,
       dependencies: serializedDependencies(
         ['setup-authenticated'],
         ['relationships-safety'],
