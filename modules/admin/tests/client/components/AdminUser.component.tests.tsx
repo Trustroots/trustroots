@@ -345,11 +345,11 @@ describe('<AdminUser />', () => {
     ).toHaveAttribute('href', '/admin/threads?username=alice');
     expect(screen.getByRole('link', { name: '2 positive' })).toHaveAttribute(
       'href',
-      '#thread-votes-received-positive',
+      '/admin/threads?username=alice&vote=received-positive',
     );
     expect(screen.getByRole('link', { name: '3 negative' })).toHaveAttribute(
       'href',
-      '#thread-votes-gave-negative',
+      '/admin/threads?username=alice&vote=given-negative',
     );
     expect(screen.getByText('Positive votes received')).toBeInTheDocument();
     expect(screen.getByText('Negative votes gave')).toBeInTheDocument();
@@ -1313,6 +1313,22 @@ describe('<AdminUser />', () => {
         name: 'Unknown member',
       }),
     ).toBeInTheDocument();
+    for (const [direction, urlDirection] of [
+      ['received', 'received'],
+      ['given', 'given'],
+    ]) {
+      const card = screen.getByRole('region', {
+        name: `Thread votes ${direction}`,
+      });
+      for (const sentiment of ['positive', 'negative']) {
+        expect(
+          within(card).getByRole('link', { name: new RegExp(sentiment) }),
+        ).toHaveAttribute(
+          'href',
+          `/admin/threads?userId=${userId}&vote=${urlDirection}-${sentiment}`,
+        );
+      }
+    }
   });
 
   it('changes a member role after confirmation and refreshes the profile', async () => {

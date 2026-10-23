@@ -1,5 +1,12 @@
 import React from 'react';
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import {
@@ -212,4 +219,95 @@ test('retains votes when a participant has been deleted', async () => {
   expect(screen.getByText('negative').closest('li')).toHaveTextContent(
     'Deleted member → Deleted member: negative',
   );
+});
+
+const voteCases = [
+  ['received-positive', bob._id, alice._id, 'yes'],
+  ['received-negative', bob._id, alice._id, 'no'],
+  ['given-positive', alice._id, bob._id, 'yes'],
+  ['given-negative', alice._id, bob._id, 'no'],
+] as const;
+const votedThreads: AdminThread[] = voteCases.map(
+  ([filter, userFrom, userTo, reference], index) => ({
+    ...thread,
+    _id: filter,
+    // The last message direction must not determine the vote direction.
+    userFromProfile: index % 2 ? [bob] : [alice],
+    userToProfile: index % 2 ? [alice] : [bob],
+    votes: [{ _id: `vote-${index}`, userFrom, userTo, reference }],
+  }),
+);
+
+test.each(voteCases)('opens only threads with %s votes', async filter => {
+  window.history.replaceState(
+    {},
+    '',
+    `/admin/threads?username=alice&vote=${filter}`,
+  );
+  threads.mockResolvedValue([
+    ...votedThreads,
+    { ...thread, _id: 'without-votes', votes: undefined },
+  ]);
+  render(<AdminThreads />);
+  const table = await screen.findByRole('table', { name: 'Threads' });
+  expect(screen.getByLabelText('Filter by thread vote')).toHaveValue(filter);
+  expect(within(table).getAllByRole('row')).toHaveLength(2);
+  const selected = votedThreads.find(item => item._id === filter)!;
+  expect(
+    within(table).getByText(
+      selected.votes![0].reference === 'yes' ? 'positive' : 'negative',
+    ),
+  ).toBeInTheDocument();
+});
+
+test('changes and clears the vote filter and preserves the member URL', async () => {
+  threads.mockResolvedValue(votedThreads);
+  render(<AdminThreads />);
+  const table = await screen.findByRole('table');
+  expect(within(table).getAllByRole('row')).toHaveLength(5);
+  fireEvent.change(screen.getByLabelText('Filter by thread vote'), {
+    target: { value: 'given-negative' },
+  });
+  expect(within(table).getAllByRole('row')).toHaveLength(2);
+  expect(window.location.search).toBe('?username=alice&vote=given-negative');
+  fireEvent.change(screen.getByLabelText('Filter by thread vote'), {
+    target: { value: '' },
+  });
+  expect(within(table).getAllByRole('row')).toHaveLength(5);
+  expect(window.location.search).toBe('?username=alice');
+  expect(threads).toHaveBeenCalledTimes(1);
+});
+
+test('shows an empty result for unmatched votes and keeps a legacy link filter during username resolution', async () => {
+  window.history.replaceState(
+    {},
+    '',
+    `/admin/threads?userId=${id}&vote=received-positive`,
+  );
+  user.mockResolvedValue({ profile: alice });
+  render(<AdminThreads />);
+  expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
+  expect(window.location.search).toBe('?vote=received-positive&username=alice');
+});
+
+test('ignores an unknown vote filter', async () => {
+  window.history.replaceState(
+    {},
+    '',
+    '/admin/threads?username=alice&vote=unknown',
+  );
+  render(<AdminThreads />);
+  await screen.findByRole('table');
+  expect(screen.getByLabelText('Filter by thread vote')).toHaveValue('');
+});
+
+test('does not attribute a vote to a missing member profile', async () => {
+  window.history.replaceState(
+    {},
+    '',
+    '/admin/threads?username=alice&vote=given-positive',
+  );
+  threads.mockResolvedValue([{ ...thread, userFromProfile: [] }]);
+  render(<AdminThreads />);
+  expect(await screen.findByText('Nothing found…')).toBeInTheDocument();
 });
