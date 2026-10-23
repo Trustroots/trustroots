@@ -14,7 +14,7 @@ describe('Offer API payload construction', () => {
       _id: new ObjectId('111111111111111111111111'),
       type: 'host',
       status: 'yes',
-      happyToMeet: true,
+      meetingStatus: 'yes',
       user: new ObjectId('222222222222222222222222'),
       description: 'A fictional offer.',
       noOfferDescription: 'A fictional status note.',
@@ -32,7 +32,7 @@ describe('Offer API payload construction', () => {
       _id: offer._id,
       type: offer.type,
       status: offer.status,
-      happyToMeet: true,
+      meetingStatus: 'yes',
       user: offer.user,
       description: offer.description,
       noOfferDescription: offer.noOfferDescription,
@@ -109,19 +109,19 @@ describe('Offer API payload construction', () => {
   });
 
   it('preserves explicit opt-in and opt-out through all payload builders', () => {
-    for (const happyToMeet of [true, false]) {
+    for (const meetingStatus of ['yes', 'maybe', 'no', 'not-set'] as const) {
       const request = {
         type: 'host' as const,
         status: 'no' as const,
         location: [12, 34] as [number, number],
-        happyToMeet,
+        meetingStatus,
       };
-      assert.equal(prepareNewOffer(request).happyToMeet, happyToMeet);
-      assert.equal(prepareOfferUpdate(request).happyToMeet, happyToMeet);
+      assert.equal(prepareNewOffer(request).meetingStatus, meetingStatus);
+      assert.equal(prepareOfferUpdate(request).meetingStatus, meetingStatus);
       assert.equal(
         prepareOfferPayload({ ...request, _id: 'offer', user: 'member' })
-          .happyToMeet,
-        happyToMeet,
+          .meetingStatus,
+        meetingStatus,
       );
     }
   });

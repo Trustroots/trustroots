@@ -99,7 +99,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       const prepare = await page.request.put(`/api/offers/${original._id}`, {
         data: {
           status: 'no',
-          happyToMeet: false,
+          meetingStatus: 'not-set',
           location: original.location,
           description: 'I can host',
           noOfferDescription: 'I am away from home.',
@@ -108,9 +108,14 @@ test.describe.serial('search offers and circles feature coverage', () => {
       expect(prepare.ok()).toBeTruthy();
       await page.goto('/offer/host');
       await expect(
-        page.getByRole('checkbox', { name: 'Happy to meet' }),
-      ).not.toBeChecked();
-      await page.getByRole('checkbox', { name: 'Happy to meet' }).check();
+        page
+          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByRole('radio', { name: 'Not set', exact: true }),
+      ).toBeChecked();
+      await page
+        .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+        .getByText('Yes', { exact: true })
+        .click();
       await expect(
         page.getByText(/for meetings, but not as a host/),
       ).toBeVisible();
@@ -147,8 +152,8 @@ test.describe.serial('search offers and circles feature coverage', () => {
       expect((await saved).ok()).toBeTruthy();
       await page.goto(`/profile/${berlin.username}/accommodation`);
       await expect(
-        page.getByText('Happy to meet', { exact: true }),
-      ).toBeVisible();
+        page.getByRole('radio', { name: 'Yes', exact: true }),
+      ).toBeChecked();
       await expect(
         page.getByText('Cannot host currently', { exact: true }),
       ).toBeVisible();
@@ -191,19 +196,41 @@ test.describe.serial('search offers and circles feature coverage', () => {
         ownOffer.location[0],
       ]);
       expect(await discover(['host'])).toBeUndefined();
+      for (const [label, status] of [
+        ['Maybe', 'maybe'],
+        ['No', 'no'],
+        ['Not set', 'not-set'],
+      ] as const) {
+        const savedFromProfile = page.waitForResponse(
+          response =>
+            response.url().endsWith(`/api/offers/${original._id}`) &&
+            response.request().method() === 'PUT',
+        );
+        await page
+          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByText(label, { exact: true })
+          .click();
+        expect((await savedFromProfile).ok()).toBeTruthy();
+        await page.reload();
+        await expect(
+          page.getByRole('radio', { name: label, exact: true }),
+        ).toBeChecked();
+        if (status === 'maybe') expect(await discover(['meet'])).toBeDefined();
+        else expect(await discover(['meet'])).toBeUndefined();
+        await expect(
+          page.getByText('Cannot host currently', { exact: true }),
+        ).toBeVisible();
+      }
       await page.goto('/offer/host');
-      await page.getByRole('checkbox', { name: 'Happy to meet' }).uncheck();
-      const disabled = page.waitForResponse(
-        response =>
-          response.url().endsWith(`/api/offers/${original._id}`) &&
-          response.request().method() === 'PUT',
-      );
-      await page.getByRole('button', { name: 'Save and Exit' }).click();
-      expect((await disabled).ok()).toBeTruthy();
-      expect(await discover(['meet'])).toBeUndefined();
+      await expect(
+        page.getByRole('radio', { name: 'Not set', exact: true }),
+      ).toBeChecked();
     } finally {
       const restored = await page.request.put(`/api/offers/${original._id}`, {
-        data: { ...original, happyToMeet: original.happyToMeet === true },
+        data: {
+          ...original,
+          meetingStatus: original.meetingStatus ?? 'not-set',
+        },
       });
       expect(restored.ok()).toBeTruthy();
     }
