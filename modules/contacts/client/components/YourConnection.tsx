@@ -29,6 +29,7 @@ interface Props {
   viewer: Member;
   member: Member;
   available?: boolean;
+  contactRefreshKey?: string;
   onContactRemoved?: (contact: ContactRecord) => void;
 }
 type Source<T> =
@@ -36,7 +37,11 @@ type Source<T> =
   | { status: 'ready'; data: T };
 
 /** Each source can be retried independently; unmounted/past-pair reads are ignored. */
-function useSource<T>(load: () => Promise<T>, enabled: boolean) {
+function useSource<T>(
+  load: () => Promise<T>,
+  enabled: boolean,
+  refreshKey?: string,
+) {
   const [attempt, setAttempt] = useState(0);
   const [state, setState] = useState<Source<T>>({
     status: enabled ? 'loading' : 'unavailable',
@@ -56,7 +61,7 @@ function useSource<T>(load: () => Promise<T>, enabled: boolean) {
     return () => {
       active = false;
     };
-  }, [attempt, enabled]);
+  }, [attempt, enabled, refreshKey]);
   return { state, setState, retry: () => setAttempt(value => value + 1) };
 }
 
@@ -80,6 +85,7 @@ export default function YourConnection({
   viewer,
   member,
   available = true,
+  contactRefreshKey,
   onContactRemoved,
 }: Props) {
   const { referencesEnabled = false } = useSettings();
@@ -100,6 +106,7 @@ export default function YourConnection({
       member={member}
       experiencesEnabled={referencesEnabled}
       feedbackEnabled={referencesEnabled}
+      contactRefreshKey={contactRefreshKey}
       onContactRemoved={onContactRemoved}
     />
   );
@@ -110,6 +117,7 @@ function ConnectionPair({
   member,
   experiencesEnabled,
   feedbackEnabled,
+  contactRefreshKey,
   onContactRemoved,
 }: Props & { experiencesEnabled: boolean; feedbackEnabled: boolean }) {
   const { t } = useTranslation('contacts');
@@ -117,6 +125,7 @@ function ConnectionPair({
   const contact = useSource<ContactRecord | null>(
     () => contacts.getByUserId(member._id),
     true,
+    contactRefreshKey,
   );
   const experience = useSource<ExperienceMine | null>(
     () => experiences.readMine({ userWith: member._id }),
@@ -379,7 +388,7 @@ function ConnectionPair({
                     : t<string>('No')
                   : t<string>('Not recorded')}
               </p>
-              {canConnect &&
+              {mutationsAllowed &&
                 reference.state.data.eligible &&
                 feedbackAllowed && (
                   <>
@@ -416,7 +425,7 @@ function ConnectionPair({
               {mutationError && (
                 <p role="alert">
                   {t<string>('Could not save your change. Please try again.')}{' '}
-                  {canConnect &&
+                  {mutationsAllowed &&
                     reference.state.data.eligible &&
                     feedbackAllowed && (
                       <button

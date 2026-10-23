@@ -470,18 +470,56 @@ it.each([
   expect(getContact).not.toHaveBeenCalled();
 });
 
-it('keeps Experience writing independent of blocking while gating contact and feedback controls', async () => {
+it('allows Experience writing and private feedback while a member is blocked', async () => {
   mount({ viewer: { ...viewer, blocked: [member._id], roles: ['user'] } });
   await loaded();
   expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
+  fireEvent.click(
+    section('Private message feedback').getByRole('button', { name: 'No' }),
+  );
+  await waitFor(() =>
+    expect(sendFeedback).toHaveBeenCalledWith('no', member._id),
+  );
+  fireEvent.click(
+    await section('Private message feedback').findByRole('button', {
+      name: 'Change',
+    }),
+  );
+  fireEvent.click(
+    section('Private message feedback').getByRole('button', { name: 'Yes' }),
+  );
+  await waitFor(() =>
+    expect(sendFeedback).toHaveBeenCalledWith('yes', member._id),
+  );
   expect(
-    section('Private message feedback').queryByRole('button'),
-  ).not.toBeInTheDocument();
+    await section('Private message feedback').findByRole('button', {
+      name: 'Change',
+    }),
+  ).toBeVisible();
   expect(
     section('Your account').getByRole('link', {
       name: 'Share your experience',
     }),
   ).toBeVisible();
+});
+
+it('refreshes externally removed contacts without reloading the other sources', async () => {
+  getContact.mockResolvedValueOnce({
+    _id: 'contact',
+    userFrom: viewer._id,
+    confirmed: true,
+  });
+  const view = mount({ contactRefreshKey: 'contact' });
+  await loaded();
+  expect(section('Connection').getByText('Confirmed contact')).toBeVisible();
+  view.rerender(<YourConnection viewer={viewer} member={member} />);
+  expect(await section('Connection').findByText('No contact')).toBeVisible();
+  expect(
+    section('Connection').queryByRole('button', { name: 'Remove contact' }),
+  ).not.toBeInTheDocument();
+  expect(getContact).toHaveBeenCalledTimes(2);
+  expect(readMine).toHaveBeenCalledTimes(1);
+  expect(getFeedback).toHaveBeenCalledTimes(1);
 });
 
 it('clears previous-pair data and ignores late successes and failures after pair/account changes', async () => {

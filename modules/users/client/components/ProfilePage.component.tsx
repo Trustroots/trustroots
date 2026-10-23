@@ -663,6 +663,7 @@ export default function ProfilePage({
               <YourConnection
                 viewer={authUser}
                 member={profile}
+                contactRefreshKey={contact._id}
                 onContactRemoved={removeContact}
               />
             )}
