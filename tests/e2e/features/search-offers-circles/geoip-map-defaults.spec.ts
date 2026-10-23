@@ -17,7 +17,13 @@ test.describe('approximate initial map locations', () => {
     test(`${state} search viewport respects approximate location precedence`, async ({
       page,
     }, testInfo) => {
-      annotateFeature(testInfo, 'search.map');
+      annotateFeature(
+        testInfo,
+        'search.map',
+        state === 'fresh' || state === 'recent'
+          ? 'Fresh search uses an approximate location while recent saved positions take precedence.'
+          : 'Expired and legacy search positions yield to the approximate location.',
+      );
       await page.addInitScript(value => {
         localStorage.removeItem('search-map-location');
         if (value !== 'fresh') {
@@ -77,7 +83,11 @@ test.describe('approximate initial map locations', () => {
   test('failed approximate lookup leaves search usable', async ({
     page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'search.map');
+    annotateFeature(
+      testInfo,
+      'search.map',
+      'Failed or late approximate lookups leave member navigation intact.',
+    );
     await page.route('**/api/map-default-location', route =>
       route.fulfill({ status: 503, json: {} }),
     );
@@ -91,7 +101,11 @@ test.describe('approximate initial map locations', () => {
   test('late approximate lookup cannot undo a member zoom', async ({
     page,
   }, testInfo) => {
-    annotateFeature(testInfo, 'search.map');
+    annotateFeature(
+      testInfo,
+      'search.map',
+      'Failed or late approximate lookups leave member navigation intact.',
+    );
     let release!: () => void;
     let started!: () => void;
     const requested = new Promise<void>(resolve => {
