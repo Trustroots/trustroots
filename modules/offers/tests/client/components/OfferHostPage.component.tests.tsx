@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
@@ -139,19 +145,22 @@ describe('OfferHostPage', () => {
     'saves meeting availability independently for hosting status %s',
     async status => {
       offersApiMock.getOffers.mockResolvedValue([
-        { ...hostOffer, status, happyToMeet: true },
+        { ...hostOffer, status, meetingStatus: 'yes' },
       ]);
       render(<OfferHostPage user={user} />);
-      const meeting = await screen.findByRole('checkbox', {
-        name: 'Happy to meet',
-      });
+      const group = within(
+        await screen.findByRole('radiogroup', {
+          name: 'Would you like to meet people?',
+        }),
+      );
+      const meeting = group.getByRole('radio', { name: 'Yes' });
       expect(meeting).toBeChecked();
-      fireEvent.click(meeting);
+      fireEvent.click(group.getByRole('radio', { name: 'No' }));
       fireEvent.submit(document.querySelector('form')!);
       await waitFor(() =>
         expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
           'offer-1',
-          expect.objectContaining({ status, happyToMeet: false }),
+          expect.objectContaining({ status, meetingStatus: 'no' }),
         ),
       );
     },
@@ -162,9 +171,11 @@ describe('OfferHostPage', () => {
       { ...hostOffer, status: 'no', description: '' },
     ]);
     render(<OfferHostPage user={user} />);
-    const meeting = await screen.findByRole('checkbox', {
-      name: 'Happy to meet',
-    });
+    const meeting = within(
+      await screen.findByRole('radiogroup', {
+        name: 'Would you like to meet people?',
+      }),
+    ).getByRole('radio', { name: 'Yes' });
     expect(meeting).not.toBeChecked();
     expect(screen.getByText(/You will not appear on the map/)).toBeVisible();
     fireEvent.click(meeting);
@@ -180,7 +191,7 @@ describe('OfferHostPage', () => {
         'offer-1',
         expect.objectContaining({
           status: 'no',
-          happyToMeet: true,
+          meetingStatus: 'yes',
           location: [52, 4],
         }),
       ),
@@ -189,9 +200,11 @@ describe('OfferHostPage', () => {
 
   it('explains hosting and meeting visibility together', async () => {
     render(<OfferHostPage user={user} />);
-    const meeting = await screen.findByRole('checkbox', {
-      name: 'Happy to meet',
-    });
+    const meeting = within(
+      await screen.findByRole('radiogroup', {
+        name: 'Would you like to meet people?',
+      }),
+    ).getByRole('radio', { name: 'Yes' });
     expect(
       screen.getByText(/You will appear on the map for hosting\./),
     ).toBeVisible();
@@ -203,7 +216,11 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
-    expect(screen.getByText('Yes')).toBeInTheDocument();
+    expect(
+      within(
+        screen.getByRole('radiogroup', { name: 'Can you host?' }),
+      ).getByText('Yes'),
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue('2')).toBeInTheDocument();
   });
 
@@ -344,7 +361,11 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('radio', { name: 'No' }));
+    fireEvent.click(
+      within(
+        screen.getByRole('radiogroup', { name: 'Can you host?' }),
+      ).getByRole('radio', { name: 'No' }),
+    );
     fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
 
     expect(
@@ -357,7 +378,11 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('radio', { name: 'No' }));
+    fireEvent.click(
+      within(
+        screen.getByRole('radiogroup', { name: 'Can you host?' }),
+      ).getByRole('radio', { name: 'No' }),
+    );
 
     expect(
       screen
@@ -454,12 +479,20 @@ describe('OfferHostPage', () => {
     render(<OfferHostPage user={user} />);
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('radio', { name: 'Maybe' }));
+    fireEvent.click(
+      within(
+        screen.getByRole('radiogroup', { name: 'Can you host?' }),
+      ).getByRole('radio', { name: 'Maybe' }),
+    );
     fireEvent.click(document.querySelector('.offer-maxguests button')!);
     fireEvent.change(screen.getByRole('spinbutton'), {
       target: { value: '' },
     });
-    fireEvent.click(screen.getByRole('radio', { name: 'No' }));
+    fireEvent.click(
+      within(
+        screen.getByRole('radiogroup', { name: 'Can you host?' }),
+      ).getByRole('radio', { name: 'No' }),
+    );
     fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
     fireEvent.change(screen.getAllByPlaceholderText('Write here...')[0], {
       target: { value: 'Not hosting this month.' },

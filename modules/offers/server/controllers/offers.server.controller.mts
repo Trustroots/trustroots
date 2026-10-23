@@ -250,7 +250,11 @@ function create(
   }
 
   const body = req.body!;
-  if (body.happyToMeet !== undefined && typeof body.happyToMeet !== 'boolean') {
+  if (
+    body.meetingStatus !== undefined &&
+    (typeof body.meetingStatus !== 'string' ||
+      !['yes', 'maybe', 'no', 'not-set'].includes(body.meetingStatus))
+  ) {
     return res.status(400).send({ message: 'Invalid meeting availability.' });
   }
 
@@ -322,8 +326,9 @@ function update(
       function (done: (error?: Error | null) => void) {
         // User can modify only their own offers
         if (
-          body.happyToMeet !== undefined &&
-          typeof body.happyToMeet !== 'boolean'
+          body.meetingStatus !== undefined &&
+          (typeof body.meetingStatus !== 'string' ||
+            !['yes', 'maybe', 'no', 'not-set'].includes(body.meetingStatus))
         ) {
           return res
             .status(400)
@@ -517,7 +522,7 @@ function list(req: OfferRequest, res: OfferResponse) {
   const asMeeting = {
     $and: [
       { $eq: ['$type', 'host'] },
-      { $eq: ['$happyToMeet', true] },
+      { $in: ['$meetingStatus', ['yes', 'maybe']] },
       meetingsOnly ? { $literal: true } : { $eq: ['$status', 'no'] },
     ],
   };

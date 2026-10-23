@@ -68,7 +68,7 @@ export interface OfferEndpointDocument {
   maxGuests?: number;
   updated?: Date;
   validUntil?: Date;
-  happyToMeet?: boolean;
+  meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles?: boolean;
   set(path: string, value: unknown): void;
   save(): Promise<unknown>;
@@ -87,7 +87,7 @@ export interface OfferReadDocument {
   maxGuests?: number;
   updated?: Date;
   validUntil?: Date;
-  happyToMeet?: boolean;
+  meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles?: boolean;
   toObject(): OfferSanitiseRecord;
 }

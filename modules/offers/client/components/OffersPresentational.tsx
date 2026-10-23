@@ -5,6 +5,8 @@ import type { Offer } from '../api/offers.api';
 
 // Internal dependencies
 import '@/config/client/i18n';
+import MeetingAvailabilityControl from './MeetingAvailabilityControl';
+import type { MeetingStatus } from '../../shared/offer';
 import OfferStatusButton from './OfferStatusButton';
 import OfferLocation from './OfferLocation.component';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
@@ -14,6 +16,9 @@ interface OffersPresentationalProps {
   isUserPublic: boolean;
   offer: Offer;
   username?: string;
+  onMeetingStatusChange?: (status: MeetingStatus) => void;
+  isSavingMeeting?: boolean;
+  meetingError?: boolean;
   t: (key: string, options?: Record<string, unknown>) => string;
 }
 
@@ -146,49 +151,96 @@ export class OffersPresentational extends Component<
     const { t } = this.props;
     const { isOwnOffer, offer, username } = this.props;
     return (
-      <div className="panel panel-default offer-view">
-        <div className="panel-heading">
-          {t('Accommodation')}
-          {offer.happyToMeet && (
-            <span className="label btn-offer-meet">{t('Happy to meet')}</span>
-          )}
-          <OfferStatusButton
-            isOwnOffer={isOwnOffer}
-            status={offer?.status}
-            username={username}
-          />
-        </div>
-
-        {/* Show offer */}
-        <div className="panel-body">
-          {/* Hosting: yes | maybe */}
-          {this.isHosting() && this.renderHostingYesMaybe()}
-
-          {/* Hosting: no */}
-          {!this.isHosting() && this.renderHostingNo()}
-        </div>
-        {(this.isHosting() || offer.happyToMeet) &&
-          offer.location?.length === 2 && (
-            <div className="offer-location-section">
-              <div className="offer-location-heading">
-                <span>
-                  {this.isHosting()
-                    ? t('Approximate hosting location')
-                    : t('Approximate meeting location')}
-                </span>
-                {isOwnOffer && (
-                  <a href="/offer/host#location">{t('Edit location')}</a>
+      <>
+        {(isOwnOffer ||
+          (offer.meetingStatus && offer.meetingStatus !== 'not-set')) && (
+          <div className="panel panel-default offer-meeting-status">
+            {isOwnOffer ? (
+              <>
+                {this.props.onMeetingStatusChange ? (
+                  <MeetingAvailabilityControl
+                    value={offer.meetingStatus ?? 'not-set'}
+                    onChange={this.props.onMeetingStatusChange}
+                    disabled={this.props.isSavingMeeting}
+                  />
+                ) : (
+                  <a href="/offer/host#location">
+                    {t(
+                      'Would you like to meet people? Set your location and availability.',
+                    )}
+                  </a>
                 )}
+                {this.props.isSavingMeeting && (
+                  <span role="status">{t('Saving…')}</span>
+                )}
+                {this.props.meetingError && (
+                  <span role="alert">
+                    {t(
+                      'Could not save meeting availability. Please try again.',
+                    )}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span>
+                {offer.meetingStatus === 'yes'
+                  ? t('{{username}} wants to meet people!', {
+                      username: username || t('This member'),
+                    })
+                  : offer.meetingStatus === 'maybe'
+                    ? t('{{username}} is maybe up for meeting', {
+                        username: username || t('This member'),
+                      })
+                    : t('{{username}} is too busy to meet people', {
+                        username: username || t('This member'),
+                      })}
+              </span>
+            )}
+          </div>
+        )}
+        <div className="panel panel-default offer-view">
+          <div className="panel-heading">
+            {t('Accommodation')}
+            <OfferStatusButton
+              isOwnOffer={isOwnOffer}
+              status={offer?.status}
+              username={username}
+            />
+          </div>
+
+          {/* Show offer */}
+          <div className="panel-body">
+            {/* Hosting: yes | maybe */}
+            {this.isHosting() && this.renderHostingYesMaybe()}
+
+            {/* Hosting: no */}
+            {!this.isHosting() && this.renderHostingNo()}
+          </div>
+          {(this.isHosting() ||
+            offer.meetingStatus === 'yes' ||
+            offer.meetingStatus === 'maybe') &&
+            offer.location?.length === 2 && (
+              <div className="offer-location-section">
+                <div className="offer-location-heading">
+                  <span>
+                    {this.isHosting()
+                      ? t('Approximate hosting location')
+                      : t('Approximate meeting location')}
+                  </span>
+                  {isOwnOffer && (
+                    <a href="/offer/host#location">{t('Edit location')}</a>
+                  )}
+                </div>
+                <OfferLocation
+                  height={220}
+                  location={offer.location}
+                  offerStatus={this.isHosting() ? offer.status : 'yes'}
+                  offerType={this.isHosting() ? 'host' : 'meet'}
+                />
               </div>
-              <OfferLocation
-                height={220}
-                location={offer.location}
-                offerStatus={this.isHosting() ? offer.status : 'yes'}
-                offerType={this.isHosting() ? 'host' : 'meet'}
-              />
-            </div>
-          )}
-      </div>
+            )}
+        </div>
+      </>
     );
   }
 

@@ -162,9 +162,10 @@ const OfferSchema = new Schema<OfferServerRecord>({
     type: Date,
   },
   // Ongoing meeting availability at the same location, independent of hosting.
-  happyToMeet: {
-    type: Boolean,
-    default: false,
+  meetingStatus: {
+    type: String,
+    enum: ['yes', 'maybe', 'no', 'not-set'],
+    default: 'not-set',
   },
   showOnlyInMyCircles: {
     type: Boolean,
