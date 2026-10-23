@@ -21,11 +21,13 @@ jest.mock('@/modules/contacts/client/components/YourConnection', () => ({
   default: ({
     viewer,
     member,
+    contactRefreshKey,
   }: {
     viewer: { _id: string };
     member: { _id: string };
+    contactRefreshKey?: string;
   }) => (
-    <div data-testid="your-connection">
+    <div data-testid="your-connection" data-contact-key={contactRefreshKey}>
       Connection for {viewer._id} and {member._id}
     </div>
   ),
@@ -535,6 +537,9 @@ describe('ProfilePage', () => {
         screen.queryByRole('button', { name: 'Remove contact' }),
       ).not.toBeInTheDocument();
     });
+    expect(screen.getByTestId('your-connection')).not.toHaveAttribute(
+      'data-contact-key',
+    );
   });
 
   it('shows user does not exist for missing profiles', async () => {
@@ -686,6 +691,16 @@ describe('ProfilePage', () => {
     expect(
       screen.getByRole('button', { name: 'Confirm removal' }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId('your-connection')).toHaveAttribute(
+      'data-contact-key',
+      'contact-1',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm removal' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('your-connection')).not.toHaveAttribute(
+        'data-contact-key',
+      ),
+    );
   });
 
   it('handles profile fetch failures gracefully', async () => {
