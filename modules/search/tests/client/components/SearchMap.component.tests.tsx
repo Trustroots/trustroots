@@ -1,6 +1,12 @@
 import React from 'react';
 import { getMapBoxToken } from '@/modules/core/client/utils/map';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -9,6 +15,7 @@ import type { Event as NostrEvent } from 'nostr-tools';
 import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import SearchMap from '@/modules/search/client/components/SearchMap.component';
+import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 import type {
   getOffer,
   queryOffers,
@@ -19,6 +26,18 @@ import type {
   OfferSearchFeatureCollection,
 } from '@/modules/offers/shared/offer';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
+
+let mockApproximateLocation: MapDefaultLocation | null = null;
+let mockHasSavedLocation = true;
+const mockStopDefaultLocation = jest.fn();
+const mockDefaultLocation = jest.fn();
+jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
+  __esModule: true,
+  default: (enabled: boolean) => {
+    mockDefaultLocation(enabled);
+    return [enabled ? mockApproximateLocation : null, mockStopDefaultLocation];
+  },
+}));
 
 function readOffer(
   overrides: Partial<OfferReadPayload> = {},
@@ -155,7 +174,11 @@ let mockPersistentMapLocation: {
 const mockSetPersistentMapLocation = jest.fn();
 jest.mock('@/modules/search/client/hooks/use-persistent-map-location', () => ({
   __esModule: true,
-  default: () => [mockPersistentMapLocation, mockSetPersistentMapLocation],
+  default: () => [
+    mockPersistentMapLocation,
+    mockSetPersistentMapLocation,
+    mockHasSavedLocation,
+  ],
 }));
 
 let mockMapStyle: string | typeof MAP_STYLE_OSM = 'mock-map-style';
@@ -405,6 +428,7 @@ const DATELINE_OFFER_FEATURES: OfferSearchFeature[] = [
 ];
 
 function moveMap(viewState: Record<string, number>) {
+  fireEvent.pointerDown(screen.getByTestId('react-map-gl/mapbox'));
   mockMapProps.onMove({ viewState });
 }
 
@@ -432,6 +456,8 @@ async function flushCommunityNotesViewport(viewport: Record<string, number>) {
 }
 
 beforeEach(() => {
+  mockApproximateLocation = null;
+  mockHasSavedLocation = true;
   mockGetMapBoxToken.mockReturnValue('test-token');
   mockIsWebGLSupported.mockReturnValue(true);
   mockLeafletSearchMap.mockClear();
@@ -479,6 +505,102 @@ beforeEach(() => {
 });
 
 describe('Search', () => {
+  it.each([true, false])(
+    'uses an approximate initial viewport without persisting it (WebGL: %s)',
+    webgl => {
+      mockHasSavedLocation = false;
+      mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 6 };
+      mockIsWebGLSupported.mockReturnValue(webgl);
+      renderSearchMap({ location: {} });
+      if (webgl) {
+        expect(mockMapProps.latitude).toBe(34);
+        expect(mockMapProps.longitude).toBe(-17);
+      } else {
+        expect(
+          mockLeafletSearchMap.mock.calls.slice(-1)[0][0].viewport,
+        ).toEqual(mockApproximateLocation);
+      }
+      expect(
+        screen.getByText(/This product includes GeoLite2/),
+      ).toBeInTheDocument();
+      expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+    },
+  );
+
+  it('keeps recent saved positions ahead of approximate locations', () => {
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 6 };
+    renderSearchMap();
+    expect(mockDefaultLocation).toHaveBeenCalledWith(false);
+    expect(mockMapProps.latitude).toBe(mockPersistentMapLocation.latitude);
+  });
+
+  it('does not reapply GeoIP after a member clears a later explicit destination', () => {
+    mockHasSavedLocation = false;
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 6 };
+    const props = {
+      filters: '{}',
+      isUserPublic: true,
+      onCommunityNoteOpen: jest.fn(),
+      onOfferClose: jest.fn(),
+      onOfferOpen: jest.fn(),
+    };
+    const { rerender } = render(<SearchMap {...props} location={{}} />);
+    expect(mockMapProps.latitude).toBe(34);
+    rerender(<SearchMap {...props} location={{ lat: 12, lng: 23 }} />);
+    expect(mockMapProps.latitude).toBe(12);
+    rerender(<SearchMap {...props} location={{}} />);
+    expect(mockMapProps.latitude).toBe(12);
+  });
+
+  it.each([undefined, {}, { northEast: { lat: 35, lng: -16 } }])(
+    'does not persist initial raster map notifications with incomplete bounds %j',
+    locationBounds => {
+      mockIsWebGLSupported.mockReturnValue(false);
+      mockHasSavedLocation = false;
+      renderSearchMap({ locationBounds });
+      const props = mockLeafletSearchMap.mock.calls.slice(-1)[0][0];
+      act(() =>
+        props.onMapChange({
+          latitude: 34,
+          longitude: -17,
+          zoom: 6,
+          bounds: {
+            northEast: { lat: 35, lng: -16 },
+            southWest: { lat: 33, lng: -18 },
+          },
+        }),
+      );
+      expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+      act(() => props.onInteraction?.());
+      expect(mockStopDefaultLocation).toHaveBeenCalled();
+    },
+  );
+
+  it('persists the viewport fitted to an explicit raster place search', () => {
+    mockIsWebGLSupported.mockReturnValue(false);
+    const bounds = {
+      northEast: { lat: 35, lng: -16 },
+      southWest: { lat: 33, lng: -18 },
+    };
+    renderSearchMap({ locationBounds: bounds });
+    act(() =>
+      mockLeafletSearchMap.mock.calls
+        .slice(-1)[0][0]
+        .onMapChange({ latitude: 34, longitude: -17, zoom: 6, bounds }, true),
+    );
+    expect(mockSetPersistentMapLocation).toHaveBeenCalledWith({
+      latitude: 34,
+      longitude: -17,
+      zoom: 6,
+    });
+    mockSetPersistentMapLocation.mockClear();
+    act(() =>
+      mockLeafletSearchMap.mock.calls
+        .slice(-1)[0][0]
+        .onMapChange({ latitude: 34, longitude: -17, zoom: 6, bounds }, false),
+    );
+    expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
+  });
   it('initialises the loaded map without touch rotation and fetches visible offers', async () => {
     mockPersistentMapLocation.zoom = 8;
     renderSearchMap();
@@ -618,6 +740,7 @@ describe('Search', () => {
     };
 
     act(() => {
+      mockLeafletSearchMap.mock.calls[0][0].onInteraction?.();
       mockLeafletSearchMap.mock.calls[0][0].onMapChange(mapState);
     });
 

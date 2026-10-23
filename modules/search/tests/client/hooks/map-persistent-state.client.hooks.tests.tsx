@@ -18,7 +18,10 @@ jest.mock('use-local-storage-state', () => {
     default: <Value,>(key: string, options: { defaultValue: Value }) => {
       mockMapStateHook(key, options);
       const react = mockReact || ReactActual;
-      return react.useState(options.defaultValue);
+      return [
+        ...react.useState(options.defaultValue),
+        { removeItem: () => {} },
+      ];
     },
   };
 });
@@ -36,7 +39,6 @@ let onMapLocationChange: jest.Mock<void, [location: MapLocation]>;
 let onMapStyleChange: jest.Mock<void, [style: MapStyle]>;
 
 const loadHooks = () => {
-  jest.resetModules();
   usePersistentMapLocation = jest.requireActual<
     typeof import('@/modules/search/client/hooks/use-persistent-map-location')
   >('@/modules/search/client/hooks/use-persistent-map-location').default;
@@ -87,7 +89,7 @@ describe('search map persistent-state hooks', () => {
     render(<MapLocationTester initialValue={initialLocation} />);
 
     expect(mockMapStateHook).toHaveBeenCalledWith('search-map-location', {
-      defaultValue: initialLocation,
+      defaultValue: undefined,
     });
     expect(onMapLocationChange).toHaveBeenCalledWith(initialLocation);
 

@@ -49,11 +49,15 @@ interface LeafletMapBounds {
 }
 
 interface LeafletSearchMapProps {
+  onInteraction?: () => void;
   bounds?: LeafletMapBounds | null;
   communityNotes: LeafletPointCollection;
   offers: LeafletPointCollection;
   onCommunityNoteClick: (feature: LeafletPointClickFeature) => void;
-  onMapChange: (state: ReturnType<typeof getMapState>) => void;
+  onMapChange: (
+    state: ReturnType<typeof getMapState>,
+    explicitPlaceFit?: boolean,
+  ) => void;
   onMapClick: () => void;
   onOfferClick: (offerId: string) => void;
   viewport: LeafletViewport;
@@ -183,9 +187,11 @@ export default function LeafletSearchMap({
   onMapChange,
   onMapClick,
   onOfferClick,
+  onInteraction,
   viewport,
 }: LeafletSearchMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const explicitPlaceFitRef = useRef(false);
   const mapRef = useRef<L.Map | null>(null);
   const groupsRef = useRef<LeafletLayerGroups | null>(null);
   const callbacksRef = useRef({
@@ -217,7 +223,13 @@ export default function LeafletSearchMap({
     const tiles = getRasterMapTiles();
     L.tileLayer(tiles.url, tiles.options).addTo(map);
 
-    const onMoveEnd = () => callbacksRef.current.onMapChange(getMapState(map));
+    const onMoveEnd = () => {
+      callbacksRef.current.onMapChange(
+        getMapState(map),
+        explicitPlaceFitRef.current,
+      );
+      explicitPlaceFitRef.current = false;
+    };
     map.on('click', () => callbacksRef.current.onMapClick());
     map.on('moveend', onMoveEnd);
     mapRef.current = map;
@@ -277,6 +289,7 @@ export default function LeafletSearchMap({
 
     const fitSelectedBounds = () => {
       map.invalidateSize({ pan: false });
+      explicitPlaceFitRef.current = true;
       map.fitBounds(
         [
           [bounds.southWest.lat, bounds.southWest.lng],
@@ -351,6 +364,14 @@ export default function LeafletSearchMap({
     <div
       className="search-map leaflet-search-map"
       data-testid="leaflet-search-map"
+      data-map-zoom={viewport.zoom}
+      data-map-latitude={viewport.latitude}
+      data-map-longitude={viewport.longitude}
+      onPointerDownCapture={onInteraction}
+      onClickCapture={onInteraction}
+      onTouchStartCapture={onInteraction}
+      onWheelCapture={onInteraction}
+      onKeyDownCapture={onInteraction}
       ref={containerRef}
     />
   );
