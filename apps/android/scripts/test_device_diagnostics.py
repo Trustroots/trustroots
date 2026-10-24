@@ -54,22 +54,23 @@ class DeviceDiagnosticsTest(unittest.TestCase):
         self.assertEqual(19, result.returncode)
 
     def test_emulator_runner_commands_are_individually_valid_shell_commands(self):
-        workflow = SCRIPT.resolve().parents[3] / ".github/workflows/android-debug-apk.yml"
-        lines = workflow.read_text().splitlines()
         commands = []
-        emulator_step = False
-        for index, line in enumerate(lines):
-            if line.startswith("      - "):
-                emulator_step = False
-            if "uses: reactivecircus/android-emulator-runner@" in line:
-                emulator_step = True
-            if not emulator_step or line.strip() != "script: |":
-                continue
-            for command in lines[index + 1:]:
-                if not command.startswith("            "):
-                    break
-                if command.strip():
-                    commands.append(command.strip())
+        for name in ["android-debug-apk.yml", "mobile-screenshots.yml"]:
+            workflow = SCRIPT.resolve().parents[3] / ".github/workflows" / name
+            lines = workflow.read_text().splitlines()
+            emulator_step = False
+            for index, line in enumerate(lines):
+                if line.startswith("      - "):
+                    emulator_step = False
+                if "uses: reactivecircus/android-emulator-runner@" in line:
+                    emulator_step = True
+                if not emulator_step or line.strip() != "script: |":
+                    continue
+                for command in lines[index + 1:]:
+                    if not command.startswith("            "):
+                        break
+                    if command.strip():
+                        commands.append(command.strip())
         self.assertTrue(commands)
         for command in commands:
             with self.subTest(command=command):

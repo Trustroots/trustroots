@@ -104,6 +104,13 @@ jobs:
           disable-animations: true
           profile: pixel_6
           script: |
+            # Match the API 36 coverage runner: a connected hardware keyboard
+            # must not suppress the software IME used by geometry assertions.
+            adb shell settings put system screen_off_timeout 2147483647
+            adb shell svc power stayon true
+            adb shell input keyevent KEYCODE_WAKEUP
+            adb shell wm dismiss-keyguard
+            adb shell settings put secure show_ime_with_hard_keyboard 1
             test -f apps/android/gradlew
             bash apps/android/gradlew -p apps/android assembleDebug assembleDebugAndroidTest
             adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
