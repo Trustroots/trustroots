@@ -585,6 +585,9 @@ importers:
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
 
   modules/statistics:
     dependencies:

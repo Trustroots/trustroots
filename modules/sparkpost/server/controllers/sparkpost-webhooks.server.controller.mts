@@ -3,6 +3,9 @@ import _ from 'lodash';
 import async from 'async';
 import basicAuth from 'basic-auth';
 import speakingurl from 'speakingurl';
+import mongoose from 'mongoose';
+import validator from 'validator';
+import type { UserServerRecord } from '../../../users/server/models/user.server.types.mts';
 import log from './../../../../config/lib/logger.mjs';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import config from './../../../../config/config.mts';
@@ -15,6 +18,7 @@ type SparkpostEvent = { msys?: Record<string, Record<string, unknown>> };
 
 const service = {} as {
   receiveBatch: (req: Request, res: Response) => unknown;
+  processUnsubscribe: (event: SparkpostEvent, callback: EventCallback) => void;
   processAndSendMetrics: (
     event: SparkpostEvent,
     callback: EventCallback,
@@ -57,10 +61,50 @@ service.receiveBatch = function (req, res) {
     });
   }
 
-  async.map(req.body, service.processAndSendMetrics, function () {
-    // @TODO what should happen when writing to stats api errors?
-    res.status(200).end();
-  });
+  async.each(
+    req.body,
+    (event: SparkpostEvent, callback: EventCallback) => {
+      service.processUnsubscribe(event, error => {
+        if (error) return callback(error);
+        // Metrics are best effort; newsletter consent must be persisted first.
+        service.processAndSendMetrics(event, () => callback());
+      });
+    },
+    (error: Error | null | undefined) => {
+      if (error) {
+        return res.status(503).send({
+          message: 'Could not process SparkPost unsubscribe events.',
+        });
+      }
+      res.status(200).end();
+    },
+  );
+};
+
+/** Persist newsletter opt-outs before acknowledging the provider's batch. */
+service.processUnsubscribe = function (event, callback) {
+  const unsubscribe = _.get(event, 'msys.unsubscribe_event');
+  if (
+    !unsubscribe ||
+    (unsubscribe.type !== 'list_unsubscribe' &&
+      unsubscribe.type !== 'link_unsubscribe')
+  ) {
+    return callback();
+  }
+
+  const recipient = unsubscribe.rcpt_to;
+  if (typeof recipient !== 'string' || !validator.isEmail(recipient.trim())) {
+    return callback();
+  }
+
+  mongoose
+    .model<UserServerRecord>('User')
+    .updateOne(
+      { email: recipient.trim().toLowerCase(), newsletter: true },
+      { $set: { newsletter: false } },
+    )
+    .exec()
+    .then(() => callback(), callback);
 };
 
 /**
@@ -211,4 +255,5 @@ export default defaultExport;
 export const basicAuthenticate = defaultExport.basicAuthenticate;
 export const processAndSendMetrics = defaultExport.processAndSendMetrics;
 export const receiveBatch = defaultExport.receiveBatch;
+export const processUnsubscribe = defaultExport.processUnsubscribe;
 export { defaultExport as 'module.exports' };
