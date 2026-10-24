@@ -183,7 +183,7 @@ jest.mock('@/modules/support/client/components/SupportPage.component', () => {
   return MockSupportPage;
 });
 
-jest.mock('@/modules/core/client/components/AppHeader.component', () => {
+jest.mock('@/layers/shell/client/components/AppHeader.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
   function MockAppHeader({
