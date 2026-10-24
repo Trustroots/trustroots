@@ -7,6 +7,7 @@ import config from '../../../../config/config.mts';
 import log from '../../../../config/lib/logger.mjs';
 import messageToStatsService from '../services/message-to-stats.server.service.mjs';
 import messageStatService from '../services/message-stat.server.service.mjs';
+import messageThrottleAlertService from '../services/message-throttle-alert.server.service.mts';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import textService from '../../../core/server/services/text.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
@@ -506,13 +507,13 @@ service.inbox = function (req, res) {
 };
 
 /**
- * Should we throttle this user sending messages?
+ * Count the sender's distinct recipients in the throttle window.
  *
  * @param  {String} userId Message sender user ID
- * @return {boolean} True if user should be throttled; sending messages to too many people. Otherwise false.
+ * @return {number} Number of distinct recipients in the current window.
  */
-async function shouldThottleUser(userId: Types.ObjectId): Promise<boolean> {
-  const { duration, count } = config.limits.messagesToIndividualsThrottle;
+async function recentRecipientCount(userId: Types.ObjectId): Promise<number> {
+  const { duration } = config.limits.messagesToIndividualsThrottle;
   const timeLimit = moment().subtract(moment.duration(duration)).toDate();
 
   // Count how many persons this user has already written within the limit
@@ -522,7 +523,7 @@ async function shouldThottleUser(userId: Types.ObjectId): Promise<boolean> {
     },
     userFrom: userId,
   });
-  return writtenTo.length > count;
+  return writtenTo.length;
 }
 
 /**
@@ -567,8 +568,12 @@ service.send = async function (req, res) {
   const isExemptFromThrottle = user.roles.some(role =>
     ['welcome-team', 'admin'].includes(role),
   );
+  const recipientCount = isExemptFromThrottle
+    ? 0
+    : await recentRecipientCount(user._id);
   const shouldThrottle =
-    !isExemptFromThrottle && (await shouldThottleUser(user._id));
+    !isExemptFromThrottle &&
+    recipientCount > config.limits.messagesToIndividualsThrottle.count;
   if (shouldThrottle) {
     // Record thottle hit in stats
     statService.stat(
@@ -581,6 +586,11 @@ service.send = async function (req, res) {
       },
       () => {},
     );
+    try {
+      await messageThrottleAlertService.notify(user, recipientCount);
+    } catch (error) {
+      log('error', 'Failed queuing message throttle notification.', { error });
+    }
     return res.status(429).send({
       message: 'You are writing too many messages.',
     });

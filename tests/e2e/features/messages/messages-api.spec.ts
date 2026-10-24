@@ -210,6 +210,69 @@ test.describe('seeded message API flows', () => {
     ).toContain(content);
   });
 
+  test('throttled messages queue one support alert across concurrent retries', async ({
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Validation prevents empty or forbidden replies.',
+    ]);
+    const sender = await findUserByUsername(SEEDED_MEMBERS[0].username);
+    expectPresent(sender);
+    const history = Array.from({ length: 16 }, () => ({
+      _id: new ObjectId(),
+      userFrom: sender._id,
+      userTo: new ObjectId(),
+      created: new Date(),
+      content: 'A fictional earlier greeting.',
+    }));
+    const content = `Fictional blocked greeting ${new ObjectId()}`;
+    const jobFilter = {
+      name: 'send email',
+      'data.subject': 'Member reached the messaging recipient limit',
+      'data.text': { $regex: `/admin/user\\?id=${sender._id}` },
+    };
+    try {
+      await withE2eDb(async db => {
+        await db
+          .collection('messagethrottlealerts')
+          .deleteOne({ _id: sender._id });
+        await db.collection('agendaJobs').deleteMany(jobFilter);
+        await db.collection('messages').insertMany(history);
+      });
+      const responses = await Promise.all(
+        Array.from({ length: 4 }, () =>
+          request.post('/api/messages', {
+            data: { userTo: SEEDED_MEMBERS[1].id, content },
+          }),
+        ),
+      );
+      for (const response of responses) expect(response.status()).toBe(429);
+      const jobs = await withE2eDb(db =>
+        db.collection('agendaJobs').find(jobFilter).toArray(),
+      );
+      expect(jobs).toHaveLength(1);
+      expect(jobs[0]!.data.text).toContain(`@${sender.username}`);
+      expect(jobs[0]!.data.text).not.toContain(content);
+      expect(
+        await withE2eDb(db =>
+          db
+            .collection('messages')
+            .countDocuments({ userFrom: sender._id, content }),
+        ),
+      ).toBe(0);
+    } finally {
+      await withE2eDb(async db => {
+        await db
+          .collection('messages')
+          .deleteMany({ _id: { $in: history.map(message => message._id) } });
+        await db
+          .collection('messagethrottlealerts')
+          .deleteOne({ _id: sender._id });
+        await db.collection('agendaJobs').deleteMany(jobFilter);
+      });
+    }
+  });
+
   for (const role of ['welcome-team', 'admin']) {
     test(`${role} can message above the recipient limit until the role is removed`, async ({
       request,
