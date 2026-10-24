@@ -10,7 +10,7 @@
  *
  * Two kinds of links are recorded, both from non-test code in
  * `modules/<name>/{client,server,shared}`:
- * - imports: `@/modules/x/...`, `modules/x/...` and relative paths into another module.
+ * - imports: `@trustroots/x`, `@/modules/x/...`, `modules/x/...` and relative paths.
  * - models: `mongoose.model('X')` for a model that another module defines.
  */
 import fs from 'node:fs';
@@ -125,6 +125,10 @@ function targetModule(
   root: string,
   modules: string[],
 ): string | null {
+  if (specifier.startsWith('@trustroots/')) {
+    const name = specifier.split('/')[1];
+    return modules.includes(name) ? name : null;
+  }
   let resolved;
   if (specifier.startsWith('.')) {
     resolved = path.relative(root, path.resolve(path.dirname(file), specifier));
