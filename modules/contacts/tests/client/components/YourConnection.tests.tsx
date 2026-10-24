@@ -42,6 +42,10 @@ const sendFeedback = jest.mocked(feedback.send);
 const remove = jest.mocked(contacts.remove);
 const settings = jest.mocked(useSettings);
 const section = (name: string) => within(screen.getByRole('region', { name }));
+const fact = (experience: ReturnType<typeof section>, label: string) =>
+  within(
+    experience.getByRole('rowheader', { name: label }).parentElement!,
+  ).getByRole('cell');
 const feedbackSection = () => section('Private message feedback');
 const clickFeedbackButton = (name: string) =>
   fireEvent.click(feedbackSection().getByRole('button', { name }));
@@ -91,12 +95,12 @@ beforeEach(() => {
 it('shows independent absent records and eligible feedback without requiring a contact', async () => {
   mount();
   await loaded();
-  expect(section('Connection').getByText('No contact')).toBeVisible();
+  expect(section('Contact').getByText('No contact')).toBeVisible();
   expect(
-    section('Connection').getByRole('link', { name: 'Add contact' }),
+    section('Contact').getByRole('link', { name: 'Add contact' }),
   ).toHaveAttribute('href', '/contact-add/other');
   expect(
-    section('Your account').getByRole('link', {
+    section('Your Experience').getByRole('link', {
       name: 'Share your experience',
     }),
   ).toHaveAttribute('href', '/profile/rowan/experiences/new');
@@ -137,22 +141,18 @@ it.each([
     const onContactRemoved = confirmed ? jest.fn() : undefined;
     mount({ onContactRemoved });
     await loaded();
-    expect(section('Connection').getByText(label)).toBeVisible();
+    expect(section('Contact').getByText(label)).toBeVisible();
     if (userFrom === member._id)
       expect(
-        section('Connection').getByRole('link', { name: 'Confirm contact' }),
+        section('Contact').getByRole('link', { name: 'Confirm contact' }),
       ).toHaveAttribute('href', '/contact-confirm/contact');
-    fireEvent.click(
-      section('Connection').getByRole('button', { name: action }),
-    );
+    fireEvent.click(section('Contact').getByRole('button', { name: action }));
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
-    fireEvent.click(
-      section('Connection').getByRole('button', { name: action }),
-    );
+    fireEvent.click(section('Contact').getByRole('button', { name: action }));
     getContact.mockResolvedValue(null);
     fireEvent.click(screen.getByRole('button', { name: /^Yes, / }));
     await waitFor(() => expect(remove).toHaveBeenCalledWith('contact'));
-    expect(await section('Connection').findByText('No contact')).toBeVisible();
+    expect(await section('Contact').findByText('No contact')).toBeVisible();
     if (confirmed)
       expect(onContactRemoved).toHaveBeenCalledWith(
         expect.objectContaining({ _id: 'contact' }),
@@ -171,10 +171,10 @@ it('reports rejected contact changes and refreshes the section', async () => {
   mount();
   await loaded();
   fireEvent.click(
-    section('Connection').getByRole('button', { name: 'Remove contact' }),
+    section('Contact').getByRole('button', { name: 'Remove contact' }),
   );
   fireEvent.click(screen.getByRole('button', { name: 'Yes, remove contact' }));
-  expect(await section('Connection').findByRole('alert')).toHaveTextContent(
+  expect(await section('Contact').findByRole('alert')).toHaveTextContent(
     'Could not save',
   );
   await waitFor(() => expect(getContact).toHaveBeenCalledTimes(2));
@@ -193,14 +193,14 @@ it.each([403, 404])(
     mount();
     await loaded();
     fireEvent.click(
-      section('Connection').getByRole('button', { name: 'Remove contact' }),
+      section('Contact').getByRole('button', { name: 'Remove contact' }),
     );
     fireEvent.click(
       screen.getByRole('button', { name: 'Yes, remove contact' }),
     );
-    expect(await section('Connection').findByText('No contact')).toBeVisible();
-    expect(section('Connection').getByRole('alert')).toBeVisible();
-    expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
+    expect(await section('Contact').findByText('No contact')).toBeVisible();
+    expect(section('Contact').getByRole('alert')).toBeVisible();
+    expect(section('Contact').queryByRole('link')).not.toBeInTheDocument();
     expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument();
   },
 );
@@ -218,7 +218,7 @@ it.each([403, 404])(
     await waitFor(() => expect(getFeedback).toHaveBeenCalledTimes(2));
     expect(feedbackSection().getByText('Yes')).toBeVisible();
     expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument();
-    expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
+    expect(section('Contact').queryByRole('link')).not.toBeInTheDocument();
   },
 );
 
@@ -226,20 +226,20 @@ it('keeps authored accounts separate and does not invent reciprocal publication 
   readMine.mockResolvedValue(experience);
   mount();
   await loaded();
-  const yours = section('Your account');
-  const theirs = section('Their account');
-  expect(yours.getByText('Cedar')).toBeVisible();
+  const yours = section('Your Experience');
+  const theirs = section('Their Experience');
+  expect(yours.getByText('Written by Cedar')).toBeVisible();
   expect(yours.getByText('Awaiting publication')).toBeVisible();
   expect(yours.getByText(/at most in 14 days/)).toBeVisible();
   expect(yours.getByText('You hosted this member')).toBeVisible();
-  expect(yours.getByText('Recommendation: Yes')).toBeVisible();
+  expect(fact(yours, 'Recommendation')).toHaveTextContent('Yes');
   expect(yours.getByRole('link', { name: 'View Experiences' })).toHaveAttribute(
     'href',
     '/profile/rowan/experiences',
   );
-  expect(theirs.getByText('Rowan')).toBeVisible();
-  expect(theirs.getByText('Met in person: No')).toBeVisible();
-  expect(theirs.getByText('Recommendation: No')).toBeVisible();
+  expect(theirs.getByText('Written by Rowan')).toBeVisible();
+  expect(fact(theirs, 'Met in person')).toHaveTextContent('No');
+  expect(fact(theirs, 'Recommendation')).toHaveTextContent('No');
   expect(theirs.getByText('You hosted this member')).toBeVisible();
   expect(theirs.queryByText('Awaiting publication')).not.toBeInTheDocument();
 });
@@ -260,20 +260,20 @@ it('handles an other-authored primary with hidden details and unknown meeting an
   });
   mount();
   await loaded();
+  expect(fact(section('Their Experience'), 'Met in person')).toHaveTextContent(
+    'Not recorded',
+  );
   expect(
-    section('Their account').getByText('Met in person: Not recorded'),
-  ).toBeVisible();
-  expect(
-    section('Their account').queryByText('A fictional visit.'),
+    section('Their Experience').queryByText('A fictional visit.'),
   ).not.toBeInTheDocument();
   expect(
-    section('Your account').getByText('This member hosted you'),
+    section('Your Experience').getByText('This member hosted you'),
   ).toBeVisible();
+  expect(fact(section('Your Experience'), 'Recommendation')).toHaveTextContent(
+    'Not recorded',
+  );
   expect(
-    section('Your account').getByText('Recommendation: Not recorded'),
-  ).toBeVisible();
-  expect(
-    section('Your account').queryByText('Awaiting publication'),
+    section('Your Experience').queryByText('Awaiting publication'),
   ).not.toBeInTheDocument();
 });
 
@@ -287,12 +287,12 @@ it('shows public other accounts and explicit author hosting roles', async () => 
   });
   mount();
   await loaded();
-  expect(section('Their account').getByText('Public')).toBeVisible();
+  expect(section('Their Experience').getByText('Public')).toBeVisible();
   expect(
-    section('Their account').getByText('This member hosted you'),
+    section('Their Experience').getByText('This member hosted you'),
   ).toBeVisible();
   expect(
-    section('Your account').getByText('No account shared yet.'),
+    section('Your Experience').getByText('No Experience shared yet.'),
   ).toBeVisible();
 });
 
@@ -303,10 +303,14 @@ it('names authors by username when a display name is unavailable', async () => {
     member: { ...member, displayName: undefined },
   });
   await loaded();
-  expect(section('Your account').getByText('cedar')).toBeVisible();
-  expect(section('Their account').getByText('rowan')).toBeVisible();
   expect(
-    section('Your account').getByText(/when rowan shares their experience/),
+    section('Your Experience').getByText('Written by cedar'),
+  ).toBeVisible();
+  expect(
+    section('Their Experience').getByText('Written by rowan'),
+  ).toBeVisible();
+  expect(
+    section('Your Experience').getByText(/when rowan shares their experience/),
   ).toBeVisible();
 });
 
@@ -330,19 +334,19 @@ it.each([new Error('offline'), api404()])(
     mount();
     await loaded();
     expect(
-      section('Connection').queryByRole('link', { name: 'Add contact' }),
+      section('Contact').queryByRole('link', { name: 'Add contact' }),
     ).not.toBeInTheDocument();
-    expect(section('Your account').queryByRole('link')).not.toBeInTheDocument();
+    expect(
+      section('Your Experience').queryByRole('link'),
+    ).not.toBeInTheDocument();
     getFeedback.mockRejectedValue(api404(true));
-    fireEvent.click(
-      section('Connection').getByRole('button', { name: 'Retry' }),
-    );
-    expect(await section('Connection').findByText('No contact')).toBeVisible();
+    fireEvent.click(section('Contact').getByRole('button', { name: 'Retry' }));
+    expect(await section('Contact').findByText('No contact')).toBeVisible();
     expect(feedbackSection().getByRole('alert')).toBeVisible();
     fireEvent.click(
-      section('Your account').getByRole('button', { name: 'Retry' }),
+      section('Your Experience').getByRole('button', { name: 'Retry' }),
     );
-    expect(await section('Your account').findByRole('link')).toBeVisible();
+    expect(await section('Your Experience').findByRole('link')).toBeVisible();
     fireEvent.click(
       feedbackSection().getByRole('button', {
         name: 'Retry',
@@ -386,7 +390,7 @@ it('makes no feature requests when disabled and resets on flag changes', async (
   await loaded();
   expect(readMine).not.toHaveBeenCalled();
   expect(getFeedback).not.toHaveBeenCalled();
-  expect(section('Your account').getByText('Unavailable')).toBeVisible();
+  expect(section('Your Experience').getByText('Unavailable')).toBeVisible();
   settings.mockReturnValue({ referencesEnabled: true });
   view.rerender(<YourConnection viewer={viewer} member={member} />);
   await loaded();
@@ -430,7 +434,7 @@ it.each([
 it('allows Experience writing and private feedback while a member is blocked', async () => {
   mount({ viewer: { ...viewer, blocked: [member._id], roles: ['user'] } });
   await loaded();
-  expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
+  expect(section('Contact').queryByRole('link')).not.toBeInTheDocument();
   clickFeedbackButton('No');
   await waitFor(() =>
     expect(sendFeedback).toHaveBeenCalledWith('no', member._id),
@@ -450,7 +454,7 @@ it('allows Experience writing and private feedback while a member is blocked', a
     }),
   ).toBeVisible();
   expect(
-    section('Your account').getByRole('link', {
+    section('Your Experience').getByRole('link', {
       name: 'Share your experience',
     }),
   ).toBeVisible();
@@ -464,11 +468,11 @@ it('refreshes externally removed contacts without reloading the other sources', 
   });
   const view = mount({ contactRefreshKey: 'contact' });
   await loaded();
-  expect(section('Connection').getByText('Confirmed contact')).toBeVisible();
+  expect(section('Contact').getByText('Confirmed contact')).toBeVisible();
   view.rerender(<YourConnection viewer={viewer} member={member} />);
-  expect(await section('Connection').findByText('No contact')).toBeVisible();
+  expect(await section('Contact').findByText('No contact')).toBeVisible();
   expect(
-    section('Connection').queryByRole('button', { name: 'Remove contact' }),
+    section('Contact').queryByRole('button', { name: 'Remove contact' }),
   ).not.toBeInTheDocument();
   expect(getContact).toHaveBeenCalledTimes(2);
   expect(readMine).toHaveBeenCalledTimes(1);
@@ -498,12 +502,12 @@ it('clears previous-pair data and ignores late successes and failures after pair
     resolveContact({ _id: 'stale', confirmed: true });
     rejectExperience(new Error('old pair'));
   });
-  expect(section('Connection').getByText('No contact')).toBeVisible();
+  expect(section('Contact').getByText('No contact')).toBeVisible();
   expect(screen.queryByText('Confirmed contact')).not.toBeInTheDocument();
   readMine.mockResolvedValue(experience);
   view.rerender(<YourConnection viewer={viewer} member={member} />);
   expect(
-    await section('Your account').findByText('A fictional visit.'),
+    await section('Your Experience').findByText('A fictional visit.'),
   ).toBeVisible();
   readMine.mockResolvedValue(null);
   view.rerender(

@@ -42,6 +42,11 @@
 }
 
 @media (max-width: @screen-xs-max) {
+  .profile-view:not(.profile-view-embedded) {
+    // Keep the final profile content clear of the fixed mobile tab bar.
+    padding-bottom: (@navbar-height + 16px);
+  }
+
   .profile-view-navbar-mobile {
     .navbar-nav {
       display: flex;
