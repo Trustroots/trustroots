@@ -14,6 +14,11 @@ export interface ExperienceChangeRequestRecord {
   requester: Types.ObjectId;
   linkIssuedBy?: Types.ObjectId;
   kind: 'edit' | 'remove';
+  original?: {
+    feedbackPublic: string;
+    recommend: 'yes' | 'no' | 'unknown';
+    interactions: { met: boolean; guest: boolean; host: boolean };
+  };
   proposed?: {
     feedbackPublic?: string;
     recommend?: 'yes' | 'no' | 'unknown';
@@ -55,6 +60,17 @@ const ExperienceChangeRequestSchema = new Schema({
   requester: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   linkIssuedBy: { type: Schema.Types.ObjectId, ref: 'User', immutable: true },
   kind: { type: String, enum: ['edit', 'remove'], required: true },
+  original: {
+    type: new Schema(
+      {
+        feedbackPublic: String,
+        recommend: String,
+        interactions: { met: Boolean, guest: Boolean, host: Boolean },
+      },
+      { _id: false },
+    ),
+    default: undefined,
+  },
   proposed: {
     feedbackPublic: String,
     recommend: { type: String, enum: ['yes', 'no', 'unknown'] },

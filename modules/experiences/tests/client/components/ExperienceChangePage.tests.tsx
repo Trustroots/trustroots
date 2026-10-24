@@ -182,3 +182,15 @@ it('discards access results after leaving the page', async () => {
   resolveAccess(experience);
   await waitFor(() => expect(apiMock.readAccess).toHaveBeenCalledTimes(1));
 });
+
+it('explains processing and hides new submission controls', async () => {
+  apiMock.readMine.mockResolvedValueOnce(request('edit', 'processing'));
+  render(<ExperienceChangePage id="experience-1" />);
+  expect(await screen.findByRole('status')).toHaveTextContent('being approved');
+  expect(
+    screen.queryByRole('button', { name: 'Request edit' }),
+  ).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole('button', { name: 'Request removal' }),
+  ).not.toBeInTheDocument();
+});
