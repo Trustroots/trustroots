@@ -25,6 +25,7 @@ describe('Experiences routes unit tests', () => {
       'readMany',
       'getCount',
       'getSuggestion',
+      'readReplyRecipient',
       'readMine',
       'readOne',
     ] as const) {
@@ -59,5 +60,10 @@ describe('Experiences routes unit tests', () => {
     const suggestion = await request(app).get('/api/experiences/suggestion');
     suggestion.status.should.equal(200);
     suggestion.body.action.should.equal('getSuggestion');
+    const recipient = await request(app).get(
+      '/api/experiences/reply-recipient/member',
+    );
+    recipient.status.should.equal(200);
+    recipient.body.action.should.equal('readReplyRecipient');
   });
 });

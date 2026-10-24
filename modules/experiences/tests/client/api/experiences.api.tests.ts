@@ -6,6 +6,7 @@ import {
   readMine,
   getCount,
   getSuggestion,
+  readReplyRecipient,
 } from '@/modules/experiences/client/api/experiences.api';
 import type {
   Experience,
@@ -38,6 +39,18 @@ const experience: Experience = {
 };
 
 describe('experiences api', () => {
+  it('loads only the reply recipient identity with an encoded username', async () => {
+    const recipient = {
+      _id: 'user-2',
+      username: 'member-two',
+      displayName: 'Member Two',
+    };
+    mockedAxios.get.mockResolvedValueOnce({ data: recipient });
+    await expect(readReplyRecipient('member/two')).resolves.toBe(recipient);
+    expect(mockedAxios.get).toHaveBeenCalledWith(
+      '/api/experiences/reply-recipient/member%2Ftwo',
+    );
+  });
   it('creates an experience and returns the saved object', async () => {
     mockedAxios.post.mockResolvedValueOnce({ data: experienceMine });
 

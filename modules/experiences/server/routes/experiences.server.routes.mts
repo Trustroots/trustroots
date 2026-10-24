@@ -31,6 +31,10 @@ function register(app: Express) {
       .all(routeHandler(experiencesPolicy.isAllowed))
       .get(routeHandler(experiences.getSuggestion));
     app
+      .route('/api/experiences/reply-recipient/:recipientUsername')
+      .all(routeHandler(experiencesPolicy.isAllowed))
+      .get(routeHandler(experiences.readReplyRecipient));
+    app
       .route('/api/my-experience')
       .all(routeHandler(experiencesPolicy.isAllowed))
       .get(routeHandler(experiences.readMine));

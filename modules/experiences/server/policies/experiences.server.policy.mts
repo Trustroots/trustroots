@@ -24,6 +24,10 @@ function invokeRolesPolicies() {
           permissions: ['get'],
         },
         {
+          resources: '/api/experiences/reply-recipient/:recipientUsername',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/my-experience',
           permissions: ['get'],
         },
