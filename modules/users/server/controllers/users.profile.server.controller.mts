@@ -25,6 +25,10 @@ import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
 import moment from 'moment';
 import * as nip19 from 'nostr-tools/nip19';
+import {
+  consumeProof,
+  proofError,
+} from '../services/nostr-proof.server.service.mts';
 import validator from 'validator';
 import type {
   ProfilePayload,
@@ -296,6 +300,21 @@ service.update = function (req, res) {
                 'This nostr npub is already in use. Please use another one.',
             });
           }
+          done();
+        }, done);
+      },
+      function (done: (error?: Error | null) => void) {
+        if (
+          !requestedNostrNpub ||
+          requestedNostrNpub === authenticatedUser.nostrNpub
+        )
+          return done();
+        consumeProof(
+          authenticatedUser._id,
+          requestedNostrNpub,
+          req.body.nostrProof,
+        ).then(valid => {
+          if (!valid) return res.status(400).send({ message: proofError });
           done();
         }, done);
       },
