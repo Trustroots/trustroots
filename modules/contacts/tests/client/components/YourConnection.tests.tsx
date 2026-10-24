@@ -42,6 +42,9 @@ const sendFeedback = jest.mocked(feedback.send);
 const remove = jest.mocked(contacts.remove);
 const settings = jest.mocked(useSettings);
 const section = (name: string) => within(screen.getByRole('region', { name }));
+const feedbackSection = () => section('Private message feedback');
+const clickFeedbackButton = (name: string) =>
+  fireEvent.click(feedbackSection().getByRole('button', { name }));
 const api404 = (eligible?: boolean) => ({
   response: {
     status: 404,
@@ -97,29 +100,17 @@ it('shows independent absent records and eligible feedback without requiring a c
       name: 'Share your experience',
     }),
   ).toHaveAttribute('href', '/profile/rowan/experiences/new');
-  expect(
-    section('Private message feedback').getByText('Not recorded'),
-  ).toBeVisible();
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'Yes' }),
-  );
+  expect(feedbackSection().getByText('Not recorded')).toBeVisible();
+  clickFeedbackButton('Yes');
   await waitFor(() =>
     expect(sendFeedback).toHaveBeenCalledWith('yes', 'other'),
   );
   expect(
-    await section('Private message feedback').findByRole('button', {
-      name: 'Change',
-    }),
+    await feedbackSection().findByRole('button', { name: 'Change' }),
   ).toBeVisible();
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'Change' }),
-  );
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'No' }),
-  );
-  await waitFor(() =>
-    expect(section('Private message feedback').getByText('No')).toBeVisible(),
-  );
+  clickFeedbackButton('Change');
+  clickFeedbackButton('No');
+  await waitFor(() => expect(feedbackSection().getByText('No')).toBeVisible());
   expect(experiences.create).not.toHaveBeenCalled();
 });
 
@@ -210,9 +201,7 @@ it.each([403, 404])(
     expect(await section('Connection').findByText('No contact')).toBeVisible();
     expect(section('Connection').getByRole('alert')).toBeVisible();
     expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
-    expect(
-      section('Private message feedback').queryByRole('button'),
-    ).not.toBeInTheDocument();
+    expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument();
   },
 );
 
@@ -223,22 +212,12 @@ it.each([403, 404])(
     sendFeedback.mockRejectedValue({ response: { status } });
     mount();
     await loaded();
-    fireEvent.click(
-      section('Private message feedback').getByRole('button', {
-        name: 'Change',
-      }),
-    );
-    fireEvent.click(
-      section('Private message feedback').getByRole('button', { name: 'No' }),
-    );
-    expect(
-      await section('Private message feedback').findByRole('alert'),
-    ).toBeVisible();
+    clickFeedbackButton('Change');
+    clickFeedbackButton('No');
+    expect(await feedbackSection().findByRole('alert')).toBeVisible();
     await waitFor(() => expect(getFeedback).toHaveBeenCalledTimes(2));
-    expect(section('Private message feedback').getByText('Yes')).toBeVisible();
-    expect(
-      section('Private message feedback').queryByRole('button'),
-    ).not.toBeInTheDocument();
+    expect(feedbackSection().getByText('Yes')).toBeVisible();
+    expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument();
     expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
   },
 );
@@ -338,9 +317,7 @@ it.each([api404(false), null])(
     else getFeedback.mockRejectedValue(response);
     mount();
     await loaded();
-    expect(
-      section('Private message feedback').queryByRole('button'),
-    ).not.toBeInTheDocument();
+    expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument();
   },
 );
 
@@ -361,20 +338,18 @@ it.each([new Error('offline'), api404()])(
       section('Connection').getByRole('button', { name: 'Retry' }),
     );
     expect(await section('Connection').findByText('No contact')).toBeVisible();
-    expect(
-      section('Private message feedback').getByRole('alert'),
-    ).toBeVisible();
+    expect(feedbackSection().getByRole('alert')).toBeVisible();
     fireEvent.click(
       section('Your account').getByRole('button', { name: 'Retry' }),
     );
     expect(await section('Your account').findByRole('link')).toBeVisible();
     fireEvent.click(
-      section('Private message feedback').getByRole('button', {
+      feedbackSection().getByRole('button', {
         name: 'Retry',
       }),
     );
     expect(
-      await section('Private message feedback').findByRole('button', {
+      await feedbackSection().findByRole('button', {
         name: 'Yes',
       }),
     ).toBeVisible();
@@ -389,31 +364,19 @@ it.each([true, false])(
     mount();
     await loaded();
     if (!refreshSucceeds) getFeedback.mockRejectedValue(new Error('offline'));
-    fireEvent.click(
-      section('Private message feedback').getByRole('button', {
-        name: 'Change',
-      }),
+    clickFeedbackButton('Change');
+    clickFeedbackButton('No');
+    expect(await feedbackSection().findByRole('alert')).toHaveTextContent(
+      'Could not save',
     );
-    fireEvent.click(
-      section('Private message feedback').getByRole('button', { name: 'No' }),
-    );
+    expect(feedbackSection().getByText('Yes', { selector: 'p' })).toBeVisible();
+    clickFeedbackButton('Retry');
     expect(
-      await section('Private message feedback').findByRole('alert'),
-    ).toHaveTextContent('Could not save');
-    expect(
-      section('Private message feedback').getByText('Yes', { selector: 'p' }),
-    ).toBeVisible();
-    fireEvent.click(
-      section('Private message feedback').getByRole('button', {
-        name: 'Retry',
-      }),
-    );
-    expect(
-      await section('Private message feedback').findByRole('button', {
+      await feedbackSection().findByRole('button', {
         name: 'Change',
       }),
     ).toBeVisible();
-    expect(section('Private message feedback').getByText('No')).toBeVisible();
+    expect(feedbackSection().getByText('No')).toBeVisible();
   },
 );
 
@@ -439,21 +402,15 @@ it('preserves the last answer and reports a rejected save when eligibility is re
   mount();
   await loaded();
   getFeedback.mockRejectedValue(api404(false));
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'Change' }),
+  clickFeedbackButton('Change');
+  clickFeedbackButton('No');
+  expect(await feedbackSection().findByRole('alert')).toHaveTextContent(
+    'Could not save',
   );
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'No' }),
-  );
-  expect(
-    await section('Private message feedback').findByRole('alert'),
-  ).toHaveTextContent('Could not save');
   await waitFor(() =>
-    expect(
-      section('Private message feedback').queryByRole('button'),
-    ).not.toBeInTheDocument(),
+    expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument(),
   );
-  expect(section('Private message feedback').getByText('Yes')).toBeVisible();
+  expect(feedbackSection().getByText('Yes')).toBeVisible();
 });
 
 it.each([
@@ -474,25 +431,21 @@ it('allows Experience writing and private feedback while a member is blocked', a
   mount({ viewer: { ...viewer, blocked: [member._id], roles: ['user'] } });
   await loaded();
   expect(section('Connection').queryByRole('link')).not.toBeInTheDocument();
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'No' }),
-  );
+  clickFeedbackButton('No');
   await waitFor(() =>
     expect(sendFeedback).toHaveBeenCalledWith('no', member._id),
   );
   fireEvent.click(
-    await section('Private message feedback').findByRole('button', {
+    await feedbackSection().findByRole('button', {
       name: 'Change',
     }),
   );
-  fireEvent.click(
-    section('Private message feedback').getByRole('button', { name: 'Yes' }),
-  );
+  clickFeedbackButton('Yes');
   await waitFor(() =>
     expect(sendFeedback).toHaveBeenCalledWith('yes', member._id),
   );
   expect(
-    await section('Private message feedback').findByRole('button', {
+    await feedbackSection().findByRole('button', {
       name: 'Change',
     }),
   ).toBeVisible();
