@@ -129,7 +129,8 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
     [
       // Aggregate unread messages
       function (done: Done<[Notification[]]>) {
-        // We want to remind user about messages, which remain unread for more than `timePassed`
+        // Wait until the newest pending message in each conversation has aged
+        // past the delay so a burst of messages produces one reminder.
         // Has to be a JS Date object, not a Moment object
         const createdTimeAgo = moment()
           .subtract(moment.duration(timePassed))
@@ -146,9 +147,6 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
               notificationCount: {
                 $lte: reminderOrder,
               },
-              created: {
-                $lt: createdTimeAgo,
-              },
             },
           },
           {
@@ -157,6 +155,9 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
               _id: {
                 userTo: '$userTo',
                 userFrom: '$userFrom',
+              },
+              latestCreated: {
+                $max: '$created',
               },
               // Collect unread messages count
               total: {
@@ -175,6 +176,13 @@ function sendUnreadMessageReminders(reminder: Reminder, callback: Done): void {
               // we'll use the value to determine whether the notification is the first one, or not; to change wording of the reminder
               notificationCount: {
                 $min: '$notificationCount',
+              },
+            },
+          },
+          {
+            $match: {
+              latestCreated: {
+                $lt: createdTimeAgo,
               },
             },
           },
