@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 
-import AppHeader from '@/modules/core/client/components/AppHeader.component';
+import AppHeader from '@/layers/shell/client/components/AppHeader.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
 import {
   getReactRouteAccessRedirect,

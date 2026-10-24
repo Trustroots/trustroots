@@ -471,9 +471,6 @@ importers:
 
   modules/core:
     dependencies:
-      '@trustroots/messages':
-        specifier: workspace:*
-        version: link:../messages
       '@trustroots/support':
         specifier: workspace:*
         version: link:../support
