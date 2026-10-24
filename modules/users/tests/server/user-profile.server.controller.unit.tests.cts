@@ -44,6 +44,7 @@ interface MockResponse {
   body: unknown;
   _next: boolean;
   _nextArg: unknown;
+  set(field: string, value: string): this;
   status(code: number): this;
   send(body: unknown): this;
   json(body: unknown): this;
@@ -65,6 +66,9 @@ function runHandler(invoke: Handler): Promise<HandlerOutcome> {
       body: null,
       _next: false,
       _nextArg: undefined,
+      set() {
+        return res;
+      },
       status(code) {
         res.statusCode = code;
         return res;
@@ -204,6 +208,31 @@ describe('Profile controller unit tests', () => {
   afterEach(() => {
     sinon.restore();
     return utils.clearDatabase();
+  });
+
+  describe('profile removal status and cancellation', () => {
+    for (const method of ['getProfileRemovalStatus', 'cancelProfileRemoval']) {
+      it(`${method} refuses an unauthenticated caller`, async () => {
+        const { res } = await runHandler(res =>
+          profileController[method]({}, res),
+        );
+        res.statusCode.should.equal(403);
+      });
+
+      it(`${method} reports database failures`, async () => {
+        const [user] = await utils.saveUsers(utils.generateUsers(1));
+        sinon
+          .stub(
+            User,
+            method === 'getProfileRemovalStatus' ? 'exists' : 'updateOne',
+          )
+          .rejects(new Error('Fictional database failure'));
+        const { res } = await runHandler(res =>
+          profileController[method]({ user }, res),
+        );
+        res.statusCode.should.equal(400);
+      });
+    }
   });
 
   describe('update', () => {
