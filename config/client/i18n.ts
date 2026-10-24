@@ -82,6 +82,14 @@ function format(
   return value;
 }
 
+// i18next >= 21 ignores `interpolation.format` and uses its own formatter,
+// so ours is registered as the formatter module.
+const formatter = {
+  type: 'formatter' as const,
+  init() {},
+  format: format as FormatFunction,
+};
+
 if (!isTest) {
   // load translation using Fetch -> see /public/locales
   // learn more: https://github.com/i18next/i18next-http-backend
@@ -94,6 +102,7 @@ i18n
   .use(LanguageDetector)
   // pass the i18n instance to react-i18next.
   .use(initReactI18next)
+  .use(formatter)
   // init i18next
   // for all options read: https://www.i18next.com/overview/configuration-options
   .init({
@@ -111,9 +120,6 @@ i18n
     returnEmptyString: false,
     interpolation: {
       escapeValue: false, // react already safes from xss
-      // Preserve this legacy formatter's numeric and fallback-value results;
-      // i18next's declaration only describes string results.
-      format: format as FormatFunction,
     },
     detection: {
       lookupCookie: 'i18n',

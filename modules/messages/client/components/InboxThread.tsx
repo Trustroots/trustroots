@@ -27,12 +27,12 @@ export default function InboxThread({ user, thread }: InboxThreadProps) {
           <div className="media-body">
             <small className="text-muted pull-right">
               {haveReplied && (
-                <i className="icon-reply" title={t<string>('You replied')} />
+                <i className="icon-reply" title={t('You replied')} />
               )}
               &nbsp;
               <TimeAgo date={new Date(thread.updated)} />
             </small>
-            <span>{otherUser.displayName || t<string>('Unknown member')}</span>
+            <span>{otherUser.displayName || t('Unknown member')}</span>
             <br />
             <span className="text-muted threadlist-thread-excerpt">
               {thread.message.excerpt}

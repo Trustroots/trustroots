@@ -22,7 +22,7 @@ export default function MapNavigationControl() {
         <button
           type="button"
           className="mapboxgl-ctrl-zoom-in"
-          aria-label={t<string>('Zoom in')}
+          aria-label={t('Zoom in')}
           onClick={() => map?.zoomIn()}
         >
           <span className="mapboxgl-ctrl-icon" aria-hidden="true" />
@@ -30,7 +30,7 @@ export default function MapNavigationControl() {
         <button
           type="button"
           className="mapboxgl-ctrl-zoom-out"
-          aria-label={t<string>('Zoom out')}
+          aria-label={t('Zoom out')}
           onClick={() => map?.zoomOut()}
         >
           <span className="mapboxgl-ctrl-icon" aria-hidden="true" />

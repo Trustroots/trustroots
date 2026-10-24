@@ -7,6 +7,6 @@
   "Spoken languages": "Spoken languages",
   "Type name, username…": "Type name, username…",
   "Zoom closer to find members.": "Zoom closer to find members.",
-  "{{count}} members found": "One member found",
-  "{{count}} members found_plural": "{{count}} members found"
+  "{{count}} members found_one": "One member found",
+  "{{count}} members found_other": "{{count}} members found"
 }

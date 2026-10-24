@@ -20,10 +20,10 @@
     "Yes, remove contact": "Si, eliminar contacto",
     "Yes, revoke request": "Si, anular solicitude",
     "You received a contact request.": "Recibiches unha solicitude de contacto.",
-    "{{count}} contacts": "{{count}} contacto",
-    "{{count}} contacts_plural": "{{count}} contactos",
-    "{{count}} contacts in common": "Un contacto en común",
-    "{{count}} contacts in common_plural": "{{count}} contactos en común",
-    "(additional {{count}} pending)": "({{count}} máis pendente)",
-    "(additional {{count}} pending)_plural": "({{count}} máis pendentes)"
+    "{{count}} contacts_one": "{{count}} contacto",
+    "{{count}} contacts_other": "{{count}} contactos",
+    "{{count}} contacts in common_one": "Un contacto en común",
+    "{{count}} contacts in common_other": "{{count}} contactos en común",
+    "(additional {{count}} pending)_one": "({{count}} máis pendente)",
+    "(additional {{count}} pending)_other": "({{count}} máis pendentes)"
 }

@@ -1,7 +1,7 @@
 {
     "Send a message": "Enviar uma mensagem",
-    "At most {{count}} guests.": "No máximo, um hóspede.",
-    "At most {{count}} guests._plural": "No máximo, {{count}} hóspedes.",
+    "At most {{count}} guests._one": "No máximo, um hóspede.",
+    "At most {{count}} guests._other": "No máximo, {{count}} hóspedes.",
     "Accommodation": "Alojamento",
     "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Viajando? Organizando um evento? Apenas fazendo um jantar e gostaria de convidar pessoas?",
     "Travelling? Organising an event?": "Viajando? Organizando um evento?",

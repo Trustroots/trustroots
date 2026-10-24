@@ -5,10 +5,9 @@
     "Type name, username…": "נא לכתוב שם, שם משתמש…",
     "Search members": "חפשי חברים",
     "No members found by this name.": "לא נמצאו חברים.",
-    "{{count}} members found_0": "חבר אחד נמצא",
-    "{{count}} members found_1": "{{count}} חברים נמצאו",
-    "{{count}} members found_2": "{{count}} חברים נמצאו",
-    "{{count}} members found_3": "{{count}} חברים נמצאו",
+    "{{count}} members found_one": "חבר אחד נמצא",
+    "{{count}} members found_two": "{{count}} חברים נמצאו",
+    "{{count}} members found_other": "{{count}} חברים נמצאו",
     "Select languages…": "בחירת שפות…",
     "Spoken languages": "שפות שיש לך שליטה בהן"
 }
