@@ -1,6 +1,7 @@
 import axios from '../../../core/client/api/http-client.js';
 import { nextPageParams } from './pagination';
 import type {
+  ConversationCounts,
   MarkMessagesReadRequest,
   MarkMessagesReadResponse,
   MessageMember,
@@ -15,6 +16,7 @@ import type {
 export type MessageUser = MessageMember;
 export type Message = MessagePayload;
 export type { MessageThreadSummary };
+export type { ConversationCounts };
 
 export type RequestParams = Record<
   string,
@@ -73,6 +75,13 @@ export async function unreadCount(): Promise<number> {
     data: { unread },
   } = await axios.get<UnreadMessageCountResponse>('/api/messages-count');
   return unread;
+}
+
+export async function conversationCounts(): Promise<ConversationCounts> {
+  const { data } = await axios.get<ConversationCounts>('/api/messages-count', {
+    params: { include: 'filters' },
+  });
+  return data;
 }
 
 export async function previewMessage(content: string): Promise<string> {

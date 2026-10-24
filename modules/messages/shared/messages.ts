@@ -62,4 +62,9 @@ export interface UnreadMessageCountResponse {
   unread: number;
 }
 
+export interface ConversationCounts extends UnreadMessageCountResponse {
+  all: number;
+  unreplied: number;
+}
+
 export type MarkMessagesReadResponse = Record<string, never>;

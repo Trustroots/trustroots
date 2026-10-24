@@ -29,6 +29,142 @@ test.describe('seeded message flows', () => {
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
   });
 
+  test('unreplied conversations and totals follow reading and replying', async ({
+    page,
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.inbox', [
+      'Unreplied conversations and all three totals reflect reading and replying.',
+    ]);
+    const member = createUser();
+    const setupContext = await createIsolatedContext(browser, baseURL);
+    try {
+      await registerViaApi(setupContext.request, member);
+    } finally {
+      await setupContext.close();
+    }
+    await updateUserByUsername(member.username, {
+      $set: {
+        public: true,
+        description:
+          'A fictional member interested in meeting people and sharing travel stories.',
+      },
+    });
+    const recipient = await findUserByUsername(member.username);
+    expectPresent(recipient);
+    const sender = {
+      _id: new ObjectId(),
+      username: `unreplied-${new ObjectId()}`,
+      email: `unreplied-${new ObjectId()}@example.test`,
+      displayName: 'Fictional Initial Sender',
+      public: true,
+      roles: ['user'],
+    };
+    const message = {
+      _id: new ObjectId(),
+      userFrom: sender._id,
+      userTo: recipient._id,
+      content: 'A fictional initial invitation.',
+      created: new Date(),
+      read: false,
+      shadowHidden: false,
+    };
+    const thread = {
+      _id: new ObjectId(),
+      userFrom: sender._id,
+      userTo: recipient._id,
+      message: message._id,
+      updated: message.created,
+      read: false,
+    };
+    await withE2eDb(async db => {
+      await db.collection('users').insertOne(sender);
+      await db.collection('messages').insertOne(message);
+      await db.collection('threads').insertOne(thread);
+    });
+    await signInViaApi(page, page.request, member);
+    const assertCounts = async (unread: number, unreplied: number) => {
+      for (const [label, count] of [
+        ['All', 1],
+        ['Unread', unread],
+        ['Unreplied', unreplied],
+      ]) {
+        await expect(
+          page.getByRole('option', {
+            name: new RegExp(`${label} conversations`),
+          }),
+        ).toContainText(`(${count})`);
+      }
+    };
+    await page.goto('/messages');
+    await assertCounts(1, 1);
+    for (const width of [1280, 768, 375, 320]) {
+      await page.setViewportSize({ width, height: 800 });
+      await expect(
+        page.getByRole('combobox', { name: 'Conversation filter' }),
+      ).toBeInViewport();
+      expect(
+        await page
+          .locator('html')
+          .evaluate(element => element.scrollWidth <= element.clientWidth),
+      ).toBeTruthy();
+    }
+    await page
+      .getByRole('combobox', { name: 'Conversation filter' })
+      .selectOption('unreplied');
+    await expect(page).toHaveURL(/filter=unreplied/);
+    await page.getByText(sender.displayName).click();
+    await expect(page.getByText(message.content)).toBeVisible();
+    await page.goto('/messages?filter=unreplied');
+    await assertCounts(0, 1);
+    await expect(page.getByText(sender.displayName)).toBeVisible();
+    await page.getByText(sender.displayName).click();
+    const editor = page.locator('#message-reply-content');
+    await editor.click();
+    await page.keyboard.insertText('A fictional first answer.');
+    const sent = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/messages') &&
+        response.request().method() === 'POST' &&
+        response.ok(),
+    );
+    await page.locator('#messageReplySubmit').click();
+    await sent;
+    await page.goto('/messages?filter=unreplied');
+    await assertCounts(0, 0);
+    await expect(page.getByRole('alert')).toHaveText(
+      'No unreplied conversations.',
+    );
+    // A newer incoming message must not make an answered conversation unreplied.
+    await withE2eDb(async db => {
+      const followUp = {
+        ...message,
+        _id: new ObjectId(),
+        created: new Date(),
+        content: 'A fictional follow-up.',
+      };
+      await db.collection('messages').insertOne(followUp);
+      await db.collection('threads').updateOne(
+        { _id: thread._id },
+        {
+          $set: {
+            userFrom: sender._id,
+            userTo: recipient._id,
+            message: followUp._id,
+            updated: followUp.created,
+            read: false,
+          },
+        },
+      );
+    });
+    await page.reload();
+    await assertCounts(1, 0);
+    await expect(page.getByRole('alert')).toHaveText(
+      'No unreplied conversations.',
+    );
+  });
+
   test('inbox and conversation load through the React shell', async ({
     page,
   }, testInfo) => {
@@ -123,7 +259,9 @@ test.describe('seeded message flows', () => {
     await expect(page.getByText('Older Unread Member')).toHaveCount(0);
     await expect(page.getByLabel('1 unread messages')).toBeVisible();
 
-    await page.getByRole('link', { name: 'Unread conversations' }).click();
+    await page
+      .getByRole('combobox', { name: 'Conversation filter' })
+      .selectOption('unread');
     await expect(page).toHaveURL(/\/messages\?filter=unread/);
     await expect(page.getByText('Older Unread Member')).toBeVisible();
     await page.getByText('Older Unread Member').click();

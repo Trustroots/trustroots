@@ -12,37 +12,16 @@
 
 .inbox-controls {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: 12px;
   margin-bottom: 20px;
 }
 
-.inbox-view-filters {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 0;
-  border: 1px solid darken(@brand-primary, 15%);
-  border-radius: @border-radius-base;
-  background: #fff;
-
-  .btn {
-    border: 0;
-    border-radius: 0;
-    white-space: nowrap;
-    background: transparent;
-    &:first-child {
-      border-radius: (@border-radius-base - 1) 0 0 (@border-radius-base - 1);
-    }
-    &:last-child {
-      border-radius: 0 (@border-radius-base - 1) (@border-radius-base - 1) 0;
-    }
-  }
-
-  .btn[aria-current='page'] {
-    background: darken(@brand-primary, 15%);
-    color: #fff;
-    font-weight: 600;
-  }
+.inbox-view-filter {
+  flex: 0 1 320px;
+  width: auto;
+  max-width: 100%;
 }
 
 .inbox-search {
@@ -60,14 +39,9 @@
     display: block;
   }
 
-  .inbox-view-filters {
-    display: flex;
+  .inbox-view-filter {
+    width: 100%;
     margin-bottom: 10px;
-
-    .btn {
-      flex: 1 1 50%;
-      white-space: normal;
-    }
   }
 
   .inbox-search {

@@ -749,6 +749,173 @@ describe('Messages controller unit tests', () => {
   });
 
   describe('messagesCount', () => {
+    it('returns all three totals for an empty inbox', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const res = deferredResponse();
+      messagesController.messagesCount(
+        { user, query: { include: 'filters' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.body.should.deepEqual({ all: 0, unread: 0, unreplied: 0 });
+    });
+
+    it('keeps totals and paginated filters aligned with message history', async () => {
+      const [
+        viewer,
+        neverAnswered,
+        readSender,
+        answered,
+        outgoing,
+        blocked,
+        stranger,
+      ] = await utils.saveUsers(utils.generateUsers(7, { public: true }));
+      viewer.blocked = [blocked._id];
+      // Multiple initial messages still form one conversation. No MessageStats are needed.
+      const incoming = async (sender: UserDocument, read = false) => {
+        const message = await Message.create({
+          userFrom: sender._id,
+          userTo: viewer._id,
+          content: 'Fictional initial message',
+          read,
+        });
+        return Thread.create({
+          userFrom: sender._id,
+          userTo: viewer._id,
+          message: message._id,
+          read,
+        });
+      };
+      await incoming(neverAnswered);
+      await Message.create({
+        userFrom: neverAnswered._id,
+        userTo: viewer._id,
+        content: 'Fictional follow-up',
+      });
+      await incoming(readSender, true);
+      await Message.create({
+        userFrom: viewer._id,
+        userTo: answered._id,
+        content: 'Fictional past reply',
+      });
+      await incoming(answered);
+      await incoming(blocked);
+      const sent = await Message.create({
+        userFrom: viewer._id,
+        userTo: outgoing._id,
+        content: 'Fictional outgoing message',
+      });
+      await Thread.create({
+        userFrom: viewer._id,
+        userTo: outgoing._id,
+        message: sent._id,
+      });
+      await Message.create({
+        userFrom: stranger._id,
+        userTo: viewer._id,
+        content: 'Fictional hidden message',
+        shadowHidden: true,
+      });
+      const requestCounts = async () => {
+        const res = deferredResponse();
+        messagesController.messagesCount(
+          { user: viewer, query: { include: 'filters' } },
+          res,
+        );
+        await res.waitForResponse();
+        return res.body;
+      };
+      (await requestCounts()).should.deepEqual({
+        all: 4,
+        unread: 2,
+        unreplied: 2,
+      });
+      for (const [filter, total] of [
+        ['all', 4],
+        ['unread', 2],
+        ['unreplied', 2],
+      ] as const) {
+        const ids = new Set();
+        for (let page = 1; page <= total; page++) {
+          const res = deferredResponse();
+          res.locals = { paginate: { href: () => '/api/messages?page=2' } };
+          messagesController.inbox(
+            { user: viewer, query: { filter, page, limit: 1 } },
+            res,
+          );
+          await res.waitForResponse();
+          res.body.should.have.length(1);
+          ids.add(
+            bodyArray<{ _id: { toString(): string } }>(
+              res.body,
+            )[0]!._id.toString(),
+          );
+        }
+        ids.size.should.equal(total);
+      }
+      await Thread.updateOne(
+        { userFrom: neverAnswered._id, userTo: viewer._id },
+        { read: true },
+      );
+      (await requestCounts()).should.deepEqual({
+        all: 4,
+        unread: 1,
+        unreplied: 2,
+      });
+      await Message.create({
+        userFrom: viewer._id,
+        userTo: neverAnswered._id,
+        content: 'Fictional first reply',
+      });
+      (await requestCounts()).should.deepEqual({
+        all: 4,
+        unread: 1,
+        unreplied: 1,
+      });
+    });
+
+    it('returns an error when filter counts fail', async () => {
+      const stub = sinon
+        .stub(Thread, 'countDocuments')
+        .rejects(new Error('Count unavailable'));
+      try {
+        const res = deferredResponse();
+        messagesController.messagesCount(
+          {
+            user: { _id: new mongoose.Types.ObjectId() },
+            query: { include: 'filters' },
+          },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+      } finally {
+        stub.restore();
+      }
+    });
+
+    for (const handler of ['inbox', 'messagesCount'] as const) {
+      it(`returns an error when unreplied history lookup fails in ${handler}`, async () => {
+        const stub = sinon
+          .stub(Message, 'distinct')
+          .rejects(new Error('History unavailable'));
+        try {
+          const res = deferredResponse();
+          messagesController[handler](
+            {
+              user: { _id: new mongoose.Types.ObjectId() },
+              query: { include: 'filters', filter: 'unreplied' },
+            },
+            res,
+          );
+          await res.waitForResponse();
+          res.statusCode.should.equal(400);
+        } finally {
+          stub.restore();
+        }
+      });
+    }
+
     it('returns zero for a user with no unread threads', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const res = deferredResponse();
