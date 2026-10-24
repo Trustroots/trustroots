@@ -135,6 +135,7 @@ test.describe('authenticated member flows', () => {
     annotateFeature(testInfo, 'account.data-export', [
       'The combined export is an attachment with the documented filename.',
       'The export has format and version metadata plus profile, circles, contacts, hosting offer, message, and experience sections.',
+      'Two exports of unchanged data attest the same content, because the request timestamp is not signed.',
     ]);
 
     if (!authenticatedMember)
@@ -151,7 +152,7 @@ test.describe('authenticated member flows', () => {
     const data = await response.json();
     expect(data).toMatchObject({
       format: 'trustroots-data-export',
-      version: 1,
+      version: 2,
       profile: expect.any(Object),
       circles: expect.any(Array),
       contacts: expect.any(Array),
@@ -160,6 +161,17 @@ test.describe('authenticated member flows', () => {
       experiences: expect.any(Array),
     });
     expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
+
+    // The signed part of the file must not vary between downloads, otherwise
+    // the signature attests something other than the member's data.
+    const second = await (await page.request.get('/api/users/export')).json();
+
+    expect(second.exportedAt).toEqual(expect.any(String));
+    expect({ ...second, exportedAt: null, signature: null }).toEqual({
+      ...data,
+      exportedAt: null,
+      signature: null,
+    });
   });
 
   test('member profile API publishes place labels without precise coordinates', async ({
