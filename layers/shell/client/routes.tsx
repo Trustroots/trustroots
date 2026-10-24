@@ -85,7 +85,7 @@ import ContactConfirmPage from '@/modules/contacts/client/components/ContactConf
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/layers/shell/client/AppProviders';
 import ReactAppShell from './ReactAppShell';
 import { signout } from './shell-helpers';
 

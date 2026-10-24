@@ -1,0 +1,60 @@
+import React, {
+  createContext,
+  useContext,
+  useMemo,
+  type ReactNode,
+} from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+import {
+  AuthProvider,
+  type AuthUser,
+} from '@/modules/core/client/react-app/auth';
+import { getBootstrapData } from './bootstrap';
+
+export type BootstrapData = {
+  env?: string;
+  isNativeMobileApp?: boolean;
+  settings: NonNullable<Window['settings']>;
+  title: string;
+  user: AuthUser | null;
+};
+type AppProvidersProps = {
+  bootstrapData?: BootstrapData;
+  children: ReactNode;
+};
+
+const AppBootstrapContext = createContext<BootstrapData | null>(null);
+
+export function AppProviders({ bootstrapData, children }: AppProvidersProps) {
+  const resolvedBootstrapData =
+    bootstrapData === undefined ? getBootstrapData() : bootstrapData;
+  const queryClient = useMemo(() => new QueryClient(), []);
+
+  return (
+    <AppBootstrapContext.Provider value={resolvedBootstrapData}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider initialUser={resolvedBootstrapData.user}>
+          {children}
+        </AuthProvider>
+      </QueryClientProvider>
+    </AppBootstrapContext.Provider>
+  );
+}
+
+export function useBootstrapData(): BootstrapData {
+  const bootstrapData = useContext(AppBootstrapContext);
+  if (!bootstrapData) {
+    throw new Error('useBootstrapData must be used within AppProviders');
+  }
+  return bootstrapData;
+}
+
+export function useSettings(): BootstrapData['settings'] {
+  return useBootstrapData().settings;
+}
+
+export function useAppConfig() {
+  const { env, isNativeMobileApp, title } = useBootstrapData();
+  return { env, isNativeMobileApp, title };
+}
