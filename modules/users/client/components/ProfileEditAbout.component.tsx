@@ -40,6 +40,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
         gender: draftUser.gender,
         birthdate: draftUser.birthdate,
         languages: draftUser.languages,
+        languageLevels: draftUser.languageLevels,
       });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
@@ -210,6 +211,10 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
               <ProfileEditLanguages
                 onChangeLanguages={languages => updateDraft({ languages })}
                 profileLanguages={draftUser.languages || []}
+                languageLevels={draftUser.languageLevels}
+                onChangeLevels={languageLevels =>
+                  updateDraft({ languageLevels })
+                }
               />
             </div>
           </div>

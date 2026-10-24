@@ -1,3 +1,5 @@
+import type { LanguageLevels } from './language-levels.js';
+
 /** A tribe membership included in a full member profile. */
 export interface ProfileTribe<Id = string> {
   _id: Id;
@@ -49,6 +51,7 @@ export interface PublicProfile<Id = string, Timestamp = string> {
   locationFrom?: string;
   locationLiving?: string;
   languages?: string[];
+  languageLevels?: LanguageLevels;
   birthdate?: Timestamp | null;
   seen?: Timestamp;
   created?: Timestamp;
@@ -132,6 +135,7 @@ export interface UpdateProfileRequest {
   birthdate?: string | null;
   gender?: string;
   languages?: string[];
+  languageLevels?: LanguageLevels;
   locationLiving?: string;
   locationFrom?: string;
   username?: string;

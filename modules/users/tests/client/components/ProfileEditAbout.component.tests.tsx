@@ -47,11 +47,20 @@ jest.mock(
 
     function MockProfileEditLanguages({
       onChangeLanguages,
+      onChangeLevels,
     }: React.ComponentProps<typeof ProfileEditLanguages>) {
       return (
-        <button type="button" onClick={() => onChangeLanguages(['en'])}>
-          Edit languages
-        </button>
+        <>
+          <button type="button" onClick={() => onChangeLanguages(['en'])}>
+            Edit languages
+          </button>
+          <button
+            type="button"
+            onClick={() => onChangeLevels?.({ en: 'native' })}
+          >
+            Edit language levels
+          </button>
+        </>
       );
     }
 
@@ -280,4 +289,27 @@ describe('ProfileEditAbout', () => {
 
     expect(screen.getAllByRole('button', { name: 'Save' })[0]).toBeEnabled();
   });
+});
+
+it('saves language levels with the profile draft', async () => {
+  updateUser.mockResolvedValue({
+    ...user,
+    languages: ['en'],
+    languageLevels: { en: 'native' },
+  });
+  renderPage();
+  fireEvent.click(screen.getByRole('button', { name: 'Edit languages' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Edit language levels' }));
+  fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]);
+  await waitFor(() =>
+    expect(updateUser).toHaveBeenCalledWith(
+      expect.objectContaining({
+        languages: ['en'],
+        languageLevels: { en: 'native' },
+      }),
+    ),
+  );
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Profile updated.',
+  );
 });
