@@ -221,24 +221,31 @@ function ConnectionPair({
     );
   }
   function accountDetails(account: ConnectionAccount | null, yours: boolean) {
-    if (!account) return <p>{t<string>('No account shared yet.')}</p>;
+    if (!account)
+      return (
+        <p className="text-muted">{t<string>('No Experience shared yet.')}</p>
+      );
     const met = account.interactions?.met;
     return (
       <>
-        <p>
-          {yours
-            ? viewer.displayName || viewer.username
-            : member.displayName || member.username}
-        </p>
-        {typeof account.public === 'boolean' && (
-          <p>
-            {account.public
-              ? t<string>('Public')
-              : t<string>('Awaiting publication')}
-          </p>
-        )}
+        <div className="your-connection-byline">
+          <span>
+            {t<string>('Written by {{name}}', {
+              name: yours
+                ? viewer.displayName || viewer.username
+                : member.displayName || member.username,
+            })}
+          </span>
+          {typeof account.public === 'boolean' && (
+            <span className="your-connection-visibility">
+              {account.public
+                ? t<string>('Public')
+                : t<string>('Awaiting publication')}
+            </span>
+          )}
+        </div>
         {yours && account.public === false && (
-          <p>
+          <p className="your-connection-note">
             {te<string>(
               'Your experience will become public when {{name}} shares their experience, or at most in {{count}} days.',
               {
@@ -248,40 +255,61 @@ function ConnectionPair({
             )}
           </p>
         )}
-        <p>
-          {t<string>('Met in person')}:{' '}
-          {met === undefined
-            ? t<string>('Not recorded')
-            : met
-              ? t<string>('Yes')
-              : t<string>('No')}
-        </p>
-        {account.interactions?.host === true && (
-          <p>
-            {yours
-              ? t<string>('You hosted this member')
-              : t<string>('This member hosted you')}
-          </p>
-        )}
-        {account.interactions?.guest === true && (
-          <p>
-            {yours
-              ? t<string>('This member hosted you')
-              : t<string>('You hosted this member')}
-          </p>
-        )}
-        {account.recommend !== undefined && (
-          <p>
-            {t<string>('Recommendation')}:{' '}
-            {account.recommend === 'yes'
-              ? t<string>('Yes')
-              : account.recommend === 'no'
-                ? t<string>('No')
-                : t<string>('Not recorded')}
-          </p>
-        )}
+        <table
+          className="your-connection-facts"
+          aria-label={
+            yours ? t<string>('Your Experience') : t<string>('Their Experience')
+          }
+        >
+          <tbody>
+            <tr>
+              <th scope="row">{t<string>('Met in person')}</th>
+              <td>
+                {met === undefined
+                  ? t<string>('Not recorded')
+                  : met
+                    ? t<string>('Yes')
+                    : t<string>('No')}
+              </td>
+            </tr>
+            {account.interactions?.host === true && (
+              <tr>
+                <th scope="row">{t<string>('Hosting')}</th>
+                <td>
+                  {yours
+                    ? t<string>('You hosted this member')
+                    : t<string>('This member hosted you')}
+                </td>
+              </tr>
+            )}
+            {account.interactions?.guest === true && (
+              <tr>
+                <th scope="row">{t<string>('Staying')}</th>
+                <td>
+                  {yours
+                    ? t<string>('This member hosted you')
+                    : t<string>('You hosted this member')}
+                </td>
+              </tr>
+            )}
+            {account.recommend !== undefined && (
+              <tr>
+                <th scope="row">{t<string>('Recommendation')}</th>
+                <td>
+                  {account.recommend === 'yes'
+                    ? t<string>('Yes')
+                    : account.recommend === 'no'
+                      ? t<string>('No')
+                      : t<string>('Not recorded')}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
         {account.feedbackPublic !== undefined && (
-          <p style={{ whiteSpace: 'pre-wrap' }}>{account.feedbackPublic}</p>
+          <blockquote className="your-connection-quote">
+            {account.feedbackPublic}
+          </blockquote>
         )}
       </>
     );
@@ -290,66 +318,74 @@ function ConnectionPair({
   return (
     <section
       aria-label={t<string>('Your connection')}
-      className="panel panel-default"
+      className="your-connection"
     >
-      <div className="panel-body">
+      <header className="your-connection-header">
         <h2>{t<string>('Your connection')}</h2>
-        <p>
+        <p className="your-connection-note">
           {t<string>(
-            'This section is private to you. It may include already-public Experiences.',
+            'Only you can see this panel. Published Experiences remain public.',
           )}
         </p>
-        <section aria-label={t<string>('Connection')}>
-          <h3>{t<string>('Connection')}</h3>
-          {sourceStatus(contact.state, contact.retry)}
-          {contact.state.status === 'ready' && (
-            <>
-              <p>
-                {connection === 'absent'
-                  ? t<string>('No contact')
-                  : connection === 'incoming'
-                    ? t<string>('Incoming contact request')
-                    : connection === 'outgoing'
-                      ? t<string>('Outgoing contact request')
-                      : t<string>('Confirmed contact')}
-              </p>
-              {canConnect && (
-                <>
-                  {connection === 'absent' && (
-                    <a href={`/contact-add/${member._id}`}>
-                      {t<string>('Add contact')}
-                    </a>
-                  )}
-                  {connection === 'incoming' && record?._id && (
-                    <a href={`/contact-confirm/${record._id}`}>
-                      {t<string>('Confirm contact')}
-                    </a>
-                  )}
-                  {record?._id && (
-                    <button
-                      type="button"
-                      className="btn btn-link"
-                      onClick={() => setShowRemove(true)}
-                    >
-                      {connection === 'confirmed'
-                        ? t<string>('Remove contact')
-                        : connection === 'incoming'
-                          ? t<string>('Decline request')
-                          : t<string>('Cancel request')}
-                    </button>
-                  )}
-                </>
-              )}
-            </>
-          )}
-          {removeError && (
-            <p role="alert">
-              {t<string>('Could not save your change. Please try again.')}
-            </p>
-          )}
-        </section>
-        <section aria-label={t<string>('Your account')}>
-          <h3>{t<string>('Your account')}</h3>
+      </header>
+      <section
+        aria-label={t<string>('Contact')}
+        className="your-connection-contact"
+      >
+        <h3>{t<string>('Contact')}</h3>
+        {sourceStatus(contact.state, contact.retry)}
+        {contact.state.status === 'ready' && (
+          <div className="your-connection-contact-status">
+            <span>
+              {connection === 'absent'
+                ? t<string>('No contact')
+                : connection === 'incoming'
+                  ? t<string>('Incoming contact request')
+                  : connection === 'outgoing'
+                    ? t<string>('Outgoing contact request')
+                    : t<string>('Confirmed contact')}
+            </span>
+            {canConnect && (
+              <div className="your-connection-actions">
+                {connection === 'absent' && (
+                  <a href={`/contact-add/${member._id}`}>
+                    {t<string>('Add contact')}
+                  </a>
+                )}
+                {connection === 'incoming' && record?._id && (
+                  <a href={`/contact-confirm/${record._id}`}>
+                    {t<string>('Confirm contact')}
+                  </a>
+                )}
+                {record?._id && (
+                  <button
+                    type="button"
+                    className="btn btn-link"
+                    onClick={() => setShowRemove(true)}
+                  >
+                    {connection === 'confirmed'
+                      ? t<string>('Remove contact')
+                      : connection === 'incoming'
+                        ? t<string>('Decline request')
+                        : t<string>('Cancel request')}
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+        {removeError && (
+          <p role="alert">
+            {t<string>('Could not save your change. Please try again.')}
+          </p>
+        )}
+      </section>
+      <div className="your-connection-experiences">
+        <section
+          aria-label={t<string>('Your Experience')}
+          className="your-connection-experience"
+        >
+          <h3>{t<string>('Your Experience')}</h3>
           {sourceStatus(experience.state, experience.retry)}
           {experience.state.status === 'ready' && (
             <>
@@ -368,81 +404,89 @@ function ConnectionPair({
             </>
           )}
         </section>
-        <section aria-label={t<string>('Their account')}>
-          <h3>{t<string>('Their account')}</h3>
+        <section
+          aria-label={t<string>('Their Experience')}
+          className="your-connection-experience"
+        >
+          <h3>{t<string>('Their Experience')}</h3>
           {sourceStatus(experience.state, experience.retry)}
           {experience.state.status === 'ready' &&
             accountDetails(accounts.theirs, false)}
         </section>
-        <section aria-label={t<string>('Private message feedback')}>
-          <h3>{t<string>('Private message feedback')}</h3>
-          {sourceStatus(reference.state, reference.retry)}
-          {reference.state.status === 'ready' && (
-            <>
-              <p>
-                {t<string>(
-                  'Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?',
+      </div>
+      <section
+        aria-label={t<string>('Private message feedback')}
+        className="your-connection-feedback"
+      >
+        <h3>{t<string>('Private message feedback')}</h3>
+        {sourceStatus(reference.state, reference.retry)}
+        {reference.state.status === 'ready' && (
+          <>
+            <p>
+              {t<string>(
+                'Do you find messages from this person to be polite, respectful and in the spirit of Trustroots?',
+              )}
+            </p>
+            <p className="your-connection-note">
+              {t<string>("Your response won't be visible to them.")}
+            </p>
+            <p>
+              {reference.state.data.answer
+                ? reference.state.data.answer.reference === 'yes'
+                  ? t<string>('Yes')
+                  : t<string>('No')
+                : t<string>('Not recorded')}
+            </p>
+            {canAnswer && (
+              <>
+                {reference.state.data.answer && !changing ? (
+                  <button
+                    type="button"
+                    className="btn btn-link"
+                    onClick={() => setChanging(true)}
+                  >
+                    {t<string>('Change')}
+                  </button>
+                ) : (
+                  <div role="group" aria-label={t<string>('Your answer')}>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      className="btn btn-default"
+                      onClick={() => void answer('yes')}
+                    >
+                      {t<string>('Yes')}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      className="btn btn-default"
+                      onClick={() => void answer('no')}
+                    >
+                      {t<string>('No')}
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+            {mutationError && (
+              <p role="alert">
+                {t<string>('Could not save your change. Please try again.')}{' '}
+                {canAnswer && (
+                  <button
+                    type="button"
+                    className="btn btn-link"
+                    disabled={saving}
+                    onClick={() => void answer(pendingAnswer!)}
+                  >
+                    {t<string>('Retry')}
+                  </button>
                 )}
               </p>
-              <p>{t<string>("Your response won't be visible to them.")}</p>
-              <p>
-                {reference.state.data.answer
-                  ? reference.state.data.answer.reference === 'yes'
-                    ? t<string>('Yes')
-                    : t<string>('No')
-                  : t<string>('Not recorded')}
-              </p>
-              {canAnswer && (
-                <>
-                  {reference.state.data.answer && !changing ? (
-                    <button
-                      type="button"
-                      className="btn btn-link"
-                      onClick={() => setChanging(true)}
-                    >
-                      {t<string>('Change')}
-                    </button>
-                  ) : (
-                    <div role="group" aria-label={t<string>('Your answer')}>
-                      <button
-                        type="button"
-                        disabled={saving}
-                        className="btn btn-default"
-                        onClick={() => void answer('yes')}
-                      >
-                        {t<string>('Yes')}
-                      </button>
-                      <button
-                        type="button"
-                        disabled={saving}
-                        className="btn btn-default"
-                        onClick={() => void answer('no')}
-                      >
-                        {t<string>('No')}
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-              {mutationError && (
-                <p role="alert">
-                  {t<string>('Could not save your change. Please try again.')}{' '}
-                  {canAnswer && (
-                    <button
-                      type="button"
-                      className="btn btn-link"
-                      disabled={saving}
-                      onClick={() => void answer(pendingAnswer!)}
-                    >
-                      {t<string>('Retry')}
-                    </button>
-                  )}
-                </p>
-              )}
-            </>
-          )}
-        </section>
-      </div>
+            )}
+          </>
+        )}
+      </section>
       {record?._id && showRemove && (
         <RemoveContact
           contact={{ ...record, userFrom: memberId(record.userFrom) }}

@@ -246,6 +246,11 @@ the relevant author's role explicitly. The view SHALL NOT infer omitted details
 or publication states, create duplicate Experiences, or change publication timers.
 Published Experience changes SHALL continue to require staff approval.
 
+Use **Your Experience** and **Their Experience** labels with named authors.
+Present recorded facts as compact label/value tables, with written feedback
+separate from the facts. The Experience cards SHALL stack on small screens
+without horizontal scrolling and appear side by side when space permits.
+
 #### Scenario: Other member is the primary API record
 
 - **WHEN** the pair response contains the other member's Experience as its primary record

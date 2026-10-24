@@ -37,10 +37,43 @@ const view = (page: Page) =>
   page.getByRole('region', { name: 'Your connection', exact: true });
 const section = (page: Page, name: string) =>
   view(page).getByRole('region', { name, exact: true });
+const fact = (page: Page, experience: string, label: string) =>
+  section(page, experience)
+    .getByRole('rowheader', { name: label, exact: true })
+    .locator('..')
+    .getByRole('cell');
 async function readExperience(page: Page, userWith: string) {
   return (
     await page.request.get(`/api/my-experience?userWith=${userWith}`)
   ).json();
+}
+async function expectExperienceLayout(
+  page: Page,
+  layout: 'stacked' | 'side-by-side',
+) {
+  const cards = view(page).locator(
+    '.your-connection-experiences > .your-connection-experience',
+  );
+  await expect(cards).toHaveCount(2);
+  const positions = await cards.evaluateAll(elements =>
+    elements.map(element => {
+      const { x, y, height } = element.getBoundingClientRect();
+      return { x, y, height };
+    }),
+  );
+  if (layout === 'stacked') {
+    expect(positions[1].y).toBeGreaterThanOrEqual(
+      positions[0].y + positions[0].height,
+    );
+  } else {
+    expect(positions[1].x).toBeGreaterThan(positions[0].x);
+    expect(positions[1].y).toBe(positions[0].y);
+  }
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
 }
 async function thread(page: Page, username: string) {
   await page.goto(`/messages/${username}`);
@@ -100,6 +133,12 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
     ).toBeVisible();
     const before = await view(page).innerText();
     await page.setViewportSize({ width: 390, height: 844 });
+    if (state === 'absent') {
+      await expectExperienceLayout(page, 'stacked');
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await expectExperienceLayout(page, 'side-by-side');
+      await page.setViewportSize({ width: 390, height: 844 });
+    }
     await thread(page, second.username);
     await expect(view(page)).toHaveText(before, { useInnerText: true });
     await expect(page.locator('#message-reply-content')).toBeVisible();
@@ -119,10 +158,12 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
     const original = await saved.json();
     await page.goto(`/profile/${second.username}`);
     await expect(
-      section(page, 'Your account').getByText('Awaiting publication'),
+      section(page, 'Your Experience').getByText('Awaiting publication'),
     ).toBeVisible();
     await expect(
-      section(page, 'Your account').getByText(first.displayName),
+      section(page, 'Your Experience').getByText(
+        `Written by ${first.displayName}`,
+      ),
     ).toBeVisible();
     await expect(
       view(page).getByRole('link', { name: 'View Experiences' }),
@@ -151,8 +192,9 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
 
     await signInViaApi(page, page.request, second);
     await page.goto(`/profile/${first.username}`);
-    const theirs = section(page, 'Their account');
-    await expect(theirs.getByText('Met in person: Not recorded')).toBeVisible();
+    await expect(fact(page, 'Their Experience', 'Met in person')).toHaveText(
+      'Not recorded',
+    );
     await expect(view(page).getByText('A fictional shared meal.')).toHaveCount(
       0,
     );
@@ -166,19 +208,33 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
     });
     expect(reply.status()).toBe(201);
     await page.reload();
+    await expect(fact(page, 'Your Experience', 'Met in person')).toHaveText(
+      'No',
+    );
+    await expect(fact(page, 'Their Experience', 'Met in person')).toHaveText(
+      'Yes',
+    );
     await expect(
-      section(page, 'Your account').getByText('Met in person: No'),
-    ).toBeVisible();
-    await expect(
-      section(page, 'Their account').getByText('Met in person: Yes'),
-    ).toBeVisible();
-    await expect(
-      section(page, 'Your account').getByText('Public', { exact: true }),
+      section(page, 'Your Experience').getByText('Public', { exact: true }),
     ).toBeVisible();
     // The reciprocal contract does not carry publication state.
     await expect(
-      section(page, 'Their account').getByText('Public', { exact: true }),
+      section(page, 'Their Experience').getByText('Public', { exact: true }),
     ).toHaveCount(0);
+    if (state === 'absent') {
+      // Keep fixed navigation outside the panel captures.
+      await page.setViewportSize({ width: 390, height: 1400 });
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await view(page).screenshot({
+        path: testInfo.outputPath('connection-experiences-mobile.png'),
+      });
+      await page.setViewportSize({ width: 1024, height: 900 });
+      await expectExperienceLayout(page, 'side-by-side');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await view(page).screenshot({
+        path: testInfo.outputPath('connection-experiences-desktop.png'),
+      });
+    }
   });
 }
 
