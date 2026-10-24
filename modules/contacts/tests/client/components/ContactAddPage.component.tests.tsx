@@ -109,7 +109,7 @@ describe('ContactAddPage', () => {
     );
     expect(
       screen.getByText(
-        /you don't need to add someone as a contact to message them/i,
+        /you can message this member without adding them as a contact/i,
       ),
     ).toBeVisible();
 

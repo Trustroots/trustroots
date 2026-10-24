@@ -16,6 +16,22 @@ import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
 jest.mock('@/modules/experiences/client/api/experiences.api');
+jest.mock('@/modules/contacts/client/components/YourConnection', () => ({
+  __esModule: true,
+  default: ({
+    viewer,
+    member,
+    contactRefreshKey,
+  }: {
+    viewer: { _id: string };
+    member: { _id: string };
+    contactRefreshKey?: string;
+  }) => (
+    <div data-testid="your-connection" data-contact-key={contactRefreshKey}>
+      Connection for {viewer._id} and {member._id}
+    </div>
+  ),
+}));
 const fetchProfile = jest.mocked(usersApi.fetch);
 const getContact = jest.mocked(contactsApi.getByUserId);
 const listContacts = jest.mocked(contactsApi.list);
@@ -320,8 +336,21 @@ describe('ProfilePage', () => {
     expect(await screen.findByText('About Bob Example')).toBeVisible();
     expect(screen.getByText('Offers panel')).toBeVisible();
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
+    expect(screen.getByTestId('your-connection')).toHaveTextContent(
+      `Connection for ${authUser._id} and ${profile._id}`,
+    );
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
   });
+
+  it.each(['experiences', 'experiences/new'])(
+    'keeps the dedicated %s flow free of duplicate private account panels',
+    async tab => {
+      renderPage(authUser, `/profile/bob/${tab}`, { referencesEnabled: true });
+      await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledWith('bob'));
+      expect(await screen.findByTestId('profile-tabs')).toBeVisible();
+      expect(screen.queryByTestId('your-connection')).not.toBeInTheDocument();
+    },
+  );
 
   it('renders an embedded profile for its explicit subject without page navigation', async () => {
     fetchProfile.mockResolvedValue({ ...profile, username: 'alice' });
@@ -508,6 +537,9 @@ describe('ProfilePage', () => {
         screen.queryByRole('button', { name: 'Remove contact' }),
       ).not.toBeInTheDocument();
     });
+    expect(screen.getByTestId('your-connection')).not.toHaveAttribute(
+      'data-contact-key',
+    );
   });
 
   it('shows user does not exist for missing profiles', async () => {
@@ -659,6 +691,16 @@ describe('ProfilePage', () => {
     expect(
       screen.getByRole('button', { name: 'Confirm removal' }),
     ).toBeInTheDocument();
+    expect(screen.getByTestId('your-connection')).toHaveAttribute(
+      'data-contact-key',
+      'contact-1',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm removal' }));
+    await waitFor(() =>
+      expect(screen.getByTestId('your-connection')).not.toHaveAttribute(
+        'data-contact-key',
+      ),
+    );
   });
 
   it('handles profile fetch failures gracefully', async () => {
