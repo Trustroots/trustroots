@@ -113,107 +113,112 @@ export default function ExperienceChangePage({
           Your {request.kind === 'edit' ? 'edit' : 'removal'} request is{' '}
           {request.status === 'pending'
             ? 'awaiting admin review'
-            : request.status}
+            : request.status === 'processing'
+              ? 'being approved'
+              : request.status}
           .
         </p>
       )}
       {accessError && <p className="alert alert-warning">{accessError}</p>}
-      {experience && request?.status !== 'pending' && (
-        <>
-          {experience.canEdit && (
-            <form
-              onSubmit={event => {
-                event.preventDefault();
-                void submit('edit');
-              }}
-            >
-              <h2>Propose an edit</h2>
-              <p>
-                Your current Experience will stay unchanged until an admin
-                accepts your request.
-              </p>
-              <div className="form-group">
-                <label htmlFor="experience-change-feedback">
-                  Written feedback
-                </label>
-                <textarea
-                  className="form-control"
-                  id="experience-change-feedback"
-                  maxLength={2000}
-                  value={feedbackPublic}
-                  onChange={event => setFeedbackPublic(event.target.value)}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="experience-change-recommend">
-                  Recommendation
-                </label>
-                <select
-                  className="form-control"
-                  id="experience-change-recommend"
-                  value={recommend}
-                  onChange={event =>
-                    setRecommend(event.target.value as ExperienceRecommendation)
+      {experience &&
+        !['pending', 'processing'].includes(request?.status || '') && (
+          <>
+            {experience.canEdit && (
+              <form
+                onSubmit={event => {
+                  event.preventDefault();
+                  void submit('edit');
+                }}
+              >
+                <h2>Propose an edit</h2>
+                <p>
+                  Your current Experience will stay unchanged until an admin
+                  accepts your request.
+                </p>
+                <div className="form-group">
+                  <label htmlFor="experience-change-feedback">
+                    Written feedback
+                  </label>
+                  <textarea
+                    className="form-control"
+                    id="experience-change-feedback"
+                    maxLength={2000}
+                    value={feedbackPublic}
+                    onChange={event => setFeedbackPublic(event.target.value)}
+                  />
+                </div>
+                <div className="form-group">
+                  <label htmlFor="experience-change-recommend">
+                    Recommendation
+                  </label>
+                  <select
+                    className="form-control"
+                    id="experience-change-recommend"
+                    value={recommend}
+                    onChange={event =>
+                      setRecommend(
+                        event.target.value as ExperienceRecommendation,
+                      )
+                    }
+                  >
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                    <option value="unknown">Unsure</option>
+                  </select>
+                </div>
+                <fieldset>
+                  <legend>How do you know them?</legend>
+                  {(
+                    [
+                      ['met', 'Met in person'],
+                      ['host', 'I hosted them'],
+                      ['guest', 'They hosted me'],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <div className="checkbox" key={key}>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={interactions[key]}
+                          onChange={() =>
+                            setInteractions(current => ({
+                              ...current,
+                              [key]: !current[key],
+                            }))
+                          }
+                        />{' '}
+                        {label}
+                      </label>
+                    </div>
+                  ))}
+                </fieldset>
+                <button
+                  className="btn btn-primary"
+                  type="submit"
+                  disabled={
+                    submitting || !Object.values(interactions).some(Boolean)
                   }
                 >
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                  <option value="unknown">Unsure</option>
-                </select>
-              </div>
-              <fieldset>
-                <legend>How do you know them?</legend>
-                {(
-                  [
-                    ['met', 'Met in person'],
-                    ['host', 'I hosted them'],
-                    ['guest', 'They hosted me'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <div className="checkbox" key={key}>
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={interactions[key]}
-                        onChange={() =>
-                          setInteractions(current => ({
-                            ...current,
-                            [key]: !current[key],
-                          }))
-                        }
-                      />{' '}
-                      {label}
-                    </label>
-                  </div>
-                ))}
-              </fieldset>
-              <button
-                className="btn btn-primary"
-                type="submit"
-                disabled={
-                  submitting || !Object.values(interactions).some(Boolean)
-                }
-              >
-                Request edit
-              </button>
-            </form>
-          )}
-          <hr />
-          <h2>Request removal</h2>
-          <p>
-            The Experience will remain visible under its current rules until an
-            admin accepts your request.
-          </p>
-          <button
-            className="btn btn-default"
-            type="button"
-            disabled={submitting}
-            onClick={() => void submit('remove')}
-          >
-            Request removal
-          </button>
-        </>
-      )}
+                  Request edit
+                </button>
+              </form>
+            )}
+            <hr />
+            <h2>Request removal</h2>
+            <p>
+              The Experience will remain visible under its current rules until
+              an admin accepts your request.
+            </p>
+            <button
+              className="btn btn-default"
+              type="button"
+              disabled={submitting}
+              onClick={() => void submit('remove')}
+            >
+              Request removal
+            </button>
+          </>
+        )}
       {submitError && (
         <p className="alert alert-danger" role="alert">
           {submitError}

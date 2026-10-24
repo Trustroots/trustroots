@@ -262,10 +262,7 @@ const readMine: Handler<
         ? {
             _id: changeRequest._id,
             kind: changeRequest.kind,
-            status:
-              changeRequest.status === 'processing'
-                ? 'pending'
-                : changeRequest.status,
+            status: changeRequest.status,
             createdAt: changeRequest.createdAt,
             reviewedAt: changeRequest.reviewedAt,
           }
@@ -341,6 +338,11 @@ const submit: Handler<
     const changeRequest = await ExperienceChangeRequest.create({
       ...input,
       linkIssuedBy: link.issuedBy,
+      original: {
+        feedbackPublic: experience.feedbackPublic || '',
+        recommend: experience.recommend,
+        interactions: experience.interactions,
+      },
     });
     const result: ExperienceChangeSubmissionResult<Types.ObjectId, Date> = {
       _id: changeRequest._id,

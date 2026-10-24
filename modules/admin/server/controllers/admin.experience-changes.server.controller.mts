@@ -32,6 +32,7 @@ interface ExperienceRecord {
   recommend: AdminExperienceRecommendation;
   feedbackPublic?: string;
   removedAt?: Date;
+  appliedChangeRequests?: Types.ObjectId[];
 }
 
 interface ExperienceWithPopulatedMembers extends Omit<
@@ -53,6 +54,7 @@ interface ChangeLinkRecord {
 }
 
 interface ChangeRequestBase {
+  original?: AdminExperienceChangeProposal;
   _id: Types.ObjectId;
   experience: Types.ObjectId;
   requester: Types.ObjectId;
@@ -387,7 +389,8 @@ const decide: Handler<
     }
     const pendingRequest = await ExperienceChangeRequest.findOne({
       _id: request.params.id,
-      status: 'pending',
+      status:
+        decision === 'approve' ? { $in: ['pending', 'processing'] } : 'pending',
       active: true,
     }).exec();
     if (!pendingRequest) {
@@ -409,53 +412,84 @@ const decide: Handler<
       return response.status(403).json({ message: ISSUER_DENIAL });
     }
 
-    const changeRequest = await ExperienceChangeRequest.findOneAndUpdate(
-      { _id: request.params.id, status: 'pending', active: true },
-      { $set: { status: 'processing' } },
+    const rejecting = decision === 'reject';
+    let changeRequest = await ExperienceChangeRequest.findOneAndUpdate(
+      {
+        _id: request.params.id,
+        active: true,
+        $or: [
+          { status: 'pending' },
+          ...(!rejecting
+            ? [{ status: 'processing', reviewedAt: { $exists: false } }]
+            : []),
+        ],
+      },
+      {
+        $set: {
+          status: rejecting ? 'rejected' : 'processing',
+          active: !rejecting,
+          reviewedAt: new Date(),
+          reviewedBy: request.user._id,
+        },
+      },
       { new: true },
     ).exec();
-    if (!changeRequest) {
-      return response
-        .status(409)
-        .json({ message: 'This request is no longer pending.' });
+    if (!changeRequest && !rejecting) {
+      changeRequest = await ExperienceChangeRequest.findOne({
+        _id: request.params.id,
+        status: 'processing',
+        active: true,
+      }).exec();
     }
-
-    try {
-      if (decision === 'approve') {
-        const update =
-          changeRequest.kind === 'remove'
-            ? { removedAt: new Date(), removedBy: request.user._id }
-            : editUpdate(changeRequest.proposed);
-        const result = await Experience.updateOne(
-          { _id: changeRequest.experience, ...active },
-          { $set: update },
-        ).exec();
-        if (result.matchedCount !== 1 && Reflect.get(result, 'n') !== 1) {
-          throw new Error('Experience is no longer available for review.');
-        }
-      }
-
-      // The validated decision is the source of truth for this state transition.
-      const reviewedStatus = decision === 'approve' ? 'approved' : 'rejected';
-      changeRequest.set({
-        status: reviewedStatus,
-        active: false,
-        reviewedAt: new Date(),
-        reviewedBy: request.user._id,
+    if (!changeRequest) {
+      return response.status(409).json({
+        message: 'This request is no longer pending. Refresh the review queue.',
       });
-      await changeRequest.save();
-      const result: AdminExperienceChangeDecisionResult<Types.ObjectId> = {
-        _id: changeRequest._id,
-        status: reviewedStatus,
-      };
-      return response.json(result);
-    } catch (error) {
+    }
+    if (rejecting)
+      return response.json({ _id: changeRequest._id, status: 'rejected' });
+
+    // Keep processing on uncertain failures. The marker and content are written
+    // atomically to one document, so even a lost response is safe to retry.
+    const update =
+      changeRequest.kind === 'remove'
+        ? {
+            removedAt: changeRequest.reviewedAt,
+            removedBy: changeRequest.reviewedBy,
+          }
+        : editUpdate(changeRequest.proposed);
+    const result = await Experience.updateOne(
+      {
+        _id: changeRequest.experience,
+        ...active,
+        appliedChangeRequests: { $ne: changeRequest._id },
+      },
+      { $set: update, $addToSet: { appliedChangeRequests: changeRequest._id } },
+    ).exec();
+    if (
+      result.matchedCount !== 1 &&
+      !(await Experience.exists({
+        _id: changeRequest.experience,
+        appliedChangeRequests: changeRequest._id,
+      }))
+    ) {
       await ExperienceChangeRequest.updateOne(
         { _id: changeRequest._id, status: 'processing' },
-        { $set: { status: 'pending' } },
+        {
+          $set: { status: 'pending' },
+          $unset: { reviewedAt: 1, reviewedBy: 1 },
+        },
       ).exec();
-      throw error;
+      return response.status(409).json({
+        message:
+          'This Experience is no longer available. Reject this request to close it.',
+      });
     }
+    await ExperienceChangeRequest.updateOne(
+      { _id: changeRequest._id, status: 'processing', active: true },
+      { $set: { status: 'approved', active: false } },
+    ).exec();
+    return response.json({ _id: changeRequest._id, status: 'approved' });
   } catch (error) {
     return next(error);
   }

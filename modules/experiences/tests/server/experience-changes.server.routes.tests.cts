@@ -896,7 +896,7 @@ describe('Experience change requests', () => {
     next.called.should.equal(false);
   });
 
-  it('keeps a failed approval pending for retry and reports a processing request as pending', async () => {
+  it('reports processing and keeps unavailable Experiences rejectable', async () => {
     const secret = await issue(author._id.toString());
     const submitted = await authorAgent
       .post(`/api/experiences/${experience._id}/change-requests`)
@@ -910,7 +910,7 @@ describe('Experience change requests', () => {
     const mine = await authorAgent
       .get(`/api/experiences/${experience._id}/change-requests/mine`)
       .expect(200);
-    mine.body.status.should.equal('pending');
+    mine.body.status.should.equal('processing');
     await ExperienceChangeRequest.updateOne(
       { _id: submitted.body._id },
       { $set: { status: 'pending' } },
@@ -924,7 +924,7 @@ describe('Experience change requests', () => {
         `/api/admin/experience-change-requests/${submitted.body._id}/decision`,
       )
       .send({ decision: 'approve' })
-      .expect(500);
+      .expect(409);
     const pending = await ExperienceChangeRequest.findById(submitted.body._id);
     if (!pending) throw new Error('Expected the request to remain pending');
     pending.status.should.equal('pending');
@@ -1083,5 +1083,176 @@ describe('Experience change requests', () => {
     );
     next.calledOnce.should.equal(true);
     next.firstCall.args[0].should.be.instanceOf(TypeError);
+  });
+  it('can approve an unchanged edit even when MongoDB modifies no values', async () => {
+    experience.feedbackPublic = '';
+    await experience.save();
+    const secret = await issue(String(author._id));
+    const proposed = {
+      feedbackPublic: experience.feedbackPublic,
+      recommend: experience.recommend,
+      interactions: { met: true, host: false, guest: false },
+    };
+    const submitted = await authorAgent
+      .post(`/api/experiences/${experience._id}/change-requests`)
+      .set(secretHeader(secret))
+      .send({ kind: 'edit', proposed })
+      .expect(201);
+    await adminAgent
+      .post(
+        `/api/admin/experience-change-requests/${submitted.body._id}/decision`,
+      )
+      .send({ decision: 'approve' })
+      .expect(200);
+    const reviewed = await ExperienceChangeRequest.findById(submitted.body._id);
+    reviewed.status.should.equal('approved');
+    reviewed.active.should.equal(false);
+  });
+  it('can retry edit approval after the experience changed but saving the decision failed', async () => {
+    const pending = await ExperienceChangeRequest.create({
+      experience: experience._id,
+      requester: author._id,
+      kind: 'edit',
+      proposed: {
+        feedbackPublic: 'An anonymous revised Experience.',
+        recommend: 'no',
+        interactions: { met: true, host: false, guest: true },
+      },
+    });
+    const failedQuery = ExperienceChangeRequest.updateOne({}, {});
+    sinon
+      .stub(failedQuery, 'exec')
+      .rejects(new Error('Temporary decision write failure'));
+    const save = sinon.stub(ExperienceChangeRequest, 'updateOne');
+    save.onFirstCall().returns(failedQuery);
+    save.callThrough();
+    const decisionUrl = `/api/admin/experience-change-requests/${pending._id}/decision`;
+    await adminAgent
+      .post(decisionUrl)
+      .send({ decision: 'approve' })
+      .expect(500);
+
+    // The queue reads live values, not a snapshot from before the edit.
+    const queue = await adminAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    queue.body.should.have.length(1);
+    queue.body[0].status.should.equal('processing');
+    queue.body[0].experience.feedbackPublic.should.equal(
+      queue.body[0].proposed.feedbackPublic,
+    );
+    queue.body[0].experience.recommend.should.equal(
+      queue.body[0].proposed.recommend,
+    );
+    await adminAgent.post(decisionUrl).send({ decision: 'reject' }).expect(409);
+    const applied = await Experience.findById(experience._id)
+      .select('+appliedChangeRequests')
+      .lean<{ appliedChangeRequests: import('mongoose').Types.ObjectId[] }>();
+    applied!.appliedChangeRequests
+      .map(String)
+      .should.deepEqual([String(pending._id)]);
+    // Retry must not overwrite subsequent changes after an uncertain response.
+    await Experience.updateOne(
+      { _id: experience._id },
+      { $set: { feedbackPublic: 'A later anonymous correction.' } },
+    );
+
+    await adminAgent
+      .post(decisionUrl)
+      .send({ decision: 'approve' })
+      .expect(200);
+    const reviewed = await ExperienceChangeRequest.findById(pending._id);
+    reviewed.status.should.equal('approved');
+    reviewed.active.should.equal(false);
+    (
+      await Experience.findById(experience._id).orFail()
+    ).feedbackPublic!.should.equal('A later anonymous correction.');
+    const emptyQueue = await adminAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    emptyQueue.body[0].status.should.equal('approved');
+  });
+  it('finishes removal after a decision write failure without changing its original audit details', async () => {
+    const pending = await ExperienceChangeRequest.create({
+      experience: experience._id,
+      requester: author._id,
+      kind: 'remove',
+    });
+    const failedQuery = ExperienceChangeRequest.updateOne({}, {});
+    sinon.stub(failedQuery, 'exec').rejects(new Error('Decision unavailable'));
+    const finalise = sinon.stub(ExperienceChangeRequest, 'updateOne');
+    finalise.onFirstCall().returns(failedQuery);
+    finalise.callThrough();
+    const url = `/api/admin/experience-change-requests/${pending._id}/decision`;
+    await adminAgent.post(url).send({ decision: 'approve' }).expect(500);
+    const removed = await Experience.findById(experience._id).lean().orFail();
+    await adminAgent.post(url).send({ decision: 'reject' }).expect(409);
+    await adminAgent.post(url).send({ decision: 'approve' }).expect(200);
+    const retried = await Experience.findById(experience._id).lean().orFail();
+    retried
+      .removedAt!.toISOString()
+      .should.equal(removed.removedAt!.toISOString());
+    String(retried.removedBy).should.equal(String(removed.removedBy));
+    (await ExperienceChangeRequest.findById(pending._id)).status.should.equal(
+      'approved',
+    );
+  });
+  it('recovers a lost Experience write response and keeps the original comparison', async () => {
+    const secret = await issue(String(author._id));
+    const submitted = await authorAgent
+      .post(`/api/experiences/${experience._id}/change-requests`)
+      .set(secretHeader(secret))
+      .send({
+        kind: 'edit',
+        proposed: {
+          feedbackPublic: 'Revised feedback',
+          recommend: 'no',
+          interactions: { met: true, host: false, guest: false },
+        },
+      })
+      .expect(201);
+    const write = Experience.updateOne.bind(Experience);
+    const stub = sinon.stub(Experience, 'updateOne').callsFake((...args) => {
+      const query = write(...args);
+      const exec = query.exec.bind(query);
+      sinon.stub(query, 'exec').callsFake(async () => {
+        await exec();
+        throw new Error('Response lost');
+      });
+      return query;
+    });
+    const url = `/api/admin/experience-change-requests/${submitted.body._id}/decision`;
+    await adminAgent.post(url).send({ decision: 'approve' }).expect(500);
+    stub.restore();
+    const queue = await adminAgent
+      .get('/api/admin/experience-change-requests')
+      .expect(200);
+    queue.body[0].original.feedbackPublic.should.equal(
+      'An anonymous original Experience.',
+    );
+    queue.body[0].experience.feedbackPublic.should.equal('Revised feedback');
+    await adminAgent.post(url).send({ decision: 'reject' }).expect(409);
+    await adminAgent.post(url).send({ decision: 'approve' }).expect(200);
+  });
+  it('retries an approval whose Experience write failed before applying anything', async () => {
+    const pending = await ExperienceChangeRequest.create({
+      experience: experience._id,
+      requester: author._id,
+      kind: 'remove',
+      status: 'processing',
+    });
+    const failedQuery = Experience.updateOne({}, {});
+    sinon.stub(failedQuery, 'exec').rejects(new Error('Write unavailable'));
+    const stub = sinon.stub(Experience, 'updateOne').returns(failedQuery);
+    const url = `/api/admin/experience-change-requests/${pending._id}/decision`;
+    await adminAgent.post(url).send({ decision: 'approve' }).expect(500);
+    stub.restore();
+    (
+      await Experience.findById(experience._id).lean().orFail()
+    ).should.not.have.property('removedAt');
+    await adminAgent.post(url).send({ decision: 'approve' }).expect(200);
+    (
+      await Experience.findById(experience._id).lean().orFail()
+    ).removedAt!.should.be.instanceOf(Date);
   });
 });
