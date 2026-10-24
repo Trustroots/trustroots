@@ -121,6 +121,9 @@ internal fun SearchHubScreen(
     val isProfileOpen = currentRoute is SearchMemberProfileVisit
     val currentMode = (currentRoute as? SearchModeVisit)?.mode ?: modeFor(entryInitialTab)
     val pushProfile: (String) -> Unit = { username ->
+        // The profile replaces the host preview, so its overlay cannot cover
+        // the profile or intercept its close and back actions.
+        if (searchBackStack.lastOrNull() is HostDetailVisit) searchBackStack.removeLastOrNull()
         searchBackStack.add(SearchMemberProfileVisit(username, nextRouteID++))
     }
     val pushHostDetail: (MapOffer) -> Unit = { offer ->
