@@ -7,9 +7,10 @@
 - [ ] Tier guards in `tooling/guards` (separate pull request).
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
-- [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation extraction is tracked below; router/layout/provider ownership remains pending.
+- [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation and router/layout extraction are tracked below. Provider ownership remains pending.
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
   - [x] Include shell components in translation extraction and verify client coverage and the production build.
+  - [x] Move the router entry, page layout, footer wrapper and navigation helpers into `layers/shell`, preserving old-path exports, route behaviour and coverage.
 - [ ] `apps/web` move (separate pull request, needs a production-image check).
 - [ ] Untangling and shim removal, one module at a time.
 

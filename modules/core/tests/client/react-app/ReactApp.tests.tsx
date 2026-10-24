@@ -206,7 +206,7 @@ jest.mock('@/layers/shell/client/components/AppHeader.component', () => {
   return MockAppHeader;
 });
 
-jest.mock('@/modules/core/client/react-app/ReactFooter', () => {
+jest.mock('@/layers/shell/client/ReactFooter', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
   function MockReactFooter() {
