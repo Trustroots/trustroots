@@ -35,6 +35,13 @@ async function publicMember(page: Page, firstName = 'Cedar') {
 
 const view = (page: Page) =>
   page.getByRole('region', { name: 'Your connection', exact: true });
+const section = (page: Page, name: string) =>
+  view(page).getByRole('region', { name, exact: true });
+async function readExperience(page: Page, userWith: string) {
+  return (
+    await page.request.get(`/api/my-experience?userWith=${userWith}`)
+  ).json();
+}
 async function thread(page: Page, username: string) {
   await page.goto(`/messages/${username}`);
   const disclosure = page
@@ -97,9 +104,7 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
     await expect(view(page)).toHaveText(before, { useInnerText: true });
     await expect(page.locator('#message-reply-content')).toBeVisible();
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Private message feedback' })
-        .getByRole('button'),
+      section(page, 'Private message feedback').getByRole('button'),
     ).toHaveCount(0);
 
     const saved = await page.request.post('/api/experiences', {
@@ -114,14 +119,10 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
     const original = await saved.json();
     await page.goto(`/profile/${second.username}`);
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Your account' })
-        .getByText('Awaiting publication'),
+      section(page, 'Your account').getByText('Awaiting publication'),
     ).toBeVisible();
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Your account' })
-        .getByText(first.displayName),
+      section(page, 'Your account').getByText(first.displayName),
     ).toBeVisible();
     await expect(
       view(page).getByRole('link', { name: 'View Experiences' }),
@@ -131,11 +132,7 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
       view(page).getByText('A fictional shared meal.'),
     ).toBeVisible();
     await expect(view(page).getByText('You hosted this member')).toBeVisible();
-    expect(
-      await (
-        await page.request.get(`/api/my-experience?userWith=${second.id}`)
-      ).json(),
-    ).toEqual(original);
+    expect(await readExperience(page, second.id)).toEqual(original);
 
     if (state === 'confirmed') {
       await page.goto(`/profile/${second.username}`);
@@ -149,16 +146,12 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
       await expect(
         view(page).getByText('A fictional shared meal.'),
       ).toBeVisible();
-      expect(
-        await (
-          await page.request.get(`/api/my-experience?userWith=${second.id}`)
-        ).json(),
-      ).toEqual(original);
+      expect(await readExperience(page, second.id)).toEqual(original);
     }
 
     await signInViaApi(page, page.request, second);
     await page.goto(`/profile/${first.username}`);
-    const theirs = view(page).getByRole('region', { name: 'Their account' });
+    const theirs = section(page, 'Their account');
     await expect(theirs.getByText('Met in person: Not recorded')).toBeVisible();
     await expect(view(page).getByText('A fictional shared meal.')).toHaveCount(
       0,
@@ -174,25 +167,17 @@ for (const state of ['absent', 'incoming', 'outgoing', 'confirmed'] as const) {
     expect(reply.status()).toBe(201);
     await page.reload();
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Your account' })
-        .getByText('Met in person: No'),
+      section(page, 'Your account').getByText('Met in person: No'),
     ).toBeVisible();
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Their account' })
-        .getByText('Met in person: Yes'),
+      section(page, 'Their account').getByText('Met in person: Yes'),
     ).toBeVisible();
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Your account' })
-        .getByText('Public', { exact: true }),
+      section(page, 'Your account').getByText('Public', { exact: true }),
     ).toBeVisible();
     // The reciprocal contract does not carry publication state.
     await expect(
-      view(page)
-        .getByRole('region', { name: 'Their account' })
-        .getByText('Public', { exact: true }),
+      section(page, 'Their account').getByText('Public', { exact: true }),
     ).toHaveCount(0);
   });
 }
@@ -225,8 +210,7 @@ test('private feedback changes from both surfaces, preserves history and is invi
   expect(savedExperience.status()).toBe(201);
   const originalExperience = await savedExperience.json();
   await page.goto(`/profile/${other.username}`);
-  const feedback = () =>
-    view(page).getByRole('region', { name: 'Private message feedback' });
+  const feedback = () => section(page, 'Private message feedback');
   await feedback().getByRole('button', { name: 'Yes', exact: true }).click();
   await expect(
     feedback().getByRole('button', { name: 'Change' }),
@@ -250,11 +234,7 @@ test('private feedback changes from both surfaces, preserves history and is invi
       .toArray(),
   );
   expect(history.map(record => record.reference).sort()).toEqual(['no', 'yes']);
-  expect(
-    await (
-      await page.request.get(`/api/my-experience?userWith=${other.id}`)
-    ).json(),
-  ).toEqual(originalExperience);
+  expect(await readExperience(page, other.id)).toEqual(originalExperience);
   await signInViaApi(page, page.request, other);
   const hidden = await page.request.get(`/api/references-thread/${viewer.id}`);
   expect(hidden.status()).toBe(404);

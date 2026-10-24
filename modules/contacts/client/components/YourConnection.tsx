@@ -104,8 +104,7 @@ export default function YourConnection({
       key={`${viewer._id}:${member._id}:${referencesEnabled}:${viewer.blocked?.includes(member._id)}`}
       viewer={viewer}
       member={member}
-      experiencesEnabled={referencesEnabled}
-      feedbackEnabled={referencesEnabled}
+      referencesEnabled={referencesEnabled}
       contactRefreshKey={contactRefreshKey}
       onContactRemoved={onContactRemoved}
     />
@@ -115,11 +114,10 @@ export default function YourConnection({
 function ConnectionPair({
   viewer,
   member,
-  experiencesEnabled,
-  feedbackEnabled,
+  referencesEnabled,
   contactRefreshKey,
   onContactRemoved,
-}: Props & { experiencesEnabled: boolean; feedbackEnabled: boolean }) {
+}: Props & { referencesEnabled: boolean }) {
   const { t } = useTranslation('contacts');
   const { t: te } = useTranslation('experiences');
   const contact = useSource<ContactRecord | null>(
@@ -129,9 +127,12 @@ function ConnectionPair({
   );
   const experience = useSource<ExperienceMine | null>(
     () => experiences.readMine({ userWith: member._id }),
-    experiencesEnabled,
+    referencesEnabled,
   );
-  const reference = useSource(() => loadFeedback(member._id), feedbackEnabled);
+  const reference = useSource(
+    () => loadFeedback(member._id),
+    referencesEnabled,
+  );
   const [showRemove, setShowRemove] = useState(false);
   const [saving, setSaving] = useState(false);
   const [mutationError, setMutationError] = useState(false);
@@ -142,6 +143,11 @@ function ConnectionPair({
   const [feedbackAllowed, setFeedbackAllowed] = useState(true);
   const [mutationsAllowed, setMutationsAllowed] = useState(true);
   const canConnect = mutationsAllowed && !viewer.blocked?.includes(member._id);
+  const canAnswer =
+    mutationsAllowed &&
+    reference.state.status === 'ready' &&
+    reference.state.data.eligible &&
+    feedbackAllowed;
   const record = contact.state.status === 'ready' ? contact.state.data : null;
   const accounts =
     experience.state.status === 'ready'
@@ -184,16 +190,14 @@ function ConnectionPair({
     try {
       await contacts.remove(contactId);
       onContactRemoved?.(record!);
-      setShowRemove(false);
-      contact.retry();
     } catch (error) {
       if ([403, 404].includes(readApiError(error).status || 0)) {
         setMutationsAllowed(false);
       }
-      setShowRemove(false);
       setRemoveError(true);
-      contact.retry();
     } finally {
+      setShowRemove(false);
+      contact.retry();
       setRemoving(false);
     }
   }
@@ -388,55 +392,51 @@ function ConnectionPair({
                     : t<string>('No')
                   : t<string>('Not recorded')}
               </p>
-              {mutationsAllowed &&
-                reference.state.data.eligible &&
-                feedbackAllowed && (
-                  <>
-                    {reference.state.data.answer && !changing ? (
+              {canAnswer && (
+                <>
+                  {reference.state.data.answer && !changing ? (
+                    <button
+                      type="button"
+                      className="btn btn-link"
+                      onClick={() => setChanging(true)}
+                    >
+                      {t<string>('Change')}
+                    </button>
+                  ) : (
+                    <div role="group" aria-label={t<string>('Your answer')}>
                       <button
                         type="button"
-                        className="btn btn-link"
-                        onClick={() => setChanging(true)}
+                        disabled={saving}
+                        className="btn btn-default"
+                        onClick={() => void answer('yes')}
                       >
-                        {t<string>('Change')}
+                        {t<string>('Yes')}
                       </button>
-                    ) : (
-                      <div role="group" aria-label={t<string>('Your answer')}>
-                        <button
-                          type="button"
-                          disabled={saving}
-                          className="btn btn-default"
-                          onClick={() => void answer('yes')}
-                        >
-                          {t<string>('Yes')}
-                        </button>
-                        <button
-                          type="button"
-                          disabled={saving}
-                          className="btn btn-default"
-                          onClick={() => void answer('no')}
-                        >
-                          {t<string>('No')}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
+                      <button
+                        type="button"
+                        disabled={saving}
+                        className="btn btn-default"
+                        onClick={() => void answer('no')}
+                      >
+                        {t<string>('No')}
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
               {mutationError && (
                 <p role="alert">
                   {t<string>('Could not save your change. Please try again.')}{' '}
-                  {mutationsAllowed &&
-                    reference.state.data.eligible &&
-                    feedbackAllowed && (
-                      <button
-                        type="button"
-                        className="btn btn-link"
-                        disabled={saving}
-                        onClick={() => void answer(pendingAnswer!)}
-                      >
-                        {t<string>('Retry')}
-                      </button>
-                    )}
+                  {canAnswer && (
+                    <button
+                      type="button"
+                      className="btn btn-link"
+                      disabled={saving}
+                      onClick={() => void answer(pendingAnswer!)}
+                    >
+                      {t<string>('Retry')}
+                    </button>
+                  )}
                 </p>
               )}
             </>
