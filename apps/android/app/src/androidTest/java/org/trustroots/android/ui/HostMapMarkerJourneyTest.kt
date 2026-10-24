@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.printToLog
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -138,17 +140,29 @@ class HostMapMarkerJourneyTest {
         val offerSearchCount = requests.count { it.startsWith("GET /api/offers?") }
         compose.onNodeWithText("Quiet Fox").performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("A fictional host").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("profilePager").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("hostDetailRoute", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
         }
+        compose.onNodeWithTag("hostDetailRoute", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("hostResultCard").assertDoesNotExist()
+        compose.onNodeWithTag("profilePager").assertIsDisplayed()
+        compose.onNodeWithTag("profilePager").performTouchInput { swipeLeft() }
+        compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithTag("profilePager").fetchSemanticsNodes().isEmpty()
         }
-        compose.onNodeWithTag("hostResultCard").assertIsDisplayed()
-        compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
+        compose.onNodeWithTag("hostResultCard").assertDoesNotExist()
+        compose.onNodeWithText("A fictional spare room.").assertDoesNotExist()
+        compose.onNodeWithTag("hostMapView").assertIsDisplayed()
         check(requests.count { it.startsWith("GET /api/offers?") } == offerSearchCount)
 
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        // The same marker can be opened again, and closing its preview keeps the map usable.
+        compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A fictional spare room.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithContentDescription("Close host result").performClick()
         compose.onNodeWithText("A fictional spare room.").assertDoesNotExist()
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Hosting").assertIsDisplayed()
@@ -215,23 +229,21 @@ class HostMapMarkerJourneyTest {
         }
         compose.onNodeWithText("Quiet Fox").performClick()
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("A fictional host").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("profilePager").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("hostDetailRoute", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
         }
-        compose.onNodeWithTag("hostDetailRoute", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("hostDetailRoute", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("navigation-search").assertIsDisplayed()
         compose.onNodeWithTag("profilePager").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
         compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("A fictional spare room.").fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("profilePager").fetchSemanticsNodes().isEmpty()
         }
         assertEquals(1, openedNotesConnections.get())
         assertEquals(0, closedNotesConnections.get())
         assertEquals(mapSearches, requests.count { it.startsWith("GET /api/offers?") })
 
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithTag("hostDetailRoute", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
-        }
+        compose.onNodeWithTag("hostDetailRoute", useUnmergedTree = true).assertDoesNotExist()
         compose.waitForIdle()
         compose.onNodeWithTag("hostMapView").assertIsDisplayed()
         assertEquals(1, openedNotesConnections.get())
