@@ -6,6 +6,7 @@ import tribes from './../../../tribes/server/controllers/tribes.server.controlle
 import authenticationService from './../../../users/server/services/authentication.server.service.mjs';
 import * as nip19 from 'nostr-tools/nip19';
 import mongoose from 'mongoose';
+import { getMapDefaultLocation } from '../controllers/map-default-location.server.controller.mts';
 
 /**
  * Module dependencies.
@@ -54,6 +55,7 @@ const defaultExport = function (app: Application) {
   // See `config/lib/express.js` and `initHelmetHeaders()` for more
   app.route('/api/report-csp-violation').post(core.receiveCSPViolationReport);
   app.route('/api/languages').get(core.getLanguages);
+  app.route('/api/map-default-location').get(getMapDefaultLocation);
   app.route('/api/nostr/author-visibility').get(function (req, res) {
     const User = mongoose.model<NostrUserRecord>('User');
     const rawPubkeys = req.query.pubkey;

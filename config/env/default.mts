@@ -12,6 +12,7 @@ import type { DefaultConfig } from '../types.mts';
  */
 
 const service = {
+  geoip: { databasePath: process.env.TRUSTROOTS_GEOIP_DATABASE_PATH || '' },
   featureFlags: {
     reference: true,
   },

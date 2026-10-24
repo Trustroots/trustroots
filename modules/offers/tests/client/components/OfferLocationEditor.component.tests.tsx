@@ -5,6 +5,21 @@ import '@testing-library/jest-dom';
 import OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import type SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import type { MapPoint } from '@/modules/search/client/utils/location';
+import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
+
+let mockApproximateLocation: MapDefaultLocation | null = null;
+const mockStopDefaultLocation = jest.fn();
+jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
+  __esModule: true,
+  default: (enabled: boolean) => [
+    enabled ? mockApproximateLocation : null,
+    mockStopDefaultLocation,
+  ],
+}));
+beforeEach(() => {
+  mockApproximateLocation = null;
+  mockStopDefaultLocation.mockClear();
+});
 
 type LocationChange = React.ComponentProps<
   typeof OfferLocationEditor
@@ -12,6 +27,8 @@ type LocationChange = React.ComponentProps<
 type MockMapProps = {
   children?: React.ReactNode;
   height: number | string;
+  location: [number, number];
+  zoom: number;
   preferRaster: boolean;
   fallbackMarker?: { location: [number, number] };
   onLocationChange: (location: [number, number]) => void;
@@ -69,6 +86,8 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
   function MockMap({
     children,
     height,
+    location,
+    zoom,
     preferRaster,
     fallbackMarker,
     onLocationChange,
@@ -78,6 +97,8 @@ jest.mock('@/modules/core/client/components/Map/index', () => {
         data-testid="offer-map"
         data-height={height}
         data-renderer={preferRaster ? 'raster' : 'webgl'}
+        data-location={location.join(',')}
+        data-zoom={zoom}
       >
         <button
           type="button"
@@ -125,6 +146,40 @@ jest.mock('@/modules/offers/client/components/OfferLocationOverlay', () => ({
 }));
 
 describe('OfferLocationEditor', () => {
+  it('centres new offers approximately without choosing a location', () => {
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
+    const onLocationChange = jest.fn();
+    render(
+      <OfferLocationEditor
+        location={null}
+        onLocationChange={onLocationChange}
+      />,
+    );
+    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+      'data-location',
+      '34,-17',
+    );
+    expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '5');
+    expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
+    expect(onLocationChange).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(/This product includes GeoLite2/),
+    ).toBeInTheDocument();
+    fireEvent.wheel(screen.getByTestId('offer-map'));
+    expect(mockStopDefaultLocation).toHaveBeenCalled();
+  });
+
+  it('keeps existing offer coordinates ahead of approximate defaults', () => {
+    mockApproximateLocation = { latitude: 34, longitude: -17, zoom: 5 };
+    render(
+      <OfferLocationEditor location={[12, 23]} onLocationChange={jest.fn()} />,
+    );
+    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+      'data-location',
+      '12,23',
+    );
+    expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '13');
+  });
   it('shows a map without an offer marker before a location is chosen', () => {
     render(
       <OfferLocationEditor location={null} onLocationChange={jest.fn()} />,

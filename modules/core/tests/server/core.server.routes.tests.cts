@@ -57,6 +57,13 @@ describe('Core CRUD tests', function () {
       done();
     })().catch(done);
   });
+  it('registers the authenticated private map-default endpoint', async function () {
+    const response = await request(app)
+      .get('/api/map-default-location')
+      .expect(401);
+    response.headers['cache-control'].should.equal('private, no-store');
+  });
+
   describe('Content Security Policy Tests:', function () {
     it('Responses should have content security policy header', function (done) {
       agent

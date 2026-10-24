@@ -82,7 +82,7 @@ export async function seedMapState(
       window.localStorage.setItem('search-map-style', JSON.stringify(mapStyle));
       window.localStorage.setItem(
         'search-map-location',
-        JSON.stringify(mapLocation),
+        JSON.stringify({ ...mapLocation, version: 1, savedAt: Date.now() }),
       );
     },
     {

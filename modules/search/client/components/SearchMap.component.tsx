@@ -24,6 +24,8 @@ import {
 } from '@/modules/core/client/components/Map/constants';
 import { CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS } from './constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
+import useMapDefaultLocation from '@/modules/core/client/utils/use-map-default-location';
+import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -317,12 +319,26 @@ export default function SearchMap({
   /**
    * Store map location in browser cache
    */
-  const [persistentMapLocation, setPersistentMapLocation] =
+  const [persistentMapLocation, setPersistentMapLocation, hasSavedLocation] =
     usePersistentMapLocation({
       latitude: DEFAULT_LOCATION.lat,
       longitude: DEFAULT_LOCATION.lng,
       zoom: DEFAULT_LOCATION.zoom,
     });
+  const hasDestination = Boolean(
+    (location &&
+      Number.isFinite(location.lat) &&
+      Number.isFinite(location.lng)) ||
+    (bounds?.northEast && bounds?.southWest),
+  );
+  const [approximateLocation, stopDefaultLocation] = useMapDefaultLocation(
+    !hasDestination && !hasSavedLocation,
+  );
+  const interactionPending = useRef(false);
+  const onInteraction = () => {
+    interactionPending.current = true;
+    stopDefaultLocation();
+  };
 
   /**
    * Debounce setting persistent map state to avoid performance issues
@@ -341,6 +357,18 @@ export default function SearchMap({
     zoom: persistentMapLocation.zoom ?? DEFAULT_LOCATION.zoom,
   }));
   const viewportRef = useRef<MapViewport>(viewport);
+  const hasAppliedApproximateLocation = useRef(false);
+  useEffect(() => {
+    if (
+      approximateLocation &&
+      !hasDestination &&
+      !hasSavedLocation &&
+      !hasAppliedApproximateLocation.current
+    ) {
+      hasAppliedApproximateLocation.current = true;
+      setViewport(approximateLocation);
+    }
+  }, [approximateLocation, hasDestination, hasSavedLocation]);
   // Place searches, offer links and cluster clicks also update the viewport
   // directly. Pinch input must start from that displayed camera, not just the
   // last viewport reported by a map interaction.
@@ -429,6 +457,12 @@ export default function SearchMap({
       latitude,
       zoom: camera.zoom ?? viewport.zoom,
     });
+    stopDefaultLocation();
+    debouncedSetPersistentMapLocation({
+      latitude,
+      longitude,
+      zoom: camera.zoom ?? viewport.zoom,
+    });
   };
 
   /**
@@ -475,12 +509,15 @@ export default function SearchMap({
   /**
    * Refresh persistent map state when viewport changes
    */
-  const onViewPortChange = (viewport: MapViewport) => {
+  const onViewPortChange = (viewport: MapViewport, userInitiated = true) => {
     viewportRef.current = viewport;
     setViewport(viewport);
 
     const { latitude, longitude, zoom } = viewport;
-    debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
+    if (userInitiated) {
+      stopDefaultLocation();
+      debouncedSetPersistentMapLocation({ latitude, longitude, zoom });
+    }
   };
   viewportChangeRef.current = onViewPortChange;
 
@@ -529,9 +566,13 @@ export default function SearchMap({
     { maxWait: 3500 },
   );
 
-  const onLeafletMapChange = (mapState: MapState) => {
+  const onLeafletMapChange = (mapState: MapState, explicitPlaceFit = false) => {
     setLeafletMapState(mapState);
-    onViewPortChange(mapState as MapViewport);
+    onViewPortChange(
+      mapState as MapViewport,
+      interactionPending.current || explicitPlaceFit,
+    );
+    interactionPending.current = false;
     debouncedUpdateOffers(mapState);
   };
 
@@ -1045,8 +1086,14 @@ export default function SearchMap({
   // Apply externally changed location object
   // Changed by the search shell when loading an offer via the URL
   useEffect(() => {
-    if (location?.lat && location?.lng) {
-      setViewport({
+    if (
+      location &&
+      typeof location.lat === 'number' &&
+      Number.isFinite(location.lat) &&
+      typeof location.lng === 'number' &&
+      Number.isFinite(location.lng)
+    ) {
+      onViewPortChange({
         ...viewport,
         latitude: location.lat,
         longitude: location.lng,
@@ -1067,18 +1114,36 @@ export default function SearchMap({
       })),
     };
     return (
-      <LeafletSearchMap
-        bounds={
-          bounds?.northEast && bounds?.southWest ? (bounds as MapBounds) : null
-        }
-        communityNotes={communityNotes}
-        offers={leafletOffers}
-        onCommunityNoteClick={openCommunityNote}
-        onMapChange={onLeafletMapChange}
-        onMapClick={onOfferClose}
-        onOfferClick={openOfferById}
-        viewport={viewport}
-      />
+      <div style={{ position: 'relative', height: '100%' }}>
+        <LeafletSearchMap
+          bounds={
+            bounds?.northEast && bounds?.southWest
+              ? (bounds as MapBounds)
+              : null
+          }
+          communityNotes={communityNotes}
+          offers={leafletOffers}
+          onCommunityNoteClick={openCommunityNote}
+          onMapChange={onLeafletMapChange}
+          onInteraction={onInteraction}
+          onMapClick={onOfferClose}
+          onOfferClick={openOfferById}
+          viewport={viewport}
+        />
+        {approximateLocation && (
+          <div
+            style={{
+              position: 'absolute',
+              top: 4,
+              left: 4,
+              maxWidth: '65%',
+              zIndex: 1000,
+            }}
+          >
+            <MapDefaultAttribution />
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -1086,7 +1151,15 @@ export default function SearchMap({
     <div
       className="search-map"
       data-map-zoom={viewport.zoom}
+      data-map-latitude={viewport.latitude}
+      data-map-longitude={viewport.longitude}
+      style={{ position: 'relative' }}
       ref={gestureSurfaceRef}
+      onPointerDownCapture={onInteraction}
+      onClickCapture={onInteraction}
+      onTouchStartCapture={onInteraction}
+      onWheelCapture={onInteraction}
+      onKeyDownCapture={onInteraction}
     >
       <TypedReactMapGL
         reuseMaps
@@ -1109,9 +1182,14 @@ export default function SearchMap({
         onClick={event => onClickMap(event as unknown as MapMouseEvent)}
         onError={event => handleMapError(event)}
         onMouseMove={event => onHover(event as unknown as MapMouseEvent)}
-        onMoveEnd={() => debouncedUpdateOffers()}
+        onMoveEnd={() => {
+          interactionPending.current = false;
+          debouncedUpdateOffers();
+        }}
         onMouseLeave={clearPreviouslyHoveredState}
-        onMove={event => onViewPortChange(event.viewState)}
+        onMove={event =>
+          onViewPortChange(event.viewState, interactionPending.current)
+        }
         onLoad={() => {
           const loadedMap = mapRef.current!.getMap();
           loadedMap.touchZoomRotate.disableRotation();
@@ -1173,6 +1251,19 @@ export default function SearchMap({
           </TypedSource>
         )}
       </TypedReactMapGL>
+      {approximateLocation && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 4,
+            left: 4,
+            maxWidth: '65%',
+            zIndex: 1,
+          }}
+        >
+          <MapDefaultAttribution />
+        </div>
+      )}
     </div>
   );
 }

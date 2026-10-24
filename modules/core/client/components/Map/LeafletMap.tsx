@@ -128,6 +128,9 @@ export default function LeafletMap({
       aria-hidden={ariaHidden}
       className={className}
       data-testid="leaflet-map"
+      data-map-latitude={location?.[0]}
+      data-map-longitude={location?.[1]}
+      data-map-zoom={zoom}
       ref={containerRef}
       style={{ height, width }}
     />
