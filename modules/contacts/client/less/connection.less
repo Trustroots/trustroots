@@ -25,3 +25,126 @@
     line-height: 128px;
   }
 }
+
+.your-connection {
+  margin: 0 0 24px;
+  padding: 20px;
+  border: 1px solid @gray-lighter;
+  border-radius: 8px;
+  background: #fff;
+  overflow-wrap: anywhere;
+
+  h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+  }
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  p {
+    margin: 0 0 8px;
+  }
+
+  .your-connection-note {
+    color: @gray;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .your-connection-contact {
+    padding: 16px 0;
+    margin-top: 12px;
+    border-top: 1px solid @gray-lighter;
+  }
+
+  .your-connection-contact-status,
+  .your-connection-actions,
+  .your-connection-byline {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px 12px;
+  }
+
+  .your-connection-actions .btn-link {
+    padding: 6px 0;
+  }
+
+  .your-connection-experiences {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .your-connection-experience {
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid @gray-lighter;
+    border-radius: 6px;
+  }
+
+  .your-connection-byline {
+    margin-bottom: 12px;
+    color: @gray;
+    font-size: 13px;
+  }
+
+  .your-connection-visibility {
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #eef5f3;
+    color: #295c50;
+  }
+
+  .your-connection-facts {
+    width: 100%;
+    margin: 0 0 8px;
+    font-size: 14px;
+    border-collapse: collapse;
+
+    th,
+    td {
+      padding: 7px 0;
+      border-bottom: 1px solid @gray-lighter;
+      vertical-align: top;
+    }
+
+    th {
+      width: 45%;
+      padding-right: 12px;
+      font-weight: normal;
+      color: @gray;
+      text-align: left;
+    }
+
+    tr:last-child > * {
+      border-bottom: 0;
+    }
+  }
+
+  .your-connection-quote {
+    margin: 12px 0;
+    padding: 0 0 0 12px;
+    border-left: 3px solid @gray-lighter;
+    font-size: 14px;
+    white-space: pre-wrap;
+  }
+
+  .your-connection-feedback {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid @gray-lighter;
+  }
+
+  @media (max-width: @screen-xs-max) {
+    padding: 16px;
+
+    .your-connection-experiences {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
