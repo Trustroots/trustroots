@@ -155,8 +155,8 @@
     "mongodb": "6.20.0",
     "mongoose": "8.24.5",
     "morgan": "1.12.1",
-    "multer": "2.4.0",
-    "nodemailer": "10.1.2",
+    "multer": "2.5.0",
+    "nodemailer": "10.1.4",
     "nostr-tools": "2.25.2",
     "nunjucks": "3.2.4",
     "open-location-code": "1.0.3",
@@ -182,7 +182,7 @@
     "validator": "13.15.35",
     "web-push": "3.6.7",
     "winston": "3.19.0",
-    "zod": "4.4.3"
+    "zod": "4.6.6"
   },
   "devDependencies": {
     "@babel/cli": "7.29.7",
