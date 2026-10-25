@@ -29,7 +29,8 @@ const reporters: NonNullable<ViteUserConfig['test']>['reporters'] = [
     : []),
 ];
 
-const explicitFiles = process.env.SERVER_TEST_FILES?.split(',').filter(Boolean);
+const listedFiles = process.env.SERVER_TEST_FILES?.split(',').filter(Boolean);
+const explicitFiles = listedFiles?.length ? listedFiles : undefined;
 
 // Vitest otherwise orders files by size and past duration. The files share
 // process state, so keep the order they always ran in: the order given in
