@@ -212,8 +212,18 @@ internal class EditProfileViewModel(
             val result = requestResult { repository.update(update) }
             if (request != generation) return@launch
             result.fold(
-                onSuccess = { profile -> mutableState.update {
-                    it.copy(baseline = profile, isSaving = false, pendingSave = EditProfileSaved(++nextSaveID, profile))
+                onSuccess = { profile -> mutableState.update { state ->
+                    val baseline = requireNotNull(state.baseline)
+                    val savedProfile = profile.copy(
+                        lastActiveAtMillis = profile.lastActiveAtMillis ?: baseline.lastActiveAtMillis,
+                        replyRate = profile.replyRate ?: baseline.replyRate,
+                        replyTime = profile.replyTime ?: baseline.replyTime,
+                    )
+                    state.copy(
+                        baseline = savedProfile,
+                        isSaving = false,
+                        pendingSave = EditProfileSaved(++nextSaveID, savedProfile),
+                    )
                 } },
                 onFailure = { error ->
                     if (error.isAuthenticationFailure()) invalidateSession(request)

@@ -41,6 +41,9 @@ data class MemberProfile(
     val locationFrom: String? = null,
     val languages: List<String>,
     val circles: List<TrustrootsCircle> = emptyList(),
+    val lastActiveAtMillis: Long? = null,
+    val replyRate: String? = null,
+    val replyTime: String? = null,
 )
 
 data class ProfileUpdate(
@@ -699,6 +702,9 @@ private fun encode(value: String): String = URLEncoder.encode(value, Charsets.UT
 private fun JSONObject.optionalText(key: String): String? =
     if (isNull(key)) null else optString(key).trim().takeIf { it.isNotEmpty() }
 
+private fun JSONObject.optionalStringText(key: String): String? =
+    (opt(key) as? String)?.trim()?.takeIf(String::isNotEmpty)
+
 internal fun parseMember(value: JSONObject): MemberProfile {
     val username = value.getString("username")
     val languages = value.optJSONArray("languages")
@@ -717,6 +723,10 @@ internal fun parseMember(value: JSONObject): MemberProfile {
         circles = if (memberships == null) emptyList() else (0 until memberships.length())
             .mapNotNull { memberships.optJSONObject(it)?.optJSONObject("tribe") }
             .mapNotNull { parseCircleOrNull(it) },
+        lastActiveAtMillis = value.optionalText("seen")
+            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
+        replyRate = value.optionalStringText("replyRate"),
+        replyTime = value.optionalStringText("replyTime"),
     )
 }
 
