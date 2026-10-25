@@ -17,6 +17,7 @@ import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.ContactRelationship
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileContact
@@ -34,6 +35,9 @@ internal interface MemberProfileRepository {
     suspend fun references(memberID: String): Result<List<ProfileReference>>
     suspend fun relationship(memberID: String): Result<ContactRelationship>
     suspend fun removeContact(contactID: String): Result<Unit>
+    suspend fun blockedMembers(): Result<List<MessageMember>>
+    suspend fun setMemberBlocked(username: String, blocked: Boolean): Result<Unit>
+    suspend fun reportMember(username: String, message: String): Result<Unit>
 }
 
 internal class MobileApiMemberProfileRepository(
@@ -62,9 +66,17 @@ internal class MobileApiMemberProfileRepository(
     override suspend fun references(memberID: String) = api.references(session, memberID)
     override suspend fun relationship(memberID: String) = api.contactWith(session, memberID)
     override suspend fun removeContact(contactID: String) = api.removeContact(session, contactID)
+    override suspend fun blockedMembers() = api.blockedMembers(session)
+    override suspend fun setMemberBlocked(username: String, blocked: Boolean) =
+        api.setMemberBlocked(session, username, blocked)
+    override suspend fun reportMember(username: String, message: String) =
+        api.reportMember(session, username, message)
 }
 
-internal enum class MemberProfileFailureReason { PROFILE, HOSTING, CONTACTS, REFERENCES, RELATIONSHIP, REMOVE_CONTACT }
+internal enum class MemberProfileFailureReason {
+    PROFILE, HOSTING, CONTACTS, REFERENCES, RELATIONSHIP, REMOVE_CONTACT,
+    BLOCK_STATUS, BLOCK_UPDATE, REPORT,
+}
 
 internal data class MemberProfileFailure(
     val reason: MemberProfileFailureReason,
@@ -87,6 +99,14 @@ internal data class MemberProfileUiState(
     val contactRemovalSucceeded: Boolean = false,
     val failure: MemberProfileFailure? = null,
     val removalFailure: MemberProfileFailure? = null,
+    val isBlocked: Boolean? = null,
+    val isLoadingBlock: Boolean = false,
+    val isUpdatingBlock: Boolean = false,
+    val blockFailure: MemberProfileFailure? = null,
+    val reportDraft: String = "",
+    val isSubmittingReport: Boolean = false,
+    val reportSubmitted: Boolean = false,
+    val reportFailure: MemberProfileFailure? = null,
     val pendingSessionInvalidation: MemberProfileSessionInvalidation? = null,
 )
 
@@ -95,6 +115,11 @@ internal sealed interface MemberProfileEvent {
     data object DismissRemoveContact : MemberProfileEvent
     data class ProfileSaved(val profile: MemberProfile) : MemberProfileEvent
     data object RefreshReferences : MemberProfileEvent
+    data object RetryBlockStatus : MemberProfileEvent
+    data class SetBlocked(val blocked: Boolean) : MemberProfileEvent
+    data class ReportDraftChanged(val message: String) : MemberProfileEvent
+    data object SubmitReport : MemberProfileEvent
+    data object DismissReport : MemberProfileEvent
     data class SessionInvalidationDelivered(val id: Long) : MemberProfileEvent
 }
 
@@ -115,6 +140,10 @@ internal class MemberProfileViewModel(
     private var removalJob: Job? = null
     private var referencesJob: Job? = null
     private var referencesGeneration = 0L
+    private var safetyGeneration = 0L
+    private var blockStatusJob: Job? = null
+    private var blockUpdateJob: Job? = null
+    private var reportJob: Job? = null
 
     init { load() }
 
@@ -122,6 +151,15 @@ internal class MemberProfileViewModel(
         when (event) {
             MemberProfileEvent.ConfirmRemoveContact -> removeContact()
             MemberProfileEvent.RefreshReferences -> refreshReferences()
+            MemberProfileEvent.RetryBlockStatus -> loadBlockStatus()
+            is MemberProfileEvent.SetBlocked -> setBlocked(event.blocked)
+            is MemberProfileEvent.ReportDraftChanged -> if (!mutableState.value.isSubmittingReport) {
+                mutableState.update { it.copy(reportDraft = event.message, reportFailure = null, reportSubmitted = false) }
+            }
+            MemberProfileEvent.SubmitReport -> submitReport()
+            MemberProfileEvent.DismissReport -> if (!mutableState.value.isSubmittingReport) {
+                mutableState.update { it.copy(reportDraft = "", reportFailure = null, reportSubmitted = false) }
+            }
             MemberProfileEvent.DismissRemoveContact -> if (!mutableState.value.isRemovingContact) {
                 mutableState.update { it.copy(removalFailure = null, contactRemovalSucceeded = false) }
             }
@@ -146,6 +184,10 @@ internal class MemberProfileViewModel(
         removalJob?.cancel()
         referencesGeneration++
         referencesJob?.cancel()
+        safetyGeneration++
+        blockStatusJob?.cancel()
+        blockUpdateJob?.cancel()
+        reportJob?.cancel()
         invalidationEmitted = false
         mutableState.value = MemberProfileUiState()
         load()
@@ -164,6 +206,7 @@ internal class MemberProfileViewModel(
             }
             val member = result.getOrThrow()
             mutableState.update { it.copy(profile = member, isLoading = false, failure = null) }
+            if (!isOwnMember(member.username)) loadBlockStatus()
             val id = member.id ?: return@launch
             launch {
                 val value = requestResult { repository.hosting(id) }
@@ -188,7 +231,7 @@ internal class MemberProfileViewModel(
                 value.onSuccess { refs -> mutableState.update { it.copy(references = refs.toList()) } }
                     .onFailure { if (it.isAuthenticationFailure()) invalidateSession(request) }
             }
-            if (member.username != ownUsername) launch {
+            if (!isOwnMember(member.username)) launch {
                 val value = requestResult { repository.relationship(id) }
                 if (request != generation) return@launch
                 value.fold(
@@ -199,6 +242,84 @@ internal class MemberProfileViewModel(
                     },
                 )
             }
+        }
+    }
+
+    private fun isOwnMember(memberUsername: String): Boolean =
+        memberUsername.equals(ownUsername, ignoreCase = true)
+
+    private fun loadBlockStatus() {
+        if (invalidationEmitted) return
+        val member = mutableState.value.profile ?: return
+        if (isOwnMember(member.username) || mutableState.value.isLoadingBlock || mutableState.value.isUpdatingBlock) return
+        val request = safetyGeneration
+        blockStatusJob?.cancel()
+        mutableState.update { it.copy(isLoadingBlock = true, blockFailure = null) }
+        blockStatusJob = requestScope.launch {
+            val result = requestResult { repository.blockedMembers() }
+            if (request != safetyGeneration || invalidationEmitted) return@launch
+            result.fold(
+                onSuccess = { blockedMembers ->
+                    val blocked = blockedMembers.any { candidate ->
+                        val sameID = candidate.id != null && member.id != null && candidate.id == member.id
+                        sameID || candidate.username?.equals(member.username, ignoreCase = true) == true
+                    }
+                    mutableState.update { it.copy(isBlocked = blocked, isLoadingBlock = false, blockFailure = null) }
+                },
+                onFailure = { error ->
+                    if (error.isAuthenticationFailure()) invalidateSession(generation)
+                    else mutableState.update {
+                        it.copy(isLoadingBlock = false, blockFailure = failure(MemberProfileFailureReason.BLOCK_STATUS, error))
+                    }
+                },
+            )
+        }
+    }
+
+    private fun setBlocked(blocked: Boolean) {
+        if (invalidationEmitted) return
+        val current = mutableState.value
+        val member = current.profile ?: return
+        if (isOwnMember(member.username) || current.isBlocked == null || current.isBlocked == blocked ||
+            current.isLoadingBlock || current.isUpdatingBlock
+        ) return
+        val request = safetyGeneration
+        mutableState.update { it.copy(isUpdatingBlock = true, blockFailure = null) }
+        blockUpdateJob = requestScope.launch {
+            val result = requestResult { repository.setMemberBlocked(member.username, blocked) }
+            if (request != safetyGeneration || invalidationEmitted) return@launch
+            result.fold(
+                onSuccess = { mutableState.update { it.copy(isBlocked = blocked, isUpdatingBlock = false, blockFailure = null) } },
+                onFailure = { error ->
+                    if (error.isAuthenticationFailure()) invalidateSession(generation)
+                    else mutableState.update {
+                        it.copy(isUpdatingBlock = false, blockFailure = failure(MemberProfileFailureReason.BLOCK_UPDATE, error))
+                    }
+                },
+            )
+        }
+    }
+
+    private fun submitReport() {
+        if (invalidationEmitted) return
+        val current = mutableState.value
+        val member = current.profile ?: return
+        val message = current.reportDraft.trim()
+        if (isOwnMember(member.username) || message.isEmpty() || current.isSubmittingReport || current.reportSubmitted) return
+        val request = safetyGeneration
+        mutableState.update { it.copy(isSubmittingReport = true, reportFailure = null, reportSubmitted = false) }
+        reportJob = requestScope.launch {
+            val result = requestResult { repository.reportMember(member.username, message) }
+            if (request != safetyGeneration || invalidationEmitted) return@launch
+            result.fold(
+                onSuccess = { mutableState.update { it.copy(isSubmittingReport = false, reportSubmitted = true, reportFailure = null) } },
+                onFailure = { error ->
+                    if (error.isAuthenticationFailure()) invalidateSession(generation)
+                    else mutableState.update {
+                        it.copy(isSubmittingReport = false, reportFailure = failure(MemberProfileFailureReason.REPORT, error))
+                    }
+                },
+            )
         }
     }
 
@@ -240,6 +361,8 @@ internal class MemberProfileViewModel(
         if (request != generation || invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update { it.copy(isLoading = false, isRemovingContact = false,
+            isLoadingBlock = false, isUpdatingBlock = false, isSubmittingReport = false,
+            reportDraft = "", reportSubmitted = false, reportFailure = null,
             pendingSessionInvalidation = MemberProfileSessionInvalidation(++nextInvalidationID)) }
     }
 
@@ -256,6 +379,10 @@ internal class MemberProfileViewModel(
         removalJob?.cancel()
         referencesGeneration++
         referencesJob?.cancel()
+        safetyGeneration++
+        blockStatusJob?.cancel()
+        blockUpdateJob?.cancel()
+        reportJob?.cancel()
         mutableState.value = MemberProfileUiState(isLoading = false)
         super.onCleared()
     }

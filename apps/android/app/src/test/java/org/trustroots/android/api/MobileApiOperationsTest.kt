@@ -184,6 +184,86 @@ class MobileApiOperationsTest {
         assertEquals(listOf("eng", "fra"), filters.getJSONArray("languages").strings())
         assertAuthenticatedRequest(request, hasJsonBody = false, hasTrustrootsRequestHeader = false)
     }
+
+    @Test
+    fun loadsBlockedMembersFromAuthenticatedUncachedEndpoint() {
+        val (result, request) = withApiResponse(
+            responseBody = """[{"_id":"member-id","username":"reported-member","displayName":"Reported Member"}]""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).blockedMembers(session) } }
+
+        val member = result.getOrThrow().single()
+        assertEquals("reported-member", member.username)
+        assertEquals("Reported Member", member.displayName)
+        assertEquals("GET /api/blocked-users HTTP/1.1", request.line)
+        assertAuthenticatedRequest(
+            request, hasJsonBody = false, hasTrustrootsRequestHeader = false,
+        )
+    }
+
+    @Test
+    fun blocksMemberUsingEncodedUsernameAndAcceptsPlainTextSuccess() {
+        val (result, request) = withApiResponse(responseBody = "Member added to block list.") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).setMemberBlocked(session, "quiet fox/one", blocked = true) }
+        }
+
+        result.getOrThrow()
+        assertEquals("PUT /api/blocked-users/quiet%20fox%2Fone HTTP/1.1", request.line)
+        assertAuthenticatedRequest(request, hasJsonBody = false)
+    }
+
+    @Test
+    fun unblocksMemberWithDelete() {
+        val (result, request) = withApiResponse(responseBody = "{}") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).setMemberBlocked(session, "reported-member", blocked = false) }
+        }
+
+        result.getOrThrow()
+        assertEquals("DELETE /api/blocked-users/reported-member HTTP/1.1", request.line)
+        assertAuthenticatedRequest(request, hasJsonBody = false)
+    }
+
+    @Test
+    fun reportsMemberThroughAuthenticatedSupportRoute() {
+        val (result, request) = withApiResponse(responseBody = "{}") { baseURL ->
+            runBlocking {
+                MobileApiClient(baseURL).reportMember(
+                    session, "reported-member", "  This profile contains abusive content.  ",
+                )
+            }
+        }
+
+        result.getOrThrow()
+        assertEquals("POST /api/support HTTP/1.1", request.line)
+        val body = JSONObject(request.body)
+        assertEquals("reported-member", body.getString("reportMember"))
+        assertEquals("This profile contains abusive content.", body.getString("message"))
+        assertAuthenticatedRequest(request)
+    }
+
+    @Test
+    fun rejectsBlankMemberReportWithoutSendingRequest() {
+        val result = runBlocking {
+            MobileApiClient("http://127.0.0.1:1").reportMember(session, "reported-member", "  \n")
+        }
+
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun preservesServerErrorsFromMemberSafetyRequests() {
+        val (result, request) = withApiResponse(
+            responseBody = """{"message":"You cannot block this member."}""",
+            responseCode = 403,
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).setMemberBlocked(session, "reported-member", blocked = true) }
+        }
+
+        val error = result.exceptionOrNull() as MobileApiException
+        assertEquals(403, error.statusCode)
+        assertEquals("You cannot block this member.", error.serverMessage)
+        assertEquals("PUT /api/blocked-users/reported-member HTTP/1.1", request.line)
+        assertAuthenticatedRequest(request, hasJsonBody = false)
+    }
 }
 
 private data class CapturedOperationRequest(val line: String, val headers: List<String>, val body: String)
@@ -208,6 +288,7 @@ private fun org.json.JSONArray.strings(): List<String> =
 
 private fun <T> withApiResponse(
     responseBody: String,
+    responseCode: Int = 200,
     call: (String) -> T,
 ): Pair<T, CapturedOperationRequest> = ServerSocket(0).use { server ->
     val capturedRequests = LinkedBlockingQueue<CapturedOperationRequest>()
@@ -235,7 +316,8 @@ private fun <T> withApiResponse(
 
             val encodedBody = responseBody.toByteArray(Charsets.UTF_8)
             val response = buildString {
-                append("HTTP/1.1 200 OK\r\n")
+                append("HTTP/1.1 ").append(responseCode)
+                append(if (responseCode in 200..299) " OK\r\n" else " Forbidden\r\n")
                 append("Content-Type: application/json\r\n")
                 append("Content-Length: ").append(encodedBody.size).append("\r\n")
                 append("Connection: close\r\n\r\n")

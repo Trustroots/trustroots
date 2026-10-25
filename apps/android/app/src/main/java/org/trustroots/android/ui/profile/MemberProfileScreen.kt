@@ -256,6 +256,8 @@ private fun MemberProfileContent(
     val relationshipResolved = profileState.relationshipResolved
     var confirmRemoveContact by rememberSaveable(username) { mutableStateOf(false) }
     val removingContact = profileState.isRemovingContact
+    var blockTarget by rememberSaveable(username, api.backendURL, session.member.username, session.cookieHeader) { mutableStateOf<Boolean?>(null) }
+    var reportVisible by rememberSaveable(username, api.backendURL, session.member.username, session.cookieHeader) { mutableStateOf(false) }
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
@@ -274,6 +276,35 @@ private fun MemberProfileContent(
             showingProfileImage -> showingProfileImage = false
             confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
             else -> onBack()
+        }
+    }
+    LaunchedEffect(profileState.isBlocked, profileState.isUpdatingBlock, blockTarget) {
+        if (blockTarget != null && !profileState.isUpdatingBlock && profileState.isBlocked == blockTarget) blockTarget = null
+    }
+    LaunchedEffect(isActiveProfileRoute) {
+        if (isActiveProfileRoute && profileState.profile != null) viewModel.onEvent(MemberProfileEvent.RetryBlockStatus)
+    }
+    if (profile != null && !profile.username.equals(session.member.username, ignoreCase = true)) {
+        blockTarget?.let { target ->
+            ProfileBlockDialog(
+                displayName = profile.displayName,
+                blocked = target,
+                state = profileState,
+                onDismiss = { blockTarget = null },
+                onConfirm = { viewModel.onEvent(MemberProfileEvent.SetBlocked(target)) },
+            )
+        }
+        if (reportVisible) {
+            ProfileReportDialog(
+                displayName = profile.displayName,
+                state = profileState,
+                onDismiss = {
+                    reportVisible = false
+                    viewModel.onEvent(MemberProfileEvent.DismissReport)
+                },
+                onDraftChanged = { viewModel.onEvent(MemberProfileEvent.ReportDraftChanged(it)) },
+                onSubmit = { viewModel.onEvent(MemberProfileEvent.SubmitReport) },
+            )
         }
     }
     if (confirmRemoveContact) {
@@ -348,7 +379,7 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.username == session.member.username
+    val isSelf = profile?.username?.equals(session.member.username, ignoreCase = true) == true
     Column(Modifier.fillMaxSize()) {
         when {
             profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
@@ -431,7 +462,7 @@ private fun MemberProfileContent(
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
                                     onMessage = {
-                                        member.id?.let(onOpenConversation)
+                                        if (profileState.isBlocked != true && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
                                     },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
                                     contactLabel = when {
@@ -454,9 +485,18 @@ private fun MemberProfileContent(
                                     topPadding = contentPadding.calculateTopPadding(),
                                     horizontalInset = contentPadding.horizontalInset(),
                                     compactTitle = member.displayName.takeIf { compactProfileHeader },
+                                    isBlocked = profileState.isBlocked,
+                                    safetyBusy = profileState.isUpdatingBlock || profileState.isLoadingBlock,
+                                    onBlock = { profileState.isBlocked?.let { blockTarget = !it } },
+                                    onReport = { reportVisible = true },
                                 )
                             }
                         }
+                        if (!isSelf) ProfileSafetyNotice(
+                            displayName = member.displayName,
+                            state = profileState,
+                            onRetry = { viewModel.onEvent(MemberProfileEvent.RetryBlockStatus) },
+                        )
                         HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
                             Column(Modifier.fillMaxSize().padding(bottom = contentPadding.calculateBottomPadding()).verticalScroll(rememberScrollState())) {
                                 Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset())) {

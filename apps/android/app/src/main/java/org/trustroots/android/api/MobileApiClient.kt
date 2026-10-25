@@ -378,6 +378,52 @@ class MobileApiClient(
             }
         }
 
+    /** Loads the viewer's block list directly from the server; block state is never cached offline. */
+    suspend fun blockedMembers(session: MemberSession): Result<List<MessageMember>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = jsonRequest(
+                    "/api/blocked-users", "GET", sessionCookie = session.cookieHeader,
+                    allowResponseCache = false,
+                )
+                val values = JSONArray(response.body)
+                (0 until values.length()).map { parseMessageMember(values.getJSONObject(it)) }
+            }
+        }
+
+    suspend fun setMemberBlocked(
+        session: MemberSession,
+        username: String,
+        blocked: Boolean,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(username.isNotBlank())
+            jsonRequest(
+                "/api/blocked-users/${encode(username).replace("+", "%20")}",
+                if (blocked) "PUT" else "DELETE",
+                sessionCookie = session.cookieHeader,
+            )
+            Unit
+        }
+    }
+
+    suspend fun reportMember(
+        session: MemberSession,
+        username: String,
+        message: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(username.isNotBlank())
+            require(message.isNotBlank())
+            val body = JSONObject()
+                .put("reportMember", username)
+                .put("message", message.trim())
+                .toString()
+            jsonRequest("/api/support", "POST", body, session.cookieHeader)
+            Unit
+        }
+    }
+
     suspend fun updateProfile(session: MemberSession, update: ProfileUpdate): Result<MemberProfile> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -579,6 +625,7 @@ class MobileApiClient(
         sessionCookie: String? = null,
         requestHeaders: Map<String, String> = emptyMap(),
         failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
+        allowResponseCache: Boolean = true,
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -613,7 +660,7 @@ class MobileApiClient(
                     failureKind = failureKind,
                 )
             }
-            if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+            if (allowResponseCache && method == "GET" && sessionCookie != null && cacheAccount != null) {
                 responseCache?.save(baseURL, cacheAccount, path, responseBody)
             } else if (method != "GET" && sessionCookie != null && cacheAccount != null) {
                 when {
@@ -626,6 +673,9 @@ class MobileApiClient(
                     path == "/api/users" -> responseCache?.clearCategories(
                         baseURL, cacheAccount, setOf("own-profile"),
                     )
+                    path.startsWith("/api/blocked-users/") -> responseCache?.clearCategories(
+                        baseURL, cacheAccount, setOf("profile", "profile-detail"),
+                    )
                 }
             }
             mutableOfflineSavedAt.value = null
@@ -634,7 +684,7 @@ class MobileApiClient(
                 sessionCookie = sessionCookieFrom(connection.headerFields),
             )
         } catch (error: IOException) {
-            val cached = if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+            val cached = if (allowResponseCache && method == "GET" && sessionCookie != null && cacheAccount != null) {
                 responseCache?.load(baseURL, cacheAccount, path)
             } else null
             if (cached != null) {
