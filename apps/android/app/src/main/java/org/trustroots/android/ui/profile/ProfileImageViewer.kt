@@ -137,7 +137,7 @@ internal fun ProfileImageViewer(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        val windowBars = ProfileImageWindowStyle(viewerBackground)
+        val windowBars = rememberProfileImageWindowStyle(viewerBackground)
         Box(
             modifier
                 .fillMaxSize()
@@ -287,26 +287,20 @@ internal fun ProfileImageViewer(
 }
 
 @Composable
-private fun ProfileImageWindowStyle(viewerBackground: Color): String {
+private fun rememberProfileImageWindowStyle(viewerBackground: Color): String {
     val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
     val viewerBackgroundArgb = viewerBackground.toArgb()
     var windowBars by remember(dialogWindow) { mutableStateOf("") }
     DisposableEffect(dialogWindow) {
         if (dialogWindow == null) return@DisposableEffect onDispose {}
         val decorView = dialogWindow.decorView
-        val originalStatusBarColor = dialogWindow.statusBarColor
-        val originalNavigationBarColor = dialogWindow.navigationBarColor
         val insetsController = WindowCompat.getInsetsController(dialogWindow, decorView)
         val originalLightStatusBars = insetsController.isAppearanceLightStatusBars
         val originalLightNavigationBars = insetsController.isAppearanceLightNavigationBars
-        dialogWindow.statusBarColor = viewerBackgroundArgb
-        dialogWindow.navigationBarColor = viewerBackgroundArgb
         insetsController.isAppearanceLightStatusBars = false
         insetsController.isAppearanceLightNavigationBars = false
         windowBars = describeWindowBars(dialogWindow)
         onDispose {
-            dialogWindow.statusBarColor = originalStatusBarColor
-            dialogWindow.navigationBarColor = originalNavigationBarColor
             insetsController.isAppearanceLightStatusBars = originalLightStatusBars
             insetsController.isAppearanceLightNavigationBars = originalLightNavigationBars
         }

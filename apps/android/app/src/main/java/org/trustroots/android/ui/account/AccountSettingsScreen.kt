@@ -55,10 +55,9 @@ import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.ui.common.LabelledCheckbox
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
-import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.rememberFormLeave
 import org.trustroots.android.ui.common.resolveFailureMessage
@@ -182,13 +181,13 @@ internal fun AccountSettingsScreen(
         null -> null
     }
     val updateReleaseUrl = (state.updateStatus as? AccountUpdateStatus.NewVersion)?.pageUrl
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            MemberLargeTopAppBar(
+            PinnedTopAppBar(
                 title = accountTitle,
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,

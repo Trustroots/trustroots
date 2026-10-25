@@ -35,7 +35,7 @@ internal fun LiveFilterField(
     TextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        placeholder = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
         shape = CircleShape,
         colors = searchFieldColors(),
@@ -57,16 +57,16 @@ internal fun SubmittedSearchField(
     onSearch: () -> Unit,
     searchEnabled: Boolean,
     modifier: Modifier = Modifier,
-    searchMode: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        placeholder = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
         shape = CircleShape,
         colors = searchFieldColors(),
-        leadingIcon = searchMode,
+        leadingIcon = leadingIcon,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { if (searchEnabled) onSearch() }),
         trailingIcon = {

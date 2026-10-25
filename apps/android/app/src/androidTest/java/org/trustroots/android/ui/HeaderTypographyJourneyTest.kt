@@ -25,7 +25,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.ui.common.ArtworkHero
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.profile.ProfileActionBar
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
@@ -39,9 +39,9 @@ class HeaderTypographyJourneyTest {
             TrustrootsTheme {
                 barState = rememberTopAppBarState()
                 Column {
-                    MemberLargeTopAppBar(
+                    PinnedTopAppBar(
                         title = "Shared title",
-                        scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(barState),
+                        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(barState),
                         contentPadding = PaddingValues.Zero,
                     )
                     ArtworkHero(

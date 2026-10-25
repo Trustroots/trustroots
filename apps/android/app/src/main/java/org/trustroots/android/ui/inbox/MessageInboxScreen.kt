@@ -21,6 +21,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -47,10 +48,9 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.LiveFilterField
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.localizedLabel
@@ -78,7 +78,7 @@ internal fun MessageInboxScreen(
         )
     }
     val backStack = rememberNavBackStack(*initialRoutes)
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val popRoute: () -> Unit = {
         if (backStack.size > 1) {
             if (backStack.lastOrNull() is MessageConversationVisit) conversationReturnGeneration++
@@ -179,8 +179,8 @@ private fun InboxContent(
     api: MobileApiClient,
     session: MemberSession,
     contentPadding: PaddingValues,
-    scrollBehavior: androidx.compose.material3.TopAppBarScrollBehavior,
     listState: LazyListState,
+    scrollBehavior: TopAppBarScrollBehavior,
     onOpenConversation: (String) -> Unit,
     onOpenProfile: (String) -> Unit,
 ) {
@@ -192,7 +192,7 @@ private fun InboxContent(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            MemberLargeTopAppBar(
+            PinnedTopAppBar(
                 title = stringResource(R.string.screen_messages_title),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,

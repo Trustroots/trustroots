@@ -91,7 +91,7 @@ class SearchFieldLayoutJourneyTest {
                         onSearch = { submissions++ },
                         searchEnabled = enabled,
                         modifier = Modifier.testTag("submittedSearchField"),
-                        searchMode = { Text("Members") },
+                        leadingIcon = { Text("Members") },
                     )
                 }
             }

@@ -61,7 +61,7 @@ import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
@@ -164,7 +164,7 @@ private fun CircleOverviewEntry(
     SideEffect { viewModel.updateEnvironment(api, session) }
     val state by viewModel.state.collectAsState()
     val failureMessage = circlesFailureMessage(state.failure)
-    val overviewScrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     LaunchedEffect(viewModel, state.pendingSessionInvalidation?.id) {
         val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
@@ -191,7 +191,7 @@ private fun CircleOverviewEntry(
         error = failureMessage,
         canRetryLoad = state.canRetryLoad,
         onRetry = { viewModel.onEvent(CirclesEvent.RetryLoad) },
-        scrollBehavior = overviewScrollBehavior,
+        scrollBehavior = scrollBehavior,
         contentPadding = contentPadding,
         onSelect = onSelect,
         onToggleMembership = toggle,
@@ -234,7 +234,7 @@ private fun CircleOverviewScreen(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            MemberLargeTopAppBar(
+            PinnedTopAppBar(
                 title = stringResource(R.string.screen_discover_circles),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,

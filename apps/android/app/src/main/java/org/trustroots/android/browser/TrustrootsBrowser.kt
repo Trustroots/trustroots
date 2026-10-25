@@ -14,20 +14,16 @@ import android.webkit.WebViewClient
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,11 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import java.net.URI
+import org.trustroots.android.ui.common.PinnedTopAppBar
 
 data class BrowserRoute(
     val title: String,
@@ -60,6 +57,7 @@ internal class BrowserEntryStateViewModel : ViewModel() {
     var savedRouteURL: String? = null
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @SuppressLint("SetJavaScriptEnabled")
 fun TrustrootsBrowser(
@@ -98,20 +96,17 @@ fun TrustrootsBrowser(
         )
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(top = contentPadding.calculateTopPadding(), bottom = contentPadding.calculateBottomPadding()),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onClose) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
-            }
-            Text(route.title, style = MaterialTheme.typography.titleMedium)
-        }
+    Scaffold(
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        topBar = {
+            PinnedTopAppBar(
+                title = route.title,
+                scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(),
+                contentPadding = contentPadding,
+                onBack = onClose,
+            )
+        },
+    ) { paddingValues ->
         AndroidView(
             factory = { browserContext ->
                 WebView(browserContext).apply {
@@ -164,7 +159,9 @@ fun TrustrootsBrowser(
                     webView = this
                 }
             },
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
             onRelease = { released ->
                 browserEntryState.savedRouteURL = route.url
                 browserEntryState.savedBrowserState = android.os.Bundle().also { released.saveState(it) }

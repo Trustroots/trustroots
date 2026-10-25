@@ -15,9 +15,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -69,17 +66,13 @@ import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.circles.CirclesNavigationDisplay
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalLeaveGuard
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
 import org.trustroots.android.ui.common.MemberNavigationBar
-import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.session.AndroidAppSessionOperations
 import org.trustroots.android.ui.session.AppSessionEvent
 import org.trustroots.android.ui.session.AppSessionSource
 import org.trustroots.android.ui.session.AppSessionViewModel
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageScreenTracking
-import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.contacts.ContactsScreen
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.menu.MenuNavigationDisplay
 import org.trustroots.android.ui.search.SearchHubScreen
