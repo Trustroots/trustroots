@@ -3,6 +3,7 @@
 - [x] Land the initial proposal and migration direction (#3250). Remaining layout decisions stay open in `design.md`.
 - [x] Workspace in place plus Turborepo (#3251).
 - [ ] Shared root code into `packages/*` with re-export shims (separate pull request).
+  - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve ESM/CommonJS compatibility paths, shared instance identity, runtime installation and coverage.
 - [ ] `packages/ui` with design tokens (separate pull request).
 - [ ] Tier guards in `tooling/guards` (separate pull request).
 - [ ] `layers/server` composition and per-module server entries (separate pull request).

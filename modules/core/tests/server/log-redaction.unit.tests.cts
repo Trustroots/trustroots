@@ -7,6 +7,72 @@ const {
   safeError,
 }: RedactionApi = require('./../../../../config/lib/log-redaction.mjs');
 
+describe('logger workspace entry points', () => {
+  it('preserves primitive values and omits binary and inherited metadata', () => {
+    const metadata = Object.assign(Object.create({ inherited: 'example' }), {
+      empty: null,
+      missing: undefined,
+      binary: Buffer.from('example'),
+      count: 3,
+    });
+    assert.deepStrictEqual(redactMetadata(metadata), {
+      empty: null,
+      missing: undefined,
+      binary: '[Binary data omitted]',
+      count: 3,
+    });
+  });
+
+  it('does not evaluate accessor properties on errors', () => {
+    assert.deepStrictEqual(
+      safeError(
+        Object.assign(new Error('Example error'), { name: 'TypeError' }),
+      ),
+      { name: 'TypeError' },
+    );
+    const error = new Error('Example error');
+    for (const key of ['name', 'code', 'status']) {
+      Object.defineProperty(error, key, {
+        get() {
+          assert.fail('Error accessors must not be evaluated');
+        },
+      });
+    }
+    assert.deepStrictEqual(safeError(error), { name: 'Error' });
+  });
+
+  it('shares ESM and CommonJS instances through package and compatibility paths', async () => {
+    const logger = await import('@trustroots/logger');
+    const metadata = await import('@trustroots/logger/log-redaction');
+
+    assert.strictEqual(require('@trustroots/logger'), logger.default);
+    assert.strictEqual(
+      require('./../../../../config/lib/logger.mts'),
+      logger.default,
+    );
+    assert.strictEqual(
+      require('./../../../../config/lib/logger.mjs'),
+      logger.default,
+    );
+    assert.strictEqual(
+      (await import('../../../../config/lib/logger.mjs')).default,
+      logger.default,
+    );
+    assert.strictEqual(
+      require('@trustroots/logger/log-redaction'),
+      metadata.default,
+    );
+    assert.strictEqual(
+      require('./../../../../config/lib/log-redaction.mts'),
+      metadata.default,
+    );
+    assert.strictEqual(
+      require('./../../../../config/lib/log-redaction.mjs'),
+      metadata.default,
+    );
+  });
+});
+
 type SafeValue =
   | undefined
   | null
@@ -292,7 +358,7 @@ describe('diagnostic log redaction', () => {
       },
     };
     const logger: (...args: unknown[]) => unknown = proxyquire(
-      require.resolve('./../../../../config/lib/logger.mts'),
+      require.resolve('@trustroots/logger'),
       {
         winston,
       },

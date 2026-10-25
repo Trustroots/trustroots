@@ -1,0 +1,17 @@
+{
+  "name": "@trustroots/logger",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./logger.mts",
+    "./log-redaction": "./log-redaction.mts"
+  },
+  "scripts": {
+    "lint": "eslint --ext .mjs,.mts .",
+    "test:server": "pnpm --dir ../.. run test:server:files modules/core/tests/server/log-redaction.unit.tests.cts"
+  },
+  "peerDependencies": {
+    "winston": "3.19.0"
+  }
+}

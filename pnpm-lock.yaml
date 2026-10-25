@@ -40,6 +40,9 @@ importers:
       '@tanstack/react-router':
         specifier: 1.170.44
         version: 1.170.44(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@trustroots/logger':
+        specifier: workspace:*
+        version: link:packages/logger
       agenda:
         specifier: 4.4.0
         version: 4.4.0(supports-color@5.5.0)
@@ -685,6 +688,12 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+
+  packages/logger:
+    dependencies:
+      winston:
+        specifier: 3.19.0
+        version: 3.19.0
 
 packages:
 
