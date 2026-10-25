@@ -1,3 +1,6 @@
+import { once } from 'node:events';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { createRequire } from 'node:module';
 import {
   afterAll,
@@ -69,9 +72,65 @@ mocha.after = wrapHook(afterAll);
 mocha.beforeEach = wrapHook(beforeEach);
 mocha.afterEach = wrapHook(afterEach);
 
+interface SupertestTest {
+  app: Server;
+  url: string;
+  _server?: Server;
+  serverAddress(app: Server, path: string): string;
+  end(fn: (error: unknown) => void): SupertestTest;
+}
+
 const setup = globalThis as typeof globalThis & {
   trustrootsServerTestSetup?: Promise<void>;
+  trustrootsSupertestLoopback?: true;
 };
+
+// Supertest sends requests to 127.0.0.1 but listens on the dual-stack `::`.
+// macOS hands such a listener a port that another socket already holds on
+// 127.0.0.1, and the request then reaches that socket instead. Listening on
+// 127.0.0.1 makes the kernel skip those ports. Binding to a host is
+// asynchronous, so the request waits for the port.
+if (!setup.trustrootsSupertestLoopback) {
+  setup.trustrootsSupertestLoopback = true;
+  const { Test } = require('supertest') as {
+    Test: { prototype: SupertestTest };
+  };
+  const { serverAddress, end } = Test.prototype;
+  const pendingPorts = new WeakMap<Server, Promise<number>>();
+  const requestTargets = new WeakMap<
+    SupertestTest,
+    { port: Promise<number>; path: string }
+  >();
+  Test.prototype.serverAddress = function (app, path) {
+    if (app.address()) return serverAddress.call(this, app, path);
+    let port = pendingPorts.get(app);
+    if (!port) {
+      this._server = app.listen(0, '127.0.0.1');
+      port = once(app, 'listening').then(
+        () => {
+          pendingPorts.delete(app);
+          return (app.address() as AddressInfo).port;
+        },
+        error => {
+          pendingPorts.delete(app);
+          throw error;
+        },
+      );
+      pendingPorts.set(app, port);
+    }
+    requestTargets.set(this, { port, path });
+    return `http://127.0.0.1${path}`;
+  };
+  Test.prototype.end = function (fn) {
+    const target = requestTargets.get(this);
+    if (!target) return end.call(this, fn);
+    target.port.then(port => {
+      this.url = `http://127.0.0.1:${port}${target.path}`;
+      end.call(this, fn);
+    }, fn);
+    return this;
+  };
+}
 
 // The database is prepared once per process, before the first test file.
 setup.trustrootsServerTestSetup ??= (async () => {

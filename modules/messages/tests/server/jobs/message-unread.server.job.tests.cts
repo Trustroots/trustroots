@@ -117,17 +117,17 @@ describe('Job: message unread', function () {
     await message.save();
   });
 
-  it('Do not remind user about unread messages which are sent less than 10 minutes ago', function (done) {
+  it('Do not remind user about unread messages which are sent less than 10 minutes ago', async function () {
     message.created = moment()
       .subtract(moment.duration({ minutes: 9 }))
       .toDate();
-    message.save();
-    messageUnreadJobHandler({}, function (err?: Error | null) {
-      if (err) return done(err);
-
-      jobs.length.should.equal(0);
-      done();
+    await message.save();
+    await new Promise<void>((resolve, reject) => {
+      messageUnreadJobHandler({}, (error?: Error | null) =>
+        error ? reject(error) : resolve(),
+      );
     });
+    jobs.length.should.equal(0);
   });
 
   it('Remind user about unread messages which are sent more than 10 minutes ago', function (done) {
