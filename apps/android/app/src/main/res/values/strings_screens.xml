@@ -16,7 +16,7 @@
     <string name="screen_enter_at_least_three_characters">Enter at least 3 characters.</string>
     <string name="screen_no_members_found">No members found. Try another name or username.</string>
     <string name="screen_find_member">Find a member</string>
-    <string name="screen_search_name_or_username">Search name or username</string>
+    <string name="screen_search_name_or_username">Search by name or username</string>
     <string name="screen_switch_to_map_search">Switch to map search</string>
     <string name="screen_join_circle">Join circle</string>
     <string name="screen_leave_circle">Leave circle</string>

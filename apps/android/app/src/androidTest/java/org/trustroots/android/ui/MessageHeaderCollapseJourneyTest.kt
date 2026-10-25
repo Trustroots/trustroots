@@ -14,9 +14,11 @@ import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.SemanticsMatcher
@@ -44,7 +46,7 @@ import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.inbox.MessageInboxScreen
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
-/** Verifies large message app bars collapse and expand through real scroll gestures. */
+/** Verifies message titles stay pinned while inbox and conversation content scrolls. */
 @RunWith(AndroidJUnit4::class)
 class MessageHeaderCollapseJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
@@ -61,7 +63,7 @@ class MessageHeaderCollapseJourneyTest {
         assertTrue("The local message fixture should stop after server shutdown", responder?.isAlive != true)
     }
 
-    @Test fun inboxHeaderCollapsesAndExpandsWithConversationListGestures() {
+    @Test fun inboxTitleStaysPinnedWhileConversationListScrolls() {
         var statusBarInsetPx = 0f
         startResponder { request ->
             when {
@@ -92,33 +94,35 @@ class MessageHeaderCollapseJourneyTest {
             titleBefore.top >= statusBarInsetPx,
         )
         val rowBefore = compose.onNodeWithText("Fictional message 1").fetchSemanticsNode().boundsInRoot
-        println("MESSAGE_HEADER inbox expanded title=$titleBefore firstRow=$rowBefore")
-        captureUsabilityScreenshot(compose, "android_message_inbox_expanded")
+        println("MESSAGE_HEADER inbox pinned title=$titleBefore firstRow=$rowBefore")
+        captureUsabilityScreenshot(compose, "android_message_inbox_pinned")
 
         compose.onNode(hasScrollAction()).performTouchInput { swipeUp() }
         compose.waitForIdle()
         compose.onNodeWithText("Messages").assertIsDisplayed()
         compose.onNodeWithText("Fictional message 1").assertDoesNotExist()
         val titleAfter = compose.onNodeWithText("Messages").fetchSemanticsNode().boundsInRoot
-        assertTrue("Scrolling shrinks the inbox title into its collapsed app bar", titleAfter.height < titleBefore.height)
-        println("MESSAGE_HEADER inbox collapsed title=$titleAfter firstRowVisible=false")
-        captureUsabilityScreenshot(compose, "android_message_inbox_collapsed")
+        assertEquals("The inbox title stays pinned while rows scroll", titleBefore.top, titleAfter.top, 1f)
+        assertEquals("The pinned inbox title keeps its height", titleBefore.height, titleAfter.height, 1f)
+        println("MESSAGE_HEADER inbox scrolled title=$titleAfter firstRowVisible=false")
+        captureUsabilityScreenshot(compose, "android_message_inbox_scrolled")
 
         repeat(3) {
             compose.onNode(hasScrollAction()).performTouchInput { swipeDown() }
             compose.waitForIdle()
         }
-        compose.onNodeWithText("Filter conversations").assertIsDisplayed()
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().assertIsDisplayed()
         val titleExpanded = compose.onNodeWithText("Messages").fetchSemanticsNode().boundsInRoot
-        assertTrue("Scrolling back expands the inbox title", titleExpanded.height > titleAfter.height)
-        println("MESSAGE_HEADER inbox expandedAgain title=$titleExpanded")
-        captureUsabilityScreenshot(compose, "android_message_inbox_expanded_again")
-        compose.onNodeWithText("Filter conversations").performTextInput("traveller-28")
+        assertEquals("Scrolling back leaves the inbox title pinned", titleBefore.top, titleExpanded.top, 1f)
+        assertEquals("The pinned inbox title keeps its height", titleBefore.height, titleExpanded.height, 1f)
+        println("MESSAGE_HEADER inbox returned title=$titleExpanded")
+        captureUsabilityScreenshot(compose, "android_message_inbox_returned")
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextInput("traveller-28")
         compose.onNodeWithText("Traveller 28").assertIsDisplayed()
         compose.onNodeWithText("Traveller 1").assertDoesNotExist()
     }
 
-    @Test fun conversationHeaderCollapsesAndExpandsWithHistoryGestures() {
+    @Test fun conversationTitleStaysPinnedWhileHistoryScrolls() {
         var statusBarInsetPx = 0f
         var startInsetPx = 0f
         var rootWidthPx = 0f
@@ -178,8 +182,8 @@ class MessageHeaderCollapseJourneyTest {
             rootWidthPx - backBefore.right >= startInsetPx,
         )
         val messageBefore = compose.onNodeWithText("Fictional conversation note 30").fetchSemanticsNode().boundsInRoot
-        println("MESSAGE_HEADER conversation expanded title=$titleBefore back=$backBefore message=$messageBefore")
-        captureUsabilityScreenshot(compose, "android_message_conversation_expanded")
+        println("MESSAGE_HEADER conversation pinned title=$titleBefore back=$backBefore message=$messageBefore")
+        captureUsabilityScreenshot(compose, "android_message_conversation_pinned")
 
         val history = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
         history.performTouchInput { swipeUp() }
@@ -191,11 +195,12 @@ class MessageHeaderCollapseJourneyTest {
         val backAfter = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
         val messageAfter = compose.onNodeWithText("Fictional conversation note 30").fetchSemanticsNode().boundsInRoot
         assertTrue(history.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value() > 0f)
-        assertTrue("Scrolling shrinks the participant title into its collapsed app bar", titleAfter.height < titleBefore.height)
+        assertEquals("The participant title stays pinned while history scrolls", titleBefore.top, titleAfter.top, 1f)
+        assertEquals("The pinned participant title keeps its height", titleBefore.height, titleAfter.height, 1f)
         assertEquals("The Back action remains available in the collapsed app bar", backBefore.size, backAfter.size)
         assertNotEquals("Message history moves when its scroll container is swiped", messageBefore.top, messageAfter.top)
-        println("MESSAGE_HEADER conversation collapsed title=$titleAfter back=$backAfter")
-        captureUsabilityScreenshot(compose, "android_message_conversation_collapsed")
+        println("MESSAGE_HEADER conversation scrolled title=$titleAfter back=$backAfter")
+        captureUsabilityScreenshot(compose, "android_message_conversation_scrolled")
 
         repeat(3) {
             compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
@@ -204,9 +209,10 @@ class MessageHeaderCollapseJourneyTest {
         }
         val titleExpanded = compose.onNodeWithText("Quiet Fox").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
-        assertTrue("Scrolling back expands the participant title", titleExpanded.height > titleAfter.height)
-        println("MESSAGE_HEADER conversation expandedAgain title=$titleExpanded")
-        captureUsabilityScreenshot(compose, "android_message_conversation_expanded_again")
+        assertEquals("Scrolling back leaves the participant title pinned", titleBefore.top, titleExpanded.top, 1f)
+        assertEquals("The pinned participant title keeps its height", titleBefore.height, titleExpanded.height, 1f)
+        println("MESSAGE_HEADER conversation returned title=$titleExpanded")
+        captureUsabilityScreenshot(compose, "android_message_conversation_returned")
         compose.onNodeWithText("View profile").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("About").fetchSemanticsNodes().isNotEmpty()

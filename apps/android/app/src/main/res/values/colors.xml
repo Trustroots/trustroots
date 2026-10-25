@@ -4,7 +4,7 @@
     <color name="trustroots_dark_green">#087F68</color>
     <color name="trustroots_pale_green">#ECF9F5</color>
     <color name="trustroots_brown">#5C3B14</color>
-    <color name="trustroots_background">#FAFCFB</color>
+    <color name="trustroots_background">#FFFFFF</color>
     <color name="trustroots_surface">#FFFFFF</color>
     <color name="trustroots_surface_dim">#D8E0DC</color>
     <color name="trustroots_surface_bright">#FFFFFF</color>

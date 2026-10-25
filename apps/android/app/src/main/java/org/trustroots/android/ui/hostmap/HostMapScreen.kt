@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Spacer
@@ -98,7 +97,7 @@ internal fun HostMapScreen(
     onSessionInvalidated: () -> Unit,
     viewModel: HostMapViewModel? = null,
     onOpenHostDetail: (MapOffer) -> Unit = {},
-    searchMode: @Composable () -> Unit = {},
+    searchModeMenu: @Composable () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues.Zero,
     geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
@@ -309,7 +308,7 @@ internal fun HostMapScreen(
                 .testTag("map-controls").background(MaterialTheme.colorScheme.surface)
                 .padding(top = contentPadding.calculateTopPadding()),
         ) {
-            Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(4.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 SubmittedSearchField(
                     value = locationQuery,
                     onValueChange = {
@@ -319,7 +318,7 @@ internal fun HostMapScreen(
                     label = stringResource(R.string.search_places),
                     clearLabel = stringResource(R.string.clear_place_search),
                     searchLabel = stringResource(R.string.search_places),
-                    searchMode = searchMode,
+                    leadingIcon = searchModeMenu,
                     onSearch = findLocation,
                     searchEnabled = locationQuery.isNotBlank(),
                     modifier = Modifier.weight(1f).testTag("placeSearchField"),

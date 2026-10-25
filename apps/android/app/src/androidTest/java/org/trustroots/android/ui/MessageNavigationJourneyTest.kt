@@ -147,7 +147,7 @@ class MessageNavigationJourneyTest {
         waitForText("Quiet Fox")
         compose.waitUntil(10_000) { inboxRequests.get() >= 2 }
         val initialInboxRequests = inboxRequests.get()
-        compose.onNodeWithText("Filter conversations").performTextReplacement("quiet-fox")
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("quiet-fox")
         compose.onNodeWithTag("message-thread-thread-fox").performClick()
         waitForText("Fictional route message")
         compose.onNodeWithText("View profile").performClick()
@@ -156,7 +156,7 @@ class MessageNavigationJourneyTest {
         compose.onNodeWithText("Fictional route message").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithTag("message-thread-thread-fox").assertIsDisplayed()
-        compose.onNodeWithText("Filter conversations").assertIsDisplayed()
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().assertIsDisplayed()
         assertEquals("Returning from the conversation refreshes the inbox once", initialInboxRequests + 1, inboxRequests.get())
         assertTrue(fixture.requests.any { it.path == "/api/users/mini/member-fox" })
         assertTrue(fixture.requests.any { it.path == "/api/users/quiet-fox" })

@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.PersonSearch
@@ -14,6 +15,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -30,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -224,7 +227,7 @@ internal fun SearchHubScreen(
                             onOpenHostDetail = pushHostDetail,
                             notesClientFactory = notesClientFactory,
                             mapViewFactory = mapViewFactory,
-                            searchMode = { SearchModeMenu(if (currentMode == SearchMode.Map) 0 else 1, selectMode) },
+                            searchModeMenu = { SearchModeMenu(if (currentMode == SearchMode.Map) 0 else 1, selectMode) },
                         )
                     }
                     SearchMode.Members -> MemberSearchScreen(
@@ -233,7 +236,7 @@ internal fun SearchHubScreen(
                         onSessionInvalidated = onSessionInvalidated,
                         contentPadding = contentPadding,
                         onOpenProfile = pushProfile,
-                        searchMode = { SearchModeMenu(if (currentMode == SearchMode.Map) 0 else 1, selectMode) },
+                        searchModeMenu = { SearchModeMenu(if (currentMode == SearchMode.Map) 0 else 1, selectMode) },
                         onSwitchToMap = { selectMode(0) },
                         viewModel = memberSearchViewModel,
                     )

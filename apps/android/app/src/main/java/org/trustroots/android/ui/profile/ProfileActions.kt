@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Edit
@@ -87,9 +88,20 @@ internal fun ProfileActionBar(
                 colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.artwork_on_scrim)),
             ) {
                 Icon(Icons.Filled.Edit, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.profile_edit_your_profile))
             }
         } else {
+            Button(
+                onClick = onMessage,
+                modifier = Modifier.heightIn(min = 48.dp).testTag("profileMessageAction"),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) {
+                Text(stringResource(R.string.profile_send_message))
+            }
             Box {
                 IconButton(
                     onClick = { menuExpanded = !menuExpanded },
@@ -120,17 +132,6 @@ internal fun ProfileActionBar(
                         )
                     }
                 }
-            }
-            Button(
-                onClick = onMessage,
-                modifier = Modifier.heightIn(min = 48.dp).testTag("profileMessageAction"),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary,
-                ),
-            ) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                Text(stringResource(R.string.profile_send_message))
             }
         }
     }

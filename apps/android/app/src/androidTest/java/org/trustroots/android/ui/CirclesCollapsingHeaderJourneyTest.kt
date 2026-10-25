@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -21,6 +22,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
@@ -39,7 +41,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.circles.CirclesScreen
 
-/** Checks that Circles titles collapse while scrollable content remains reachable. */
+/** Checks that the overview title stays pinned and detail artwork collapses with its scrolling content. */
 @RunWith(AndroidJUnit4::class)
 class CirclesCollapsingHeaderJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
@@ -77,10 +79,18 @@ class CirclesCollapsingHeaderJourneyTest {
             val listAfter = compose.onNodeWithTag("circlesList").fetchSemanticsNode()
             val scrollPosition = listAfter.config[SemanticsProperties.VerticalScrollAxisRange].value()
 
-            // The expanded title settles into the compact Material title row as content scrolls.
+            // The pinned app bar keeps its title in place while the overview content scrolls.
             compose.onNodeWithText("Discover circles").assertIsDisplayed()
-            assertTrue(titleAfter.top < titleBefore.top)
-            assertTrue((titleAfter.bottom - titleAfter.top) < (titleBefore.bottom - titleBefore.top))
+            assertTrue(
+                "The pinned title keeps its vertical position",
+                kotlin.math.abs((titleAfter.top - titleBefore.top).value) < 1f,
+            )
+            assertTrue(
+                "The pinned title keeps its height",
+                kotlin.math.abs(
+                    ((titleAfter.bottom - titleAfter.top) - (titleBefore.bottom - titleBefore.top)).value,
+                ) < 1f,
+            )
             assertTrue("The overview list must have scrolled", scrollPosition > 0f)
             compose.onNodeWithText("Fictional Circle 01").assertDoesNotExist()
         }
@@ -178,7 +188,7 @@ class CirclesCollapsingHeaderJourneyTest {
             }
             assertTrue(themeSurface.get() == Color(darkContext.getColor(R.color.trustroots_surface)))
 
-            compose.onNodeWithText("Filter circles").performTextReplacement(" HARBOUR ")
+            compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement(" HARBOUR ")
             hideTestKeyboard()
             compose.onNodeWithText(longLabel).assertIsDisplayed().performClick()
             compose.onNodeWithText("Fictional Forest Circle").assertDoesNotExist()
@@ -196,7 +206,7 @@ class CirclesCollapsingHeaderJourneyTest {
             assertTrue(backBounds.right <= root.right - 24.dp)
             assertTrue(backBounds.bottom <= root.bottom)
             val title = compose.onNodeWithText(longLabel).getUnclippedBoundsInRoot()
-            assertTrue((title.bottom - title.top) < 60.dp)
+            assertTrue("The expanded hero title is displayed across multiple lines", (title.bottom - title.top) > 60.dp)
             captureUsabilityScreenshot(compose, "android_circle_header_dark_rtl_detail")
 
             repeat(4) {
@@ -205,6 +215,9 @@ class CirclesCollapsingHeaderJourneyTest {
                 }
             }
             compose.onNodeWithText("Join circle").assertIsDisplayed()
+            compose.onNodeWithText(longLabel).assertIsDisplayed()
+            val compactTitle = compose.onNodeWithText(longLabel).getUnclippedBoundsInRoot()
+            assertTrue("The pinned title is single-line after collapsing", (compactTitle.bottom - compactTitle.top) < 60.dp)
             val navigationTop = compose.onNodeWithTag("navigation-circles").getUnclippedBoundsInRoot().top
             val joinBounds = compose.onNodeWithText("Join circle").getUnclippedBoundsInRoot()
             assertTrue(joinBounds.bottom <= navigationTop - 96.dp)

@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsAtLeast
@@ -11,6 +12,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -49,7 +51,8 @@ class SearchControlsJourneyTest {
             }
             waitFor("Harbour Circle")
             compose.onNodeWithContentDescription("Clear circle filter").assertDoesNotExist()
-            compose.onNodeWithText("Filter circles").performTextReplacement("harbour")
+            compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("harbour")
+            compose.onNodeWithContentDescription("Filter circles").assertIsDisplayed()
             compose.onNodeWithText("Meadow Circle").assertDoesNotExist()
             hideTestKeyboard()
             captureUsabilityScreenshot(compose, "android_circle_filter_clear")
@@ -72,7 +75,8 @@ class SearchControlsJourneyTest {
                 }
             }
             waitFor("Quiet Fox")
-            compose.onNodeWithText("Filter conversations").performTextReplacement("quiet")
+            compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("quiet")
+            compose.onNodeWithContentDescription("Filter conversations").assertIsDisplayed()
             compose.onNodeWithText("Amber Owl").assertDoesNotExist()
             compose.onNodeWithContentDescription("Clear conversation filter").performClick()
             compose.onNodeWithText("Amber Owl").assertIsDisplayed()

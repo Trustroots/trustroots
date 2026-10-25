@@ -113,7 +113,7 @@ class PlaceSearchControlsJourneyTest {
                 if (submitWithKeyboard) {
                     compose.onNodeWithTag("placeSearchField").performImeAction()
                 } else {
-                    compose.onNodeWithContentDescription("Search places")
+                    compose.onNodeWithTag("submittedSearchButton")
                         .assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp).performClick()
                 }
                 assertTrue("Submitted place lookup should start", lookupStarted.await(5, TimeUnit.SECONDS))

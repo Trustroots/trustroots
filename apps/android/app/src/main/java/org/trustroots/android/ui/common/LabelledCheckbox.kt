@@ -1,8 +1,10 @@
 package org.trustroots.android.ui.common
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Text
@@ -35,6 +37,7 @@ internal fun LabelledCheckbox(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(checked = checked, onCheckedChange = null, enabled = enabled)
+        Spacer(Modifier.width(8.dp))
         Text(label)
     }
 }

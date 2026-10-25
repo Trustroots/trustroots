@@ -18,8 +18,8 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonSearch
@@ -27,13 +27,13 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.dp
 import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.SharedNavigationLink
 import org.trustroots.android.ui.common.SharedNavigationLinks
@@ -80,12 +80,13 @@ internal fun MenuScreen(
     val communityTagline = stringResource(R.string.screen_travellers_community)
     val apiLabel = stringResource(R.string.screen_api_url, BuildConfig.API_BASE_URL)
     val buildLabel = stringResource(R.string.screen_build_date, buildDate)
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val menuLinkModifier = Modifier.padding(contentPadding.horizontalInset())
     Scaffold(
         modifier = Modifier.fillMaxSize().nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            MemberLargeTopAppBar(
+            PinnedTopAppBar(
                 title = stringResource(R.string.screen_destination_profile),
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,
@@ -96,7 +97,6 @@ internal fun MenuScreen(
         modifier = Modifier.fillMaxSize()
             .padding(top = appBarPadding.calculateTopPadding())
             .verticalScroll(rememberScrollState())
-            .padding(contentPadding.horizontalInset())
             .padding(top = 12.dp)
             .testTag("profileDestinationScreen"),
     ) {
@@ -122,13 +122,13 @@ internal fun MenuScreen(
             )
         }
         Spacer(Modifier.height(12.dp))
-        MenuLink(editProfile, Icons.Default.Edit, openEditProfile)
-        MenuLink(host, Icons.Default.Home, openHost)
-        MenuLink(nostroots, Icons.Default.Public, openNostroots)
-        MenuLink(contacts, Icons.Default.People, openContacts)
-        MenuLink(findPeople, Icons.Default.PersonSearch, openFindPeople)
-        MenuLink(circles, Icons.Default.Groups, openCircles)
-        MenuLink(account, Icons.Default.Settings, openAccount)
+        MenuLink(editProfile, Icons.Default.Edit, modifier = menuLinkModifier, openEditProfile)
+        MenuLink(host, Icons.Default.Home,modifier = menuLinkModifier,  openHost)
+        MenuLink(nostroots, Icons.Default.Public, modifier = menuLinkModifier, openNostroots)
+        MenuLink(contacts, Icons.Default.People, modifier = menuLinkModifier, openContacts)
+        MenuLink(findPeople, Icons.Default.PersonSearch, modifier = menuLinkModifier, openFindPeople)
+        MenuLink(circles, Icons.Default.Groups, modifier = menuLinkModifier, openCircles)
+        MenuLink(account, Icons.Default.Settings, modifier = menuLinkModifier, openAccount)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             stringResource(R.string.screen_info_and_support),
@@ -137,11 +137,14 @@ internal fun MenuScreen(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
         SharedNavigationLinks.INFO_AND_SUPPORT.forEach { link ->
-            MenuLink(stringResource(supportLinkLabelResource(link.id)), infoAndSupportIcon(link.id)) {
-                openBrowser(link)
-            }
+            MenuLink(
+              stringResource(supportLinkLabelResource(link.id)),
+              infoAndSupportIcon(link.id),
+              modifier = menuLinkModifier,
+              onClick = { openBrowser(link) }
+            )
         }
-        Spacer(Modifier.height(contentPadding.calculateBottomPadding() + 24.dp))
+        Spacer(Modifier.height(24.dp))
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -167,6 +170,7 @@ internal fun MenuScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+        Spacer(Modifier.height(contentPadding.calculateBottomPadding()))
     }
     }
 }
@@ -182,21 +186,24 @@ private fun infoAndSupportIcon(id: String) =
 private fun MenuLink(
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier,
     onClick: () -> Unit,
 ) {
-    TextButton(
-        onClick = onClick,
-        modifier = Modifier
+    val foregroundColor = MaterialTheme.colorScheme.primary
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier
+            .clickable( onClick = onClick )
             .fillMaxWidth()
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Icon(icon, contentDescription = null)
+        Icon(icon, contentDescription = null, tint = foregroundColor)
         Text(
             label,
             modifier = Modifier
                 .weight(1f)
-                .padding(start = 14.dp),
-            color = MaterialTheme.colorScheme.primary,
+                .padding(start = 12.dp),
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
         )
     }
 }

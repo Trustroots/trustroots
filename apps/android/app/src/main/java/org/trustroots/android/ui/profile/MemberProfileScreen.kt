@@ -35,7 +35,6 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -43,10 +42,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
-import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -73,6 +69,7 @@ import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.ui.experience.CreateExperienceScreen
 import org.trustroots.android.ui.common.ArtworkBitmapState
 import org.trustroots.android.ui.common.ArtworkHero
+import org.trustroots.android.ui.common.rememberSnappableCollapseHeader
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.horizontalInset
@@ -362,32 +359,15 @@ private fun MemberProfileContent(
                             .coerceAtLeast(compactHeaderHeight)
                             .coerceAtMost(profileActionsHeight + 250.dp)
                     } else profileActionsHeight + 250.dp
-                    val maxCollapsePx = with(LocalDensity.current) { (expandedHeaderHeight - compactHeaderHeight).toPx() }
-                    var collapseOffset by rememberSaveable(username) { mutableFloatStateOf(0f) }
-                    val collapseConnection = remember(maxCollapsePx) {
-                        object : NestedScrollConnection {
-                            private fun consume(deltaY: Float): Float {
-                                val before = collapseOffset.coerceIn(0f, maxCollapsePx)
-                                val after = (before - deltaY).coerceIn(0f, maxCollapsePx)
-                                collapseOffset = after
-                                return before - after
-                            }
-
-                            override fun onPreScroll(available: Offset, source: NestedScrollSource): Offset =
-                                Offset(0f, consume(available.y))
-
-                            override fun onPostScroll(
-                                consumed: Offset,
-                                available: Offset,
-                                source: NestedScrollSource,
-                            ): Offset = Offset(0f, consume(available.y))
-                        }
-                    }
-                    val collapsedDp = with(LocalDensity.current) { collapseOffset.coerceIn(0f, maxCollapsePx).toDp() }
-                    val headerHeight = (expandedHeaderHeight - collapsedDp).coerceAtLeast(compactHeaderHeight)
-                    val compactProfileHeader = headerHeight <= compactHeaderHeight + 1.dp
+                    val collapsibleHeader = rememberSnappableCollapseHeader(
+                        expandedHeaderHeight = { expandedHeaderHeight },
+                        compactHeaderHeight = { compactHeaderHeight },
+                        key = username,
+                    )
+                    val headerHeight = collapsibleHeader.headerHeight
+                    val compactProfileHeader = collapsibleHeader.isCollapsed
                     val addContactLabel = stringResource(R.string.profile_add_contact)
-                    Column(Modifier.fillMaxSize().nestedScroll(collapseConnection)) {
+                    Column(Modifier.fillMaxSize().nestedScroll(collapsibleHeader.connection)) {
                         Box(Modifier.fillMaxWidth().height(headerHeight).clipToBounds()) {
                             ArtworkHero(
                                 url = member.id?.let { api.avatarURL(it, 512) },
@@ -427,7 +407,6 @@ private fun MemberProfileContent(
                             )
                             Box(
                                 Modifier.fillMaxWidth()
-                                    .background(colorResource(R.color.artwork_scrim_end))
                                     .onSizeChanged { size ->
                                         val measuredHeight = with(density) { size.height.toDp() }
                                         if (profileActionsHeight != measuredHeight) profileActionsHeight = measuredHeight

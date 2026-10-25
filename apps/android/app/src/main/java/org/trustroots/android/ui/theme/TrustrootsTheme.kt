@@ -7,6 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import org.trustroots.android.R
 
@@ -30,6 +31,7 @@ internal fun HostResultCardTheme(content: @Composable () -> Unit) {
 
 @Composable
 private fun trustrootsLightColorScheme() = lightColorScheme(
+    surfaceTint = Color.Transparent,
     primary = colorResource(R.color.trustroots_primary),
     onPrimary = colorResource(R.color.trustroots_on_primary),
     primaryContainer = colorResource(R.color.trustroots_primary_container),
@@ -61,6 +63,7 @@ private fun trustrootsLightColorScheme() = lightColorScheme(
 
 @Composable
 private fun trustrootsDarkColorScheme() = darkColorScheme(
+    surfaceTint = Color.Transparent,
     primary = colorResource(R.color.trustroots_primary),
     onPrimary = colorResource(R.color.trustroots_on_primary),
     primaryContainer = colorResource(R.color.trustroots_primary_container),
@@ -92,6 +95,7 @@ private fun trustrootsDarkColorScheme() = darkColorScheme(
 
 @Composable
 private fun hostResultCardColorScheme() = lightColorScheme(
+    surfaceTint = Color.Transparent,
     primary = colorResource(R.color.host_card_primary),
     onPrimary = colorResource(R.color.host_card_on_primary),
     primaryContainer = colorResource(R.color.host_card_primary_container),

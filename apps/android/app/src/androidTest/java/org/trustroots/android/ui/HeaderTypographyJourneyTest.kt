@@ -25,7 +25,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.ui.common.ArtworkHero
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.profile.ProfileActionBar
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
@@ -33,15 +33,19 @@ import org.trustroots.android.ui.theme.TrustrootsTheme
 class HeaderTypographyJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
-    @Test fun profileTitlesMatchTheSharedAppBarInExpandedAndCollapsedStates() {
+    @Test fun expandedProfileUsesLargeTypographyAndCompactTitleMatchesSharedAppBar() {
         lateinit var barState: TopAppBarState
+        lateinit var sharedTitleStyle: TextStyle
+        lateinit var expandedProfileStyle: TextStyle
         compose.setContent {
             TrustrootsTheme {
+                sharedTitleStyle = MaterialTheme.typography.titleLarge
+                expandedProfileStyle = MaterialTheme.typography.headlineMedium
                 barState = rememberTopAppBarState()
                 Column {
-                    MemberLargeTopAppBar(
+                    PinnedTopAppBar(
                         title = "Shared title",
-                        scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(barState),
+                        scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(barState),
                         contentPadding = PaddingValues.Zero,
                     )
                     ArtworkHero(
@@ -71,14 +75,15 @@ class HeaderTypographyJourneyTest {
             }
         }
         compose.waitForIdle()
-        assertSameTypography(textStyle("Shared title"), textStyle("Expanded profile"))
+        assertSameTypography(expandedProfileStyle, textStyle("Expanded profile"))
 
         compose.runOnIdle {
             assertTrue(barState.heightOffsetLimit < 0f)
             barState.heightOffset = barState.heightOffsetLimit
         }
         compose.waitForIdle()
-        assertSameTypography(textStyle("Shared title"), textStyle("Compact profile"))
+        assertSameTypography(sharedTitleStyle, textStyle("Shared title"))
+        assertSameTypography(sharedTitleStyle, textStyle("Compact profile"))
     }
 
     private fun textStyle(label: String): TextStyle {

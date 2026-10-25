@@ -12,9 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
@@ -28,7 +28,7 @@ import org.trustroots.android.R
 
 /** Large title app bar shared by native member screens with scrollable content. */
 @Composable
-internal fun MemberLargeTopAppBar(
+internal fun PinnedTopAppBar(
     title: String,
     scrollBehavior: TopAppBarScrollBehavior,
     contentPadding: PaddingValues,
@@ -36,7 +36,7 @@ internal fun MemberLargeTopAppBar(
     leadingContent: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    LargeTopAppBar(
+    TopAppBar(
         title = {
             Text(
                 title,
@@ -68,7 +68,7 @@ internal fun MemberLargeTopAppBar(
             }
         },
         actions = actions,
-        colors = TopAppBarDefaults.largeTopAppBarColors(
+        colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.surface,
             scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
         ),

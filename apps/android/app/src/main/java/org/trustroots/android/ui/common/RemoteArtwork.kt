@@ -107,6 +107,7 @@ internal fun ArtworkHero(
     expandedTitleStyle: TextStyle = MaterialTheme.typography.headlineMedium,
     bottomContent: (@Composable () -> Unit)? = null,
     onProfileImageClick: (() -> Unit)? = null,
+    leadingContent: (@Composable () -> Unit)? = null,
 ) {
     val bitmap = rememberArtworkBitmap(url, sessionCookie)
     val profileImageDescription = if (onProfileImageClick == null) {
@@ -142,6 +143,7 @@ internal fun ArtworkHero(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    leadingContent?.invoke()
                     ProfileAvatar(
                         bitmap,
                         avatarSize,

@@ -12,10 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.PersonSearch
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -40,7 +39,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
@@ -59,7 +57,7 @@ internal fun MemberSearchScreen(
     session: MemberSession,
     onSessionInvalidated: () -> Unit,
     onOpenProfile: (String) -> Unit = {},
-    searchMode: (@Composable () -> Unit)? = null,
+    searchModeMenu: (@Composable () -> Unit)? = null,
     onSwitchToMap: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
     viewModel: MemberSearchViewModel? = null,
@@ -103,7 +101,7 @@ internal fun MemberSearchScreen(
                 label = stringResource(R.string.member_search_hint),
                 clearLabel = stringResource(R.string.clear_member_search),
                 searchLabel = stringResource(R.string.search_members),
-                searchMode = searchMode,
+                leadingIcon = searchModeMenu,
                 onSearch = {
                     keyboard?.hide()
                     focusManager.clearFocus()
@@ -132,7 +130,7 @@ internal fun MemberSearchScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(
-                    Icons.Default.People,
+                    Icons.Default.PersonSearch,
                     null,
                     modifier = Modifier.size(72.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),

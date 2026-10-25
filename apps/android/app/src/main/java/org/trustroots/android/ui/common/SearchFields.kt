@@ -20,6 +20,9 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -35,7 +38,7 @@ internal fun LiveFilterField(
     TextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label) },
+        placeholder = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
         shape = CircleShape,
         colors = searchFieldColors(),
@@ -43,7 +46,7 @@ internal fun LiveFilterField(
         trailingIcon = {
             ClearSearchButton(value, clearLabel) { onValueChange("") }
         },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
     )
 }
 
@@ -57,16 +60,16 @@ internal fun SubmittedSearchField(
     onSearch: () -> Unit,
     searchEnabled: Boolean,
     modifier: Modifier = Modifier,
-    searchMode: (@Composable () -> Unit)? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
 ) {
     TextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+        placeholder = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
         shape = CircleShape,
         colors = searchFieldColors(),
-        leadingIcon = searchMode,
+        leadingIcon = leadingIcon,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(onSearch = { if (searchEnabled) onSearch() }),
         trailingIcon = {
@@ -79,13 +82,13 @@ internal fun SubmittedSearchField(
                     onClick = onSearch,
                     enabled = searchEnabled,
                     shape = CircleShape,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(48.dp).testTag("submittedSearchButton"),
                 ) {
                     Icon(Icons.Default.Search, contentDescription = searchLabel)
                 }
             }
         },
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().semantics { contentDescription = label },
     )
 }
 

@@ -2,8 +2,7 @@ package org.trustroots.android.ui.common
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -12,9 +11,11 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
@@ -26,8 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.res.stringResource
 import org.trustroots.android.R
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 internal typealias LeaveGuard = (() -> Unit) -> Unit
@@ -86,6 +87,7 @@ internal fun rememberFormLeave(dirty: Boolean, saving: Boolean, onCancel: () -> 
     return guard
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 internal fun FormActionBar(
     title: String,
@@ -93,17 +95,31 @@ internal fun FormActionBar(
     canSave: Boolean,
     onCancel: () -> Unit,
     onSave: () -> Unit,
-    horizontalInset: PaddingValues = PaddingValues.Zero,
+    scrollBehavior: TopAppBarScrollBehavior,
+    contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    Surface(color = MaterialTheme.colorScheme.surface, shadowElevation = 2.dp) {
-        Row(Modifier.fillMaxWidth().padding(horizontalInset).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+    TopAppBar(
+        title = {
+            Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        },
+        scrollBehavior = scrollBehavior,
+        modifier = Modifier.padding(contentPadding.horizontalInset()),
+        windowInsets = WindowInsets(
+            left = 0.dp,
+            top = contentPadding.calculateTopPadding(),
+            right = 0.dp,
+            bottom = 0.dp,
+        ),
+        navigationIcon = {
             IconButton(onClick = onCancel, enabled = !saving) {
                 Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
             }
-            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium)
+        },
+        actions = {
             TextButton(onClick = onSave, enabled = canSave && !saving) {
                 Text(if (saving) stringResource(R.string.saving) else stringResource(R.string.save_changes))
             }
-        }
-    }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface),
+    )
 }

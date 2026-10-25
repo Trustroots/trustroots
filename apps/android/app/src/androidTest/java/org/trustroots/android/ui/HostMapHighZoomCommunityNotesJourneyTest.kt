@@ -8,7 +8,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -317,7 +316,7 @@ class HostMapHighZoomCommunityNotesJourneyTest {
         compose.waitUntil(10_000) { local.requests.any { it.path.startsWith("/api/offers?") } }
         compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional Harbour")
         compose.waitUntil(5_000) { geocoderCalls.contains("Fictional Harbour") }
-        compose.onNodeWithContentDescription("Search places").performClick()
+        compose.onNodeWithTag("submittedSearchButton").performClick()
         compose.waitUntil(10_000) {
             geocoderCalls.count { it == "Fictional Harbour" } >= 2 &&
                 compose.onAllNodesWithText("Could not find that place.").fetchSemanticsNodes().isNotEmpty()

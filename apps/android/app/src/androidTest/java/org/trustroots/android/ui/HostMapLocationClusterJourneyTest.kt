@@ -5,7 +5,6 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -149,12 +148,12 @@ class HostMapLocationClusterJourneyTest {
         })
 
         compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional Harbour")
-        compose.onNodeWithContentDescription("Search places").performClick()
+        compose.onNodeWithTag("submittedSearchButton").performClick()
         compose.waitUntil(10_000) { geocoderCalls.any { it == ("Fictional Harbour" to 1) } }
         compose.onNodeWithTag("hostMapView").assertIsDisplayed()
 
         compose.onNodeWithTag("placeSearchField").performTextReplacement("Unmapped Place")
-        compose.onNodeWithContentDescription("Search places").performClick()
+        compose.onNodeWithTag("submittedSearchButton").performClick()
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Could not find that place.").fetchSemanticsNodes().isNotEmpty()
         }
@@ -163,7 +162,7 @@ class HostMapLocationClusterJourneyTest {
 
         // Android's geocoder may return null as well as an empty list for no matches.
         compose.onNodeWithTag("placeSearchField").performTextReplacement("No Address Match")
-        compose.onNodeWithContentDescription("Search places").performClick()
+        compose.onNodeWithTag("submittedSearchButton").performClick()
         compose.waitUntil(10_000) {
             geocoderCalls.any { it == ("No Address Match" to 1) } &&
                 compose.onAllNodesWithText("Could not find that place.").fetchSemanticsNodes().isNotEmpty()

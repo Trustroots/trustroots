@@ -51,7 +51,7 @@ import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.common.MemberLargeTopAppBar
+import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.localizedLabel
@@ -83,7 +83,7 @@ internal fun MessageConversationEntryScreen(
         onSessionInvalidated()
         model.onEvent(MessageConversationEvent.SessionInvalidationDelivered(pending.id))
     }
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val composerFocus = remember { FocusRequester() }
     val yesMessage = stringResource(R.string.screen_quick_reply_host_yes_html)
     val noMessage = stringResource(R.string.screen_quick_reply_host_no_html)
@@ -99,7 +99,7 @@ internal fun MessageConversationEntryScreen(
         modifier = Modifier.fillMaxSize().imePadding().nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
         topBar = {
-            MemberLargeTopAppBar(
+            PinnedTopAppBar(
                 title = title.ifBlank { stringResource(R.string.screen_messages_title) },
                 scrollBehavior = scrollBehavior,
                 contentPadding = contentPadding,

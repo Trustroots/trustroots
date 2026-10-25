@@ -8,18 +8,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -57,6 +61,7 @@ internal fun CreateExperienceScreen(
     val notSureLabel = stringResource(R.string.screen_not_sure)
     val noLabel = stringResource(R.string.screen_no)
     val cancel = rememberFormCancel(state.isDirty, state.isSaving, onBack)
+    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     LaunchedEffect(state.pendingInvalidation?.id) {
         state.pendingInvalidation?.let { pending ->
             onSessionInvalidated()
@@ -69,10 +74,19 @@ internal fun CreateExperienceScreen(
             viewModel.onEvent(CreateExperienceEvent.SuccessDelivered(pending.id))
         }
     }
-    Column(Modifier.fillMaxSize().imePadding().padding(top = contentPadding.calculateTopPadding())) {
-        FormActionBar(experienceTitle, state.isSaving, state.canSave, cancel, { viewModel.onEvent(CreateExperienceEvent.Submit) }, horizontalInset = contentPadding.horizontalInset())
-        Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("createExperienceScreen")) {
-        Text(whatHappenedLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+    Scaffold(
+        modifier = Modifier.fillMaxSize().imePadding().nestedScroll(scrollBehavior.nestedScrollConnection),
+        contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
+        topBar = {
+            FormActionBar(experienceTitle, state.isSaving, state.canSave, cancel, { viewModel.onEvent(CreateExperienceEvent.Submit) }, contentPadding = contentPadding, scrollBehavior = scrollBehavior)
+        },
+    ) { appBarPadding ->
+        Column(Modifier.fillMaxSize().padding(appBarPadding)) {
+        Column(
+            Modifier.weight(1f).verticalScroll(rememberScrollState())
+                .padding(bottom = contentPadding.calculateBottomPadding()).padding(20.dp).padding(contentPadding.horizontalInset()).testTag("createExperienceScreen"),
+        ) {
+                Text(whatHappenedLabel, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
         LabelledCheckbox(
             label = metInPersonLabel,
             checked = state.met,
@@ -116,5 +130,6 @@ internal fun CreateExperienceScreen(
         }
 
     }
+        }
     }
 }

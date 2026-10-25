@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.view.WindowCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -31,7 +32,6 @@ import java.net.SocketTimeoutException
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -90,14 +90,19 @@ class RemainingHeadersBaselineJourneyTest {
         }
         val titleTop = compose.onNodeWithText("Contacts").fetchSemanticsNode().boundsInRoot.top
         val backBounds = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
-        captureUsabilityScreenshot(compose, "android_contacts_header_expanded_baseline")
+        captureUsabilityScreenshot(compose, "android_contacts_header_pinned_baseline")
 
         compose.onNodeWithTag("contactsList").performTouchInput { swipeUp() }
         captureUsabilityScreenshot(compose, "android_contacts_header_scrolled_baseline")
 
         compose.onNodeWithText("Contacts").assertIsDisplayed()
-        val collapsedTitleTop = compose.onNodeWithText("Contacts").fetchSemanticsNode().boundsInRoot.top
-        assertNotEquals("The large title transitions to its compact position", titleTop, collapsedTitleTop)
+        val pinnedTitle = compose.onNodeWithText("Contacts").fetchSemanticsNode().boundsInRoot
+        assertEquals("The title stays pinned while contacts scroll", titleTop, pinnedTitle.top, 1f)
+        assertTrue(
+            "The contacts list scrolls beneath the pinned title",
+            compose.onNodeWithTag("contactsList").fetchSemanticsNode()
+                .config[SemanticsProperties.VerticalScrollAxisRange].value() > 0f,
+        )
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         assertTrue(backPressed)
@@ -127,13 +132,18 @@ class RemainingHeadersBaselineJourneyTest {
         }
         val titleTop = compose.onNodeWithText("Account").fetchSemanticsNode().boundsInRoot.top
         val backBounds = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
-        captureUsabilityScreenshot(compose, "android_account_header_expanded_baseline")
+        captureUsabilityScreenshot(compose, "android_account_header_pinned_baseline")
 
         compose.onNodeWithTag("accountSettingsScreen").performTouchInput { swipeUp() }
         captureUsabilityScreenshot(compose, "android_account_header_scrolled_baseline")
 
-        val collapsedTitleTop = compose.onNodeWithText("Account").fetchSemanticsNode().boundsInRoot.top
-        assertNotEquals("The title transitions to its compact position", titleTop, collapsedTitleTop)
+        val pinnedTitle = compose.onNodeWithText("Account").fetchSemanticsNode().boundsInRoot
+        assertEquals("The title stays pinned while account settings scroll", titleTop, pinnedTitle.top, 1f)
+        assertTrue(
+            "Account settings scroll beneath the pinned title",
+            compose.onNodeWithTag("accountSettingsScreen").fetchSemanticsNode()
+                .config[SemanticsProperties.VerticalScrollAxisRange].value() > 0f,
+        )
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         assertTrue(backPressed)
@@ -164,11 +174,16 @@ class RemainingHeadersBaselineJourneyTest {
             }
         }
         val expandedTop = compose.onNodeWithTag("memberLargeTopAppBarTitle").fetchSemanticsNode().boundsInRoot.top
-        captureUsabilityScreenshot(compose, "android_profile_destination_expanded_baseline")
+        captureUsabilityScreenshot(compose, "android_profile_destination_pinned_baseline")
         compose.onNodeWithTag("profileDestinationScreen").performTouchInput { swipeUp() }
         val compactTop = compose.onNodeWithTag("memberLargeTopAppBarTitle").fetchSemanticsNode().boundsInRoot.top
         captureUsabilityScreenshot(compose, "android_profile_destination_scrolled_baseline")
-        assertNotEquals(expandedTop, compactTop)
+        assertEquals("The profile title stays pinned as the menu scrolls", expandedTop, compactTop, 1f)
+        assertTrue(
+            "The profile destination content scrolls beneath its pinned title",
+            compose.onNodeWithTag("profileDestinationScreen").fetchSemanticsNode()
+                .config[SemanticsProperties.VerticalScrollAxisRange].value() > 0f,
+        )
         compose.onNodeWithTag("profileDestinationScreen").performTouchInput { swipeDown() }
         compose.onNodeWithText("View your profile").performScrollTo().performClick()
         assertTrue(profileOpened)
