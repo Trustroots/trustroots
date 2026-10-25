@@ -52,6 +52,35 @@ class EditProfileViewModelTest {
     }
 
     @Test
+    fun savingProfileRetainsActivityStatisticsWhenUpdateResponseOmitsThem() {
+        val existingProfile = profileFixture().copy(
+            lastActiveAtMillis = 1_782_920_000_000,
+            replyRate = "82%",
+            replyTime = "4 hours",
+        )
+        val repository = FakeRepository().apply {
+            saveResults += Result.success(profileFixture("Updated Name"))
+        }
+        val model = EditProfileViewModel(
+            username = "quiet-fox",
+            repository = repository,
+            initialApi = api(),
+            initialSession = session(),
+            initialProfile = existingProfile,
+            scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
+        )
+
+        model.onEvent(EditProfileEvent.NameChanged("Updated Name"))
+        model.onEvent(EditProfileEvent.Save)
+
+        val saved = requireNotNull(model.state.value.pendingSave?.profile)
+        assertEquals(existingProfile.lastActiveAtMillis, saved.lastActiveAtMillis)
+        assertEquals("82%", saved.replyRate)
+        assertEquals("4 hours", saved.replyTime)
+        assertEquals(saved, model.state.value.baseline)
+    }
+
+    @Test
     fun blankNameCannotSaveAndInFlightSavePreservesLaterEditsUntilItsEffectIsAcknowledged() {
         val repository = FakeRepository()
         val pendingResponse = CompletableDeferred<Result<MemberProfile>>()

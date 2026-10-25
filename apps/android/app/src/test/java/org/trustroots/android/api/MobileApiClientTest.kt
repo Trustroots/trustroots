@@ -1,6 +1,7 @@
 package org.trustroots.android.api
 
 import java.net.ServerSocket
+import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.concurrent.thread
@@ -227,7 +228,7 @@ class MobileApiClientTest {
         val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
         val result = withApiResponse(
             status = 200,
-            responseBody = """{"id":"profile-alias-id","username":"calm-lynx","displayName":"  ","locationLiving":" ","locationFrom":"Fictional Hills","languages":null,"member":null}""",
+            responseBody = """{"id":"profile-alias-id","username":"calm-lynx","displayName":"  ","locationLiving":" ","locationFrom":"Fictional Hills","languages":null,"member":null,"seen":"2026-07-01T12:30:00Z","replyRate":"82%","replyTime":"4 hours"}""",
         ) { baseURL -> runBlocking { MobileApiClient(baseURL).profile(session, "calm-lynx") } }.first
 
         val profile = result.getOrThrow()
@@ -237,6 +238,39 @@ class MobileApiClientTest {
         assertEquals("Fictional Hills", profile.locationFrom)
         assertEquals(emptyList<String>(), profile.languages)
         assertEquals(emptyList<String>(), profile.circles)
+        assertEquals(Instant.parse("2026-07-01T12:30:00Z").toEpochMilli(), profile.lastActiveAtMillis)
+        assertEquals("82%", profile.replyRate)
+        assertEquals("4 hours", profile.replyTime)
+    }
+
+    @Test
+    fun skipsMissingBlankAndMalformedProfileActivityStatistics() {
+        val absent = parseMember(JSONObject("""{"username":"quiet-fox"}"""))
+        assertNull(absent.lastActiveAtMillis)
+        assertNull(absent.replyRate)
+        assertNull(absent.replyTime)
+
+        val blankAndMalformed = parseMember(
+            JSONObject(
+                """{"username":"quiet-fox","seen":"not a timestamp","replyRate":"  ","replyTime":""}""",
+            ),
+        )
+        assertNull(blankAndMalformed.lastActiveAtMillis)
+        assertNull(blankAndMalformed.replyRate)
+        assertNull(blankAndMalformed.replyTime)
+
+        val wrongTypes = parseMember(
+            JSONObject("""{"username":"quiet-fox","replyRate":0,"replyTime":false}"""),
+        )
+        assertNull(wrongTypes.replyRate)
+        assertNull(wrongTypes.replyTime)
+
+        val nullValues = parseMember(
+            JSONObject("""{"username":"quiet-fox","seen":null,"replyRate":null,"replyTime":null}"""),
+        )
+        assertNull(nullValues.lastActiveAtMillis)
+        assertNull(nullValues.replyRate)
+        assertNull(nullValues.replyTime)
     }
 
     @Test

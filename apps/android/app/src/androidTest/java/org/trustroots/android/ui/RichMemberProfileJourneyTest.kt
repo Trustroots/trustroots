@@ -53,6 +53,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
@@ -121,6 +122,34 @@ class RichMemberProfileJourneyTest {
         }
         compose.onNodeWithText("S").performScrollTo().assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-main?types=host ") })
+    }
+
+    @Test fun displaysAvailableActivityStatisticsAndOmitsUnavailableFacts() {
+        val seen = Instant.now().minusSeconds(3 * 24 * 60 * 60L).toString()
+        val profile = ROOT_PROFILE.replace(
+            "\"languages\":[\"eng\",\"por\"]",
+            "\"languages\":[\"eng\",\"por\"],\"seen\":\"$seen\",\"replyRate\":\"82%\",\"replyTime\":\"4 hours\"",
+        )
+        startResponder(ROOT_MAYBE_OFFER, profile)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Activity").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityLastActive").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyRate").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("82%").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyTime").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Within 4 hours").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun omitsProfileActivitySectionWhenTheApiHasNoStatistics() {
+        startResponder(ROOT_MAYBE_OFFER)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithTag("profileActivityFacts").assertDoesNotExist()
     }
 
     @Test fun compactProfileCaptionHasReadableContrastOnBrightArtwork() {
