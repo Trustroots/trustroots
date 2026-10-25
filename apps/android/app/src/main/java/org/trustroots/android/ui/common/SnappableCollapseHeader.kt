@@ -12,6 +12,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
@@ -47,12 +48,16 @@ internal fun rememberSnappableCollapseHeader(
     compactHeaderHeight: () -> Dp,
     key: Any? = Unit,
 ): SnappableCollapseHeader {
-    val density = LocalDensity.current
+    val currentDensity = rememberUpdatedState(LocalDensity.current)
+    val currentExpandedHeaderHeight = rememberUpdatedState(expandedHeaderHeight)
+    val currentCompactHeaderHeight = rememberUpdatedState(compactHeaderHeight)
     val scope = rememberCoroutineScope()
     val collapseOffset = rememberSaveable(key) { mutableFloatStateOf(0f) }
     fun maxCollapsePx(): Float =
-        with(density) { (expandedHeaderHeight() - compactHeaderHeight()).coerceAtLeast(0.dp).toPx() }
-    val connection = remember(scope) {
+        with(currentDensity.value) {
+            (currentExpandedHeaderHeight.value() - currentCompactHeaderHeight.value()).coerceAtLeast(0.dp).toPx()
+        }
+    val connection = remember(scope, collapseOffset) {
         object : NestedScrollConnection {
             private var snapJob: Job? = null
 
@@ -109,15 +114,15 @@ internal fun rememberSnappableCollapseHeader(
             }
         }
     }
-    val headerHeight = remember(expandedHeaderHeight, compactHeaderHeight) {
+    val headerHeight = remember(expandedHeaderHeight, compactHeaderHeight, collapseOffset) {
         derivedStateOf {
-            (expandedHeaderHeight() - with(density) {
+            (currentExpandedHeaderHeight.value() - with(currentDensity.value) {
                 collapseOffset.floatValue.coerceIn(0f, maxCollapsePx()).toDp()
-            }).coerceAtLeast(compactHeaderHeight())
+            }).coerceAtLeast(currentCompactHeaderHeight.value())
         }
     }
     val isCollapsed = remember(headerHeight) {
-        derivedStateOf { headerHeight.value <= compactHeaderHeight() + 1.dp }
+        derivedStateOf { headerHeight.value <= currentCompactHeaderHeight.value() + 1.dp }
     }
     return remember(connection, headerHeight, isCollapsed) {
         SnappableCollapseHeader(connection, headerHeight, isCollapsed)

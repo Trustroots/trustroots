@@ -38,6 +38,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import java.net.URI
 import org.trustroots.android.ui.common.PinnedTopAppBar
+import org.trustroots.android.ui.common.bottomInset
+import org.trustroots.android.ui.common.horizontalInset
 
 data class BrowserRoute(
     val title: String,
@@ -161,7 +163,9 @@ fun TrustrootsBrowser(
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues),
+                .padding(paddingValues)
+                .padding(contentPadding.horizontalInset())
+                .padding(contentPadding.bottomInset()),
             onRelease = { released ->
                 browserEntryState.savedRouteURL = route.url
                 browserEntryState.savedBrowserState = android.os.Bundle().also { released.saveState(it) }

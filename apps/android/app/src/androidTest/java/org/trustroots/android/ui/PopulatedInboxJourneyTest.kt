@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.unit.dp
@@ -79,7 +80,7 @@ class PopulatedInboxJourneyTest {
             compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty() &&
                 compose.onAllNodesWithText("Amber Owl").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Filter conversations").performTextReplacement("  quiet-fox ")
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("  quiet-fox ")
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertDoesNotExist()
         compose.onNodeWithText("Profile").performClick()
@@ -90,7 +91,7 @@ class PopulatedInboxJourneyTest {
         }
         compose.onNodeWithText("A fictional profile for a neighbour.").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Filter conversations").assertIsDisplayed()
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertDoesNotExist()
         assertTrue(requests.any { it.startsWith("GET /api/users/quiet-fox ") })
@@ -129,7 +130,7 @@ class PopulatedInboxJourneyTest {
             requests.count { it.startsWith("GET /api/messages?") } >= 2 &&
                 compose.onAllNodesWithText("Amber Owl").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Filter conversations").assertIsDisplayed()
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/messages/member-fox?") })

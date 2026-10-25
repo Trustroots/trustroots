@@ -1,10 +1,12 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -84,11 +86,11 @@ class CirclesDescriptionFilterJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Harbour Circle").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Filter circles").performTextReplacement("  SEA ")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("  SEA ")
         compose.onNodeWithText("Harbour Circle").assertIsDisplayed()
         compose.onNodeWithText("Mountain Circle").assertDoesNotExist()
 
-        compose.onNodeWithText("Filter circles").performTextReplacement("")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("")
         compose.onNodeWithText("Mountain Circle").performClick()
         compose.onNodeWithText("Mountain Circle").assertIsDisplayed()
         compose.onNodeWithText("Join circle").assertIsDisplayed()

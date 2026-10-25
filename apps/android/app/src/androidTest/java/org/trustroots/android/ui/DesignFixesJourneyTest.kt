@@ -79,11 +79,12 @@ class DesignFixesJourneyTest {
             compose.waitUntil(10_000) { compose.onAllNodesWithText("Fictional host profile").fetchSemanticsNodes().isNotEmpty() }
             compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
             compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
+            compose.onNodeWithTag("hostResultCard").assertDoesNotExist()
+            compose.onNodeWithText("A fictional spare room").assertDoesNotExist()
             compose.runOnIdle {
                 assertSame(originalMap, findMap())
                 assertNotNull((originalMap.tileProvider as MapTileProviderBasic).tileWriter)
             }
-            compose.onNodeWithContentDescription("Close host result").performClick()
         }
         compose.onNodeWithContentDescription("Search mode").performClick()
         compose.onNodeWithText("Members").performClick()
@@ -199,7 +200,7 @@ class DesignFixesJourneyTest {
         compose.waitUntil(5_000) {
             compose.onAllNodesWithText("Filter conversations").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.onNodeWithText("Filter conversations").performTextInput("traveller-30")
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextInput("traveller-30")
         compose.onNodeWithText("Traveller 30").assertIsDisplayed()
         compose.onNodeWithText("Traveller 1").assertDoesNotExist()
     }

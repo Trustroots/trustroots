@@ -116,7 +116,7 @@ class MainActivityRotationJourneyTest {
                 scenario.onActivity { activity ->
                     assertSame(originalActivity[0], activity)
                     assertEquals(
-                        Color.parseColor("#101613"),
+                        Color.parseColor("#19211D"),
                         activity.getColor(org.trustroots.android.R.color.trustroots_background),
                     )
                     val controller = WindowCompat.getInsetsController(activity.window, activity.window.decorView)

@@ -94,7 +94,7 @@ internal fun ProfileActionBar(
         } else {
             Button(
                 onClick = onMessage,
-                modifier = Modifier.heightIn(min = 40.dp).testTag("profileMessageAction"),
+                modifier = Modifier.heightIn(min = 48.dp).testTag("profileMessageAction"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,

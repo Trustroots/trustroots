@@ -25,6 +25,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -261,7 +262,7 @@ class Navigation3MemberShellJourneyTest {
         waitForText("Quiet Harbour")
         compose.waitUntil(10_000) { circleReads.get() == 1 && membershipReads.get() == 1 }
 
-        compose.onNodeWithText("Filter circles").performTextReplacement("sea")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("sea")
         compose.onNodeWithText("Quiet Harbour").performClick()
         waitForEnabledText("Join circle")
         compose.onNodeWithText("Join circle").assertIsEnabled().performClick()
@@ -275,7 +276,7 @@ class Navigation3MemberShellJourneyTest {
         assertEquals(initialCircleReads, circleReads.get())
         assertEquals(initialMembershipReads, membershipReads.get())
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Filter circles").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
         compose.onNodeWithText("Mountain Circle").assertDoesNotExist()
 
@@ -283,7 +284,7 @@ class Navigation3MemberShellJourneyTest {
         waitForText("No conversations yet.")
         compose.onNodeWithTag("navigation-circles").performClick()
         waitForText("Mountain Circle")
-        compose.onNodeWithText("Filter circles").performTextReplacement("mountain")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("mountain")
         compose.onNodeWithText("Mountain Circle").performClick()
         waitForText("High mountain paths.")
         pressBack()
@@ -303,7 +304,7 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithTag("navigation-circles").performClick()
         waitForText("Mountain Circle")
         compose.waitUntil(5_000) { circleReads.get() == 3 && membershipReads.get() == 5 }
-        compose.onNodeWithText("Filter circles").performTextReplacement("sea")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("sea")
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
         compose.onNodeWithTag("navigation-circles").performClick()
         waitForText("Mountain Circle")
@@ -367,7 +368,7 @@ class Navigation3MemberShellJourneyTest {
         )
         waitForText("Quiet Harbour")
         compose.waitUntil(10_000) { circleReads.get() == 1 && membershipReads.get() == 1 }
-        compose.onNodeWithText("Filter circles").performTextReplacement("harbour")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("harbour")
         val membershipsReady = CountDownLatch(1)
         membershipResponseGate = membershipsReady
         compose.onNodeWithText("Quiet Harbour").performClick()
@@ -387,7 +388,7 @@ class Navigation3MemberShellJourneyTest {
         compose.waitUntil(5_000) { circleDetailReads.get() == 1 }
         assertEquals("detail reload must not refetch the retained catalogue", 1, circleReads.get())
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Filter circles").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
         compose.onNodeWithText("Mountain Circle").assertDoesNotExist()
         compose.onNodeWithText("Joined").assertIsDisplayed()
@@ -399,7 +400,7 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithTag("navigation-circles").performClick()
         waitForText("Quiet Harbour")
         compose.waitUntil(5_000) { circleReads.get() == 2 && membershipReads.get() == 3 }
-        compose.onNodeWithText("Filter circles").performTextReplacement("mountain")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("mountain")
         compose.onNodeWithText("Mountain Circle").performClick()
         waitForText("High mountain paths.")
         compose.onNodeWithTag("navigation-circles").performClick()
@@ -420,7 +421,7 @@ class Navigation3MemberShellJourneyTest {
         )
         waitForText("Quiet Harbour")
         compose.waitUntil(10_000) { circleReads.get() == 1 && membershipReads.get() == 1 }
-        compose.onNodeWithText("Filter circles").performTextReplacement("harbour")
+        compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("harbour")
         compose.onNodeWithText("Quiet Harbour").performClick()
         compose.onNodeWithText("Retry").assertIsDisplayed()
         assertEquals("opening an unknown detail must preserve the existing overview", 1, circleReads.get())
@@ -435,7 +436,7 @@ class Navigation3MemberShellJourneyTest {
         cancelPredictiveBack()
         compose.onNodeWithText("Detail loaded from its own endpoint.").assertIsDisplayed()
         completePredictiveBack()
-        compose.onNodeWithText("Filter circles").assertIsDisplayed()
+        compose.onNode(hasSetTextAction()).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Quiet Harbour").assertIsDisplayed()
         compose.onNodeWithText("Mountain Circle").assertDoesNotExist()
         assertEquals("returning from detail must reuse the filtered overview", 1, circleReads.get())
@@ -703,12 +704,23 @@ class Navigation3MemberShellJourneyTest {
         compose.onNodeWithContentDescription("Close host result")
             .assertIsDisplayed().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
         val detailCalls = fixture.requests.count { it.path == "/api/offers/overlay-offer" }
+        assertEquals("Opening the marker loads one host preview", 1, detailCalls)
         compose.onNodeWithText("Quiet Fox").performClick()
         waitForText("A fictional traveller")
         pressBack()
-        compose.onNodeWithText("A fictional room above the map.").assertIsDisplayed()
+        compose.onNodeWithTag("hostMapView").assertIsDisplayed()
+        compose.onNodeWithTag("hostResultCard").assertDoesNotExist()
+        compose.onNodeWithText("A fictional room above the map.").assertDoesNotExist()
+        requireNotNull(scenario).onActivity { activity ->
+            assertTrue("Returning from the profile preserves the Search map", findMapView(activity.window.decorView) === mapBefore.get())
+        }
+
+        compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
+        waitForText("A fictional room above the map.")
+        compose.onNodeWithTag("hostResultCard").assertIsDisplayed()
+        val reopenedDetailCalls = fixture.requests.count { it.path == "/api/offers/overlay-offer" }
+        assertEquals("Opening the marker again fetches a fresh host preview", detailCalls + 1, reopenedDetailCalls)
         val searchCalls = fixture.requests.count { it.path.startsWith("/api/offers?") }
-        assertEquals(1, detailCalls)
         requireNotNull(scenario).onActivity { activity ->
             assertTrue("The map remains mounted below its detail dialog", findMapView(activity.window.decorView) === mapBefore.get())
         }
@@ -726,7 +738,7 @@ class Navigation3MemberShellJourneyTest {
             assertEquals(viewportBefore.get().zoom, map.zoomLevelDouble, 0.1)
         }
         Thread.sleep(800)
-        assertEquals(detailCalls, fixture.requests.count { it.path == "/api/offers/overlay-offer" })
+        assertEquals(reopenedDetailCalls, fixture.requests.count { it.path == "/api/offers/overlay-offer" })
         assertEquals(searchCalls, fixture.requests.count { it.path.startsWith("/api/offers?") })
 
         try {

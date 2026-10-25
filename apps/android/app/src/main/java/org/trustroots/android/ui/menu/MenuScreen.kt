@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PersonSearch
@@ -73,6 +74,7 @@ internal fun MenuScreen(
     val nostroots = stringResource(R.string.screen_nostroots)
     val contacts = stringResource(R.string.screen_contacts)
     val findPeople = stringResource(R.string.screen_find_people)
+    val circles = stringResource(R.string.screen_destination_circles)
     val account = stringResource(R.string.screen_account)
     val brandName = stringResource(R.string.screen_brand_name)
     val communityTagline = stringResource(R.string.screen_travellers_community)
@@ -125,6 +127,7 @@ internal fun MenuScreen(
         MenuLink(nostroots, Icons.Default.Public, modifier = menuLinkModifier, openNostroots)
         MenuLink(contacts, Icons.Default.People, modifier = menuLinkModifier, openContacts)
         MenuLink(findPeople, Icons.Default.PersonSearch, modifier = menuLinkModifier, openFindPeople)
+        MenuLink(circles, Icons.Default.Groups, modifier = menuLinkModifier, openCircles)
         MenuLink(account, Icons.Default.Settings, modifier = menuLinkModifier, openAccount)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(

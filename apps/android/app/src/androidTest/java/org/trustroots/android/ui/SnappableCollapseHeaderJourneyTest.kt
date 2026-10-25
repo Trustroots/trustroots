@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
@@ -33,13 +36,22 @@ private val compactHeight = 60.dp
 class SnappableCollapseHeaderJourneyTest {
     @get:Rule val compose = createComposeRule()
 
+    private data class HeaderConfiguration(
+        val key: String,
+        val expandedHeight: Dp,
+        val compactHeight: Dp,
+    )
+
+    private var configuration by mutableStateOf(HeaderConfiguration("first", expandedHeight, compactHeight))
     private var headerHeight: (() -> Dp)? = null
 
     private fun setCurrentContent() {
         compose.setContent {
+            val currentConfiguration = configuration
             val header = rememberSnappableCollapseHeader(
-                expandedHeaderHeight = { expandedHeight },
-                compactHeaderHeight = { compactHeight },
+                expandedHeaderHeight = { currentConfiguration.expandedHeight },
+                compactHeaderHeight = { currentConfiguration.compactHeight },
+                key = currentConfiguration.key,
             )
             headerHeight = { header.headerHeight }
             Column(Modifier.fillMaxSize().nestedScroll(header.connection)) {
@@ -80,6 +92,52 @@ class SnappableCollapseHeaderJourneyTest {
         compose.waitForIdle()
         compose.runOnIdle {
             assertEquals(expandedHeight, requireNotNull(headerHeight).invoke())
+        }
+    }
+
+    @Test fun updatedHeightsAndKeyResetUseLatestConfiguration() {
+        setCurrentContent()
+        compose.onNodeWithTag("collapsibleContent").performTouchInput { swipeUp() }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(compactHeight, requireNotNull(headerHeight).invoke())
+            configuration = HeaderConfiguration("first", 400.dp, 80.dp)
+        }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(
+                "Changed height lambdas apply while retaining the current collapse offset",
+                160.dp,
+                requireNotNull(headerHeight).invoke(),
+            )
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("collapsibleContent").performTouchInput { swipeUp() }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(
+                "The updated scroll connection collapses to the new compact height",
+                80.dp,
+                requireNotNull(headerHeight).invoke(),
+            )
+            configuration = HeaderConfiguration("second", 400.dp, 80.dp)
+        }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(
+                "Changing the key resets the saved collapse offset",
+                400.dp,
+                requireNotNull(headerHeight).invoke(),
+            )
+        }
+        compose.onNodeWithTag("collapsibleContent").performTouchInput { swipeUp() }
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(
+                "The keyed scroll connection still uses the latest compact height",
+                80.dp,
+                requireNotNull(headerHeight).invoke(),
+            )
         }
     }
 }
