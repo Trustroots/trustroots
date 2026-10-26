@@ -42,7 +42,7 @@ internal fun foregroundActivityTask(
 
 /** Boot-time launcher and System UI ANRs can keep their dialogs above every test Activity. */
 internal fun dismissSystemAnr(shell: (String) -> String, waitForSystemAnr: () -> Boolean) {
-    val focusedWindow = shell("dumpsys window windows").lineSequence()
+    val focusedWindow = shell("dumpsys activity activities").lineSequence()
         .firstOrNull { it.trimStart().startsWith("mCurrentFocus=") }
         ?: return
     val process = listOf("com.android.launcher3", "com.android.systemui")

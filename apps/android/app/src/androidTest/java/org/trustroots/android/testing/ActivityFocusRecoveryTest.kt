@@ -7,21 +7,21 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ActivityFocusRecoveryTest {
-    @Test fun waitsOnlyForTheExactSystemAnrDialogWithWindowFocus() {
+    @Test fun readsTheFocusedSystemAnrFromActivityDumpAndWaitsOnlyForExactMatches() {
         for (process in listOf("com.android.launcher3", "com.android.systemui")) {
             val commands = recoverWith("""
                 mCurrentFocus=Window{abc u0 Application Not Responding: $process}
                 mFocusedApp=ActivityRecord{def u0 org.trustroots.android.debug/androidx.activity.ComponentActivity}
             """.trimIndent())
 
-            assertEquals(listOf("dumpsys window windows", "wait for matched system ANR"), commands)
+            assertEquals(listOf("dumpsys activity activities", "wait for matched system ANR"), commands)
         }
     }
 
     @Test fun doesNotDismissAnApplicationOrAnotherSystemProcessAnr() {
         for (process in listOf("org.trustroots.android.debug", "com.android.settings", "com.android.launcher3.other", "com.android.systemui.other")) {
             assertEquals(
-                listOf("dumpsys window windows"),
+                listOf("dumpsys activity activities"),
                 recoverWith("mCurrentFocus=Window{abc u0 Application Not Responding: $process}"),
             )
         }
@@ -40,7 +40,7 @@ class ActivityFocusRecoveryTest {
             "mCurrentFocus=null",
             "No device output",
         )) {
-            assertEquals(listOf("dumpsys window windows"), recoverWith(dump))
+            assertEquals(listOf("dumpsys activity activities"), recoverWith(dump))
         }
     }
 
@@ -49,7 +49,11 @@ class ActivityFocusRecoveryTest {
         dismissSystemAnr(
             shell = { command ->
                 commands += command
-                if (command == "dumpsys window windows") dump else ""
+                when (command) {
+                    "dumpsys window windows" -> "mTopFocusedDisplayId=0"
+                    "dumpsys activity activities" -> dump
+                    else -> ""
+                }
             },
             waitForSystemAnr = { commands += "wait for matched system ANR"; true },
         )
