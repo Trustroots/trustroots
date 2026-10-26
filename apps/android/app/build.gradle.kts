@@ -9,6 +9,10 @@ plugins {
     jacoco
 }
 
+dependencies {
+    implementation(project(":shared"))
+}
+
 val coverageEnabled = providers.gradleProperty("trustrootsCoverage").map(String::toBoolean).orElse(false)
 val coverageToolVersion = "0.8.15"
 jacoco { toolVersion = coverageToolVersion }

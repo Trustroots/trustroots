@@ -68,11 +68,27 @@ def add_nostr_sdk_package(project, targets)
   end
 end
 
+def add_shared_compose_build_phase(target)
+  phase = target.new_shell_script_build_phase("Compile Kotlin Framework")
+  phase.always_out_of_date = "1"
+  phase.shell_script = <<~SH
+    if [ "YES" = "$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED" ]; then
+      echo "Skipping Gradle task invocation because the Kotlin IDE plugin already built the framework"
+      exit 0
+    fi
+    cd "$SRCROOT/../android"
+    ./gradlew :shared:embedAndSignAppleFrameworkForXcode
+  SH
+  target.build_phases.delete(phase)
+  target.build_phases.unshift(phase)
+end
+
 FileUtils.rm_rf(PROJECT_PATH)
 project = Xcodeproj::Project.new(PROJECT_PATH)
 project.build_configurations.each do |config|
   config.build_settings["SWIFT_VERSION"] = "5.0"
   config.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = IOS_VERSION
+  config.build_settings["EXCLUDED_ARCHS[sdk=iphonesimulator*]"] = "x86_64"
 end
 
 main_group = project.main_group
@@ -85,6 +101,7 @@ configure_app_target(app_target)
 configure_test_target(tests_target)
 tests_target.add_dependency(app_target)
 add_nostr_sdk_package(project, [app_target, tests_target])
+add_shared_compose_build_phase(app_target)
 
 app_sources = Dir.glob(File.join(ROOT, "TrustrootsApp/**/*.swift")).sort
 test_sources = Dir.glob(File.join(ROOT, "TrustrootsTests/**/*.swift")).sort

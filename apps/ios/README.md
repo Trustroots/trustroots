@@ -21,6 +21,10 @@ xcodebuild -project Trustroots.xcodeproj -scheme Trustroots -sdk iphonesimulator
 xcodebuild -project Trustroots.xcodeproj -scheme TrustrootsTests -sdk iphonesimulator test
 ```
 
+The generated Xcode project builds the shared Compose framework through the
+Android Gradle wrapper. Use JDK 17 and Xcode 26.4.1 for the Kotlin 2.4.21
+toolchain documented in [the shared Kotlin and Compose UI assessment](../compose-assessment.md).
+
 The app uses the existing Trustroots JSON routes with a signed website-session
 cookie stored in Keychain. The native URL session does not share that
 credential with the bounded browser used for confirmation and recovery flows.

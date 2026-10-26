@@ -15,4 +15,5 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "TrustrootsAndroid"
-include(":app")
+include(":app", ":shared")
+project(":shared").projectDir = file("../shared")

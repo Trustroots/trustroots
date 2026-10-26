@@ -1,8 +1,10 @@
 # Shared Kotlin and Compose UI assessment
 
-Status: source-level assessment, 22 October 2026. Related: [#3232](https://github.com/Trustroots/trustroots/issues/3232).
-No Compose iOS implementation, mobile build or runtime measurement is supplied
-by this report. The working SwiftUI iOS app is the comparison baseline.
+Status: source assessment prepared 22 October and updated 26 October 2026.
+Related: [#3232](https://github.com/Trustroots/trustroots/issues/3232). This
+assessment records the shared build foundation below; it does not claim a
+shared member journey or runtime evaluation. The working SwiftUI iOS app remains
+the comparison baseline.
 
 ## Recommendation and agreed direction
 
@@ -75,24 +77,32 @@ keep native tests for platform boundaries rather than replacing them with mocks.
 
 ## Toolchain, builds and releases
 
-The repository pins Kotlin Compose/serialization plugins to **2.3.21**, Android
-Gradle Plugin to **9.2.1** and Gradle to **9.4.1**. Android targets SDK 37 with
-minimum SDK 26 and Java 17 source compatibility. The checked-in iOS project
-targets iOS 17 and Swift 5 language mode. Local Xcode reports **27.1**; that is
-an environment observation, not a project requirement or successful build.
+The Android application uses Android Gradle Plugin **9.2.1** and Gradle
+**9.4.1**, targets SDK 37 with minimum SDK 26, and uses Java 17 source
+compatibility. The shared module pins Kotlin **2.4.21** and Compose
+Multiplatform **1.12.2**. JetBrains' [KMP compatibility table](https://kotlinlang.org/docs/multiplatform/multiplatform-compatibility-guide.html)
+lists Kotlin 2.4.20–2.4.21 with Gradle through 9.7.0, AGP through 9.3.1 and
+Xcode 26.4; the retained Gradle and AGP pins fit those ranges. Compose
+Multiplatform releases separately from Kotlin; its [compatibility table](https://kotlinlang.org/docs/multiplatform/compose-compatibility-and-versioning.html)
+lists 1.12.2 as compatible with the latest Kotlin release. The Kotlin Compose
+compiler plugin matches Kotlin 2.4.21.
 
-JetBrains' [KMP compatibility table](https://kotlinlang.org/docs/multiplatform/multiplatform-compatibility-guide.html)
-lists Kotlin 2.3.20–2.3.21 with Gradle through 9.3.0, AGP through 9.0.0 and
-Xcode 26.0. Therefore the current Android pins and local Xcode are **not a
-documented supported KMP combination**. This does not establish that the existing
-Android app is broken. Resolve and record a supported combination in the first
-build-integration PR, including its CI Xcode version; do not silently reuse the
-Android pins or upgrade the whole toolchain in this documentation PR.
+The checked-in iOS project targets iOS 17 and Swift 5 language mode. Local
+Xcode reports **27.1**, outside the documented KMP compatibility entry. The
+iOS CI job selects **Xcode 26.4.1** for the shared framework build. On the local
+host, both Kotlin/Native framework linking and an Xcode simulator-SDK app build
+completed, but CoreSimulator is older than Xcode 27.1 and simulator device
+support is unavailable. These local results do not establish a supported
+toolchain combination or a simulator launch; the pinned CI job remains the
+compatibility gate.
 
-[Compose compatibility](https://kotlinlang.org/docs/multiplatform/compose-compatibility-and-versioning.html)
-is separate from Kotlin compatibility: the Compose compiler plugin must match
-Kotlin, while the Compose Multiplatform UI release has its own version. Select
-and pin that release with the supported toolchain after resolving compatibility.
+The build foundation adds `apps/shared`, a minimal Compose entry point, and a
+SwiftUI controller wrapper. The wrapper is compiled but is not shown by either
+application. The Android debug APK, iOS simulator framework and existing SwiftUI
+app build succeeded locally. No sign-in, profile, inbox or conversation screen
+has moved to Compose, and no member journey, credential handling, API behaviour,
+accessibility, performance or on-device behaviour has been verified. Those
+remain separate acceptance gates for issue #3232.
 
 The [documented SwiftUI integration](https://kotlinlang.org/docs/multiplatform/compose-swiftui-integration.html)
 embeds a `ComposeUIViewController` using `UIViewControllerRepresentable`.
@@ -100,17 +110,17 @@ Use that boundary inside the existing iOS app rather than creating another
 bundle identifier. Audit the selected release's required Info.plist settings
 and [platform behaviours](https://kotlinlang.org/docs/multiplatform/compose-platform-specifics.html).
 
-Keep the existing Android Gradle root, adding a shared KMP library under
-`apps/shared` and referencing it from that root. Build Android and arm64 iOS
+Keep the existing Android Gradle root, include a shared KMP library under
+`apps/shared` from that root. Build Android and arm64 iOS
 device/simulator targets; embed its framework in the existing Xcode project and
 update the project generator as well. Use the supported Android KMP library
 plugin rather than combining an Android application and KMP plugin in one module.
 Keep Swift-facing entry points small: controller creation, session operations
 and host navigation callbacks. Avoid exposing every Kotlin model to Swift.
 
-Android APK and iOS simulator workflows must both react to shared-source changes.
-The iOS CI job will need a compatible JDK and Gradle/framework build before Xcode
-tests. App Store builds will also need the framework built in Xcode Cloud, in
+Android APK and iOS simulator workflows now react to shared-source changes.
+The iOS CI job uses JDK 17 and builds the Gradle framework before Xcode tests.
+App Store builds will also need the framework built in Xcode Cloud, in
 addition to existing signing. Preserve current application identifiers, signing
 and distribution; do not trigger an App Store upload during evaluation. Existing
 [iOS delivery instructions](ios/README.md#app-store-connect-delivery) describe an

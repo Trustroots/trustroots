@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6D3A51B903D24E6FA875C102 /* SharedComposeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */; };
 		0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D160385B89B56C5385E8E9 /* NostrIdentity.swift */; };
 		0EE9C2C716DAC81E1D756A95 /* CircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */; };
 		15790C63AF0422B5D50AB4EA /* LocationPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5627FC9D7597842E4C1125E1 /* LocationPreviewView.swift */; };
@@ -54,6 +55,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComposeHost.swift; sourceTree = "<group>"; };
 		16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsBrowserView.swift; sourceTree = "<group>"; };
 		1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberSearchView.swift; sourceTree = "<group>"; };
 		2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommunityNotesStore.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 				16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */,
 				85202EA8935BEB061B55B655 /* TrustrootsPalette.swift */,
 				C4451489F9D874431A361845 /* TrustrootsRootView.swift */,
+				6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */,
 				88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */,
 			);
 			name = TrustrootsApp;
@@ -220,6 +223,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = B1F0C793BB952B4B3F3356E5 /* Build configuration list for PBXNativeTarget "Trustroots" */;
 			buildPhases = (
+				6D3A51B903D24E6FA875C103 /* Compile Kotlin Framework */,
 				697A263EDE362F28A6CDCC42 /* Sources */,
 				4E0907E8F1010A9D668EC3A7 /* Frameworks */,
 				F8D0116F61B44249AD5F99FE /* Resources */,
@@ -287,6 +291,24 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		6D3A51B903D24E6FA875C103 /* Compile Kotlin Framework */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Compile Kotlin Framework";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle task invocation because the Kotlin IDE plugin already built the framework\"\n  exit 0\nfi\ncd \"$SRCROOT/../android\"\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		697A263EDE362F28A6CDCC42 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -320,6 +342,7 @@
 				F7D5EF361B1FFA5A0CA4C8D8 /* TrustrootsBrowserView.swift in Sources */,
 				8A534189FD434F68070CB955 /* TrustrootsPalette.swift in Sources */,
 				B723E46EDE3A2E24538FAB5D /* TrustrootsRootView.swift in Sources */,
+				6D3A51B903D24E6FA875C102 /* SharedComposeHost.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,6 +454,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+			"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -486,6 +510,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
