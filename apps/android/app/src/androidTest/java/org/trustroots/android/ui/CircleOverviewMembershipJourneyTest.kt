@@ -30,6 +30,8 @@ class CircleOverviewMembershipJourneyTest {
                     LocalTransportFixture.Response("[$circle]")
                 request.method == "GET" && request.path == "/api/tribes/quiet-circle" ->
                     LocalTransportFixture.Response(circle)
+                request.method == "GET" && request.path == "/api/tribes/quiet-circle/members" ->
+                    LocalTransportFixture.Response(EMPTY_MEMBER_GROUPS)
                 request.method == "GET" && request.path == "/api/users/memberships" ->
                     LocalTransportFixture.Response(if (joined.get()) """[{"tribe":{"_id":"circle-one"}}]""" else "[]")
                 request.method == "POST" && request.path == "/api/users/memberships/circle-one" -> {
@@ -75,5 +77,9 @@ class CircleOverviewMembershipJourneyTest {
 
     private fun waitForText(text: String) {
         compose.waitUntil(10_000) { compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    private companion object {
+        const val EMPTY_MEMBER_GROUPS = """{"contacts":[],"recommenders":[],"active":[]}"""
     }
 }

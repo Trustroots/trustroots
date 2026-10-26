@@ -49,7 +49,14 @@ class CircleMembershipDepartureJourneyTest {
         waitForEnabledText("Leave circle")
 
         assertEquals(
-            listOf("GET" to "/api/tribes?limit=150", "GET" to "/api/users/memberships", "GET" to "/api/tribes/quiet-harbour", "GET" to "/api/users/memberships", "DELETE" to "/api/users/memberships/circle-harbour"),
+            listOf(
+                "GET" to "/api/tribes?limit=150",
+                "GET" to "/api/users/memberships",
+                "GET" to "/api/tribes/quiet-harbour",
+                "GET" to "/api/users/memberships",
+                "GET" to "/api/tribes/quiet-harbour/members",
+                "DELETE" to "/api/users/memberships/circle-harbour",
+            ),
             local.requests.map { it.method to it.path },
         )
         val delete = local.requests.last()
@@ -74,7 +81,14 @@ class CircleMembershipDepartureJourneyTest {
         }
 
         assertEquals(
-            listOf("GET" to "/api/tribes?limit=150", "GET" to "/api/users/memberships", "GET" to "/api/tribes/quiet-harbour", "GET" to "/api/users/memberships", "DELETE" to "/api/users/memberships/circle-harbour"),
+            listOf(
+                "GET" to "/api/tribes?limit=150",
+                "GET" to "/api/users/memberships",
+                "GET" to "/api/tribes/quiet-harbour",
+                "GET" to "/api/users/memberships",
+                "GET" to "/api/tribes/quiet-harbour/members",
+                "DELETE" to "/api/users/memberships/circle-harbour",
+            ),
             local.requests.map { it.method to it.path },
         )
         assertEquals(TEST_SESSION.cookieHeader, local.requests.last().cookie)
@@ -113,6 +127,7 @@ class CircleMembershipDepartureJourneyTest {
         when (request.method to request.path) {
             "GET" to "/api/tribes?limit=150" -> LocalTransportFixture.Response(CIRCLES)
             "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response(CIRCLE_DETAIL)
+            "GET" to "/api/tribes/quiet-harbour/members" -> LocalTransportFixture.Response(EMPTY_MEMBER_GROUPS)
             "GET" to "/api/users/memberships" ->
                 LocalTransportFixture.Response("""[{"tribe":{"_id":"circle-harbour"}}]""")
             "DELETE" to "/api/users/memberships/circle-harbour" -> LocalTransportFixture.Response(
@@ -130,6 +145,7 @@ class CircleMembershipDepartureJourneyTest {
         )
         const val CIRCLES = """[{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","count":4,"description":"A fictional circle for coastal travellers.","image":false}]"""
         const val CIRCLE_DETAIL = """{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour","count":4,"description":"A fictional circle for coastal travellers.","image":false}"""
+        const val EMPTY_MEMBER_GROUPS = """{"contacts":[],"recommenders":[],"active":[]}"""
         const val MEMBERSHIP_ERROR = """{"message":"Circle membership could not be changed."}"""
     }
 }

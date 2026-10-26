@@ -162,6 +162,7 @@ internal fun MemberProfileScreen(
                     onSessionInvalidated = onSessionInvalidated,
                     contentPadding = contentPadding, onBack = popProfile,
                     onMembershipChanged = { _, _ -> },
+                    onOpenProfile = { related -> backStack.add(MemberProfileVisit(related, nextVisitID++)) },
                 )
             }
             entry<MemberProfileEditVisit> { route ->

@@ -109,6 +109,12 @@ data class ExperienceCreate(
 
 data class ProfileContact(val id: String, val user: MessageMember)
 
+data class CircleMemberGroups(
+    val contacts: List<MessageMember>,
+    val recommenders: List<MessageMember>,
+    val active: List<MessageMember>,
+)
+
 data class ContactRelationship(
     val id: String?,
     val confirmed: Boolean,
@@ -587,6 +593,15 @@ class MobileApiClient(
             }
         }
 
+    suspend fun circleMembers(session: MemberSession, slug: String): Result<CircleMemberGroups> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                parseCircleMemberGroups(JSONObject(jsonRequest(
+                    "/api/tribes/${encode(slug)}/members", "GET", sessionCookie = session.cookieHeader,
+                ).body))
+            }
+        }
+
     suspend fun circleMemberships(session: MemberSession): Result<Set<String>> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -817,6 +832,18 @@ internal fun parseContacts(values: JSONArray): List<ProfileContact> =
         val item = values.optJSONObject(index) ?: return@mapNotNull null
         val user = item.optJSONObject("user") ?: return@mapNotNull null
         ProfileContact(item.optionalText("_id") ?: return@mapNotNull null, parseMessageMember(user))
+    }
+
+internal fun parseCircleMemberGroups(value: JSONObject): CircleMemberGroups = CircleMemberGroups(
+    contacts = parseCircleMemberGroup(value.optJSONArray("contacts")),
+    recommenders = parseCircleMemberGroup(value.optJSONArray("recommenders")),
+    active = parseCircleMemberGroup(value.optJSONArray("active")),
+)
+
+private fun parseCircleMemberGroup(values: JSONArray?): List<MessageMember> =
+    if (values == null) emptyList() else (0 until values.length()).mapNotNull { index ->
+        values.optJSONObject(index)?.let(::parseMessageMember)
+            ?.takeIf { !it.username.isNullOrBlank() }
     }
 
 internal fun parseContactRelationship(value: JSONObject): ContactRelationship =

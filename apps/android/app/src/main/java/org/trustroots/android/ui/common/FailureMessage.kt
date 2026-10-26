@@ -18,6 +18,7 @@ internal enum class UiFailureFallback {
     SESSION_EXPIRED,
     CIRCLES_LOAD,
     CIRCLE_MEMBERSHIPS_LOAD,
+    CIRCLE_MEMBERS_LOAD,
     CIRCLE_MEMBERSHIP_UPDATE,
     SEND_MESSAGE,
     LOAD_CONVERSATION,
@@ -64,6 +65,7 @@ private val UiFailureFallback.resource: Int
         UiFailureFallback.SESSION_EXPIRED -> R.string.screen_sign_in_session_expired
         UiFailureFallback.CIRCLES_LOAD -> R.string.screen_circles_load_error
         UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD -> R.string.screen_circle_memberships_load_error
+        UiFailureFallback.CIRCLE_MEMBERS_LOAD -> R.string.screen_circle_members_load_error
         UiFailureFallback.CIRCLE_MEMBERSHIP_UPDATE -> R.string.screen_circle_membership_update_error
         UiFailureFallback.SEND_MESSAGE -> R.string.screen_send_message_error
         UiFailureFallback.LOAD_CONVERSATION -> R.string.screen_load_conversation_error
