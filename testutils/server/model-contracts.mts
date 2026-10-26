@@ -79,7 +79,7 @@ export type UserModel = Model<UserRecord, Record<string, never>, UserMethods> &
 export type UserModelDocument = HydratedDocument<UserRecord, UserMethods>;
 /** The filter/update overload used by controller and job update stubs. */
 export type UserUpdateOne = (
-  filter: import('mongoose').FilterQuery<UserRecord>,
+  filter: import('mongoose').QueryFilter<UserRecord>,
   update: import('mongoose').UpdateQuery<UserRecord>,
   options?: import('mongoose').QueryOptions<UserRecord>,
 ) => ReturnType<UserModel['updateOne']>;

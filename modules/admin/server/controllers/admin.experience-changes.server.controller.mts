@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import mongoose, { type FilterQuery, type Types } from 'mongoose';
+import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import type {
   AdminExperienceChangeProposal,
   AdminExperienceChangeDecision,
@@ -257,7 +257,7 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
 };
 
 function queuedRequests(
-  filter: FilterQuery<ChangeRequestRecord>,
+  filter: QueryFilter<ChangeRequestRecord>,
   sort: Record<string, 1 | -1>,
 ) {
   return ExperienceChangeRequest.find(filter)

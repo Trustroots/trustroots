@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url';
 import passport from 'passport';
-import mongoose, { type FilterQuery } from 'mongoose';
+import mongoose, { type QueryFilter } from 'mongoose';
 import path from 'path';
 import config from './../../../../config/config.mts';
 import usersSuspended from './../controllers/users.suspended.server.controller.mts';
@@ -24,7 +24,7 @@ interface UsersApplication {
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
 async function findSessionUser(
-  id: FilterQuery<UserServerRecord>['_id'],
+  id: QueryFilter<UserServerRecord>['_id'],
 ): Promise<UserServerDocument | null> {
   return User.findOne({ _id: id }, '-salt -password');
 }
@@ -52,7 +52,7 @@ const defaultExport = async function (app: UsersApplication): Promise<void> {
       }
 
       findSessionUser(
-        sessionData!.id as FilterQuery<UserServerRecord>['_id'],
+        sessionData!.id as QueryFilter<UserServerRecord>['_id'],
       ).then(
         function (user) {
           if (!user) {

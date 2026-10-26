@@ -3,7 +3,7 @@
  */
 import _ from 'lodash';
 import mongoose, {
-  type FilterQuery,
+  type QueryFilter,
   type HydratedDocument,
   type Types,
   type UpdateQuery,
@@ -372,7 +372,7 @@ function getPotentialMatchReasons(
 
 export async function findPotentialMatches(user: PotentialMatchUser) {
   const signals = getPotentialMatchSignals(user);
-  const querySignals: FilterQuery<UserRecord>[] = signals.identifiers.flatMap(
+  const querySignals: QueryFilter<UserRecord>[] = signals.identifiers.flatMap(
     ({ value }) => [
       { username: createFlexibleIdentifierRegexp(value, false) },
       { email: createFlexibleIdentifierRegexp(value, true) },
@@ -457,7 +457,7 @@ function getMemberListOptions(body: unknown): MemberListOptions | null {
 async function sendMemberList(
   req: AdminListRequest,
   res: AdminResponse,
-  query: FilterQuery<UserRecord>,
+  query: QueryFilter<UserRecord>,
 ): Promise<unknown> {
   const options = getMemberListOptions(req.body);
 
@@ -833,7 +833,7 @@ export const changeRole = async (
         currentRoles.some(
           (existingRole, index) => existingRole !== nextRoles[index],
         );
-      const filter: FilterQuery<UserRecord> = { _id: id };
+      const filter: QueryFilter<UserRecord> = { _id: id };
       filter.roles = Object.prototype.hasOwnProperty.call(current, 'roles')
         ? current.roles
         : { $exists: false };
