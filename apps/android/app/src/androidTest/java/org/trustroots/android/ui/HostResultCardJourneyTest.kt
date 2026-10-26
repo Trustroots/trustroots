@@ -96,6 +96,27 @@ class HostResultCardJourneyTest {
         compose.onNodeWithTag("hostResultActivityFacts", useUnmergedTree = true).assertDoesNotExist()
     }
 
+    @Test fun displaysHostCardReplyRateWhenLastActiveIsUnavailable() {
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                HostResultCard(
+                    offer = HostOffer("offer-five", "yes", null, null, MessageMember(null, "quiet-fox", "Quiet Fox")),
+                    profile = MemberProfile(null, "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList(), replyRate = "82%"),
+                    sharedCircleIDs = emptySet(),
+                    isMeet = false,
+                    api = MobileApiClient("http://127.0.0.1:1"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onClose = {},
+                    onOpenProfile = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("hostResultActivityFacts", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("hostResultReplyRate", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("hostResultLastActive", useUnmergedTree = true).assertDoesNotExist()
+    }
+
     @Test fun keepsLongHostDetailsScrollableWithinSmallHeightAndCloseReachable() {
         val closed = AtomicBoolean(false)
         val description = (1..16).joinToString(" ") {
