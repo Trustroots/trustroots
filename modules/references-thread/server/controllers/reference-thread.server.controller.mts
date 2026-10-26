@@ -131,7 +131,7 @@ service.createReferenceThread = async function (req, res) {
         error,
       });
       return res.status(403).send({
-        message: 'Referenced person has not sent messages to to you.',
+        message: 'Referenced person has not sent messages to you.',
       });
     }
     if (!message) {
@@ -139,7 +139,7 @@ service.createReferenceThread = async function (req, res) {
         error: null,
       });
       return res.status(403).send({
-        message: 'Referenced person has not sent messages to to you.',
+        message: 'Referenced person has not sent messages to you.',
       });
     }
 
