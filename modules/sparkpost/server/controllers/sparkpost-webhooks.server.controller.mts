@@ -1,7 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
 import async from 'async';
-import basicAuth from 'basic-auth';
+import { parse as parseBasicAuth } from 'basic-auth';
 import speakingurl from 'speakingurl';
 import mongoose from 'mongoose';
 import validator from 'validator';
@@ -231,7 +231,7 @@ service.basicAuthenticate = function (req, res, next) {
   // Get the basic auth credentials from the request.
   // The Authorization header is parsed and if the header is invalid,
   // undefined is returned, otherwise an object with name and pass properties.
-  const credentials = basicAuth(req);
+  const credentials = parseBasicAuth(req.headers.authorization || '');
   const enabled = _.get(config, 'sparkpostWebhook.enabled');
 
   // Access denied
