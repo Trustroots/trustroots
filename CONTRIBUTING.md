@@ -6,7 +6,7 @@ For CI workflow ownership, dependency updates, and secret handling, see [CI secu
 
 ## Tests and coverage
 
-Run `pnpm run lint:boundaries` to check that shared package production code imports only its own files, external dependencies and declared shared workspace packages. Run `pnpm run lint:boundaries:test` for the guard regressions. Both commands run during `pnpm lint` and CI; `pnpm check:affected` also checks package boundaries before its module tasks. Package integration tests are excluded from this production-source rule.
+Run `pnpm run lint:boundaries` to check that shared package production code imports only its own files, external dependencies and declared shared workspace packages, and that production modules do not import composition layers or apps. Run `pnpm run lint:boundaries:test` for the guard regressions. Both commands run during `pnpm lint` and CI; `pnpm check:affected` also checks package boundaries before its module tasks. Package integration tests are excluded from this production-source rule.
 
 Run `pnpm run test:client` for the Jest client suite and `pnpm run test:server` for the Vitest/Supertest server suite. Jest runs with Watchman disabled so test discovery is consistent on developer machines and CI.
 
