@@ -11,7 +11,7 @@ import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mts';
 import async from 'async';
 import crypto from 'crypto';
-import mongoose, { type FilterQuery, type UpdateQuery } from 'mongoose';
+import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
   UserServerDocument,
   UserServerModel,
@@ -64,7 +64,7 @@ const service = {} as PasswordController;
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
 function findOneAndUpdateWithCallback(
-  filter: FilterQuery<UserServerRecord>,
+  filter: QueryFilter<UserServerRecord>,
   update: UpdateQuery<UserServerRecord>,
   options: { new: boolean; runValidators?: boolean },
   callback: (error: Error | null, user: UserServerDocument | null) => void,
@@ -333,7 +333,7 @@ service.changePassword = function (req, res) {
         const authVersion = user.authVersion;
         User.hashPassword(validatedNewPassword!)
           .then((password: string) => {
-            const filter: FilterQuery<UserServerRecord> = {
+            const filter: QueryFilter<UserServerRecord> = {
               _id: user._id,
               password: oldPassword,
             };

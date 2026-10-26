@@ -86,12 +86,13 @@ service.createReferenceThread = async function (req, res) {
     return errorService.sendInvalidId(res);
   }
   try {
+    const userTo = new mongoose.Types.ObjectId(req.body.userTo);
     // Make sure referenced thread exists and that UserFrom is participating in it.
     const threadQuery = Thread.findOne(
       {
         $or: [
-          { userFrom: req.user._id, userTo: req.body.userTo },
-          { userTo: req.user._id, userFrom: req.body.userTo },
+          { userFrom: req.user._id, userTo },
+          { userTo: req.user._id, userFrom: userTo },
         ],
       },
       'userTo userFrom',

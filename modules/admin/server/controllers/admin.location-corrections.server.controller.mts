@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import mongoose, { type FilterQuery, type Types } from 'mongoose';
+import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
 import textService from '../../../core/server/services/text.server.service.mjs';
 import messageToStatsService from '../../../messages/server/services/message-to-stats.server.service.mjs';
@@ -269,7 +269,7 @@ async function findCandidates(
 }
 
 async function updateThread(message: MessageRecord): Promise<void> {
-  const pair: FilterQuery<ThreadRecord> = {
+  const pair: QueryFilter<ThreadRecord> = {
     $or: [
       { userFrom: message.userFrom, userTo: message.userTo },
       { userFrom: message.userTo, userTo: message.userFrom },

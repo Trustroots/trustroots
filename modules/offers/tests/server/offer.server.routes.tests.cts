@@ -23,7 +23,7 @@ const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 
-type OfferQueryFilter = import('mongoose').FilterQuery<OfferRecord>;
+type OfferQueryFilter = import('mongoose').QueryFilter<OfferRecord>;
 
 async function findOneOffer(
   filter: OfferQueryFilter,

@@ -12,28 +12,18 @@ const User =
 
 type SaveHooks = {
   hooks: {
-    execPre(
-      name: 'save',
-      context: object,
-      args: object[],
-      callback: (error?: Error | null) => void,
-    ): void;
+    execPre(name: 'save', context: object, args: object[]): Promise<unknown>;
   };
 };
 
 // Exercise real validation and save middleware without a database connection.
-function runSaveMiddleware(
+async function runSaveMiddleware(
   this: import('../../../../testutils/server/model-contracts.mts').UserModelDocument,
 ) {
-  return new Promise<
-    import('../../../../testutils/server/model-contracts.mts').UserModelDocument
-  >((resolve, reject) => {
-    const schemaInternals = User.schema as unknown as { s: SaveHooks };
-    schemaInternals.s.hooks.execPre('save', this, [{}], error => {
-      if (error) reject(error);
-      else resolve(this);
-    });
-  });
+  const schemaInternals = User.schema as unknown as { s: SaveHooks };
+  await this.validate();
+  await schemaInternals.s.hooks.execPre('save', this, [{}]);
+  return this;
 }
 
 function fixture(username: string, password: string) {

@@ -110,8 +110,8 @@ function process(
         return { firstMessage: completeFirstMessage, firstReply: null };
       }
       return Message.findOne({
-        userTo: completeFirstMessage.userFrom,
-        userFrom: completeFirstMessage.userTo,
+        userTo: getUserId(completeFirstMessage.userFrom),
+        userFrom: getUserId(completeFirstMessage.userTo),
       })
         .sort({ created: 1 })
         .exec()

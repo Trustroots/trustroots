@@ -1,7 +1,7 @@
 /** Module dependencies. */
 import _ from 'lodash';
 import crypto from 'crypto';
-import mongoose, { type Types } from 'mongoose';
+import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import type {
   ErrorBody,
@@ -282,12 +282,15 @@ export const getMessages = async (
   }
   try {
     const messages = await findPairRecords<MessageRecord>(
-      Message,
+      { find: filter => Message.find(filter as QueryFilter<MessageRecord>) },
       user1,
       user2,
     ).exec();
     const referenceThreads = await findPairRecords(
-      ReferenceThread,
+      {
+        find: filter =>
+          ReferenceThread.find(filter as QueryFilter<ReferenceThreadRecord>),
+      },
       user1,
       user2,
     ).exec();

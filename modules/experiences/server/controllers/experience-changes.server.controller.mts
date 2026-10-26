@@ -23,6 +23,12 @@ interface ChangeRequest {
   _id: Types.ObjectId;
   experience: Types.ObjectId;
   requester: Types.ObjectId;
+  linkIssuedBy?: Types.ObjectId;
+  original?: {
+    feedbackPublic: string;
+    recommend: ExperienceRecommendation;
+    interactions: ExperienceInteractions;
+  };
   kind: ExperienceChangeRequestKind;
   proposed?: ExperienceChangeProposal;
   status: 'pending' | 'processing' | 'approved' | 'rejected';
