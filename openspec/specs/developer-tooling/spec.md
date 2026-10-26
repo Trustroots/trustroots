@@ -375,7 +375,7 @@ Feature modules SHALL be private source-only pnpm workspace packages. Their work
 
 ### Requirement: Client route table sits outside feature modules
 
-The client route table SHALL live outside `modules/*`. Composing a feature page into that table SHALL NOT add a module-graph link from `core` to that feature. Existing imports of the previous core route module SHALL keep working through a re-export.
+The client route table SHALL live outside `modules/*`. Composing a feature page into that table SHALL NOT add a module-graph link from `core` to that feature. Repository callers SHALL import route helpers directly from the shell owner; the obsolete core route-table re-export SHALL be removed once its callers have been migrated.
 
 #### Scenario: Feature page is added to the route table
 
@@ -384,8 +384,9 @@ The client route table SHALL live outside `modules/*`. Composing a feature page 
 
 #### Scenario: Existing caller imports the previous path
 
-- **WHEN** client code imports the route helpers from `modules/core/client/react-app/routes`
-- **THEN** those helpers resolve to the shell route table
+- **WHEN** an existing repository caller of the previous core route-helper path is migrated
+- **THEN** they reference `layers/shell/client/routes` directly
+- **AND** no production module needs to import that composition layer
 
 ### Requirement: Shared package source boundaries
 
@@ -419,3 +420,21 @@ The guard SHALL inspect static imports, re-exports, import types, CommonJS impor
 
 - **WHEN** a source-bearing package has a missing or invalid manifest, or production source uses a symbolic link
 - **THEN** the guard fails with a diagnostic instead of silently omitting the source
+
+### Requirement: Feature runtime interfaces are independent of shell composition
+
+Feature production modules SHALL obtain bootstrap settings/context hooks and the browser navigation primitive from core-owned implementations without importing `layers/shell`. The shell SHALL compose those interfaces with authentication and query providers while owning window bootstrap reading, routing and layout.
+
+Current repository consumers and tooling references SHALL import implementation owners directly. Obsolete core-to-shell re-export files SHALL be removed after their consumers are migrated. State identity, navigation behaviour, client coverage and existing browser journeys SHALL be preserved.
+
+#### Scenario: Feature consumes application settings
+
+- **WHEN** a feature reads settings or application configuration through a core hook inside the shell provider tree
+- **THEN** it observes the same bootstrap context and authentication/query state across rerenders
+- **AND** its production imports do not reach the shell
+
+#### Scenario: Feature navigates through the client runtime
+
+- **WHEN** a feature requests same-origin navigation through the core client runtime
+- **THEN** the core browser-navigation primitive preserves history and popstate behaviour
+- **AND** the shell remains responsible for selecting and rendering the route

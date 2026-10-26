@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';

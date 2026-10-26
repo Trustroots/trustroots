@@ -9,11 +9,12 @@
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement. Broader module/layer guards remain pending.
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
-- [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces and compatibility shims remain.
+- [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces remain.
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
   - [x] Include shell components in translation extraction and verify client coverage and the production build.
   - [x] Move the router entry, page layout, footer wrapper and navigation helpers into `layers/shell`, preserving old-path exports, route behaviour and coverage.
   - [x] Move application provider composition and window bootstrap reading into `layers/shell`, keeping a single bootstrap context and the existing core authentication context through compatibility exports.
+  - [x] Give feature-facing context/hooks and browser navigation core-owned implementations; update all repository consumers and remove obsolete core-to-shell re-exports.
 - [ ] `apps/web` move (separate pull request, needs a production-image check).
 - [ ] Untangling and shim removal, one module at a time.
 

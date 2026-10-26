@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import ReactFooter from '@/modules/core/client/react-app/ReactFooter';
+import ReactFooter from '@/layers/shell/client/ReactFooter';
 
 type BuildMetadata = NonNullable<
   React.ComponentProps<typeof ReactFooter>['build']
