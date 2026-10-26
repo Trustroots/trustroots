@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import React from 'react';
 
 // Internal dependencies
-import LanguageSwitch from './LanguageSwitch';
+import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 
 export default function NavigationLoggedOut({
   currentPath,

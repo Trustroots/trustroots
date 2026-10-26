@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import NavigationLoggedOut from '@/modules/core/client/components/NavigationLoggedOut';
+import NavigationLoggedOut from '@/layers/shell/client/components/NavigationLoggedOut';
 import type LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 
 jest.mock('@/modules/core/client/components/LanguageSwitch', () => {

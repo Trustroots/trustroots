@@ -18,6 +18,10 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 This project is under active development again (no longer in maintenance mode),
 so improvements, refactors, and cleanups are welcome where they add value.
 
+Avoid unnecessary re-exports. Import directly from the owning file and update
+consumers when moving code. Keep a compatibility re-export only when a concrete
+consumer or public API still needs the old path, and explain why it is needed.
+
 Use tables for overviews when they make information easier to compare, with
 coloured status dots where useful. Include text labels so meaning does not
 depend on colour alone.

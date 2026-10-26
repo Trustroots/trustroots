@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
+import NavigationLoggedIn from '@/layers/shell/client/components/NavigationLoggedIn';
 import {
   listMemberships,
   type MembershipUpdate,

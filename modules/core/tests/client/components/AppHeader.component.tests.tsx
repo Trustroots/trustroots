@@ -4,14 +4,14 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import AppHeader from '@/modules/core/client/components/AppHeader.component';
-import type NavigationLoggedIn from '@/modules/core/client/components/NavigationLoggedIn';
-import type NavigationLoggedOut from '@/modules/core/client/components/NavigationLoggedOut';
+import AppHeader from '@/layers/shell/client/components/AppHeader.component';
+import type NavigationLoggedIn from '@/layers/shell/client/components/NavigationLoggedIn';
+import type NavigationLoggedOut from '@/layers/shell/client/components/NavigationLoggedOut';
 
 type LoggedInProps = React.ComponentProps<typeof NavigationLoggedIn>;
 type LoggedOutProps = React.ComponentProps<typeof NavigationLoggedOut>;
 
-jest.mock('@/modules/core/client/components/NavigationLoggedIn', () => {
+jest.mock('@/layers/shell/client/components/NavigationLoggedIn', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
   function MockNavigationLoggedIn({ currentPath, user }: LoggedInProps) {
@@ -25,7 +25,7 @@ jest.mock('@/modules/core/client/components/NavigationLoggedIn', () => {
   return MockNavigationLoggedIn;
 });
 
-jest.mock('@/modules/core/client/components/NavigationLoggedOut', () => {
+jest.mock('@/layers/shell/client/components/NavigationLoggedOut', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
   function MockNavigationLoggedOut({ currentPath }: LoggedOutProps) {
