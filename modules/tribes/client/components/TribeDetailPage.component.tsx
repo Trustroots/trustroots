@@ -8,6 +8,7 @@ import JoinButton from './JoinButton';
 import CircleMemberDiscovery from './CircleMemberDiscovery';
 import HackerspaceMap from './HackerspaceMap';
 import HitchhikingMap from './HitchhikingMap';
+import RadioCircle from './RadioCircle';
 import { getCircleBackgroundStyle } from '../utils';
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
@@ -160,7 +161,7 @@ export default function TribeDetailPage({
         tribe={tribe}
         className={`${user ? '' : 'is-guest'} ${
           hasLocationMap ? 'has-location-map' : ''
-        }`}
+        } ${tribe.slug === 'radio' ? 'has-radio-player' : ''}`}
       >
         <div className="tribe-header-info">
           <div className="container">
@@ -312,6 +313,9 @@ export default function TribeDetailPage({
           )}
         </div>
       </Header>
+      {tribe.slug === 'radio' && (
+        <RadioCircle key={user?._id || 'visitor'} user={user} />
+      )}
       {/* Keep this a reviewed snapshot rendered as JSX text and fixed HTTPS links.
           Do not embed remote wiki HTML, scripts, images or frames here. */}
       <div

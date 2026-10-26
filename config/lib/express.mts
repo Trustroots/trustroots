@@ -365,7 +365,8 @@ function initHelmetHeaders(app: Express) {
         // Allows control over Flash and other plugins.
         objectSrc: ["'none'"],
         // Allows control of media elements, e.g. HTML5 `<audio>`, `<video>`.
-        mediaSrc: ["'self'"],
+        // Radio station URLs can redirect to HTTPS streaming CDN hosts.
+        mediaSrc: ["'self'", 'https:'],
         // Lists valid endpoints for submission from `<form>` tags.
         formAction: ["'self'"],
         // specifies the sources that can embed the current page.

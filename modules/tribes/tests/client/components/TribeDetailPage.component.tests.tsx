@@ -23,6 +23,34 @@ const user: UserProfile = {
 };
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
+jest.mock('@/modules/tribes/client/components/RadioCircle', () => ({
+  __esModule: true,
+  default: ({ user }: { user?: UserProfile }) => (
+    <section aria-label="Radio player">{user?.username || 'visitor'}</section>
+  ),
+}));
+
+it.each([undefined, user])(
+  'renders radio only on the Radio circle for viewer %p',
+  async viewer => {
+    getMock.mockResolvedValue({
+      _id: 'fictional-radio',
+      slug: 'radio',
+      label: 'Radio',
+      count: 0,
+    });
+    render(
+      <TribeDetailPage
+        circle="radio"
+        user={viewer}
+        onMembershipUpdated={jest.fn()}
+      />,
+    );
+    expect(
+      await screen.findByRole('region', { name: 'Radio player' }),
+    ).toHaveTextContent(viewer?.username || 'visitor');
+  },
+);
 jest.mock(
   '@/modules/tribes/client/components/HitchhikingMap',
   () =>
