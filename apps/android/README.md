@@ -185,8 +185,12 @@ connections locally; this dependency is only included in JVM tests. The Android
 geocoder adapter is tested offline with Robolectric, also confined to JVM tests.
 Its runtime is pinned to API 35 so these tests continue to run with JDK 17.
 
-Android changes also run all unit and device tests on an API 36 emulator in the
-Android debug APK workflow, publishing combined line and branch coverage tables
+The Android debug APK workflow builds coverage APKs and runs JVM tests once,
+then runs the full API 36 suite in two shards on separate runners alongside the
+API 32 compatibility journeys. All three device jobs install the same APKs; the
+final report uses the original compiled classes and JVM probes without rebuilding.
+Missing or empty shard results fail the final coverage check. The workflow publishes
+combined line and branch coverage tables
 in its job summary. The report includes every production package and source file,
 including untested files; only generated R and BuildConfig classes are excluded.
 JaCoCo applies its standard Kotlin bytecode filters. Coverage instrumentation is
