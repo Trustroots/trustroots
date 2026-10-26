@@ -508,7 +508,7 @@ private fun MemberProfileContent(
                                             memberLocationLabel(member.locationLiving, member.locationFrom)?.let {
                                                 Text(it, modifier = Modifier.padding(vertical = 6.dp))
                                             }
-ProfileAboutSection(member = member)
+                                            ProfileAboutSection(member = member)
                                             ProfileActivityFacts(member)
                                             HorizontalDivider(Modifier.padding(vertical = 16.dp))
                                             ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
