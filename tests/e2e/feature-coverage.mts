@@ -1716,6 +1716,7 @@ const features = [
         apiRoute('GET', '/api/offers', source.offersServer),
         apiRoute('GET', '/api/offers/:offerId', source.offersServer),
         apiRoute('GET', '/api/tribes/:tribe', source.tribesServer),
+        apiRoute('GET', '/api/map-default-location', source.coreServer),
       ],
     },
     requiredScenarios: [
@@ -1738,6 +1739,9 @@ const features = [
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
       'Trackpad pinch zoom preserves the centre selected by place search.',
+      'Fresh search uses an approximate location while recent saved positions take precedence.',
+      'Expired and legacy search positions yield to the approximate location.',
+      'Failed or late approximate lookups leave member navigation intact.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'search page loads for a signed in member'),
@@ -1769,6 +1773,30 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'offer deep-link uses fixture offer data in the sidebar',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'fresh search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'recent search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'expired search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'legacy search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'failed approximate lookup leaves search usable',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'late approximate lookup cannot undo a member zoom',
       ),
     ],
   },
