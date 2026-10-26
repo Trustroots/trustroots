@@ -112,7 +112,7 @@ internal fun MessageInboxScreen(
                     model.onEvent(InboxEvent.SessionChanged(session))
                 }
                 LaunchedEffect(model, api) { model.updateApi(api) }
-                LaunchedEffect(model) { model.onEvent(InboxEvent.Opened) }
+                LaunchedEffect(model) { model.onDisplayed() }
                 LaunchedEffect(model, conversationReturnGeneration) {
                     if (conversationReturnGeneration > 0) {
                         model.onEvent(InboxEvent.ReturnFromConversation)
