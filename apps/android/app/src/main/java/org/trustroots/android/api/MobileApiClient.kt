@@ -41,6 +41,7 @@ data class MemberProfile(
     val locationFrom: String? = null,
     val languages: List<String>,
     val circles: List<TrustrootsCircle> = emptyList(),
+    val seen: String? = null,
 )
 
 data class ProfileUpdate(
@@ -714,6 +715,7 @@ internal fun parseMember(value: JSONObject): MemberProfile {
         locationFrom = value.optionalText("locationFrom"),
         languages = if (languages == null) emptyList() else (0 until languages.length())
             .mapNotNull { languages.optString(it).takeIf(String::isNotBlank) },
+        seen = value.optionalText("seen"),
         circles = if (memberships == null) emptyList() else (0 until memberships.length())
             .mapNotNull { memberships.optJSONObject(it)?.optJSONObject("tribe") }
             .mapNotNull { parseCircleOrNull(it) },

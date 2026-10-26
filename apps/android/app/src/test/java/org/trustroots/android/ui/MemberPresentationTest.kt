@@ -20,6 +20,13 @@ class MemberPresentationTest {
         assertEquals("Portuguese", languageName("por"))
     }
 
+    @Test fun resolvesIsoPrefixedLanguageCodesIncludingMandinka() {
+        assertEquals("Mandinka", languageName("iso_639_3-mnk", Locale.ENGLISH))
+        assertEquals("Mandinka", languageName("mnk", Locale.ENGLISH))
+        assertEquals("English", languageName("iso_639_3-eng", Locale.ENGLISH))
+        assertEquals("Portuguese", languageName("pt-BR", Locale.ENGLISH))
+    }
+
     @Test fun canonicalisesLegacyLanguageAliasesForEnglishDisplay() {
         assertEquals("German", languageName("ger", Locale.ENGLISH))
         assertEquals("German", languageName("deu", Locale.ENGLISH))

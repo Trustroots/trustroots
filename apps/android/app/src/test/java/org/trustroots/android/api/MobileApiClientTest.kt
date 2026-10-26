@@ -223,6 +223,16 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun parsesOptionalPublicLastSeenTimestamp() {
+        val member = parseMember(
+            JSONObject("""{"username":"quiet-fox","seen":"2020-01-02T03:04:05.000Z"}"""),
+        )
+
+        assertEquals("2020-01-02T03:04:05.000Z", member.seen)
+        assertEquals(null, parseMember(JSONObject("""{"username":"calm-lynx"}""")).seen)
+    }
+
+    @Test
     fun profileEndpointUsesCanonicalMemberAliasesAndLocationFallbacks() {
         val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
         val result = withApiResponse(

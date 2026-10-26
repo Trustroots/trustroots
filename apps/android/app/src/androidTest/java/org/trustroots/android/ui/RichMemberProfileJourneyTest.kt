@@ -104,6 +104,7 @@ class RichMemberProfileJourneyTest {
         waitForText("Quiet Fox")
         compose.onNodeWithTag("profileSection-about").performClick()
         compose.onNodeWithText("Languages: English, Portuguese").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Last seen a long time ago").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Circles").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Silver Coast Circle").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Maybe hosting").performScrollTo().assertIsDisplayed()
@@ -121,6 +122,30 @@ class RichMemberProfileJourneyTest {
         }
         compose.onNodeWithText("S").performScrollTo().assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-main?types=host ") })
+    }
+
+    @Test fun displaysLastSeenAndMandinkaUsingThePublicProfileData() {
+        val profile = ROOT_PROFILE
+            .replace("\"languages\":[\"eng\",\"por\"]", "\"languages\":[\"iso_639_3-mnk\"]")
+            .replace("\"description\":", "\"seen\":\"2020-01-02T03:04:05.000Z\",\"description\":")
+        startResponder(ROOT_MAYBE_OFFER, profile)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Languages: Mandinka").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Last seen", substring = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("a long time ago").assertDoesNotExist()
+    }
+
+    @Test fun marksMalformedLastSeenAsUnavailable() {
+        val profile = ROOT_PROFILE.replace("\"description\":", "\"seen\":\"not-a-timestamp\",\"description\":")
+        startResponder(ROOT_MAYBE_OFFER, profile)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Last seen status unavailable").performScrollTo().assertIsDisplayed()
     }
 
     @Test fun compactProfileCaptionHasReadableContrastOnBrightArtwork() {

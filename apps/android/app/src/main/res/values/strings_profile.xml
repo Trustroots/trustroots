@@ -16,6 +16,9 @@
     </plurals>
     <string name="profile_no_about">No about text yet.</string>
     <string name="profile_languages_prefix">Languages: %1$s</string>
+    <string name="profile_last_seen">Last seen %1$s</string>
+    <string name="profile_last_seen_long_ago">a long time ago</string>
+    <string name="profile_last_seen_unavailable">status unavailable</string>
     <string name="profile_circles_heading">Circles</string>
     <string name="profile_hosting_yes">Hosting travellers</string>
     <string name="profile_hosting_maybe">Maybe hosting</string>

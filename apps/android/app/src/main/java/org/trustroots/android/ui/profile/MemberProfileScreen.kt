@@ -4,6 +4,8 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.text.Html
+import android.text.format.DateUtils
+import java.time.Instant
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -467,6 +469,21 @@ private fun MemberProfileContent(
                                                 Text(it, modifier = Modifier.padding(vertical = 6.dp))
                                             }
                                             ProfileAboutSection(member = member)
+                                            val lastSeen = when (val timestamp = member.seen) {
+                                                null -> stringResource(R.string.profile_last_seen_long_ago)
+                                                else -> runCatching {
+                                                    DateUtils.getRelativeTimeSpanString(
+                                                        Instant.parse(timestamp).toEpochMilli(),
+                                                        System.currentTimeMillis(),
+                                                        DateUtils.MINUTE_IN_MILLIS,
+                                                    ).toString()
+                                                }.getOrElse { stringResource(R.string.profile_last_seen_unavailable) }
+                                            }
+                                            Text(
+                                                stringResource(R.string.profile_last_seen, lastSeen),
+                                                modifier = Modifier.padding(top = 8.dp),
+                                                style = MaterialTheme.typography.bodySmall,
+                                            )
                                             HorizontalDivider(Modifier.padding(vertical = 16.dp))
                                             ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
                                             ProfileCirclesSection(member = member, api = api, onOpenCircle = onOpenCircle)

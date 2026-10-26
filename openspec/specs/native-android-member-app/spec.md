@@ -1750,3 +1750,36 @@ payloads.
   changes before a shell request completes
 - **THEN** the old request is cancelled or ignored
 - **AND** the new root visit displays no result from the former account
+
+### Requirement: Native profile activity and readable language names
+
+The Android member profile SHALL display the public profile's `seen` timestamp
+using a localised relative last-seen label. If the timestamp is missing, the
+profile SHALL display the website's long-ago fallback. If the timestamp is
+malformed, the profile SHALL display an unavailable status. Recognised ISO
+language prefixes SHALL be resolved to language names, including Mandinka for
+`iso_639_3-mnk`, while ordinary language tags remain intact. These details
+SHALL preserve the existing biography, hosting and circles order.
+
+#### Scenario: Member views a profile with a last-seen timestamp
+
+- **WHEN** a member opens a profile with a valid public `seen` timestamp
+- **THEN** Android displays a localised relative last-seen label
+- **AND** biography, hosting and circles remain in their current order
+
+#### Scenario: Member views a profile without a last-seen timestamp
+
+- **WHEN** the profile has no `seen` timestamp
+- **THEN** Android displays the website's long-ago fallback
+
+#### Scenario: Member views a profile with a malformed last-seen timestamp
+
+- **WHEN** the profile's `seen` value is not a valid timestamp
+- **THEN** Android displays an unavailable status instead of claiming the
+  member was last seen a long time ago
+
+#### Scenario: Profile language uses an ISO-prefixed identifier
+
+- **WHEN** a profile lists `iso_639_3-mnk`
+- **THEN** Android displays “Mandinka” instead of the raw identifier
+- **AND** ordinary regional language tags such as `pt-BR` remain recognised

@@ -18,7 +18,13 @@ private val iso6393LanguageTags by lazy {
 }
 
 internal fun languageName(code: String, displayLocale: Locale = Locale.getDefault()): String {
-    val normalised = code.lowercase(Locale.ROOT)
+    val lowerCode = code.lowercase(Locale.ROOT)
+    val normalised = when {
+        lowerCode.startsWith("iso_639_3-") -> lowerCode.removePrefix("iso_639_3-")
+        lowerCode.startsWith("iso_639_1-") -> lowerCode.removePrefix("iso_639_1-")
+        else -> lowerCode
+    }
+    if (normalised == "mnk") return "Mandinka"
     val languageTag = legacyLanguageTags[normalised] ?: iso6393LanguageTags[normalised] ?: normalised
     val display = Locale.forLanguageTag(languageTag).getDisplayLanguage(displayLocale)
     return display.takeIf { it.isNotBlank() && !it.equals(languageTag, true) }
