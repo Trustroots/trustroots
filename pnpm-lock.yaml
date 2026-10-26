@@ -71,8 +71,8 @@ importers:
         specifier: 1.8.2
         version: 1.8.2(supports-color@5.5.0)
       connect-mongo:
-        specifier: 5.1.0
-        version: 5.1.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
+        specifier: 6.0.0
+        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
       core-js:
         specifier: 3.51.0
         version: 3.51.0
@@ -1796,10 +1796,6 @@ packages:
     resolution: {integrity: sha512-+Sg6GCR/wy1oSmQDFq4LQDAhm3ETKnorxN+y5nbLULOR3P0c14f2Wurzj3/xqPXtasLFfHd5iRFQ7AJt4KH2cw==}
     engines: {node: '>=8'}
 
-  '@jas-/asn.1@6.0.1':
-    resolution: {integrity: sha512-ePJ7CghTqJ1WdOPcnllKoxpbJdoy0GoyFE8PLJl3u1jo8xK4/enY4n/ow/+iNPjMDXY2LK5AiWSHv5ewuetryQ==}
-    engines: {node: '>=18'}
-
   '@jest/console@30.5.2':
     resolution: {integrity: sha512-e8sQC4pCMHPBrPX7Hk8TJr+DM5dkUnImSTNag8SEWFAFAF6xIz4AJvCKapnrdHnZxep4bxw4PhG+ZbimYBMyKw==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
@@ -3282,12 +3278,12 @@ packages:
     engines: {node: '>=10.0.0'}
     hasBin: true
 
-  connect-mongo@5.1.0:
-    resolution: {integrity: sha512-xT0vxQLqyqoUTxPLzlP9a/u+vir0zNkhiy9uAdHjSCcUUf7TS5b55Icw8lVyYFxfemP3Mf9gdwUOgeF3cxCAhw==}
-    engines: {node: '>=12.9.0'}
+  connect-mongo@6.0.0:
+    resolution: {integrity: sha512-mHxfnTiWk7ZtxmHdcrFBKlr7fCtgGoFpx/oe9jFW0yb2NinagsxEeuol78nUWMpnWyYK0nnuXMlU9wrgUjTE6g==}
+    engines: {node: '>=20.8.0'}
     peerDependencies:
       express-session: ^1.17.1
-      mongodb: '>= 5.1.0 < 7'
+      mongodb: '>=5.0.0'
 
   content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
@@ -4707,9 +4703,9 @@ packages:
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
 
-  kruptein@3.4.0:
-    resolution: {integrity: sha512-zyzWq5d2RNglua4EIAxAyqPl2043wkpGRUmhTQ+Tjz8uDMnKnGwBqP32Co7vhp7nb7O1R5RI+lS4dzP0XDsdqg==}
-    engines: {node: '>=18'}
+  kruptein@3.0.8:
+    resolution: {integrity: sha512-0CyalFA0Cjp3jnziMp0u1uLZW2/ouhQ0mEMfYlroBXNe86na1RwAuwBcdRAegeWZNMfQy/G5fN47g/Axjtqrfw==}
+    engines: {node: '>8'}
 
   kuler@2.0.0:
     resolution: {integrity: sha512-Xq9nH7KlWZmXAtodXDDRE7vs6DU1gTU8zYDHDiWLSip45Egwq3plLHzPn27NgvzL2r1LMPC1vdqh98sQxtqj4A==}
@@ -7973,8 +7969,6 @@ snapshots:
 
   '@istanbuljs/schema@0.1.6': {}
 
-  '@jas-/asn.1@6.0.1': {}
-
   '@jest/console@30.5.2':
     dependencies:
       '@jest/types': 30.5.1
@@ -9626,11 +9620,11 @@ snapshots:
       tree-kill: 1.2.2
       yargs: 16.2.2
 
-  connect-mongo@5.1.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0):
+  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       express-session: 1.19.0(supports-color@5.5.0)
-      kruptein: 3.4.0
+      kruptein: 3.0.8
       mongodb: 6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
     transitivePeerDependencies:
       - supports-color
@@ -11433,9 +11427,9 @@ snapshots:
     dependencies:
       json-buffer: 3.0.1
 
-  kruptein@3.4.0:
+  kruptein@3.0.8:
     dependencies:
-      '@jas-/asn.1': 6.0.1
+      asn1.js: 5.4.1
 
   kuler@2.0.0: {}
 
