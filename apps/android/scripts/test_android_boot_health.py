@@ -54,6 +54,7 @@ elif args[:3] == ['shell', 'dumpsys', 'activity']:
         print('No ANR has occurred since boot')
 elif args[:3] == ['shell', 'dumpsys', 'window']:
     print('WINDOW MANAGER WINDOWS (dumpsys window windows)')
+    print('  Window #0 Window{normal system window}:')
     if os.environ.get('FAKE_ANR') == 'systemui' and not rebooted:
         print('Window{1 Application Not Responding: com.android.systemui}')
     elif os.environ.get('FAKE_ANR') == 'delayed' and not rebooted and len(Path(os.environ['ADB_CALLS']).read_text().splitlines()) >= 2:
@@ -65,7 +66,7 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
         print('Window{2 Application Not Responding: org.trustroots.android}')
     if os.environ.get('FAKE_ANR') == 'systemui-child':
         print('Window{1 Application Not Responding: com.android.systemui.other}')
-    print('mCurrentFocus=Window{normal app window}')
+    print('  mTopFocusedDisplayId=0')
 """
         )
         self.adb.chmod(0o755)
@@ -94,7 +95,7 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
             check=False,
         )
 
-    def test_clean_boot_runs_command_without_reboot(self):
+    def test_clean_boot_without_current_focus_field_runs_command_without_reboot(self):
         result = self.run_gate()
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertTrue(self.command_marker.exists())

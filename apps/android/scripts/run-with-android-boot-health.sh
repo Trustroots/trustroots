@@ -16,7 +16,9 @@ device_anr_report() {
   windows=$(timeout 5 adb shell dumpsys window windows 2>&1) || return 1
   grep -q 'ACTIVITY MANAGER LAST ANR' <<< "$last_anr" || return 1
   grep -q 'WINDOW MANAGER WINDOWS' <<< "$windows" || return 1
-  grep -q 'mCurrentFocus=' <<< "$windows" || return 1
+  # Healthy fresh emulators may omit mCurrentFocus from this dump. Validate
+  # the windows section itself; focus is not required to inspect ANR dialogs.
+  grep -Eq '^[[:space:]]*Window #[0-9]+ Window\{' <<< "$windows" || return 1
   printf '%s\n%s\n' "$last_anr" "$windows"
 }
 
