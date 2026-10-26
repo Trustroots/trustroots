@@ -151,6 +151,49 @@ internal data class HostMapUiState(
     val pendingSessionInvalidation: HostMapSessionInvalidation? = null,
 )
 
+internal data class HostMapSnapshot(
+    val viewport: MapViewport,
+    val measuredBounds: MapBounds,
+    val filters: HostMapFilters,
+    val offers: List<MapOffer>,
+    val searchFingerprint: String?,
+    val searchSucceededAt: Long?,
+)
+
+/** Shares only recent map data between Search visits, never their UI or request state. */
+internal class HostMapResultsCache {
+    var snapshot: HostMapSnapshot? = null
+        private set
+
+    fun save(snapshot: HostMapSnapshot) {
+        this.snapshot = snapshot
+    }
+
+    fun clear() {
+        snapshot = null
+    }
+}
+
+/** Holds one cache for the active backend and member session. */
+internal class HostMapResultsCacheStore {
+    private var backendURL: String? = null
+    private var username: String? = null
+    private var sessionCookie: String? = null
+    private var cache = HostMapResultsCache()
+
+    fun forSession(backendURL: String, session: MemberSession): HostMapResultsCache {
+        if (this.backendURL != backendURL || username != session.member.username || sessionCookie != session.cookieHeader) {
+            this.backendURL = backendURL
+            username = session.member.username
+            sessionCookie = session.cookieHeader
+            cache = HostMapResultsCache()
+        }
+        return cache
+    }
+}
+
+private const val HOST_MAP_RESULTS_FRESHNESS_MS = 2 * 60 * 1_000L
+
 internal sealed interface HostMapEvent {
     data class MapVisibilityChanged(val visible: Boolean) : HostMapEvent
     data class OwnerLifecycleChanged(val isStarted: Boolean) : HostMapEvent
@@ -173,9 +216,21 @@ internal class HostMapViewModel(
         ::createNostrootsNotesConnection,
     scope: CoroutineScope?,
     private val wait: suspend (Long) -> Unit = { delay(it) },
+    private val now: () -> Long = android.os.SystemClock::elapsedRealtime,
+    private val resultsCache: HostMapResultsCache = HostMapResultsCache(),
 ) : ViewModel() {
     private val workScope = scope ?: viewModelScope
-    private val mutableState = MutableStateFlow(HostMapUiState())
+    private val initialSnapshot = resultsCache.snapshot
+    private val mutableState = MutableStateFlow(
+        initialSnapshot?.let { snapshot ->
+            HostMapUiState(
+                offers = snapshot.offers,
+                filters = snapshot.filters,
+                viewport = snapshot.viewport,
+                measuredBounds = snapshot.measuredBounds,
+            )
+        } ?: HostMapUiState(),
+    )
     val state = mutableState.asStateFlow()
 
     private var searchJob: Job? = null
@@ -191,7 +246,8 @@ internal class HostMapViewModel(
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
     private var resetGeneration = -1L
-    private var lastSuccessfulSearch: String? = null
+    private var lastSuccessfulSearch: String? = initialSnapshot?.searchFingerprint
+    private var lastSuccessfulSearchAt: Long? = initialSnapshot?.searchSucceededAt
 
     fun onEvent(event: HostMapEvent) {
         when (event) {
@@ -208,6 +264,7 @@ internal class HostMapViewModel(
             }
             is HostMapEvent.ViewportChanged -> {
                 mutableState.update { it.copy(viewport = event.viewport, measuredBounds = event.bounds) }
+                saveCurrentSnapshot()
                 maybeSearch(force = false)
             }
             is HostMapEvent.FiltersChanged -> {
@@ -218,6 +275,7 @@ internal class HostMapViewModel(
                 }
                 if (includeMeetChanged && !event.filters.includeMeet) receivedNotes.clear()
                 reconcileNotesSource()
+                saveCurrentSnapshot()
                 maybeSearch(force = false)
             }
             is HostMapEvent.LocationQueryChanged -> {
@@ -231,6 +289,8 @@ internal class HostMapViewModel(
             HostMapEvent.NotesDismissed -> mutableState.update { it.copy(selectedNotes = emptyList()) }
             HostMapEvent.RetrySearch -> {
                 lastSuccessfulSearch = null
+                lastSuccessfulSearchAt = null
+                saveCurrentSnapshot()
                 maybeSearch(force = true)
             }
             is HostMapEvent.Reset -> reset(event.generation)
@@ -247,6 +307,8 @@ internal class HostMapViewModel(
         resetGeneration = -1L
         receivedNotes.clear()
         lastSuccessfulSearch = null
+        lastSuccessfulSearchAt = null
+        resultsCache.clear()
         mutableState.value = HostMapUiState(
             mapVisible = state.value.mapVisible,
             ownerStarted = state.value.ownerStarted,
@@ -274,6 +336,8 @@ internal class HostMapViewModel(
         searchGeneration++
         placeGeneration++
         lastSuccessfulSearch = null
+        lastSuccessfulSearchAt = null
+        resultsCache.clear()
         receivedNotes.clear()
         mutableState.update { current ->
             current.copy(
@@ -298,11 +362,16 @@ internal class HostMapViewModel(
         if (types.isEmpty()) {
             cancelSearch()
             lastSuccessfulSearch = null
+            lastSuccessfulSearchAt = null
+            resultsCache.clear()
             mutableState.update { it.copy(offers = emptyList(), isLoading = false) }
             return
         }
-        val fingerprint = listOf(bounds, current.filters.copy(languages = current.filters.languages.toSortedSet(), circleIDs = current.filters.circleIDs.toSortedSet())).joinToString("|")
-        if (!force && fingerprint == lastSuccessfulSearch) return
+        val fingerprint = searchFingerprint(bounds, current.filters)
+        val isFresh = fingerprint == lastSuccessfulSearch && lastSuccessfulSearchAt?.let {
+            now() - it < HOST_MAP_RESULTS_FRESHNESS_MS
+        } == true
+        if (!force && isFresh) return
         cancelSearch()
         val generation = ++searchGeneration
         searchJob = workScope.launch {
@@ -313,7 +382,9 @@ internal class HostMapViewModel(
             result.fold(
                 onSuccess = { offers ->
                     lastSuccessfulSearch = fingerprint
+                    lastSuccessfulSearchAt = now()
                     mutableState.update { it.copy(offers = offers, isLoading = false) }
+                    saveCurrentSnapshot()
                 },
                 onFailure = { error ->
                     handleFailure(error, UiFailureFallback.HOST_SEARCH)
@@ -322,6 +393,28 @@ internal class HostMapViewModel(
             )
         }
     }
+
+    private fun saveCurrentSnapshot() {
+        val current = state.value
+        if (!current.mapVisible || !current.ownerStarted) return
+        val bounds = current.measuredBounds ?: return
+        resultsCache.save(
+            HostMapSnapshot(
+                viewport = current.viewport,
+                measuredBounds = bounds,
+                filters = current.filters,
+                offers = current.offers,
+                searchFingerprint = lastSuccessfulSearch,
+                searchSucceededAt = lastSuccessfulSearchAt,
+            ),
+        )
+    }
+
+    private fun searchFingerprint(bounds: MapBounds, filters: HostMapFilters): String =
+        listOf(
+            bounds,
+            filters.copy(languages = filters.languages.toSortedSet(), circleIDs = filters.circleIDs.toSortedSet()),
+        ).joinToString("|")
 
     private fun loadPlaceSuggestions(query: String) {
         val generation = ++placeGeneration
@@ -445,6 +538,7 @@ internal class HostMapViewModel(
         if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         cancelSearch()
+        resultsCache.clear()
         val invalidation = HostMapSessionInvalidation(++nextInvalidationID)
         mutableState.update { it.copy(pendingSessionInvalidation = invalidation, isLoading = false) }
         reconcileNotesSource()
@@ -470,11 +564,12 @@ internal class HostMapViewModel(
         private val repository: HostMapRepository,
         private val notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection),
         private val scope: CoroutineScope? = null,
+        private val resultsCache: HostMapResultsCache = HostMapResultsCache(),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(HostMapViewModel::class.java))
-            return HostMapViewModel(repository, notesClientFactory, scope) as T
+            return HostMapViewModel(repository, notesClientFactory, scope, resultsCache = resultsCache) as T
         }
     }
 }
@@ -486,18 +581,20 @@ internal fun rememberHostMapViewModel(
     geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
         ::createNostrootsNotesConnection,
+    resultsCache: HostMapResultsCache? = null,
 ): HostMapViewModel {
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "SearchHubScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner"
     }
     val applicationContext = LocalContext.current.applicationContext
+    val cache = resultsCache ?: remember(owner) { HostMapResultsCache() }
     val repository = remember(owner, api, session.member.username, geocoderLookup) {
         MobileHostMapRepository(api, session, applicationContext, geocoderLookup)
     }
     val sourceFactory: (onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection =
         remember(notesClientFactory) { notesClientFactory }
-    val factory = remember(owner, repository, sourceFactory) {
-        HostMapViewModel.Factory(repository, sourceFactory)
+    val factory = remember(owner, repository, sourceFactory, cache) {
+        HostMapViewModel.Factory(repository, sourceFactory, resultsCache = cache)
     }
     val viewModel = rememberEntryViewModel(owner, HostMapViewModel::class.java, factory)
     androidx.compose.runtime.SideEffect { viewModel.updateSession(session) }

@@ -677,6 +677,46 @@ class Navigation3MemberShellJourneyTest {
         )
     }
 
+    @Test fun recentMapResultsAppearOnANewSearchVisitWithoutRepeatingTheirRequest() {
+        hostMapOffers = """{"features":[{"properties":{"id":"cached-offer","type":"host","status":"yes"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
+        scenario = ActivityScenario.launch(
+            Intent(context, SignInJourneyActivity::class.java)
+                .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, fixture.baseURL),
+        )
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        waitForText("1 offer · 0 Nostroots notes in this area")
+        requireNotNull(scenario).onActivity { activity ->
+            val map = requireNotNull(findMapView(activity.window.decorView))
+            map.controller.setCenter(GeoPoint(40.0, -4.0))
+            map.controller.setZoom(8.0)
+        }
+        compose.waitUntil(10_000) {
+            fixture.requests.count { it.path.startsWith("/api/offers?") } >= 2
+        }
+        waitForText("1 offer · 0 Nostroots notes in this area")
+        val expectedOfferRequests = fixture.requests.count { it.path.startsWith("/api/offers?") }
+        val expectedViewport = AtomicReference<MapViewport>()
+        requireNotNull(scenario).onActivity { activity ->
+            val map = requireNotNull(findMapView(activity.window.decorView))
+            expectedViewport.set(MapViewport(map.mapCenter.latitude, map.mapCenter.longitude, map.zoomLevelDouble))
+        }
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        waitForText("1 offer · 0 Nostroots notes in this area")
+        assertEquals(expectedOfferRequests, fixture.requests.count { it.path.startsWith("/api/offers?") })
+        requireNotNull(scenario).onActivity { activity ->
+            val map = requireNotNull(findMapView(activity.window.decorView))
+            assertEquals(expectedViewport.get().latitude, map.mapCenter.latitude, 0.00001)
+            assertEquals(expectedViewport.get().longitude, map.mapCenter.longitude, 0.00001)
+            assertEquals(expectedViewport.get().zoom, map.zoomLevelDouble, 0.001)
+        }
+    }
+
     @Test fun hostDetailDialogRestoresAboveTheSameMapEntryWithoutRepeatingRequests() {
         hostMapOffers = """{"features":[{"properties":{"id":"overlay-offer","type":"host","status":"yes"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
         scenario = ActivityScenario.launch(
