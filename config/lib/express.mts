@@ -360,6 +360,7 @@ function initHelmetHeaders(app: Express) {
           'wss://relay.trustroots.org',
           'wss://relay.nomadwiki.org',
           'wss://relay.maps.hitchwiki.org',
+          'https://hitchwiki.org',
           'https://1p.trustroots.org', // Umami analytics
         ],
         // Allows control over Flash and other plugins.

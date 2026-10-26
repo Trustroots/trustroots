@@ -1,6 +1,9 @@
 import { expect, expectPresent, test } from '../../support/fixtures.mts';
-import { installNostrRelayStub } from '../../support/nostr.mts';
-import { finalizeEvent, generateSecretKey } from 'nostr-tools';
+import {
+  installNostrRelayStub,
+  type SignedNostrEvent,
+} from '../../support/nostr.mts';
+import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import type { Page } from '@playwright/test';
 
 test('circle map stays still without dragging and preserves its view as live places arrive', async ({
@@ -78,10 +81,15 @@ test('circle map stays still without dragging and preserves its view as live pla
   await expect(pane).not.toHaveAttribute('style', position!);
 });
 
-async function prepareCircle(page: Page, unavailable = false): Promise<void> {
+async function prepareCircle(
+  page: Page,
+  unavailable = false,
+  events: SignedNostrEvent[] = [],
+): Promise<void> {
   await installNostrRelayStub(page, {
     relayUrl: 'wss://relay.maps.hitchwiki.org',
     unavailable,
+    events,
   });
   await page.route('**/api/tribes/hitchhikers', route =>
     route.fulfill({
@@ -95,6 +103,81 @@ async function prepareCircle(page: Page, unavailable = false): Promise<void> {
     }),
   );
 }
+
+test('ride popups link named hitchhikers to existing wiki pages and leave Anonymous unlinked', async ({
+  page,
+}) => {
+  const secret = generateSecretKey();
+  // Use a fictional publisher so the whole relay/signature/parsing path is tested
+  // without copying a real person's ride into a fixture.
+  const author = getPublicKey(secret);
+  await page.route(/\/assets\/[^/?]+\.js(?:\?.*)?$/, async route => {
+    const response = await route.fetch();
+    const body = (await response.text()).replaceAll(
+      '6623bb9cbae2220e94d5f7581e0fd926db5d67538a08a7f306768e978d4d142e',
+      author,
+    );
+    await route.fulfill({ response, body });
+  });
+  const now = Math.floor(Date.now() / 1000);
+  const event = finalizeEvent(
+    {
+      kind: 36820,
+      created_at: now,
+      tags: [['d', 'fictional-ride']],
+      content: JSON.stringify({
+        source: 'maps.hitchwiki.org',
+        submission_time: new Date(now * 1000).toISOString(),
+        stops: [
+          {
+            location: { latitude: 12, longitude: 34 },
+            waiting_duration: 'PT3M',
+          },
+        ],
+        hitchhikers: [
+          { nickname: 'ExampleHiker' },
+          { nickname: 'OtherHiker' },
+          { nickname: 'Anonymous' },
+        ],
+      }),
+    },
+    secret,
+  );
+  await prepareCircle(page, false, [event]);
+  await page.route('https://hitchwiki.org/en/api.php?**', route =>
+    route.fulfill({
+      json: {
+        query: {
+          pages: [
+            { title: 'User:ExampleHiker' },
+            { title: 'User:OtherHiker', missing: true },
+          ],
+        },
+      },
+    }),
+  );
+  await page.goto('/circles/hitchhikers');
+  await expect(page.locator('.circle-location-map-status')).toHaveText(
+    '1 ride origins in the past 7 days',
+  );
+  await page.locator('.circle-location-map .leaflet-interactive').click();
+  const popup = page.locator('.leaflet-popup');
+  await expect(
+    popup.getByRole('link', { name: 'ExampleHiker', exact: true }),
+  ).toHaveAttribute('href', 'https://hitchwiki.org/en/User%3AExampleHiker');
+  await expect(
+    popup.getByRole('link', { name: 'OtherHiker', exact: true }),
+  ).toHaveAttribute('href', 'https://maps.hitchwiki.org/account/OtherHiker');
+  await expect(popup).toContainText('Anonymous');
+  await expect(
+    popup.getByRole('link', { name: 'Anonymous', exact: true }),
+  ).toHaveCount(0);
+  await expect(popup.locator('dt').first()).toHaveText('Hitchhikers');
+  await expect(popup).toContainText('3 min');
+  await expect(
+    popup.getByRole('link', { name: 'View ride on Hitchwiki Maps' }),
+  ).toHaveAttribute('href', 'https://maps.hitchwiki.org/ride/fictional-ride');
+});
 
 test('Hitchhikers circle foregrounds the recent map and explains source and dates', async ({
   page,
