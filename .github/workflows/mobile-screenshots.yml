@@ -101,6 +101,7 @@ jobs:
         with:
           api-level: 36
           arch: x86_64
+          cores: 4
           disable-animations: true
           profile: pixel_6
           script: |
@@ -113,11 +114,8 @@ jobs:
             adb shell settings put secure show_ime_with_hard_keyboard 1
             test -f apps/android/gradlew
             bash apps/android/gradlew -p apps/android assembleDebug assembleDebugAndroidTest
-            adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk
-            adb install -r apps/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
-            mkdir -p tmp/mobile-screenshots
             # The emulator action executes each line in a separate shell.
-            bash apps/android/scripts/run-with-device-diagnostics.sh tmp/android-device-diagnostics bash -euo pipefail -c 'adb shell am instrument -w org.trustroots.android.debug.test/androidx.test.runner.AndroidJUnitRunner > tmp/android-instrumentation.txt 2>&1; cat tmp/android-instrumentation.txt; grep -Eq "^OK [(][0-9]+ tests?[)]" tmp/android-instrumentation.txt'
+            bash apps/android/scripts/run-with-android-boot-health.sh tmp/android-device-diagnostics bash -euo pipefail -c 'adb install -r apps/android/app/build/outputs/apk/debug/app-debug.apk; adb install -r apps/android/app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk; mkdir -p tmp/mobile-screenshots; adb shell am instrument -w org.trustroots.android.debug.test/androidx.test.runner.AndroidJUnitRunner > tmp/android-instrumentation.txt 2>&1; cat tmp/android-instrumentation.txt; grep -Eq "^OK [(][0-9]+ tests?[)]" tmp/android-instrumentation.txt'
             adb shell am force-stop org.trustroots.android.debug
             adb shell am start -W -n org.trustroots.android.debug/org.trustroots.android.MainActivity
             # Compose can render a blank first frame while Android restores the
