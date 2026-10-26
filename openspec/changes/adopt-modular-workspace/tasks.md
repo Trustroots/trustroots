@@ -6,6 +6,7 @@
   - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve ESM/CommonJS compatibility paths, shared instance identity, runtime installation and coverage.
 - [ ] `packages/ui` with design tokens (separate pull request).
 - [ ] Tier guards in `tooling/guards` (separate pull request).
+  - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement. Broader module/layer guards remain pending.
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
 - [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces and compatibility shims remain.
