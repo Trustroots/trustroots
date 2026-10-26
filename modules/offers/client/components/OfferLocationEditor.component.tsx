@@ -55,7 +55,12 @@ export default function OfferLocationEditor({
     type: 'center' | 'bounds',
   ) {
     stopDefaultLocation();
-    if (type === 'center' && 'lat' in data && data.lat && data.lng) {
+    if (
+      type === 'center' &&
+      'lat' in data &&
+      Number.isFinite(data.lat) &&
+      Number.isFinite(data.lng)
+    ) {
       onLocationChange([data.lat, data.lng]);
     } else if (
       type === 'bounds' &&
@@ -106,6 +111,7 @@ export default function OfferLocationEditor({
           )}
         </p>
         <SearchPlaceInput
+          onDeviceLocationRequest={stopDefaultLocation}
           id="offer-search-query"
           onPlaceSearch={handlePlaceSearch}
           searchQuery={searchQuery}

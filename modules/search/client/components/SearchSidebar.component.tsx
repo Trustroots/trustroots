@@ -32,6 +32,8 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
       | import('../utils/location').MapPoint,
     type: 'center' | 'bounds',
   ) => void;
+  onDeviceLocationRequest: () => void;
+  onDeviceLocation: (location: { lat: number; lng: number }) => void;
   onTabSelect: (tab: string | null) => void;
   onlineInPast6Months: boolean;
   onOnlineInPast6MonthsChange: () => void;
@@ -46,6 +48,8 @@ export default function SearchSidebar({
   onCommunityNotesToggle,
   onFiltersChange,
   onPlaceSearch,
+  onDeviceLocationRequest,
+  onDeviceLocation,
   onTabSelect,
   onlineInPast6Months,
   onOnlineInPast6MonthsChange,
@@ -64,6 +68,8 @@ export default function SearchSidebar({
       <div className="search-sidebar-section hidden-xs">
         <SearchPlaceInput
           onPlaceSearch={onPlaceSearch}
+          onDeviceLocation={onDeviceLocation}
+          onDeviceLocationRequest={onDeviceLocationRequest}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
         />

@@ -24,7 +24,11 @@ import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 type SearchMapProps = React.ComponentProps<typeof SearchMap>;
 type SearchMapHarnessProps = Pick<
   SearchMapProps,
-  'filters' | 'isUserPublic' | 'location' | 'locationBounds'
+  | 'deviceLocationRequestId'
+  | 'filters'
+  | 'isUserPublic'
+  | 'location'
+  | 'locationBounds'
 > & {
   onOfferOpen: (offer: Partial<SearchResultOffer>, recenter?: boolean) => void;
   onCommunityNoteOpen: (note: {
@@ -82,6 +86,26 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 jest.mock('@/modules/search/client/api/location.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
 jest.mock('@/modules/offers/client/api/offers.api');
+jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
+  __esModule: true,
+  default: ({
+    onLocation,
+    onRequest,
+  }: {
+    onLocation: (location: { lat: number; lng: number }) => void;
+    onRequest?: () => void;
+  }) => (
+    <button
+      type="button"
+      onClick={() => {
+        onRequest?.();
+        onLocation({ lat: 0, lng: 0 });
+      }}
+    >
+      Use my location
+    </button>
+  ),
+}));
 
 jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -682,6 +706,73 @@ describe('<SearchPage />', () => {
         southWest: { lat: 60, lng: 24 },
       });
     });
+  });
+
+  it('uses device coordinates, clears selected content and removes the old location query', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('location', 'Helsinki_Finland');
+    url.searchParams.set('communityNotes', 'true');
+    window.history.replaceState({}, '', url);
+    renderSearchPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview offer' }));
+    expect(
+      screen.getByRole('link', { name: /host person/i }),
+    ).toBeInTheDocument();
+    const filtersBeforeLocation = searchMapProps.filters;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(searchMapProps.location).toEqual({
+      lat: 0,
+      lng: 0,
+      zoom: 13,
+      clearSelection: true,
+    });
+    expect(searchMapProps.locationBounds).toEqual({});
+    expect(searchMapProps.deviceLocationRequestId).toBe(1);
+    expect(searchMapProps.filters).toBe(filtersBeforeLocation);
+    expect(
+      screen.queryByRole('link', { name: /host person/i }),
+    ).not.toBeInTheDocument();
+    expect(new URL(window.location.href).searchParams.has('location')).toBe(
+      false,
+    );
+  });
+
+  it('does not apply an initial place lookup after device location succeeds', async () => {
+    mockGetRouteParams.mockReturnValue({ location: 'Paris' });
+    const pendingSuggestions: Array<
+      (suggestions: LocationSuggestions) => void
+    > = [];
+    locationApi.fetchLocationSuggestions.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          pendingSuggestions.push(resolve);
+        }),
+    );
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 48.8566, lng: 2.3522, zoom: 10 },
+      type: 'center',
+    });
+
+    renderSearchPage();
+    await waitFor(() => expect(pendingSuggestions.length).toBeGreaterThan(0));
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    await act(async () => {
+      pendingSuggestions.forEach(resolve =>
+        resolve([{ id: 'place-paris', trTitle: 'Paris, France' }]),
+      );
+    });
+
+    expect(searchMapProps.location).toEqual({
+      lat: 0,
+      lng: 0,
+      zoom: 13,
+      clearSelection: true,
+    });
+    expect(searchMapProps.locationBounds).toEqual({});
   });
 
   it('updates sidebar filters from the filters panel', () => {

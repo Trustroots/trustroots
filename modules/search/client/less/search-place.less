@@ -12,6 +12,20 @@
   }
 }
 
+.search-device-location {
+  margin-top: 8px;
+  text-align: right;
+
+  [role='status'] {
+    display: block;
+    text-align: left;
+
+    &:not(:empty) {
+      margin-top: 8px;
+    }
+  }
+}
+
 // Search input at sidebar (bigger screens)
 .search-sidebar-section {
   .search-place {
@@ -53,6 +67,9 @@
   .form-group {
     margin: 0;
   }
+  .search-device-location {
+    padding: 0 15px;
+  }
   .search-place {
     // Location field's input and button are even highr than `input-lg`
     .input-location {
@@ -67,6 +84,12 @@
       max-width: 40px;
       padding-left: 7px;
       padding-right: 7px;
+    }
+
+    .search-device-location .device-location-button {
+      max-width: none;
+      padding-left: 12px;
+      padding-right: 12px;
     }
     // Location sugestion
     .dropdown-menu {
@@ -110,4 +133,12 @@
   .btn {
     border-left: 0;
   }
+}
+
+.search-form-group
+  .search-device-location
+  .device-location-button:focus-visible {
+  outline: 2px solid @brand-primary;
+  outline-offset: 2px;
+  box-shadow: none;
 }

@@ -136,6 +136,74 @@ test.describe('approximate initial map locations', () => {
     await expect(map).toHaveAttribute('data-map-zoom', '7');
   });
 
+  test('late approximate lookup cannot override an explicit device location', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(
+      testInfo,
+      'search.map',
+      'A late approximate lookup cannot override explicit device navigation.',
+    );
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition(success: PositionCallback) {
+            queueMicrotask(() =>
+              success({
+                coords: {
+                  latitude: -23.55,
+                  longitude: -46.63,
+                  accuracy: 10,
+                  altitude: null,
+                  altitudeAccuracy: null,
+                  heading: null,
+                  speed: null,
+                },
+                timestamp: Date.now(),
+              } as GeolocationPosition),
+            );
+          },
+        },
+      });
+    });
+
+    let release!: () => void;
+    let started!: () => void;
+    const requested = new Promise<void>(resolve => {
+      started = resolve;
+    });
+    const blocked = new Promise<void>(resolve => {
+      release = resolve;
+    });
+    await page.route('**/api/map-default-location', async route => {
+      started();
+      await blocked;
+      await route.fulfill({
+        json: { location: { latitude: 34, longitude: -17, zoom: 6 } },
+      });
+    });
+    await page.goto('/search');
+    await requested;
+    const locate = page.getByRole('button', {
+      name: 'Use my location',
+      exact: true,
+    });
+    await expect(locate).toBeVisible();
+    await locate.click();
+
+    const map = page.getByTestId('leaflet-search-map');
+    await expect(map).toHaveAttribute('data-map-latitude', '-23.55');
+    await expect(map).toHaveAttribute('data-map-longitude', '-46.63');
+    await expect(map).toHaveAttribute('data-map-zoom', '13');
+    const completed = page.waitForResponse('**/api/map-default-location');
+    release();
+    await completed;
+    await expect(map).toHaveAttribute('data-map-latitude', '-23.55');
+    await expect(map).toHaveAttribute('data-map-longitude', '-46.63');
+    await expect(map).toHaveAttribute('data-map-zoom', '13');
+  });
+
   test('approximate meeting viewport does not choose a location', async ({
     page,
   }, testInfo) => {
