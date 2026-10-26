@@ -456,6 +456,9 @@ async function flushCommunityNotesViewport(viewport: Record<string, number>) {
 }
 
 beforeEach(() => {
+  mockStopDefaultLocation.mockClear();
+  mockDefaultLocation.mockClear();
+  mockSetPersistentMapLocation.mockClear();
   mockApproximateLocation = null;
   mockHasSavedLocation = true;
   mockGetMapBoxToken.mockReturnValue('test-token');
@@ -532,6 +535,14 @@ describe('Search', () => {
     renderSearchMap();
     expect(mockDefaultLocation).toHaveBeenCalledWith(false);
     expect(mockMapProps.latitude).toBe(mockPersistentMapLocation.latitude);
+  });
+
+  it('stops an approximate default lookup when device location is requested', () => {
+    mockHasSavedLocation = false;
+    renderSearchMap({ deviceLocationRequestId: 1 });
+
+    expect(mockDefaultLocation).toHaveBeenCalledWith(true);
+    expect(mockStopDefaultLocation).toHaveBeenCalled();
   });
 
   it('does not reapply GeoIP after a member clears a later explicit destination', () => {
@@ -1209,6 +1220,45 @@ describe('Search', () => {
       },
     );
     await waitFor(() => expect(onOfferOpen).toHaveBeenCalledWith(offer));
+  });
+
+  it('clears the selected pin and ignores its pending details after device navigation', async () => {
+    let resolveOffer!: (offer: Awaited<ReturnType<MockGetOffer>>) => void;
+    mockGetOffer.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveOffer = resolve;
+      }),
+    );
+    const props = {
+      filters: '{}',
+      isUserPublic: true,
+      onCommunityNoteOpen: jest.fn(),
+      onOfferClose: jest.fn(),
+      onOfferOpen: jest.fn(),
+    };
+    const { rerender } = renderSearchMap(props);
+    clickOfferPin('offer-1');
+
+    rerender(
+      <SearchMap
+        {...props}
+        location={{ lat: 0, lng: 0, zoom: 13, clearSelection: true }}
+      />,
+    );
+
+    expect(mockMap.setFeatureState).toHaveBeenCalledWith(
+      { id: 'offer-1', source: 'offers' },
+      { existing: true, selected: false },
+    );
+    await act(async () => resolveOffer(readOffer()));
+    expect(props.onOfferOpen).not.toHaveBeenCalled();
+
+    const nextOffer = readOffer();
+    mockGetOffer.mockResolvedValueOnce(nextOffer);
+    clickOfferPin('offer-2');
+    await waitFor(() =>
+      expect(props.onOfferOpen).toHaveBeenCalledWith(nextOffer),
+    );
   });
 
   it('ignores unclustered offer clicks that do not include an offer id', () => {

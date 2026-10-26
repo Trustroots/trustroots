@@ -4,6 +4,7 @@ import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
 import type { MapBounds, MapPoint } from '../utils/location';
+import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 
 interface PlaceSuggestion {
   id: string;
@@ -21,6 +22,8 @@ interface SearchPlaceInputProps {
   ) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  onDeviceLocationRequest?: () => void;
+  onDeviceLocation?: (location: { lat: number; lng: number }) => void;
 }
 
 export default function SearchPlaceInput({
@@ -28,6 +31,8 @@ export default function SearchPlaceInput({
   onPlaceSearch,
   searchQuery,
   setSearchQuery,
+  onDeviceLocationRequest,
+  onDeviceLocation,
 }: SearchPlaceInputProps) {
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [locationNotFound, setLocationNotFound] = useState<string | false>(
@@ -35,16 +40,26 @@ export default function SearchPlaceInput({
   );
   const [isOpen, setIsOpen] = useState(false);
   const skipSuggestionsRef = useRef(false);
+  const suggestionRequestRef = useRef(0);
+  const suppressSuggestionsRef = useRef(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const loadSuggestions = useDebouncedCallback(async (query: string) => {
+    if (suppressSuggestionsRef.current) return;
     if (!query || query.length < 3) {
       setSuggestions([]);
       setIsOpen(false);
       return;
     }
 
+    const requestId = ++suggestionRequestRef.current;
     const results = await fetchLocationSuggestions(query);
+    if (
+      requestId !== suggestionRequestRef.current ||
+      suppressSuggestionsRef.current
+    ) {
+      return;
+    }
 
     if (skipSuggestionsRef.current) {
       skipSuggestionsRef.current = false;
@@ -113,6 +128,8 @@ export default function SearchPlaceInput({
           className="form-control input-lg"
           id={id}
           onChange={({ target: { value } }) => {
+            suppressSuggestionsRef.current = false;
+            suggestionRequestRef.current += 1;
             setLocationNotFound(false);
             setSearchQuery(value);
           }}
@@ -123,6 +140,10 @@ export default function SearchPlaceInput({
           }}
           onKeyDown={event => {
             if (event.key === 'Enter') {
+              // An explicit manual submit restores place search after a
+              // denied or unavailable device-location request.
+              suppressSuggestionsRef.current = false;
+              suggestionRequestRef.current += 1;
               skipSuggestionsRef.current = true;
               event.preventDefault();
               loadSuggestions(searchQuery);
@@ -139,6 +160,8 @@ export default function SearchPlaceInput({
             size="lg"
             disabled={!searchQuery.length}
             onClick={() => {
+              suggestionRequestRef.current += 1;
+              skipSuggestionsRef.current = false;
               setSearchQuery('');
               setSuggestions([]);
               setIsOpen(false);
@@ -150,6 +173,32 @@ export default function SearchPlaceInput({
             <i className="icon-close"></i>
           </Button>
         </span>
+      </div>
+      <div className="search-device-location">
+        <DeviceLocationButton
+          onLocation={location => {
+            suggestionRequestRef.current += 1;
+            skipSuggestionsRef.current = false;
+            setSuggestions([]);
+            setIsOpen(false);
+            setLocationNotFound(false);
+            setSearchQuery('');
+            if (onDeviceLocation) {
+              onDeviceLocation(location);
+            } else {
+              onPlaceSearch(location, 'center');
+            }
+          }}
+          onRequest={() => {
+            suppressSuggestionsRef.current = true;
+            suggestionRequestRef.current += 1;
+            skipSuggestionsRef.current = false;
+            setSuggestions([]);
+            setIsOpen(false);
+            setLocationNotFound(false);
+            onDeviceLocationRequest?.();
+          }}
+        />
       </div>
       {isOpen && suggestions.length > 0 && (
         <ul

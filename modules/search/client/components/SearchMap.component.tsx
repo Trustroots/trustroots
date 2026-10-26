@@ -67,9 +67,11 @@ interface MapLocation {
   lat: number;
   lng: number;
   zoom?: number;
+  clearSelection?: boolean;
 }
 
 interface SearchMapProps {
+  deviceLocationRequestId?: number;
   filters: string;
   isUserPublic: boolean;
   location?: Partial<MapLocation> | null;
@@ -306,6 +308,7 @@ function nostrEventsToGeoJSON(
 }
 
 export default function SearchMap({
+  deviceLocationRequestId = 0,
   filters,
   isUserPublic,
   location,
@@ -334,6 +337,9 @@ export default function SearchMap({
   const [approximateLocation, stopDefaultLocation] = useMapDefaultLocation(
     !hasDestination && !hasSavedLocation,
   );
+  useEffect(() => {
+    if (deviceLocationRequestId > 0) stopDefaultLocation();
+  }, [deviceLocationRequestId, stopDefaultLocation]);
   const interactionPending = useRef(false);
   const onInteraction = () => {
     interactionPending.current = true;
@@ -384,6 +390,7 @@ export default function SearchMap({
   const [map, setMap] = useState<MapboxMap | undefined>();
   const [hoveredOffer, setHoveredOffer] = useState<MapFeature | false>(false);
   const [selectedOffer, setSelectedOffer] = useState<MapFeature | false>(false);
+  const offerSelectionGeneration = useRef(0);
   const [offers, setOffers] = useState<OfferSearchFeatureCollection>({
     features: [],
     type: 'FeatureCollection',
@@ -854,10 +861,10 @@ export default function SearchMap({
    * Fetch offer data and open it in the search sidebar.
    */
   async function openOfferById(offerId: string | number) {
-    // @TODO: cancellation when opening another offer instead
+    const generation = ++offerSelectionGeneration.current;
     const offer = await getOffer(String(offerId));
 
-    if (offer) {
+    if (offer && generation === offerSelectionGeneration.current) {
       // Delegated to the search shell.
       // The offer endpoint returns the sidebar profile fields at runtime.
       onOfferOpen(offer);
@@ -1093,6 +1100,10 @@ export default function SearchMap({
       typeof location.lng === 'number' &&
       Number.isFinite(location.lng)
     ) {
+      if (location.clearSelection) {
+        offerSelectionGeneration.current += 1;
+        clearPreviouslySelectedState();
+      }
       onViewPortChange({
         ...viewport,
         latitude: location.lat,

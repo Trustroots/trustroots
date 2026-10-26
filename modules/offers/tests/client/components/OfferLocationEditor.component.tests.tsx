@@ -68,6 +68,12 @@ jest.mock(
           </button>
           <button
             type="button"
+            onClick={() => onPlaceSearch({ lat: 0, lng: 0 }, 'center')}
+          >
+            Use my location
+          </button>
+          <button
+            type="button"
             onClick={() =>
               // Deliberately incomplete external place data.
               onPlaceSearch({ lat: 0 } as MapPoint, 'center')
@@ -264,6 +270,20 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search places' }));
 
     expect(onLocationChange).toHaveBeenCalledWith([48.8566, 2.3522]);
+  });
+
+  it('accepts zero coordinates from device location', () => {
+    const onLocationChange = jest.fn();
+    render(
+      <OfferLocationEditor
+        location={null}
+        onLocationChange={onLocationChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(onLocationChange).toHaveBeenCalledWith([0, 0]);
   });
 
   it('updates the location when the map is clicked', () => {

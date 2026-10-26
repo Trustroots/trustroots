@@ -26,10 +26,51 @@ import {
   prepareRasterSearchMap,
   routeRasterMapTiles,
 } from '../../support/maps.mts';
-import type { Locator, Page } from '@playwright/test';
+import type { Locator, Page, Request } from '@playwright/test';
 
 const berlin = SEEDED_MEMBERS[0];
 const alice = SEEDED_RELATIONSHIP_MEMBERS.alice;
+
+declare global {
+  interface Window {
+    __deviceLocationRequests?: number;
+  }
+}
+
+async function mockDeviceLocation(
+  page: Page,
+  latitude: number,
+  longitude: number,
+): Promise<void> {
+  await page.addInitScript(
+    ({ latitude: deviceLatitude, longitude: deviceLongitude }) => {
+      window.__deviceLocationRequests = 0;
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition(success: PositionCallback) {
+            window.__deviceLocationRequests! += 1;
+            queueMicrotask(() =>
+              success({
+                coords: {
+                  latitude: deviceLatitude,
+                  longitude: deviceLongitude,
+                  accuracy: 10,
+                  altitude: null,
+                  altitudeAccuracy: null,
+                  heading: null,
+                  speed: null,
+                },
+                timestamp: Date.now(),
+              } as GeolocationPosition),
+            );
+          },
+        },
+      });
+    },
+    { latitude, longitude },
+  );
+}
 
 async function expectHostingMapSettled(map: Locator): Promise<void> {
   await expect(map.locator('.leaflet-pan-anim')).toHaveCount(0);
@@ -246,9 +287,11 @@ test.describe.serial('search offers and circles feature coverage', () => {
       name: 'Finish editing and save',
     });
     await expect(finish).toBeDisabled();
-    await expect(page.getByRole('status')).toContainText(
-      'Search for a place or move the map',
-    );
+    await expect(
+      page
+        .getByRole('status')
+        .filter({ hasText: 'Search for a place or move the map' }),
+    ).toContainText('Search for a place or move the map');
     await page.getByRole('button', { name: 'Zoom in' }).click();
     await expect(finish).toBeDisabled();
 
@@ -294,6 +337,164 @@ test.describe.serial('search offers and circles feature coverage', () => {
       headers: { 'X-Trustroots-Request': '1' },
     });
     expect(remove.ok()).toBeTruthy();
+  });
+
+  test('meeting device location stays a draft until the member saves', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'offers.meet-create-edit-delete', [
+      'Meeting device location updates the draft coordinates.',
+      'The meeting is persisted only after Save and Exit.',
+    ]);
+    await mockDeviceLocation(page, -23.55, -46.63);
+    await page.goto('/offer/meet/add');
+    await page
+      .getByPlaceholder('Write here...')
+      .fill('A fictional meeting near the harbour.');
+    await page.getByRole('button', { name: 'Next section' }).click();
+
+    const map = page.getByTestId('leaflet-map');
+    await expect(map).toBeVisible();
+    const locate = page.getByRole('button', {
+      name: 'Use my location',
+      exact: true,
+    });
+    await expect(locate).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+      .toBe(0);
+    let saves = 0;
+    const countSave = (request: Request) => {
+      if (
+        request.url().endsWith('/api/offers') &&
+        request.method() === 'POST'
+      ) {
+        saves += 1;
+      }
+    };
+    page.on('request', countSave);
+
+    await locate.click();
+    await expect(map).toHaveAttribute('data-map-latitude', '-23.55');
+    await expect(map).toHaveAttribute('data-map-longitude', '-46.63');
+    const finish = page.getByRole('button', {
+      name: 'Finish editing and save',
+    });
+    await expect(finish).toBeEnabled();
+    expect(saves).toBe(0);
+
+    const saved = page.waitForResponse(
+      response =>
+        response.url().endsWith('/api/offers') &&
+        response.request().method() === 'POST',
+    );
+    await finish.click();
+    const response = await saved;
+    page.off('request', countSave);
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().location).toEqual([
+      -23.55, -46.63,
+    ]);
+
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [meeting] = await findOffersByUser(memberId, {
+      type: 'meet',
+      description: 'A fictional meeting near the harbour.',
+    });
+    expect(meeting.location).toEqual([-23.55, -46.63]);
+    const remove = await page.request.delete(`/api/offers/${meeting._id}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
+    expect(remove.ok()).toBeTruthy();
+  });
+
+  test('hosting device location stays a draft until the member saves', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'offers.host', [
+      'Hosting device location updates the editable coordinates.',
+      'The hosting offer is persisted only after Save and Exit.',
+    ]);
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
+    await mockDeviceLocation(page, 0, 0);
+    await page.goto('/offer/host#location');
+    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+
+    const map = page.getByTestId('leaflet-map');
+    const locate = page.getByRole('button', {
+      name: 'Use my location',
+      exact: true,
+    });
+    await expect(locate).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+      .toBe(0);
+    let saves = 0;
+    const countSave = (request: Request) => {
+      if (
+        request.url().includes('/api/offers/') &&
+        request.method() === 'PUT'
+      ) {
+        saves += 1;
+      }
+    };
+    page.on('request', countSave);
+
+    await locate.click();
+    await expect(map).toHaveAttribute('data-map-latitude', '0');
+    await expect(map).toHaveAttribute('data-map-longitude', '0');
+    expect(saves).toBe(0);
+    await page.screenshot({
+      path: testInfo.outputPath('device-location-host-desktop.png'),
+    });
+
+    const saved = page.waitForResponse(
+      response =>
+        response.url().includes('/api/offers/') &&
+        response.request().method() === 'PUT',
+    );
+    await page.getByRole('button', { name: 'Save and Exit' }).click();
+    const response = await saved;
+    page.off('request', countSave);
+    expect(response.ok()).toBeTruthy();
+    expect(response.request().postDataJSON().location).toEqual([0, 0]);
+    const [savedOffer] = await findOffersByUser(memberId, { type: 'host' });
+    expect(savedOffer.location).toEqual([0, 0]);
+
+    const restore = await page.request.put(`/api/offers/${originalOffer._id}`, {
+      data: { location: originalOffer.location },
+    });
+    expect(restore.ok()).toBeTruthy();
+  });
+
+  test('mobile hosting editor exposes the device location action', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'offers.host', [
+      'The hosting location editor keeps device location reachable on mobile.',
+    ]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockDeviceLocation(page, 0, 0);
+    await page.goto('/offer/host#location');
+    await page.getByRole('tab', { name: 'Location' }).click();
+    const locate = page.getByRole('button', {
+      name: 'Use my location',
+      exact: true,
+    });
+    await expect(locate).toBeVisible();
+    await expect(locate).toBeInViewport();
+    await locate.click();
+    await expect(page.getByTestId('leaflet-map')).toHaveAttribute(
+      'data-map-latitude',
+      '0',
+    );
+    await page.screenshot({
+      path: testInfo.outputPath('device-location-host-mobile.png'),
+    });
   });
 
   test('hosting location follows place searches and map dragging', async ({
