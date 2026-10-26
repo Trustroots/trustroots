@@ -56,6 +56,10 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     title: 'Contribute',
   },
   {
+    path: '/credits',
+    title: 'Credits',
+  },
+  {
     path: '/faq',
     title: 'FAQ - Site & community',
   },

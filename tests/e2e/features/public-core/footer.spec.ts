@@ -19,6 +19,24 @@ test.describe('public footer', () => {
       'Standard footer links to the deployed GitHub commit.',
     ]);
 
+    await page.addInitScript(
+      build => {
+        let settings: Record<string, unknown> = {};
+        Object.defineProperty(window, 'settings', {
+          configurable: true,
+          get: () => settings,
+          set: value => {
+            settings = { ...value, build };
+          },
+        });
+      },
+      {
+        commitUrl:
+          'https://github.com/Trustroots/trustroots/commit/abcdef0123456789abcdef0123456789abcdef01',
+        committedAt: '2026-10-21 00:00',
+        shortCommit: 'abcdef0',
+      },
+    );
     await page.goto('/faq');
 
     const footer = page.locator('#tr-footer');
@@ -31,6 +49,7 @@ test.describe('public footer', () => {
       ['Safety', '/safety'],
       ['FAQ', '/faq'],
       ['Privacy', '/privacy'],
+      ['Credits', '/credits'],
       ['Contact', '/contact'],
     ]) {
       await expect(
@@ -77,6 +96,28 @@ test.describe('public footer', () => {
     expect(metaBox.x + metaBox.width).toBeGreaterThan(
       contentBox.x + contentBox.width - 1,
     );
+  });
+
+  test('credits page is accessible from the footer', async ({ page }) => {
+    await page.goto('/faq');
+    await page
+      .locator('#tr-footer')
+      .getByRole('link', { name: 'Credits', exact: true })
+      .click();
+    await expect(page).toHaveURL(/\/credits$/);
+    await expect(
+      page.getByRole('heading', { name: 'Credits', level: 1 }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/This product includes GeoLite2 data/),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'MaxMind' })).toHaveAttribute(
+      'href',
+      'https://www.maxmind.com',
+    );
+    await expect(
+      page.getByRole('link', { name: 'OpenStreetMap contributors' }),
+    ).toBeVisible();
   });
 
   test('standard footer stays hidden on mobile', async ({ page }, testInfo) => {
