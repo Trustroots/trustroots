@@ -32,6 +32,9 @@ interface ControllerTestConfig {
 }
 const config: ControllerTestConfig = require('./../../../../config/config.mts');
 const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
+const messageThrottleAlerts =
+  require('../../server/services/message-throttle-alert.server.service.mts')
+    .default as typeof import('../../server/services/message-throttle-alert.server.service.mts').default;
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
@@ -242,12 +245,14 @@ describe('Messages controller unit tests', () => {
 
   describe('send validation', () => {
     let sender: UserDocument;
+    let notify: import('sinon').SinonStub;
 
     beforeEach(async () => {
       [sender] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
       );
       sender.roles = ['user'];
+      notify = sinon.stub(messageThrottleAlerts, 'notify').resolves();
     });
 
     it('requires a userTo field', async () => {
@@ -310,6 +315,7 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(404);
+      notify.called.should.equal(false);
     });
 
     it('rejects a first message from an empty profile', async () => {
@@ -350,9 +356,37 @@ describe('Messages controller unit tests', () => {
         );
         await res.waitForResponse();
         res.statusCode.should.equal(429);
+        notify.calledOnceWithExactly(sender, 0).should.equal(true);
       } finally {
         throttle.count = originalCount;
       }
+    });
+
+    it('retains HTTP 429 when throttle notification fails', async () => {
+      sinon
+        .stub(Message, 'distinct')
+        .resolves(
+          Array.from(
+            { length: config.limits.messagesToIndividualsThrottle.count + 1 },
+            () => new mongoose.Types.ObjectId(),
+          ),
+        );
+      notify.rejects(new Error('Notification unavailable'));
+      const res = deferredResponse();
+      await messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: new mongoose.Types.ObjectId().toString(),
+            content: 'A fictional greeting.',
+          },
+        },
+        res,
+      );
+      res.statusCode.should.equal(429);
+      bodyField<string>(res.body, 'message').should.equal(
+        'You are writing too many messages.',
+      );
     });
 
     for (const role of ['welcome-team', 'admin']) {
@@ -380,6 +414,7 @@ describe('Messages controller unit tests', () => {
         await res.waitForResponse();
         res.statusCode.should.equal(404);
         distinct.called.should.equal(false);
+        notify.called.should.equal(false);
 
         sender.roles = ['user'];
         const revokedResponse = deferredResponse();
