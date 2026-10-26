@@ -281,6 +281,8 @@ const UserSchema = new Schema<
     ],
   },
   // nostr npub
+  nostrChallenge: { type: String, select: false },
+  nostrChallengeExpiresAt: { type: Date, select: false },
   nostrNpub: {
     type: String,
     trim: true,

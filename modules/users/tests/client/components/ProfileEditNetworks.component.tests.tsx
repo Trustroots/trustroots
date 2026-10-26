@@ -7,6 +7,11 @@ import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNe
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
+jest.mock('@/modules/users/client/services/nostr-proof.client', () => ({
+  ...jest.requireActual('@/modules/users/client/services/nostr-proof.client'),
+  signNostrProof: jest.fn().mockResolvedValue({ id: 'signed-proof' }),
+}));
+
 const mockedUsersApi = jest.mocked(usersApi);
 
 jest.mock('@/modules/users/client/api/users.api');
@@ -58,6 +63,137 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 }
 
 describe('ProfileEditNetworks', () => {
+  it('shows remote authorisation while signing and cancels on unmount', async () => {
+    const { signNostrProof } =
+      await import('../../../client/services/nostr-proof.client');
+    let signal: AbortSignal | undefined;
+    jest
+      .mocked(signNostrProof)
+      .mockImplementationOnce(
+        (_event, _npub, _method, _uri, onAuth, operationSignal) => {
+          signal = operationSignal;
+          onAuth('https://signer.example.com/authorise');
+          return new Promise(() => {});
+        },
+      );
+    const view = renderPage();
+    fireEvent.change(screen.getByLabelText('nostr npub'), {
+      target: { value: 'npub1qqqq' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(
+      await screen.findByRole('link', { name: 'Authorise the remote signer' }),
+    ).toHaveAttribute('href', 'https://signer.example.com/authorise');
+    view.unmount();
+    expect(signal?.aborted).toBe(true);
+  });
+  it('saves a new key using a signed external challenge and keeps later network edits unsigned', async () => {
+    mockedUsersApi.update.mockResolvedValue({
+      ...user,
+      nostrNpub: 'npub1qqqq',
+    });
+    renderPage();
+    fireEvent.change(screen.getByLabelText('nostr npub'), {
+      target: { value: 'npub1qqqq' },
+    });
+    fireEvent.change(screen.getByLabelText('Signing method'), {
+      target: { value: 'external' },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Create signing challenge' }),
+    );
+    expect(
+      (await screen.findByLabelText<HTMLTextAreaElement>('Challenge to sign'))
+        .value,
+    ).toContain('27235');
+    fireEvent.change(screen.getByLabelText('Signed event JSON'), {
+      target: { value: '{"id":"external-proof"}' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() =>
+      expect(mockedUsersApi.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          nostrNpub: 'npub1qqqq',
+          nostrProof: { id: 'external-proof' },
+        }),
+      ),
+    );
+    await screen.findByText('Hospitality networks updated.');
+    expect(screen.queryByLabelText('Signing method')).not.toBeInTheDocument();
+    mockedUsersApi.update.mockClear();
+    mockedUsersApi.nostrChallenge.mockClear();
+    fireEvent.change(screen.getByLabelText('couchers.org/user/'), {
+      target: { value: 'fictional' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(mockedUsersApi.update).toHaveBeenCalledTimes(1));
+    expect(mockedUsersApi.nostrChallenge).not.toHaveBeenCalled();
+  });
+
+  it('retains drafts when an external challenge request fails and clears proof when the key changes', async () => {
+    renderPage();
+    fireEvent.change(screen.getByLabelText('nostr npub'), {
+      target: { value: 'npub1qqqq' },
+    });
+    fireEvent.change(screen.getByLabelText('Signing method'), {
+      target: { value: 'external' },
+    });
+    mockedUsersApi.nostrChallenge.mockRejectedValueOnce(new Error('offline'));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Create signing challenge' }),
+    );
+    expect(
+      await screen.findByText('Something went wrong. Please try again!'),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Create signing challenge' }),
+    );
+    await screen.findByLabelText('Challenge to sign');
+    fireEvent.change(screen.getByLabelText('Signed event JSON'), {
+      target: { value: 'invalid' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByText(
+      'Paste the signed event JSON from your signing tool.',
+    );
+    expect(mockedUsersApi.update).not.toHaveBeenCalled();
+    fireEvent.change(screen.getByLabelText('nostr npub'), {
+      target: { value: 'npub1pppp' },
+    });
+    expect(
+      screen.queryByLabelText('Challenge to sign'),
+    ).not.toBeInTheDocument();
+  });
+
+  it('passes the bunker connection details to the signer', async () => {
+    const { signNostrProof } =
+      await import('../../../client/services/nostr-proof.client');
+    mockedUsersApi.update.mockResolvedValue({
+      ...user,
+      nostrNpub: 'npub1qqqq',
+    });
+    renderPage();
+    fireEvent.change(screen.getByLabelText('nostr npub'), {
+      target: { value: 'npub1qqqq' },
+    });
+    fireEvent.change(screen.getByLabelText('Signing method'), {
+      target: { value: 'bunker' },
+    });
+    fireEvent.change(screen.getByLabelText('Bunker URI'), {
+      target: { value: 'bunker://fictional' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    await screen.findByText('Hospitality networks updated.');
+    expect(signNostrProof).toHaveBeenCalledWith(
+      expect.anything(),
+      'npub1qqqq',
+      'bunker',
+      'bunker://fictional',
+      expect.any(Function),
+      expect.any(AbortSignal),
+    );
+  });
+
   it.each(['household/fictional-host', 'address/fictional-host', ''])(
     'saves the Servas path %s and previews non-empty links',
     async path => {
@@ -91,6 +227,12 @@ describe('ProfileEditNetworks', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     delete window.nostr;
+    mockedUsersApi.nostrChallenge.mockResolvedValue({
+      kind: 27235,
+      created_at: 1,
+      tags: [],
+      content: '',
+    });
   });
 
   it('saves hospitality network changes and shows related links', async () => {
