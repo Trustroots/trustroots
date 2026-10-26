@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import NostrService from '@/modules/search/client/services/nostr.client.service';
 import CircleLocationMap, { type CircleLocation } from './CircleLocationMap';
 import { useCircleMapEvents } from '../hooks/useCircleMapEvents';
-import { useHitchwikiProfiles } from '../hooks/useHitchwikiProfiles';
 import {
   HITCHWIKI_AUTHOR,
   HITCHHIKING_KIND,
@@ -41,13 +40,12 @@ export default function HitchhikingMap() {
         .filter((location): location is CircleLocation => !!location),
     [events, now],
   );
-  const profileLocations = useHitchwikiProfiles(locations);
   return (
     <CircleLocationMap
       title="Hitchhikers on the road"
       description="Recent rides shared on Hitchwiki Maps."
       mapLabel="Map of recent Hitchwiki hitchhiking locations"
-      locations={profileLocations}
+      locations={locations}
       state={state}
       loadingText="Loading recent locations from Hitchwiki relay…"
       emptyText="No reported locations in the past 7 days."

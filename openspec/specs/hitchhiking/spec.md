@@ -61,7 +61,7 @@ Both circle maps SHALL support pinch and mouse-wheel zoom, constrain zoom and pa
 
 ### Requirement: Hitchhiker names in ride popups
 
-Ride popups SHALL show available non-empty hitchhiker nicknames before waiting time, preserving feed order and removing duplicate names. Named riders SHALL link to their existing English Hitchwiki.org user page when available, falling back to their Hitchwiki Maps account. Anonymous SHALL be plain text without a profile link. Missing and malformed names SHALL be omitted. Labels SHALL render safely as text, without gender symbols.
+Ride popups SHALL show available non-empty hitchhiker nicknames before waiting time, preserving feed order and removing duplicate names. Named riders SHALL link directly to their Hitchwiki Maps account at `https://maps.hitchwiki.org/account/<nickname>`, with the nickname URL-encoded. Anonymous SHALL be plain text without a profile link. Missing and malformed names SHALL be omitted. Labels SHALL render safely as text, without gender symbols.
 
 #### Scenario: Visitor inspects named and anonymous riders
 
@@ -69,8 +69,8 @@ Ride popups SHALL show available non-empty hitchhiker nicknames before waiting t
 - **THEN** the popup shows their names and links only named hitchhikers
 - **AND** existing ride facts and the source ride link remain available
 
-#### Scenario: User page is missing or lookup fails
+#### Scenario: Direct Maps account links
 
-- **WHEN** a named hitchhiker has no English Hitchwiki.org user page or the lookup fails
-- **THEN** their name links to the Hitchwiki Maps account
-- **AND** the ride remains visible
+- **WHEN** a visitor opens a ride popup containing a named hitchhiker
+- **THEN** their name links directly to the Hitchwiki Maps account
+- **AND** no wiki user-page lookup is required

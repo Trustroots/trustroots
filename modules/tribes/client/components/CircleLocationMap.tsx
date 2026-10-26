@@ -144,7 +144,13 @@ export default function CircleLocationMap(props: Props) {
           openLocation.current = null;
         })
         .addTo(markers);
-      if (selected === location.id) marker.openPopup();
+      if (selected === location.id) {
+        const popup = marker.getPopup()!;
+        // Refresh the selected popup without undoing the visitor's map position.
+        popup.options.autoPan = false;
+        marker.openPopup();
+        popup.options.autoPan = true;
+      }
     });
   }, [props.locations, props.markerColor]);
   useEffect(() => {

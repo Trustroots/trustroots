@@ -104,7 +104,7 @@ async function prepareCircle(
   );
 }
 
-test('ride popups link named hitchhikers to existing wiki pages and leave Anonymous unlinked', async ({
+test('ride popups link named hitchhikers to Maps accounts and leave Anonymous unlinked', async ({
   page,
 }) => {
   const secret = generateSecretKey();
@@ -144,18 +144,6 @@ test('ride popups link named hitchhikers to existing wiki pages and leave Anonym
     secret,
   );
   await prepareCircle(page, false, [event]);
-  await page.route('https://hitchwiki.org/en/api.php?**', route =>
-    route.fulfill({
-      json: {
-        query: {
-          pages: [
-            { title: 'User:ExampleHiker' },
-            { title: 'User:OtherHiker', missing: true },
-          ],
-        },
-      },
-    }),
-  );
   await page.goto('/circles/hitchhikers');
   await expect(page.locator('.circle-location-map-status')).toHaveText(
     '1 ride origins in the past 7 days',
@@ -164,7 +152,7 @@ test('ride popups link named hitchhikers to existing wiki pages and leave Anonym
   const popup = page.locator('.leaflet-popup');
   await expect(
     popup.getByRole('link', { name: 'ExampleHiker', exact: true }),
-  ).toHaveAttribute('href', 'https://hitchwiki.org/en/User%3AExampleHiker');
+  ).toHaveAttribute('href', 'https://maps.hitchwiki.org/account/ExampleHiker');
   await expect(
     popup.getByRole('link', { name: 'OtherHiker', exact: true }),
   ).toHaveAttribute('href', 'https://maps.hitchwiki.org/account/OtherHiker');

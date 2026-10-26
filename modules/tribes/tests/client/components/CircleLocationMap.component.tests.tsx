@@ -30,6 +30,7 @@ jest.mock('leaflet', () => {
         on: jest.fn().mockReturnThis(),
         addTo: jest.fn().mockReturnThis(),
         openPopup: jest.fn(),
+        getPopup: jest.fn(() => ({ options: { autoPan: true } })),
       })),
       latLngBounds: jest.fn(value => value),
     },
@@ -107,7 +108,7 @@ describe('shared circle map', () => {
     rerender(<CircleLocationMap {...props} />);
     expect(map.fitBounds).not.toHaveBeenCalled();
   });
-  it('keeps the selected popup open when profile links are enriched', () => {
+  it('keeps the selected popup open when locations are refreshed', () => {
     const { rerender } = render(<CircleLocationMap {...props} />);
     const marker = jest.mocked(L.circleMarker).mock.results[0].value;
     const notify = (name: string) =>
