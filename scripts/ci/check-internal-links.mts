@@ -181,10 +181,7 @@ function findRoutes(node: ts.Node): void {
 findRoutes(routesFile.source);
 
 const errors: string[] = [];
-const shellFile = path.join(
-  root,
-  'modules/core/client/react-app/ReactAppShell.tsx',
-);
+const shellFile = path.join(root, 'layers/shell/client/ReactAppShell.tsx');
 const shellIds = fs.existsSync(shellFile)
   ? readSource(shellFile).ids
   : new Set();

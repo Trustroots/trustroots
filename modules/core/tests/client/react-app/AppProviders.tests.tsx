@@ -3,14 +3,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { useQueryClient } from '@tanstack/react-query';
 
-import {
-  AppProviders,
-  useBootstrapData,
-} from '@/modules/core/client/react-app/AppProviders';
-import {
-  AppProviders as ShellAppProviders,
-  useBootstrapData as useShellBootstrapData,
-} from '@/layers/shell/client/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
+import { useBootstrapData } from '@/modules/core/client/react-app/app-context';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 
 describe('AppProviders', () => {
@@ -66,70 +60,54 @@ describe('AppProviders', () => {
     delete window.title;
   });
 
-  it.each([
-    [
-      'shell provider with compatibility hooks',
-      ShellAppProviders,
-      useBootstrapData,
-    ],
-    [
-      'compatibility provider with shell hooks',
-      AppProviders,
-      useShellBootstrapData,
-    ],
-  ] as const)(
-    'shares bootstrap, auth and query state across %s',
-    (_label, Provider, useBootstrap) => {
-      function Consumer() {
-        const { title } = useBootstrap();
-        const { user, setUser } = useAuth();
-        const queryClient = useQueryClient();
-        React.useEffect(() => () => queryClient.clear(), [queryClient]);
-        const cached = queryClient.getQueryData<string>([
-          'provider-compatibility',
-        ]);
+  it('shares core bootstrap, auth and query state across rerenders', () => {
+    function Consumer() {
+      const { title } = useBootstrapData();
+      const { user, setUser } = useAuth();
+      const queryClient = useQueryClient();
+      React.useEffect(() => () => queryClient.clear(), [queryClient]);
+      const cached = queryClient.getQueryData<string>(['provider-state']);
 
-        return (
-          <button
-            onClick={() => {
-              queryClient.setQueryData(['provider-compatibility'], 'retained');
-              setUser({ username: 'updated-member' });
-            }}
-          >
-            {title} {user?.username} {cached}
-          </button>
-        );
-      }
-
-      const { rerender } = render(
-        <Provider
-          bootstrapData={{
-            settings: {},
-            title: 'Initial title',
-            user: { username: 'initial-member' },
+      return (
+        <button
+          onClick={() => {
+            queryClient.setQueryData(['provider-state'], 'retained');
+            setUser({ username: 'updated-member' });
           }}
         >
-          <Consumer />
-        </Provider>,
+          {title} {user?.username} {cached}
+        </button>
       );
-      expect(screen.getByRole('button')).toHaveTextContent(
-        'Initial title initial-member',
-      );
-      fireEvent.click(screen.getByRole('button'));
-      rerender(
-        <Provider
-          bootstrapData={{
-            settings: {},
-            title: 'Updated title',
-            user: { username: 'replacement-member' },
-          }}
-        >
-          <Consumer />
-        </Provider>,
-      );
-      expect(screen.getByRole('button')).toHaveTextContent(
-        'Updated title updated-member retained',
-      );
-    },
-  );
+    }
+
+    const { rerender } = render(
+      <AppProviders
+        bootstrapData={{
+          settings: {},
+          title: 'Initial title',
+          user: { username: 'initial-member' },
+        }}
+      >
+        <Consumer />
+      </AppProviders>,
+    );
+    expect(screen.getByRole('button')).toHaveTextContent(
+      'Initial title initial-member',
+    );
+    fireEvent.click(screen.getByRole('button'));
+    rerender(
+      <AppProviders
+        bootstrapData={{
+          settings: {},
+          title: 'Updated title',
+          user: { username: 'replacement-member' },
+        }}
+      >
+        <Consumer />
+      </AppProviders>,
+    );
+    expect(screen.getByRole('button')).toHaveTextContent(
+      'Updated title updated-member retained',
+    );
+  });
 });

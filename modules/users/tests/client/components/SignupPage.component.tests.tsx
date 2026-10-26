@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SignupPage from '@/modules/users/client/components/SignupPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';

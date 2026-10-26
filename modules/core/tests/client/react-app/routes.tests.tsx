@@ -9,8 +9,8 @@ import {
   parseLegacySearch,
   routes,
   stringifyLegacySearch,
-} from '@/modules/core/client/react-app/routes';
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+} from '@/layers/shell/client/routes';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,

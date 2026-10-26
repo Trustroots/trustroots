@@ -11,11 +11,9 @@ import {
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import ReactApp from '@/modules/core/client/react-app/ReactApp';
-import {
-  AppProviders,
-  type BootstrapData,
-} from '@/modules/core/client/react-app/AppProviders';
+import ReactApp from '@/layers/shell/client/ReactApp';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
+import type { BootstrapData } from '@/modules/core/client/react-app/app-context';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';

@@ -1,5 +1,5 @@
 import { matchReactRoute } from '@/modules/core/shared/react-route-ownership.mts';
-import { navigateTo } from '@/modules/core/client/react-app/shell-helpers';
+import { navigateTo } from './browser-navigation';
 
 const STATE_TARGETS: Record<string, string> = {
   home: '/',

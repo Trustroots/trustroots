@@ -8,7 +8,7 @@ import ProfileEditPage from './ProfileEditPage.component';
 import { update } from '../api/users.api';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
 

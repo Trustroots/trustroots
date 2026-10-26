@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditPhoto from '@/modules/users/client/components/ProfileEditPhoto.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type Avatar from '@/modules/users/client/components/Avatar.component';

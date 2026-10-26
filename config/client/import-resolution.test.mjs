@@ -21,10 +21,7 @@ const filePath = fileURLToPath(
 );
 
 const resolvedFiles = [
-  [
-    '@/modules/core/client/react-app/ReactApp.js',
-    'modules/core/client/react-app/ReactApp.tsx',
-  ],
+  ['@/layers/shell/client/ReactApp.js', 'layers/shell/client/ReactApp.tsx'],
   [
     'modules/messages/client/services/visibility.client.service.js',
     'modules/messages/client/services/visibility.client.service.ts',
