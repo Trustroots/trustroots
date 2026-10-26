@@ -66,14 +66,21 @@ describe('translation formats and catalogue', () => {
         .filter(entry => entry.key.includes('guests'))
         .map(entry => [entry.key, entry.source]),
     ).toEqual([
-      ['{{count}} guests', '{{count}} guest'],
-      ['{{count}} guests_plural', '{{count}} guests'],
+      ['{{count}} guests_one', '{{count}} guest'],
+      ['{{count}} guests_other', '{{count}} guests'],
     ]);
     expect(
       catalogue('ar', snapshot()).entries.filter(entry =>
         entry.key.includes('guests'),
       ),
-    ).toHaveLength(6);
+    ).toEqual(
+      ['zero', 'one', 'two', 'few', 'many', 'other'].map(category =>
+        expect.objectContaining({
+          key: '{{count}} guests_' + category,
+          source: category === 'one' ? '{{count}} guest' : '{{count}} guests',
+        }),
+      ),
+    );
     expect(
       german.entries.find(entry => entry.key === 'Hello')?.needsReview,
     ).toBe(false);
