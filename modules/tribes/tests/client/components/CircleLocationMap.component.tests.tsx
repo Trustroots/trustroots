@@ -27,7 +27,10 @@ jest.mock('leaflet', () => {
       layerGroup: jest.fn(() => group),
       circleMarker: jest.fn(() => ({
         bindPopup: jest.fn().mockReturnThis(),
-        addTo: jest.fn(),
+        on: jest.fn().mockReturnThis(),
+        addTo: jest.fn().mockReturnThis(),
+        openPopup: jest.fn(),
+        getPopup: jest.fn(() => ({ options: { autoPan: true } })),
       })),
       latLngBounds: jest.fn(value => value),
     },
@@ -104,6 +107,22 @@ describe('shared circle map', () => {
     act(() => moveStart());
     rerender(<CircleLocationMap {...props} />);
     expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+  it('keeps the selected popup open when locations are refreshed', () => {
+    const { rerender } = render(<CircleLocationMap {...props} />);
+    const marker = jest.mocked(L.circleMarker).mock.results[0].value;
+    const notify = (name: string) =>
+      marker.on.mock.calls.find(([event]: [string]) => event === name)[1]();
+    act(() => notify('popupopen'));
+    rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
+    expect(
+      jest.mocked(L.circleMarker).mock.results[1].value.openPopup,
+    ).toHaveBeenCalled();
+    act(() => notify('popupclose'));
+    rerender(<CircleLocationMap {...props} locations={[{ ...location }]} />);
+    expect(
+      jest.mocked(L.circleMarker).mock.results[2].value.openPopup,
+    ).not.toHaveBeenCalled();
   });
 
   it('renders markers, safe text popups and attribution, and removes its map', () => {
@@ -187,6 +206,39 @@ describe('shared circle map', () => {
       .slice(-1)[0][1];
     act(() => resize());
     expect(map.setMinZoom).toHaveBeenCalledWith(4);
+  });
+  it('renders linked fact lists safely and leaves anonymous and unsafe URLs unlinked', () => {
+    const popup = locationPopup({
+      ...location,
+      facts: [
+        {
+          label: 'Hitchhikers',
+          value: [
+            {
+              label: '<img src=x>ExampleHiker',
+              url: 'https://maps.hitchwiki.org/account/ExampleHiker',
+            },
+            { label: 'Anonymous' },
+            { label: '<script>Other</script>', url: 'javascript:alert(1)' },
+          ],
+        },
+      ],
+    });
+    const definition = popup.querySelector('dd')!;
+    expect(definition).toHaveTextContent(
+      '<img src=x>ExampleHiker, Anonymous, <script>Other</script>',
+    );
+    expect(definition.querySelectorAll('a')).toHaveLength(1);
+    expect(definition.querySelector('a')).toHaveAttribute(
+      'href',
+      'https://maps.hitchwiki.org/account/ExampleHiker',
+    );
+    expect(definition.querySelector('a')).toHaveAttribute('target', '_blank');
+    expect(definition.querySelector('a')).toHaveAttribute(
+      'rel',
+      'noopener noreferrer',
+    );
+    expect(definition.querySelector('img, script')).toBeNull();
   });
 });
 

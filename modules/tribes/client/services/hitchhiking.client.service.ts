@@ -58,7 +58,7 @@ interface RideStop {
 interface RideData {
   stops?: RideStop[];
   signals?: { methods?: unknown }[];
-  hitchhikers?: { reasons_to_hitchhike?: unknown }[];
+  hitchhikers?: { nickname?: unknown; reasons_to_hitchhike?: unknown }[];
   submission_time?: unknown;
 }
 
@@ -70,6 +70,30 @@ function rideFacts(
   const add = (label: string, value: string | null) => {
     if (value !== null) facts.push({ label, value });
   };
+  const names = Array.isArray(data.hitchhikers)
+    ? [
+        ...new Set(
+          data.hitchhikers.flatMap(person =>
+            typeof person?.nickname === 'string' && person.nickname.trim()
+              ? [person.nickname.trim()]
+              : [],
+          ),
+        ),
+      ]
+    : [];
+  if (names.length) {
+    facts.push({
+      label: 'Hitchhikers',
+      value: names.map(label => ({
+        label,
+        ...(label === 'Anonymous'
+          ? {}
+          : {
+              url: `https://maps.hitchwiki.org/account/${encodeURIComponent(label)}`,
+            }),
+      })),
+    });
+  }
   add('Waiting time', waitingTime(origin.waiting_duration));
   const stops = data.stops;
   if (
