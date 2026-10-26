@@ -1604,8 +1604,9 @@ root SHALL cancel its work and clear its account-owned state.
 - **WHEN** a member opens HostDetail from a map marker
 - **THEN** HostDetail appears as a bottom-aligned surface above a dim scrim
   while the same map scene remains composed beneath it
-- **AND** the scrim blocks map input, while the shell and its bottom
-  navigation remain in the same Activity window
+- **AND** pan and zoom gestures outside the host preview card reach the retained
+  map through the visual scrim, while the shell and its bottom navigation
+  remain in the same Activity window
 - **AND** Back, including a cancelled predictive Back gesture, leaves the
   retained map visit and its camera, filters, results and community-note
   source unchanged
@@ -1750,3 +1751,21 @@ payloads.
   changes before a shell request completes
 - **THEN** the old request is cancelled or ignored
 - **AND** the new root visit displays no result from the former account
+
+### Requirement: Interact with the map beneath a host preview
+
+The Android HostDetail preview SHALL allow map pan and zoom gestures through
+its visual scrim while remaining open. The preview card's controls SHALL
+remain interactive. Opening a member profile from the preview SHALL continue
+to replace the preview, and Back SHALL return to the retained map.
+
+#### Scenario: Pan the map with a host preview open
+
+- **WHEN** a member pans or zooms the map outside the host preview card
+- **THEN** the map camera responds and the host preview remains open
+
+#### Scenario: Open a profile from the host preview
+
+- **WHEN** a member opens the host profile from the preview and presses Back
+- **THEN** the profile is shown without the host preview covering it
+- **AND** Back returns to the retained map with the host preview closed

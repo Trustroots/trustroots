@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.search
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.input.pointer.pointerInput
@@ -63,21 +64,12 @@ private class SearchOverlayScene(
                 onBack()
             }
             if (kind == SearchOverlayKind.HostDetail) {
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .pointerInput(Unit) {
-                            awaitPointerEventScope {
-                                while (true) {
-                                    awaitPointerEvent()
-                                }
-                            }
-                        },
-                ) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = colorResource(R.color.search_overlay_scrim),
-                    ) {}
+                Box(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(colorResource(R.color.search_overlay_scrim)),
+                    )
                     entry.Content()
                 }
             } else {
