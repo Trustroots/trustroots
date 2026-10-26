@@ -247,7 +247,7 @@
     "nodemon": "3.1.14",
     "postcss": "8.5.31",
     "prettier": "3.9.10",
-    "rtlcss": "3.5.0",
+    "rtlcss": "4.3.0",
     "should": "13.2.3",
     "sinon": "22.1.0",
     "supertest": "6.1.6",
