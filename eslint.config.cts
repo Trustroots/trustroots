@@ -359,6 +359,7 @@ const legacyConfig = {
         'config/**',
         'migrations/**',
         'scripts/**/*.{mts,cts}',
+        'tooling/guards/**/*.mts',
         'packages/logger/**',
       ],
       env: {

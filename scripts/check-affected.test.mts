@@ -163,7 +163,7 @@ test('falls back when history is unavailable or the directory is not a repositor
   );
 });
 
-test('runs Turbo then repository-wide typechecking and forwards the base', t => {
+test('checks boundaries, runs Turbo then repository-wide typechecking and forwards the base', t => {
   t.mock.method(console, 'log', () => {});
   const { root } = repository(t);
   const calls: string[][] = [];
@@ -178,6 +178,7 @@ test('runs Turbo then repository-wide typechecking and forwards the base', t => 
     0,
   );
   assert.deepEqual(calls, [
+    ['run', 'lint:boundaries'],
     ['exec', 'turbo', 'run', 'lint', 'test:client', '--affected'],
     ['run', 'typecheck'],
   ]);
@@ -240,13 +241,13 @@ for (const result of [
   });
 }
 
-test('propagates a typecheck failure after Turbo passes', t => {
+test('propagates a typecheck failure after boundary checks and Turbo pass', t => {
   t.mock.method(console, 'log', () => {});
   const { root } = repository(t);
   let calls = 0;
   assert.equal(
-    main(root, {}, () => ({ status: ++calls === 1 ? 0 : 3, signal: null })),
+    main(root, {}, () => ({ status: ++calls < 3 ? 0 : 3, signal: null })),
     3,
   );
-  assert.equal(calls, 2);
+  assert.equal(calls, 3);
 });
