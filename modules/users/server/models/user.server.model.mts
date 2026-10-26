@@ -4,10 +4,7 @@ import { readFileSync } from 'node:fs';
 import authenticationService from '../services/authentication.server.service.mjs';
 import passwordHashing from '../services/password-hashing.server.service.mjs';
 import crypto from 'crypto';
-import mongoose, {
-  type CallbackWithoutResultAndOptionalError,
-  type FilterQuery,
-} from 'mongoose';
+import mongoose, { type QueryFilter } from 'mongoose';
 import uniqueValidation from '../../../../config/lib/mongoose-unique-validation.mjs';
 import validator from 'validator';
 import type {
@@ -476,44 +473,38 @@ UserSchemaWithInitHook.pre('init', function (data) {
 /**
  * Hook a pre save method to hash the password
  */
-UserSchema.pre(
-  'save',
-  function (
-    this: UserServerDocument,
-    next: CallbackWithoutResultAndOptionalError,
-  ) {
-    async function prepare(user: UserServerDocument) {
-      if (
-        user.password &&
-        user.isModified('password') &&
-        user.password.length >= passwordMinLength
-      ) {
-        // Always treat modified input as plaintext, including strings that look
-        // like a tagged password hash supplied by a client.
-        user.password = await passwordHashing.hashPassword(user.password);
-        user.salt = undefined;
-      }
-
-      // Pre-cached email hash to use with Gravatar
-      if (user.email && user.isModified('email') && user.email !== '') {
-        user.emailHash = crypto
-          .createHash('md5')
-          .update(user.email.trim().toLowerCase())
-          .digest('hex');
-      }
-
-      // Generate `displayName`
-      if (user.isModified('firstName') || user.isModified('lastName')) {
-        user.displayName = [user.firstName, user.lastName]
-          .filter((name): name is string => Boolean(name?.trim()))
-          .map(name => name.trim())
-          .join(' ');
-      }
+UserSchema.pre('save', async function (this: UserServerDocument) {
+  async function prepare(user: UserServerDocument) {
+    if (
+      user.password &&
+      user.isModified('password') &&
+      user.password.length >= passwordMinLength
+    ) {
+      // Always treat modified input as plaintext, including strings that look
+      // like a tagged password hash supplied by a client.
+      user.password = await passwordHashing.hashPassword(user.password);
+      user.salt = undefined;
     }
 
-    prepare(this).then(() => next(), next);
-  },
-);
+    // Pre-cached email hash to use with Gravatar
+    if (user.email && user.isModified('email') && user.email !== '') {
+      user.emailHash = crypto
+        .createHash('md5')
+        .update(user.email.trim().toLowerCase())
+        .digest('hex');
+    }
+
+    // Generate `displayName`
+    if (user.isModified('firstName') || user.isModified('lastName')) {
+      user.displayName = [user.firstName, user.lastName]
+        .filter((name): name is string => Boolean(name?.trim()))
+        .map(name => name.trim())
+        .join(' ');
+    }
+  }
+
+  await prepare(this);
+});
 
 /**
  * Create static helper for hashing a plaintext password
@@ -544,7 +535,7 @@ UserSchema.methods.authenticate = async function (password: unknown) {
   if (!verification.needsRehash) return true;
 
   const newPassword = await passwordHashing.hashPassword(candidate);
-  const filter: FilterQuery<UserServerRecord> = {
+  const filter: QueryFilter<UserServerRecord> = {
     _id: this._id,
     password: oldPassword,
   };

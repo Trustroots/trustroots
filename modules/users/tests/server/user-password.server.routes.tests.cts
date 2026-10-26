@@ -20,7 +20,7 @@ type RecoveryJob =
   }>;
 let jobs: RecoveryJob[];
 function findOneWithCallback(
-  query: import('mongoose').FilterQuery<PasswordUserRecord>,
+  query: import('mongoose').QueryFilter<PasswordUserRecord>,
   callback: (error: Error | null, foundUser: PasswordUser | null) => void,
 ): void {
   User.findOne(query).then(
@@ -40,7 +40,7 @@ let credentials: {
 let user: PasswordUser;
 let _user: PasswordUserRecord;
 function findUserWithResetToken(
-  query: import('mongoose').FilterQuery<PasswordUserRecord>,
+  query: import('mongoose').QueryFilter<PasswordUserRecord>,
   callback: (error: Error | null, foundUser?: PasswordUser | null) => void,
 ): void {
   const timeout = Date.now() + 3000;

@@ -1,4 +1,4 @@
-import type { FilterQuery, HydratedDocument } from 'mongoose';
+import type { QueryFilter, HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
 
 const request: typeof import('supertest') = require('supertest');
@@ -40,7 +40,7 @@ type CallbackUpdate = (
   callback: (error?: unknown) => void,
 ) => void;
 function findUser(
-  filter: FilterQuery<LastSeenUserRecord>,
+  filter: QueryFilter<LastSeenUserRecord>,
   callback: (error: unknown | null, user: LastSeenDocument | null) => void,
 ): void {
   void User.findOne(filter).then(

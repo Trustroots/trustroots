@@ -1,4 +1,4 @@
-import mongoose, { type FilterQuery, type Types } from 'mongoose';
+import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import type { UserServerRecord } from '../models/user.server.types.mts';
 interface ActivityRecord {
   userFrom: Types.ObjectId;
@@ -60,7 +60,7 @@ function emptyArrayOrMissing(field: 'member' | 'blocked' | 'pushRegistration') {
     ],
   };
 }
-function candidateQuery(): FilterQuery<UserServerRecord> {
+function candidateQuery(): QueryFilter<UserServerRecord> {
   return {
     $and: [
       {
