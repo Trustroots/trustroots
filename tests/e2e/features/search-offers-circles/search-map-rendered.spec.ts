@@ -1302,7 +1302,6 @@ test.describe('rendered search map feature coverage', () => {
       .toBe(0);
 
     await page
-      .locator('.search-place')
       .getByRole('button', { name: 'Use my location', exact: true })
       .click();
     await expect
@@ -1343,7 +1342,6 @@ test.describe('rendered search map feature coverage', () => {
     await page.goto('/search?offer=665100000000000000000001');
     await expect(page.getByTestId('leaflet-search-map')).toBeVisible();
     await page
-      .locator('.search-place')
       .getByRole('button', { name: 'Use my location', exact: true })
       .click();
     await expect.poll(() => readMapZoom(page)).toBe(13);
@@ -1368,6 +1366,9 @@ test.describe('rendered search map feature coverage', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await prepareRasterSearchMap(page, context, { includeMapbox: true });
     await mockDeviceLocationFailure(page);
+    await page.route('**/api/map-default-location', route =>
+      route.fulfill({ json: { location: null } }),
+    );
     await page.goto('/search');
     await expect(page.getByTestId('leaflet-search-map')).toBeVisible();
     await page.getByRole('button', { name: 'Search places' }).click();
@@ -1382,14 +1383,13 @@ test.describe('rendered search map feature coverage', () => {
     const searchInput = placePanel.getByRole('textbox', {
       name: 'Search places',
     });
-    const locate = placePanel.getByRole('button', {
+    const locate = page.getByRole('button', {
       name: 'Use my location',
       exact: true,
     });
     await expect(searchInput).toBeVisible();
     await expect(locate).toBeVisible();
-    await searchInput.focus();
-    await page.keyboard.press('Tab');
+    await locate.focus();
     await expect(locate).toBeFocused();
     const focusStyle = await locate.evaluate(element => ({
       outlineStyle: getComputedStyle(element).outlineStyle,
@@ -1399,7 +1399,7 @@ test.describe('rendered search map feature coverage', () => {
       focusStyle.outlineStyle !== 'none' || focusStyle.boxShadow !== 'none',
     ).toBe(true);
     await locate.click();
-    const status = placePanel.getByRole('status');
+    const status = page.locator('.device-location-control').getByRole('status');
     await expect(status).toHaveText(
       'Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
     );

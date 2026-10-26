@@ -43,6 +43,11 @@
     // Make space for the search+filters navbar
     height: calc(100% - @navbar-height);
     margin-top: @navbar-height;
+
+    .device-location-control {
+      // Keep the control and its feedback above the mobile search footer.
+      bottom: 100px;
+    }
   }
 }
 

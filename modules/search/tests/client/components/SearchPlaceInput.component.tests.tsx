@@ -12,26 +12,6 @@ type PlaceSuggestion = Awaited<
 const locationApiMock = jest.mocked(locationApi);
 
 jest.mock('@/modules/search/client/api/location.api');
-jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
-  __esModule: true,
-  default: ({
-    onLocation,
-    onRequest,
-  }: {
-    onLocation: (location: { lat: number; lng: number }) => void;
-    onRequest?: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={() => {
-        onRequest?.();
-        onLocation({ lat: 0, lng: 0 });
-      }}
-    >
-      Use my location
-    </button>
-  ),
-}));
 jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
@@ -84,33 +64,9 @@ describe('SearchPlaceInput', () => {
 
     expect(screen.getByLabelText('Search places')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search Places')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Use my location' }),
-    ).toBeInTheDocument();
   });
 
-  it('uses device coordinates and clears the place query on success', () => {
-    const onDeviceLocationRequest = jest.fn();
-    const onDeviceLocation = jest.fn();
-    render(
-      <SearchPlaceInput
-        onDeviceLocation={onDeviceLocation}
-        onDeviceLocationRequest={onDeviceLocationRequest}
-        onPlaceSearch={onPlaceSearch}
-        searchQuery="Helsinki"
-        setSearchQuery={setSearchQuery}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
-
-    expect(onDeviceLocationRequest).toHaveBeenCalledTimes(1);
-    expect(onDeviceLocation).toHaveBeenCalledWith({ lat: 0, lng: 0 });
-    expect(setSearchQuery).toHaveBeenCalledWith('');
-    expect(onPlaceSearch).not.toHaveBeenCalled();
-  });
-
-  it('ignores an autocomplete response already in flight when device location is requested', async () => {
+  it('ignores an autocomplete response already in flight when its query is cleared', async () => {
     let resolveSuggestions!: (suggestions: PlaceSuggestion[]) => void;
     locationApiMock.fetchLocationSuggestions.mockReturnValue(
       new Promise(resolve => {
@@ -118,14 +74,26 @@ describe('SearchPlaceInput', () => {
       }),
     );
 
-    renderInput('Paris');
+    const rendered = render(
+      <SearchPlaceInput
+        onPlaceSearch={onPlaceSearch}
+        searchQuery="Paris"
+        setSearchQuery={setSearchQuery}
+      />,
+    );
     await waitFor(() => {
       expect(locationApi.fetchLocationSuggestions).toHaveBeenCalledWith(
         'Paris',
       );
     });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+    rendered.rerender(
+      <SearchPlaceInput
+        onPlaceSearch={onPlaceSearch}
+        searchQuery=""
+        setSearchQuery={setSearchQuery}
+      />,
+    );
     resolveSuggestions([{ id: 'place-1', trTitle: 'Paris, France' }]);
 
     await waitFor(() => {
@@ -133,8 +101,7 @@ describe('SearchPlaceInput', () => {
         expect.objectContaining({ id: 'place-1' }),
       );
     });
-    expect(onPlaceSearch).toHaveBeenCalledTimes(1);
-    expect(onPlaceSearch).toHaveBeenCalledWith({ lat: 0, lng: 0 }, 'center');
+    expect(onPlaceSearch).not.toHaveBeenCalled();
     expect(
       screen.queryByRole('button', { name: 'Paris, France' }),
     ).not.toBeInTheDocument();

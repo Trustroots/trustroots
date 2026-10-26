@@ -14,6 +14,12 @@ import useDeviceLocation from '@/modules/core/client/utils/use-device-location';
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => `i18n:${key}` }),
 }));
+const mockRequestMapDefaultLocation = jest.fn();
+jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
+  __esModule: true,
+  requestMapDefaultLocation: (...args: unknown[]) =>
+    mockRequestMapDefaultLocation(...args),
+}));
 
 type SuccessCallback = PositionCallback;
 type ErrorCallback = PositionErrorCallback;
@@ -67,6 +73,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  mockRequestMapDefaultLocation.mockReset();
   if (originalNavigator) {
     Object.defineProperty(globalThis, 'navigator', originalNavigator);
   }
@@ -300,4 +307,127 @@ it('ignores a thrown error after a success callback has completed', () => {
 
   expect(onLocation).toHaveBeenCalledWith({ lat: 45, lng: 12 });
   expect(screen.getByRole('status')).toBeEmptyDOMElement();
+});
+
+it('uses and attributes the approximate location after a device error', async () => {
+  const approximate = { latitude: 34, longitude: -17, zoom: 6 };
+  mockRequestMapDefaultLocation.mockResolvedValue(approximate);
+  const onLocation = jest.fn();
+  const onApproximateLocation = jest.fn();
+  render(
+    <DeviceLocationButton
+      onLocation={onLocation}
+      onApproximateLocation={onApproximateLocation}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
+  act(() =>
+    getCurrentPosition.mock.calls[0][1]({
+      code: 1,
+    } as GeolocationPositionError),
+  );
+  await act(async () => {});
+
+  expect(mockRequestMapDefaultLocation).toHaveBeenCalledTimes(1);
+  expect(onApproximateLocation).toHaveBeenCalledWith(approximate);
+  expect(onLocation).not.toHaveBeenCalled();
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'i18n:Showing your approximate location.',
+  );
+  expect(screen.getByRole('link', { name: 'MaxMind' })).toHaveAttribute(
+    'href',
+    'https://www.maxmind.com',
+  );
+});
+
+it('stays pending while the approximate location is loading', async () => {
+  let resolveApproximate!: (value: {
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  }) => void;
+  mockRequestMapDefaultLocation.mockReturnValue(
+    new Promise(resolve => {
+      resolveApproximate = resolve;
+    }),
+  );
+  const onApproximateLocation = jest.fn();
+  render(
+    <DeviceLocationButton
+      onLocation={jest.fn()}
+      onApproximateLocation={onApproximateLocation}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
+  act(() =>
+    getCurrentPosition.mock.calls[0][1]({
+      code: 3,
+    } as GeolocationPositionError),
+  );
+
+  expect(
+    screen.getByRole('button', { name: 'i18n:Finding your location…' }),
+  ).toBeDisabled();
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'i18n:Finding your location…',
+  );
+  expect(getCurrentPosition).toHaveBeenCalledTimes(1);
+
+  await act(async () => {
+    resolveApproximate({ latitude: 34, longitude: -17, zoom: 6 });
+  });
+  expect(onApproximateLocation).toHaveBeenCalledTimes(1);
+});
+
+it('retains the device error when the approximate location is unavailable', async () => {
+  mockRequestMapDefaultLocation.mockResolvedValue(null);
+  render(
+    <DeviceLocationButton
+      onLocation={jest.fn()}
+      onApproximateLocation={jest.fn()}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
+  act(() =>
+    getCurrentPosition.mock.calls[0][1]({
+      code: 1,
+    } as GeolocationPositionError),
+  );
+  await act(async () => {});
+
+  expect(screen.getByRole('status')).toHaveTextContent(
+    'i18n:Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+  );
+});
+
+it('ignores a late approximate response after unmount', async () => {
+  let resolveApproximate!: (value: {
+    latitude: number;
+    longitude: number;
+    zoom: number;
+  }) => void;
+  mockRequestMapDefaultLocation.mockReturnValue(
+    new Promise(resolve => {
+      resolveApproximate = resolve;
+    }),
+  );
+  const onApproximateLocation = jest.fn();
+  const { unmount } = render(
+    <DeviceLocationButton
+      onLocation={jest.fn()}
+      onApproximateLocation={onApproximateLocation}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'i18n:Use my location' }));
+  act(() =>
+    getCurrentPosition.mock.calls[0][1]({
+      code: 2,
+    } as GeolocationPositionError),
+  );
+
+  unmount();
+  await act(async () => {
+    resolveApproximate({ latitude: 34, longitude: -17, zoom: 6 });
+  });
+  expect(onApproximateLocation).not.toHaveBeenCalled();
 });
