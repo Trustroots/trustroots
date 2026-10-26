@@ -51,6 +51,115 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun draftAndSendAreIgnoredUntilTheRecipientLoads() = withScope { scope ->
+        val lookupStarted = CompletableDeferred<Unit>()
+        val loadedMember = CompletableDeferred<Result<MessageMember>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "A fictional saved draft",
+        ).apply {
+            memberHandler = {
+                lookupStarted.complete(Unit)
+                loadedMember.await()
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        assertTrue("The recipient lookup should be waiting", lookupStarted.isCompleted)
+
+        model.onEvent(MessageConversationEvent.DraftChanged("A fictional early draft"))
+        model.onEvent(MessageConversationEvent.Send("A fictional early message"))
+
+        assertEquals("", model.state.value.draft)
+        assertNull(repository.savedDraftKey)
+        assertEquals(0, repository.sendCalls)
+
+        loadedMember.complete(Result.success(member))
+
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        assertEquals(member, model.state.value.member)
+        assertEquals(0, repository.sendCalls)
+    }
+
+    @Test
+    fun messageLoadFinishingAfterSendKeepsTheNewOutgoingMessage() = withScope { scope ->
+        val loadStarted = CompletableDeferred<Unit>()
+        val loadedMessages = CompletableDeferred<Result<List<DirectMessage>>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            messagesHandler = {
+                loadStarted.complete(Unit)
+                loadedMessages.await()
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        assertTrue("The initial conversation load should be waiting", loadStarted.isCompleted)
+
+        model.onEvent(MessageConversationEvent.Send("A fictional new note"))
+
+        assertEquals(listOf(sent), model.state.value.messages)
+        loadedMessages.complete(Result.success(listOf(incoming)))
+
+        assertEquals(listOf(sent, incoming), model.state.value.messages)
+        assertTrue(model.state.value.messagesLoaded)
+    }
+
+    @Test
+    fun messageLoadDoesNotDuplicateAnOutgoingMessageAlreadyReturnedByTheServer() = withScope { scope ->
+        val loadStarted = CompletableDeferred<Unit>()
+        val loadedMessages = CompletableDeferred<Result<List<DirectMessage>>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            messagesHandler = {
+                loadStarted.complete(Unit)
+                loadedMessages.await()
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        assertTrue("The initial conversation load should be waiting", loadStarted.isCompleted)
+
+        model.onEvent(MessageConversationEvent.Send("A fictional new note"))
+        loadedMessages.complete(Result.success(listOf(sent, incoming)))
+
+        assertEquals(listOf(sent, incoming), model.state.value.messages)
+    }
+
+    @Test
+    fun refreshedMessagesReplaceOldMessagesButKeepMessagesSentDuringTheRefresh() = withScope { scope ->
+        val oldMessage = DirectMessage("old-message", "A fictional old note", member)
+        val refreshStarted = CompletableDeferred<Unit>()
+        val refreshedMessages = CompletableDeferred<Result<List<DirectMessage>>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(oldMessage)),
+            initialDraft = "",
+        ).apply {
+            messagesHandler = {
+                if (messageLookups.size == 1) Result.success(listOf(oldMessage))
+                else {
+                    refreshStarted.complete(Unit)
+                    refreshedMessages.await()
+                }
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        assertEquals(listOf(oldMessage), model.state.value.messages)
+
+        model.onEvent(MessageConversationEvent.Retry)
+        assertTrue("The refresh should be waiting", refreshStarted.isCompleted)
+        model.onEvent(MessageConversationEvent.Send("A fictional new note"))
+        refreshedMessages.complete(Result.success(listOf(incoming)))
+
+        assertEquals(listOf(sent, incoming), model.state.value.messages)
+    }
+
+    @Test
     fun missingRecipientCanRetryWithoutReadingInboxState() = withScope { scope ->
         val repository = FakeConversationRepository(
             memberResult = Result.failure(MobileApiException(404, "Fictional member unavailable.")),

@@ -156,6 +156,7 @@ internal class MessageConversationViewModel(
     private fun load(force: Boolean = false) {
         if (invalidationEmitted || (!force && mutableState.value.messagesLoaded)) return
         val request = ++generation
+        val messageIDsAtLoadStart = mutableState.value.messages.mapTo(mutableSetOf()) { it.id }
         loadJob?.cancel()
         mutableState.update { it.copy(isLoading = true, messagesLoaded = false, loadFailed = false, failure = null, pendingSessionInvalidation = null) }
         loadJob = requestScope.launch {
@@ -175,8 +176,16 @@ internal class MessageConversationViewModel(
             if (error != null) {
                 fail(request, error, UiFailureFallback.LOAD_CONVERSATION)
             } else {
+                val loadedMessages = messageResult.getOrThrow()
                 mutableState.update {
-                    it.copy(messages = messageResult.getOrThrow(), isLoading = false, messagesLoaded = true, loadFailed = false)
+                    val messagesAddedWhileLoading = it.messages.filterNot { message -> message.id in messageIDsAtLoadStart }
+                    val addedIDs = messagesAddedWhileLoading.mapTo(mutableSetOf()) { message -> message.id }
+                    it.copy(
+                        messages = messagesAddedWhileLoading + loadedMessages.filterNot { message -> message.id in addedIDs },
+                        isLoading = false,
+                        messagesLoaded = true,
+                        loadFailed = false,
+                    )
                 }
             }
         }

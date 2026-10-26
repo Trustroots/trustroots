@@ -1,5 +1,7 @@
 package org.trustroots.android.testing
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityNodeInfo
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.UiAutomation
@@ -15,6 +17,10 @@ internal fun foregroundActivityTask(
     activity: Activity,
     uiAutomation: UiAutomation,
 ) {
+    dismissSystemAnr(
+        shell = { command -> shellDump(uiAutomation, command) },
+        waitForSystemUi = { clickSystemAnrWait(uiAutomation) },
+    )
     val taskId = activity.taskId
     val appTask = activity.getSystemService(ActivityManager::class.java)
         .appTasks
@@ -31,6 +37,40 @@ internal fun foregroundActivityTask(
                 activityFocusDiagnostics(activity, uiAutomation),
             error,
         )
+    }
+}
+
+/** Boot-time launcher and System UI ANRs can keep their dialogs above every test Activity. */
+internal fun dismissSystemAnr(shell: (String) -> String, waitForSystemUi: () -> Boolean) {
+    val focusedWindow = shell("dumpsys window windows").lineSequence()
+        .firstOrNull { it.trimStart().startsWith("mCurrentFocus=") }
+        ?: return
+    val process = listOf("com.android.launcher3", "com.android.systemui")
+        .firstOrNull { focusedWindow.contains("Application Not Responding: $it}") }
+        ?: return
+    if (process == "com.android.systemui") {
+        // System UI is persistent, so am force-stop does not kill it or clear its ANR dialog.
+        // Act only after the focused window identifies this exact system process.
+        waitForSystemUi()
+    } else {
+        shell("am force-stop $process")
+    }
+}
+
+private fun clickSystemAnrWait(uiAutomation: UiAutomation): Boolean {
+    val serviceInfo = uiAutomation.serviceInfo ?: return false
+    val previousFlags = serviceInfo.flags
+    try {
+        serviceInfo.flags = previousFlags or AccessibilityServiceInfo.FLAG_REPORT_VIEW_IDS
+        uiAutomation.serviceInfo = serviceInfo
+        val root = uiAutomation.rootInActiveWindow ?: return false
+        if (root.packageName?.toString() != "android") return false
+        return root.findAccessibilityNodeInfosByViewId("android:id/aerr_wait")
+            .firstOrNull { it.isClickable && it.isEnabled }
+            ?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+    } finally {
+        serviceInfo.flags = previousFlags
+        uiAutomation.serviceInfo = serviceInfo
     }
 }
 
