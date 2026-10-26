@@ -137,7 +137,8 @@ internal fun MessageConversationEntryScreen(
                 .padding(bottom = if (keyboardOpen) 8.dp else contentPadding.calculateBottomPadding() + 20.dp),
         ) {
             state.failure?.let { failure ->
-                Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error)
+                Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("conversationFailure"))
                 if (state.loadFailed) {
                     OutlinedButton(
                         onClick = { model.onEvent(MessageConversationEvent.Retry) },

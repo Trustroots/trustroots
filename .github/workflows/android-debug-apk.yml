@@ -161,6 +161,9 @@ jobs:
         with:
           api-level: ${{ matrix.api }}
           arch: x86_64
+          # Public ubuntu-latest runners have four vCPUs; leave enough CPU for
+          # Android's System UI and launcher while the instrumentation suite runs.
+          cores: 4
           disable-animations: true
           profile: pixel_6
           script: |
@@ -169,7 +172,7 @@ jobs:
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
             adb shell settings put secure show_ime_with_hard_keyboard 1
-            bash apps/android/scripts/run-with-device-diagnostics.sh apps/android/app/build/diagnostics/${{ matrix.target }} ${{ matrix.command }}
+            bash apps/android/scripts/run-with-android-boot-health.sh apps/android/app/build/diagnostics/${{ matrix.target }} ${{ matrix.command }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
