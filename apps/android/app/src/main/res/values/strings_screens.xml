@@ -29,6 +29,8 @@
     <string name="screen_maybe_hosting">Maybe hosting</string>
     <string name="screen_not_hosting_currently">Not hosting currently</string>
     <string name="screen_close_host_result">Close host result</string>
+    <string name="screen_host_result_last_active">Last active: %1$s</string>
+    <string name="screen_host_result_reply_rate">Reply rate: %1$s</string>
     <string name="screen_circles_in_common">Circles in common: %1$s</string>
     <string name="screen_circles_load_error">Could not load circles.</string>
     <string name="screen_circle_memberships_load_error">Could not load circle memberships.</string>

@@ -19,7 +19,7 @@ internal fun foregroundActivityTask(
 ) {
     dismissSystemAnr(
         shell = { command -> shellDump(uiAutomation, command) },
-        waitForSystemUi = { clickSystemAnrWait(uiAutomation) },
+        waitForSystemAnr = { clickSystemAnrWait(uiAutomation) },
     )
     val taskId = activity.taskId
     val appTask = activity.getSystemService(ActivityManager::class.java)
@@ -41,20 +41,16 @@ internal fun foregroundActivityTask(
 }
 
 /** Boot-time launcher and System UI ANRs can keep their dialogs above every test Activity. */
-internal fun dismissSystemAnr(shell: (String) -> String, waitForSystemUi: () -> Boolean) {
-    val focusedWindow = shell("dumpsys window windows").lineSequence()
+internal fun dismissSystemAnr(shell: (String) -> String, waitForSystemAnr: () -> Boolean) {
+    val focusedWindow = shell("dumpsys activity activities").lineSequence()
         .firstOrNull { it.trimStart().startsWith("mCurrentFocus=") }
         ?: return
     val process = listOf("com.android.launcher3", "com.android.systemui")
         .firstOrNull { focusedWindow.contains("Application Not Responding: $it}") }
         ?: return
-    if (process == "com.android.systemui") {
-        // System UI is persistent, so am force-stop does not kill it or clear its ANR dialog.
-        // Act only after the focused window identifies this exact system process.
-        waitForSystemUi()
-    } else {
-        shell("am force-stop $process")
-    }
+    // Only act after the focused window identifies this exact system process. Force-stopping
+    // the launcher did not reliably clear its ANR dialog in the API 36 emulator.
+    waitForSystemAnr()
 }
 
 private fun clickSystemAnrWait(uiAutomation: UiAutomation): Boolean {

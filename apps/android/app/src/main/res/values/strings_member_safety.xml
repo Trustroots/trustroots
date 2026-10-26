@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_block_member">Block member</string>
+    <string name="profile_unblock_member">Unblock member</string>
+    <string name="profile_report_member">Report member</string>
+    <string name="profile_block_confirm_title">Block member?</string>
+    <string name="profile_unblock_confirm_title">Unblock member?</string>
+    <string name="profile_block_confirm_message">Block %1$s on Trustroots? You can unblock this member later.</string>
+    <string name="profile_unblock_confirm_message">Unblock %1$s on Trustroots?</string>
+    <string name="profile_block_pending">Updating…</string>
+    <string name="profile_block_checking">Checking member controls…</string>
+    <string name="profile_blocked_notice">You have blocked %1$s.</string>
+    <string name="profile_block_load_error">Could not check whether this member is blocked.</string>
+    <string name="profile_block_update_error">Could not update this member’s blocking status.</string>
+    <string name="profile_report_target">Reported member: %1$s</string>
+    <string name="profile_report_details">Report details</string>
+    <string name="profile_report_help">Tell the Trustroots support team what happened.</string>
+    <string name="profile_report_send">Send report</string>
+    <string name="profile_report_sending">Sending…</string>
+    <string name="profile_report_error">Could not send your report. Please try again.</string>
+    <string name="profile_report_sent">Report sent</string>
+    <string name="profile_report_thanks">Thank you. The Trustroots support team will review your report.</string>
+    <string name="profile_safety_done">Done</string>
+</resources>

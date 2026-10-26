@@ -140,6 +140,41 @@ navigation. Hosting details SHALL remain in About.
 - **THEN** a compact host card shows hosting status and available member context
 - **AND** opening the card displays About before experiences
 
+### Requirement: Restore recent map results on a new Search visit
+
+The authenticated Android shell SHALL retain the latest successful map
+viewport, visible bounds, filters and offers in memory for a short freshness
+period. Opening a new Search visit for the same backend and member session
+SHALL display that snapshot immediately. If the snapshot is stale, Search SHALL
+refresh its current bounds in the background while keeping cached offers visible
+until a successful response replaces them. A changed viewport SHALL search its
+new bounds, and explicit Retry SHALL issue a request regardless of cache
+freshness. Snapshots SHALL NOT be shown across a backend or member-session
+change, or after session invalidation.
+
+#### Scenario: Return to Search with recent results
+
+- **WHEN** a member leaves Search and opens a new Search tab visit before the
+  snapshot expires
+- **THEN** the previous map viewport and offers appear immediately
+- **AND** no duplicate offer request is made while that snapshot is fresh
+
+#### Scenario: Refresh an expired snapshot while keeping it visible
+
+- **WHEN** a member opens Search with an expired snapshot
+- **THEN** the cached viewport and offers are shown immediately
+- **AND** a search for the current bounds refreshes them in the background
+
+#### Scenario: Keep snapshots within their backend and session
+
+- **WHEN** the backend, member, session cookie or authenticated session changes
+- **THEN** the previous map snapshot is cleared before the next Search visit
+
+#### Scenario: Refresh after an explicit retry or bounds change
+
+- **WHEN** a member retries a failed search or pans the map to new bounds
+- **THEN** Search requests those bounds even when a cached snapshot exists
+
 ### Requirement: Clear native interaction and messaging
 
 Circle discovery SHALL explain membership and visually distinguish joined
@@ -150,6 +185,90 @@ separate the composer, providing an accessible send action beside the input.
 
 - **WHEN** a member sends a non-empty draft
 - **THEN** it appears in an outgoing bubble and the composer clears on success
+
+### Requirement: Native Android profile member safety controls
+
+The Android app SHALL provide Block/Unblock and Report member actions in
+another member's profile overflow menu using the existing authenticated
+blocked-member and support APIs. Own profiles SHALL NOT offer these actions.
+Safety state and report drafts SHALL belong to the profile visit and SHALL be
+cleared when the account or backend changes.
+
+#### Scenario: Blocking status is unknown
+
+- **WHEN** the blocked-member lookup is loading or has failed
+- **THEN** the app SHALL NOT treat the member as confirmed unblocked
+- **AND** messaging and block mutation SHALL remain unavailable until the
+  blocking status is known
+- **AND** a failed lookup SHALL offer a retry
+
+#### Scenario: Member blocks or unblocks another member
+
+- **WHEN** the member chooses Block or Unblock
+- **THEN** a confirmation is shown before any mutation
+- **AND** cancelling sends no request
+- **AND** a confirmed change uses the existing PUT or DELETE blocked-member route
+- **AND** a successful block hides the profile message action and a successful
+  unblock restores it
+- **AND** failed changes preserve the previously confirmed state and show an
+  error
+- **AND** repeated taps while a change is pending do not duplicate requests
+
+#### Scenario: Member reports another member
+
+- **WHEN** a member chooses Report member
+- **THEN** a native form identifies the reported member and accepts a nonblank
+  report message
+- **AND** submission posts the target username and message to the existing
+  support route
+- **AND** pending submission cannot be duplicated
+- **AND** success is clearly acknowledged
+- **AND** failure keeps the draft and allows retry
+- **AND** the draft survives Activity recreation without replaying a completed
+  submission
+
+#### Scenario: Safety work becomes stale
+
+- **WHEN** the account or backend changes while safety work is outstanding
+- **THEN** old responses do not update the new environment
+- **AND** private report drafts and success messages are cleared
+- **AND** authentication failures use the existing single-delivery
+  session-invalidation flow
+
+### Requirement: Android profile activity statistics
+
+The native Android app SHALL show available last-active, reply-rate and
+reply-time facts on a member profile. It SHALL show available last-active and
+reply-rate facts on a host result card. Missing or invalid facts SHALL be
+omitted without preventing the remaining profile or card content from
+appearing, and missing reply statistics SHALL NOT be presented as a zero rate.
+ISO 639-3 identifiers, including prefixed identifiers for less common languages,
+SHALL be shown using the canonical language catalogue when Android has no
+localised name. Android locale display names SHALL be preferred when available,
+and ordinary regional language tags SHALL remain intact.
+
+#### Scenario: Member views a profile with activity statistics
+
+- **WHEN** the profile response includes a valid last-seen timestamp and reply
+  statistics
+- **THEN** the profile shows labelled, localised last-active and reply facts
+- **AND** the host result card shows available last-active and reply-rate facts
+
+#### Scenario: Member views a profile with missing or invalid statistics
+
+- **WHEN** profile activity or reply statistics are absent, blank or invalid
+- **THEN** Android omits unavailable facts and keeps the remaining profile and
+  host card content available
+- **AND** it does not show a missing reply rate as zero
+
+#### Scenario: Profile language uses an ISO 639-3 identifier
+
+- **WHEN** a profile lists a bare or `iso_639_3-`-prefixed ISO 639-3 code,
+  including `mnk` or a less common language code
+- **THEN** Android displays its language name, including “Mandinka” for `mnk`
+- **AND** the complete canonical language catalogue supplies names Android does
+  not recognise
+- **AND** ordinary regional language tags such as `pt-BR` remain recognised
 
 ### Requirement: Protect unsaved native form changes
 
@@ -1604,8 +1723,9 @@ root SHALL cancel its work and clear its account-owned state.
 - **WHEN** a member opens HostDetail from a map marker
 - **THEN** HostDetail appears as a bottom-aligned surface above a dim scrim
   while the same map scene remains composed beneath it
-- **AND** the scrim blocks map input, while the shell and its bottom
-  navigation remain in the same Activity window
+- **AND** pan and zoom gestures outside the host preview card reach the retained
+  map through the visual scrim, while the shell and its bottom navigation
+  remain in the same Activity window
 - **AND** Back, including a cancelled predictive Back gesture, leaves the
   retained map visit and its camera, filters, results and community-note
   source unchanged
@@ -1750,3 +1870,21 @@ payloads.
   changes before a shell request completes
 - **THEN** the old request is cancelled or ignored
 - **AND** the new root visit displays no result from the former account
+
+### Requirement: Interact with the map beneath a host preview
+
+The Android HostDetail preview SHALL allow map pan and zoom gestures through
+its visual scrim while remaining open. The preview card's controls SHALL
+remain interactive. Opening a member profile from the preview SHALL continue
+to replace the preview, and Back SHALL return to the retained map.
+
+#### Scenario: Pan the map with a host preview open
+
+- **WHEN** a member pans or zooms the map outside the host preview card
+- **THEN** the map camera responds and the host preview remains open
+
+#### Scenario: Open a profile from the host preview
+
+- **WHEN** a member opens the host profile from the preview and presses Back
+- **THEN** the profile is shown without the host preview covering it
+- **AND** Back returns to the retained map with the host preview closed

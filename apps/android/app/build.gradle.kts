@@ -42,6 +42,12 @@ val releaseSigningConfigured = listOf(
     releaseKeyPassword,
 ).all { it.isPresent }
 
+val languageCatalogueAssets = layout.buildDirectory.dir("generated/languageCatalogueAssets")
+val copyLanguageCatalogue = tasks.register<Sync>("copyLanguageCatalogue") {
+    from(rootProject.file("../../config/languages/languages.json"))
+    into(languageCatalogueAssets)
+}
+
 android {
     namespace = "org.trustroots.android"
     compileSdk = 37
@@ -100,6 +106,8 @@ android {
         compose = true
     }
 
+    sourceSets.getByName("main").assets.srcDir(languageCatalogueAssets.get().asFile)
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -112,6 +120,10 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(copyLanguageCatalogue)
 }
 
 // Combine host-side unit tests and device journeys against the same debug classes.

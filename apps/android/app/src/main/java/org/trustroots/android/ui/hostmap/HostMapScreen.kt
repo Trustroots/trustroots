@@ -57,6 +57,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.selected
@@ -118,6 +119,7 @@ internal fun HostMapScreen(
     }
     val resources = LocalResources.current
     val languageLocale = LocalConfiguration.current.locales[0]
+    val appContext = LocalContext.current.applicationContext
     val mapBackground = colorResource(R.color.trustroots_pale_green)
     val potentialHostLabel = stringResource(R.string.screen_potential_host)
     val communityNoteLabel = stringResource(R.string.screen_community_note)
@@ -416,7 +418,7 @@ internal fun HostMapScreen(
                                 label = {
                                     Text(
                                         if (selectedLanguages.isEmpty()) spokenLanguagesLabel
-                                        else selectedLanguages.sorted().joinToString { languageName(it, languageLocale) },
+                                        else selectedLanguages.sorted().joinToString { languageName(appContext, it, languageLocale) },
                                     )
                                 },
                             )
@@ -434,7 +436,7 @@ internal fun HostMapScreen(
                                 mapFilterLanguages.forEach { code ->
                                     DropdownMenuItem(
                                         text = {
-                                            Text(languageName(code, languageLocale))
+                                            Text(languageName(appContext, code, languageLocale))
                                         },
                                         modifier = Modifier
                                             .testTag("languageFilterOption-$code")

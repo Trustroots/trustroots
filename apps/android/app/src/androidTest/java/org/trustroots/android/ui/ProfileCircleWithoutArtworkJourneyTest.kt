@@ -37,6 +37,7 @@ class ProfileCircleWithoutArtworkJourneyTest {
                 "GET" to "/api/users/quiet-fox" -> LocalTransportFixture.Response(PROFILE_WITH_CIRCLE_WITHOUT_IMAGE)
                 "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response("""{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour Circle","description":"A fictional circle page","count":4,"image":false}""")
                 "GET" to "/api/users/steady-heron" -> LocalTransportFixture.Response("""{"username":"steady-heron","member":[]}""")
+                "GET" to "/api/blocked-users" -> LocalTransportFixture.Response("[]")
                 else -> LocalTransportFixture.Response("{}", status = 404)
             }
         }
@@ -67,10 +68,11 @@ class ProfileCircleWithoutArtworkJourneyTest {
         assertTrue(biographyTop < circleTop)
         compose.waitForIdle()
 
-        assertEquals(1, localApi.requests.size)
-        assertEquals("GET", localApi.requests.single().method)
-        assertEquals("/api/users/quiet-fox", localApi.requests.single().path)
-        assertEquals(session.cookieHeader, localApi.requests.single().cookie)
+        val profileRequests = localApi.requests.filterNot { it.path == "/api/blocked-users" }
+        assertEquals(1, profileRequests.size)
+        assertEquals("GET", profileRequests.single().method)
+        assertEquals("/api/users/quiet-fox", profileRequests.single().path)
+        assertEquals(session.cookieHeader, profileRequests.single().cookie)
         assertFalse(localApi.requests.any { it.path.startsWith("/uploads-circle/") || it.path.contains("/avatar?") })
         compose.onNodeWithTag("profileCircle-quiet-harbour").performClick()
         compose.waitUntil(10_000) {
@@ -80,6 +82,78 @@ class ProfileCircleWithoutArtworkJourneyTest {
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithTag("profileCircle-quiet-harbour").assertIsDisplayed()
         assertEquals(1, localApi.requests.count { it.path == "/api/users/quiet-fox" })
+    }
+
+    @Test fun profileActivityFactsShowReplyRateWithoutOtherStatistics() {
+        val localApi = LocalTransportFixture { request ->
+            if (request.method == "GET" && request.path == "/api/users/quiet-fox") {
+                LocalTransportFixture.Response(PROFILE_WITH_REPLY_RATE_ONLY)
+            } else {
+                LocalTransportFixture.Response("{}", status = 404)
+            }
+        }
+        fixture = localApi
+        val session = MemberSession(
+            "connect.sid=fictional-profile-session",
+            MobileMember("steady-heron", "Steady Heron"),
+        )
+
+        compose.setContent {
+            MemberProfileScreen(
+                api = MobileApiClient(localApi.baseURL),
+                session = session,
+                username = "quiet-fox",
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            localApi.requests.any { it.method == "GET" && it.path == "/api/users/quiet-fox" } &&
+                compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithTag("profileActivityFacts").assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyRate").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("82%").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityLastActive").assertDoesNotExist()
+        compose.onNodeWithTag("profileActivityReplyTime").assertDoesNotExist()
+    }
+
+    @Test fun profileActivityFactsShowReplyTimeWithoutOtherStatistics() {
+        val localApi = LocalTransportFixture { request ->
+            if (request.method == "GET" && request.path == "/api/users/quiet-fox") {
+                LocalTransportFixture.Response(PROFILE_WITH_REPLY_TIME_ONLY)
+            } else {
+                LocalTransportFixture.Response("{}", status = 404)
+            }
+        }
+        fixture = localApi
+        val session = MemberSession(
+            "connect.sid=fictional-profile-session",
+            MobileMember("steady-heron", "Steady Heron"),
+        )
+
+        compose.setContent {
+            MemberProfileScreen(
+                api = MobileApiClient(localApi.baseURL),
+                session = session,
+                username = "quiet-fox",
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            localApi.requests.any { it.method == "GET" && it.path == "/api/users/quiet-fox" } &&
+                compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithTag("profileActivityFacts").assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyTime").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Within 4 hours").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityLastActive").assertDoesNotExist()
+        compose.onNodeWithTag("profileActivityReplyRate").assertDoesNotExist()
     }
 
     private companion object {
@@ -96,6 +170,18 @@ class ProfileCircleWithoutArtworkJourneyTest {
                     "image":false
                 }
             }]
+        }"""
+
+        const val PROFILE_WITH_REPLY_RATE_ONLY = """{
+            "username":"quiet-fox",
+            "displayName":"Quiet Fox",
+            "replyRate":"82%"
+        }"""
+
+        const val PROFILE_WITH_REPLY_TIME_ONLY = """{
+            "username":"quiet-fox",
+            "displayName":"Quiet Fox",
+            "replyTime":"4 hours"
         }"""
     }
 }

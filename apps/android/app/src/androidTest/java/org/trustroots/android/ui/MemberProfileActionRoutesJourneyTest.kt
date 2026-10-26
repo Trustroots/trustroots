@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -66,7 +67,7 @@ class MemberProfileActionRoutesJourneyTest {
         startFixture()
         compose.setContent { showProfile() }
 
-        waitForText("Send a message")
+        waitForEnabledText("Send a message")
         compose.onNodeWithText("Send a message").performClick()
         compose.waitUntil(10_000) {
             requests.any { it.path == "/api/messages/member-two?limit=100" } &&
@@ -127,6 +128,12 @@ class MemberProfileActionRoutesJourneyTest {
     private fun waitForText(text: String) {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
+        }
+    }
+
+    private fun waitForEnabledText(text: String) {
+        compose.waitUntil(10_000) {
+            runCatching { compose.onNodeWithText(text).assertIsEnabled() }.isSuccess
         }
     }
 
@@ -202,6 +209,7 @@ class MemberProfileActionRoutesJourneyTest {
     }
 
     private fun responseFor(path: String): FixtureReply = when {
+        path == "/api/blocked-users" -> FixtureReply(200, "OK", "[]")
         path == "/api/users/quiet-fox" -> FixtureReply(
             200,
             "OK",

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -183,12 +184,11 @@ class SearchProfileAndSendTransportJourneysTest {
         }
         compose.onNodeWithTag("messageComposer").performTextInput(draft)
         compose.onNodeWithContentDescription("Send").assertIsEnabled().performClick()
-        val transportError = awaitTransportFailure(
-            setOf(
-                "Back", "Fictional Recipient", "Message", "Send", "F",
-                "Yes, I can host!", "Sorry I can't host", "Write back",
-            ),
-        )
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("conversationFailure").fetchSemanticsNodes().isNotEmpty()
+        }
+        val transportError = compose.onNodeWithTag("conversationFailure")
+            .fetchSemanticsNode().config[SemanticsProperties.Text].first().text
         compose.onNodeWithText(transportError).assertIsDisplayed()
         compose.onNodeWithTag("messageComposer").assertIsDisplayed()
         compose.waitUntil(5_000) {

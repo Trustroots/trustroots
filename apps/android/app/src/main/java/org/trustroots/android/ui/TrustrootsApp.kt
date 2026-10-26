@@ -74,6 +74,7 @@ import org.trustroots.android.ui.session.AppSessionViewModel
 import org.trustroots.android.ui.common.rememberEntryViewModel
 import org.trustroots.android.ui.common.UsageScreenTracking
 import org.trustroots.android.ui.inbox.MessageInboxScreen
+import org.trustroots.android.ui.hostmap.HostMapResultsCacheStore
 import org.trustroots.android.ui.menu.MenuNavigationDisplay
 import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
@@ -267,6 +268,8 @@ private fun MemberShell(
     val inboxCache = remember(api.backendURL, session.member.username, session.cookieHeader) {
         org.trustroots.android.ui.inbox.InboxCache()
     }
+    val hostMapResultsCacheStore = remember { HostMapResultsCacheStore() }
+    val hostMapResultsCache = hostMapResultsCacheStore.forSession(api.backendURL, session)
     val shellViewModel = rememberMemberShellViewModel(api, session)
     val shellState by shellViewModel.state.collectAsState()
     LaunchedEffect(activeVisitID) {
@@ -469,6 +472,7 @@ private fun MemberShell(
                                             resetVisitID = searchResetVisitID,
                                             ownerVisitID = visit.visitID,
                                             isActiveTabVisit = visit.visitID == activeVisitID,
+                                            mapResultsCache = hostMapResultsCache,
                                             onCurrentUsageScreen = { visitID, screen ->
                                                 if (searchUsageByVisit[visitID] != screen) {
                                                     searchUsageByVisit = searchUsageByVisit + (visitID to screen)

@@ -308,6 +308,7 @@ class MessageConversationViewModelTest {
         assertEquals("steady-heron" to "steady-owl", repository.clearedDraftKey)
         assertEquals("", model.state.value.draft)
         assertEquals("sent-message", model.state.value.messages.first().id)
+        assertEquals("sent-message", model.state.value.lastSentMessageID)
         assertFalse(model.state.value.showQuickReply)
         assertFalse(model.state.value.isSending)
     }
@@ -350,6 +351,7 @@ class MessageConversationViewModelTest {
         assertFalse(model.state.value.isSending)
         assertEquals(UiFailureFallback.SEND_MESSAGE, model.state.value.failure?.fallback)
         assertEquals("Keep this note", model.state.value.draft)
+        assertEquals(null, model.state.value.lastSentMessageID)
         assertEquals(1, repository.sendCalls)
     }
 

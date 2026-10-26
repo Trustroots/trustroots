@@ -20,6 +20,9 @@ class DeviceDiagnosticsTest(unittest.TestCase):
         self.adb = self.root / "adb"
         self.adb.write_text("#!/bin/sh\nprintf '%s\\n' \"$*\"\nexit \"${FAKE_ADB_EXIT:-0}\"\n")
         self.adb.chmod(0o755)
+        self.timeout = self.root / "timeout"
+        self.timeout.write_text("#!/bin/sh\nshift\nexec \"$@\"\n")
+        self.timeout.chmod(0o755)
         self.environment = dict(os.environ, PATH=f"{self.root}:{os.environ['PATH']}")
 
     def run_command(self, code):

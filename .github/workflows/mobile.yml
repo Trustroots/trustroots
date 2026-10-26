@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/mobile.yml'
       - 'apps/android/**'
+      - 'config/languages/languages.json'
       - 'apps/ios/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - 'openspec/changes/add-native-android-member-mvp/**'
@@ -14,6 +15,7 @@ on:
     paths:
       - '.github/workflows/mobile.yml'
       - 'apps/android/**'
+      - 'config/languages/languages.json'
       - 'apps/ios/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - 'openspec/changes/add-native-android-member-mvp/**'

@@ -12,7 +12,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +31,126 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostMapViewModelTest {
+    @Test
+    fun aFreshSnapshotHydratesANewSearchVisitWithoutRepeatingItsSearch() {
+        val now = 10_000L
+        val resultsCache = HostMapResultsCache()
+        withViewModel(nowMillis = { now }, resultsCache = resultsCache) { viewModel, repository, notes ->
+            val viewport = MapViewport(40.0, -4.0, 8.0)
+            val expectedBounds = bounds(39.5)
+            val expectedFilters = HostMapFilters(includeMeet = true, languages = setOf("eng"))
+            val result = MapOffer("cached-result", 39.8, -4.2)
+            repository.searchHandler = { _, _, _ -> Result.success(listOf(result)) }
+            viewModel.onEvent(HostMapEvent.ViewportChanged(viewport, expectedBounds))
+            viewModel.onEvent(HostMapEvent.FiltersChanged(expectedFilters))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+
+            assertEquals(1, repository.searchCalls)
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(false))
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            val newVisit = HostMapViewModel(
+                repository,
+                { onNote, onError -> notes.open(onNote, onError) },
+                scope,
+                wait = {},
+                now = { now },
+                resultsCache = resultsCache,
+            )
+            try {
+                assertEquals(listOf(result), newVisit.state.value.offers)
+                assertEquals(viewport, newVisit.state.value.viewport)
+                assertEquals(expectedBounds, newVisit.state.value.measuredBounds)
+                assertEquals(expectedFilters, newVisit.state.value.filters)
+                newVisit.onEvent(HostMapEvent.MapVisibilityChanged(true))
+
+                assertEquals(1, repository.searchCalls)
+            } finally {
+                scope.cancel()
+            }
+        }
+    }
+
+    @Test
+    fun aStoppedSearchVisitCannotOverwriteTheLatestSharedSnapshot() {
+        val resultsCache = HostMapResultsCache()
+        withViewModel(resultsCache = resultsCache) { viewModel, repository, _ ->
+            val originalViewport = MapViewport(40.0, -4.0, 8.0)
+            val originalBounds = bounds(39.5)
+            repository.searchHandler = { _, _, _ -> Result.success(listOf(MapOffer("latest-result", 39.8, -4.2))) }
+            viewModel.onEvent(HostMapEvent.ViewportChanged(originalViewport, originalBounds))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(false))
+            viewModel.onEvent(HostMapEvent.OwnerLifecycleChanged(false))
+
+            viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(10.0, 10.0, 3.0), bounds(9.5)))
+
+            assertEquals(originalViewport, resultsCache.snapshot?.viewport)
+            assertEquals(originalBounds, resultsCache.snapshot?.measuredBounds)
+            assertEquals(listOf(MapOffer("latest-result", 39.8, -4.2)), resultsCache.snapshot?.offers)
+        }
+    }
+
+    @Test
+    fun anExpiredSnapshotStaysVisibleWhileANewVisitRefreshesIt() {
+        var now = 20_000L
+        val resultsCache = HostMapResultsCache()
+        withViewModel(nowMillis = { now }, resultsCache = resultsCache) { viewModel, repository, notes ->
+            val firstResult = MapOffer("cached-result", 39.8, -4.2)
+            val refreshedResult = MapOffer("refreshed-result", 39.9, -4.1)
+            repository.searchHandler = { _, _, _ -> Result.success(listOf(firstResult)) }
+            viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(), bounds()))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(false))
+            now += 2 * 60 * 1_000L
+
+            val pendingRefresh = CompletableDeferred<Result<List<MapOffer>>>()
+            repository.searchHandler = { _, _, _ -> pendingRefresh.await() }
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            val newVisit = HostMapViewModel(
+                repository,
+                { onNote, onError -> notes.open(onNote, onError) },
+                scope,
+                wait = {},
+                now = { now },
+                resultsCache = resultsCache,
+            )
+            try {
+                assertEquals(listOf(firstResult), newVisit.state.value.offers)
+                newVisit.onEvent(HostMapEvent.MapVisibilityChanged(true))
+                assertTrue(newVisit.state.value.isLoading)
+                assertEquals(listOf(firstResult), newVisit.state.value.offers)
+                pendingRefresh.complete(Result.success(listOf(refreshedResult)))
+
+                assertEquals(listOf(refreshedResult), newVisit.state.value.offers)
+                assertEquals(2, repository.searchCalls)
+            } finally {
+                scope.cancel()
+            }
+        }
+    }
+
+    @Test
+    fun mapSnapshotsBelongToOneBackendAndMemberSession() {
+        val store = HostMapResultsCacheStore()
+        val firstSession = session("cookie-one")
+        val firstCache = store.forSession("https://api.example.test", firstSession)
+        firstCache.save(
+            HostMapSnapshot(MapViewport(), bounds(), HostMapFilters(), listOf(MapOffer("cached-result", 1.0, 2.0)), "query", 50L),
+        )
+
+        assertSame(firstCache, store.forSession("https://api.example.test", firstSession))
+        assertNotSame(firstCache, store.forSession("https://other.example.test", firstSession))
+        assertNull(store.forSession("https://other.example.test", firstSession).snapshot)
+        assertNotSame(
+            firstCache,
+            store.forSession("https://other.example.test", session("cookie-two")),
+        )
+        assertNotSame(
+            firstCache,
+            store.forSession("https://other.example.test", MemberSession("cookie-two", MobileMember("second-member", "Second Member"))),
+        )
+    }
+
     @Test
     fun filtersViewportAndLastSuccessfulSearchSurviveMapDisposalAndReentry() = withViewModel { viewModel, repository, _ ->
         val bounds = bounds()
@@ -478,12 +600,23 @@ class HostMapViewModelTest {
         assertEquals(HostMapUiState(), viewModel.state.value)
     }
 
-    private fun withViewModel(test: (HostMapViewModel, FakeHostMapRepository, FakeNotesConnections) -> Unit) {
+    private fun withViewModel(
+        nowMillis: () -> Long = android.os.SystemClock::elapsedRealtime,
+        resultsCache: HostMapResultsCache = HostMapResultsCache(),
+        test: (HostMapViewModel, FakeHostMapRepository, FakeNotesConnections) -> Unit,
+    ) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val repository = FakeHostMapRepository()
         val notes = FakeNotesConnections()
         try {
-            val viewModel = HostMapViewModel(repository, { onNote, onError -> notes.open(onNote, onError) }, scope) { }
+            val viewModel = HostMapViewModel(
+                repository,
+                { onNote, onError -> notes.open(onNote, onError) },
+                scope,
+                wait = {},
+                now = nowMillis,
+                resultsCache = resultsCache,
+            )
             test(viewModel, repository, notes)
         } finally {
             scope.cancel()

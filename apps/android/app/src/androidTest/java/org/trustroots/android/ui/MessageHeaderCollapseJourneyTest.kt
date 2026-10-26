@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
@@ -19,9 +20,9 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -32,11 +33,11 @@ import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.net.SocketException
+import java.util.Collections
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -56,6 +57,7 @@ class MessageHeaderCollapseJourneyTest {
         MobileMember("member-self", "Steady Heron"),
     )
     private var responder: Thread? = null
+    private val requests = Collections.synchronizedList(mutableListOf<String>())
 
     @After fun closeServer() {
         server.close()
@@ -128,6 +130,7 @@ class MessageHeaderCollapseJourneyTest {
         var rootWidthPx = 0f
         var backInsetUpperBoundPx = 0f
         startResponder { request ->
+            requests += request
             when {
                 request.startsWith("GET /api/users/mini/member-one ") -> "200 OK" to
                     """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}"""
@@ -161,10 +164,16 @@ class MessageHeaderCollapseJourneyTest {
                 )
             }
         }
-        compose.waitUntil(10_000) {
-            compose.onAllNodesWithText("Fictional conversation note 30")
-                .fetchSemanticsNodes().isNotEmpty()
-        }
+        val historyLoaded = runCatching {
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Fictional conversation note 1")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+        }.isSuccess
+        assertTrue(
+            "Conversation history should load; fixture requests were ${synchronized(requests) { requests.toList() }}",
+            historyLoaded,
+        )
         val titleBefore = compose.onNodeWithText("Quiet Fox").fetchSemanticsNode().boundsInRoot
         val backBefore = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
         rootWidthPx = compose.onRoot().fetchSemanticsNode().boundsInRoot.width
@@ -181,32 +190,31 @@ class MessageHeaderCollapseJourneyTest {
             "RTL Back respects the asymmetric logical start inset",
             rootWidthPx - backBefore.right >= startInsetPx,
         )
-        val messageBefore = compose.onNodeWithText("Fictional conversation note 30").fetchSemanticsNode().boundsInRoot
+        val messageBefore = compose.onNodeWithText("Fictional conversation note 1").fetchSemanticsNode().boundsInRoot
         println("MESSAGE_HEADER conversation pinned title=$titleBefore back=$backBefore message=$messageBefore")
         captureUsabilityScreenshot(compose, "android_message_conversation_pinned")
 
-        val history = compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
-        history.performTouchInput { swipeUp() }
+        val history = compose.onNodeWithTag("conversationMessages")
+        // The API fixture is newest-first. Drag down from the latest message to read older history.
+        history.performTouchInput { swipeDown() }
         compose.waitForIdle()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
         compose.onNodeWithText("View profile").assertIsDisplayed()
+        compose.onNodeWithText("Fictional conversation note 30").assertIsDisplayed()
+        compose.onNodeWithText("Fictional conversation note 1").assertDoesNotExist()
         val titleAfter = compose.onNodeWithText("Quiet Fox").fetchSemanticsNode().boundsInRoot
         val backAfter = compose.onNodeWithContentDescription("Back").fetchSemanticsNode().boundsInRoot
-        val messageAfter = compose.onNodeWithText("Fictional conversation note 30").fetchSemanticsNode().boundsInRoot
         assertTrue(history.fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange].value() > 0f)
         assertEquals("The participant title stays pinned while history scrolls", titleBefore.top, titleAfter.top, 1f)
         assertEquals("The pinned participant title keeps its height", titleBefore.height, titleAfter.height, 1f)
         assertEquals("The Back action remains available in the collapsed app bar", backBefore.size, backAfter.size)
-        assertNotEquals("Message history moves when its scroll container is swiped", messageBefore.top, messageAfter.top)
         println("MESSAGE_HEADER conversation scrolled title=$titleAfter back=$backAfter")
         captureUsabilityScreenshot(compose, "android_message_conversation_scrolled")
 
-        repeat(3) {
-            compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsProperties.VerticalScrollAxisRange))
-                .performTouchInput { swipeDown() }
-            compose.waitForIdle()
-        }
+        history.performScrollToNode(hasText("Fictional conversation note 1"))
+        compose.waitForIdle()
+        compose.onNodeWithText("Fictional conversation note 1").assertIsDisplayed()
         val titleExpanded = compose.onNodeWithText("Quiet Fox").fetchSemanticsNode().boundsInRoot
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
         assertEquals("Scrolling back leaves the participant title pinned", titleBefore.top, titleExpanded.top, 1f)
@@ -219,7 +227,7 @@ class MessageHeaderCollapseJourneyTest {
         }
         compose.onNodeWithText("About").assertIsDisplayed()
         compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
-        compose.onNodeWithText("Fictional conversation note 30").assertIsDisplayed()
+        compose.onNodeWithText("Fictional conversation note 1").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Messages").assertIsDisplayed()
     }

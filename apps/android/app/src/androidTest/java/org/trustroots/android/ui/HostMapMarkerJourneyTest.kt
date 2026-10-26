@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import android.graphics.Point
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -14,9 +15,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.printToLog
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
-import androidx.compose.ui.test.printToLog
+import androidx.compose.ui.geometry.Offset
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
 import java.net.Socket
@@ -27,9 +29,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -108,6 +113,7 @@ class HostMapMarkerJourneyTest {
 
     @Test fun opensHostDetailsFromTheVisibleMapMarker() {
         startHostFixture()
+        lateinit var mapView: MapView
         compose.setContent {
             NativeTestAppFrame(Destination.Search) {
                 SearchHubScreen(
@@ -121,6 +127,7 @@ class HostMapMarkerJourneyTest {
                             setAddressLine(0, "Fictional destination")
                         })
                     },
+                    mapViewFactory = { context -> MapView(context).also { mapView = it } },
                 )
             }
         }
@@ -136,6 +143,22 @@ class HostMapMarkerJourneyTest {
         compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
         compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
         check(requests.any { it.startsWith("GET /api/offers/offer-one ") })
+
+        val offerSearchesBeforePan = requests.count { it.startsWith("GET /api/offers?") }
+        compose.onNodeWithTag("hostMapView").performTouchInput {
+            val start = Offset(width * 0.75f, height * 0.32f)
+            val end = Offset(width * 0.50f, height * 0.32f)
+            down(0, start)
+            for (step in 1..8) {
+                val fraction = step / 8f
+                moveTo(0, Offset(start.x + (end.x - start.x) * fraction, start.y), 50)
+            }
+            up(0)
+        }
+        compose.waitUntil(10_000) {
+            requests.count { it.startsWith("GET /api/offers?") } > offerSearchesBeforePan
+        }
+        compose.onNodeWithText("A fictional spare room.").assertIsDisplayed()
 
         val offerSearchCount = requests.count { it.startsWith("GET /api/offers?") }
         compose.onNodeWithText("Quiet Fox").performClick()
@@ -158,7 +181,17 @@ class HostMapMarkerJourneyTest {
         check(requests.count { it.startsWith("GET /api/offers?") } == offerSearchCount)
 
         // The same marker can be opened again, and closing its preview keeps the map usable.
-        compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
+        val (markerPosition, mapSize) = compose.runOnUiThread {
+            Point().also { mapView.projection.toPixels(GeoPoint(38.7223, -9.1393), it) } to
+                (mapView.width to mapView.height)
+        }
+        assertTrue(
+            "The original map marker should remain visible after the pan",
+            markerPosition.x in 0 until mapSize.first && markerPosition.y in 0 until mapSize.second,
+        )
+        compose.onNodeWithTag("hostMapView").performTouchInput {
+            click(Offset(markerPosition.x.toFloat(), markerPosition.y.toFloat()))
+        }
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("A fictional spare room.").fetchSemanticsNodes().isNotEmpty()
         }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.layout.ime
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -87,6 +88,10 @@ internal fun MessageConversationEntryScreen(
     }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val composerFocus = remember { FocusRequester() }
+    val messageListState = rememberLazyListState()
+    LaunchedEffect(model, state.lastSentMessageID) {
+        if (state.lastSentMessageID != null) messageListState.scrollToItem(0)
+    }
     val yesMessage = stringResource(R.string.screen_quick_reply_host_yes_html)
     val noMessage = stringResource(R.string.screen_quick_reply_host_no_html)
     val member = state.member
@@ -132,7 +137,8 @@ internal fun MessageConversationEntryScreen(
                 .padding(bottom = if (keyboardOpen) 8.dp else contentPadding.calculateBottomPadding() + 20.dp),
         ) {
             state.failure?.let { failure ->
-                Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error)
+                Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.testTag("conversationFailure"))
                 if (state.loadFailed) {
                     OutlinedButton(
                         onClick = { model.onEvent(MessageConversationEvent.Retry) },
@@ -144,7 +150,7 @@ internal fun MessageConversationEntryScreen(
                 }
             }
             if (state.isLoading && member == null) CircularProgressIndicator()
-            LazyColumn(Modifier.weight(1f).testTag("conversationMessages"), reverseLayout = true) {
+            LazyColumn(Modifier.weight(1f).testTag("conversationMessages"), state = messageListState, reverseLayout = true) {
                 items(state.messages, key = { it.id }) { message ->
                     Row(
                         Modifier.fillMaxWidth(),

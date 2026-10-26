@@ -56,6 +56,7 @@ import org.trustroots.android.ui.hostdetail.HostDetailScreen
 import org.trustroots.android.ui.hostmap.HostMapEvent
 import org.trustroots.android.ui.hostmap.HostMapNotesConnection
 import org.trustroots.android.ui.hostmap.HostMapScreen
+import org.trustroots.android.ui.hostmap.HostMapResultsCache
 import org.trustroots.android.ui.hostmap.createNostrootsNotesConnection
 import org.trustroots.android.ui.hostmap.lookupAndroidPlaces
 import org.trustroots.android.ui.hostmap.rememberHostMapViewModel
@@ -105,12 +106,17 @@ internal fun SearchHubScreen(
     geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
         ::createNostrootsNotesConnection,
+    mapResultsCache: HostMapResultsCache? = null,
     mapViewFactory: (Context) -> MapView = { MapView(it) },
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
 ) {
     val memberSearchViewModel = rememberMemberSearchViewModel(api, session)
     val hostMapViewModel = rememberHostMapViewModel(
-        api, session, geocoderLookup = geocoderLookup, notesClientFactory = notesClientFactory,
+        api,
+        session,
+        geocoderLookup = geocoderLookup,
+        notesClientFactory = notesClientFactory,
+        resultsCache = mapResultsCache,
     )
     val entryInitialTab = rememberSaveable { initialTab }
     var mapResetGeneration by rememberSaveable { mutableIntStateOf(0) }

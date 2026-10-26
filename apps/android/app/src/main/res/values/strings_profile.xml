@@ -16,6 +16,12 @@
     </plurals>
     <string name="profile_no_about">No about text yet.</string>
     <string name="profile_languages_prefix">Languages: %1$s</string>
+    <string name="profile_activity_heading">Activity</string>
+    <string name="profile_activity_last_active">Last active</string>
+    <string name="profile_activity_reply_rate">Reply rate</string>
+    <string name="profile_activity_reply_time">Usually replies</string>
+    <string name="profile_activity_reply_time_value">Within %1$s</string>
+    <string name="profile_activity_recently">Recently</string>
     <string name="profile_circles_heading">Circles</string>
     <string name="profile_hosting_yes">Hosting travellers</string>
     <string name="profile_hosting_maybe">Maybe hosting</string>
