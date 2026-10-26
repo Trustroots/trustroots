@@ -224,7 +224,8 @@ class Navigation3MemberShellJourneyTest {
         waitForText("No conversations yet.")
         waitForStableMessageReads(3) // one shell badge poll and one inbox load
         compose.onNodeWithTag("navigation-messages").performClick()
-        waitForStableMessageReads(5) // one new-visit badge poll and one refreshed inbox load
+        waitForStableMessageReads(4) // new-visit badge poll; the fresh inbox is reused
+        compose.onNodeWithTag("inboxLoading").assertDoesNotExist()
         compose.onNodeWithTag("navigation-circles").performClick()
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
