@@ -51,6 +51,37 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun draftAndSendAreIgnoredUntilTheRecipientLoads() = withScope { scope ->
+        val lookupStarted = CompletableDeferred<Unit>()
+        val loadedMember = CompletableDeferred<Result<MessageMember>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "A fictional saved draft",
+        ).apply {
+            memberHandler = {
+                lookupStarted.complete(Unit)
+                loadedMember.await()
+            }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+        assertTrue("The recipient lookup should be waiting", lookupStarted.isCompleted)
+
+        model.onEvent(MessageConversationEvent.DraftChanged("A fictional early draft"))
+        model.onEvent(MessageConversationEvent.Send("A fictional early message"))
+
+        assertEquals("", model.state.value.draft)
+        assertNull(repository.savedDraftKey)
+        assertEquals(0, repository.sendCalls)
+
+        loadedMember.complete(Result.success(member))
+
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        assertEquals(member, model.state.value.member)
+        assertEquals(0, repository.sendCalls)
+    }
+
+    @Test
     fun messageLoadFinishingAfterSendKeepsTheNewOutgoingMessage() = withScope { scope ->
         val loadStarted = CompletableDeferred<Unit>()
         val loadedMessages = CompletableDeferred<Result<List<DirectMessage>>>()
