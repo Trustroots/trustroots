@@ -80,6 +80,8 @@ import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.common.memberLocationLabel
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
+import org.trustroots.android.ui.circles.CircleDetailVisit
+import org.trustroots.android.ui.circledetail.CircleDetailEntry
 
 @Composable
 internal fun MemberProfileScreen(
@@ -142,6 +144,7 @@ internal fun MemberProfileScreen(
                     viewModel = model, onOpenRelated = pushRelated,
                     onOpenConversation = pushConversation,
                     onOpenContactBrowser = pushContactBrowser,
+                    onOpenCircle = { slug -> backStack.add(CircleDetailVisit(slug, nextVisitID++)) },
                     isActiveProfileRoute = isActiveRoute.value,
                     onOpenEditProfile = { backStack.add(MemberProfileEditVisit(route.username, route.visitID, nextVisitID++)) },
                     onOpenExperience = { memberID -> backStack.add(MemberProfileExperienceVisit(route.username, memberID, route.visitID, nextVisitID++)) },
@@ -149,6 +152,14 @@ internal fun MemberProfileScreen(
                     onProfileChanged = { handoffViewModel.retainProfile(route.visitID, it, handoffEnvironment) },
                     completion = handoffs[route.visitID]?.completion,
                     onCompletionHandled = { deliveryID -> handoffViewModel.consumeCompletion(route.visitID, deliveryID) },
+                )
+            }
+            entry<CircleDetailVisit> { route ->
+                CircleDetailEntry(
+                    slug = route.slug, api = api, session = session,
+                    onSessionInvalidated = onSessionInvalidated,
+                    contentPadding = contentPadding, onBack = popProfile,
+                    onMembershipChanged = { _, _ -> },
                 )
             }
             entry<MemberProfileEditVisit> { route ->
@@ -219,6 +230,7 @@ private fun MemberProfileContent(
     onOpenRelated: (String) -> Unit,
     onOpenConversation: (String) -> Unit,
     onOpenContactBrowser: (String) -> Unit,
+    onOpenCircle: (String) -> Unit,
     isActiveProfileRoute: Boolean,
     onOpenEditProfile: () -> Unit,
     onOpenExperience: (String) -> Unit,
@@ -454,9 +466,10 @@ private fun MemberProfileContent(
                                             memberLocationLabel(member.locationLiving, member.locationFrom)?.let {
                                                 Text(it, modifier = Modifier.padding(vertical = 6.dp))
                                             }
-                                            ProfileAboutSection(member = member, api = api)
+                                            ProfileAboutSection(member = member)
                                             HorizontalDivider(Modifier.padding(vertical = 16.dp))
                                             ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
+                                            ProfileCirclesSection(member = member, api = api, onOpenCircle = onOpenCircle)
                                         }
                                         ProfileSection.Experiences -> ProfileOverviewSection(
                                             references = references,

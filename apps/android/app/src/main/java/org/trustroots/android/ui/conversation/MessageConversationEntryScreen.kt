@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
@@ -95,6 +97,8 @@ internal fun MessageConversationEntryScreen(
         if (onOpenProfile == null) null else ({ onOpenProfile(username) })
     }
 
+    val keyboardOpen = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+
     Scaffold(
         modifier = Modifier.fillMaxSize().imePadding().nestedScroll(scrollBehavior.nestedScrollConnection),
         contentWindowInsets = WindowInsets(0.dp, 0.dp, 0.dp, 0.dp),
@@ -125,7 +129,7 @@ internal fun MessageConversationEntryScreen(
                 .padding(top = appBarPadding.calculateTopPadding())
                 .padding(contentPadding.horizontalInset())
                 .padding(horizontal = 20.dp)
-                .padding(bottom = contentPadding.calculateBottomPadding() + 20.dp),
+                .padding(bottom = if (keyboardOpen) 8.dp else contentPadding.calculateBottomPadding() + 20.dp),
         ) {
             state.failure?.let { failure ->
                 Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error)
@@ -140,8 +144,8 @@ internal fun MessageConversationEntryScreen(
                 }
             }
             if (state.isLoading && member == null) CircularProgressIndicator()
-            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
-                state.messages.asReversed().forEach { message ->
+            LazyColumn(Modifier.weight(1f).testTag("conversationMessages"), reverseLayout = true) {
+                items(state.messages, key = { it.id }) { message ->
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = if (message.sender.username == state.currentUsername) Arrangement.End else Arrangement.Start,

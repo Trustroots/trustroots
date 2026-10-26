@@ -133,7 +133,7 @@ internal fun ProfileOverviewSection(
 }
 
 @Composable
-internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
+internal fun ProfileAboutSection(member: MemberProfile) {
     val languageLocale = LocalConfiguration.current.locales[0]
     member.description?.let {
         Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
@@ -147,10 +147,14 @@ internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
             modifier = Modifier.padding(top = 16.dp),
         )
     }
+}
+
+@Composable
+internal fun ProfileCirclesSection(member: MemberProfile, api: MobileApiClient, onOpenCircle: (String) -> Unit) {
     if (member.circles.isNotEmpty()) {
         Text(stringResource(R.string.profile_circles_heading), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         member.circles.forEach { circle ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+            Row(Modifier.fillMaxWidth().clickable { onOpenCircle(circle.slug) }.testTag("profileCircle-${circle.slug}").padding(vertical = 5.dp)) {
                 RemoteArtwork(
                     url = if (circle.image) api.circleImageURL(circle.slug) else null,
                     sessionCookie = null,

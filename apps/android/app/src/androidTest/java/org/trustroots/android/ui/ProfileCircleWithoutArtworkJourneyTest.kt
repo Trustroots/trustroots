@@ -11,6 +11,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import androidx.compose.ui.test.onNodeWithContentDescription
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +35,8 @@ class ProfileCircleWithoutArtworkJourneyTest {
         val localApi = LocalTransportFixture { request ->
             when (request.method to request.path) {
                 "GET" to "/api/users/quiet-fox" -> LocalTransportFixture.Response(PROFILE_WITH_CIRCLE_WITHOUT_IMAGE)
+                "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response("""{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour Circle","description":"A fictional circle page","count":4,"image":false}""")
+                "GET" to "/api/users/steady-heron" -> LocalTransportFixture.Response("""{"username":"steady-heron","member":[]}""")
                 else -> LocalTransportFixture.Response("{}", status = 404)
             }
         }
@@ -58,6 +62,9 @@ class ProfileCircleWithoutArtworkJourneyTest {
         }
         compose.onNodeWithTag("profileSection-about").performClick()
         compose.onNodeWithText("Quiet Harbour Circle").performScrollTo().assertIsDisplayed()
+        val biographyTop = compose.onNodeWithText("A fictional biography").fetchSemanticsNode().boundsInRoot.top
+        val circleTop = compose.onNodeWithTag("profileCircle-quiet-harbour").fetchSemanticsNode().boundsInRoot.top
+        assertTrue(biographyTop < circleTop)
         compose.waitForIdle()
 
         assertEquals(1, localApi.requests.size)
@@ -65,12 +72,21 @@ class ProfileCircleWithoutArtworkJourneyTest {
         assertEquals("/api/users/quiet-fox", localApi.requests.single().path)
         assertEquals(session.cookieHeader, localApi.requests.single().cookie)
         assertFalse(localApi.requests.any { it.path.startsWith("/uploads-circle/") || it.path.contains("/avatar?") })
+        compose.onNodeWithTag("profileCircle-quiet-harbour").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A fictional circle page").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("A fictional circle page").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithTag("profileCircle-quiet-harbour").assertIsDisplayed()
+        assertEquals(1, localApi.requests.count { it.path == "/api/users/quiet-fox" })
     }
 
     private companion object {
         const val PROFILE_WITH_CIRCLE_WITHOUT_IMAGE = """{
             "username":"quiet-fox",
             "displayName":"Quiet Fox",
+            "description":"A fictional biography",
             "member":[{
                 "tribe":{
                     "_id":"circle-harbour",
