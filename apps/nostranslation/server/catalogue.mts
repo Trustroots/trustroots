@@ -22,13 +22,8 @@ export const digest = (text: string) =>
   createHash('sha256').update(text).digest('hex');
 
 const plurals = i18next.createInstance();
-void plurals.init({ fallbackLng: 'en', initImmediate: false });
-interface Plurals {
-  getSuffixes(locale: string): string[];
-  getSuffix(locale: string, count: number): string;
-  getRule(locale: string): { numbers: number[] } | undefined;
-}
-const resolver = plurals.services.pluralResolver as Plurals;
+void plurals.init({ fallbackLng: 'en', initAsync: false });
+const resolver = plurals.services.pluralResolver;
 
 export function catalogue(locale: string, snapshot: Snapshot): Catalogue {
   if (
@@ -40,25 +35,26 @@ export function catalogue(locale: string, snapshot: Snapshot): Catalogue {
   const entries: Entry[] = [];
   const language = locale.replaceAll('_', '-');
   for (const [namespace, strings] of Object.entries(snapshot.source)) {
-    for (const [key, source] of Object.entries(strings)) {
-      if (key.endsWith('_plural') && Object.hasOwn(strings, key.slice(0, -7))) {
+    for (const [sourceKey, source] of Object.entries(strings)) {
+      if (
+        sourceKey.endsWith('_other') &&
+        Object.hasOwn(strings, sourceKey.slice(0, -6) + '_one')
+      ) {
         continue;
       }
-      const plural = Object.hasOwn(strings, key + '_plural');
+      const plural =
+        sourceKey.endsWith('_one') &&
+        Object.hasOwn(strings, sourceKey.slice(0, -4) + '_other');
+      const key = plural ? sourceKey.slice(0, -4) : sourceKey;
       const suffixes = plural ? resolver.getSuffixes(language) : [''];
       for (const suffix of suffixes) {
         const targetKey = key + suffix;
-        const count = resolver
-          .getRule(language)
-          ?.numbers.find(
-            number => resolver.getSuffix(language, number) === suffix,
-          );
         const english =
-          plural && count !== 1 ? strings[key + '_plural'] : source;
+          plural && suffix !== '_one' ? strings[key + '_other'] : source;
         const id = namespace + ':' + targetKey;
         const original = snapshot.target[namespace]?.[targetKey] ?? null;
         const sourceHash = digest(
-          JSON.stringify([key, source, strings[key + '_plural']]),
+          JSON.stringify([key, source, strings[key + '_other']]),
         );
         const review = snapshot.reviews[id];
         entries.push({

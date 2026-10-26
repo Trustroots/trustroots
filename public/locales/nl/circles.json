@@ -11,8 +11,8 @@
     "No members yet": "Nog geen leden",
     "Send us suggestions!": "Zend ons suggesties!",
     "Sign up with Trustroots": "Meld je aan bij Trustroots",
-    "{{count, number}} members": "Eén lid",
-    "{{count, number}} members_plural": "{{count, number}} leden",
+    "{{count, number}} members_one": "Eén lid",
+    "{{count, number}} members_other": "{{count, number}} leden",
     "Do you want to leave \"{{label}}\"?": "Wil je \"{{label}}\" verlaten?",
     "Join Trustroots to find members behind circles.": "Meld je aan bij Trustroots om leden uit de cirkels te vinden.",
     "New circle!": "Nieuwe cirkel!"

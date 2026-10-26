@@ -1,8 +1,8 @@
 {
     "Confirm Request": "Bevestig verzoek",
     "Cancel": "Annuleer",
-    "{{count}} contacts": "{{count}} contact",
-    "{{count}} contacts_plural": "{{count}} contacten",
+    "{{count}} contacts_one": "{{count}} contact",
+    "{{count}} contacts_other": "{{count}} contacten",
     "Decline contact request?": "Contact verzoek afwijzen?",
     "From <2>{{locationFrom}}</2>": "Van <2>1{{locationFrom}}</2>",
     "No contacts yet.": "Nog geen contacten.",
@@ -10,8 +10,8 @@
     "Revoke Request": "Trek verzoek in",
     "Revoke contact request?": "Contactverzoek intrekken?",
     "Search contacts": "Zoek contacten",
-    "(additional {{count}} pending)": "(plus {{count}} in behandeling)",
-    "(additional {{count}} pending)_plural": "(plus {{count}} in behandeling)",
+    "(additional {{count}} pending)_one": "(plus {{count}} in behandeling)",
+    "(additional {{count}} pending)_other": "(plus {{count}} in behandeling)",
     "Yes, decline request": "Ja, wijs verzoek af",
     "Yes, revoke request": "Ja, trek verzoek in",
     "You received a contact request.": "Je hebt een contactverzoek ontvangen.",
@@ -24,6 +24,6 @@
     "Lives in <2>{{locationLiving}}</2>": "Woont in <2>{{locationLiving}}</2>",
     "Yes, remove contact": "Ja, verwijder contact",
     "Wait a moment…": "Een moment geduld…",
-    "{{count}} contacts in common": "Eén gemeenschappelijk contact",
-    "{{count}} contacts in common_plural": "{{count}} gemeenschappelijke contacten"
+    "{{count}} contacts in common_one": "Eén gemeenschappelijk contact",
+    "{{count}} contacts in common_other": "{{count}} gemeenschappelijke contacten"
 }

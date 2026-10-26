@@ -33,11 +33,11 @@
         "": "Du har mottatt en kontaktforespørsel."
     },
     "{{amount}} contacts": "{{amount}} kontakter",
-    "{{count}} contacts in common": "{{count}} kontakt til felles",
-    "{{count}} contacts in common_plural": "{{count}} felles kontakter",
-    "{{count}} contacts": "{{count}} kontakt",
-    "{{count}} contacts_plural": "{{count}} kontakter",
+    "{{count}} contacts in common_one": "{{count}} kontakt til felles",
+    "{{count}} contacts in common_other": "{{count}} felles kontakter",
+    "{{count}} contacts_one": "{{count}} kontakt",
+    "{{count}} contacts_other": "{{count}} kontakter",
     "Search contacts": "Søk i kontakter",
-    "(additional {{count}} pending)": "(flere {{count}} venter)",
-    "(additional {{count}} pending)_plural": "(flere {{count}} venter)"
+    "(additional {{count}} pending)_one": "(flere {{count}} venter)",
+    "(additional {{count}} pending)_other": "(flere {{count}} venter)"
 }

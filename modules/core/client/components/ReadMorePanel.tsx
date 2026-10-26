@@ -35,7 +35,7 @@ export default function ReadMorePanel({ content, id }: ReadMorePanelProps) {
         onClick={() => setShowMore(true)}
         type="button"
       >
-        {t<string>('Read more…')}
+        {t('Read more…')}
       </button>
     </div>
   );

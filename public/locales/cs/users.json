@@ -40,8 +40,8 @@
     "other": "jiné",
     "{{birthdate, age}} years": "{{birthdate, age}} let",
     "“Everyone is necessarily the hero of their own life story.”": "",
-    "{{count}} contacts_0": "{{count}} kontakt",
-    "{{count}} contacts_1": "{{count}} kontakty",
-    "{{count}} contacts_2": "{{count}} kontaktů",
+    "{{count}} contacts_one": "{{count}} kontakt",
+    "{{count}} contacts_few": "{{count}} kontakty",
+    "{{count}} contacts_other": "{{count}} kontaktů",
     "Find people": "Hledat lidi"
 }

@@ -1,9 +1,9 @@
 {
     "“Everyone is necessarily the hero of their own life story.”": "\"Todo mundo é necessariamente o herói da própria história de vida.\"",
-    "{{count}} experiences": "{{count}} experiência",
-    "{{count}} experiences_plural": "{{count}} experiências",
-    "{{count}} contacts": "{{count}} contato",
-    "{{count}} contacts_plural": "{{count}} contatos",
+    "{{count}} experiences_one": "{{count}} experiência",
+    "{{count}} experiences_other": "{{count}} experiências",
+    "{{count}} contacts_one": "{{count}} contato",
+    "{{count}} contacts_other": "{{count}} contatos",
     "{{birthdate, age}} years.": "{{birthdate, age}} anos.",
     "Your profile description should be longer so that you can send messages.": "A descrição do seu perfil deve ser mais longa para que você possa enviar mensagens.",
     "Your data is yours. We are committed to making it easy for you to get all of your data into, and out of, Trustroots at any time.": "Os seus dados são seus. Estamos empenhados em tornar o mais fácil possível para você colocar e retirar todos os seus dados do Trustroots a qualquer momento.",

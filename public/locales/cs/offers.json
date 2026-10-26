@@ -1,10 +1,5 @@
 {
     "Accommodation": "Můj dům",
-    "At most {{count}} guests": {
-        "At most {{count}} guests._0": "Nejvíce jeden host.",
-        "At most {{count}} guests._1": "Nejvíce {{count}} hosté.",
-        "At most {{count}} guests._2": "Nejvíce {{count}} hostů."
-    },
     "Bigger map": "Větší mapa",
     "Can host": "Hostí",
     "Cannot host currently": "Nemůže teď hostit",
@@ -32,8 +27,8 @@
     "Just making a dinner and would like to invite people over?": "Připravuješ večeři a chceš pozvat lidi?",
     "Meetups stay visible on map at most one month.": "Setkání jsou viditelná na mapě maximálně jeden měsíc.",
     "Travelling? Organising an event?": "Cestuješ? Organizuješ akci?",
-    "At most {{count}} guests._0": "Maximálně {{count}} host.",
-    "At most {{count}} guests._1": "Maximálně {{count}} hosté.",
-    "At most {{count}} guests._2": "Maximálně {{count}} hostů.",
+    "At most {{count}} guests._one": "Maximálně {{count}} host.",
+    "At most {{count}} guests._few": "Maximálně {{count}} hosté.",
+    "At most {{count}} guests._other": "Maximálně {{count}} hostů.",
     "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Cestuješ? Organizuješ akci? Připravuješ večeři a chceš pozvat lidi?"
 }

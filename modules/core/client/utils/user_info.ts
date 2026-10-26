@@ -8,13 +8,13 @@ export function getGender(genderCode: GenderCode): string | undefined {
 
   switch (genderCode) {
     case 'female':
-      return t<string>('Female') as string;
+      return t('Female') as string;
     case 'male':
-      return t<string>('Male') as string;
+      return t('Male') as string;
     case 'non-binary':
-      return t<string>('Non-binary') as string;
+      return t('Non-binary') as string;
     case 'other':
-      return t<string>('Other gender') as string;
+      return t('Other gender') as string;
     default:
       return undefined;
   }

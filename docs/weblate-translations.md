@@ -63,6 +63,14 @@ If repo fixes did not propagate, edit at the source:
 
 `pnpm run i18n:check-placeholders` may still report pre-existing issues in other locales (e.g. Hebrew pages missing `<2>` tags, German plural keys). These were out of scope for #2746 but worth a separate pass.
 
+## Plural format (i18next v4)
+
+Plural strings use CLDR suffixes: `key_one`, `key_other`, plus `_zero`, `_two`, `_few`, `_many` where the language has them (for example Polish `_one`/`_few`/`_many`/`_other`, Arabic all six). The old `key_plural` and numeric `key_0`, `key_1` suffixes are gone.
+
+The Weblate components must use the file format **i18next JSON file v4** (API identifier `i18nextv4`) so Weblate reads and writes these suffixes. A component still on the legacy format will write `_plural` or numeric keys back to the repository, which i18next no longer reads. Switch each component's format (**Settings → Files → File format**) when this change lands, then run **Manage → Repository maintenance → Update**.
+
+`pnpm run i18n:extract` uses `babel-plugin-i18next-extract` 1.x, which writes `_one`/`_other` for keys used with `count`. Its defaults for plural keys are the key plus the suffix, so review the English values after extracting.
+
 ## Local QA
 
 Scan all non-English locales for placeholder/tag mismatches vs English:

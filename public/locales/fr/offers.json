@@ -1,9 +1,5 @@
 {
     "Accommodation": "Logement",
-    "At most {{count}} guests": {
-        "At most {{count}} guests.": "Maximum {{count}} invité.",
-        "At most {{count}} guests._plural": "Maximum {{count}} invités."
-    },
     "Bigger map": "Carte agrandie",
     "Can host": "Peut héberger",
     "Cannot host currently": "Ne peut pas héberger actuellement",
@@ -26,8 +22,8 @@
         "": "Désolé, l'utilisateur n'héberge pas actuellement."
     },
     "Start hosting travellers": "Commencer à accueillir des voyageurs",
-    "At most {{count}} guests.": "Maximum {{count}} invité.",
-    "At most {{count}} guests._plural": "Maximum {{count}} invités.",
+    "At most {{count}} guests._one": "Maximum {{count}} invité.",
+    "At most {{count}} guests._other": "Maximum {{count}} invités.",
     "Send a message": "Envoyer un message",
     "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Vous voyagez ? Organisez un événement ? Vous faîtes simplement un dîner et souhaitez inviter des gens ?",
     "Travelling? Organising an event?": "Vous voyagez ? Organisez un événement ?",
