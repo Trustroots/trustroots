@@ -9,6 +9,7 @@ import org.robolectric.annotation.Config
 import org.junit.Test
 import java.util.Locale
 import org.trustroots.android.ui.common.languageName
+import org.trustroots.android.ui.common.languageCatalogue
 import org.trustroots.android.ui.common.messageTime
 
 @RunWith(RobolectricTestRunner::class)
@@ -18,6 +19,32 @@ class MemberPresentationTest {
     @Test fun namesCommonProfileLanguages() {
         assertEquals("English", languageName("eng"))
         assertEquals("Portuguese", languageName("por"))
+    }
+
+    @Test fun resolvesIsoPrefixedLanguageCodesIncludingMandinka() {
+        val catalogue = languageCatalogue(RuntimeEnvironment.getApplication())
+        assertEquals("Mandinka", languageName("iso_639_3-mnk", Locale.ENGLISH, catalogue))
+        assertEquals("Mandinka", languageName("mnk", Locale.ENGLISH, catalogue))
+        assertEquals("English", languageName("iso_639_3-eng", Locale.ENGLISH, catalogue))
+        assertEquals("Portuguese", languageName("pt-BR", Locale.ENGLISH))
+    }
+
+    @Test fun resolvesRareIso6393LanguagesFromTheBundledCatalogue() {
+        val catalogue = languageCatalogue(RuntimeEnvironment.getApplication())
+        assertEquals("Ghotuo", languageName("iso_639_3-aaa", Locale.ENGLISH, catalogue))
+        assertEquals("Alumu-Tesu", languageName("aab", Locale.ENGLISH, catalogue))
+        val iso6393Entries = catalogue.filterKeys { it.startsWith("iso_639_3-") }
+        assertTrue(catalogue.size > 7_000)
+        assertTrue(iso6393Entries.values.all { it.isNotBlank() })
+        iso6393Entries.forEach { (key, _) ->
+            val code = key.removePrefix("iso_639_3-")
+            val resolved = languageName(code, Locale.ENGLISH, catalogue)
+            assertTrue("$code should resolve to a language name, got $resolved", resolved.isNotBlank())
+            assertTrue(
+                "$code should resolve to its catalogue name or a localised name, got $resolved",
+                resolved.equals(catalogue.getValue(key), true) || !resolved.equals(code, true),
+            )
+        }
     }
 
     @Test fun canonicalisesLegacyLanguageAliasesForEnglishDisplay() {

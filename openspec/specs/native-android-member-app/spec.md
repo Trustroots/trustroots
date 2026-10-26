@@ -207,6 +207,10 @@ reply-time facts on a member profile. It SHALL show available last-active and
 reply-rate facts on a host result card. Missing or invalid facts SHALL be
 omitted without preventing the remaining profile or card content from
 appearing, and missing reply statistics SHALL NOT be presented as a zero rate.
+ISO 639-3 identifiers, including prefixed identifiers for less common languages,
+SHALL be shown using the canonical language catalogue when Android has no
+localised name. Android locale display names SHALL be preferred when available,
+and ordinary regional language tags SHALL remain intact.
 
 #### Scenario: Member views a profile with activity statistics
 
@@ -221,6 +225,15 @@ appearing, and missing reply statistics SHALL NOT be presented as a zero rate.
 - **THEN** Android omits unavailable facts and keeps the remaining profile and
   host card content available
 - **AND** it does not show a missing reply rate as zero
+
+#### Scenario: Profile language uses an ISO 639-3 identifier
+
+- **WHEN** a profile lists a bare or `iso_639_3-`-prefixed ISO 639-3 code,
+  including `mnk` or a less common language code
+- **THEN** Android displays its language name, including “Mandinka” for `mnk`
+- **AND** the complete canonical language catalogue supplies names Android does
+  not recognise
+- **AND** ordinary regional language tags such as `pt-BR` remain recognised
 
 ### Requirement: Protect unsaved native form changes
 

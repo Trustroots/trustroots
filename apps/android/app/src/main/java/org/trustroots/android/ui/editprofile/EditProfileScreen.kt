@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -69,8 +70,9 @@ internal fun EditProfileScreen(
   val state by viewModel.state.collectAsState()
   val editProfileTitle = stringResource(R.string.screen_edit_profile)
   val languageLocale = LocalConfiguration.current.locales[0]
+  val appContext = LocalContext.current.applicationContext
   var languageMenu by remember { mutableStateOf(false) }
-  val options = remember(state.languages, languageLocale) {
+  val options = remember(state.languages, languageLocale, appContext) {
     (listOf(
       "eng",
       "por",
@@ -90,7 +92,7 @@ internal fun EditProfileScreen(
       "ukr"
     ) + state.languages)
       .distinct()
-      .sortedBy { languageName(it, languageLocale) }
+      .sortedBy { languageName(appContext, it, languageLocale) }
   }
   val cancel = rememberFormCancel(state.isDirty, state.isSaving, onCancel)
   LaunchedEffect(state.pendingInvalidation?.id) {
@@ -243,8 +245,8 @@ internal fun EditProfileScreen(
           }
           TextField(
             state.languages
-              .sortedBy { languageName(it, languageLocale) }
-              .joinToString { languageName(it, languageLocale) },
+              .sortedBy { languageName(appContext, it, languageLocale) }
+              .joinToString { languageName(appContext, it, languageLocale) },
             onValueChange = {},
             readOnly = true,
             enabled = !state.isSaving,
@@ -264,7 +266,7 @@ internal fun EditProfileScreen(
           DropdownMenu(expanded = languageMenu, onDismissRequest = { languageMenu = false }) {
             options.forEach { code ->
               DropdownMenuItem(
-                text = { Text(languageName(code, languageLocale)) },
+                text = { Text(languageName(appContext, code, languageLocale)) },
                 modifier = Modifier
                   .testTag("editProfileLanguageOption-$code")
                   .semantics { selected = code in state.languages },

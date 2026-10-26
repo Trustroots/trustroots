@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - 'apps/android/**'
+      - 'config/languages/languages.json'
       - '.github/workflows/android-debug-apk.yml'
   workflow_dispatch:
 
@@ -35,7 +36,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/apk-changed-files"
-          if grep -Eq '^(apps/android/|\.github/workflows/android-debug-apk\.yml$)' "$RUNNER_TEMP/apk-changed-files"; then
+          if grep -Eq '^(apps/android/|config/languages/languages\.json$|\.github/workflows/android-debug-apk\.yml$)' "$RUNNER_TEMP/apk-changed-files"; then
             echo 'android=true' >> "$GITHUB_OUTPUT"
           else
             echo 'android=false' >> "$GITHUB_OUTPUT"

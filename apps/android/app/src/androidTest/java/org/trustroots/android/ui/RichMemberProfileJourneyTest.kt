@@ -124,6 +124,19 @@ class RichMemberProfileJourneyTest {
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-main?types=host ") })
     }
 
+    @Test fun displaysMandinkaForAnIsoPrefixedProfileLanguage() {
+        val profile = ROOT_PROFILE.replace(
+            "\"languages\":[\"eng\",\"por\"]",
+            "\"languages\":[\"eng\",\"iso_639_3-mnk\",\"iso_639_3-aaa\"]",
+        )
+        startResponder(ROOT_MAYBE_OFFER, profile)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Languages: English, Mandinka, Ghotuo").performScrollTo().assertIsDisplayed()
+    }
+
     @Test fun displaysAvailableActivityStatisticsAndOmitsUnavailableFacts() {
         val seen = Instant.now().minusSeconds(3 * 24 * 60 * 60L).toString()
         val profile = ROOT_PROFILE.replace(

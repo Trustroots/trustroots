@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'apps/android/**'
+      - 'config/languages/languages.json'
       - 'fastlane/metadata/android/**'
       - '.github/workflows/android-preview-release.yml'
   workflow_dispatch:
