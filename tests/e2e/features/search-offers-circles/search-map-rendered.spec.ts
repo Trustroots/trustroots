@@ -39,6 +39,8 @@ type WheelSelector = '.mapboxgl-canvas' | '.leaflet-container';
 
 declare global {
   interface Window {
+    __deviceLocationRequests?: number;
+    __deviceLocationRequestOptions?: PositionOptions;
     __wheelEvents?: Array<{
       type: string;
       deltaY: number;
@@ -54,6 +56,74 @@ declare global {
 const berlin = SEEDED_MEMBERS[0];
 const communityNotePlusCode = '9F4MG82G+7Q';
 const communityNoteText = 'E2E community note: quiet courtyard with good tea.';
+
+async function mockDeviceLocation(
+  page: Page,
+  latitude = 0,
+  longitude = 0,
+): Promise<void> {
+  await page.addInitScript(
+    ({ latitude: deviceLatitude, longitude: deviceLongitude }) => {
+      window.__deviceLocationRequests = 0;
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition(
+            success: PositionCallback,
+            _error: PositionErrorCallback | null,
+            options?: PositionOptions,
+          ) {
+            window.__deviceLocationRequests! += 1;
+            window.__deviceLocationRequestOptions = options;
+            queueMicrotask(() =>
+              success({
+                coords: {
+                  latitude: deviceLatitude,
+                  longitude: deviceLongitude,
+                  accuracy: 10,
+                  altitude: null,
+                  altitudeAccuracy: null,
+                  heading: null,
+                  speed: null,
+                },
+                timestamp: Date.now(),
+              } as GeolocationPosition),
+            );
+          },
+        },
+      });
+    },
+    { latitude, longitude },
+  );
+}
+
+async function mockDeviceLocationFailure(page: Page, code = 1): Promise<void> {
+  await page.addInitScript(errorCode => {
+    window.__deviceLocationRequests = 0;
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(
+          _success: PositionCallback,
+          failure: PositionErrorCallback | null,
+          options?: PositionOptions,
+        ) {
+          window.__deviceLocationRequests! += 1;
+          window.__deviceLocationRequestOptions = options;
+          queueMicrotask(() =>
+            failure?.({
+              code: errorCode,
+              message: 'Fictional location failure',
+              PERMISSION_DENIED: 1,
+              POSITION_UNAVAILABLE: 2,
+              TIMEOUT: 3,
+            } as GeolocationPositionError),
+          );
+        },
+      },
+    });
+  }, code);
+}
 
 const readMapZoom = (page: Page): Promise<number | null> =>
   page.evaluate(() => {
@@ -1157,9 +1227,11 @@ test.describe('rendered search map feature coverage', () => {
       name: 'Visible search results',
     });
     await expect(resultList).toBeVisible();
-    await expect(sidebar.getByRole('status')).toContainText(
-      'Offers in this map area:',
-    );
+    await expect(
+      sidebar
+        .getByRole('status')
+        .filter({ hasText: 'Offers in this map area:' }),
+    ).toContainText('Offers in this map area:');
 
     const visibleHost = resultList.getByRole('button', {
       name: /open hosting offer from berlin host/i,
@@ -1194,6 +1266,194 @@ test.describe('rendered search map feature coverage', () => {
 
     await expect(result).toBeVisible();
     await expect(result.getByText(/Berlin Host/i)).toBeVisible();
+  });
+
+  test('device location centres search only after activation and preserves filters', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Opening search does not request device location.',
+      'Activating device location centres the map at zoom 13 and clears the selected offer.',
+      'Device location preserves the member’s search filters.',
+    ]);
+    await mockDeviceLocation(page, 0, 0);
+    await page.goto('/search');
+    await waitForSearchMap(page);
+    await expect
+      .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+      .toBe(0);
+
+    const mapContent = page.getByRole('group', { name: 'Map content' });
+    const communityNotes = mapContent
+      .locator('label')
+      .filter({ hasText: 'Community Notes' })
+      .locator('input[type="checkbox"]');
+    await expect(communityNotes).toBeChecked();
+    await communityNotes.locator('..').click();
+    await expect(communityNotes).not.toBeChecked();
+
+    await page.goto('/search?offer=665100000000000000000001');
+    await waitForSearchMap(page);
+    await expect(page).toHaveURL(/offer=665100000000000000000001/);
+    await page.getByRole('tab', { name: /Filters/ }).click();
+    await expect(communityNotes).not.toBeChecked();
+    await expect
+      .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+      .toBe(0);
+
+    await page
+      .locator('.search-place')
+      .getByRole('button', { name: 'Use my location', exact: true })
+      .click();
+    await expect
+      .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+      .toBe(1);
+    await expect.poll(() => readMapZoom(page)).toBe(13);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = localStorage.getItem('search-map-location');
+          return raw ? JSON.parse(raw) : null;
+        }),
+      )
+      .toMatchObject({ latitude: 0, longitude: 0, zoom: 13 });
+    await expect(page).not.toHaveURL(/offer=/);
+    await expect(communityNotes).not.toBeChecked();
+    expect(
+      await page.evaluate(() => window.__deviceLocationRequestOptions),
+    ).toMatchObject({
+      enableHighAccuracy: false,
+      timeout: 15000,
+      maximumAge: 0,
+    });
+    await page.screenshot({
+      path: testInfo.outputPath('device-location-search-desktop.png'),
+    });
+  });
+
+  test('device location centres the raster search map at zoom 13', async ({
+    page,
+    context,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Device location centres the raster search map at zoom 13.',
+    ]);
+    await prepareRasterSearchMap(page, context, { includeMapbox: true });
+    await mockDeviceLocation(page, -23.55, -46.63);
+    await page.goto('/search?offer=665100000000000000000001');
+    await expect(page.getByTestId('leaflet-search-map')).toBeVisible();
+    await page
+      .locator('.search-place')
+      .getByRole('button', { name: 'Use my location', exact: true })
+      .click();
+    await expect.poll(() => readMapZoom(page)).toBe(13);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const raw = localStorage.getItem('search-map-location');
+          return raw ? JSON.parse(raw) : null;
+        }),
+      )
+      .toMatchObject({ latitude: -23.55, longitude: -46.63, zoom: 13 });
+  });
+
+  test('mobile search offers a retryable device location action and manual fallback', async ({
+    page,
+    context,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'search.map', [
+      'Mobile search exposes device location after opening place search.',
+      'Denied device location gives accessible feedback and leaves manual search available.',
+    ]);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await prepareRasterSearchMap(page, context, { includeMapbox: true });
+    await mockDeviceLocationFailure(page);
+    await page.goto('/search');
+    await expect(page.getByTestId('leaflet-search-map')).toBeVisible();
+    await page.getByRole('button', { name: 'Search places' }).click();
+
+    const map = page.getByTestId('leaflet-search-map');
+    const originalMapState = {
+      latitude: await map.getAttribute('data-map-latitude'),
+      longitude: await map.getAttribute('data-map-longitude'),
+      zoom: await map.getAttribute('data-map-zoom'),
+    };
+    const placePanel = page.locator('.search-map-place');
+    const searchInput = placePanel.getByRole('textbox', {
+      name: 'Search places',
+    });
+    const locate = placePanel.getByRole('button', {
+      name: 'Use my location',
+      exact: true,
+    });
+    await expect(searchInput).toBeVisible();
+    await expect(locate).toBeVisible();
+    await searchInput.focus();
+    await page.keyboard.press('Tab');
+    await expect(locate).toBeFocused();
+    const focusStyle = await locate.evaluate(element => ({
+      outlineStyle: getComputedStyle(element).outlineStyle,
+      boxShadow: getComputedStyle(element).boxShadow,
+    }));
+    expect(
+      focusStyle.outlineStyle !== 'none' || focusStyle.boxShadow !== 'none',
+    ).toBe(true);
+    await locate.click();
+    const status = placePanel.getByRole('status');
+    await expect(status).toHaveText(
+      'Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+    );
+    await expect(status).toBeInViewport();
+    await expect(searchInput).toBeVisible();
+    await expect(searchInput).toBeEditable();
+    await expect(map).toHaveAttribute(
+      'data-map-latitude',
+      originalMapState.latitude!,
+    );
+    await expect(map).toHaveAttribute(
+      'data-map-longitude',
+      originalMapState.longitude!,
+    );
+    await expect(map).toHaveAttribute('data-map-zoom', originalMapState.zoom!);
+    await expect(locate).toBeEnabled();
+    await locate.click();
+    await expect
+      .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+      .toBe(2);
+    await expect(status).toHaveText(
+      'Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+    );
+
+    await page.screenshot({
+      path: testInfo.outputPath('device-location-search-mobile.png'),
+    });
+    await page.evaluate(() => {
+      Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
+        publicKey: 'test-geocoding-token',
+      });
+    });
+    await page.route('https://api.mapbox.com/geocoding/**', route =>
+      route.fulfill({
+        contentType: 'application/json',
+        body: JSON.stringify({
+          features: [
+            {
+              id: 'place.manual-fallback',
+              text: 'Example Harbour',
+              center: [-46.63, -23.55],
+            },
+          ],
+        }),
+      }),
+    );
+    await searchInput.fill('Example Harbour');
+    await searchInput.press('Enter');
+    await expect
+      .poll(async () => Number(await map.getAttribute('data-map-latitude')))
+      .toBeCloseTo(-23.55, 4);
+    await expect
+      .poll(async () => Number(await map.getAttribute('data-map-longitude')))
+      .toBeCloseTo(-46.63, 4);
   });
 
   test('trackpad zoom out preserves the searched place', async ({

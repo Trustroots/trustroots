@@ -38,6 +38,7 @@ interface SearchMapLocation {
   lat: number;
   lng: number;
   zoom?: number;
+  clearSelection?: boolean;
 }
 
 interface SearchMapBounds {
@@ -84,6 +85,9 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
   const [bounds, setBounds] = useState<Partial<SearchMapBounds>>({});
   const [location, setLocation] = useState<Partial<SearchMapLocation>>({});
+  const [deviceLocationRequestId, setDeviceLocationRequestId] = useState(0);
+  const placeSearchGenerationRef = useRef(0);
+  const locationNavigationGenerationRef = useRef(0);
   const [offer, setOffer] = useState<SearchResultOffer | null>(null);
   const locallyPreviewedOfferIdRef = React.useRef<string | null>(null);
   const [communityNoteThreads, setCommunityNoteThreads] = useState<
@@ -116,6 +120,11 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     initialFilters.seen?.months === 6,
   );
 
+  const requestDeviceLocation = useCallback(() => {
+    placeSearchGenerationRef.current += 1;
+    setDeviceLocationRequestId(requestId => requestId + 1);
+  }, []);
+
   const clearSelection = useCallback(
     ({ clearOfferParam = true }: { clearOfferParam?: boolean } = {}) => {
       locallyPreviewedOfferIdRef.current = null;
@@ -127,6 +136,21 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       }
     },
     [],
+  );
+
+  const handleDeviceLocation = useCallback(
+    ({ lat, lng }: { lat: number; lng: number }) => {
+      locationNavigationGenerationRef.current += 1;
+      clearSelection();
+      setBounds({});
+      setLocation({ lat, lng, zoom: 13, clearSelection: true });
+      setSearchQuery('');
+      setIsPlaceSearchVisible(false);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('location');
+      window.history.replaceState({}, '', url);
+    },
+    [clearSelection],
   );
 
   const updateFilters = useCallback(
@@ -309,6 +333,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
 
   useEffect(() => {
+    const requestGeneration = placeSearchGenerationRef.current;
     let isMounted = true;
 
     async function initialiseFromUrl() {
@@ -327,7 +352,11 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       if (searchQuery) {
         const suggestions = await fetchLocationSuggestions(searchQuery);
 
-        if (isMounted && suggestions.length) {
+        if (
+          isMounted &&
+          requestGeneration === placeSearchGenerationRef.current &&
+          suggestions.length
+        ) {
           const located = locatePlace(suggestions[0]);
 
           if (located) {
@@ -355,6 +384,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       return;
     }
     let isMounted = true;
+    const locationNavigationGeneration =
+      locationNavigationGenerationRef.current;
     clearSelection({ clearOfferParam: false });
 
     async function loadOfferFromUrl() {
@@ -365,12 +396,20 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         try {
           const loadedOffer = await getOffer(routeParams.offer);
 
-          if (isMounted) {
+          if (
+            isMounted &&
+            locationNavigationGeneration ===
+              locationNavigationGenerationRef.current
+          ) {
             // Search results include the profile fields used by the sidebar.
             previewOffer(loadedOffer as unknown as SearchResultOffer, true);
           }
         } catch {
-          if (isMounted) {
+          if (
+            isMounted &&
+            locationNavigationGeneration ===
+              locationNavigationGenerationRef.current
+          ) {
             clearSelection({ clearOfferParam: false });
             trackEvent('offer-not-found', {
               category: 'search.map',
@@ -434,6 +473,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         <div className="visible-xs-block panel panel-default search-map-place">
           <SearchPlaceInput
             onPlaceSearch={onPlaceSearch}
+            onDeviceLocation={handleDeviceLocation}
+            onDeviceLocationRequest={requestDeviceLocation}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
@@ -500,6 +541,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               updateFilters({ seen: { months } });
             }}
             onPlaceSearch={onPlaceSearch}
+            onDeviceLocation={handleDeviceLocation}
+            onDeviceLocationRequest={requestDeviceLocation}
             onTabSelect={tab => {
               if (tab === 'filters' || tab === 'results') setSidebarTab(tab);
             }}
@@ -532,6 +575,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         )}
 
         <SearchMap
+          deviceLocationRequestId={deviceLocationRequestId}
           filters={filtersJson}
           isUserPublic={isUserPublic}
           location={location}
