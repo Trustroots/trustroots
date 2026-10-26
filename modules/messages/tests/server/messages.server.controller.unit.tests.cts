@@ -35,7 +35,7 @@ const messageStatService = require('./../../server/services/message-stat.server.
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const User = mongoose.model('User') as UserModel;
+const User = mongoose.model('User') as unknown as UserModel;
 const Thread = mongoose.model('Thread') as ThreadModel;
 type MessagePaginationResult = {
   docs: MessageDocument[];
@@ -48,7 +48,7 @@ type MessageTestModel = MessageModel & {
     options: { page: number; limit: number; sort?: Record<string, 1 | -1> },
   ): Promise<MessagePaginationResult>;
 };
-const Message = mongoose.model('Message') as MessageTestModel;
+const Message = mongoose.model('Message') as unknown as MessageTestModel;
 
 function typedStub<TArgs extends readonly unknown[]>(
   target: object,

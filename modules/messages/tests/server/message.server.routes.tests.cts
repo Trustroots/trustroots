@@ -19,7 +19,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const config: TestConfigModule = require('./../../../../config/config.mts');
 const express: TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils = require('../../../../testutils/server/data.server.testutil');
-const User = mongoose.model('User') as UserModel;
+const User = mongoose.model('User') as unknown as UserModel;
 const Message = mongoose.model('Message') as MessageModel;
 const Thread = mongoose.model('Thread') as ThreadModel;
 

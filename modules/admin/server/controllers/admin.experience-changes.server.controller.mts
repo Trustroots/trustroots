@@ -124,9 +124,12 @@ const Experience = mongoose.model<ExperienceRecord>('Experience');
 const ExperienceChangeLink = mongoose.model<ChangeLinkRecord>(
   'ExperienceChangeLink',
 );
-const ExperienceChangeRequest = mongoose.model<ChangeRequestRecord>(
-  'ExperienceChangeRequest',
-);
+const ExperienceChangeRequest = mongoose.model<
+  ChangeRequestBase & {
+    kind: 'edit' | 'remove';
+    proposed?: AdminExperienceChangeProposal;
+  }
+>('ExperienceChangeRequest');
 const User = mongoose.model<UserRecord>('User');
 const active = { removedAt: { $exists: false } };
 const APPROVED_EDIT_VISIBILITY_MS = 7 * 24 * 60 * 60 * 1000;
@@ -236,7 +239,10 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     await ExperienceChangeLink.findOneAndUpdate(
-      { experience: experience._id, member: memberId },
+      {
+        experience: experience._id,
+        member: new mongoose.Types.ObjectId(memberId),
+      },
       {
         tokenHash,
         expiresAt,
@@ -417,12 +423,12 @@ const decide: Handler<
       {
         _id: request.params.id,
         active: true,
-        $or: [
-          { status: 'pending' },
-          ...(!rejecting
-            ? [{ status: 'processing', reviewedAt: { $exists: false } }]
-            : []),
-        ],
+        $or: rejecting
+          ? [{ status: 'pending' }]
+          : [
+              { status: 'pending' },
+              { status: 'processing', reviewedAt: { $exists: false } },
+            ],
       },
       {
         $set: {
@@ -433,13 +439,17 @@ const decide: Handler<
         },
       },
       { new: true },
-    ).exec();
+    )
+      .lean<ChangeRequestRecord | null>()
+      .exec();
     if (!changeRequest && !rejecting) {
       changeRequest = await ExperienceChangeRequest.findOne({
         _id: request.params.id,
         status: 'processing',
         active: true,
-      }).exec();
+      })
+        .lean<ChangeRequestRecord | null>()
+        .exec();
     }
     if (!changeRequest) {
       return response.status(409).json({
