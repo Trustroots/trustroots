@@ -109,6 +109,11 @@ class RichMemberProfileJourneyTest {
         compose.onNodeWithText("Maybe hosting").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("A quiet place for one traveller.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Space for 1 guest").performScrollTo().assertIsDisplayed()
+        val biographyTop = compose.onNodeWithText("Travelling through fictional places.").fetchSemanticsNode().boundsInRoot.top
+        val hostingTop = compose.onNodeWithText("A quiet place for one traveller.").fetchSemanticsNode().boundsInRoot.top
+        val circlesTop = compose.onNodeWithTag("profileCircle-silver-coast").fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Biography should precede hosting details", biographyTop < hostingTop)
+        assertTrue("Hosting details should precede circles", hostingTop < circlesTop)
 
         compose.waitUntil(10_000) {
             requests.any { it.startsWith("GET /api/users/member-main/avatar?size=512 ") } &&

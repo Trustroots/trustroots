@@ -264,6 +264,9 @@ private fun MemberShell(
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
+    val inboxCache = remember(api.backendURL, session.member.username, session.cookieHeader) {
+        org.trustroots.android.ui.inbox.InboxCache()
+    }
     val shellViewModel = rememberMemberShellViewModel(api, session)
     val shellState by shellViewModel.state.collectAsState()
     LaunchedEffect(activeVisitID) {
@@ -480,6 +483,7 @@ private fun MemberShell(
                                         session = session,
                                         onSessionInvalidated = onSessionInvalidated,
                                         initialMemberID = visit.requestedMessageMemberID,
+                                        inboxCache = inboxCache,
                                         initialVisitID = visit.visitID,
                                         contentPadding = contentPadding,
                                     )

@@ -30,6 +30,63 @@ import org.trustroots.android.api.MobileMember
 @Config(sdk = [35], manifest = Config.NONE)
 class InboxViewModelTest {
     @Test
+    fun newVisitReusesFreshDataWithoutSharingFilterOrRequestState() = withScope { scope ->
+        val cache = InboxCache()
+        val repository = FakeInboxRepository { Result.success(listOf(thread("saved", "Quiet Fox"))) }
+        val first = InboxViewModel(repository, session(), scope, now = { 0L }, cache = cache)
+        first.onEvent(InboxEvent.FilterChanged("Quiet"))
+        val next = InboxViewModel(repository, session(), scope, now = { 29_999L }, cache = cache)
+        assertEquals(listOf(1), repository.pages)
+        assertEquals("saved", next.state.value.threads.single().id)
+        assertEquals("", next.state.value.filter)
+        assertTrue(next.state.value.hasLoaded)
+        assertFalse(next.state.value.isLoading)
+
+        InboxViewModel(repository, session(), scope, now = { 30_000L }, cache = cache)
+        assertEquals(listOf(1, 1), repository.pages)
+    }
+
+    @Test
+    fun reopeningKeepsFreshInboxAndRefreshesStaleDataWithoutInitialLoadingState() = withScope { scope ->
+        var now = 0L
+        val pending = CompletableDeferred<Result<List<MessageThread>>>()
+        var calls = 0
+        val repository = FakeInboxRepository {
+            if (calls++ == 0) Result.success(listOf(thread("old", "Quiet Fox"))) else pending.await()
+        }
+        val model = InboxViewModel(repository, session(), scope, now = { now })
+        now = 29_999L
+        model.onEvent(InboxEvent.Opened)
+        assertEquals(1, calls)
+        now = 30_000L
+        model.onEvent(InboxEvent.Opened)
+        assertEquals(2, calls)
+        assertTrue(model.state.value.hasLoaded)
+        assertTrue(model.state.value.isLoading)
+        assertEquals("old", model.state.value.threads.single().id)
+        model.onEvent(InboxEvent.Opened)
+        assertEquals(2, calls)
+        pending.complete(Result.success(listOf(thread("new", "Quiet Fox"))))
+        assertEquals("new", model.state.value.threads.single().id)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
+    fun returningFromConversationRefreshesEvenFreshInboxWithoutHidingIt() = withScope { scope ->
+        var calls = 0
+        val pending = CompletableDeferred<Result<List<MessageThread>>>()
+        val repository = FakeInboxRepository {
+            if (calls++ == 0) Result.success(emptyList()) else pending.await()
+        }
+        val model = InboxViewModel(repository, session(), scope, now = { 0L })
+        model.onEvent(InboxEvent.ReturnFromConversation)
+        assertEquals(2, calls)
+        assertTrue(model.state.value.hasLoaded)
+        pending.complete(Result.success(emptyList()))
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
     fun loadsPagesAndDeduplicatesThreadsAndFilteringLivesInState() = withScope { scope ->
         val repository = FakeInboxRepository { page ->
             when (page) {
