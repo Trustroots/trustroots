@@ -102,8 +102,6 @@ const defaultProps: React.ComponentProps<typeof SearchSidebar> = {
   onCommunityNotesToggle: jest.fn(),
   onFiltersChange: jest.fn(),
   onPlaceSearch: jest.fn(),
-  onDeviceLocation: jest.fn(),
-  onDeviceLocationRequest: jest.fn(),
   onTabSelect: jest.fn(),
   onlineInPast6Months: true,
   onOnlineInPast6MonthsChange: jest.fn(),

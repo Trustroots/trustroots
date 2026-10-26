@@ -1,10 +1,22 @@
-import { expect, expectPresent, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  expect,
+  expectPresent,
+  test,
+} from '../../support/fixtures.mts';
 import {
   installNostrRelayStub,
   type SignedNostrEvent,
 } from '../../support/nostr.mts';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import type { Page } from '@playwright/test';
+import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
+
+declare global {
+  interface Window {
+    __deviceLocationRequests?: number;
+  }
+}
 
 test('circle map stays still without dragging and preserves its view as live places arrive', async ({
   page,
@@ -103,6 +115,69 @@ async function prepareCircle(
     }),
   );
 }
+
+test('hitchhiking map uses explicit device location and GeoIP fallback on failure', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.public', [
+    'Circle location controls only request device location after activation.',
+    'A denied device request falls back to the approximate member location.',
+  ]);
+  await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  await page.addInitScript(() => {
+    window.__deviceLocationRequests = 0;
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(
+          _success: PositionCallback,
+          failure: PositionErrorCallback | null,
+        ) {
+          window.__deviceLocationRequests! += 1;
+          queueMicrotask(() =>
+            failure?.({
+              code: 1,
+              message: 'Fictional permission denial',
+              PERMISSION_DENIED: 1,
+              POSITION_UNAVAILABLE: 2,
+              TIMEOUT: 3,
+            } as GeolocationPositionError),
+          );
+        },
+      },
+    });
+  });
+  let defaultLocationRequests = 0;
+  await page.route('**/api/map-default-location', route => {
+    defaultLocationRequests += 1;
+    return route.fulfill({
+      json: { location: { latitude: 34, longitude: -17, zoom: 6 } },
+    });
+  });
+  await prepareCircle(page);
+  await page.goto('/circles/hitchhikers');
+  await expect(page.locator('.circle-location-map')).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+    .toBe(0);
+  expect(defaultLocationRequests).toBe(0);
+
+  const locate = page.getByRole('button', {
+    name: 'Use my location',
+    exact: true,
+  });
+  await expect(locate).toBeVisible();
+  await locate.click();
+  await expect
+    .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+    .toBe(1);
+  await expect(page.getByRole('status')).toContainText(
+    'Showing your approximate location.',
+  );
+  await expect(page.getByRole('status')).toContainText('approximate');
+  await expect.poll(() => defaultLocationRequests).toBe(1);
+});
 
 test('ride popups link named hitchhikers to Maps accounts and leave Anonymous unlinked', async ({
   page,

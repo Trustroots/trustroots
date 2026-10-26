@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import L from 'leaflet';
 import type { Event } from 'nostr-tools';
 import CircleLocationMap, {
@@ -42,6 +48,56 @@ jest.mock('@/modules/core/client/utils/map', () => ({
     options: {},
   }),
 }));
+jest.mock('@/modules/core/client/components/DeviceLocationButton', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  type mockButtonProps = {
+    onRequest?: () => void;
+    onLocation: (location: { lat: number; lng: number }) => void;
+    onApproximateLocation: (location: {
+      latitude: number;
+      longitude: number;
+      zoom: number;
+    }) => void;
+  };
+  return {
+    __esModule: true,
+    default: ({
+      onRequest,
+      onLocation,
+      onApproximateLocation,
+    }: mockButtonProps) =>
+      React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => {
+              onRequest?.();
+              onLocation({ lat: 0, lng: 0 });
+            },
+          },
+          'Mock device location',
+        ),
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => {
+              onRequest?.();
+              onApproximateLocation({
+                latitude: 34,
+                longitude: -17,
+                zoom: 6,
+              });
+            },
+          },
+          'Mock approximate location',
+        ),
+      ),
+  };
+});
 
 const location: CircleLocation = {
   id: 'example',
@@ -107,6 +163,26 @@ describe('shared circle map', () => {
     act(() => moveStart());
     rerender(<CircleLocationMap {...props} />);
     expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+  it('centres precisely on device location and keeps late relay results from resetting the view', () => {
+    const { rerender } = render(
+      <CircleLocationMap {...props} locations={[]} state="loading" />,
+    );
+    const map = jest.mocked(L.map).mock.results[0].value;
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mock device location' }),
+    );
+    expect(map.setView).toHaveBeenCalledWith([0, 0], 13, { animate: false });
+    rerender(<CircleLocationMap {...props} />);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+  it('uses the approximate fallback location and zoom after a device failure', () => {
+    render(<CircleLocationMap {...props} locations={[]} state="loading" />);
+    const map = jest.mocked(L.map).mock.results[0].value;
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mock approximate location' }),
+    );
+    expect(map.setView).toHaveBeenCalledWith([34, -17], 6, { animate: false });
   });
   it('keeps the selected popup open when locations are refreshed', () => {
     const { rerender } = render(<CircleLocationMap {...props} />);

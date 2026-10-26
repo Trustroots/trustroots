@@ -204,6 +204,112 @@ test.describe('approximate initial map locations', () => {
     await expect(map).toHaveAttribute('data-map-zoom', '13');
   });
 
+  test('denied device location uses an explicit approximate search viewport', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(
+      testInfo,
+      'search.map',
+      'Denied device location falls back to an explicitly labelled approximate viewport.',
+    );
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition(
+            _success: PositionCallback,
+            failure: PositionErrorCallback,
+          ) {
+            queueMicrotask(() =>
+              failure({ code: 1 } as GeolocationPositionError),
+            );
+          },
+        },
+      });
+      localStorage.setItem(
+        'search-map-location',
+        JSON.stringify({
+          latitude: 12,
+          longitude: 23,
+          zoom: 9,
+          version: 1,
+          savedAt: Date.now(),
+        }),
+      );
+    });
+    await page.goto('/search');
+    const map = page.getByTestId('leaflet-search-map');
+    await expect(map).toHaveAttribute('data-map-latitude', '12');
+    const locate = page.getByRole('button', {
+      name: 'Use my location',
+      exact: true,
+    });
+    await locate.click();
+    await expect(map).toHaveAttribute('data-map-latitude', '34');
+    await expect(map).toHaveAttribute('data-map-longitude', '-17');
+    await expect(map).toHaveAttribute('data-map-zoom', '6');
+    await expect(
+      page.locator('.device-location-control').getByRole('status'),
+    ).toContainText('approximate');
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            JSON.parse(localStorage.getItem('search-map-location')!).latitude,
+        ),
+      )
+      .toBe(34);
+  });
+
+  test('denied device location only moves the meeting editor viewport', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(
+      testInfo,
+      'offers.meet-create-edit-delete',
+      'An approximate fallback does not choose offer coordinates or enable saving.',
+    );
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'geolocation', {
+        configurable: true,
+        value: {
+          getCurrentPosition(
+            _success: PositionCallback,
+            failure: PositionErrorCallback,
+          ) {
+            queueMicrotask(() =>
+              failure({ code: 1 } as GeolocationPositionError),
+            );
+          },
+        },
+      });
+    });
+    await page.goto('/offer/meet/add');
+    await page
+      .getByPlaceholder('Write here...')
+      .fill('A fictional park meeting.');
+    await page.getByRole('button', { name: 'Next section' }).click();
+    await expect(page.getByTestId('leaflet-map')).toHaveAttribute(
+      'data-map-latitude',
+      '34',
+    );
+    await page.route('**/api/map-default-location', route =>
+      route.fulfill({
+        json: { location: { latitude: -12, longitude: 45, zoom: 5 } },
+      }),
+    );
+    await page
+      .getByRole('button', { name: 'Use my location', exact: true })
+      .click();
+    const map = page.getByTestId('leaflet-map');
+    await expect(map).toHaveAttribute('data-map-latitude', '-12');
+    await expect(map).toHaveAttribute('data-map-zoom', '5');
+    await expect(map.locator('.leaflet-overlay-pane path')).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Finish editing and save' }),
+    ).toBeDisabled();
+  });
+
   test('approximate meeting viewport does not choose a location', async ({
     page,
   }, testInfo) => {

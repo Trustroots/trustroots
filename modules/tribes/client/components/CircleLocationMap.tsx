@@ -1,6 +1,7 @@
 import L from 'leaflet';
 import React, { useEffect, useRef, type ReactNode } from 'react';
 import { getRasterMapTiles } from '@/modules/core/client/utils/map';
+import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import './circle-location-map.less';
 
 export interface CircleLocation {
@@ -184,12 +185,29 @@ export default function CircleLocationMap(props: Props) {
         <h3>{props.title}</h3>
         <p>{props.description}</p>
       </div>
-      <div
-        className="circle-location-map"
-        ref={container}
-        role="application"
-        aria-label={props.mapLabel}
-      />
+      <div className="circle-location-map-frame">
+        <div
+          className="circle-location-map"
+          ref={container}
+          role="application"
+          aria-label={props.mapLabel}
+        />
+        <DeviceLocationButton
+          onRequest={() => {
+            initialViewSet.current = true;
+          }}
+          onLocation={({ lat, lng }) => {
+            initialViewSet.current = true;
+            mapRef.current?.setView([lat, lng], 13, { animate: false });
+          }}
+          onApproximateLocation={({ latitude, longitude, zoom }) => {
+            initialViewSet.current = true;
+            mapRef.current?.setView([latitude, longitude], zoom, {
+              animate: false,
+            });
+          }}
+        />
+      </div>
       <div className="circle-location-map-footer">
         <span className="circle-location-map-status" aria-live="polite">
           {props.state === 'loading'
