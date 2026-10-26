@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import MapDefaultAttribution from './Map/MapDefaultAttribution';
@@ -36,6 +36,16 @@ export default function DeviceLocationButton({
     onLocation,
     onApproximateLocation,
   );
+  const [requestId, setRequestId] = useState(0);
+  const [dismissedRequestId, setDismissedRequestId] = useState(-1);
+  useEffect(() => {
+    if (!error) return;
+    const timeout = window.setTimeout(
+      () => setDismissedRequestId(requestId),
+      8000,
+    );
+    return () => window.clearTimeout(timeout);
+  }, [error, requestId]);
   const isPending = status === 'pending';
   const statusMessage = isPending
     ? t('Finding your location…')
@@ -58,6 +68,7 @@ export default function DeviceLocationButton({
         aria-label={buttonLabel}
         title={buttonLabel}
         onClick={() => {
+          setRequestId(current => current + 1);
           onRequest?.();
           requestLocation();
         }}
@@ -76,7 +87,15 @@ export default function DeviceLocationButton({
           <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
         </svg>
       </button>
-      <span role="status" aria-live="polite">
+      <span
+        role="status"
+        aria-live="polite"
+        className={
+          error && dismissedRequestId === requestId
+            ? 'device-location-feedback-dismissed'
+            : undefined
+        }
+      >
         {statusMessage}
         {isApproximate && (
           <>
