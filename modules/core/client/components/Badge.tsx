@@ -2,7 +2,7 @@ import React, { type ReactNode } from 'react';
 import styled from 'styled-components';
 
 const Dot = styled.div`
-  background: #d9534f;
+  background: var(--tr-notification-badge-bg);
   border-radius: 50%;
   height: 7px;
   position: absolute;
