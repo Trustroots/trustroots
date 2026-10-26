@@ -66,6 +66,13 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
         print('Window{2 Application Not Responding: org.trustroots.android}')
     if os.environ.get('FAKE_ANR') == 'systemui-child':
         print('Window{1 Application Not Responding: com.android.systemui.other}')
+    elif os.environ.get('FAKE_ANR') == 'systemui-surface' and not rebooted:
+        print('      mSurface=Surface(name=Application Not Responding: com.android.systemui)/@0x6449014')
+    elif os.environ.get('FAKE_ANR') == 'systemui-surface-child':
+        print('      mSurface=Surface(name=Application Not Responding: com.android.systemui.other)/@0x6449014')
+    elif os.environ.get('FAKE_ANR') == 'mixed-surface':
+        print('      mSurface=Surface(name=Application Not Responding: com.android.systemui)/@0x6449014')
+        print('Window{2 Application Not Responding: org.trustroots.android}')
     print('  mTopFocusedDisplayId=0')
 """
         )
@@ -113,6 +120,12 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
         self.assertTrue(self.command_marker.exists())
         self.assertEqual(1, self.calls.read_text().splitlines().count("reboot"))
 
+    def test_boot_ui_surface_anr_matches_real_window_dump_and_reboots_once(self):
+        result = self.run_gate("systemui-surface")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertTrue(self.command_marker.exists())
+        self.assertEqual(1, self.calls.read_text().splitlines().count("reboot"))
+
     def test_unexpected_app_anr_fails_without_reboot_or_running_command(self):
         result = self.run_gate("app")
         self.assertEqual(1, result.returncode)
@@ -128,6 +141,18 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
 
     def test_system_ui_child_package_is_not_treated_as_the_system_ui_process(self):
         result = self.run_gate("systemui-child")
+        self.assertEqual(1, result.returncode)
+        self.assertFalse(self.command_marker.exists())
+        self.assertNotIn("reboot\n", self.calls.read_text())
+
+    def test_system_ui_surface_child_package_is_not_treated_as_the_system_ui_process(self):
+        result = self.run_gate("systemui-surface-child")
+        self.assertEqual(1, result.returncode)
+        self.assertFalse(self.command_marker.exists())
+        self.assertNotIn("reboot\n", self.calls.read_text())
+
+    def test_system_ui_surface_does_not_mask_a_mixed_app_anr(self):
+        result = self.run_gate("mixed-surface")
         self.assertEqual(1, result.returncode)
         self.assertFalse(self.command_marker.exists())
         self.assertNotIn("reboot\n", self.calls.read_text())
