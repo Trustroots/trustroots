@@ -190,11 +190,13 @@ class MessageHeaderCollapseJourneyTest {
             "RTL Back respects the asymmetric logical start inset",
             rootWidthPx - backBefore.right >= startInsetPx,
         )
-        println("MESSAGE_HEADER conversation pinned title=$titleBefore back=$backBefore firstMessageVisible=true")
+        val messageBefore = compose.onNodeWithText("Fictional conversation note 1").fetchSemanticsNode().boundsInRoot
+        println("MESSAGE_HEADER conversation pinned title=$titleBefore back=$backBefore message=$messageBefore")
         captureUsabilityScreenshot(compose, "android_message_conversation_pinned")
 
         val history = compose.onNodeWithTag("conversationMessages")
-        history.performScrollToNode(hasText("Fictional conversation note 30"))
+        // The API fixture is newest-first. Drag down from the latest message to read older history.
+        history.performTouchInput { swipeDown() }
         compose.waitForIdle()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").assertIsDisplayed()
