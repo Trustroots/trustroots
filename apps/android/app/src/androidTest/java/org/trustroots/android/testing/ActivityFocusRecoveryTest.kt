@@ -7,15 +7,14 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ActivityFocusRecoveryTest {
-    @Test fun recoversOnlyTheSystemProcessWhoseAnrDialogHasWindowFocus() {
+    @Test fun waitsOnlyForTheExactSystemAnrDialogWithWindowFocus() {
         for (process in listOf("com.android.launcher3", "com.android.systemui")) {
             val commands = recoverWith("""
                 mCurrentFocus=Window{abc u0 Application Not Responding: $process}
                 mFocusedApp=ActivityRecord{def u0 org.trustroots.android.debug/androidx.activity.ComponentActivity}
             """.trimIndent())
 
-            val recovery = if (process == "com.android.systemui") "wait for System UI" else "am force-stop $process"
-            assertEquals(listOf("dumpsys window windows", recovery), commands)
+            assertEquals(listOf("dumpsys window windows", "wait for matched system ANR"), commands)
         }
     }
 
@@ -52,7 +51,7 @@ class ActivityFocusRecoveryTest {
                 commands += command
                 if (command == "dumpsys window windows") dump else ""
             },
-            waitForSystemUi = { commands += "wait for System UI"; true },
+            waitForSystemAnr = { commands += "wait for matched system ANR"; true },
         )
         return commands
     }

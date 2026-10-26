@@ -14,11 +14,12 @@ import androidx.test.platform.app.InstrumentationRegistry
  * dropdowns on current emulator images can stay open without taking focus, and that wait
  * then fails the journey. Dialogs also ignore a synthetic back key and dismiss through
  * their own back dispatcher, so call that when the window belongs to one.
+ * Use dialogOnly when a closing popup may still have a visible window above the dialog.
  */
-internal fun pressBackFromNonActivityRoot(activity: Activity) {
+internal fun pressBackFromNonActivityRoot(activity: Activity, dialogOnly: Boolean = false) {
     val instrumentation = InstrumentationRegistry.getInstrumentation()
     instrumentation.waitForIdleSync()
-    val target = topNonActivityRoot(activity)
+    val target = topNonActivityRoot(activity, dialogOnly)
         ?: error("Expected an open dialog or popup to receive system back")
     instrumentation.runOnMainSync {
         val dialog = target.findViewTreeOnBackPressedDispatcherOwner() as? ComponentDialog
@@ -37,10 +38,13 @@ internal fun hasFocusedNonActivityRoot(activity: Activity): Boolean =
     topNonActivityRoot(activity)?.hasWindowFocus() == true
 
 @Suppress("PrivateApi")
-private fun topNonActivityRoot(activity: Activity): View? {
+private fun topNonActivityRoot(activity: Activity, dialogOnly: Boolean = false): View? {
     val manager = Class.forName("android.view.WindowManagerGlobal")
     val instance = manager.getMethod("getInstance").invoke(null)
     val views = manager.getDeclaredField("mViews").apply { isAccessible = true }.get(instance) as Iterable<*>
     val activityDecor = activity.window.decorView
-    return views.filterIsInstance<View>().lastOrNull { it.isShown && it !== activityDecor }
+    return views.filterIsInstance<View>().lastOrNull {
+        it.isShown && it !== activityDecor &&
+            (!dialogOnly || it.findViewTreeOnBackPressedDispatcherOwner() is ComponentDialog)
+    }
 }

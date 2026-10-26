@@ -163,7 +163,7 @@ class ProfileMemberSafetyJourneyTest {
     private fun pressDialogBack() {
         lateinit var activity: android.app.Activity
         requireNotNull(scenario).onActivity { activity = it }
-        pressBackFromNonActivityRoot(activity)
+        pressBackFromNonActivityRoot(activity, dialogOnly = true)
     }
 
     @Test fun blockAndReportDialogsIgnoreBackWhileRequestsArePendingAndDismissAfterwards() {
@@ -179,9 +179,13 @@ class ProfileMemberSafetyJourneyTest {
 
         releaseBlockRequest.countDown()
         waitForTag("profileBlockedNotice")
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("confirmProfileBlock").fetchSemanticsNodes().isEmpty()
+        }
         holdBlockRequest.set(false)
         openMenu()
-        compose.onNodeWithText("Unblock member").performClick()
+        compose.onNodeWithTag("profileBlockAction").assertIsEnabled().performClick()
+        compose.onNodeWithTag("confirmProfileBlock").assertIsDisplayed()
         pressDialogBack()
         compose.onNodeWithTag("confirmProfileBlock").assertDoesNotExist()
 
