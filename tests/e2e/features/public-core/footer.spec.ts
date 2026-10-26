@@ -19,6 +19,24 @@ test.describe('public footer', () => {
       'Standard footer links to the deployed GitHub commit.',
     ]);
 
+    await page.addInitScript(
+      build => {
+        let settings: Record<string, unknown> = {};
+        Object.defineProperty(window, 'settings', {
+          configurable: true,
+          get: () => settings,
+          set: value => {
+            settings = { ...value, build };
+          },
+        });
+      },
+      {
+        commitUrl:
+          'https://github.com/Trustroots/trustroots/commit/abcdef012345',
+        committedAt: '2026-10-21 00:00',
+        shortCommit: 'abcdef0',
+      },
+    );
     await page.goto('/faq');
 
     const footer = page.locator('#tr-footer');
