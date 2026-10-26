@@ -7,17 +7,19 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class ActivityFocusRecoveryTest {
-    @Test fun stopsTheLauncherOnlyWhenItsAnrDialogHasWindowFocus() {
-        val commands = recoverWith("""
-            mCurrentFocus=Window{abc u0 Application Not Responding: com.android.launcher3}
-            mFocusedApp=ActivityRecord{def u0 org.trustroots.android.debug/androidx.activity.ComponentActivity}
-        """.trimIndent())
+    @Test fun stopsTheSystemProcessOnlyWhenItsAnrDialogHasWindowFocus() {
+        for (process in listOf("com.android.launcher3", "com.android.systemui")) {
+            val commands = recoverWith("""
+                mCurrentFocus=Window{abc u0 Application Not Responding: $process}
+                mFocusedApp=ActivityRecord{def u0 org.trustroots.android.debug/androidx.activity.ComponentActivity}
+            """.trimIndent())
 
-        assertEquals(listOf("dumpsys window windows", "am force-stop com.android.launcher3"), commands)
+            assertEquals(listOf("dumpsys window windows", "am force-stop $process"), commands)
+        }
     }
 
     @Test fun doesNotDismissAnApplicationOrAnotherSystemProcessAnr() {
-        for (process in listOf("org.trustroots.android.debug", "com.android.settings", "com.android.launcher3.other")) {
+        for (process in listOf("org.trustroots.android.debug", "com.android.settings", "com.android.launcher3.other", "com.android.systemui.other")) {
             assertEquals(
                 listOf("dumpsys window windows"),
                 recoverWith("mCurrentFocus=Window{abc u0 Application Not Responding: $process}"),
@@ -25,10 +27,14 @@ class ActivityFocusRecoveryTest {
         }
     }
 
-    @Test fun doesNotActOnAnUnfocusedLauncherAnrOrAMissingFocusWindow() {
+    @Test fun doesNotActOnAnUnfocusedSystemAnrOrAMissingFocusWindow() {
         for (dump in listOf(
             """
                 Window #1 Window{abc u0 Application Not Responding: com.android.launcher3}
+                mCurrentFocus=Window{def u0 org.trustroots.android.debug/androidx.activity.ComponentActivity}
+            """.trimIndent(),
+            """
+                Window #1 Window{abc u0 Application Not Responding: com.android.systemui}
                 mCurrentFocus=Window{def u0 org.trustroots.android.debug/androidx.activity.ComponentActivity}
             """.trimIndent(),
             "mCurrentFocus=null",
@@ -40,7 +46,7 @@ class ActivityFocusRecoveryTest {
 
     private fun recoverWith(dump: String): List<String> {
         val commands = mutableListOf<String>()
-        dismissLauncherAnr { command ->
+        dismissSystemAnr { command ->
             commands += command
             if (command == "dumpsys window windows") dump else ""
         }

@@ -15,7 +15,7 @@ internal fun foregroundActivityTask(
     activity: Activity,
     uiAutomation: UiAutomation,
 ) {
-    dismissLauncherAnr { command -> shellDump(uiAutomation, command) }
+    dismissSystemAnr { command -> shellDump(uiAutomation, command) }
     val taskId = activity.taskId
     val appTask = activity.getSystemService(ActivityManager::class.java)
         .appTasks
@@ -35,14 +35,15 @@ internal fun foregroundActivityTask(
     }
 }
 
-/** A boot-time launcher ANR can keep its system dialog above every test Activity. */
-internal fun dismissLauncherAnr(shell: (String) -> String) {
+/** Boot-time launcher and System UI ANRs can keep their dialogs above every test Activity. */
+internal fun dismissSystemAnr(shell: (String) -> String) {
     val focusedWindow = shell("dumpsys window windows").lineSequence()
         .firstOrNull { it.trimStart().startsWith("mCurrentFocus=") }
         ?: return
-    if (focusedWindow.contains("Application Not Responding: com.android.launcher3}")) {
-        shell("am force-stop com.android.launcher3")
-    }
+    val process = listOf("com.android.launcher3", "com.android.systemui")
+        .firstOrNull { focusedWindow.contains("Application Not Responding: $it}") }
+        ?: return
+    shell("am force-stop $process")
 }
 
 private fun appTaskTaskId(appTask: ActivityManager.AppTask): Int? {
