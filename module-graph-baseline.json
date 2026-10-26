@@ -9,7 +9,7 @@
     "pages": ["core", "support", "tribes", "users"],
     "references-thread": ["core", "stats", "users"],
     "search": ["core", "offers", "tribes", "users"],
-    "sparkpost": ["core", "stats"],
+    "sparkpost": ["core", "stats", "users"],
     "statistics": ["core", "experiences", "stats", "users"],
     "support": ["core", "stats"],
     "tribes": ["core", "search", "users"],
@@ -44,6 +44,7 @@
     "offers": ["users"],
     "pages": ["users"],
     "references-thread": ["messages", "users"],
+    "sparkpost": ["users"],
     "statistics": [
       "experiences",
       "messages",

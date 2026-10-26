@@ -22,6 +22,7 @@ const statService: typeof import('../../../stats/server/services/stats.server.se
 const controller: WebhookController = require('./../../server/controllers/sparkpost-webhooks.server.controller.mts');
 const sinon: typeof import('sinon') = require('sinon');
 const should: typeof import('should') = require('should');
+const mongoose: typeof import('mongoose') = require('mongoose');
 void should;
 
 function mockResponse(): MockResponse {
@@ -116,6 +117,143 @@ function processEvent(controller: WebhookController, event: WebhookEvent) {
 
 describe('SparkPost webhook controller unit tests', () => {
   afterEach(() => sinon.restore());
+
+  function stubPreferenceUpdate(error?: Error) {
+    const exec = sinon.stub();
+    if (error) exec.rejects(error);
+    else exec.resolves({ matchedCount: 1, modifiedCount: 1 });
+    const updateOne = sinon.stub().returns({ exec });
+    sinon.stub(mongoose, 'model').returns({
+      updateOne,
+    } as unknown as ReturnType<typeof mongoose.model>);
+    return { updateOne, exec };
+  }
+
+  for (const type of ['list_unsubscribe', 'link_unsubscribe']) {
+    it(`persists ${type} opt-outs before acknowledging a batch`, async () => {
+      const { controller, stat } = loadController();
+      const { updateOne, exec } = stubPreferenceUpdate();
+      let finish!: () => void;
+      exec.returns(new Promise<void>(resolve => (finish = resolve)));
+      const res = mockResponse();
+
+      receiveBatch(
+        controller,
+        [
+          {
+            msys: {
+              unsubscribe_event: {
+                type,
+                rcpt_to: ' MEMBER@example.test ',
+              },
+            },
+          },
+        ],
+        res,
+      );
+
+      stat.called.should.be.false();
+      finish();
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      sinon.assert.calledWithExactly(
+        updateOne,
+        { email: 'member@example.test', newsletter: true },
+        { $set: { newsletter: false } },
+      );
+      stat.calledOnce.should.be.true();
+    });
+  }
+
+  it('ignores malformed recipients and unrelated events without querying users', async () => {
+    const { controller } = loadController();
+    const { updateOne } = stubPreferenceUpdate();
+    const events: WebhookEvent[] = [
+      {},
+      { msys: {} },
+      {
+        msys: {
+          message_event: {
+            type: 'list_unsubscribe',
+            rcpt_to: 'member@example.test',
+          },
+        },
+      },
+      {
+        msys: {
+          unsubscribe_event: {
+            type: 'delivery',
+            rcpt_to: 'member@example.test',
+          },
+        },
+      },
+      ...[undefined, null, '', ' ', 'invalid', 42, { $ne: null }].map(
+        rcpt_to => ({
+          msys: { unsubscribe_event: { type: 'list_unsubscribe', rcpt_to } },
+        }),
+      ),
+    ];
+    for (const event of events) {
+      await new Promise<void>(resolve =>
+        controller.processUnsubscribe(event, () => resolve()),
+      );
+    }
+    sinon.assert.notCalled(updateOne);
+  });
+
+  it('returns a retryable response when an opt-out cannot be persisted', async () => {
+    const { controller, stat } = loadController();
+    stubPreferenceUpdate(new Error('database unavailable'));
+    const res = mockResponse();
+
+    receiveBatch(
+      controller,
+      [
+        {
+          msys: {
+            unsubscribe_event: {
+              type: 'list_unsubscribe',
+              rcpt_to: 'member@example.test',
+            },
+          },
+        },
+      ],
+      res,
+    );
+    await res.waitForResponse();
+
+    res.statusCode.should.equal(503);
+    should(res.body).deepEqual({
+      message: 'Could not process SparkPost unsubscribe events.',
+    });
+    stat.called.should.be.false();
+  });
+
+  it('keeps a persisted opt-out when metrics fail', async () => {
+    const { controller } = loadController({
+      statError: new Error('metrics unavailable'),
+    });
+    const { updateOne } = stubPreferenceUpdate();
+    const res = mockResponse();
+    receiveBatch(
+      controller,
+      [
+        {
+          msys: {
+            unsubscribe_event: {
+              type: 'link_unsubscribe',
+              rcpt_to: 'member@example.test',
+            },
+          },
+        },
+      ],
+      res,
+    );
+    await res.waitForResponse();
+    res.statusCode.should.equal(200);
+    updateOne.calledOnce.should.be.true();
+  });
   it('rejects non-array webhook batches', async () => {
     const { controller } = loadController();
     const res = mockResponse();
