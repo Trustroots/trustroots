@@ -221,7 +221,7 @@
     "@typescript-eslint/parser": "8.71.2",
     "@vitejs/plugin-react": "6.1.2",
     "@vitest/coverage-v8": "5.0.5",
-    "@wordpress/browserslist-config": "6.57.0",
+    "@wordpress/browserslist-config": "7.0.0",
     "agendash": "2.1.1",
     "autoprefixer": "10.6.1",
     "babel-plugin-i18next-extract": "1.1.0",

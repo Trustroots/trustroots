@@ -330,8 +330,8 @@ importers:
         specifier: 5.0.5
         version: 5.0.5(vitest@5.0.5)
       '@wordpress/browserslist-config':
-        specifier: 6.57.0
-        version: 6.57.0
+        specifier: 7.0.0
+        version: 7.0.0
       agendash:
         specifier: 2.1.1
         version: 2.1.1(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)(supports-color@5.5.0)
@@ -2748,9 +2748,9 @@ packages:
   '@vitest/spy@5.0.5':
     resolution: {integrity: sha512-lwJRExuH417257Q5wv9QYugN9IMJkoxcrKrYxGPQkBzl7wlNpTUxD/5yNX4ESKVUIShKPgkGchYPFMWOOk0wzw==}
 
-  '@wordpress/browserslist-config@6.57.0':
-    resolution: {integrity: sha512-FhgKf5DOa7W3KywIkSQcXL876nTqabaEY3EBJk+tO6XtgA14V9VoXXsk0ZtjWDFunZe/TVhZCtA9X0s27b9D+w==}
-    engines: {node: '>=18.12.0'}
+  '@wordpress/browserslist-config@7.0.0':
+    resolution: {integrity: sha512-eZ2yaOBprRNppFNN/qubJ7C2nOX6llR+IeQ5jQC1665sFcOkZes+hLwpbKsZNcmL26ge+77vdQ0f/Ur67rgkgw==}
+    engines: {node: '>=22.13.0'}
 
   a-sync-waterfall@1.0.1:
     resolution: {integrity: sha512-RYTOHHdWipFUliRFMCS4X2Yn2X8M87V/OpSqWzKKOGhzqyUxzyVmhHDH9sAvG+ZuQf/TAOFsLCpMw09I1ufUnA==}
@@ -6389,10 +6389,6 @@ packages:
       jsdom:
         optional: true
 
-  void-elements@3.1.0:
-    resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
-    engines: {node: '>=0.10.0'}
-
   w3c-xmlserializer@5.0.0:
     resolution: {integrity: sha512-o8qghlI8NZHU1lLPrpi2+Uq7abh4GGPpYANlalzWxyWteJOCsr/P+oPBA49TOLu5FTZO4d3F9MnWJfiMo4BkmA==}
     engines: {node: '>=18'}
@@ -8915,7 +8911,7 @@ snapshots:
 
   '@vitest/spy@5.0.5': {}
 
-  '@wordpress/browserslist-config@6.57.0': {}
+  '@wordpress/browserslist-config@7.0.0': {}
 
   a-sync-waterfall@1.0.1: {}
 
@@ -13146,8 +13142,6 @@ snapshots:
       jsdom: 26.1.0(supports-color@5.5.0)
     transitivePeerDependencies:
       - msw
-
-  void-elements@3.1.0: {}
 
   w3c-xmlserializer@5.0.0:
     dependencies:
