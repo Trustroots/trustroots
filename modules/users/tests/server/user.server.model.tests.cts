@@ -713,8 +713,8 @@ describe('User Model Unit Tests:', function () {
         if (!filter || !changes || '$set' in changes === false) {
           throw new Error('Expected a password upgrade update');
         }
-        filter.password.should.equal(legacyPassword);
-        filter.salt.should.equal(legacySalt.toString('base64'));
+        present(filter.password).should.equal(legacyPassword);
+        present(filter.salt).should.equal(legacySalt.toString('base64'));
         present(filter.$or).should.deepEqual([
           { authVersion: { $exists: false } },
           { authVersion: 0 },

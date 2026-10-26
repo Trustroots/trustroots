@@ -9,7 +9,7 @@ import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
 import async from 'async';
 import crypto from 'crypto';
-import mongoose, { type FilterQuery, type UpdateQuery } from 'mongoose';
+import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
   UserServerDocument,
   UserServerModel,
@@ -102,7 +102,7 @@ const service = {} as AuthenticationController;
 const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 
 function findOneAndUpdateWithCallback(
-  filter: FilterQuery<UserServerRecord>,
+  filter: QueryFilter<UserServerRecord>,
   update: UpdateQuery<UserServerRecord>,
   options: { new: boolean },
   callback: (error: Error | null, user: UserDocument | null) => void,
