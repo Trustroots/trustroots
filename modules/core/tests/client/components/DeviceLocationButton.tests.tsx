@@ -431,3 +431,40 @@ it('ignores a late approximate response after unmount', async () => {
   });
   expect(onApproximateLocation).not.toHaveBeenCalled();
 });
+
+it('fades warnings after eight seconds and restores them when retried', () => {
+  jest.useFakeTimers();
+  try {
+    setGeolocation(undefined);
+    render(<DeviceLocationButton onLocation={jest.fn()} />);
+    const locate = screen.getByRole('button', { name: 'i18n:Use my location' });
+    fireEvent.click(locate);
+    const status = screen.getByRole('status');
+    act(() => jest.advanceTimersByTime(7999));
+    expect(status).not.toHaveClass('device-location-feedback-dismissed');
+    act(() => jest.advanceTimersByTime(1));
+    expect(status).toHaveClass('device-location-feedback-dismissed');
+    fireEvent.click(locate);
+    expect(status).not.toHaveClass('device-location-feedback-dismissed');
+    act(() => jest.advanceTimersByTime(8000));
+    expect(status).toHaveClass('device-location-feedback-dismissed');
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('cancels warning dismissal when unmounted', () => {
+  jest.useFakeTimers();
+  try {
+    setGeolocation(undefined);
+    const { unmount } = render(<DeviceLocationButton onLocation={jest.fn()} />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'i18n:Use my location' }),
+    );
+    expect(jest.getTimerCount()).toBe(1);
+    unmount();
+    expect(jest.getTimerCount()).toBe(0);
+  } finally {
+    jest.useRealTimers();
+  }
+});

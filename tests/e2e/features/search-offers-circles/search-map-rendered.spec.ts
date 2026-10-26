@@ -1427,6 +1427,9 @@ test.describe('rendered search map feature coverage', () => {
     await page.screenshot({
       path: testInfo.outputPath('device-location-search-mobile.png'),
     });
+    await expect(status).toBeHidden({ timeout: 12000 });
+    await locate.click();
+    await expect(status).toBeVisible();
     await page.evaluate(() => {
       Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
         publicKey: 'test-geocoding-token',
