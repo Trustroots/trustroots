@@ -87,8 +87,8 @@ Alternative considered: moon. Rejected for now: it brings a second toolchain man
 
 ### Migration rules that protect open pull requests
 
-1. Create the new home first, then turn the old path into a one-line re-export shim.
-2. Rewrite imports later, per module, with a codemod, only after the open pull requests touching those lines have merged.
+1. Create the new home and update consumers directly. Keep an old-path re-export shim only when a concrete consumer, public API or overlapping open pull request still needs it; explain that need.
+2. Where a shim protects overlapping open pull requests, rewrite imports per module with a codemod after those pull requests have merged, then remove the shim.
 3. `@` keeps pointing at the repository root, also from `apps/web`, until the shims are dropped.
 4. Each step is useful on its own. Stopping after any step leaves no half-finished state.
 

@@ -4,7 +4,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
-import AppHeader from '@/modules/core/client/components/AppHeader.component';
+import AppHeader from '@/layers/shell/client/components/AppHeader.component';
 import type NavigationLoggedIn from '@/layers/shell/client/components/NavigationLoggedIn';
 import type NavigationLoggedOut from '@/layers/shell/client/components/NavigationLoggedOut';
 

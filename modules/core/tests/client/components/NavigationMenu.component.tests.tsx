@@ -2,8 +2,8 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import NavigationMenuItem from '@/modules/core/client/components/NavigationMenuItem';
-import NavigationSubMenuList from '@/modules/core/client/components/NavigationSubMenuList';
+import NavigationMenuItem from '@/layers/shell/client/components/NavigationMenuItem';
+import NavigationSubMenuList from '@/layers/shell/client/components/NavigationSubMenuList';
 
 type NavigationSubMenu = React.ComponentProps<
   typeof NavigationSubMenuList

@@ -20,6 +20,6 @@ Affected: developer tooling (`developer-tooling` spec), repository layout, CI, `
 
 No user-facing behaviour changes. No data migration. Production behaviour is unchanged: still one server image, one client bundle and one MongoDB database. The `apps/web` step changes deploy paths (Dockerfile, pm2 files, `deploy/` scripts), so it needs the maintainer's production-image check before merge.
 
-Open pull requests are protected by the migration rules in `design.md`: new locations are created first, old paths become re-export shims, and module files are not rewritten until the pull requests that touch them have merged.
+Open pull requests are protected by the migration rules in `design.md`: update imports directly unless a concrete consumer, public API or overlapping pull request needs a temporary re-export shim. Remove each shim once that need ends.
 
 Test coverage thresholds and the end-to-end baseline are unchanged. Coverage stays one global number.
