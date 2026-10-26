@@ -53,7 +53,13 @@ const usePersistentMapLocation = (initialMapLocation: MapLocation) => {
     mapLocation,
     (newLocation: MapLocation) => {
       setMapLocation(newLocation);
-      setStored({ ...newLocation, version: 1, savedAt: Date.now() });
+      // Maps can report unwrapped longitudes after crossing the date line.
+      // Keep the active camera unchanged, but store a restorable coordinate.
+      const longitude =
+        Math.abs(newLocation.longitude) > 180
+          ? ((((newLocation.longitude + 180) % 360) + 360) % 360) - 180
+          : newLocation.longitude;
+      setStored({ ...newLocation, longitude, version: 1, savedAt: Date.now() });
     },
     Boolean(initialSaved),
   ] as const;

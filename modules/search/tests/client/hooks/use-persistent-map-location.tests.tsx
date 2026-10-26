@@ -86,6 +86,42 @@ describe('Search viewport expiry', () => {
     expect(result.current[0]).toEqual({ latitude: 12, longitude: 34, zoom: 8 });
   });
 
+  it.each([
+    [181, -179],
+    [-181, 179],
+    [541, -179],
+    [-541, 179],
+    [180, 180],
+    [-180, -180],
+    [34.123456, 34.123456],
+  ])('restores a saved longitude of %s as %s', (longitude, expected) => {
+    const position = { latitude: 12, longitude, zoom: 8 };
+    const { result, unmount } = renderHook(() =>
+      usePersistentMapLocation(fallback),
+    );
+    act(() => result.current[1](position));
+    expect(result.current[0]).toEqual(position);
+    const stored = JSON.parse(localStorage.getItem('search-map-location')!);
+    expect(stored).toEqual({
+      ...position,
+      longitude: expected,
+      version: 1,
+      savedAt: saved.savedAt + 100,
+    });
+    unmount();
+
+    jest.spyOn(Date, 'now').mockReturnValue(saved.savedAt + 200);
+    const restored = renderHook(() => usePersistentMapLocation(fallback));
+    expect(restored.result.current[0]).toMatchObject({
+      ...position,
+      longitude: expected,
+    });
+    expect(restored.result.current[2]).toBe(true);
+    expect(JSON.parse(localStorage.getItem('search-map-location')!)).toEqual(
+      stored,
+    );
+  });
+
   it('remains usable when browser storage throws', () => {
     jest.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
       throw new Error('unavailable');
