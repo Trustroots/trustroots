@@ -116,9 +116,15 @@ internal class InboxViewModel(
     private var sessionInvalidationEmitted = false
     private var loadJob: Job? = null
     private var lastLoadedAt: Long? = cache.loadedAt
+    private var displayed = false
 
     init {
         onEvent(InboxEvent.Opened)
+    }
+
+    fun onDisplayed() {
+        // Construction starts the initial load; only later displays need a freshness check.
+        if (displayed) onEvent(InboxEvent.Opened) else displayed = true
     }
 
     fun onEvent(event: InboxEvent) {
