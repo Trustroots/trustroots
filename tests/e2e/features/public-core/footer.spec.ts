@@ -32,7 +32,7 @@ test.describe('public footer', () => {
       },
       {
         commitUrl:
-          'https://github.com/Trustroots/trustroots/commit/abcdef012345',
+          'https://github.com/Trustroots/trustroots/commit/abcdef0123456789abcdef0123456789abcdef01',
         committedAt: '2026-10-21 00:00',
         shortCommit: 'abcdef0',
       },
@@ -102,7 +102,7 @@ test.describe('public footer', () => {
     await page.goto('/faq');
     await page
       .locator('#tr-footer')
-      .getByRole('link', { name: 'Credits' })
+      .getByRole('link', { name: 'Credits', exact: true })
       .click();
     await expect(page).toHaveURL(/\/credits$/);
     await expect(
