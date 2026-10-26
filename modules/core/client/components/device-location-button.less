@@ -41,6 +41,21 @@
     }
   }
 
+  [role='status'] {
+    transition:
+      opacity 300ms,
+      visibility 300ms;
+
+    &.device-location-feedback-dismissed {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
+    }
+  }
+
   [role='status']:not(:empty) {
     margin-bottom: 8px;
     padding: 8px 12px;
