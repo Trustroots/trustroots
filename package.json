@@ -235,7 +235,7 @@
     "eslint-plugin-prettier": "5.5.7",
     "eslint-plugin-react": "7.37.5",
     "eslint-plugin-testing-library": "7.16.2",
-    "husky": "7.0.4",
+    "husky": "9.1.7",
     "istanbul-lib-coverage": "3.2.2",
     "istanbul-lib-instrument": "6.0.3",
     "jest": "30.5.2",
