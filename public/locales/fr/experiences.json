@@ -46,12 +46,6 @@
         "": "Votre recommandation deviendra publique lorsque <1></1> vous recommandera en retour, ou bien dans {{daysToReply}} jours."
     },
     "{{daysLeft}} days left": "{{daysLeft}} jours restants",
-    "{{count}} unknown_one": "{{count}} inconnu",
-    "{{count}} unknown_other": "{{count}} inconnus",
-    "{{count}} recommend_one": "{{count}} recommandé",
-    "{{count}} recommend_other": "{{count}} recommandés",
-    "{{count}} not recommend_one": "{{count}} non recommandé",
-    "{{count}} not recommend_other": "{{count}} non recommandés",
     "pending": "en attente",
     "Your reference will become public when <1></1> gives you a reference back, or in {{DAYS_TO_REPLY}} days.": "Votre recommandation deviendra publique lorsque <1></1> vous obtiendrez une recommandation en retour, ou à défaut dans {{DAYS_TO_REPLY}} jours.",
     "Write one!": "Écrivez-en une !",

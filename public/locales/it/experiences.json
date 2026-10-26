@@ -46,12 +46,6 @@
         "": "La tua referenza sarà pubblicata quando <1></1> scriverà la sua, oppure tra{{daysToReply}} giorni."
     },
     "It's extremely important you report anyone behaving against rules to us.": "È molto importante che ci segnali chiunque vada contro le regole.",
-    "{{count}} unknown_one": "{{count}} sconosciutə",
-    "{{count}} unknown_other": "{{count}} sconosciut3",
-    "{{count}} recommend_one": "{{count}} raccomandazione",
-    "{{count}} recommend_other": "{{count}} raccomandazioni",
-    "{{count}} not recommend_one": "{{count}} raccomandazione negativa",
-    "{{count}} not recommend_other": "{{count}} raccomandazioni negative",
     "You have {{count}} days left to respond before their experience will become public._one": "Hai ancora un giorno per rispondere prima che la loro esperienza diventi pubblica.",
     "You have {{count}} days left to respond before their experience will become public._other": "Hai ancora {{count}} giorni rimanenti per rispondere prima che la loro esperienza diventi pubblica.",
     "Sorry, you can't share experience only with yourself.": "Ci dispiace, non puoi condividere un'esperienza solo con te stesso.",

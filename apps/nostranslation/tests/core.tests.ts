@@ -130,6 +130,40 @@ describe('translation formats and catalogue', () => {
     else expect(result).toBeNull();
   });
 
+  it('preserves unchanged nested values and renamed legacy plural text', () => {
+    const state = snapshot();
+    const before = {
+      nested: { '': 'Existing text' },
+      '{{count}} guests': 'Existing singular',
+      '{{count}} guests_plural': 'Existing plural',
+      '{{count}} guests_2': 'Existing numeric plural',
+      unrelated_2: 'Unrelated text',
+    } as unknown as Record<string, string>;
+    const after = {
+      nested: { '': 'Existing text' },
+      '{{count}} guests_one': 'Existing singular',
+      '{{count}} guests_other': 'Existing plural',
+    } as unknown as Record<string, string>;
+    expect(validateChanged('de', 'users', before, after, state)).toEqual([]);
+    after['{{count}} guests_other'] = 'Existing numeric plural';
+    expect(validateChanged('de', 'users', before, after, state)).toEqual([]);
+    for (const value of ['Edited without placeholder', 'Unrelated text']) {
+      after['{{count}} guests_other'] = value;
+      expect(validateChanged('de', 'users', before, after, state)).toHaveLength(
+        1,
+      );
+    }
+    after['{{count}} guests_other'] = 'Existing plural';
+    after['{{count}} guests_plural'] = 'Existing plural';
+    expect(validateChanged('de', 'users', before, after, state)).toHaveLength(
+      1,
+    );
+    after['{{count}} guests_few'] = 'Existing singular';
+    expect(validateChanged('de', 'users', before, after, state)).toHaveLength(
+      2,
+    );
+  });
+
   it('checks only changed values rather than failing on unrelated legacy strings', () => {
     const state = snapshot();
     expect(

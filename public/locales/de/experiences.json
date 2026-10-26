@@ -45,17 +45,11 @@
     "Your reference will become public when <1></1> gives you a reference back, or in {{daysToReply}} days": {
         "": ""
     },
-    "{{count}} unknown_one": "{{count}} unbekannt",
-    "{{count}} unknown_other": "{{count}} unbekannt",
     "Experiences pending publishing": "Auf Veröffentlichung wartende Erlebnisse",
     "Did you not enjoy their cooking? singing?": "Hat es dir nicht gefallen, wie dieses Mitglied gekocht hat? Und gesungen?",
     "Did you maybe enjoy their cooking? singing?": "Hat es dir vielleicht gefallen, wie dieses Mitglied gekocht hat? Und gesungen?",
     "Did you hate their cooking? singing?": "Hat es dir nicht gefallen, wie dieses Mitglied gekocht hat? wie es gesungen hat?",
     "Did you enjoy their cooking? singing?": "Hat dir gefallen, wie dieses Mitglied gekocht hat? Und gesungen?",
-    "{{count}} recommend_one": "{{count}} empfiehlt",
-    "{{count}} recommend_other": "{{count}} empfehlen",
-    "{{count}} not recommend_one": "{{count}} empfiehlt nicht",
-    "{{count}} not recommend_other": "{{count}} empfehlen nicht",
     "Your experience with {{name}} is public now.": "Dein Erlebnis mit {{name}} ist jetzt öffentlich.",
     "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._one": "Dein Erlebnis wird öffentlich, wenn {{name}} ihr oder sein Erlebnis teilt, spätestens aber morgen.",
     "Your experience will become public when {{name}} shares their experience, or at most in {{count}} days._other": "Dein Erlebnis wird öffentlich, wenn {{name}} ihr oder sein Erlebnis teilt, spätestens aber in {{count}} Tagen.",

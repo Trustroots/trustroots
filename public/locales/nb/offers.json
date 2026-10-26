@@ -1,11 +1,5 @@
 {
     "Accommodation": "Husvære",
-    "At most {{count}} guests": {
-        "At most {{count}} guests": {
-            "At most {{count}} guests._one": "Kun én gjest.",
-            "At most {{count}} guests._other": "Kun {{count}} gjester."
-        }
-    },
     "Bigger map": "Større kart",
     "Can host": "Kan huse",
     "Cannot host currently": "Kan ikke huse for øyeblikket",
