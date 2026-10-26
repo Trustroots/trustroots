@@ -250,6 +250,24 @@ class MobileApiOperationsTest {
     }
 
     @Test
+    fun rejectsBlankUsernameForBlockMutationBeforeSendingRequest() {
+        val result = runBlocking {
+            MobileApiClient("http://127.0.0.1:1").setMemberBlocked(session, "  \n", blocked = true)
+        }
+
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+    }
+
+    @Test
+    fun rejectsBlankUsernameForMemberReportBeforeSendingRequest() {
+        val result = runBlocking {
+            MobileApiClient("http://127.0.0.1:1").reportMember(session, "  \n", "Fictional report")
+        }
+
+        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
+    }
+
+    @Test
     fun preservesServerErrorsFromMemberSafetyRequests() {
         val (result, request) = withApiResponse(
             responseBody = """{"message":"You cannot block this member."}""",

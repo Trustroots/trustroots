@@ -18,6 +18,8 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -30,6 +32,7 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
+import org.trustroots.android.testing.pressBackFromNonActivityRoot
 
 /** Exercises member controls through the real profile navigation and authenticated API adapter. */
 @RunWith(AndroidJUnit4::class)
@@ -43,6 +46,12 @@ class ProfileMemberSafetyJourneyTest {
     private val failBlock = AtomicBoolean(false)
     private val failLookup = AtomicBoolean(false)
     private val failReport = AtomicBoolean(false)
+    private val holdBlockRequest = AtomicBoolean(false)
+    private val blockRequestStarted = CountDownLatch(1)
+    private val releaseBlockRequest = CountDownLatch(1)
+    private val holdReportRequest = AtomicBoolean(false)
+    private val reportRequestStarted = CountDownLatch(1)
+    private val releaseReportRequest = CountDownLatch(1)
     private var targetUsername = "quiet-fox"
     private var targetName = "Quiet Fox"
     private val fixture = LocalTransportFixture { request ->
@@ -56,12 +65,22 @@ class ProfileMemberSafetyJourneyTest {
             request.path == "/api/blocked-users/quiet-fox" -> if (failBlock.get()) {
                 LocalTransportFixture.Response("""{"message":"Please try this change again."}""", 503)
             } else {
+                if (request.method == "PUT" && holdBlockRequest.get()) {
+                    blockRequestStarted.countDown()
+                    releaseBlockRequest.await(10, TimeUnit.SECONDS)
+                }
                 blocked.set(request.method == "PUT")
                 LocalTransportFixture.Response(if (request.method == "PUT") "Member added to block list." else "{}")
             }
             request.path == "/api/support" -> if (failReport.get()) {
                 LocalTransportFixture.Response("""{"message":"Support is temporarily unavailable."}""", 503)
-            } else LocalTransportFixture.Response("{}")
+            } else {
+                if (holdReportRequest.get()) {
+                    reportRequestStarted.countDown()
+                    releaseReportRequest.await(10, TimeUnit.SECONDS)
+                }
+                LocalTransportFixture.Response("{}")
+            }
             request.path.startsWith("/api/users?search=") -> LocalTransportFixture.Response(
                 """[{"_id":"member-fox","username":"$targetUsername","displayName":"$targetName"}]""",
             )
@@ -85,6 +104,8 @@ class ProfileMemberSafetyJourneyTest {
     }
 
     @After fun closeAndRestoreSession() {
+        releaseBlockRequest.countDown()
+        releaseReportRequest.countDown()
         scenario?.close()
         fixture.close()
         val editor = preferences.edit().clear()
@@ -139,12 +160,55 @@ class ProfileMemberSafetyJourneyTest {
         assertEquals(2, fixture.requests.count { it.method == "PUT" })
     }
 
+    private fun pressDialogBack() {
+        lateinit var activity: android.app.Activity
+        requireNotNull(scenario).onActivity { activity = it }
+        pressBackFromNonActivityRoot(activity)
+    }
+
+    @Test fun blockAndReportDialogsIgnoreBackWhileRequestsArePendingAndDismissAfterwards() {
+        holdBlockRequest.set(true)
+        openProfile()
+        openMenu()
+        compose.onNodeWithTag("profileBlockAction").performClick()
+        compose.onNodeWithTag("confirmProfileBlock").performClick()
+        assertTrue(blockRequestStarted.await(10, TimeUnit.SECONDS))
+        compose.onNodeWithText("Updating…").assertIsDisplayed()
+        pressDialogBack()
+        compose.onNodeWithTag("confirmProfileBlock").assertIsDisplayed()
+
+        releaseBlockRequest.countDown()
+        waitForTag("profileBlockedNotice")
+        holdBlockRequest.set(false)
+        openMenu()
+        compose.onNodeWithText("Unblock member").performClick()
+        pressDialogBack()
+        compose.onNodeWithTag("confirmProfileBlock").assertDoesNotExist()
+
+        holdReportRequest.set(true)
+        openMenu()
+        compose.onNodeWithTag("profileReportAction").performClick()
+        compose.onNodeWithTag("profileReportDetails").performTextReplacement("A fictional report while testing pending dismissal.")
+        hideTestKeyboard()
+        compose.onNodeWithTag("submitProfileReport").performClick()
+        assertTrue(reportRequestStarted.await(10, TimeUnit.SECONDS))
+        compose.onNodeWithText("Sending…").assertIsDisplayed()
+        pressDialogBack()
+        compose.onNodeWithTag("profileReportDetails").assertIsDisplayed()
+
+        releaseReportRequest.countDown()
+        waitForText("Report sent")
+        pressDialogBack()
+        compose.onNodeWithText("Report sent").assertDoesNotExist()
+    }
+
     @Test fun failedLookupIsNotTreatedAsUnblockedAndHasRetry() {
         failLookup.set(true)
         openProfile()
         waitForText("Member controls are temporarily unavailable.")
         openMenu()
         compose.onNodeWithTag("profileBlockAction").assertIsNotEnabled()
+        compose.onNodeWithTag("profileMessageAction").assertIsNotEnabled()
         compose.onNodeWithTag("profileReportAction").assertIsEnabled()
         compose.onNodeWithTag("profileReportAction").performClick()
         compose.onNodeWithText("Cancel").performClick()
@@ -154,6 +218,7 @@ class ProfileMemberSafetyJourneyTest {
         compose.waitForIdle()
         openMenu()
         compose.onNodeWithTag("profileBlockAction").assertIsEnabled()
+        compose.onNodeWithTag("profileMessageAction").assertIsEnabled()
     }
 
     @Test fun reportDraftSurvivesFailureAndRecreationWithoutRepeatingSubmission() {

@@ -85,6 +85,111 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun blockStatusLookupGuardsRetriesAndMutationsUntilTheLookupFinishes() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingLookup = CompletableDeferred<Result<List<MessageMember>>>()
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersHandler = { call ->
+                if (call == 1) withContext(NonCancellable) { pendingLookup.await() }
+                else Result.success(emptyList())
+            }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+
+            model.onEvent(MemberProfileEvent.RetryBlockStatus)
+            model.onEvent(MemberProfileEvent.RetryBlockStatus)
+            model.onEvent(MemberProfileEvent.SetBlocked(true))
+
+            assertTrue(model.state.value.isLoadingBlock)
+            assertEquals(1, repository.blockedMembersCalls)
+            assertTrue(repository.blockChanges.isEmpty())
+
+            pendingLookup.complete(Result.success(listOf(MessageMember("member-quiet-fox", "another-name", "Quiet Fox"))))
+
+            assertEquals(true, model.state.value.isBlocked)
+            assertFalse(model.state.value.isLoadingBlock)
+            assertTrue(repository.blockChanges.isEmpty())
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun blockStatusMatchesMemberIDBeforeUsernameAndFallsBackToUsername() {
+        val idMatchRepository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember("member-quiet-fox", "different-name", "Quiet Fox")))
+        }
+        assertEquals(true, newModel("quiet-fox", idMatchRepository).state.value.isBlocked)
+
+        val usernameMatchRepository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember(null, "QUIET-FOX", "Quiet Fox")))
+        }
+        assertEquals(true, newModel("quiet-fox", usernameMatchRepository).state.value.isBlocked)
+
+        val mismatchRepository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", null, "Someone Else")))
+        }
+        assertEquals(false, newModel("quiet-fox", mismatchRepository).state.value.isBlocked)
+    }
+
+    @Test
+    fun reportDraftAndDismissEventsAreIgnoredWhileSubmissionIsPending() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingReport = CompletableDeferred<Result<Unit>>()
+        val repository = FakeMemberProfileRepository().apply {
+            reportHandler = { _, _ -> withContext(NonCancellable) { pendingReport.await() } }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            model.onEvent(MemberProfileEvent.ReportDraftChanged("Original fictional report."))
+            model.onEvent(MemberProfileEvent.SubmitReport)
+
+            model.onEvent(MemberProfileEvent.ReportDraftChanged("Changed while pending."))
+            model.onEvent(MemberProfileEvent.DismissReport)
+
+            assertTrue(model.state.value.isSubmittingReport)
+            assertEquals("Original fictional report.", model.state.value.reportDraft)
+            assertEquals(listOf("quiet-fox" to "Original fictional report."), repository.reports)
+
+            pendingReport.complete(Result.success(Unit))
+            model.onEvent(MemberProfileEvent.DismissReport)
+            assertEquals("", model.state.value.reportDraft)
+            assertFalse(model.state.value.reportSubmitted)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun staleBlockStatusResponseIsIgnoredAfterEnvironmentRefresh() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val staleLookup = CompletableDeferred<Result<List<MessageMember>>>()
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersHandler = { call ->
+                if (call == 1) withContext(NonCancellable) { staleLookup.await() }
+                else Result.success(emptyList())
+            }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            assertTrue(model.state.value.isLoadingBlock)
+
+            model.updateEnvironment(
+                MobileApiClient("http://127.0.0.1:2"),
+                MemberSession("connect.sid=another-fictional-session", MobileMember("different-member", "Different Member")),
+            )
+            assertEquals(false, model.state.value.isBlocked)
+            staleLookup.complete(Result.success(listOf(MessageMember("member-quiet-fox", "quiet-fox", "Quiet Fox"))))
+
+            assertEquals(false, model.state.value.isBlocked)
+            assertEquals(2, repository.blockedMembersCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun blockMutationPreservesKnownStateOnFailureAndUpdatesOnlyAfterSuccess() {
         val repository = FakeMemberProfileRepository().apply {
             setBlockedHandler = { _, blocked ->
@@ -792,6 +897,7 @@ class MemberProfileViewModelTest {
         var removalHandler: (suspend (String) -> Result<Unit>)? = null
         var blockedMembersCalls = 0
         var blockedMembersResult: Result<List<MessageMember>> = Result.success(emptyList())
+        var blockedMembersHandler: (suspend (Int) -> Result<List<MessageMember>>)? = null
         val blockChanges = mutableListOf<Pair<String, Boolean>>()
         var setBlockedHandler: (suspend (String, Boolean) -> Result<Unit>)? = null
         var reportResult: Result<Unit> = Result.success(Unit)
@@ -834,7 +940,7 @@ class MemberProfileViewModelTest {
         }
         override suspend fun blockedMembers(): Result<List<MessageMember>> {
             blockedMembersCalls++
-            return blockedMembersResult
+            return blockedMembersHandler?.invoke(blockedMembersCalls) ?: blockedMembersResult
         }
         override suspend fun setMemberBlocked(username: String, blocked: Boolean): Result<Unit> {
             blockChanges += username to blocked

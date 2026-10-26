@@ -464,7 +464,7 @@ private fun MemberProfileContent(
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
                                     onMessage = {
-                                        if (profileState.isBlocked != true && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
+                                        if (profileState.isBlocked == false && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
                                     },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
                                     contactLabel = when {

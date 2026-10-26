@@ -98,7 +98,7 @@ internal fun ProfileActionBar(
         } else {
             if (isBlocked != true) Button(
                 onClick = onMessage,
-                enabled = !safetyBusy,
+                enabled = isBlocked == false && !safetyBusy,
                 modifier = Modifier.heightIn(min = 48.dp).testTag("profileMessageAction"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,

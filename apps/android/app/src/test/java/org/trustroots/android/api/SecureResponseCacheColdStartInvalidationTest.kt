@@ -2,6 +2,7 @@ package org.trustroots.android.api
 
 import android.content.Context
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
@@ -94,6 +95,33 @@ class SecureResponseCacheColdStartInvalidationTest {
                 }
             }
         }
+    }
+
+    @Test
+    fun successfulBlockMutationIsSafeWhenResponseCacheIsUnavailable() = runBlocking {
+        MockWebServer().use { server ->
+            server.start()
+            server.enqueue(MockResponse(code = 200, body = "Member added to block list."))
+            val account = "block-without-cache-${System.nanoTime()}"
+            val session = MemberSession("connect.sid=fictional-session", MobileMember(account, "Quiet Fox"))
+
+            val result = MobileApiClient(server.url("/").toString(), responseCache = null, cacheAccount = account)
+                .setMemberBlocked(session, "member-one", blocked = true)
+
+            assertTrue(result.isSuccess)
+            assertEquals("/api/blocked-users/member-one", server.takeRequest(5, java.util.concurrent.TimeUnit.SECONDS)?.target)
+        }
+    }
+
+    @Test
+    fun blockedMembersConnectionFailureDoesNotUseOfflineCache() = runBlocking {
+        val account = "blocked-connection-failure-${System.nanoTime()}"
+        val cache = SecureResponseCache(RuntimeEnvironment.getApplication())
+        val session = MemberSession("connect.sid=fictional-session", MobileMember(account, "Quiet Fox"))
+
+        val result = MobileApiClient("http://127.0.0.1:1", cache, account).blockedMembers(session)
+
+        assertTrue(result.exceptionOrNull() is IOException)
     }
 
     @Test
