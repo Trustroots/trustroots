@@ -47,6 +47,24 @@ class RequestResultTest {
     }
 
     @Test
+    fun propagatesCancellationReturnedAsAResult() {
+        val cancellation = CancellationException("request cancelled")
+
+        val thrown = assertThrows(CancellationException::class.java) {
+            runBlocking { requestResult<String> { Result.failure(cancellation) } }
+        }
+
+        assertSame(cancellation, thrown)
+    }
+
+    @Test
+    fun preservesAnOrdinaryFailureReturnedAsAResult() = runBlocking {
+        val failure = IllegalArgumentException("request failed")
+
+        assertSame(failure, requestResult<String> { Result.failure(failure) }.exceptionOrNull())
+    }
+
+    @Test
     fun checksTheCoroutineAfterAnOperationCancelsItsJobBeforeReturningSuccess() {
         var delivered = false
         assertThrows(CancellationException::class.java) {
