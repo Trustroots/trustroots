@@ -91,6 +91,45 @@ class ConversationJourneyTest {
         }
     }
 
+    @Test fun sendingFromOlderHistoryRevealsTheNewMessage() {
+        val messages = (40 downTo 1).joinToString(prefix = "[", postfix = "]") { index ->
+            """{"_id":"history-$index","content":"Older fictional note $index","userFrom":{"_id":"member-one","username":"quiet-fox"}}"""
+        }
+        LocalTransportFixture { request ->
+            when {
+                request.method == "POST" && request.path == "/api/messages" -> LocalTransportFixture.Response(
+                    """{"_id":"sent-note","content":"My new fictional note","userFrom":{"_id":"self","username":"steady-heron"}}""",
+                )
+                request.path == "/api/messages/member-one?limit=100" -> LocalTransportFixture.Response(messages)
+                request.path == "/api/users/mini/member-one" -> LocalTransportFixture.Response(
+                    """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}""",
+                )
+                else -> LocalTransportFixture.Response("[]")
+            }
+        }.use { local ->
+            compose.setContent {
+                ConversationRouteTestHarness(
+                    api = MobileApiClient(local.baseURL),
+                    session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
+                    memberID = "member-one", onSessionInvalidated = {},
+                )
+            }
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Older fictional note 40").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("messageComposer").performClick().performTextInput("My new fictional note")
+            hideTestKeyboard()
+            compose.onNodeWithTag("conversationMessages").performScrollToIndex(39)
+            compose.onNodeWithText("Older fictional note 1").assertIsDisplayed()
+            compose.onNodeWithContentDescription("Send").performClick()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("My new fictional note").fetchSemanticsNodes()
+                    .any { it.config.contains(androidx.compose.ui.semantics.SemanticsProperties.Text) }
+            }
+            compose.onNodeWithText("My new fictional note").assertIsDisplayed()
+        }
+    }
+
     @Test fun multilineComposerSendsMessage() {
         val message = "Hello there\nA fictional follow-up."
         val postedResponse = JSONObject()

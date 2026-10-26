@@ -74,6 +74,7 @@ internal data class MessageConversationUiState(
     val messagesLoaded: Boolean = false,
     val loadFailed: Boolean = false,
     val isSending: Boolean = false,
+    val lastSentMessageID: String? = null,
     val failure: UiFailure? = null,
     val pendingSessionInvalidation: ConversationSessionInvalidation? = null,
     val currentUsername: String = "",
@@ -209,7 +210,9 @@ internal class MessageConversationViewModel(
             } else {
                 repository.clearDraft(session.member.username, member.username ?: member.id)
                 mutableState.update {
-                    it.copy(messages = listOf(result.getOrThrow()) + it.messages, draft = "", isSending = false, failure = null)
+                    val message = result.getOrThrow()
+                    it.copy(messages = listOf(message) + it.messages, draft = "", isSending = false,
+                        lastSentMessageID = message.id, failure = null)
                 }
             }
         }
