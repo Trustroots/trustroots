@@ -122,6 +122,35 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun parsesCircleMemberGroupsAndSkipsMembersWithoutUsernames() {
+        val groups = parseCircleMemberGroups(
+            JSONObject(
+                """{"contacts":[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"},{"_id":"no-username"}],"recommenders":[{"_id":"member-two","username":"steady-heron","displayName":"Steady Heron"}],"active":[{"_id":"member-three","username":"calm-lynx","displayName":"Calm Lynx"}]}""",
+            ),
+        )
+
+        assertEquals(listOf("quiet-fox"), groups.contacts.map { it.username })
+        assertEquals(listOf("steady-heron"), groups.recommenders.map { it.username })
+        assertEquals(listOf("calm-lynx"), groups.active.map { it.username })
+        assertEquals("Quiet Fox", groups.contacts.single().displayName)
+    }
+
+    @Test
+    fun loadsCircleMemberGroupsFromAuthenticatedNativeRoute() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"contacts":[],"recommenders":[],"active":[]}""",
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).circleMembers(session, "quiet-harbour") }
+        }
+
+        assertEquals(CircleMemberGroups(emptyList(), emptyList(), emptyList()), result.getOrThrow())
+        assertEquals("GET /api/tribes/quiet-harbour/members HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Cookie: connect.sid=session-value", ignoreCase = true) })
+    }
+
+    @Test
     fun parsesHostingInformation() {
         val offer = parseAccommodationOffer(
             JSONObject(

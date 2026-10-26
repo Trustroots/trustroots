@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.trustroots.android.api.CircleMemberGroups
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
@@ -27,6 +28,8 @@ internal data class CircleDetailMembershipEvent(
 
 internal data class CircleDetailUiState(
     val circle: TrustrootsCircle? = null,
+    val memberGroups: CircleMemberGroups? = null,
+    val isLoadingMembers: Boolean = false,
     val membershipsLoaded: Boolean = false,
     val isMember: Boolean = false,
     val isLoading: Boolean = true,
@@ -56,6 +59,7 @@ internal class CircleDetailViewModel(
     private var loadJob: Job? = null
     private var updateJob: Job? = null
     private var loadGeneration = 0L
+    private var membershipRevision = 0L
     private var nextInvalidationID = 0L
     private var nextMembershipEventID = 0L
     private var sessionInvalidationEmitted = false
@@ -86,6 +90,7 @@ internal class CircleDetailViewModel(
         val sessionChanged = repository.updateSession(session)
         if (!backendChanged && !sessionChanged) return
         loadGeneration++
+        membershipRevision++
         loadJob?.cancel()
         updateJob?.cancel()
         sessionInvalidationEmitted = false
@@ -96,11 +101,14 @@ internal class CircleDetailViewModel(
     private fun load() {
         if (sessionInvalidationEmitted) return
         val generation = ++loadGeneration
+        val membershipRevisionAtLoad = membershipRevision
         loadJob?.cancel()
         mutableState.update { current ->
             current.copy(
                 isLoading = true,
                 membershipsLoaded = false,
+                memberGroups = null,
+                isLoadingMembers = false,
                 failure = null,
                 canRetryLoad = false,
                 pendingOverviewMembershipEvent = null,
@@ -108,16 +116,30 @@ internal class CircleDetailViewModel(
         }
         loadJob = requestScope.launch {
             val circleResult = requestResult { repository.circleBySlug(slug) }
-            if (generation != loadGeneration) return@launch
+            if (generation != loadGeneration || membershipRevisionAtLoad != membershipRevision) return@launch
             circleResult.fold(
                 onSuccess = { circle ->
                     mutableState.update { it.copy(circle = circle) }
                     val membershipResult = requestResult { repository.memberships() }
-                    if (generation != loadGeneration) return@launch
+                    if (generation != loadGeneration || membershipRevisionAtLoad != membershipRevision) return@launch
                     membershipResult.fold(
                         onSuccess = { memberships ->
+                            val isMember = circle.id in memberships
                             mutableState.update {
-                                it.copy(membershipsLoaded = true, isMember = circle.id in memberships)
+                                it.copy(membershipsLoaded = true, isMember = isMember, isLoadingMembers = isMember)
+                            }
+                            if (isMember) {
+                                val groupsResult = requestResult { repository.circleMembers(slug) }
+                                if (generation != loadGeneration || membershipRevisionAtLoad != membershipRevision) return@launch
+                                groupsResult.fold(
+                                    onSuccess = { groups ->
+                                        mutableState.update { it.copy(memberGroups = groups, isLoadingMembers = false) }
+                                    },
+                                    onFailure = {
+                                        reportFailure(it, CirclesFailureKind.CIRCLE_MEMBERS_LOAD, retryLoad = true)
+                                        mutableState.update { state -> state.copy(isLoadingMembers = false) }
+                                    },
+                                )
                             }
                         },
                         onFailure = { reportFailure(it, CirclesFailureKind.MEMBERSHIPS_LOAD, retryLoad = true) },
@@ -139,6 +161,7 @@ internal class CircleDetailViewModel(
         updateJob = requestScope.launch {
             requestResult { repository.setMembership(circle.id, isMember = !joining) }.fold(
                 onSuccess = {
+                    membershipRevision++
                     val event = CircleDetailMembershipEvent(
                         id = ++nextMembershipEventID,
                         circleID = circle.id,
@@ -148,7 +171,28 @@ internal class CircleDetailViewModel(
                         it.copy(
                             isMember = joining,
                             isUpdating = false,
+                            memberGroups = if (joining) it.memberGroups else null,
+                            isLoadingMembers = joining,
+                            failure = null,
+                            canRetryLoad = false,
                             pendingOverviewMembershipEvent = event,
+                        )
+                    }
+                    if (joining) {
+                        val generation = loadGeneration
+                        val membershipRevisionAtRequest = membershipRevision
+                        requestResult { repository.circleMembers(slug) }.fold(
+                            onSuccess = { groups ->
+                                if (generation == loadGeneration && membershipRevisionAtRequest == membershipRevision) {
+                                    mutableState.update { it.copy(memberGroups = groups, isLoadingMembers = false) }
+                                }
+                            },
+                            onFailure = { error ->
+                                if (generation == loadGeneration && membershipRevisionAtRequest == membershipRevision) {
+                                    reportFailure(error, CirclesFailureKind.CIRCLE_MEMBERS_LOAD, retryLoad = true)
+                                    mutableState.update { it.copy(isLoadingMembers = false) }
+                                }
+                            },
                         )
                     }
                 },
@@ -194,6 +238,7 @@ internal class CircleDetailViewModel(
 
     override fun onCleared() {
         loadGeneration++
+        membershipRevision++
         loadJob?.cancel()
         updateJob?.cancel()
         mutableState.value = CircleDetailUiState(isLoading = false)
