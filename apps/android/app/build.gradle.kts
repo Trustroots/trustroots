@@ -28,9 +28,9 @@ val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
 val previewUpdateAlerts = providers.gradleProperty("trustrootsPreviewUpdateAlerts")
     .map { it == "true" }
     .orElse(false)
-val buildEpochSeconds = providers.exec {
+val buildEpochSeconds = providers.environmentVariable("ANDROID_BUILD_EPOCH_SECONDS").orElse(providers.exec {
     commandLine("date", "+%s")
-}.standardOutput.asText.map(String::trim)
+}.standardOutput.asText.map(String::trim))
 val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS")
