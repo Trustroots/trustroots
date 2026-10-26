@@ -38,6 +38,7 @@ import NotFoundPage from '@/modules/core/client/components/NotFoundPage.componen
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Contribute from '@/modules/pages/client/components/Contribute.component';
+import Credits from '@/modules/pages/client/components/Credits.component';
 import FaqBugsAndFeatures from '@/modules/pages/client/components/FaqBugsAndFeatures.component';
 import FaqFoundation from '@/modules/pages/client/components/FaqFoundation.component';
 import FaqGeneral from '@/modules/pages/client/components/FaqGeneral.component';
@@ -267,6 +268,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/faq/foundation': () => <FaqFoundation />,
     '/faq/technology': () => <FaqTechnology />,
     '/foundation': renderWithUser(Foundation),
+    '/credits': () => <Credits />,
     '/guide': () => <Guide />,
     '/media': () => <Media />,
     '/messages': renderWithUser(Inbox),

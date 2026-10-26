@@ -31,6 +31,7 @@ test.describe('public footer', () => {
       ['Safety', '/safety'],
       ['FAQ', '/faq'],
       ['Privacy', '/privacy'],
+      ['Credits', '/credits'],
       ['Contact', '/contact'],
     ]) {
       await expect(
@@ -77,6 +78,28 @@ test.describe('public footer', () => {
     expect(metaBox.x + metaBox.width).toBeGreaterThan(
       contentBox.x + contentBox.width - 1,
     );
+  });
+
+  test('credits page is accessible from the footer', async ({ page }) => {
+    await page.goto('/faq');
+    await page
+      .locator('#tr-footer')
+      .getByRole('link', { name: 'Credits' })
+      .click();
+    await expect(page).toHaveURL(/\/credits$/);
+    await expect(
+      page.getByRole('heading', { name: 'Credits', level: 1 }),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/This product includes GeoLite2 data/),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: 'MaxMind' })).toHaveAttribute(
+      'href',
+      'https://www.maxmind.com',
+    );
+    await expect(
+      page.getByRole('link', { name: 'OpenStreetMap contributors' }),
+    ).toBeVisible();
   });
 
   test('standard footer stays hidden on mobile', async ({ page }, testInfo) => {

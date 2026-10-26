@@ -76,6 +76,9 @@ function FooterLinks() {
         <a href="/privacy">Privacy</a>
       </li>
       <li>
+        <a href="/credits">Credits</a>
+      </li>
+      <li>
         <a href="/contact">Contact</a>
       </li>
     </ul>
@@ -121,6 +124,7 @@ export default function SiteFooter({
   if (variant === 'home') {
     return (
       <footer className="site-footer-home hidden-print" role="contentinfo">
+        <a href="/credits">Credits</a>
         <BuildLink build={build} />
         <BoardCredits photoCredits={photoCredits || {}} />
       </footer>

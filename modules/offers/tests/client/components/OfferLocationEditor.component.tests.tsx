@@ -162,9 +162,10 @@ describe('OfferLocationEditor', () => {
     expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '5');
     expect(screen.queryByText(/Marker at/)).not.toBeInTheDocument();
     expect(onLocationChange).not.toHaveBeenCalled();
-    expect(
-      screen.getByText(/This product includes GeoLite2/),
-    ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Data credits' })).toHaveAttribute(
+      'href',
+      '/credits',
+    );
     fireEvent.wheel(screen.getByTestId('offer-map'));
     expect(mockStopDefaultLocation).toHaveBeenCalled();
   });

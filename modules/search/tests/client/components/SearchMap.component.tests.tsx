@@ -521,7 +521,7 @@ describe('Search', () => {
         ).toEqual(mockApproximateLocation);
       }
       expect(
-        screen.getByText(/This product includes GeoLite2/),
+        screen.getByRole('link', { name: 'Data credits' }),
       ).toBeInTheDocument();
       expect(mockSetPersistentMapLocation).not.toHaveBeenCalled();
     },
