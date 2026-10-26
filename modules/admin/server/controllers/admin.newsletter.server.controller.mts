@@ -190,7 +190,6 @@ function isNewsletterAudienceFormat(
 
 type ObjectIdInput =
   | string
-  | number
   | Types.ObjectId
   | { id: string | Buffer; toHexString(): string }
   | Buffer
@@ -211,7 +210,6 @@ function isObjectIdLike(value: object): value is {
 function isObjectIdInput(value: unknown): value is ObjectIdInput {
   if (
     typeof value === 'string' ||
-    typeof value === 'number' ||
     value instanceof mongoose.Types.ObjectId ||
     Buffer.isBuffer(value) ||
     value instanceof Uint8Array

@@ -194,7 +194,7 @@ describe('Support team access and investigation', () => {
       Object.hasOwn(member, 'score').should.equal(false),
     );
     type FindUsers = (
-      filter?: import('mongoose').FilterQuery<
+      filter?: import('mongoose').QueryFilter<
         import('../../../../testutils/server/model-contracts.mts').UserRecord
       >,
     ) => ReturnType<typeof User.find>;

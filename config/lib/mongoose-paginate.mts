@@ -1,7 +1,7 @@
 import type {
   Schema,
   Model,
-  FilterQuery,
+  QueryFilter,
   PopulateOptions,
   SortOrder,
   ProjectionType,
@@ -31,7 +31,7 @@ export interface PaginateResult<T> {
 /** Adds `Model.paginate(query, options, [callback])`. */
 async function paginateQuery(
   Model: Model<PaginateRecord>,
-  query: FilterQuery<PaginateRecord> = {},
+  query: QueryFilter<PaginateRecord> = {},
   options: PaginateOptions = {},
 ) {
   const { select, sort, populate, lean = false, leanWithId = true } = options;
@@ -102,7 +102,7 @@ async function paginateQuery(
 export default function mongoosePaginate(schema: Schema) {
   schema.statics.paginate = function paginate(
     this: Model<PaginateRecord>,
-    query?: FilterQuery<PaginateRecord>,
+    query?: QueryFilter<PaginateRecord>,
     options?: PaginateOptions,
     callback?: (
       error: unknown,

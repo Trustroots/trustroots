@@ -59,11 +59,13 @@ describe('Reference thread controller mongoose error handling', () => {
   });
 
   it('responds with 403 when the message lookup rejects', async () => {
-    sinon.stub(Thread, 'findOne').resolves({
-      _id: new mongoose.Types.ObjectId(),
-      userFrom: author._id,
-      userTo: other._id,
-    });
+    sinon.stub(Thread, 'findOne').resolves(
+      new Thread({
+        _id: new mongoose.Types.ObjectId(),
+        userFrom: author._id,
+        userTo: other._id,
+      }),
+    );
     sinon.stub(Message, 'findOne').rejects(new Error('db down'));
 
     const res = await create(deferredResponse());

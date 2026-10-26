@@ -264,7 +264,7 @@ describe('Admin messages controller unit tests', () => {
       .returns(
         recipientQuery as unknown as ReturnType<typeof User.find>,
       ) as import('sinon').SinonStub<
-      [filter?: import('mongoose').FilterQuery<UserRecord>],
+      [filter?: import('mongoose').QueryFilter<UserRecord>],
       ReturnType<typeof User.find>
     >;
 
