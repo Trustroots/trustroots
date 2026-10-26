@@ -18,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import android.graphics.Rect
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import java.net.ServerSocket
 import java.time.Instant
 import android.graphics.Bitmap
@@ -36,19 +37,29 @@ import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.testing.KeyboardTestSupport
+import org.trustroots.android.testing.foregroundActivityTask
 
 @RunWith(AndroidJUnit4::class)
 class ConversationJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
     private val server = ServerSocket(0)
+    private lateinit var keyboardTestSupport: KeyboardTestSupport
 
     @Before fun resizeForKeyboardLikeTheMainActivity() {
+        keyboardTestSupport = KeyboardTestSupport(
+            InstrumentationRegistry.getInstrumentation().uiAutomation,
+            compose.activity,
+        )
         compose.activityRule.scenario.onActivity { activity ->
             activity.window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
         }
     }
 
-    @After fun closeServer() = server.close()
+    @After fun closeServer() {
+        keyboardTestSupport.close()
+        server.close()
+    }
 
     @Test fun opensAtLatestMessageAndComposerStaysCloseToKeyboard() {
         val messages = (40 downTo 1).joinToString(prefix = "[", postfix = "]") { index ->
@@ -75,7 +86,13 @@ class ConversationJourneyTest {
             compose.onNodeWithText("Fictional message 40").assertIsDisplayed()
             compose.onNodeWithTag("conversationMessages").performScrollToIndex(39)
             compose.onNodeWithText("Fictional message 1").assertIsDisplayed()
+            foregroundActivityTask(
+                compose,
+                compose.activity,
+                InstrumentationRegistry.getInstrumentation().uiAutomation,
+            )
             compose.onNodeWithTag("messageComposer").performClick().performTextInput("A fictional draft")
+            keyboardTestSupport.awaitShown(compose)
             compose.waitUntil(10_000) {
                 ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
                     ?.isVisible(WindowInsetsCompat.Type.ime()) == true
