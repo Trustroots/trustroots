@@ -606,6 +606,7 @@ class RichMemberProfileJourneyTest {
     }
 
     private fun fixtureResponse(request: String, rootOffer: String, rootProfile: String): Pair<String, String> = when {
+        request.startsWith("GET /api/blocked-users ") -> "200 OK" to "[]"
         request.startsWith("GET /api/users/quiet-fox ") -> "200 OK" to rootProfile
         request.startsWith("GET /api/users/reference-author ") -> "200 OK" to RELATED_PROFILE
         request.startsWith("GET /api/offers-by/member-main?types=host ") -> "200 OK" to rootOffer

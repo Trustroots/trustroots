@@ -37,6 +37,7 @@ class ProfileCircleWithoutArtworkJourneyTest {
                 "GET" to "/api/users/quiet-fox" -> LocalTransportFixture.Response(PROFILE_WITH_CIRCLE_WITHOUT_IMAGE)
                 "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response("""{"_id":"circle-harbour","slug":"quiet-harbour","label":"Quiet Harbour Circle","description":"A fictional circle page","count":4,"image":false}""")
                 "GET" to "/api/users/steady-heron" -> LocalTransportFixture.Response("""{"username":"steady-heron","member":[]}""")
+                "GET" to "/api/blocked-users" -> LocalTransportFixture.Response("[]")
                 else -> LocalTransportFixture.Response("{}", status = 404)
             }
         }
@@ -67,10 +68,11 @@ class ProfileCircleWithoutArtworkJourneyTest {
         assertTrue(biographyTop < circleTop)
         compose.waitForIdle()
 
-        assertEquals(1, localApi.requests.size)
-        assertEquals("GET", localApi.requests.single().method)
-        assertEquals("/api/users/quiet-fox", localApi.requests.single().path)
-        assertEquals(session.cookieHeader, localApi.requests.single().cookie)
+        val profileRequests = localApi.requests.filterNot { it.path == "/api/blocked-users" }
+        assertEquals(1, profileRequests.size)
+        assertEquals("GET", profileRequests.single().method)
+        assertEquals("/api/users/quiet-fox", profileRequests.single().path)
+        assertEquals(session.cookieHeader, profileRequests.single().cookie)
         assertFalse(localApi.requests.any { it.path.startsWith("/uploads-circle/") || it.path.contains("/avatar?") })
         compose.onNodeWithTag("profileCircle-quiet-harbour").performClick()
         compose.waitUntil(10_000) {
