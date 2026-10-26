@@ -227,7 +227,7 @@
     "agendash": "4.0.0",
     "autoprefixer": "10.6.1",
     "babel-plugin-i18next-extract": "1.1.0",
-    "concurrently": "6.3.0",
+    "concurrently": "10.0.6",
     "eslint": "9.39.5",
     "eslint-config-prettier": "10.1.8",
     "eslint-import-resolver-typescript": "4.4.5",
