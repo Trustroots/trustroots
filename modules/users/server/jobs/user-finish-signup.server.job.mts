@@ -43,18 +43,14 @@ const defaultExport = function (
       // Find un-confirmed users
       function (done: WaterfallCallback) {
         // Ignore very recently signed up users
-        const createdTimeAgo = moment().subtract(
-          moment.duration({
-            hours: 4,
-          }),
-        );
+        const createdTimeAgo = moment()
+          .subtract(moment.duration({ hours: 4 }))
+          .toDate();
 
         // Ignore very recently reminded users
-        const remindedTimeAgo = moment().subtract(
-          moment.duration({
-            days: 2,
-          }),
-        );
+        const remindedTimeAgo = moment()
+          .subtract(moment.duration({ days: 2 }))
+          .toDate();
         User.find({
           public: false,
           created: {

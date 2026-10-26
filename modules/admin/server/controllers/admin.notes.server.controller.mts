@@ -27,7 +27,6 @@ interface NoteResponse {
 
 type ObjectIdInput =
   | string
-  | number
   | Types.ObjectId
   | { id: string | Buffer; toHexString(): string }
   | Buffer
@@ -48,7 +47,6 @@ function isObjectIdLike(value: object): value is {
 function isValidObjectId(value: unknown): value is ObjectIdInput {
   if (
     typeof value === 'string' ||
-    typeof value === 'number' ||
     value instanceof mongoose.Types.ObjectId ||
     Buffer.isBuffer(value) ||
     value instanceof Uint8Array
@@ -112,7 +110,9 @@ export const getNotes = async (
   if (!isValidObjectId(userId)) return errorService.sendInvalidId(res);
 
   try {
-    const items = await AdminNote.find({ user: userId })
+    const items = await AdminNote.find({
+      user: new mongoose.Types.ObjectId(userId),
+    })
       .sort('-date')
       .populate({
         path: 'admin',
