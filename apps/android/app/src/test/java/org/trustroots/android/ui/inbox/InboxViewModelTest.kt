@@ -30,6 +30,23 @@ import org.trustroots.android.api.MobileMember
 @Config(sdk = [35], manifest = Config.NONE)
 class InboxViewModelTest {
     @Test
+    fun firstDisplayPreservesAnImmediateFailureAndLaterDisplayRefreshes() = withScope { scope ->
+        var calls = 0
+        val repository = FakeInboxRepository {
+            calls++
+            Result.failure(MobileApiException(503, serverMessage = "Fictional inbox unavailable."))
+        }
+        val model = InboxViewModel(repository, session(), scope)
+
+        model.onDisplayed()
+        assertEquals(1, calls)
+        assertEquals("Fictional inbox unavailable.", model.state.value.failure?.serverMessage)
+
+        model.onDisplayed()
+        assertEquals(2, calls)
+    }
+
+    @Test
     fun newVisitReusesFreshDataWithoutSharingFilterOrRequestState() = withScope { scope ->
         val cache = InboxCache()
         val repository = FakeInboxRepository { Result.success(listOf(thread("saved", "Quiet Fox"))) }
