@@ -408,8 +408,8 @@ importers:
         specifier: 3.9.10
         version: 3.9.10
       rtlcss:
-        specifier: 3.5.0
-        version: 3.5.0
+        specifier: 4.3.0
+        version: 4.3.0
       should:
         specifier: 13.2.3
         version: 13.2.3
@@ -5666,8 +5666,9 @@ packages:
   rrweb-cssom@0.8.0:
     resolution: {integrity: sha512-guoltQEx+9aMf2gDZ0s62EcV8lsXR+0w8915TC3ITdn2YueuNjdAYh/levpU9nFaoChh9RUS5ZdQMrKfVEN9tw==}
 
-  rtlcss@3.5.0:
-    resolution: {integrity: sha512-wzgMaMFHQTnyi9YOwsx9LjOxYXJPzS8sYnFaKm6R5ysvTkwzHiB0vxnbHwchHQT65PTdBjDG21/kQBWI7q9O7A==}
+  rtlcss@4.3.0:
+    resolution: {integrity: sha512-FI+pHEn7Wc4NqKXMXFM+VAYKEj/mRIcW4h24YVwVtyjI+EqGrLc2Hx/Ny0lrZ21cBWU2goLy36eqMcNj3AQJig==}
+    engines: {node: '>=12.0.0'}
     hasBin: true
 
   run-parallel@1.2.0:
@@ -12401,9 +12402,9 @@ snapshots:
 
   rrweb-cssom@0.8.0: {}
 
-  rtlcss@3.5.0:
+  rtlcss@4.3.0:
     dependencies:
-      find-up: 5.0.0
+      escalade: 3.2.0
       picocolors: 1.1.1
       postcss: 8.5.31
       strip-json-comments: 3.1.1
