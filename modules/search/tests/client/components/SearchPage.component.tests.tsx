@@ -24,11 +24,13 @@ import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 type SearchMapProps = React.ComponentProps<typeof SearchMap>;
 type SearchMapHarnessProps = Pick<
   SearchMapProps,
-  | 'deviceLocationRequestId'
   | 'filters'
   | 'isUserPublic'
   | 'location'
   | 'locationBounds'
+  | 'onApproximateLocation'
+  | 'onDeviceLocation'
+  | 'onDeviceLocationRequest'
 > & {
   onOfferOpen: (offer: Partial<SearchResultOffer>, recenter?: boolean) => void;
   onCommunityNoteOpen: (note: {
@@ -86,26 +88,6 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 jest.mock('@/modules/search/client/api/location.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
 jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
-  __esModule: true,
-  default: ({
-    onLocation,
-    onRequest,
-  }: {
-    onLocation: (location: { lat: number; lng: number }) => void;
-    onRequest?: () => void;
-  }) => (
-    <button
-      type="button"
-      onClick={() => {
-        onRequest?.();
-        onLocation({ lat: 0, lng: 0 });
-      }}
-    >
-      Use my location
-    </button>
-  ),
-}));
 
 jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -300,6 +282,28 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
         </button>
         <button onClick={() => props.onOfferClose()} type="button">
           Close offer
+        </button>
+        <button
+          onClick={() => {
+            props.onDeviceLocationRequest?.();
+            props.onDeviceLocation?.({ lat: 0, lng: 0 });
+          }}
+          type="button"
+        >
+          Use my location
+        </button>
+        <button
+          onClick={() => {
+            props.onDeviceLocationRequest?.();
+            props.onApproximateLocation?.({
+              latitude: 12,
+              longitude: 23,
+              zoom: 5,
+            });
+          }}
+          type="button"
+        >
+          Use approximate location
         </button>
       </div>
     );
@@ -730,7 +734,6 @@ describe('<SearchPage />', () => {
       clearSelection: true,
     });
     expect(searchMapProps.locationBounds).toEqual({});
-    expect(searchMapProps.deviceLocationRequestId).toBe(1);
     expect(searchMapProps.filters).toBe(filtersBeforeLocation);
     expect(
       screen.queryByRole('link', { name: /host person/i }),
@@ -738,6 +741,24 @@ describe('<SearchPage />', () => {
     expect(new URL(window.location.href).searchParams.has('location')).toBe(
       false,
     );
+  });
+
+  it('uses an approximate location at its coarse zoom without changing filters', () => {
+    renderSearchPage();
+    const filtersBeforeLocation = searchMapProps.filters;
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Use approximate location' }),
+    );
+
+    expect(searchMapProps.location).toEqual({
+      lat: 12,
+      lng: 23,
+      zoom: 5,
+      clearSelection: true,
+    });
+    expect(searchMapProps.locationBounds).toEqual({});
+    expect(searchMapProps.filters).toBe(filtersBeforeLocation);
   });
 
   it('does not apply an initial place lookup after device location succeeds', async () => {

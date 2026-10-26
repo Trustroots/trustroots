@@ -2,8 +2,12 @@ import React, { useState } from 'react';
 
 import Map from '@/modules/core/client/components/Map/index';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
-import useMapDefaultLocation from '@/modules/core/client/utils/use-map-default-location';
+import useMapDefaultLocation, {
+  type MapDefaultLocation,
+} from '@/modules/core/client/utils/use-map-default-location';
 import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
+import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
+import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
 import OfferLocationOverlay from './OfferLocationOverlay';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import { getOfferHexColor } from '../utils/markers';
@@ -42,19 +46,28 @@ export default function OfferLocationEditor({
   onLocationChange,
 }: OfferLocationEditorProps) {
   const [searchQuery, setSearchQuery] = useState('');
+  const [deviceApproximateLocation, setDeviceApproximateLocation] =
+    useState<MapDefaultLocation | null>(null);
   const [approximateLocation, stopDefaultLocation] =
     useMapDefaultLocation(!location);
-  const mapLocation =
-    location ||
-    (approximateLocation
-      ? [approximateLocation.latitude, approximateLocation.longitude]
-      : [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng]);
+  const mapLocation: [number, number] = deviceApproximateLocation
+    ? [deviceApproximateLocation.latitude, deviceApproximateLocation.longitude]
+    : location ||
+      (approximateLocation
+        ? [approximateLocation.latitude, approximateLocation.longitude]
+        : [DEFAULT_LOCATION.lat, DEFAULT_LOCATION.lng]);
+  const mapZoom =
+    deviceApproximateLocation?.zoom ??
+    (location?.length === 2
+      ? 13
+      : (approximateLocation?.zoom ?? DEFAULT_LOCATION.zoom));
 
   function handlePlaceSearch(
     data: MapBounds | MapPoint,
     type: 'center' | 'bounds',
   ) {
     stopDefaultLocation();
+    setDeviceApproximateLocation(null);
     if (
       type === 'center' &&
       'lat' in data &&
@@ -76,6 +89,7 @@ export default function OfferLocationEditor({
 
   function handleMapLocationChange(nextLocation: [number, number]) {
     stopDefaultLocation();
+    setDeviceApproximateLocation(null);
     // The unchosen map centre is not an offer location.
     if (
       !location &&
@@ -85,6 +99,17 @@ export default function OfferLocationEditor({
       return;
     }
     onLocationChange(nextLocation);
+  }
+
+  function handleDeviceLocation(location: DeviceLocation) {
+    stopDefaultLocation();
+    setDeviceApproximateLocation(null);
+    onLocationChange([location.lat, location.lng]);
+  }
+
+  function handleApproximateLocation(location: MapDefaultLocation) {
+    stopDefaultLocation();
+    setDeviceApproximateLocation(location);
   }
 
   return (
@@ -111,7 +136,6 @@ export default function OfferLocationEditor({
           )}
         </p>
         <SearchPlaceInput
-          onDeviceLocationRequest={stopDefaultLocation}
           id="offer-search-query"
           onPlaceSearch={handlePlaceSearch}
           searchQuery={searchQuery}
@@ -138,14 +162,9 @@ export default function OfferLocationEditor({
           onLocationChange={handleMapLocationChange}
           scrollZoom
           width="100%"
-          zoom={
-            /* istanbul ignore next -- offer editors initialise a two-coordinate location. */
-            location?.length === 2
-              ? 13
-              : (approximateLocation?.zoom ?? DEFAULT_LOCATION.zoom)
-          }
+          zoom={mapZoom}
         >
-          {location?.length === 2 && (
+          {location?.length === 2 && !deviceApproximateLocation && (
             <OfferLocationOverlay
               location={location}
               offerStatus={offerStatus}
@@ -154,6 +173,11 @@ export default function OfferLocationEditor({
           )}
         </TypedMap>
         <div className="offer-location-overlay"></div>
+        <DeviceLocationButton
+          onApproximateLocation={handleApproximateLocation}
+          onLocation={handleDeviceLocation}
+          onRequest={stopDefaultLocation}
+        />
       </div>
     </div>
   );

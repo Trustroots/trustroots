@@ -11,6 +11,7 @@ import {
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
 import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
+import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 import { getOffer } from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import { get as getCircle } from '@/modules/tribes/client/api/tribes.api';
@@ -86,7 +87,6 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
   const [bounds, setBounds] = useState<Partial<SearchMapBounds>>({});
   const [location, setLocation] = useState<Partial<SearchMapLocation>>({});
-  const [deviceLocationRequestId, setDeviceLocationRequestId] = useState(0);
   const placeSearchGenerationRef = useRef(0);
   const locationNavigationGenerationRef = useRef(0);
   const [offer, setOffer] = useState<SearchResultOffer | null>(null);
@@ -124,7 +124,6 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
 
   const requestDeviceLocation = useCallback(() => {
     placeSearchGenerationRef.current += 1;
-    setDeviceLocationRequestId(requestId => requestId + 1);
   }, []);
 
   const clearSelection = useCallback(
@@ -141,11 +140,11 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
 
   const handleDeviceLocation = useCallback(
-    ({ lat, lng }: { lat: number; lng: number }) => {
+    ({ lat, lng, zoom = 13 }: { lat: number; lng: number; zoom?: number }) => {
       locationNavigationGenerationRef.current += 1;
       clearSelection();
       setBounds({});
-      setLocation({ lat, lng, zoom: 13, clearSelection: true });
+      setLocation({ lat, lng, zoom, clearSelection: true });
       setSearchQuery('');
       setIsPlaceSearchVisible(false);
       const url = new URL(window.location.href);
@@ -153,6 +152,13 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       window.history.replaceState({}, '', url);
     },
     [clearSelection],
+  );
+
+  const handleApproximateLocation = useCallback(
+    ({ latitude, longitude, zoom }: MapDefaultLocation) => {
+      handleDeviceLocation({ lat: latitude, lng: longitude, zoom });
+    },
+    [handleDeviceLocation],
   );
 
   const updateFilters = useCallback(
@@ -475,8 +481,6 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         <div className="visible-xs-block panel panel-default search-map-place">
           <SearchPlaceInput
             onPlaceSearch={onPlaceSearch}
-            onDeviceLocation={handleDeviceLocation}
-            onDeviceLocationRequest={requestDeviceLocation}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
@@ -543,8 +547,6 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               updateFilters({ seen: { months } });
             }}
             onPlaceSearch={onPlaceSearch}
-            onDeviceLocation={handleDeviceLocation}
-            onDeviceLocationRequest={requestDeviceLocation}
             onTabSelect={tab => {
               if (tab === 'filters' || tab === 'results') setSidebarTab(tab);
             }}
@@ -577,12 +579,14 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         )}
 
         <SearchMap
-          deviceLocationRequestId={deviceLocationRequestId}
           filters={filtersJson}
           isUserPublic={isUserPublic}
           location={location}
           locationBounds={bounds}
+          onApproximateLocation={handleApproximateLocation}
           onCommunityNoteOpen={previewCommunityNote}
+          onDeviceLocation={handleDeviceLocation}
+          onDeviceLocationRequest={requestDeviceLocation}
           onOfferClose={closeOffer}
           onOfferOpen={previewOffer}
           onVisibleCommunityNoteThreadsChange={setCommunityNoteThreads}

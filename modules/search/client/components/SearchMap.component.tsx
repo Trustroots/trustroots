@@ -24,8 +24,12 @@ import {
 } from '@/modules/core/client/components/Map/constants';
 import { CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS } from './constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
-import useMapDefaultLocation from '@/modules/core/client/utils/use-map-default-location';
+import useMapDefaultLocation, {
+  type MapDefaultLocation,
+} from '@/modules/core/client/utils/use-map-default-location';
 import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
+import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
+import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -71,7 +75,6 @@ interface MapLocation {
 }
 
 interface SearchMapProps {
-  deviceLocationRequestId?: number;
   filters: string;
   isUserPublic: boolean;
   location?: Partial<MapLocation> | null;
@@ -86,6 +89,9 @@ interface SearchMapProps {
     notes: NostrEvent[];
     plusCode: string | null;
   }) => void;
+  onDeviceLocationRequest?: () => void;
+  onDeviceLocation?: (location: DeviceLocation) => void;
+  onApproximateLocation?: (location: MapDefaultLocation) => void;
 }
 
 interface MapViewport {
@@ -308,7 +314,6 @@ function nostrEventsToGeoJSON(
 }
 
 export default function SearchMap({
-  deviceLocationRequestId = 0,
   filters,
   isUserPublic,
   location,
@@ -318,6 +323,9 @@ export default function SearchMap({
   onVisibleOffersChange = ignoreVisibleCallback,
   onVisibleCommunityNoteThreadsChange = ignoreVisibleCallback,
   onCommunityNoteOpen,
+  onDeviceLocationRequest,
+  onDeviceLocation,
+  onApproximateLocation,
 }: SearchMapProps) {
   /**
    * Store map location in browser cache
@@ -337,9 +345,6 @@ export default function SearchMap({
   const [approximateLocation, stopDefaultLocation] = useMapDefaultLocation(
     !hasDestination && !hasSavedLocation,
   );
-  useEffect(() => {
-    if (deviceLocationRequestId > 0) stopDefaultLocation();
-  }, [deviceLocationRequestId, stopDefaultLocation]);
   const interactionPending = useRef(false);
   const onInteraction = () => {
     interactionPending.current = true;
@@ -1108,7 +1113,7 @@ export default function SearchMap({
         ...viewport,
         latitude: location.lat,
         longitude: location.lng,
-        zoom: location?.zoom || DEFAULT_LOCATION.zoom,
+        zoom: location.zoom ?? DEFAULT_LOCATION.zoom,
       });
     }
   }, [location, map]);
@@ -1141,6 +1146,14 @@ export default function SearchMap({
           onOfferClick={openOfferById}
           viewport={viewport}
         />
+        <DeviceLocationButton
+          onApproximateLocation={onApproximateLocation}
+          onLocation={location => onDeviceLocation?.(location)}
+          onRequest={() => {
+            stopDefaultLocation();
+            onDeviceLocationRequest?.();
+          }}
+        />
         {approximateLocation && (
           <div
             style={{
@@ -1172,6 +1185,14 @@ export default function SearchMap({
       onWheelCapture={onInteraction}
       onKeyDownCapture={onInteraction}
     >
+      <DeviceLocationButton
+        onApproximateLocation={onApproximateLocation}
+        onLocation={location => onDeviceLocation?.(location)}
+        onRequest={() => {
+          stopDefaultLocation();
+          onDeviceLocationRequest?.();
+        }}
+      />
       <TypedReactMapGL
         reuseMaps
         dragRotate={false}

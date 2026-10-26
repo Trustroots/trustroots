@@ -1,4 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
+import {
+  requestMapDefaultLocation,
+  type MapDefaultLocation,
+} from './use-map-default-location';
 
 export type DeviceLocation = { lat: number; lng: number };
 export type DeviceLocationError =
@@ -36,13 +40,17 @@ function getCoordinates(position: GeolocationPosition): DeviceLocation | null {
 /** Requests the browser's current position only when explicitly asked. */
 export default function useDeviceLocation(
   onLocation: (location: DeviceLocation) => void,
+  onApproximateLocation?: (location: MapDefaultLocation) => void,
 ) {
   const [status, setStatus] = useState<DeviceLocationStatus>('idle');
   const [error, setError] = useState<DeviceLocationError | null>(null);
+  const [isApproximate, setIsApproximate] = useState(false);
   const mounted = useRef(false);
   const pending = useRef(false);
   const onLocationRef = useRef(onLocation);
+  const onApproximateLocationRef = useRef(onApproximateLocation);
   onLocationRef.current = onLocation;
+  onApproximateLocationRef.current = onApproximateLocation;
 
   useEffect(() => {
     mounted.current = true;
@@ -54,56 +62,83 @@ export default function useDeviceLocation(
   const requestLocation = () => {
     if (pending.current) return;
 
-    const geolocation =
-      typeof navigator === 'undefined' ? undefined : navigator.geolocation;
-    if (!geolocation) {
-      setError('unsupported');
-      setStatus('error');
-      return;
-    }
-
     pending.current = true;
     setError(null);
+    setIsApproximate(false);
     setStatus('pending');
 
     let completed = false;
-    const finish = () => {
+    const completeDeviceRequest = () => {
       if (completed) return false;
       completed = true;
-      pending.current = false;
       return true;
     };
 
+    const reportError = (deviceError: DeviceLocationError) => {
+      const approximateHandler = onApproximateLocationRef.current;
+      if (!mounted.current) {
+        pending.current = false;
+        return;
+      }
+
+      if (!approximateHandler) {
+        pending.current = false;
+        setError(deviceError);
+        setStatus('error');
+        return;
+      }
+
+      void requestMapDefaultLocation().then(location => {
+        pending.current = false;
+        if (!mounted.current) return;
+        if (!location) {
+          setError(deviceError);
+          setStatus('error');
+          return;
+        }
+        setError(null);
+        setIsApproximate(true);
+        setStatus('idle');
+        onApproximateLocationRef.current?.(location);
+      });
+    };
+
     try {
+      const geolocation =
+        typeof navigator === 'undefined' ? undefined : navigator.geolocation;
+      if (!geolocation) {
+        completeDeviceRequest();
+        reportError('unsupported');
+        return;
+      }
+
       geolocation.getCurrentPosition(
         position => {
-          if (!finish()) return;
+          if (!completeDeviceRequest()) return;
           const location = getCoordinates(position);
-          if (!mounted.current) return;
-          if (!location) {
-            setError('unavailable');
-            setStatus('error');
+          if (!mounted.current) {
+            pending.current = false;
             return;
           }
+          if (!location) {
+            reportError('unavailable');
+            return;
+          }
+          pending.current = false;
           setStatus('idle');
           onLocationRef.current(location);
         },
         (positionError: PositionError) => {
-          if (!finish()) return;
-          if (!mounted.current) return;
-          setError(getError(positionError.code));
-          setStatus('error');
+          if (!completeDeviceRequest()) return;
+          reportError(getError(positionError.code));
         },
         { enableHighAccuracy: false, timeout: 15000, maximumAge: 0 },
       );
     } catch {
-      if (!finish()) return;
-      if (mounted.current) {
-        setError('unavailable');
-        setStatus('error');
-      }
+      if (!completeDeviceRequest()) return;
+      reportError('unavailable');
     }
   };
 
-  return { status, error, requestLocation } as const;
+  return { status, error, isApproximate, requestLocation } as const;
 }

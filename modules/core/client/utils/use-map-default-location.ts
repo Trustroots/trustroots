@@ -40,6 +40,15 @@ function requestLocation(account: string) {
   return request;
 }
 
+/** Fetches an authenticated approximate location, sharing in-flight requests. */
+export async function requestMapDefaultLocation(): Promise<MapDefaultLocation | null> {
+  const account = getCurrentUser();
+  if (!account) return null;
+
+  const location = await requestLocation(account);
+  return getCurrentUser() === account ? location : null;
+}
+
 /** A late approximate location must never undo the member's camera choice. */
 export default function useMapDefaultLocation(enabled: boolean) {
   const account = useAuth().user?._id ?? null;
