@@ -71,7 +71,7 @@ export default defineConfig({
     setupFiles: ['./testutils/server/vitest.setup.mts'],
     coverage: {
       provider: 'v8',
-      include: ['modules/*/server/**/*.{mjs,mts}'],
+      include: ['modules/*/server/**/*.{mjs,mts}', 'packages/logger/**/*.mts'],
       exclude: [
         'modules/*/tests/**',
         'deploy/docker/data/**',

@@ -1,5 +1,6 @@
 packages:
   - 'modules/*'
+  - 'packages/*'
 
 overrides:
   'node-forge': '1.4.0'

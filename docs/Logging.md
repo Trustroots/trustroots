@@ -1,5 +1,10 @@
 # Application logging
 
+The source-only `@trustroots/logger` workspace package owns logging and metadata
+formatting. Existing `config/lib/logger.mjs` and `config/lib/logger.mts` imports
+remain compatible re-exports; ESM imports and CommonJS requires share one logger.
+Winston remains supplied by the root application as a peer dependency.
+
 The application logger keeps the existing Winston call shape:
 
 ```js

@@ -189,6 +189,7 @@ const legacyConfig = {
         'modules/*/server/*.{js,mjs}',
         'modules/*/server/**/*.{js,mjs,mts}',
         'testutils/server/**',
+        'packages/logger/**',
         'testutils/common/**',
       ],
       env: {
@@ -201,6 +202,7 @@ const legacyConfig = {
       files: [
         'modules/*/server/**/*.{mjs,mts}',
         'config/lib/**/*.{mjs,mts}',
+        'packages/logger/**/*.mts',
         'bin/**/*.mjs',
       ],
       rules: {
@@ -306,6 +308,7 @@ const legacyConfig = {
         'modules/*/server/**/*.mts',
         'config/**/*.d.mts',
         'config/lib/**/*.mts',
+        'packages/logger/**/*.mts',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'modules/*/tests/server/**/*.{cts,mts}',
         'testutils/client/**/*.{ts,tsx}',
@@ -351,7 +354,13 @@ const legacyConfig = {
      * Overrides for CLI scripts and application config
      */
     {
-      files: ['bin/**', 'config/**', 'migrations/**', 'scripts/**/*.{mts,cts}'],
+      files: [
+        'bin/**',
+        'config/**',
+        'migrations/**',
+        'scripts/**/*.{mts,cts}',
+        'packages/logger/**',
+      ],
       env: {
         node: true,
       },
