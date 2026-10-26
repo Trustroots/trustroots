@@ -62,6 +62,16 @@ class MemberPresentationTest {
         assertEquals("ZZX", languageName("zzx", Locale.FRENCH))
     }
 
+    @Test fun usesCatalogueFallbacksAndNormalisesPrefixedCodes() {
+        val catalogue = mapOf("iso_639_3-zzx" to "Fictional language", "qqq" to "Another language")
+
+        assertEquals("English", languageName("ISO_639_1-EN", Locale.ENGLISH, catalogue))
+        assertEquals("Fictional language", languageName("ISO_639_3-ZZX", Locale.ENGLISH, catalogue))
+        assertEquals("Another language", languageName("qqq", Locale.ENGLISH, catalogue))
+        assertEquals("ISO_639_3-ZZY", languageName("iso_639_3-zzy", Locale.ENGLISH, catalogue))
+        assertEquals("Mandinka catalogue name", languageName("mnk", Locale.FRENCH, mapOf("iso_639_3-mnk" to "Mandinka catalogue name")))
+    }
+
     @Test fun showsRelativeMessageTime() {
         assertEquals("Just now", messageTime(resources, 1_000, 1_030))
         assertEquals("3 min ago", messageTime(resources, 1_000, 1_000 + 3 * 60_000))
