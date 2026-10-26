@@ -10,6 +10,12 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.unit.dp
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import android.graphics.Rect
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -43,6 +49,47 @@ class ConversationJourneyTest {
     }
 
     @After fun closeServer() = server.close()
+
+    @Test fun opensAtLatestMessageAndComposerStaysCloseToKeyboard() {
+        val messages = (40 downTo 1).joinToString(prefix = "[", postfix = "]") { index ->
+            """{"_id":"message-$index","content":"Fictional message $index","userFrom":{"_id":"member-one","username":"quiet-fox"}}"""
+        }
+        LocalTransportFixture { request ->
+            when {
+                request.path == "/api/messages/member-one?limit=100" -> LocalTransportFixture.Response(messages)
+                request.path == "/api/users/mini/member-one" -> LocalTransportFixture.Response("""{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}""")
+                else -> LocalTransportFixture.Response("[]")
+            }
+        }.use { local ->
+            compose.setContent {
+                ConversationRouteTestHarness(
+                    api = MobileApiClient(local.baseURL),
+                    session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
+                    memberID = "member-one", onSessionInvalidated = {},
+                    contentPadding = PaddingValues(bottom = 80.dp),
+                )
+            }
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Fictional message 40").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Fictional message 40").assertIsDisplayed()
+            compose.onNodeWithTag("conversationMessages").performScrollToIndex(39)
+            compose.onNodeWithText("Fictional message 1").assertIsDisplayed()
+            compose.onNodeWithTag("messageComposer").performClick().performTextInput("A fictional draft")
+            compose.waitUntil(10_000) {
+                ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                    ?.isVisible(WindowInsetsCompat.Type.ime()) == true
+            }
+            compose.waitForIdle()
+            val visible = Rect()
+            compose.runOnUiThread { compose.activity.window.decorView.getWindowVisibleDisplayFrame(visible) }
+            val composer = compose.onNodeWithTag("messageComposer").fetchSemanticsNode().boundsInWindow
+            val gap = visible.bottom - composer.bottom
+            val tolerance = 32 * compose.activity.resources.displayMetrics.density
+            assertTrue("Composer gap above keyboard: $gap px", gap >= -1 && gap <= tolerance)
+            hideTestKeyboard()
+        }
+    }
 
     @Test fun multilineComposerSendsMessage() {
         val message = "Hello there\nA fictional follow-up."
