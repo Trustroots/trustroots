@@ -30,7 +30,9 @@ anr_kind() {
   # A mixed report must never be treated as recoverable merely because it also
   # mentions System UI or the launcher. Reboot only when every ANR line belongs
   # to one of those boot-time system processes.
-  unexpected_lines=$(grep -Ev 'ANR in .*com\.android\.(systemui|launcher3)([[:space:]}:]|$)|Application Not Responding: com\.android\.(systemui|launcher3)([[:space:]}:]|$)' <<< "$anr_lines" || true)
+  # Window dumps can include this process name inside a Surface(...) value,
+  # where the exact package is followed by a closing parenthesis.
+  unexpected_lines=$(grep -Ev 'ANR in .*com\.android\.(systemui|launcher3)([[:space:]}:]|$)|Application Not Responding: com\.android\.(systemui|launcher3)([[:space:]}:]|\)|$)' <<< "$anr_lines" || true)
   if [[ -n "$unexpected_lines" ]]; then
     printf 'unexpected\n'
   else
