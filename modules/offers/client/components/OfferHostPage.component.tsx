@@ -217,7 +217,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                             onChange={() =>
                               setOffer(current => ({ ...current, status }))
                             }
-                            className="sr-only"
+                            className="offer-availability-radio"
                             type="radio"
                             value={status}
                           />
@@ -245,8 +245,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       : ['yes', 'maybe'].includes(offer.meetingStatus)
                         ? 'You will appear on the map for hosting and meetings.'
                         : 'You will appear on the map for hosting.'}{' '}
-                    Meetings use this same approximate location and circle
-                    visibility setting.
+                    Hosting and meetings share your approximate location and
+                    circle visibility.
                   </p>
                   <fieldset>
                     <legend>
@@ -264,18 +264,13 @@ export default function OfferHostPage({ user }: HostPageProps) {
                           }
                           type="checkbox"
                         />
-                        <span>
-                          People that are not in any of my circles should not
-                          find me.
-                        </span>
+                        <span>Only my circles can find me on the map.</span>
                       </label>
                     </div>
                   </fieldset>
 
                   {offer.status !== 'no' && (
                     <>
-                      <br />
-                      <br />
                       <fieldset className="offer-maxguests">
                         <legend>
                           <h4 id="maxGuests">
@@ -334,9 +329,6 @@ export default function OfferHostPage({ user }: HostPageProps) {
                           </span>
                         </div>
                       </fieldset>
-
-                      <br />
-                      <br />
                     </>
                   )}
                 </div>

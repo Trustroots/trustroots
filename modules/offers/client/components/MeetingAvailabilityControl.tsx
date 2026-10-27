@@ -40,7 +40,7 @@ export default function MeetingAvailabilityControl({
           >
             <input
               checked={value === status}
-              className="sr-only"
+              className="offer-availability-radio"
               name={id}
               onChange={() => onChange(status)}
               type="radio"

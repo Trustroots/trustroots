@@ -719,7 +719,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await hostPage.goto('/offer/host');
 
       const circleOnly = hostPage.getByLabel(
-        'People that are not in any of my circles should not find me.',
+        'Only my circles can find me on the map.',
       );
       await expect(circleOnly).toBeVisible();
       await circleOnly.check();
