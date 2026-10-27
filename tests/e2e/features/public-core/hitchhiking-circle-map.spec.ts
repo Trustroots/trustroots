@@ -372,12 +372,35 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
     await page.goto(`/circles/${circle}`);
     const map = page.locator('.circle-location-map');
     const zoomOut = map.locator('.leaflet-control-zoom-out');
-    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
     await map.hover();
+    if (circle === 'hackers') {
+      // The previous map's pinch zoom is restored on the next circle.
+      await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
+      await page.mouse.wheel(0, 10000);
+    }
+    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
     await page.mouse.wheel(0, -240);
     await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
     await page.mouse.wheel(0, 10000);
     await expect(zoomOut).toHaveClass(/leaflet-disabled/);
+    const minimumZoom = await map.evaluate(element =>
+      Math.max(
+        3,
+        Math.ceil(
+          Math.log2(
+            Math.max(element.clientWidth, element.clientHeight, 1) / 256,
+          ),
+        ),
+      ),
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const view = sessionStorage.getItem('circle-map-view');
+          return view ? (JSON.parse(view) as number[])[2] : null;
+        }),
+      )
+      .toBe(minimumZoom);
     const box = await map.boundingBox();
     expectPresent(box);
     const x = box.x + box.width / 2;
@@ -399,6 +422,14 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
       touchPoints: [],
     });
     await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const view = sessionStorage.getItem('circle-map-view');
+          return view ? (JSON.parse(view) as number[])[2] : null;
+        }),
+      )
+      .toBeGreaterThan(minimumZoom);
   }
 });
 
