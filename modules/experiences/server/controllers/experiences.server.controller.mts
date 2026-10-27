@@ -65,7 +65,12 @@ type ExperienceResponseBody =
       Types.ObjectId | ExperienceUserRecord
     >
   | ExperienceCount
-  | { _id: Types.ObjectId; displayName?: string; username?: string }
+  | {
+      _id: Types.ObjectId;
+      displayName?: string;
+      username?: string;
+      ownExperience?: ExperiencePayload<Types.ObjectId, Date, Types.ObjectId>;
+    }
   | { message?: string; details?: Record<string, unknown> }
   | null
   | undefined;
@@ -108,8 +113,7 @@ const plainText = textService.plainText as (
   cleanWhitespace?: boolean,
 ) => string;
 
-// A block must not prevent replying to an existing Experience. Reveal only
-// the author's identity here; normal profile and messaging access still apply.
+// Provide minimal access to a blocked profile or an existing reply recipient.
 service.readReplyRecipient = async function (req, res, next) {
   try {
     const recipient = await User.findOne({
@@ -117,7 +121,7 @@ service.readReplyRecipient = async function (req, res, next) {
       public: true,
       roles: visibleAuthorRoles,
     })
-      .select('_id username displayName')
+      .select('_id username displayName blocked')
       .exec();
     const incoming =
       recipient &&
@@ -126,15 +130,20 @@ service.readReplyRecipient = async function (req, res, next) {
         userTo: req.user._id,
         removedAt: { $exists: false },
       }));
-    if (!incoming) {
+    const blocked = recipient?.blocked?.some(id => id.equals(req.user._id));
+    if (!recipient || (!incoming && !blocked)) {
       return res.status(404).json({
         message: errorService.getErrorMessageByKey('not-found'),
       });
     }
+    const own = await findMyExperience(req, String(recipient._id));
     return res.json({
-      _id: recipient!._id,
-      username: recipient!.username,
-      displayName: recipient!.displayName,
+      _id: recipient._id,
+      username: recipient.username,
+      displayName: recipient.displayName,
+      ...(own
+        ? { ownExperience: prepareSendingToClient(own, null, req.user._id) }
+        : {}),
     });
   } catch (error) {
     return next(error);

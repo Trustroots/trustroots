@@ -84,13 +84,62 @@ describe('Experience reply recipient access', () => {
     await agent.get(path()).expect(200);
   });
 
+  it('returns the viewer’s Experience without the reciprocal Experience', async () => {
+    await Experience.create({
+      userFrom: users[1]._id,
+      userTo: users[0]._id,
+      public: true,
+      recommend: 'yes',
+      interactions: { met: true },
+      feedbackPublic: 'My account.',
+    });
+    const { body } = await agent.get(path()).expect(200);
+    body.ownExperience.feedbackPublic.should.equal('My account.');
+    (body.ownExperience.response === null).should.equal(true);
+    await Experience.updateMany(
+      { userFrom: users[1]._id },
+      { $set: { removedAt: new Date() } },
+    );
+    const afterRemoval = await agent.get(path()).expect(200);
+    (afterRemoval.body.ownExperience === undefined).should.equal(true);
+  });
+
   it('does not grant access to an unrelated member', async () => {
     await utils.signOut(agent);
     await utils.signIn(userData[2], agent);
     await agent.get(path()).expect(404);
   });
 
-  it('does not grant access based on a removed Experience', async () => {
+  it('allows a blocked member without an incoming Experience to write and see only their own', async () => {
+    await Experience.updateMany({}, { $set: { removedAt: new Date() } });
+    await agent.get(path()).expect(200);
+    await agent
+      .post('/api/experiences')
+      .send({
+        userTo: users[0]._id.toString(),
+        recommend: 'no',
+        interactions: { met: true },
+        feedbackPublic: 'My account of our meeting.',
+      })
+      .expect(201);
+    const { body } = await agent.get(path()).expect(200);
+    body.ownExperience.feedbackPublic.should.equal(
+      'My account of our meeting.',
+    );
+    (body.ownExperience.response === null).should.equal(true);
+    await agent
+      .post('/api/experiences')
+      .send({
+        userTo: users[0]._id.toString(),
+        recommend: 'no',
+        interactions: { met: true },
+      })
+      .expect(409);
+  });
+
+  it('does not grant access based on a removed Experience without a block', async () => {
+    users[0].blocked = [];
+    await users[0].save();
     await Experience.updateMany({}, { $set: { removedAt: new Date() } });
     await agent.get(path()).expect(404);
   });
