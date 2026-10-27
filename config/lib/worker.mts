@@ -35,6 +35,12 @@ async function start(options: WorkerOptions, callback?: Done) {
     await import('./../../modules/users/server/jobs/user-welcome-sequence-third.server.job.mjs');
   const { default: dependency12 } =
     await import('./../../modules/experiences/server/jobs/experiences-publish.server.job.mjs');
+  const { sendSupportMessage: supportMessageJob } =
+    await import('./../../modules/support/server/jobs/send-support-message.server.job.mts');
+  const { pollSupportMailbox: pollSupportMailboxJob } =
+    await import('./../../modules/support/server/jobs/poll-support-mailbox.server.job.mts');
+  const { recoverSupportMessages: recoverSupportMessagesJob } =
+    await import('./../../modules/support/server/jobs/recover-support-messages.server.job.mts');
 
   // Define jobs
 
@@ -113,6 +119,21 @@ async function start(options: WorkerOptions, callback?: Done) {
     },
     dependency12,
   );
+  agenda.define(
+    'send support message',
+    { priority: 'high', concurrency: 2, lockLifetime: 60000 },
+    supportMessageJob,
+  );
+  agenda.define(
+    'poll support mailbox',
+    { concurrency: 1, lockLifetime: 120000 },
+    pollSupportMailboxJob,
+  );
+  agenda.define(
+    'recover support messages',
+    { concurrency: 1, lockLifetime: 120000 },
+    recoverSupportMessagesJob,
+  );
   const startPromise = agenda
     .start()
     .then(function () {
@@ -125,6 +146,17 @@ async function start(options: WorkerOptions, callback?: Done) {
         agenda.every('60 minutes', 'welcome sequence second'),
         agenda.every('60 minutes', 'welcome sequence third'),
         agenda.every('23 minutes', 'publish expired experiences'),
+        ...(config.supportInbox.enabled && config.supportInbox.imap.enabled
+          ? [
+              agenda.every(
+                `${config.supportInbox.imap.pollIntervalMinutes} minutes`,
+                'poll support mailbox',
+              ),
+            ]
+          : []),
+        ...(config.supportInbox.enabled
+          ? [agenda.every('1 minute', 'recover support messages')]
+          : []),
       ]);
     })
     .then(function () {

@@ -1,5 +1,23 @@
-import mongoose, { type QueryFilter, type Types } from 'mongoose';
+import mongoose, {
+  type PipelineStage,
+  type QueryFilter,
+  type Types,
+} from 'mongoose';
 import { SUPPORT_CATEGORIES } from '../../../support/shared/categories.ts';
+import {
+  SUPPORT_STATUSES,
+  UNRESOLVED_STATUSES,
+  isSupportStatus,
+  normaliseSupportStatus,
+  type SupportStatus,
+} from '../../../support/shared/statuses.ts';
+import type { SupportMessageRecord } from '../../../support/server/models/support-message.server.model.mts';
+import { normaliseStoredSupportCategory } from '../../../support/server/services/support-fingerprint.server.service.mts';
+import { supportCategoryExpression } from '../../../support/server/services/support-migration.server.service.mts';
+import {
+  queueReply,
+  retryReply,
+} from '../../../support/server/services/support-email.server.service.mts';
 
 interface SupportRequestRecord {
   _id: Types.ObjectId;
@@ -14,6 +32,14 @@ interface SupportRequestRecord {
   status?: string;
   resolvedAt?: Date | null;
   resolvedBy?: Types.ObjectId | string | null;
+  subject?: string;
+  lastActivityAt?: Date;
+  statusChangedAt?: Date;
+  statusRevision?: number;
+  zendeskTicketId?: number;
+  initialAttachments?: SupportMessageRecord['attachments'];
+  oversized?: boolean;
+  truncated?: boolean;
 }
 
 interface UserRecord {
@@ -62,9 +88,18 @@ type SupportParams = Record<string, string>;
 interface SupportRequest {
   params: SupportParams;
   query: SupportQuery;
-  body: { status?: unknown };
+  body: {
+    status?: unknown;
+    body?: unknown;
+    idempotencyKey?: unknown;
+    confirmUncertain?: unknown;
+  };
   route: { path: string };
-  user: { _id: Types.ObjectId | string };
+  user: {
+    _id: Types.ObjectId | string;
+    username?: string;
+    displayName?: string;
+  };
 }
 
 interface SupportResponse {
@@ -74,8 +109,12 @@ interface SupportResponse {
 
 type Action = (req: SupportRequest, res: SupportResponse) => Promise<unknown>;
 type SupportError = Error & { status: number };
-const LIST_STATUSES = ['all', 'open', 'resolved'] as const;
-const WRITE_STATUSES = ['open', 'resolved'] as const;
+const LIST_STATUSES = [
+  'all',
+  'unresolved',
+  'resolved',
+  ...SUPPORT_STATUSES,
+] as const;
 
 function isOneOf<const Values extends readonly unknown[]>(
   values: Values,
@@ -86,14 +125,17 @@ function isOneOf<const Values extends readonly unknown[]>(
 
 const SupportRequestModel =
   mongoose.model<SupportRequestRecord>('SupportRequest');
+const SupportMessage = mongoose.model<SupportMessageRecord>('SupportMessage');
 const User = mongoose.model<UserRecord>('User');
 const Message = mongoose.model<InvestigationRecord>('Message');
 const Experience = mongoose.model<InvestigationRecord>('Experience');
 const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 const PAGE_SIZE = 50;
 const LIST_FIELDS =
-  '_id category user reportedUser sent email username reportMember status resolvedAt resolvedBy';
-const REQUEST_FIELDS = `${LIST_FIELDS} message`;
+  '_id category user reportedUser sent email username reportMember status resolvedAt resolvedBy subject lastActivityAt zendeskTicketId';
+const REQUEST_FIELDS = `${LIST_FIELDS} message statusChangedAt statusRevision initialAttachments oversized truncated`;
+const CONVERSATION_FIELDS =
+  '_id request direction kind body createdAt authorId authorName deliveryState attachments oversized truncated';
 const MEMBER_FIELDS =
   '_id username displayName email emailTemporary public roles created description tagline locationLiving locationFrom languages removeProfileToken';
 
@@ -160,7 +202,14 @@ async function audit(req: SupportRequest): Promise<void> {
     user: req.user._id,
     route: req.route.path,
     params: req.params,
-    query: req.query,
+    query: {
+      ...Object.fromEntries(
+        ['status', 'category', 'page']
+          .filter(key => req.query[key] !== undefined)
+          .map(key => [key, req.query[key]]),
+      ),
+      ...(req.query.q ? { hasSearch: true } : {}),
+    },
     body: req.body?.status ? { status: req.body.status } : {},
   }).save();
 }
@@ -176,7 +225,12 @@ async function requestById(req: SupportRequest) {
       status: 404,
     });
   }
-  return report;
+  return {
+    ...report,
+    category:
+      normaliseStoredSupportCategory(report.category, report.reportMember) ||
+      'other',
+  };
 }
 
 function memberPayload(member: UserRecord): UserRecord & {
@@ -189,60 +243,250 @@ function memberPayload(member: UserRecord): UserRecord & {
 
 export const list = handler(async (req, res) => {
   const page = pageNumber(req.query);
-  const { category, status = 'open' } = req.query;
+  const { category, status = 'unresolved', q } = req.query;
   if (
     !isOneOf(LIST_STATUSES, status) ||
     (category !== undefined &&
       (typeof category !== 'string' ||
-        !Object.hasOwn(SUPPORT_CATEGORIES, category)))
+        !Object.hasOwn(SUPPORT_CATEGORIES, category))) ||
+    (q !== undefined && (typeof q !== 'string' || q.length > 200))
   ) {
     throw invalid('Invalid support filters.');
   }
-  const criteria: QueryFilter<SupportRequestRecord> = category
-    ? { category: String(category) }
-    : {};
-  if (status === 'open') {
-    criteria.$or = [{ status: 'open' }, { status: { $exists: false } }];
+  const pipeline: PipelineStage[] = [];
+  pipeline.push({ $set: { category: supportCategoryExpression } });
+  if (category) pipeline.push({ $match: { category } });
+  const search = typeof q === 'string' ? q.trim() : '';
+  if (search) {
+    const expression = {
+      $regex: search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+      $options: 'i',
+    };
+    pipeline.push(
+      {
+        $lookup: {
+          from: SupportMessage.collection.name,
+          let: { requestId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: { $eq: ['$request', '$$requestId'] },
+                body: expression,
+              },
+            },
+            { $limit: 1 },
+            { $project: { _id: 1 } },
+          ],
+          as: 'matchingReplies',
+        },
+      },
+      {
+        $match: {
+          $or: [
+            ...['subject', 'message', 'username', 'email'].map(field => ({
+              [field]: expression,
+            })),
+            { 'matchingReplies.0': { $exists: true } },
+            ...(/^[a-f\d]{24}$/i.test(search)
+              ? [{ _id: new mongoose.Types.ObjectId(search) }]
+              : []),
+            ...(/^\d+$/.test(search) && Number.isSafeInteger(Number(search))
+              ? [{ zendeskTicketId: Number(search) }]
+              : []),
+          ],
+        },
+      },
+    );
   }
-  if (status === 'resolved') criteria.status = 'resolved';
-  const items = await SupportRequestModel.find(criteria)
-    .select(LIST_FIELDS)
-    .sort({ sent: -1, _id: -1 })
-    .skip((page - 1) * PAGE_SIZE)
-    .limit(PAGE_SIZE + 1)
-    .lean();
+  pipeline.push({
+    $set: {
+      canonicalStatus: {
+        $switch: {
+          branches: [
+            { case: { $eq: ['$status', 'resolved'] }, then: 'solved' },
+            {
+              case: { $in: ['$status', [...SUPPORT_STATUSES]] },
+              then: '$status',
+            },
+          ],
+          default: 'open',
+        },
+      },
+      activity: { $ifNull: ['$lastActivityAt', '$sent'] },
+    },
+  });
+  const matchStatus =
+    status === 'all'
+      ? {}
+      : {
+          canonicalStatus:
+            status === 'unresolved'
+              ? { $in: [...UNRESOLVED_STATUSES] }
+              : normaliseSupportStatus(status),
+        };
+  pipeline.push({
+    $facet: {
+      statusCounts: [
+        { $group: { _id: '$canonicalStatus', count: { $sum: 1 } } },
+      ],
+      matching: [{ $match: matchStatus }, { $count: 'count' }],
+      items: [
+        { $match: matchStatus },
+        { $sort: { activity: -1, _id: -1 } },
+        { $skip: (page - 1) * PAGE_SIZE },
+        { $limit: PAGE_SIZE },
+        {
+          $project: {
+            ...Object.fromEntries(
+              LIST_FIELDS.split(' ').map(field => [field, 1]),
+            ),
+            status: '$canonicalStatus',
+          },
+        },
+      ],
+    },
+  });
+  const [results, total] = await Promise.all([
+    SupportRequestModel.aggregate<{
+      items: SupportRequestRecord[];
+      matching: Array<{ count: number }>;
+      statusCounts: Array<{ _id: SupportStatus; count: number }>;
+    }>(pipeline).option({ maxTimeMS: 10_000 }),
+    SupportRequestModel.countDocuments({}),
+  ]);
+  const result = results[0];
+  const matchingTotal = result.matching[0]?.count || 0;
+  const statusCounts = Object.fromEntries(
+    SUPPORT_STATUSES.map(value => [value, 0]),
+  );
+  result.statusCounts.forEach(item => {
+    statusCounts[item._id] = item.count;
+  });
   await audit(req);
   return res.send({
-    items: items.slice(0, PAGE_SIZE),
+    items: result.items,
     page,
-    hasMore: items.length > PAGE_SIZE,
+    hasMore: page * PAGE_SIZE < matchingTotal,
+    total,
+    matchingTotal,
+    statusCounts,
   });
 });
 
 export const detail = handler(async (req, res) => {
   const report = await requestById(req);
   await audit(req);
-  return res.send(report);
+  return res.send({ ...report, status: normaliseSupportStatus(report.status) });
 });
 
 export const setStatus = handler(async (req, res) => {
-  const status = req.body.status;
-  if (!isOneOf(WRITE_STATUSES, status)) {
+  const value = req.body?.status;
+  if (!isSupportStatus(value) && value !== 'resolved') {
     throw invalid('Invalid status.');
   }
+  const status = normaliseSupportStatus(value);
   const report = await requestById(req);
   await audit(req);
-  await SupportRequestModel.updateOne(
-    { _id: report._id },
+  const result = await SupportRequestModel.updateOne(
+    { _id: report._id, ...revisionCriteria(report.statusRevision) },
     {
       $set: {
         status,
-        resolvedAt: status === 'resolved' ? new Date() : null,
-        resolvedBy: status === 'resolved' ? req.user._id : null,
+        resolvedAt:
+          status === 'solved' || status === 'closed' ? new Date() : null,
+        resolvedBy:
+          status === 'solved' || status === 'closed' ? req.user._id : null,
+        statusChangedAt: new Date(),
       },
+      $inc: { statusRevision: 1 },
     },
   );
+  if (!result.matchedCount)
+    throw Object.assign(
+      new Error('This request changed. Reload before updating it.'),
+      { status: 409 },
+    );
   return res.send({ status });
+});
+
+function revisionCriteria(
+  revision?: number,
+): QueryFilter<SupportRequestRecord> {
+  return revision === undefined
+    ? { statusRevision: { $exists: false } }
+    : { statusRevision: revision };
+}
+
+export const conversation = handler(async (req, res) => {
+  const report = await requestById(req);
+  const page = pageNumber(req.query);
+  const offset = (page - 1) * PAGE_SIZE;
+  const [messages, count] = await Promise.all([
+    SupportMessage.find({ request: report._id })
+      .select(CONVERSATION_FIELDS)
+      .sort({ createdAt: 1, _id: 1 })
+      .skip(Math.max(0, offset - 1))
+      .limit(PAGE_SIZE - (offset === 0 ? 1 : 0))
+      .lean(),
+    SupportMessage.countDocuments({ request: report._id }),
+  ]);
+  await audit(req);
+  return res.send({
+    items: [
+      ...(offset === 0
+        ? [
+            {
+              _id: `initial-${report._id}`,
+              request: report._id,
+              kind: 'initial',
+              direction: 'inbound',
+              body: report.message,
+              createdAt: report.sent,
+              authorName: report.username || report.email,
+              deliveryState: 'received',
+              attachments: report.initialAttachments || [],
+              oversized: Boolean(report.oversized),
+              truncated: Boolean(report.truncated),
+            },
+          ]
+        : []),
+      ...messages,
+    ],
+    page,
+    hasMore: page * PAGE_SIZE < count + 1,
+  });
+});
+
+export const reply = handler(async (req, res) => {
+  const report = await requestById(req);
+  await audit(req);
+  const message = await queueReply(
+    report._id.toString(),
+    req.user,
+    req.body?.body,
+    req.body?.idempotencyKey,
+  );
+  const safe = await SupportMessage.findById(message._id)
+    .select(CONVERSATION_FIELDS)
+    .lean();
+  return res.status(201).send(safe);
+});
+
+export const retry = handler(async (req, res) => {
+  const report = await requestById(req);
+  const messageId = objectId(req.params.messageId);
+  await audit(req);
+  const message = await retryReply(
+    report._id.toString(),
+    messageId,
+    req.user,
+    req.body?.idempotencyKey,
+    req.body?.confirmUncertain,
+  );
+  const safe = await SupportMessage.findById(message._id)
+    .select(CONVERSATION_FIELDS)
+    .lean();
+  return res.send(safe);
 });
 
 export const investigation = handler(async (req, res) => {
@@ -381,6 +625,16 @@ export const member = handler(async (req, res) => {
   return res.send(memberPayload(result));
 });
 
-const api = { list, detail, setStatus, investigation, searchMembers, member };
+const api = {
+  list,
+  detail,
+  setStatus,
+  conversation,
+  reply,
+  retry,
+  investigation,
+  searchMembers,
+  member,
+};
 export default api;
 export { api as 'module.exports' };

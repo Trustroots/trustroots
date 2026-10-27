@@ -528,6 +528,14 @@ describe('React route ownership', () => {
     expect(
       renderRoute(usernameChangesRoute).getByText('Admin username changes'),
     ).toBeInTheDocument();
+
+    expect(
+      findRoute('/admin/support/requests/111111111111111111111111'),
+    ).toMatchObject({
+      params: { requestId: '111111111111111111111111' },
+      path: '/admin/support/requests/:requestId',
+      requiresRole: ['admin', 'support-team'],
+    });
   });
 
   it('renders the admin circles route with admin metadata', () => {

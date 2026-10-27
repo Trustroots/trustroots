@@ -8,6 +8,7 @@ import defaultConfig from './env/default.mts';
 import developmentConfig from './env/development.mts';
 import productionConfig from './env/production.mts';
 import testConfig from './env/test.mts';
+import { applyMailSafety } from './lib/mail-safety.mts';
 import type {
   Config,
   ConfigOverrides,
@@ -135,6 +136,7 @@ const initGlobalConfig = function (): Config {
       {},
   );
 
+  applyMailSafety(config, process.env);
   return Object.assign(config, {
     files: getGlobalConfigFiles(defaultAssets),
     utils: { getGlobbedPaths },
