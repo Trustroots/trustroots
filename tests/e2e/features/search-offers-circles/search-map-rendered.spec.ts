@@ -1401,7 +1401,7 @@ test.describe('rendered search map feature coverage', () => {
     await locate.click();
     const status = page.locator('.device-location-control').getByRole('status');
     await expect(status).toHaveText(
-      'Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+      'Location access denied. Enable it in your browser or choose a location. Approximate location unavailable.',
     );
     await expect(status).toBeInViewport();
     await expect(searchInput).toBeVisible();
@@ -1421,7 +1421,7 @@ test.describe('rendered search map feature coverage', () => {
       .poll(() => page.evaluate(() => window.__deviceLocationRequests))
       .toBe(2);
     await expect(status).toHaveText(
-      'Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+      'Location access denied. Enable it in your browser or choose a location. Approximate location unavailable.',
     );
 
     await page.screenshot({
