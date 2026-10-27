@@ -16,8 +16,6 @@
     "@trustroots/admin": "workspace:*",
     "@trustroots/core": "workspace:*",
     "@trustroots/stats": "workspace:*",
-    "@trustroots/users": "workspace:*",
-    "imapflow": "2.9.1",
-    "mailparser": "3.12.4"
+    "@trustroots/users": "workspace:*"
   }
 }
