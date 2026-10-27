@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { ObjectId } from 'mongodb';
 import {
   annotateFeature,
   expect,
@@ -27,10 +28,15 @@ test('support can triage a report and investigate only its verified member pair'
   const reporter = createUser({ firstName: 'Fictional', lastName: 'Reporter' });
   const target = createUser({ firstName: 'Fictional', lastName: 'Member' });
   const support = createUser({ firstName: 'Fictional', lastName: 'Support' });
+  const supportObserver = createUser({
+    firstName: 'Fictional',
+    lastName: 'Observer',
+  });
   let requestId: string | undefined;
   let targetId: string | undefined;
+  const replyId = new ObjectId();
   try {
-    for (const user of [reporter, target, support])
+    for (const user of [reporter, target, support, supportObserver])
       await registerViaApi(context.request, user);
     await withE2eDb(async db => {
       const reporterDoc = (await db
@@ -43,10 +49,13 @@ test('support can triage a report and investigate only its verified member pair'
       const supportDoc = (await db
         .collection('users')
         .findOne({ username: support.username }))!;
+      const observerDoc = (await db
+        .collection('users')
+        .findOne({ username: supportObserver.username }))!;
       await db
         .collection('users')
-        .updateOne(
-          { _id: supportDoc._id },
+        .updateMany(
+          { _id: { $in: [supportDoc._id, observerDoc._id] } },
           { $set: { roles: ['user', 'support-team'] } },
         );
       await db
@@ -153,11 +162,107 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(
       page.getByText('Fictional report for support investigation.'),
     ).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/support/requests/${requestId}$`),
+    );
+    await page.goBack();
+    await expect(page).toHaveURL('/admin/support');
+    await page.goForward();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/support/requests/${requestId}$`),
+    );
+    await page.getByLabel('Reply to requester').fill('Fictional support reply');
+    await page.getByRole('button', { name: 'Send reply' }).click();
+    await expect(
+      page.getByText(/Reply could not be queued\. Your draft is still here/),
+    ).toBeVisible();
+    await expect(page.getByLabel('Reply to requester')).toHaveValue(
+      'Fictional support reply',
+    );
+    await page.route(
+      `**/api/admin/support/${requestId}/replies`,
+      async route => {
+        if (route.request().method() !== 'POST') return route.continue();
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            _id: replyId.toHexString(),
+            request: requestId,
+            direction: 'outbound',
+            kind: 'reply',
+            body: 'Fictional support reply',
+            createdAt: new Date().toISOString(),
+            authorName: 'Fictional Support',
+            deliveryState: 'captured',
+          }),
+        });
+      },
+    );
+    await page.getByRole('button', { name: 'Send reply' }).click();
+    await expect(page.getByText('Fictional support reply')).toBeVisible();
+    await expect(
+      page.getByText('Captured for testing (not sent)'),
+    ).toBeVisible();
+    await page.unroute(`**/api/admin/support/${requestId}/replies`);
+    await withE2eDb(async db => {
+      const supportDoc = (await db
+        .collection('users')
+        .findOne({ username: support.username }))!;
+      await db.collection('supportmessages').insertOne({
+        _id: replyId,
+        request: new ObjectId(requestId!),
+        direction: 'outbound',
+        kind: 'reply',
+        body: 'Fictional support reply',
+        createdAt: new Date(),
+        authorId: supportDoc._id,
+        authorName: 'Fictional Support',
+        emailFrom: 'support@example.test',
+        emailTo: reporter.email,
+        messageId: `<${replyId.toHexString()}@example.test>`,
+        deliveryState: 'captured',
+        attempts: 1,
+      });
+    });
+    await page
+      .getByLabel('Search requests')
+      .fill('Fictional report for support');
+    await expect(page).toHaveURL(/q=Fictional\+report\+for\+support/);
+    await page.locator('#support-status').selectOption('all');
+    await page.getByLabel('Category').selectOption('reportMember');
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/admin/support/requests/${requestId}\\?status=all&category=reportMember&q=Fictional\\+report\\+for\\+support$`,
+      ),
+    );
+    await page.reload();
+    await expect(page.getByText('Fictional support reply')).toBeVisible();
+    const observerContext = await createIsolatedContext(browser, baseURL);
+    try {
+      const observerPage = await observerContext.newPage();
+      await signInViaApi(
+        observerPage,
+        observerContext.request,
+        supportObserver,
+      );
+      await observerPage.goto(
+        `/admin/support/requests/${requestId}?status=all&category=reportMember&q=Fictional+report+for+support`,
+      );
+      await expect(
+        observerPage.getByText('Fictional support reply'),
+      ).toBeVisible();
+      await expect(
+        observerPage.getByText('Captured for testing (not sent)'),
+      ).toBeVisible();
+    } finally {
+      await observerContext.close();
+    }
     await page.getByRole('button', { name: 'View conversation' }).click();
     await expect(page.getByText('Fictional hidden context')).toBeVisible();
     await expect(page.getByText('Fictional reply')).toBeVisible();
     await expect(page.getByText('Unrelated conversation')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Resolve request' }).click();
+    await page.getByRole('button', { name: 'Mark solved' }).click();
     await expect(
       page.getByRole('button', { name: 'Reopen request' }),
     ).toBeVisible();
@@ -260,6 +365,67 @@ test('support can triage a report and investigate only its verified member pair'
           .countDocuments({ 'params.requestId': requestId }),
       ).toBeGreaterThan(0);
     });
+  } finally {
+    await context.close();
+  }
+});
+
+test('support request deep links preserve queue filters on reload', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Support can open a request from a filterable, shareable inbox URL.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const support = createUser({ firstName: 'Fictional', lastName: 'Agent' });
+  const requestId = new ObjectId();
+  try {
+    await registerViaApi(context.request, support);
+    await withE2eDb(async db => {
+      const supportDoc = (await db
+        .collection('users')
+        .findOne({ username: support.username }))!;
+      await db
+        .collection('users')
+        .updateOne(
+          { _id: supportDoc._id },
+          { $set: { roles: ['user', 'support-team'] } },
+        );
+      await db.collection('supportrequests').insertOne({
+        _id: requestId,
+        category: 'other',
+        sent: new Date(),
+        username: 'fictional-requester',
+        email: 'requester@example.test',
+        message: 'Fictional deep-linked support request',
+        status: 'new',
+        statusRevision: 0,
+      });
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto(
+      `/admin/support/requests/${requestId.toHexString()}?status=new&category=other&q=deep-linked`,
+    );
+    await expect(
+      page.getByText('Fictional deep-linked support request'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/^Showing 1–1 of 1 matching requests \(\d+ total\)$/),
+    ).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/admin/support/requests/${requestId.toHexString()}\\?status=new&category=other&q=deep-linked$`,
+      ),
+    );
+    await page.reload();
+    await expect(
+      page.getByText('Fictional deep-linked support request'),
+    ).toBeVisible();
+    await expect(page.locator('#support-status')).toHaveValue('new');
+    await expect(page.locator('#support-category')).toHaveValue('other');
+    await expect(page.getByLabel('Search requests')).toHaveValue('deep-linked');
   } finally {
     await context.close();
   }

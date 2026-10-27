@@ -296,9 +296,16 @@ declare module 'nunjucks' {
 }
 
 declare module 'morgan' {
-  export default function morgan(
-    format: string,
-  ): import('express').RequestHandler;
+  function morgan(format: string): import('express').RequestHandler;
+  namespace morgan {
+    function token(
+      name: string,
+      callback: (
+        request: import('node:http').IncomingMessage & { originalUrl?: string },
+      ) => string,
+    ): typeof morgan;
+  }
+  export default morgan;
 }
 
 declare module 'serve-favicon' {

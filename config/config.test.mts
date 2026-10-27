@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
+import './lib/mail-safety.test.mts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
@@ -20,6 +21,11 @@ function load(environment: string, local?: string, skipLocal = false) {
   try {
     const configDirectory = join(directory, 'config');
     mkdirSync(configDirectory);
+    mkdirSync(join(configDirectory, 'lib'));
+    cpSync(
+      join(root, 'config/lib/mail-safety.mts'),
+      join(configDirectory, 'lib/mail-safety.mts'),
+    );
     for (const name of ['config.mts', 'assets', 'env', 'package.json']) {
       cpSync(join(root, 'config', name), join(configDirectory, name), {
         recursive: true,
@@ -53,6 +59,10 @@ function load(environment: string, local?: string, skipLocal = false) {
           NODE_ENV: environment,
           TRUSTROOTS_SKIP_LOCAL_CONFIG: skipLocal ? 'true' : '',
           TRUSTROOTS_SERVER_TEST_DATABASE: undefined,
+          TRUSTROOTS_DEPLOYMENT_TIER: undefined,
+          TRUSTROOTS_MAIL_MODE: undefined,
+          TRUSTROOTS_MAIL_RECIPIENT_ALLOWLIST: undefined,
+          TRUSTROOTS_SUPPORT_TEST_MAILBOX: undefined,
         },
         encoding: 'utf8',
       },

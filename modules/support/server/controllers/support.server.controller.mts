@@ -10,6 +10,7 @@ import mongoose, { type Types } from 'mongoose';
 import validator from 'validator';
 import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';
+import { queueAcknowledgement } from '../services/support-email.server.service.mts';
 
 interface SupportUser {
   _id: Types.ObjectId | string;
@@ -133,13 +134,18 @@ export const supportRequest: SupportService['supportRequest'] = async function (
     'category' | 'userAgent' | 'username' | 'email' | 'message'
   > &
     Partial<
-      Pick<SupportRequestRecord, 'user' | 'reportedUser' | 'reportMember'>
+      Pick<
+        SupportRequestRecord,
+        'user' | 'reportedUser' | 'reportMember' | 'subject' | 'lastActivityAt'
+      >
     > = {
     category,
     userAgent: supportRequestData.userAgent,
     username: supportRequestData.username,
     email: supportRequestData.email,
     message: supportRequestData.message,
+    subject: SUPPORT_CATEGORIES[category],
+    lastActivityAt: new Date(),
   };
   if (req.user) {
     storedSupportRequestData.user = req.user._id as Types.ObjectId;
@@ -180,11 +186,49 @@ export const supportRequest: SupportService['supportRequest'] = async function (
   try {
     await supportRequest.save();
   } catch (dbErr: unknown) {
-    if (dbErr) {
-      log('error', 'Failed storing support request to the DB. #39ghsa', {
-        error: dbErr,
+    if (config.supportInbox.enabled) {
+      log('error', 'Failed storing support request to the DB. #39ghsa');
+      return res.status(503).send({
+        message: 'Unable to save your support request. Please try again.',
       });
     }
+    if (dbErr) {
+      log('error', 'Failed storing support request to the DB. #39ghsa');
+    }
+  }
+
+  function finish() {
+    res.json({ message: 'Support request sent.' });
+    statService.stat(
+      {
+        namespace: 'supportRequest',
+        counts: { count: 1 },
+        tags: {
+          authenticated: supportRequestData.authenticated,
+          category: supportRequestData.category,
+          type: supportRequestData.reportMember ? 'reportMember' : 'normal',
+        },
+      },
+      function () {
+        log('info', 'Support request processed and recorded to stats. #2hfsgh');
+      },
+    );
+  }
+
+  if (config.supportInbox.enabled) {
+    if (validator.isEmail(supportRequestData.email)) {
+      try {
+        await queueAcknowledgement(supportRequest._id.toString());
+      } catch {
+        log('error', 'Unable to queue support acknowledgement.');
+        return res.status(503).send({
+          message:
+            'Your request was saved but its acknowledgement could not be queued. Please contact support if necessary.',
+        });
+      }
+    }
+    finish();
+    return;
   }
 
   // Send email
@@ -194,30 +238,14 @@ export const supportRequest: SupportService['supportRequest'] = async function (
     function (emailServiceErr?: Error | null) {
       if (emailServiceErr) {
         log('error', 'Failed sending support request via email. #49ghsd', {
-          error: emailServiceErr,
+          code: 'SUPPORT_EMAIL_FAILED',
         });
         return res.status(400).send({
           message:
             'Failure while sending your support request. Please try again.',
         });
       }
-      res.json({
-        message: 'Support request sent.',
-      });
-      const statsObject = {
-        namespace: 'supportRequest',
-        counts: {
-          count: 1,
-        },
-        tags: {
-          authenticated: supportRequestData.authenticated,
-          category,
-          type: supportRequestData.reportMember ? 'reportMember' : 'normal',
-        },
-      };
-      statService.stat(statsObject, function () {
-        log('info', 'Support request processed and recorded to stats. #2hfsgh');
-      });
+      finish();
     },
   );
 };

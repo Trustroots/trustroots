@@ -21,6 +21,8 @@
     "check:links": "node scripts/ci/check-internal-links.mts",
     "test:links": "node --test scripts/ci/check-internal-links.test.mts",
     "agenda-maintenance": "node ./bin/db-maintenance/archive-done-agenda-jobs.mts",
+    "support:prepare-zendesk-statuses": "node ./bin/db-maintenance/prepare-zendesk-statuses.mts",
+    "support:migrate-inbox": "node ./bin/db-maintenance/migrate-support-inbox.mts",
     "build": "pnpm run clean:public && pnpm run build:generate-circle-images && pnpm run build:vite",
     "build:generate-circle-images": "NODE_ENV=production pnpm run generate-circle-images",
     "cleanup:historical-spam": "node ./bin/db-maintenance/purge-historical-spam-accounts.mts",

@@ -1,5 +1,6 @@
 import mongoose, { type Types } from 'mongoose';
 import supportCategories from '../../shared/categories.ts';
+import { SUPPORT_STATUSES, type SupportStatus } from '../../shared/statuses.ts';
 
 /**
  * Module dependencies.
@@ -18,15 +19,30 @@ export interface SupportRequestRecord {
   reportMember?: string;
   reportedUser?: Types.ObjectId;
   linkageEvidence?: string;
-  status: 'open' | 'resolved';
-  resolvedAt?: Date;
-  resolvedBy?: Types.ObjectId;
+  status: SupportStatus | 'resolved';
+  subject?: string;
+  lastActivityAt?: Date;
+  statusChangedAt?: Date;
+  statusRevision: number;
+  zendeskTicketId?: number;
+  initialMessageId?: string;
+  initialInboundKey?: string;
+  initialReferences?: string[];
+  initialAttachments?: Array<{
+    filename?: string;
+    contentType?: string;
+    size?: number;
+  }>;
+  oversized?: boolean;
+  truncated?: boolean;
+  resolvedAt?: Date | null;
+  resolvedBy?: Types.ObjectId | null;
 }
 
 /**
  * Support request Schema
  *
- * This collection serves as a backup for sent support requests
+ * Shared support requests and their original requester messages.
  */
 const SupportRequestSchema = new Schema<SupportRequestRecord>({
   category: {
@@ -62,11 +78,36 @@ const SupportRequestSchema = new Schema<SupportRequestRecord>({
   },
   reportedUser: { type: Schema.Types.ObjectId, ref: 'User' },
   linkageEvidence: { type: String },
-  status: { type: String, enum: ['open', 'resolved'], default: 'open' },
+  status: {
+    type: String,
+    enum: [...SUPPORT_STATUSES, 'resolved'],
+    default: 'new',
+  },
+  subject: { type: String, maxlength: 998 },
+  lastActivityAt: { type: Date },
+  statusChangedAt: { type: Date },
+  statusRevision: { type: Number, default: 0 },
+  zendeskTicketId: { type: Number },
+  initialMessageId: { type: String },
+  initialInboundKey: { type: String },
+  initialReferences: [{ type: String }],
+  initialAttachments: [{ filename: String, contentType: String, size: Number }],
+  oversized: { type: Boolean, default: false },
+  truncated: { type: Boolean, default: false },
   resolvedAt: { type: Date },
   resolvedBy: { type: Schema.Types.ObjectId, ref: 'User' },
 });
 SupportRequestSchema.index({ status: 1, sent: -1 });
+SupportRequestSchema.index({ lastActivityAt: -1, sent: -1 });
+SupportRequestSchema.index({ initialMessageId: 1 }, { sparse: true });
+SupportRequestSchema.index(
+  { initialInboundKey: 1 },
+  { unique: true, sparse: true },
+);
+SupportRequestSchema.index(
+  { zendeskTicketId: 1 },
+  { unique: true, sparse: true },
+);
 mongoose.model('SupportRequest', SupportRequestSchema);
 const defaultInterop = {};
 export default defaultInterop;
