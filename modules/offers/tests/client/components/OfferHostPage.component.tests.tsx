@@ -161,7 +161,7 @@ describe('OfferHostPage', () => {
     fireEvent.click(meeting);
     expect(screen.getByText(/for meetings, but not as a host/)).toBeVisible();
     expect(
-      screen.getByLabelText(/People that are not in any of my circles/),
+      screen.getByLabelText(/Only my circles can find me on the map/),
     ).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
@@ -431,10 +431,10 @@ describe('OfferHostPage', () => {
     expect(screen.getByDisplayValue('3')).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByLabelText(/People that are not in any of my circles/),
+      screen.getByLabelText(/Only my circles can find me on the map/),
     );
     expect(
-      screen.getByLabelText(/People that are not in any of my circles/),
+      screen.getByLabelText(/Only my circles can find me on the map/),
     ).toBeChecked();
   });
 
