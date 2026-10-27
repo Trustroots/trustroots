@@ -35,6 +35,13 @@ import org.trustroots.android.ui.search.SearchOfferType
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostDetailViewModelTest {
+    @Test fun retryBeforeAHostRouteIsLoadedDoesNotIssueARequest() = withModel { model, repository ->
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertTrue(repository.offerIDs.isEmpty())
+        assertEquals(HostDetailUiState(), model.state.value)
+    }
+
     @Test fun blankAndRepeatedRouteLoadsDoNotDuplicateDetailRequests() = withModel { model, repository ->
         val pendingOffer = CompletableDeferred<Result<HostOffer>>()
         repository.offerHandler = { call, id ->
