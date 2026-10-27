@@ -316,6 +316,10 @@ test('support can triage a report and investigate only its verified member pair'
         testInfo.outputPath('support-inbox.png'),
         path.join(screenshotsDir, `${testInfo.project.name}-support-inbox.png`),
       );
+      fs.writeFileSync(
+        path.join(screenshotsDir, `${testInfo.project.name}-support-inbox.url`),
+        page.url(),
+      );
     }
     await page
       .getByRole('link', { name: 'Reported account and notes' })
