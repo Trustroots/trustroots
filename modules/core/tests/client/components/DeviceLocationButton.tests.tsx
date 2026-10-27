@@ -130,7 +130,7 @@ it('prevents duplicate requests while pending and exposes pending accessibly', (
 it.each([
   [
     1,
-    'i18n:Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+    'i18n:Location access denied. Enable it in your browser or choose a location.',
   ],
   [
     2,
@@ -332,11 +332,11 @@ it('uses and attributes the approximate location after a device error', async ()
   expect(onApproximateLocation).toHaveBeenCalledWith(approximate);
   expect(onLocation).not.toHaveBeenCalled();
   expect(screen.getByRole('status')).toHaveTextContent(
-    'i18n:Showing your approximate location.',
+    'i18n:Showing an approximate location based on your IP address.',
   );
-  expect(screen.getByRole('link', { name: 'MaxMind' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: 'Data credits' })).toHaveAttribute(
     'href',
-    'https://www.maxmind.com',
+    '/credits',
   );
 });
 
@@ -396,7 +396,7 @@ it('retains the device error when the approximate location is unavailable', asyn
   await act(async () => {});
 
   expect(screen.getByRole('status')).toHaveTextContent(
-    'i18n:Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+    'i18n:Location access denied. Enable it in your browser or choose a location. i18n:Approximate location unavailable.',
   );
 });
 

@@ -116,6 +116,63 @@ async function prepareCircle(
   );
 }
 
+test('keeps a chosen map view between the two circles', async ({ page }) => {
+  await prepareCircle(page);
+  await installNostrRelayStub(page, { relayUrl: 'wss://relay.trustroots.org' });
+  await installNostrRelayStub(page, { relayUrl: 'wss://relay.nomadwiki.org' });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'fictional-hackers',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+      },
+    }),
+  );
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: (success: PositionCallback) =>
+          success({
+            coords: { latitude: 34, longitude: -17 },
+          } as GeolocationPosition),
+      },
+    });
+  });
+  await page.goto('/circles/hitchhikers');
+  await page.getByRole('button', { name: 'Use my location' }).click();
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('circle-map-view')))
+    .not.toBeNull();
+  const view = await page.evaluate(() =>
+    sessionStorage.getItem('circle-map-view'),
+  );
+  await expect
+    .poll(() => page.locator('.circle-location-map .leaflet-tile').count())
+    .toBeGreaterThan(0);
+  const tiles = await page
+    .locator('.circle-location-map .leaflet-tile')
+    .evaluateAll(elements =>
+      elements.map(element => (element as HTMLImageElement).src).sort(),
+    );
+  await page.goto('/circles/hackers');
+  await expect(page.locator('.circle-location-map')).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator('.circle-location-map .leaflet-tile')
+        .evaluateAll(elements =>
+          elements.map(element => (element as HTMLImageElement).src).sort(),
+        ),
+    )
+    .toEqual(tiles);
+  expect(
+    await page.evaluate(() => sessionStorage.getItem('circle-map-view')),
+  ).toBe(view);
+});
+
 test('hitchhiking map uses explicit device location and GeoIP fallback on failure', async ({
   page,
   request,
@@ -173,7 +230,7 @@ test('hitchhiking map uses explicit device location and GeoIP fallback on failur
     .poll(() => page.evaluate(() => window.__deviceLocationRequests))
     .toBe(1);
   await expect(page.getByRole('status')).toContainText(
-    'Showing your approximate location.',
+    'Showing an approximate location based on your IP address.',
   );
   await expect(page.getByRole('status')).toContainText('approximate');
   await expect.poll(() => defaultLocationRequests).toBe(1);

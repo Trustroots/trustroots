@@ -23,6 +23,8 @@ jest.mock('leaflet', () => {
     fitBounds: jest.fn(),
     on: jest.fn(),
     setMinZoom: jest.fn(),
+    getCenter: jest.fn(() => ({ lat: 12, lng: 34 })),
+    getZoom: jest.fn(() => 6),
   };
   const group = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
   return {
@@ -122,6 +124,59 @@ const props = {
 describe('shared circle map', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    sessionStorage.clear();
+  });
+
+  it('restores the chosen view when opening another circle map', () => {
+    const { unmount } = render(<CircleLocationMap {...props} />);
+    const map = jest.mocked(L.map).mock.results[0].value;
+    const moveEnd = map.on.mock.calls.find(
+      ([name]: [string]) => name === 'moveend',
+    )[1];
+    act(() => moveEnd());
+    unmount();
+    jest.clearAllMocks();
+    render(<CircleLocationMap {...props} />);
+    const nextMap = jest.mocked(L.map).mock.results[0].value;
+    expect(nextMap.setView).toHaveBeenCalledWith([12, 34], 6);
+    expect(nextMap.fitBounds).not.toHaveBeenCalled();
+  });
+
+  it('does not save the automatic initial fit as a chosen view', () => {
+    jest.mocked(L.map)(document.createElement('div'));
+    const map = jest.mocked(L.map).mock.results[0].value;
+    map.fitBounds.mockImplementationOnce(() => {
+      const moveEnd = map.on.mock.calls.find(
+        ([name]: [string]) => name === 'moveend',
+      )[1];
+      moveEnd();
+    });
+    render(<CircleLocationMap {...props} />);
+    expect(sessionStorage.getItem('circle-map-view')).toBeNull();
+  });
+
+  it('continues to work if session storage is unavailable', () => {
+    const getItem = jest
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('unavailable');
+      });
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('unavailable');
+      });
+    try {
+      render(<CircleLocationMap {...props} />);
+      const map = jest.mocked(L.map).mock.results[0].value;
+      const moveEnd = map.on.mock.calls.find(
+        ([name]: [string]) => name === 'moveend',
+      )[1];
+      expect(() => act(() => moveEnd())).not.toThrow();
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
   });
 
   it('fits the initial results without animation, then preserves the view on live updates', () => {
