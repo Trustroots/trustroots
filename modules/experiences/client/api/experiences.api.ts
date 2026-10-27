@@ -22,10 +22,12 @@ interface UserWith {
 
 export async function readReplyRecipient(
   username: string,
-): Promise<ExperienceUser & { displayName: string }> {
-  const { data } = await axios.get<ExperienceUser & { displayName: string }>(
-    `/api/experiences/reply-recipient/${encodeURIComponent(username)}`,
-  );
+): Promise<
+  ExperienceUser & { displayName: string; ownExperience?: ExperienceMine }
+> {
+  const { data } = await axios.get<
+    ExperienceUser & { displayName: string; ownExperience?: ExperienceMine }
+  >(`/api/experiences/reply-recipient/${encodeURIComponent(username)}`);
   return data;
 }
 
