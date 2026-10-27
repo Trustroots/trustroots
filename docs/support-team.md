@@ -59,6 +59,9 @@ template used by this repository. Unknown formats, missing requester email,
 unsupported statuses and repeated ticket IDs are skipped. Its output contains
 only ticket IDs, statuses, update times and one-way identity fingerprints; it
 does not include request text, email addresses or usernames.
+The earliest website form is recognised by its complete generated footer,
+including authentication, browser and ID fields, even though it predates the
+later signature separator.
 
 Before importing, run the support inbox migration in dry-run mode and review
 its counts, including historical requests without a category. Applying the
@@ -91,6 +94,13 @@ links or investigation access.
 Historical statuses are matched only by the fingerprint of the original
 category, recorded requester email and original message. Current usernames and
 fuzzy matching are never used. A repeated import is idempotent.
+
+The **Skipped during matching** table explains unmatched requests, repeated
+fingerprints, ambiguous local matches, existing ticket links and newer local
+activity. It remains visible after applying. A local request left without an
+imported status can still appear as Open; this does not mean Zendesk considered
+it Open. To investigate an earlier import, preview the same reduced file again
+and review these aggregate reasons before applying further changes.
 
 ## Historical reports
 

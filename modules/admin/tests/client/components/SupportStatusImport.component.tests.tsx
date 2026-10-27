@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import SupportStatusImport from '@/modules/admin/client/components/SupportStatusImport';
@@ -223,5 +229,66 @@ describe('<SupportStatusImport />', () => {
     expect(
       screen.getByRole('button', { name: 'Preview status changes' }),
     ).toBeDisabled();
+  });
+
+  it('shows matching skip reasons after preview and retains them after applying', async () => {
+    const reasons = {
+      'duplicate-ticket-id': 1,
+      'duplicate-fingerprint': 2,
+      'no-match': 3,
+      'ambiguous-match': 4,
+      'ticket-id-conflict': 5,
+      'newer-local-activity': 6,
+      'future-reason': 7,
+    };
+    post
+      .mockResolvedValueOnce({
+        data: {
+          previewId: 'diagnostic-preview',
+          counts: {
+            total: 29,
+            eligible: 1,
+            alreadyApplied: 0,
+            skipped: 28,
+            skippedByReason: reasons,
+          },
+          changes: [],
+          expiresAt: '2025-01-01T00:30:00.000Z',
+        },
+      } as never)
+      .mockResolvedValueOnce({
+        data: { applied: 1, alreadyApplied: 0, skipped: 28 },
+      } as never);
+    render(<SupportStatusImport />);
+    const picker = screen.getByLabelText('Reduced JSON manifest');
+    fireEvent.change(picker, {
+      target: { files: [fileFrom(JSON.stringify(manifest))] },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview status changes' }),
+    );
+    const table = await screen.findByRole('table', {
+      name: 'Skipped during matching',
+    });
+    expect(within(table).getByText(/No local request matches/)).toBeVisible();
+    expect(within(table).getByText(/Several Zendesk tickets/)).toBeVisible();
+    expect(within(table).getByText(/Several local requests/)).toBeVisible();
+    expect(within(table).getByText(/newer activity/)).toBeVisible();
+    expect(within(table).getByText('future-reason')).toBeVisible();
+    for (const count of Object.values(reasons))
+      expect(
+        within(table).getByRole('cell', { name: String(count) }),
+      ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Apply status changes' }),
+    );
+    expect(
+      await screen.findByText(/Applied 1; already applied 0; skipped 28/),
+    ).toBeVisible();
+    expect(table).toBeVisible();
+    fireEvent.change(picker, { target: { files: [] } });
+    expect(
+      screen.queryByRole('table', { name: 'Skipped during matching' }),
+    ).not.toBeInTheDocument();
   });
 });
