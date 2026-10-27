@@ -63,18 +63,38 @@ export function parseSupportRequestTemplate(
     : source.match(
         /^(?:(?:Reporting|Reported) member: ([^\n]*)\n)?([\s\S]*)\n\n-- \n(?:From username|Username): [^\n]*\nEmail: ([^\n]+)\nAuthenticated:/,
       );
-  if (!currentMatch && !legacyMatch) return null;
+  // The January 2016 template predates the signature separator. Require its
+  // complete generated footer, including the final browser and ID lines.
+  const earliestMatch =
+    currentMatch || legacyMatch
+      ? null
+      : source.match(
+          /^([\s\S]*)\n\nUsername: [^\n]*\nEmail: ([^\n]+)\nAuthenticated: (?:yes|no)\nBrowser: [^\n]*\nID: [^\n]*\n?$/,
+        );
+  if (!currentMatch && !legacyMatch && !earliestMatch) return null;
   const category = currentMatch
     ? categoryForLabel(currentMatch[1]!)
-    : legacyMatch![1]?.trim()
+    : legacyMatch?.[1]?.trim()
       ? 'reportMember'
       : 'other';
-  const email = (currentMatch ? currentMatch[3]! : legacyMatch![3]!)
+  const email = (
+    currentMatch
+      ? currentMatch[3]!
+      : legacyMatch
+        ? legacyMatch[3]!
+        : earliestMatch![2]!
+  )
     .trim()
     .toLowerCase();
   // The mail renderer wraps plain URLs in angle brackets. Requests store the
   // original text, so remove only that known rendering wrapper before hashing.
-  const message = (currentMatch ? currentMatch[2]! : legacyMatch![2]!)
+  const message = (
+    currentMatch
+      ? currentMatch[2]!
+      : legacyMatch
+        ? legacyMatch[2]!
+        : earliestMatch![1]!
+  )
     .replace(/<(https?:\/\/[^\s<>]+)>/g, '$1')
     .trim();
   if (

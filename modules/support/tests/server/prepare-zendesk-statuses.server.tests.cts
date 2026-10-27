@@ -147,6 +147,61 @@ describe('prepare Zendesk status manifest', () => {
     );
   });
 
+  it('recognises the complete earliest template footer and rejects incomplete or quoted copies', () => {
+    const body =
+      'Fictional early request.\n\nUsername: fictional-member\nEmail: visitor@example.org\nAuthenticated: no\nBrowser: Fictional browser\nID: \n';
+    assert.deepEqual(parseSupportRequestTemplate(body), {
+      category: 'other',
+      email: 'visitor@example.org',
+      message: 'Fictional early request.',
+    });
+    assert.equal(
+      extractTicketStatusItem(ticket(body, { status: 'closed' }))?.status,
+      'closed',
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('Authenticated: no', 'Authenticated: yes'),
+      )?.category,
+      'other',
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('Authenticated: no', 'Authenticated: unknown'),
+      ),
+      null,
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('Browser: Fictional browser\nID: \n', ''),
+      ),
+      null,
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body
+          .split('\n')
+          .map(line => `> ${line}`)
+          .join('\n'),
+      ),
+      null,
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('visitor@example.org', 'invalid'),
+      ),
+      null,
+    );
+    const embedded = body.replace(
+      'Fictional early request.',
+      'Fictional early request.\n\nUsername: fictional-text-in-message',
+    );
+    assert.equal(
+      parseSupportRequestTemplate(embedded)?.message,
+      'Fictional early request.\n\nUsername: fictional-text-in-message',
+    );
+  });
+
   it('keeps URL text aligned with the stored request fingerprint', async () => {
     const message = 'Please check https://example.org/help?topic=fictional';
     const rendered = await renderedTemplate({ message });

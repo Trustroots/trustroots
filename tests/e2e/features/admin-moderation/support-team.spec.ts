@@ -434,3 +434,81 @@ test('support request deep links preserve queue filters on reload', async ({
     await context.close();
   }
 });
+
+test('administrators can see why a historical status was skipped during matching', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Administrators can preview historical support statuses and see why unmatched tickets remain unchanged.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const administrator = createUser({
+    firstName: 'Fictional',
+    lastName: 'Administrator',
+  });
+  try {
+    await registerViaApi(context.request, administrator);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: administrator.username },
+          { $set: { roles: ['user', 'admin'] } },
+        );
+    });
+    await signInViaApi(page, context.request, administrator);
+    await page.goto('/admin/support');
+    const importer = page.getByRole('region', {
+      name: 'Zendesk status import',
+    });
+    await importer.getByLabel('Reduced JSON manifest').setInputFiles({
+      name: 'fictional-statuses.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          version: 1,
+          exportedAt: '2025-01-01T00:00:00.000Z',
+          items: [
+            {
+              zendeskTicketId: 987654,
+              status: 'closed',
+              updatedAt: '2025-01-01T00:00:00.000Z',
+              fingerprint: '0'.repeat(64),
+            },
+          ],
+        }),
+      ),
+    });
+    await importer
+      .getByRole('button', { name: 'Preview status changes' })
+      .click();
+    await expect(
+      importer.getByText(/0 eligible, 0 already applied, 1 skipped/),
+    ).toBeVisible();
+    const breakdown = importer.getByRole('table', {
+      name: 'Skipped during matching',
+    });
+    await expect(
+      breakdown.getByText(
+        'No local request matches the original category, email and message',
+      ),
+    ).toBeVisible();
+    await expect(
+      breakdown.getByRole('cell', { name: '1', exact: true }),
+    ).toBeVisible();
+    await expect(
+      importer.getByRole('button', { name: 'Apply status changes' }),
+    ).toBeDisabled();
+    await withE2eDb(async db => {
+      expect(
+        await db
+          .collection('supportrequests')
+          .countDocuments({ zendeskTicketId: 987654 }),
+      ).toBe(0);
+    });
+  } finally {
+    await context.close();
+  }
+});

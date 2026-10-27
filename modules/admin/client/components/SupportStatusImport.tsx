@@ -8,6 +8,17 @@ import type {
 } from '../../../support/shared/status-import';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
+const SKIP_REASON_LABELS: Record<string, string> = {
+  'duplicate-ticket-id': 'Repeated Zendesk ticket ID in the manifest',
+  'duplicate-fingerprint':
+    'Several Zendesk tickets have the same original request',
+  'no-match':
+    'No local request matches the original category, email and message',
+  'ambiguous-match': 'Several local requests match the same original request',
+  'ticket-id-conflict':
+    'A request or Zendesk ticket is already linked elsewhere',
+  'newer-local-activity': 'The local request has newer activity',
+};
 
 async function previewManifest(manifest: SupportStatusImportManifest) {
   const { data } = await http.post<SupportStatusImportPreviewResponse>(
@@ -34,6 +45,9 @@ export default function SupportStatusImport() {
   );
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
+  const [matchingSkips, setMatchingSkips] = useState<Record<string, number>>(
+    {},
+  );
 
   if (!getCurrentUser()?.roles?.includes('admin')) return null;
 
@@ -41,6 +55,7 @@ export default function SupportStatusImport() {
     setError('');
     setResult(null);
     setPreview(null);
+    setMatchingSkips({});
     if (file.size > MAX_UPLOAD_BYTES) {
       setError('Choose a reduced JSON manifest no larger than 10 MiB.');
       return;
@@ -59,7 +74,11 @@ export default function SupportStatusImport() {
       ) {
         throw new Error('invalid manifest');
       }
-      setPreview(await previewManifest(parsed as SupportStatusImportManifest));
+      const reviewed = await previewManifest(
+        parsed as SupportStatusImportManifest,
+      );
+      setPreview(reviewed);
+      setMatchingSkips(reviewed.counts.skippedByReason);
     } catch (cause) {
       setError(
         cause instanceof Error && cause.message === 'invalid manifest'
@@ -111,6 +130,7 @@ export default function SupportStatusImport() {
           setPreview(null);
           setResult(null);
           setError('');
+          setMatchingSkips({});
         }}
       />
       <button
@@ -122,6 +142,32 @@ export default function SupportStatusImport() {
         {working && !preview ? 'Preparing preview…' : 'Preview status changes'}
       </button>
       {error && <p role="alert">{error}</p>}
+      {Object.keys(matchingSkips).length > 0 && (
+        <div className="table-responsive">
+          <table className="table table-striped">
+            <caption>Skipped during matching</caption>
+            <thead>
+              <tr>
+                <th scope="col">Reason</th>
+                <th scope="col">Tickets</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Object.entries(matchingSkips).map(([reason, count]) => (
+                <tr key={reason}>
+                  <td>{SKIP_REASON_LABELS[reason] || reason}</td>
+                  <td>{count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p>
+            These tickets were left unchanged. Local requests without an
+            imported status can still appear as Open. Previewing this file again
+            shows the current matching reasons without applying changes.
+          </p>
+        </div>
+      )}
       {preview && (
         <div className="support-status-import__preview" aria-live="polite">
           <p role="status">
