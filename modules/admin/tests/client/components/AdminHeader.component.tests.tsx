@@ -36,6 +36,7 @@ describe('<AdminHeader />', () => {
           'Support inbox',
           'Member search',
           'Flagged members',
+          'External connection search',
           'Staff blockers',
           'Location corrections',
         ],
@@ -80,6 +81,9 @@ describe('<AdminHeader />', () => {
       'href',
       '/admin/support/members',
     );
+    expect(
+      screen.getByRole('link', { name: 'External connection search' }),
+    ).toHaveAttribute('href', '/admin/network-connections');
     expect(
       screen.getByRole('link', { name: 'Staff blockers' }),
     ).toBeInTheDocument();

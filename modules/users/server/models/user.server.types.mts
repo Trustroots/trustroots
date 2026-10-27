@@ -1,4 +1,5 @@
 import type { HydratedDocument, Model, Types } from 'mongoose';
+import type { ConnectionHistoryEntry } from '../../shared/network-connections.js';
 
 export interface UserMemberRecord {
   tribe: Types.ObjectId;
@@ -52,6 +53,10 @@ export interface UserServerRecord {
   nostrNpub?: string;
   nostrChallenge?: string;
   nostrChallengeExpiresAt?: Date;
+  connectionHistory?: ConnectionHistoryEntry[];
+  connectionSearchKeys?: string[];
+  connectionHistoryInitialised?: boolean;
+  connectionHistoryRevision?: number;
   password?: string;
   salt?: string;
   authVersion?: number;

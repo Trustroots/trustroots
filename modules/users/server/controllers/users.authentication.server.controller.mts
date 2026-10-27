@@ -18,6 +18,10 @@ import {
   emailConfirmationTokenQuery,
   setEmailConfirmationToken,
 } from '../services/email-confirmation.server.service.mts';
+import {
+  CONNECTION_HISTORY_CONFLICT_MESSAGE,
+  isConnectionHistoryWriteConflict,
+} from '../services/connection-history.server.service.mts';
 type UserDocument = UserServerDocument;
 type AuthenticatedUser = UserDocument;
 
@@ -528,6 +532,11 @@ service.removeOAuthProvider = function (req, res) {
       });
     },
     function (err: Error) {
+      if (isConnectionHistoryWriteConflict(err, user)) {
+        return res
+          .status(409)
+          .send({ message: CONNECTION_HISTORY_CONFLICT_MESSAGE });
+      }
       res.status(400).send({
         message: errorService.getErrorMessage(err),
       });

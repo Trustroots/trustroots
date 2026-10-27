@@ -51,6 +51,10 @@ import {
 } from '../services/profile-response.server.service.mts';
 import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
 import { isSupportProfileRead } from '../policies/users.server.policy.mts';
+import {
+  CONNECTION_HISTORY_CONFLICT_MESSAGE,
+  isConnectionHistoryWriteConflict,
+} from '../services/connection-history.server.service.mts';
 
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
@@ -388,6 +392,15 @@ service.update = function (req, res) {
     try {
       await user.save();
     } catch (error) {
+      if (
+        error instanceof Error &&
+        isConnectionHistoryWriteConflict(error, user)
+      ) {
+        res.status(409).send({
+          message: CONNECTION_HISTORY_CONFLICT_MESSAGE,
+        });
+        return;
+      }
       if (
         usernameChange &&
         (error instanceof mongoose.Error.DocumentNotFoundError ||

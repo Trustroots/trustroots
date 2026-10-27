@@ -24,6 +24,7 @@ import * as signupReviewRules from '../controllers/admin.signup-review-rules.ser
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mts';
 import support from '../controllers/admin.support.server.controller.mts';
 import * as supportImport from '../controllers/admin.support-import.server.controller.mts';
+import networkConnections from '../controllers/admin.network-connections.server.controller.mts';
 import adminNotes from './../controllers/admin.notes.server.controller.mts';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mts';
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mts';
@@ -103,6 +104,14 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/support-import/apply')
     .all(adminPolicy.isAllowed)
     .post(supportImport.apply);
+  app
+    .route('/api/admin/network-connections')
+    .all(adminPolicy.isAllowed)
+    .get(networkConnections.search);
+  app
+    .route('/api/admin/network-connections/:memberId')
+    .all(adminPolicy.isAllowed)
+    .get(networkConnections.history);
   app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
   app
     .route('/api/admin/support/:requestId')
