@@ -17,7 +17,7 @@ type DeviceLocationButtonProps = {
 
 const errorMessages: Record<DeviceLocationError, string> = {
   denied:
-    'Location access was denied. Enable location permissions in your browser settings, or choose a location manually.',
+    'Location access denied. Enable it in your browser or choose a location.',
   unavailable:
     'Your location is unavailable. Try again, or choose a location manually.',
   timeout:
@@ -50,7 +50,7 @@ export default function DeviceLocationButton({
   const statusMessage = isPending
     ? t('Finding your location…')
     : isApproximate
-      ? t('Showing your approximate location.')
+      ? t('Showing an approximate location based on your IP address.')
       : error
         ? t(errorMessages[error])
         : '';
@@ -97,6 +97,9 @@ export default function DeviceLocationButton({
         }
       >
         {statusMessage}
+        {error && onApproximateLocation && (
+          <> {t('Approximate location unavailable.')}</>
+        )}
         {isApproximate && (
           <>
             {' '}

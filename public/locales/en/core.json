@@ -24,7 +24,8 @@
   "Language: {{code}}": "Language: {{code}}",
   "Loading…": "Loading…",
   "Login": "Login",
-  "Location access was denied. Enable location permissions in your browser settings, or choose a location manually.": "Location access was denied. Enable location permissions in your browser settings, or choose a location manually.",
+  "Approximate location unavailable.": "Approximate location unavailable.",
+  "Location access denied. Enable it in your browser or choose a location.": "Location access denied. Enable it in your browser or choose a location.",
   "Location is not supported by this browser. Choose a location manually.": "Location is not supported by this browser. Choose a location manually.",
   "Media": "Media",
   "Meet": "Meet",
@@ -70,5 +71,5 @@
   "Zoom out": "Zoom out",
   "Your location is unavailable. Try again, or choose a location manually.": "Your location is unavailable. Try again, or choose a location manually.",
   "Safety": "Safety",
-  "Showing your approximate location.": "Showing your approximate location."
+  "Showing an approximate location based on your IP address.": "Showing an approximate location based on your IP address."
 }

@@ -39,6 +39,16 @@ Hitchhiking and hackerspace circle maps SHALL share map rendering, safe text pop
 - **THEN** its subscription and map resources are released
 - **AND** both circle maps retain their source-specific disclosures
 
+### Requirement: Shared circle map view
+
+The hackers and hitchhikers circle maps SHALL restore the centre and zoom chosen on either map during the same browser session. When no view has been chosen, a map SHALL fit its initial results as before.
+
+#### Scenario: Visitor switches circle maps
+
+- **WHEN** a visitor pans or zooms one circle map and opens the other circle map in the same browser session
+- **THEN** the other map shows the chosen centre and zoom
+- **AND** incoming results do not reset that view
+
 ### Requirement: Concise Hitchwiki ride details
 
 The Hitchhikers circle SHALL include only records whose source is maps.hitchwiki.org. Popups SHALL show available waiting time, distance, signal methods, submission time and reasons for hitchhiking using concise labelled values. Missing values SHALL be omitted. The map footer SHALL combine the count, past-seven-day period and source credits.
