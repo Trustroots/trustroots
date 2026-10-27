@@ -144,11 +144,17 @@ describe('<OffersPresentational />', () => {
   it.each([undefined, [51]])(
     'omits a meeting map without valid coordinates: %s',
     location => {
+      const offer: Offer = {
+        status: 'no',
+        meetingStatus: 'yes',
+        // @ts-expect-error Exercise malformed coordinates received at runtime.
+        location,
+      };
       render(
         <OffersPresentational
           isOwnOffer={false}
           isUserPublic={true}
-          offer={{ status: 'no', meetingStatus: 'yes', location }}
+          offer={offer}
         />,
       );
       expect(screen.queryByTestId('hosting-map')).not.toBeInTheDocument();
