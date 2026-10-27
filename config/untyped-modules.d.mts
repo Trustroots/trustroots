@@ -143,12 +143,6 @@ declare module 'passport-local' {
   export default passportLocal;
 }
 
-declare module 'basic-auth' {
-  export default function basicAuth(
-    req: import('http').IncomingMessage,
-  ): { name: string; pass: string } | undefined;
-}
-
 declare module 'speakingurl' {
   export default function speakingurl(
     text: string,

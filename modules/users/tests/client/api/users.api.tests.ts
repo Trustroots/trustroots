@@ -1,6 +1,8 @@
 import axios, { type AxiosResponse } from 'axios';
 
 import {
+  cancelProfileRemoval,
+  getProfileRemovalStatus,
   changePassword,
   fetch,
   fetchMini,
@@ -123,4 +125,16 @@ describe('users api', () => {
     });
     expect(axiosMock.delete).toHaveBeenCalledWith('/api/users/accounts/github');
   });
+});
+
+it('fetches pending deletion status', async () => {
+  axiosMock.get.mockResolvedValueOnce(response({ pending: true }));
+  await expect(getProfileRemovalStatus()).resolves.toEqual({ pending: true });
+  expect(axiosMock.get).toHaveBeenCalledWith('/api/users/removal/pending');
+});
+
+it('cancels pending deletion for the authenticated member', async () => {
+  axiosMock.delete.mockResolvedValueOnce(response({ pending: false }));
+  await expect(cancelProfileRemoval()).resolves.toEqual({ pending: false });
+  expect(axiosMock.delete).toHaveBeenCalledWith('/api/users/removal/pending');
 });

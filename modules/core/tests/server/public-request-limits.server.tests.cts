@@ -89,7 +89,10 @@ describe('Signup and support request allowances', () => {
       .expect(429);
     assert.equal(await mongoose.model('User').countDocuments(), 1);
     assert.equal(jobs.length, queued);
-    const counters = await mongoose.model('RequestLimit').find({}).lean();
+    const counters = await mongoose
+      .model<{ key: string }>('RequestLimit')
+      .find({})
+      .lean();
     assert.ok(
       counters.every(counter => !counter.key.includes('recipient@example.org')),
     );

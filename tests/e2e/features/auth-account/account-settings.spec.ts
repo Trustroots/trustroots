@@ -525,6 +525,64 @@ test.describe.serial('account settings feature coverage', () => {
     expect(deletedUser).toBeNull();
   });
 
+  test('members can cancel deletion, invalidate the old link and request a new one', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'account.profile-removal', [
+      'Pending removal is visible after reloading Account settings.',
+      'Cancellation invalidates the old removal link and allows a fresh request.',
+    ]);
+    const user = createUser();
+    await registerViaApi(request, user);
+    await signInViaApi(page, request, user);
+    await page.goto('/profile/edit/account#remove');
+    const requestButton = page.getByRole('button', {
+      name: 'Remove profile',
+      exact: true,
+    });
+    await page.getByLabel('Yes, I want to remove my profile').check();
+    await requestButton.click();
+    const cancelButton = page.getByRole('button', {
+      name: 'Cancel account deletion',
+      exact: true,
+    });
+    await expect(cancelButton).toBeVisible();
+    const oldToken = await findActionToken(user.username, 'removeProfileToken');
+    await page.reload();
+    await expect(cancelButton).toBeVisible();
+    // This is also the email cancellation destination. Opening it is read-only.
+    expect(
+      (await findUserByUsername(user.username))!.removeProfileToken,
+    ).toBeTruthy();
+    await cancelButton.click();
+    await expect(
+      page.getByText('Account deletion cancelled. Your account will be kept.'),
+    ).toBeVisible();
+    await expect(cancelButton).toHaveCount(0);
+    const retained = (await findUserByUsername(user.username))!;
+    expect(retained.removeProfileToken).toBeUndefined();
+    expect(retained.removeProfileExpires).toBeUndefined();
+    await page.goto(`/remove/${oldToken}`);
+    await page
+      .getByRole('button', { name: 'Permanently delete my account' })
+      .click();
+    await expect(page.getByText('Your profile was not removed.')).toBeVisible();
+    await page.goto('/profile/edit/account#remove');
+    await expect(cancelButton).toHaveCount(0);
+    await page.getByLabel('Yes, I want to remove my profile').check();
+    await requestButton.click();
+    await expect(cancelButton).toBeVisible();
+    const newToken = await findActionToken(user.username, 'removeProfileToken');
+    expect(newToken).not.toBe(oldToken);
+    await page.goto(`/remove/${newToken}`);
+    await page
+      .getByRole('button', { name: 'Permanently delete my account' })
+      .click();
+    await expect(page.getByText('Your profile was removed.')).toBeVisible();
+    expect(await findUserByUsername(user.username)).toBeNull();
+  });
+
   test('members can remove connected OAuth provider data', async ({
     page,
     request,

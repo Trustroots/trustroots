@@ -140,7 +140,7 @@ interface LookupUserDouble {
 }
 type LegacyFindOneStub = import('sinon').SinonStub<
   [
-    import('mongoose').FilterQuery<PasswordUserRecord>,
+    import('mongoose').QueryFilter<PasswordUserRecord>,
     unknown,
     (error: Error | null, user: LookupUserDouble | null) => void,
   ],

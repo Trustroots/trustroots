@@ -93,4 +93,9 @@
   "Advanced": "Advanced",
   "Native": "Native",
   "Level for {{language}}": "Level for {{language}}"
+  "Account deletion cancelled. Your account will be kept.": "Account deletion cancelled. Your account will be kept.",
+  "Account deletion is pending. You can cancel it here to invalidate the confirmation link in your email.": "Account deletion is pending. You can cancel it here to invalidate the confirmation link in your email.",
+  "Cancel account deletion": "Cancel account deletion",
+  "Could not cancel account deletion. Please try again.": "Could not cancel account deletion. Please try again.",
+  "Could not check pending account deletion. Please reload to try again.": "Could not check pending account deletion. Please reload to try again."
 }

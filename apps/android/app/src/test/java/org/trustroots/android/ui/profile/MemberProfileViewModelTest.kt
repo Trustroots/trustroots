@@ -1,6 +1,7 @@
 package org.trustroots.android.ui.profile
 
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.CompletableDeferred
@@ -164,6 +165,21 @@ class MemberProfileViewModelTest {
             blockedMembersResult = Result.success(listOf(MessageMember("another-member", null, "Someone Else")))
         }
         assertEquals(false, newModel("quiet-fox", mismatchRepository).state.value.isBlocked)
+
+        val missingIdentityRepository = FakeMemberProfileRepository().apply {
+            profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", null, "Someone Else")))
+        }
+        assertEquals(false, newModel("quiet-fox", missingIdentityRepository).state.value.isBlocked)
+    }
+
+    @Test
+    fun factoryRejectsUnrelatedViewModelTypes() {
+        val factory = MemberProfileViewModel.Factory("quiet-fox", "member-self", FakeMemberProfileRepository())
+
+        val failure = runCatching { factory.create(UnrelatedViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
     }
 
     @Test
@@ -943,6 +959,8 @@ class MemberProfileViewModelTest {
     )
 
     private class Owner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class UnrelatedViewModel : ViewModel()
 
     private class FakeMemberProfileRepository : MemberProfileRepository {
         val removedContactIDs = mutableListOf<String>()

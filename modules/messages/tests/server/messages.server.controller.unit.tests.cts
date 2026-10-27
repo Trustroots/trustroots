@@ -3,7 +3,7 @@
  * branches that the higher-level route tests do not reach. Handlers are
  * called directly with mock req/res objects against the test database.
  */
-import type { FilterQuery, UpdateQuery } from 'mongoose';
+import type { QueryFilter, UpdateQuery } from 'mongoose';
 import type {
   MessageDocument,
   MessageModel,
@@ -32,10 +32,13 @@ interface ControllerTestConfig {
 }
 const config: ControllerTestConfig = require('./../../../../config/config.mts');
 const messageStatService = require('./../../server/services/message-stat.server.service.mjs');
+const messageThrottleAlerts =
+  require('../../server/services/message-throttle-alert.server.service.mts')
+    .default as typeof import('../../server/services/message-throttle-alert.server.service.mts').default;
 const utils = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-const User = mongoose.model('User') as UserModel;
+const User = mongoose.model('User') as unknown as UserModel;
 const Thread = mongoose.model('Thread') as ThreadModel;
 type MessagePaginationResult = {
   docs: MessageDocument[];
@@ -44,11 +47,11 @@ type MessagePaginationResult = {
 };
 type MessageTestModel = MessageModel & {
   paginate(
-    query: FilterQuery<MessageRecord>,
+    query: QueryFilter<MessageRecord>,
     options: { page: number; limit: number; sort?: Record<string, 1 | -1> },
   ): Promise<MessagePaginationResult>;
 };
-const Message = mongoose.model('Message') as MessageTestModel;
+const Message = mongoose.model('Message') as unknown as MessageTestModel;
 
 function typedStub<TArgs extends readonly unknown[]>(
   target: object,
@@ -242,12 +245,14 @@ describe('Messages controller unit tests', () => {
 
   describe('send validation', () => {
     let sender: UserDocument;
+    let notify: import('sinon').SinonStub;
 
     beforeEach(async () => {
       [sender] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
       );
       sender.roles = ['user'];
+      notify = sinon.stub(messageThrottleAlerts, 'notify').resolves();
     });
 
     it('requires a userTo field', async () => {
@@ -310,6 +315,7 @@ describe('Messages controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(404);
+      notify.called.should.equal(false);
     });
 
     it('rejects a first message from an empty profile', async () => {
@@ -350,9 +356,37 @@ describe('Messages controller unit tests', () => {
         );
         await res.waitForResponse();
         res.statusCode.should.equal(429);
+        notify.calledOnceWithExactly(sender, 0).should.equal(true);
       } finally {
         throttle.count = originalCount;
       }
+    });
+
+    it('retains HTTP 429 when throttle notification fails', async () => {
+      sinon
+        .stub(Message, 'distinct')
+        .resolves(
+          Array.from(
+            { length: config.limits.messagesToIndividualsThrottle.count + 1 },
+            () => new mongoose.Types.ObjectId(),
+          ),
+        );
+      notify.rejects(new Error('Notification unavailable'));
+      const res = deferredResponse();
+      await messagesController.send(
+        {
+          user: sender,
+          body: {
+            userTo: new mongoose.Types.ObjectId().toString(),
+            content: 'A fictional greeting.',
+          },
+        },
+        res,
+      );
+      res.statusCode.should.equal(429);
+      bodyField<string>(res.body, 'message').should.equal(
+        'You are writing too many messages.',
+      );
     });
 
     for (const role of ['welcome-team', 'admin']) {
@@ -380,6 +414,7 @@ describe('Messages controller unit tests', () => {
         await res.waitForResponse();
         res.statusCode.should.equal(404);
         distinct.called.should.equal(false);
+        notify.called.should.equal(false);
 
         sender.roles = ['user'];
         const revokedResponse = deferredResponse();
@@ -674,7 +709,7 @@ describe('Messages controller unit tests', () => {
     it('returns 400 when thread acknowledgement fails', async () => {
       typedStub<
         [
-          query: FilterQuery<ThreadRecord>,
+          query: QueryFilter<ThreadRecord>,
           update: UpdateQuery<ThreadRecord>,
           callback: LegacyCallback,
         ]
@@ -1111,7 +1146,7 @@ describe('Messages controller unit tests', () => {
 
     it('returns 404 when recipient lookup errors', async () => {
       const { sender, receiver } = await prepareSender();
-      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'findOne').returns({
+      typedStub<[query?: QueryFilter<UserRecord>]>(User, 'findOne').returns({
         exec: () => Promise.reject(new Error('recipient lookup failed')),
       });
 
@@ -1135,7 +1170,7 @@ describe('Messages controller unit tests', () => {
       const { sender, receiver } = await prepareSender();
       typedStub<
         [
-          query: FilterQuery<ThreadRecord>,
+          query: QueryFilter<ThreadRecord>,
           update: UpdateQuery<ThreadRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback,
@@ -1263,7 +1298,7 @@ describe('Messages controller unit tests', () => {
     it('returns 400 when inbox pagination fails', async () => {
       typedStub<
         [
-          query: FilterQuery<ThreadRecord>,
+          query: QueryFilter<ThreadRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback<PaginationPayload>,
         ]
@@ -1307,7 +1342,7 @@ describe('Messages controller unit tests', () => {
     it('returns 400 when markRead update fails', async () => {
       typedStub<
         [
-          query: FilterQuery<MessageRecord>,
+          query: QueryFilter<MessageRecord>,
           update: UpdateQuery<MessageRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback,
@@ -1330,7 +1365,7 @@ describe('Messages controller unit tests', () => {
 
     it('returns 400 when messagesCount lookup fails', async () => {
       typedStub<
-        [query: FilterQuery<ThreadRecord>, callback: LegacyCallback<number>]
+        [query: QueryFilter<ThreadRecord>, callback: LegacyCallback<number>]
       >(Thread, 'countDocuments').callsFake(() =>
         Promise.reject(new Error('count failed')),
       );
@@ -1342,7 +1377,7 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when sync message lookup fails', async () => {
-      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+      typedStub<[query?: QueryFilter<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
             exec: () => Promise.reject(new Error('find failed')),
@@ -1362,7 +1397,7 @@ describe('Messages controller unit tests', () => {
       );
       typedStub<
         [
-          query: FilterQuery<MessageRecord>,
+          query: QueryFilter<MessageRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback<PaginationPayload>,
         ]
@@ -1462,7 +1497,7 @@ describe('Messages controller unit tests', () => {
       const threadId = new mongoose.Types.ObjectId();
       typedStub<
         [
-          query: FilterQuery<ThreadRecord>,
+          query: QueryFilter<ThreadRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback<PaginationPayload>,
         ]
@@ -1523,7 +1558,7 @@ describe('Messages controller unit tests', () => {
       const threadId = new mongoose.Types.ObjectId();
       typedStub<
         [
-          query: FilterQuery<ThreadRecord>,
+          query: QueryFilter<ThreadRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback<PaginationPayload>,
         ]
@@ -1576,7 +1611,7 @@ describe('Messages controller unit tests', () => {
       const threadId = new mongoose.Types.ObjectId();
       typedStub<
         [
-          query: FilterQuery<ThreadRecord>,
+          query: QueryFilter<ThreadRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback<PaginationPayload>,
         ]
@@ -1733,7 +1768,7 @@ describe('Messages controller unit tests', () => {
       );
       typedStub<
         [
-          query: FilterQuery<MessageRecord>,
+          query: QueryFilter<MessageRecord>,
           options: Record<string, unknown>,
           callback: LegacyCallback<PaginationPayload>,
         ]
@@ -1763,7 +1798,7 @@ describe('Messages controller unit tests', () => {
         userTo: viewerId,
         created: new Date(),
       };
-      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+      typedStub<[query?: QueryFilter<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
             exec: () => Promise.resolve([incoming]),
@@ -1803,7 +1838,7 @@ describe('Messages controller unit tests', () => {
         userTo: receiver._id,
         created: new Date(),
       };
-      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+      typedStub<[query?: QueryFilter<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
             exec: () => Promise.resolve([outgoing]),
@@ -1837,7 +1872,7 @@ describe('Messages controller unit tests', () => {
         utils.generateUsers(2, { public: true }),
       );
       const viewerId = receiver._id;
-      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+      typedStub<[query?: QueryFilter<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
             exec: () =>
@@ -1852,7 +1887,7 @@ describe('Messages controller unit tests', () => {
           }),
         }),
       });
-      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
+      typedStub<[query?: QueryFilter<UserRecord>]>(User, 'find').returns({
         select: () => ({
           exec: () => Promise.reject(new Error('user lookup failed')),
         }),
@@ -1866,14 +1901,14 @@ describe('Messages controller unit tests', () => {
     });
 
     it('returns 400 when sync user lookup fails', async () => {
-      typedStub<[query?: FilterQuery<MessageRecord>]>(Message, 'find').returns({
+      typedStub<[query?: QueryFilter<MessageRecord>]>(Message, 'find').returns({
         sort: () => ({
           select: () => ({
             exec: () => Promise.resolve([]),
           }),
         }),
       });
-      typedStub<[query?: FilterQuery<UserRecord>]>(User, 'find').returns({
+      typedStub<[query?: QueryFilter<UserRecord>]>(User, 'find').returns({
         select: () => ({
           exec: () => Promise.reject(new Error('user lookup failed')),
         }),

@@ -82,3 +82,21 @@ export async function removeSocialAccount(
   );
   return data;
 }
+
+export interface ProfileRemovalStatus {
+  pending: boolean;
+}
+
+export async function getProfileRemovalStatus(): Promise<ProfileRemovalStatus> {
+  const { data } = await axios.get<ProfileRemovalStatus>(
+    '/api/users/removal/pending',
+  );
+  return data;
+}
+
+export async function cancelProfileRemoval(): Promise<ProfileRemovalStatus> {
+  const { data } = await axios.delete<ProfileRemovalStatus>(
+    '/api/users/removal/pending',
+  );
+  return data;
+}
