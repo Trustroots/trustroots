@@ -1,4 +1,5 @@
 /* global getComputedStyle, window */
+import fs from 'node:fs';
 import {
   annotateFeature,
   expect,
@@ -878,6 +879,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
       path: 'tmp/screenshots/circle-hackers-desktop.png',
       fullPage: true,
     });
+    fs.writeFileSync('tmp/screenshots/circle-hackers-desktop.url', page.url());
     await page.setViewportSize({ width: 390, height: 844 });
     const mobileResources = await resources.boundingBox();
     const mobileMembers = await members.boundingBox();
@@ -893,6 +895,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
       path: 'tmp/screenshots/circle-hackers-mobile.png',
       fullPage: true,
     });
+    fs.writeFileSync('tmp/screenshots/circle-hackers-mobile.url', page.url());
   } finally {
     if (!wasMember)
       await page.request.delete(`/api/users/memberships/${circle._id}`, {

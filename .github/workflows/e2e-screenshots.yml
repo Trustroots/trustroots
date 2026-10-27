@@ -244,7 +244,11 @@ jobs:
 
               for (const file of files) {
                 const title = file.replace(/\.png$/, '').replace(/_/g, ' ');
-                lines.push('', `### ${title}`, '', `![${title}](${baseUrl}/${encodeURIComponent(file)})`);
+                const urlPath = path.join(screenshotDir, file.replace(/\.png$/, '.url'));
+                const url = fs.existsSync(urlPath) ? fs.readFileSync(urlPath, 'utf8') : null;
+                lines.push('', `### ${title}`);
+                if (url) lines.push('', `URL: \`${url.replace(/`/g, '%60')}\``);
+                lines.push('', `![${title}](${baseUrl}/${encodeURIComponent(file)})`);
               }
             }
 
