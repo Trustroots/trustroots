@@ -45,6 +45,7 @@ export const profileQueryFields = [
   'locationFrom',
   'locationLiving',
   'languages',
+  'languageLevels',
   'birthdate',
   'seen',
   'created',
@@ -85,6 +86,9 @@ export function selectProfileUpdateFields(
     ...(Object.hasOwn(body, 'birthdate') ? { birthdate: body.birthdate } : {}),
     ...(Object.hasOwn(body, 'gender') ? { gender: body.gender } : {}),
     ...(Object.hasOwn(body, 'languages') ? { languages: body.languages } : {}),
+    ...(Object.hasOwn(body, 'languageLevels')
+      ? { languageLevels: body.languageLevels }
+      : {}),
     ...(Object.hasOwn(body, 'locationLiving')
       ? { locationLiving: body.locationLiving }
       : {}),
@@ -157,6 +161,7 @@ export function selectProfileResponse<Id, Timestamp>(
     locationFrom: profile.locationFrom,
     locationLiving: profile.locationLiving,
     languages: profile.languages,
+    languageLevels: profile.languageLevels,
     birthdate: profile.birthdate,
     seen: profile.seen,
     created: profile.created,

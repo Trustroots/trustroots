@@ -41,6 +41,7 @@ export interface UserServerRecord {
   birthdate?: Date;
   gender?: '' | 'female' | 'male' | 'non-binary' | 'other';
   languages?: string[];
+  languageLevels?: import('../../shared/language-levels.js').LanguageLevels;
   locationLiving?: string;
   locationFrom?: string;
   extSitesCouchers?: string;

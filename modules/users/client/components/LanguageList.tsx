@@ -5,16 +5,23 @@ import React from 'react';
 // Internal dependencies
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 
+import {
+  languageLevelLabels,
+  type LanguageLevels,
+} from '../../shared/language-levels';
+
 export default function LanguageList({
   languages = [],
   className,
   emphasisedLanguages = [],
+  languageLevels = {},
 }: {
   languages?: string[];
   className?: string;
   emphasisedLanguages?: string[];
+  languageLevels?: LanguageLevels;
 }) {
-  const { t } = useTranslation(['languages']) as {
+  const { t } = useTranslation(['languages', 'users']) as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { data: languageNames, isLoading } = useLanguagesQuery() as {
@@ -39,6 +46,14 @@ export default function LanguageList({
               <strong>{name}</strong>
             ) : (
               name
+            )}
+            {languageLevels[code] && (
+              // i18next-extract-disable-next-line
+              <>
+                {' '}
+                —{' '}
+                {t(languageLevelLabels[languageLevels[code]], { ns: 'users' })}
+              </>
             )}
           </li>
         );

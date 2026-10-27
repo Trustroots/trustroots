@@ -85,6 +85,7 @@ export default function Monkeybox({
             <LanguageList
               className="list-unstyled"
               languages={user.languages}
+              languageLevels={user.languageLevels}
             />
           </div>
         )}
