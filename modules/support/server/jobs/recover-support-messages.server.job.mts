@@ -31,6 +31,19 @@ export async function recoverSupportMessages(
       { deliveryState: 'sending', lastAttemptAt: { $lt: staleSending } },
       { $set: { deliveryState: 'uncertain', errorCode: 'worker_interrupted' } },
     );
+    await SupportMessage.updateMany(
+      {
+        direction: 'outbound',
+        kind: 'acknowledgement',
+        deliveryState: 'failed',
+        errorCode: 'queue_failed',
+        createdAt: { $lt: queuedBefore },
+      },
+      {
+        $set: { deliveryState: 'queued' },
+        $unset: { errorCode: 1 },
+      },
+    );
     const pending = await SupportMessage.find({
       deliveryState: 'queued',
       createdAt: { $lt: queuedBefore },
@@ -41,11 +54,23 @@ export async function recoverSupportMessages(
     const agendaModule = await import('../../../../config/lib/agenda.mjs');
     const agenda = agendaModule.default as import('agenda').Agenda;
     await Promise.all(
-      pending.map(message =>
-        agenda
-          .create('send support message', { messageId: String(message._id) })
-          .save(),
-      ),
+      pending.map(message => {
+        const messageId = String(message._id);
+        return (
+          agenda
+            .create('send support message', { messageId })
+            // Only pending jobs suppress recovery. Completed jobs remain in
+            // Agenda history, but must not block re-enqueue after a lost send.
+            .unique(
+              {
+                'data.messageId': messageId,
+                lastFinishedAt: { $exists: false },
+              },
+              { insertOnly: true },
+            )
+            .save()
+        );
+      }),
     );
     return done();
   } catch (error) {

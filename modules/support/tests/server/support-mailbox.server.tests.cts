@@ -112,10 +112,6 @@ function fetchedItem(overrides: Record<string, unknown> = {}) {
   };
 }
 
-async function* items(values: object[]) {
-  yield* values;
-}
-
 function enableMailbox(
   options: {
     uidValidity?: string;
@@ -160,22 +156,24 @@ function enableMailbox(
   let cursorUpdates = 0;
   let lockOptions: unknown;
   sinon.stub(ImapFlowClass.prototype, 'connect').resolves();
-  sinon.stub(ImapFlowClass.prototype, 'getMailboxLock').callsFake(function (
-    this: InstanceType<typeof ImapFlowClass>,
-    _mailbox,
-    lock,
-  ) {
-    lockOptions = lock;
-    if (options.openedMailbox !== false) {
-      Object.assign(this, {
-        mailbox: {
-          uidValidity: options.uidValidity ?? '42',
-          uidNext: options.uidNext ?? 12,
-        },
-      });
-    }
-    return Promise.resolve({ path: 'INBOX', release() {} });
-  });
+  const getMailboxLock = sinon
+    .stub(ImapFlowClass.prototype, 'getMailboxLock')
+    .callsFake(function (
+      this: InstanceType<typeof ImapFlowClass>,
+      _mailbox,
+      lock,
+    ) {
+      lockOptions = lock;
+      if (options.openedMailbox !== false) {
+        Object.assign(this, {
+          mailbox: {
+            uidValidity: options.uidValidity ?? '42',
+            uidNext: options.uidNext ?? 12,
+          },
+        });
+      }
+      return Promise.resolve({ path: 'INBOX', release() {} });
+    });
   const logout = sinon
     .stub(ImapFlowClass.prototype, 'logout')
     .callsFake(async () => {
@@ -187,15 +185,25 @@ function enableMailbox(
   const addFlags = sinon
     .stub(ImapFlowClass.prototype, 'messageFlagsAdd')
     .resolves(true);
-  sinon
-    .stub(ImapFlowClass.prototype, 'fetch')
-    .callsFake(() => items(options.fetched || []) as never);
+  let fetchActive = false;
+  sinon.stub(ImapFlowClass.prototype, 'fetch').callsFake(() => {
+    const values = options.fetched || [];
+    return (async function* () {
+      fetchActive = true;
+      try {
+        for (const value of values) yield value;
+      } finally {
+        fetchActive = false;
+      }
+    })() as never;
+  });
   const download = sinon.stub(ImapFlowClass.prototype, 'download');
   if (options.downloadError) download.rejects(options.downloadError);
   else if (options.noDownloadContent) download.resolves({} as never);
   else {
     let sourceIndex = 0;
     download.callsFake(async () => {
+      assert.equal(fetchActive, false, 'downloads must follow FETCH iteration');
       await options.downloadGate;
       return {
         content: Readable.from([
@@ -218,6 +226,8 @@ function enableMailbox(
     download,
     logout,
     lockOptions: () => lockOptions,
+    client: () =>
+      getMailboxLock.thisValues[0] as InstanceType<typeof ImapFlowClass>,
   };
 }
 
@@ -280,6 +290,20 @@ describe('support mailbox polling', () => {
     assert.equal(cutover?.uidValidity, 'unknown');
     assert.equal(cutover?.lastUid, 0);
     assert.equal(await SupportRequest.countDocuments(), 0);
+  });
+
+  it('reports an IMAP error emitted during initial cutover logout', async () => {
+    const mailboxError = new Error('synthetic cutover connection failure');
+    const mailbox = enableMailbox({ uidNext: 20 });
+    sinon.stub(ImapFlowClass.prototype, 'close').callsFake(() => undefined);
+    mailbox.logout.callsFake(async () => {
+      void mailbox.client()?.emit('error', mailboxError);
+    });
+
+    await assert.rejects(poll(), error => error === mailboxError);
+    assert.equal(mailbox.logout.callCount, 2);
+    const cursor = await Cursor.findById('support-inbox').lean();
+    assert.equal(cursor?.lastUid, 19);
   });
 
   it('uses a zero UIDNext fallback when initialising a rescan cursor', async () => {
@@ -1028,6 +1052,142 @@ describe('support mailbox polling', () => {
       (await SupportRequest.findById(request._id).lean())?.status,
       'open',
     );
+  });
+
+  it('keeps the inbound key when an incoming reply reuses an outbound ID', async () => {
+    await Cursor.create({
+      _id: 'support-inbox',
+      uidValidity: '42',
+      lastUid: 10,
+      cutoverAt: CUTOVER_AT,
+    });
+    const request = (await SupportRequest.create({
+      category: 'other',
+      email: 'visitor@example.org',
+      message: 'An original fictional request.',
+      status: 'open',
+      initialMessageId: '<collision-root@example.org>',
+      sent: new Date('2024-01-01T00:00:00.000Z'),
+      statusRevision: 0,
+    } as never)) as unknown as RequestFixture;
+    await SupportMessage.create({
+      request: request._id,
+      direction: 'outbound',
+      kind: 'reply',
+      body: 'A fictional outbound reply.',
+      messageId: '<reused-id@example.org>',
+      deliveryState: 'accepted',
+      attempts: 1,
+    });
+    const firstSource = mimeMail({
+      headers: 'In-Reply-To: <collision-root@example.org>',
+      body: 'A reply that reuses the outbound ID.',
+    }).replace('<incoming-1@example.org>', '<reused-id@example.org>');
+    enableMailbox({
+      fetched: [
+        fetchedItem({
+          uid: 11,
+          envelope: envelope({
+            messageId: '<reused-id@example.org>',
+            inReplyTo: '<collision-root@example.org>',
+          }),
+        }),
+        fetchedItem({
+          uid: 12,
+          envelope: envelope({
+            messageId: '<following@example.org>',
+            inReplyTo: '<collision-root@example.org>',
+          }),
+        }),
+      ],
+      sources: [
+        firstSource,
+        mimeMail({
+          headers: 'In-Reply-To: <collision-root@example.org>',
+          body: 'The following fictional reply.',
+        }).replace('<incoming-1@example.org>', '<following@example.org>'),
+      ],
+    });
+    await poll();
+
+    const firstInbound = await SupportMessage.findOne({
+      direction: 'inbound',
+      inboundKey: '<reused-id@example.org>',
+    }).lean();
+    assert.ok(firstInbound);
+    assert.match(firstInbound.messageId, /^<[\da-f-]{36}@trustroots\.org>$/i);
+    assert.equal(firstInbound.inboundKey, '<reused-id@example.org>');
+    assert.equal(
+      await SupportMessage.countDocuments({
+        direction: 'inbound',
+        request: request._id,
+      }),
+      2,
+    );
+    assert.equal((await Cursor.findById('support-inbox').lean())?.lastUid, 12);
+
+    await Cursor.updateOne({ _id: 'support-inbox' }, { $set: { lastUid: 10 } });
+    sinon.restore();
+    config.supportInbox = {
+      ...ORIGINAL_INBOX,
+      enabled: true,
+      imap: {
+        ...ORIGINAL_INBOX.imap,
+        enabled: true,
+        host: 'imap.example.org',
+        user: 'support@example.org',
+        password: 'fictional-secret',
+        maxMessageBytes: 1000,
+      },
+    };
+    enableMailbox({
+      fetched: [
+        fetchedItem({
+          uid: 11,
+          envelope: envelope({
+            messageId: '<reused-id@example.org>',
+            inReplyTo: '<collision-root@example.org>',
+          }),
+        }),
+      ],
+      source: firstSource,
+    });
+    await poll();
+    assert.equal(
+      await SupportMessage.countDocuments({
+        direction: 'inbound',
+        inboundKey: '<reused-id@example.org>',
+      }),
+      1,
+    );
+    assert.equal((await Cursor.findById('support-inbox').lean())?.lastUid, 11);
+  });
+
+  it('reports an IMAP error emitted during download and leaves the cursor unchanged', async () => {
+    await Cursor.create({
+      _id: 'support-inbox',
+      uidValidity: '42',
+      lastUid: 10,
+      cutoverAt: CUTOVER_AT,
+    });
+    const mailboxError = Object.assign(
+      new Error('synthetic IMAP connection failure'),
+      { code: 'FICTIONAL_IMAP_ERROR' },
+    );
+    const mailbox = enableMailbox({ fetched: [fetchedItem()] });
+    sinon.stub(ImapFlowClass.prototype, 'close').callsFake(() => undefined);
+    mailbox.download.callsFake(async () => {
+      void mailbox.client()?.emit('error', mailboxError);
+      return {
+        content: Readable.from([mimeMail()]),
+      } as never;
+    });
+
+    await assert.rejects(poll(), error => error === mailboxError);
+    assert.ok(mailbox.client());
+    assert.equal(mailbox.logout.called, true);
+    assert.equal((await Cursor.findById('support-inbox').lean())?.lastUid, 10);
+    assert.equal(await SupportRequest.countDocuments(), 0);
   });
 
   it('does not attach a reply header that matches multiple original requests', async () => {

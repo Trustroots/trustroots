@@ -12,17 +12,28 @@ const utils: typeof import('../../../../testutils/server/data.server.testutil.mt
 const SupportRequest = mongoose.model('SupportRequest');
 const SupportMessage = mongoose.model('SupportMessage');
 const originalMailerOptions = config.mailer.options;
+type StoredSupportMessage =
+  import('../../server/models/support-message.server.model.mts').SupportMessageRecord & {
+    _id: import('mongoose').Types.ObjectId;
+  };
+type StubbedAgendaJob = {
+  unique: (
+    query: Record<string, unknown>,
+    options: { insertOnly: boolean },
+  ) => StubbedAgendaJob;
+  save: () => Promise<void>;
+};
 type StubbedAgenda = {
-  create: (
-    name: string,
-    data: Record<string, unknown>,
-  ) => { save: () => Promise<void> };
+  create: (name: string, data: Record<string, unknown>) => StubbedAgendaJob;
 };
 
 function stubSupportJobs() {
   const jobs: Array<{ name: string; data: Record<string, unknown> }> = [];
   const agendaTestDouble = agenda as unknown as StubbedAgenda;
   sinon.stub(agendaTestDouble, 'create').callsFake((name, data) => ({
+    unique() {
+      return this;
+    },
     save: async () => {
       jobs.push({ name, data });
     },
@@ -318,6 +329,53 @@ describe('Support email service', () => {
     assert.equal(String(first._id), String(repeated._id));
     assert.equal(first.idempotencyKey, `ack:${request._id}`);
     assert.equal(jobs.length, 1);
+  });
+
+  it('leaves failed acknowledgement scheduling queued for recovery without duplicating it', async () => {
+    config.supportInbox.enabled = true;
+    const schedule = sinon.stub(agenda, 'create').callsFake(
+      () =>
+        ({
+          save: async () => {
+            throw new Error('Queue unavailable');
+          },
+        }) as never,
+    );
+    const request = await SupportRequest.create({
+      category: 'other',
+      email: 'anonymous@example.org',
+      message: 'A fictional request',
+      status: 'new',
+      statusRevision: 0,
+    });
+
+    await assert.rejects(
+      emailService.queueAcknowledgement(String(request._id)),
+      /Queue unavailable/,
+    );
+    const first = await SupportMessage.findOne({
+      request: request._id,
+      kind: 'acknowledgement',
+    }).lean<StoredSupportMessage>();
+    assert.ok(first);
+    assert.equal(first.deliveryState, 'queued');
+    assert.equal(first.errorCode, 'queue_failed');
+    assert.equal(first.idempotencyKey, `ack:${request._id}`);
+    assert.equal(schedule.callCount, 1);
+
+    const repeated = await emailService.queueAcknowledgement(
+      String(request._id),
+    );
+    assert.equal(String(repeated._id), String(first._id));
+    assert.equal(repeated.messageId, first.messageId);
+    assert.equal(schedule.callCount, 1);
+    assert.equal(
+      await SupportMessage.countDocuments({
+        request: request._id,
+        kind: 'acknowledgement',
+      }),
+      1,
+    );
   });
 
   it('records JSON transport output as captured without changing request status', async () => {
@@ -1059,6 +1117,124 @@ describe('Support email service', () => {
     assert.equal(saved.errorCode, 'worker_interrupted');
     assert.equal(jobs.length, 1);
     assert.equal(jobs[0].data.messageId, String(queued._id));
+  });
+
+  for (const legacyFailure of [false, true]) {
+    it(`recovers ${legacyFailure ? 'legacy failed' : 'queued'} acknowledgements and bounds Agenda duplicates`, async () => {
+      config.supportInbox.enabled = true;
+      const request = await SupportRequest.create({
+        category: 'other',
+        email: 'anonymous@example.org',
+        message: 'A fictional request',
+        status: 'new',
+        statusRevision: 0,
+      });
+      const createStub = sinon.stub(agenda, 'create').callsFake((() => ({
+        save: async () => {
+          throw new Error('fixture queue failure');
+        },
+      })) as never);
+      await assert.rejects(
+        emailService.queueAcknowledgement(String(request._id)),
+      );
+      createStub.restore();
+
+      const acknowledgement = await SupportMessage.findOne({
+        request: request._id,
+        kind: 'acknowledgement',
+      });
+      assert.ok(acknowledgement);
+      assert.equal(acknowledgement.deliveryState, 'queued');
+      assert.equal(acknowledgement.errorCode, 'queue_failed');
+      await SupportMessage.updateOne(
+        { _id: acknowledgement._id },
+        {
+          $set: {
+            createdAt: new Date(Date.now() - 2 * 60 * 1000),
+            ...(legacyFailure && { deliveryState: 'failed' }),
+          },
+        },
+      );
+
+      const messageId = String(acknowledgement._id);
+      const query = {
+        name: 'send support message',
+        'data.messageId': messageId,
+        lastFinishedAt: { $exists: false },
+      };
+      try {
+        await new Promise<void>((resolve, reject) => {
+          recoveryJob.recoverSupportMessages({ attrs: {} } as never, error =>
+            error ? reject(error) : resolve(),
+          );
+        });
+        await new Promise<void>((resolve, reject) => {
+          recoveryJob.recoverSupportMessages({ attrs: {} } as never, error =>
+            error ? reject(error) : resolve(),
+          );
+        });
+        const pendingJobs = await agenda.jobs(query);
+        assert.equal(pendingJobs.length, 1);
+        const recovered = await SupportMessage.findById(
+          acknowledgement._id,
+        ).lean<StoredSupportMessage>();
+        assert.equal(recovered?.deliveryState, 'queued');
+        assert.equal(
+          recovered?.errorCode,
+          legacyFailure ? undefined : 'queue_failed',
+        );
+      } finally {
+        await agenda.cancel({
+          name: 'send support message',
+          'data.messageId': messageId,
+        });
+      }
+    });
+  }
+
+  it('allows recovery when only a completed historical Agenda job exists', async () => {
+    config.supportInbox.enabled = true;
+    const request = await SupportRequest.create({
+      category: 'other',
+      email: 'anonymous@example.org',
+      message: 'A fictional request',
+      status: 'open',
+      statusRevision: 0,
+    });
+    const queued = await SupportMessage.create({
+      request: request._id,
+      direction: 'outbound',
+      kind: 'reply',
+      body: 'A queued reply',
+      messageId: '<fixture-historical-job@example.org>',
+      deliveryState: 'queued',
+      attempts: 0,
+      createdAt: new Date(Date.now() - 2 * 60 * 1000),
+    });
+    const messageId = String(queued._id);
+    const name = 'send support message';
+    try {
+      await agenda.create(name, { messageId }).save();
+      const [historical] = await agenda.jobs({
+        name,
+        'data.messageId': messageId,
+      });
+      assert.ok(historical);
+      historical.attrs.lastFinishedAt = new Date();
+      historical.attrs.nextRunAt = null;
+      await historical.save();
+
+      await new Promise<void>((resolve, reject) => {
+        recoveryJob.recoverSupportMessages({ attrs: {} } as never, error =>
+          error ? reject(error) : resolve(),
+        );
+      });
+      const jobs = await agenda.jobs({ name, 'data.messageId': messageId });
+      assert.equal(jobs.length, 2);
+      assert.equal(jobs.filter(job => !job.attrs.lastFinishedAt).length, 1);
+    } finally {
+      await agenda.cancel({ name, 'data.messageId': messageId });
+    }
   });
 
   it('reports queue recovery database errors through the job callback', async () => {
