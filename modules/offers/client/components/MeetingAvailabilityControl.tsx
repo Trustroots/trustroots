@@ -6,12 +6,14 @@ interface Props {
   value: MeetingStatus;
   onChange: (status: MeetingStatus) => void;
   disabled?: boolean;
+  heading?: boolean;
 }
 
 export default function MeetingAvailabilityControl({
   value,
   onChange,
   disabled,
+  heading = false,
 }: Props) {
   const id = useId();
   const { t } = useTranslation('offers');
@@ -23,7 +25,13 @@ export default function MeetingAvailabilityControl({
   ];
   return (
     <fieldset className="meeting-availability-control" disabled={disabled}>
-      <legend id={id}>{t('Would you like to meet people?')}</legend>
+      <legend id={id}>
+        {heading ? (
+          <h4>{t('Would you like to meet people?')}</h4>
+        ) : (
+          t('Would you like to meet people?')
+        )}
+      </legend>
       <div aria-labelledby={id} className="btn-group" role="radiogroup">
         {options.map(([status, label]) => (
           <label
