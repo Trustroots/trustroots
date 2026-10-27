@@ -1710,6 +1710,18 @@ describe('Profile controller unit tests', () => {
               changedAt: new Date('2025-01-01T00:00:00.000Z'),
             },
           ],
+          connectionHistory: [
+            {
+              network: 'github',
+              oldIdentifier: 'private-old-login',
+              newIdentifier: 'private-new-login',
+              changedAt: new Date('2025-01-01T00:00:00.000Z'),
+              initial: false,
+            },
+          ],
+          connectionSearchKeys: ['github:private-old-login'],
+          connectionHistoryInitialised: true,
+          connectionHistoryRevision: 4,
           email: 'member@example.test',
           locale: 'en',
           blocked: [],
@@ -1733,6 +1745,10 @@ describe('Profile controller unit tests', () => {
         'pushRegistration',
         'providerData',
         'usernameHistory',
+        'connectionHistory',
+        'connectionSearchKeys',
+        'connectionHistoryInitialised',
+        'connectionHistoryRevision',
         'futurePrivateField',
       ]) {
         (sanitized[field] === undefined).should.be.true();

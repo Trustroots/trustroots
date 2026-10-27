@@ -27,7 +27,12 @@ describe('<AdminHeader />', () => {
     for (const [name, labels] of [
       [
         'Member support',
-        ['Support inbox', 'Staff blockers', 'Location corrections'],
+        [
+          'Support inbox',
+          'External connection search',
+          'Staff blockers',
+          'Location corrections',
+        ],
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
@@ -47,6 +52,9 @@ describe('<AdminHeader />', () => {
     expect(
       screen.getByRole('link', { name: 'Support inbox' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'External connection search' }),
+    ).toHaveAttribute('href', '/admin/network-connections');
     expect(
       screen.getByRole('link', { name: 'Staff blockers' }),
     ).toBeInTheDocument();

@@ -3,6 +3,7 @@ import { plainText } from '../../../core/client/utils/filters';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
 import SupportStatusImport from './SupportStatusImport';
+import { NetworkConnectionsPanel } from './NetworkConnections.component';
 import UserState from './UserState.component';
 import { SUPPORT_CATEGORIES } from '../../../support/shared/categories';
 import {
@@ -881,6 +882,7 @@ export function SupportMemberPage({ id }: { id: string }) {
             <div style={{ whiteSpace: 'pre-wrap' }}>
               {plainText(member.description)}
             </div>
+            <NetworkConnectionsPanel key={member._id} memberId={member._id} />
             <p>
               Living: {member.locationLiving} · From: {member.locationFrom}
             </p>

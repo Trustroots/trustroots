@@ -13,6 +13,12 @@ import type {
   UserServerModel,
   UserServerRecord,
 } from './user.server.types.mts';
+import {
+  captureConnectionSnapshot,
+  clearConnectionHistoryCas,
+  trackConnectionHistoryBeforeSave,
+} from '../services/connection-history.server.service.mts';
+import type { ConnectionHistoryEntry } from '../../shared/network-connections.js';
 /**
  * Module dependencies.
  */
@@ -142,6 +148,31 @@ const UsernameHistorySchema = new Schema<
     oldUsername: { type: String, required: true },
     newUsername: { type: String, required: true },
     changedAt: { type: Date, required: true },
+  },
+  { _id: false },
+);
+
+const ConnectionHistorySchema = new Schema<ConnectionHistoryEntry>(
+  {
+    network: {
+      type: String,
+      enum: [
+        'couchers',
+        'bewelcome',
+        'couchsurfing',
+        'warmshowers',
+        'servas',
+        'nostr',
+        'facebook',
+        'twitter',
+        'github',
+      ],
+      required: true,
+    },
+    oldIdentifier: { type: String, default: null },
+    newIdentifier: { type: String, default: null },
+    changedAt: { type: Date, default: null },
+    initial: { type: Boolean, required: true },
   },
   { _id: false },
 );
@@ -298,6 +329,19 @@ const UserSchema = new Schema<
     lowercase: true,
     set: setPlainTextField,
   },
+  // Private external identity history is selected only by staff tooling.
+  connectionHistory: {
+    type: [ConnectionHistorySchema],
+    default: undefined,
+    select: false,
+  },
+  connectionSearchKeys: {
+    type: [String],
+    default: undefined,
+    select: false,
+  },
+  connectionHistoryInitialised: { type: Boolean, select: false },
+  connectionHistoryRevision: { type: Number, select: false },
   password: {
     type: String,
     default: '',
@@ -479,11 +523,21 @@ UserSchemaWithInitHook.pre('init', function (data) {
   if (data.avatarSource === 'facebook') data.avatarSource = 'none';
 });
 
+UserSchema.post('init', function (user: UserServerDocument) {
+  captureConnectionSnapshot(user);
+});
+
+UserSchema.post('save', function (user: UserServerDocument) {
+  clearConnectionHistoryCas(user);
+  captureConnectionSnapshot(user);
+});
+
 /**
  * Hook a pre save method to hash the password
  */
 UserSchema.pre('save', async function (this: UserServerDocument) {
   async function prepare(user: UserServerDocument) {
+    await trackConnectionHistoryBeforeSave(user);
     if (
       user.password &&
       user.isModified('password') &&
@@ -617,6 +671,10 @@ UserSchema.index(
     unique: true,
     partialFilterExpression: { nostrNpub: { $type: 'string', $gt: '' } },
   },
+);
+UserSchema.index(
+  { connectionSearchKeys: 1 },
+  { name: 'user_connection_search_keys' },
 );
 UserSchema.index(
   {

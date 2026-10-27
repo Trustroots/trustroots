@@ -2998,14 +2998,34 @@ const features = [
           requiresAuth: true,
           requiresRole: ['admin', 'support-team'],
         }),
+        clientRoute(
+          'admin-network-connections',
+          '/admin/network-connections',
+          source.adminClient,
+          { requiresAuth: true, requiresRole: ['admin', 'support-team'] },
+        ),
       ],
-      apiRoutes: [apiRoute('GET', '/api/admin/support', source.adminServer)],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/support', source.adminServer),
+        apiRoute('GET', '/api/admin/network-connections', source.adminServer),
+        apiRoute(
+          'GET',
+          '/api/admin/network-connections/:memberId',
+          source.adminServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
       'Support can search for a member from the top of the inbox.',
+      'Support can search external network identifiers and inspect connection history.',
     ],
-    relatedSpecs: [],
+    relatedSpecs: [
+      spec(
+        'features/admin-moderation/network-connections.spec.ts',
+        'staff can search and inspect external network connections',
+      ),
+    ],
   },
   {
     id: 'admin.acquisition-stories',

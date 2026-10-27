@@ -195,7 +195,9 @@ describe('Authentication controller OAuth unit tests', () => {
     it('returns 400 when saving after removing a provider fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
       stubLegacySave(userDoc).callsFake(() =>
@@ -214,10 +216,42 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
+    it('returns a generic conflict when provider history CAS loses a race', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+      stubLegacySave(userDoc).callsFake(() =>
+        Promise.reject(
+          new mongoose.Error.DocumentNotFoundError('private query'),
+        ),
+      );
+
+      const req = {
+        user: userDoc,
+        params: { provider: 'github' },
+        login: (user: unknown, cb: AuthCallback) => cb(),
+      };
+      const res = deferredResponse();
+
+      authController.removeOAuthProvider(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(409);
+      responseField(res, 'message').should.equal(
+        'An external connection changed in another request. Please try again.',
+      );
+    });
+
     it('returns 400 when login fails after removing a provider', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
 
@@ -259,6 +293,28 @@ describe('Authentication controller OAuth unit tests', () => {
         reloaded.additionalProvidersData &&
         reloaded.additionalProvidersData.github,
       ).should.be.false();
+      const history = await User.findById(saved._id)
+        .select('+connectionHistory')
+        .lean()
+        .exec();
+      should.exist(history);
+      const historyRecord = history as unknown as {
+        connectionHistory: Array<{
+          network: string;
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          changedAt: Date | null;
+          initial: boolean;
+        }>;
+      };
+      const removed = historyRecord.connectionHistory.slice(-1)[0];
+      should(removed).have.properties({
+        network: 'github',
+        oldIdentifier: 'gh-member',
+        newIdentifier: null,
+        initial: false,
+      });
+      should(removed?.changedAt).be.Date();
     });
 
     it('keeps no photo when removing a legacy Facebook connection', async () => {

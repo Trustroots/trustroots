@@ -46,6 +46,10 @@ import {
   selectProfileUpdateFields,
 } from '../services/profile-response.server.service.mts';
 import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
+import {
+  CONNECTION_HISTORY_CONFLICT_MESSAGE,
+  isConnectionHistoryWriteConflict,
+} from '../services/connection-history.server.service.mts';
 
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
@@ -431,6 +435,14 @@ service.update = function (req, res) {
             done(null, token, user);
           })
           .catch(error => {
+            if (
+              error instanceof Error &&
+              isConnectionHistoryWriteConflict(error, user)
+            ) {
+              return res.status(409).send({
+                message: CONNECTION_HISTORY_CONFLICT_MESSAGE,
+              });
+            }
             if (
               usernameChange &&
               (error instanceof mongoose.Error.DocumentNotFoundError ||
@@ -1204,6 +1216,10 @@ function sanitizeProfile(
   }
   // Username history is visible only through the dedicated admin endpoint.
   delete profile.usernameHistory;
+  delete profile.connectionHistory;
+  delete profile.connectionSearchKeys;
+  delete profile.connectionHistoryInitialised;
+  delete profile.connectionHistoryRevision;
 
   profile.isGreeter = profile.roles!.includes('welcome-team');
 

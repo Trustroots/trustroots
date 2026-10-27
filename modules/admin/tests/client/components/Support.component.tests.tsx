@@ -36,6 +36,9 @@ jest.mock(
       return <div>Notes for {id}</div>;
     },
 );
+jest.mock('../../../client/components/NetworkConnections.component', () => ({
+  NetworkConnectionsPanel: () => <div>External connection history</div>,
+}));
 
 const load = jest.mocked(api.load);
 const setStatus = jest.mocked(api.setStatus);

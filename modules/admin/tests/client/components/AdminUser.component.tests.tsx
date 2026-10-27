@@ -93,6 +93,12 @@ jest.mock('@/modules/admin/client/components/AdminNotes', () => {
 
   return MockAdminNotes;
 });
+jest.mock(
+  '@/modules/admin/client/components/NetworkConnections.component',
+  () => ({
+    NetworkConnectionsPanel: () => <div>External connection history</div>,
+  }),
+);
 jest.mock('@/modules/admin/client/components/Json.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 

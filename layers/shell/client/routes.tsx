@@ -16,6 +16,7 @@ import {
   toTanStackPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
 import Admin from '@/modules/admin/client/components/Admin.component';
+import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
 import SupportInbox, {
   SupportMemberPage,
 } from '@/modules/admin/client/components/Support.component';
@@ -32,6 +33,7 @@ import AdminReferenceThreads from '@/modules/admin/client/components/AdminRefere
 import AdminExperienceChanges from '@/modules/admin/client/components/AdminExperienceChanges';
 import ExperienceChangePage from '@/modules/experiences/client/components/ExperienceChangePage';
 import AdminSearchUsers from '@/modules/admin/client/components/AdminSearchUsers.component';
+import { NetworkConnectionSearchPage } from '@/modules/admin/client/components/NetworkConnections.component';
 import AdminThreads from '@/modules/admin/client/components/AdminThreads.component';
 import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
@@ -256,6 +258,12 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/newsletter': () => <AdminNewsletter />,
     '/admin/reference-threads': () => <AdminReferenceThreads />,
     '/admin/search-users': () => <AdminSearchUsers />,
+    '/admin/network-connections': () => (
+      <>
+        <AdminHeader />
+        <NetworkConnectionSearchPage />
+      </>
+    ),
     '/admin/threads': () => <AdminThreads />,
     '/admin/user': ({ user }) => <AdminUser viewer={user as AuthUser} />,
     '/admin/user/:username': ({ params, user }) => (

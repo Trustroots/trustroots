@@ -12,6 +12,7 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
+const connectionHistoryBackfill: typeof import('../../server/services/connection-history-backfill.server.service.mts') = require('../../server/services/connection-history-backfill.server.service.mts');
 const User = mongoose.model<UserRecord, UserModel>('User');
 type TestUserDocument = UserModelDocument;
 function assertPresent<T>(value: T | null | undefined): asserts value is T {
@@ -663,6 +664,347 @@ describe('User Model Unit Tests:', function () {
           done();
         })
         .catch(done);
+    });
+  });
+  describe('External connection history tracking', function () {
+    it('records new account connections as added entries', async function () {
+      const member = new User({
+        ...user3,
+        email: 'connection-history-new@example.test',
+        extSitesBW: 'new-member',
+        nostrNpub: 'npub1example',
+      });
+      await member.save();
+
+      const saved = await User.findById(member._id)
+        .select(
+          '+connectionHistory +connectionHistoryInitialised +connectionHistoryRevision +connectionSearchKeys',
+        )
+        .exec();
+      should.exist(saved);
+      const privateSaved = saved as unknown as {
+        connectionHistory: Array<{
+          network: string;
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          changedAt: Date | null;
+          initial: boolean;
+        }>;
+        connectionHistoryInitialised: boolean;
+        connectionHistoryRevision: number;
+        connectionSearchKeys: string[];
+      };
+      privateSaved.connectionHistory
+        .map(({ network, oldIdentifier, newIdentifier, initial }) => ({
+          network,
+          oldIdentifier,
+          newIdentifier,
+          initial,
+        }))
+        .should.deepEqual([
+          {
+            network: 'bewelcome',
+            oldIdentifier: null,
+            newIdentifier: 'new-member',
+            initial: false,
+          },
+          {
+            network: 'nostr',
+            oldIdentifier: null,
+            newIdentifier: 'npub1example',
+            initial: false,
+          },
+        ]);
+      privateSaved.connectionHistoryInitialised.should.be.true();
+      privateSaved.connectionHistoryRevision.should.equal(1);
+      privateSaved.connectionSearchKeys.should.containEql(
+        'bewelcome:new-member',
+      );
+    });
+
+    it('initialises a legacy account and records a change atomically', async function () {
+      const member = new User({
+        ...user3,
+        email: 'connection-history-legacy@example.test',
+      });
+      await member.save();
+      await User.collection.updateOne(
+        { _id: member._id },
+        {
+          $set: { extSitesServas: 'household/FormerFamily' },
+          $unset: {
+            connectionHistory: '',
+            connectionSearchKeys: '',
+            connectionHistoryInitialised: '',
+            connectionHistoryRevision: '',
+          },
+        },
+      );
+      const staleSnapshot = await User.findById(member._id).exec();
+      assertPresent(staleSnapshot);
+      staleSnapshot.extSitesServas = 'household/NewFamily';
+      await staleSnapshot.save();
+
+      const saved = await User.findById(member._id)
+        .select('+connectionHistory +connectionSearchKeys')
+        .exec();
+      should.exist(saved);
+      const privateSaved = saved as unknown as {
+        connectionHistory: Array<{
+          network: string;
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          changedAt: Date | null;
+          initial: boolean;
+        }>;
+        connectionSearchKeys: string[];
+      };
+      privateSaved.connectionHistory
+        .map(
+          ({ network, oldIdentifier, newIdentifier, changedAt, initial }) => ({
+            network,
+            oldIdentifier,
+            newIdentifier,
+            changedAt: changedAt?.toISOString() || null,
+            initial,
+          }),
+        )
+        .should.deepEqual([
+          {
+            network: 'servas',
+            oldIdentifier: null,
+            newIdentifier: 'household/FormerFamily',
+            changedAt: null,
+            initial: true,
+          },
+          {
+            network: 'servas',
+            oldIdentifier: 'household/FormerFamily',
+            newIdentifier: 'household/NewFamily',
+            changedAt:
+              privateSaved.connectionHistory[1]?.changedAt?.toISOString(),
+            initial: false,
+          },
+        ]);
+      privateSaved.connectionSearchKeys.should.containEql(
+        'servas:household/FormerFamily',
+      );
+      privateSaved.connectionSearchKeys.should.containEql(
+        'servas:household/NewFamily',
+      );
+    });
+
+    it('rejects a stale save without overwriting the winning connection', async function () {
+      const member = new User({
+        ...user3,
+        email: 'connection-history-race@example.test',
+        extSitesBW: 'original-member',
+      });
+      await member.save();
+      const first = await User.findById(member._id).exec();
+      const second = await User.findById(member._id).exec();
+      assertPresent(first);
+      assertPresent(second);
+      first.extSitesBW = 'first-member';
+      second.extSitesBW = 'second-member';
+      await first.save();
+
+      await second
+        .save()
+        .should.be.rejectedWith(
+          'An external connection changed in another request',
+        );
+      const saved = await User.findById(member._id).exec();
+      assertPresent(saved);
+      present(saved.extSitesBW).should.equal('first-member');
+    });
+
+    it('allows a second unrelated save on the same document after a connection CAS', async function () {
+      const member = new User({
+        ...user3,
+        email: 'connection-history-reuse@example.test',
+      });
+      await member.save();
+      member.extSitesBW = 'member-name';
+      await member.save();
+      member.tagline = 'A later unrelated edit';
+
+      await member.save();
+
+      const saved = await User.findById(member._id).exec();
+      assertPresent(saved);
+      present(saved.extSitesBW).should.equal('member-name');
+      present(saved.tagline).should.equal('A later unrelated edit');
+    });
+
+    it('backfills a legacy snapshot once and preserves it after a later edit', async function () {
+      const member = new User({
+        ...user3,
+        email: 'connection-history-backfill@example.test',
+      });
+      await member.save();
+      await User.collection.updateOne(
+        { _id: member._id },
+        {
+          $set: { extSitesServas: 'household/FormerFamily' },
+          $unset: {
+            connectionHistory: '',
+            connectionSearchKeys: '',
+            connectionHistoryInitialised: '',
+            connectionHistoryRevision: '',
+          },
+        },
+      );
+      const model = User as unknown as import('mongoose').Model<
+        import('../../server/models/user.server.types.mts').UserServerRecord
+      >;
+
+      (
+        await connectionHistoryBackfill.backfillConnectionHistory(model)
+      ).should.equal(1);
+      (
+        await connectionHistoryBackfill.backfillConnectionHistory(model)
+      ).should.equal(0);
+
+      const legacy = await User.findById(member._id)
+        .select('+connectionHistory')
+        .exec();
+      assertPresent(legacy);
+      const legacyHistory = legacy as unknown as {
+        connectionHistory: Array<{
+          network: string;
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          changedAt: Date | null;
+          initial: boolean;
+        }>;
+      };
+      legacyHistory.connectionHistory.should.have.length(1);
+      legacyHistory.connectionHistory[0]?.should.have.properties({
+        network: 'servas',
+        oldIdentifier: null,
+        newIdentifier: 'household/FormerFamily',
+        changedAt: null,
+        initial: true,
+      });
+
+      const edited = await User.findById(member._id).exec();
+      assertPresent(edited);
+      edited.extSitesServas = 'household/NewFamily';
+      await edited.save();
+      const afterEdit = await User.findById(member._id)
+        .select('+connectionHistory')
+        .exec();
+      assertPresent(afterEdit);
+      const afterEditHistory = afterEdit as unknown as {
+        connectionHistory: Array<{
+          network: string;
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          initial: boolean;
+        }>;
+      };
+      afterEditHistory.connectionHistory
+        .map(({ network, oldIdentifier, newIdentifier, initial }) => ({
+          network,
+          oldIdentifier,
+          newIdentifier,
+          initial,
+        }))
+        .should.deepEqual([
+          {
+            network: 'servas',
+            oldIdentifier: null,
+            newIdentifier: 'household/FormerFamily',
+            initial: true,
+          },
+          {
+            network: 'servas',
+            oldIdentifier: 'household/FormerFamily',
+            newIdentifier: 'household/NewFamily',
+            initial: false,
+          },
+        ]);
+
+      const removed = await User.findOneAndDelete({ _id: member._id }).exec();
+      assertPresent(removed);
+      (
+        await User.countDocuments({
+          connectionSearchKeys: 'servas:household/FormerFamily',
+        }).exec()
+      ).should.equal(0);
+    });
+
+    it('keeps a concurrent save when the backfill CAS misses', async function () {
+      const member = new User({
+        ...user3,
+        email: 'connection-history-backfill-race@example.test',
+      });
+      await member.save();
+      await User.collection.updateOne(
+        { _id: member._id },
+        {
+          $set: { extSitesBW: 'old-member' },
+          $unset: {
+            connectionHistory: '',
+            connectionSearchKeys: '',
+            connectionHistoryInitialised: '',
+            connectionHistoryRevision: '',
+          },
+        },
+      );
+      const concurrent = await User.findById(member._id).exec();
+      assertPresent(concurrent);
+      const model = User as unknown as import('mongoose').Model<
+        import('../../server/models/user.server.types.mts').UserServerRecord
+      >;
+      const updateOne = User.updateOne.bind(User);
+      const interceptedUpdate = sinon.stub(User, 'updateOne');
+      interceptedUpdate.callsFake(
+        (...args) =>
+          ({
+            exec: async () => {
+              concurrent.extSitesBW = 'new-member';
+              await concurrent.save();
+              return updateOne(...args).exec();
+            },
+          }) as never,
+      );
+
+      try {
+        (
+          await connectionHistoryBackfill.backfillConnectionHistory(model)
+        ).should.equal(0);
+      } finally {
+        interceptedUpdate.restore();
+      }
+
+      const saved = await User.findById(member._id)
+        .select('+connectionHistory')
+        .exec();
+      assertPresent(saved);
+      present(saved.extSitesBW).should.equal('new-member');
+      const history = saved as unknown as {
+        connectionHistory: Array<{
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          initial: boolean;
+        }>;
+      };
+      history.connectionHistory
+        .map(({ oldIdentifier, newIdentifier, initial }) => ({
+          oldIdentifier,
+          newIdentifier,
+          initial,
+        }))
+        .should.deepEqual([
+          { oldIdentifier: null, newIdentifier: 'old-member', initial: true },
+          {
+            oldIdentifier: 'old-member',
+            newIdentifier: 'new-member',
+            initial: false,
+          },
+        ]);
     });
   });
   describe('Password hash migration', function () {

@@ -19,6 +19,7 @@ import {
 } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
+import { NetworkConnectionsPanel } from './NetworkConnections.component';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
 import AdminUserResultsTable from './AdminUserResultsTable.component';
 import Json from './Json.component';
@@ -1152,6 +1153,9 @@ export default class AdminUser extends Component<
                     </div>
                   </div>
                 )}
+                <div className="admin-member-box">
+                  <NetworkConnectionsPanel key={userId} memberId={userId} />
+                </div>
                 <div className="admin-member-box">
                   <AdminNotes
                     id={userId}

@@ -26,6 +26,7 @@ export default function AdminHeader() {
       label: 'Member support',
       pages: [
         { path: 'support', label: 'Support inbox' },
+        { path: 'network-connections', label: 'External connection search' },
         { path: 'staff-blockers', label: 'Staff blockers' },
         { path: 'location-corrections', label: 'Location corrections' },
       ],
@@ -68,7 +69,9 @@ export default function AdminHeader() {
       pages: group.pages.filter(
         page =>
           isAdmin ||
-          (['support', 'experience-changes'].includes(page.path) &&
+          (['support', 'experience-changes', 'network-connections'].includes(
+            page.path,
+          ) &&
             isSupport) ||
           (page.path === 'staff-blockers' && (isWelcomeTeam || isSupport)) ||
           page.path === 'acquisition-stories' ||
