@@ -258,6 +258,42 @@ function renderPage(
 }
 
 describe('ProfilePage', () => {
+  it('refreshes the viewer’s Experience when returning from the form without a reload', async () => {
+    fetchProfile.mockRejectedValue({ response: { status: 404 } });
+    const recipient = {
+      _id: profile._id,
+      username: profile.username,
+      displayName: profile.displayName!,
+    };
+    jest
+      .mocked(experiencesApi.readReplyRecipient)
+      .mockResolvedValueOnce(recipient);
+    renderPage(authUser, '/profile/bob/experiences/new', {
+      referencesEnabled: true,
+    });
+    expect(await screen.findByText('New experience form')).toBeVisible();
+
+    jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({
+      ...recipient,
+      ownExperience: {
+        _id: 'experience-1',
+        created: '2024-01-01T00:00:00.000Z',
+        public: false,
+        userFrom: authUser._id,
+        userTo: profile._id,
+        response: null,
+        feedbackPublic: 'My newly saved experience',
+      },
+    });
+    window.history.pushState({}, '', '/profile/bob/experiences');
+    fireEvent.popState(window);
+
+    expect(await screen.findByText('My newly saved experience')).toBeVisible();
+    expect(
+      screen.queryByRole('link', { name: 'Share your experience' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('offers sharing and reporting on a blocked profile without an Experience', async () => {
     fetchProfile.mockRejectedValueOnce({ response: { status: 404 } });
     jest.mocked(experiencesApi.readReplyRecipient).mockResolvedValueOnce({

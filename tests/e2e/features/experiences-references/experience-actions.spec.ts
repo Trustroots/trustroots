@@ -84,7 +84,7 @@ test.describe.serial('experience and reference feature coverage', () => {
       await expect(
         page.getByText('Your experience has been saved.'),
       ).toBeVisible();
-      await page.goto(`/profile/${blocker.username}`);
+      await page.getByRole('link', { name: 'See their experiences' }).click();
       await expect(
         page.getByText('My own experience with this member.'),
       ).toBeVisible();
