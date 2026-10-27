@@ -8,7 +8,7 @@ import type {
   SchemaDefinition,
   Model,
   Document,
-  FilterQuery,
+  QueryFilter,
   ProjectionType,
   QueryOptions,
 } from 'mongoose';
@@ -198,7 +198,7 @@ export default function (
       const model = this.constructor as Model<SlugDocument>;
       const slugLimited =
         options.maxLength && slug.length === options.maxLength;
-      const q: FilterQuery<SlugDocument> = {};
+      const q: QueryFilter<SlugDocument> = {};
       const fields: Record<string, number> = {};
 
       q._id = { $ne: this._id };
@@ -240,7 +240,7 @@ export default function (
       fields?: ProjectionType<SlugDocument>,
       additionalOptions?: QueryOptions<SlugDocument>,
     ) {
-      const q: FilterQuery<SlugDocument> = {};
+      const q: QueryFilter<SlugDocument> = {};
       q[options.field] = slug;
       return this.findOne(q, fields, additionalOptions);
     };

@@ -420,7 +420,7 @@ describe('Reference thread controller unit tests', () => {
 
       res.statusCode.should.equal(403);
       responseBody(res).message!.should.equal(
-        'Referenced person has not sent messages to to you.',
+        'Referenced person has not sent messages to you.',
       );
     });
 

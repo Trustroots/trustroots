@@ -20,7 +20,7 @@ export default function SupportPage({ user }: SupportPageProps) {
             <div className="col-xs-12 text-center">
               <br />
               <br />
-              <h2>{t<string>('Trustroots Support')}</h2>
+              <h2>{t('Trustroots Support')}</h2>
             </div>
           </div>
         </div>
@@ -32,20 +32,18 @@ export default function SupportPage({ user }: SupportPageProps) {
             <SupportForm user={user} />
           </div>
           <div className="col-xs-12 col-md-4 col-lg-5">
-            <h3>{t<string>('See also')}</h3>
+            <h3>{t('See also')}</h3>
             <ul className="list-unstyled lead">
               <li>
-                <a href="/faq">{t<string>('Frequently Asked Questions')}</a>
+                <a href="/faq">{t('Frequently Asked Questions')}</a>
               </li>
               <li>
-                <a href="/support?category=reportBug">
-                  {t<string>('Report a bug')}
-                </a>
+                <a href="/support?category=reportBug">{t('Report a bug')}</a>
               </li>
               {user && (
                 <li>
                   <a href="/profile/edit/account#remove">
-                    {t<string>('Removing your account')}
+                    {t('Removing your account')}
                   </a>
                 </li>
               )}

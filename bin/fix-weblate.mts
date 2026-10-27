@@ -28,15 +28,15 @@ function convert(obj: object): Record<string, unknown> {
            {
              "foo": {
                "foo._0": "No foos",
-               "foo._1": "1 foo",
-               "foo._plural": "{{count}} foos"
+               "foo._one": "1 foo",
+               "foo._other": "{{count}} foos"
              }
            }
          and we need to turn it into
             {
              "foo._0": "No foos",
-             "foo._1": "1 foo",
-             "foo._plural": "{{count}} foos"
+             "foo._one": "1 foo",
+             "foo._other": "{{count}} foos"
            }
       */
       for (const key2 of Object.keys(value)) {

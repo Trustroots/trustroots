@@ -45,8 +45,8 @@
     "Your profile seems quite empty": {
         "": "Profilen din ser ganske tom ut."
     },
-    "{{count}} unread messages": "{{count}} ulest melding",
-    "{{count}} unread messages_plural": "{{count}} uleste meldinger",
+    "{{count}} unread messages_one": "{{count}} ulest melding",
+    "{{count}} unread messages_other": "{{count}} uleste meldinger",
     "License": "Lisens",
     "Your response won't be visible to them.": "Ditt svar vil ikke være synlig for dem.",
     "Yes": "Ja",

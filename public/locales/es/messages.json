@@ -45,9 +45,9 @@
     "Your profile seems quite empty": {
         "": "Tu perfil parece estar bastante vacío."
     },
-    "{{count}} unread messages_0": "{{count}} mensaje no leídos",
-    "{{count}} unread messages_1": "{{count}} mensajes no leídos",
-    "{{count}} unread messages_2": "{{count}} mensajes no leídos",
+    "{{count}} unread messages_one": "{{count}} mensaje no leídos",
+    "{{count}} unread messages_other": "{{count}} mensajes no leídos",
+    "{{count}} unread messages_many": "{{count}} mensajes no leídos",
     "License": "Licencia",
     "...explaining that you are interested in meeting them, not just looking for free accommodation.": "...explicando que tienes interés en conocerlos, no que solo estás buscando alojamiento gratis.",
     "No": "No",

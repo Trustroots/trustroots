@@ -60,6 +60,7 @@ WORKDIR /home/app/trustroots
 ENV pnpm_config_store_dir=/pnpm/store
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/logger/package.json ./packages/logger/package.json
 RUN --mount=type=cache,target=/pnpm/store \
   pnpm install --frozen-lockfile
 

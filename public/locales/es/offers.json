@@ -1,9 +1,5 @@
 {
     "Accommodation": "Alojamiento",
-    "At most {{count}} guests": {
-        "At most {{count}} guests.": "Máximo {{count}} invitado.",
-        "At most {{count}} guests._plural": "Máximo {{count}} invitados."
-    },
     "Bigger map": "Mapa más grande",
     "Can host": "Puedo alojar",
     "Cannot host currently": "No puedo alojar ahora",
@@ -26,8 +22,8 @@
         "": "Disculpa, el usuario no acepta invitados por el momento."
     },
     "Start hosting travellers": "Empieza a alojar viajeros",
-    "At most {{count}} guests.": "Como máximo un invitado.",
-    "At most {{count}} guests._plural": "Como máximo {{count}} invitados.",
+    "At most {{count}} guests._one": "Como máximo un invitado.",
+    "At most {{count}} guests._other": "Como máximo {{count}} invitados.",
     "Send a message": "Envía un mensaje",
     "Add it to map!": "¡Agrégalo al mapa!",
     "Just making a dinner and would like to invite people over?": "¿Estás preparando una cena y quieres invitar a gente?",

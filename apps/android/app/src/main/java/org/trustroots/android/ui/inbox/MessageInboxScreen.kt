@@ -65,6 +65,7 @@ internal fun MessageInboxScreen(
     onSessionInvalidated: () -> Unit,
     initialMemberID: String? = null,
     initialVisitID: Long = 0L,
+    inboxCache: InboxCache? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     var conversationReturnGeneration by remember(initialVisitID) { mutableIntStateOf(0) }
@@ -105,12 +106,13 @@ internal fun MessageInboxScreen(
         entryDecorators = decorators,
         entryProvider = entryProvider {
             entry<MessageInboxVisit> {
-                val model = rememberInboxViewModel(api, session)
+                val model = rememberInboxViewModel(api, session, inboxCache)
                 val state by model.state.collectAsState()
                 LaunchedEffect(model, session) {
                     model.onEvent(InboxEvent.SessionChanged(session))
                 }
                 LaunchedEffect(model, api) { model.updateApi(api) }
+                LaunchedEffect(model) { model.onDisplayed() }
                 LaunchedEffect(model, conversationReturnGeneration) {
                     if (conversationReturnGeneration > 0) {
                         model.onEvent(InboxEvent.ReturnFromConversation)
@@ -162,12 +164,13 @@ internal fun MessageInboxScreen(
 private fun rememberInboxViewModel(
     api: MobileApiClient,
     session: MemberSession,
+    inboxCache: InboxCache?,
 ): InboxViewModel {
     val owner = checkNotNull(LocalViewModelStoreOwner.current) {
         "Inbox must be hosted by a Navigation 3 ViewModelStoreOwner."
     }
     return remember(owner, session.member.username) {
-        owner.inboxViewModel(api, session)
+        owner.inboxViewModel(api, session, inboxCache ?: InboxCache())
     }
 }
 
@@ -217,7 +220,7 @@ private fun InboxContent(
                         clearLabel = stringResource(R.string.clear_conversation_filter),
                         modifier = Modifier.testTag("messageInboxFilter"),
                     )
-                    if (state.isLoading) CircularProgressIndicator()
+                    if (state.isLoading && !state.hasLoaded) CircularProgressIndicator(Modifier.testTag("inboxLoading"))
                     state.failure?.let { failure ->
                         Text(resolveFailureMessage(failure), color = MaterialTheme.colorScheme.error)
                         OutlinedButton(onClick = onRetry, modifier = Modifier.testTag("inboxRetry")) {

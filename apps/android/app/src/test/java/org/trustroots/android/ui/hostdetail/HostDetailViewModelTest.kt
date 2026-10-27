@@ -1,5 +1,8 @@
 package org.trustroots.android.ui.hostdetail
 
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -7,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -305,6 +309,37 @@ class HostDetailViewModelTest {
         assertEquals("current-owl", model.state.value.profile?.username)
         assertEquals(setOf("current-circle"), model.state.value.sharedCircleIDs)
         assertEquals(2, repository.membershipCalls)
+    }
+
+    @Test fun clearingTheEntryCancelsAnInFlightDetailRequest() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = FakeRepository()
+        var cancelled = false
+        repository.offerHandler = { _, _ ->
+            try {
+                awaitCancellation()
+            } finally {
+                cancelled = true
+            }
+        }
+        val store = ViewModelStore()
+        try {
+            val model = ViewModelProvider(
+                object : ViewModelStoreOwner { override val viewModelStore = store },
+                HostDetailViewModel.Factory(repository, scope),
+            ).get(HostDetailViewModel::class.java)
+            model.onEvent(HostDetailEvent.Load("pending-offer", SearchOfferType.Host))
+            assertTrue(model.state.value.isLoading)
+
+            store.clear()
+
+            assertTrue(cancelled)
+            assertTrue(repository.profileUsernames.isEmpty())
+            assertEquals(0, repository.membershipCalls)
+        } finally {
+            store.clear()
+            scope.cancel()
+        }
     }
 
     private fun withModel(test: (HostDetailViewModel, FakeRepository) -> Unit) {

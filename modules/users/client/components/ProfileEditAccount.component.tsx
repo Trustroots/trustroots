@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
 import {
+  cancelProfileRemoval,
+  getProfileRemovalStatus,
   changePassword,
   removeProfile,
   resendEmailConfirmation,
@@ -31,6 +33,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const [usernameMessage, setUsernameMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [removalMessage, setRemovalMessage] = useState('');
+  const [removalPending, setRemovalPending] = useState(false);
+  const [isCheckingRemoval, setIsCheckingRemoval] = useState(true);
+  const [isCancellingRemoval, setIsCancellingRemoval] = useState(false);
   const [removeProfileConfirm, setRemoveProfileConfirm] = useState(false);
   const [isRemovingProfile, setIsRemovingProfile] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -48,6 +53,52 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     });
     return () => window.cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    getProfileRemovalStatus().then(
+      status => {
+        if (active) {
+          setRemovalPending(status.pending);
+          setIsCheckingRemoval(false);
+        }
+      },
+      () => {
+        if (active) {
+          setIsCheckingRemoval(false);
+          setRemovalMessage(
+            t(
+              'Could not check pending account deletion. Please reload to try again.',
+            ),
+          );
+        }
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [t]);
+
+  async function handleCancelRemoval() {
+    setIsCancellingRemoval(true);
+    setRemovalMessage('');
+    try {
+      await cancelProfileRemoval();
+      setRemovalPending(false);
+      setRemoveProfileConfirm(false);
+      setIsRemovingProfile(false);
+      setRemovalMessage(
+        t('Account deletion cancelled. Your account will be kept.'),
+      );
+    } catch (error: unknown) {
+      const { message } = readApiError(error);
+      setRemovalMessage(
+        message || t('Could not cancel account deletion. Please try again.'),
+      );
+    } finally {
+      setIsCancellingRemoval(false);
+    }
+  }
 
   async function handleEmailSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -126,7 +177,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     } catch (error: unknown) {
       const { message } = readApiError(error);
       setPasswordMessage(
-        message || t('Password not changed due error, try again.'),
+        message || t('Password not changed due to an error, try again.'),
       );
     }
   }
@@ -150,6 +201,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
 
     try {
       const response = await removeProfile();
+      setRemovalPending(true);
       setRemovalMessage(response.message || t('Success.'));
     } catch (error: unknown) {
       const { message } = readApiError(error);
@@ -391,6 +443,23 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               {t('Read the account removal FAQ')}
             </a>
           </p>
+          {removalPending && (
+            <div className="alert alert-info" role="status">
+              <p>
+                {t(
+                  'Account deletion is pending. You can cancel it here to invalidate the confirmation link in your email.',
+                )}
+              </p>
+              <button
+                type="button"
+                className="btn btn-default"
+                disabled={isCancellingRemoval}
+                onClick={handleCancelRemoval}
+              >
+                {t('Cancel account deletion')}
+              </button>
+            </div>
+          )}
           <div className="checkbox profile-remove-confirmation">
             <label>
               <input
@@ -406,7 +475,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
           <button
             type="button"
             className="btn btn-danger"
-            disabled={!removeProfileConfirm || isRemovingProfile}
+            disabled={
+              isCheckingRemoval ||
+              !removeProfileConfirm ||
+              isRemovingProfile ||
+              removalPending ||
+              isCancellingRemoval
+            }
             onClick={removeProfileConfirm ? handleRemoveProfile : undefined}
           >
             {t('Remove profile')}

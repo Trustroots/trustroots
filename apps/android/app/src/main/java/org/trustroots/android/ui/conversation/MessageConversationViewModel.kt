@@ -74,6 +74,7 @@ internal data class MessageConversationUiState(
     val messagesLoaded: Boolean = false,
     val loadFailed: Boolean = false,
     val isSending: Boolean = false,
+    val lastSentMessageID: String? = null,
     val failure: UiFailure? = null,
     val pendingSessionInvalidation: ConversationSessionInvalidation? = null,
     val currentUsername: String = "",
@@ -156,6 +157,7 @@ internal class MessageConversationViewModel(
     private fun load(force: Boolean = false) {
         if (invalidationEmitted || (!force && mutableState.value.messagesLoaded)) return
         val request = ++generation
+        val messageIDsAtLoadStart = mutableState.value.messages.mapTo(mutableSetOf()) { it.id }
         loadJob?.cancel()
         mutableState.update { it.copy(isLoading = true, messagesLoaded = false, loadFailed = false, failure = null, pendingSessionInvalidation = null) }
         loadJob = requestScope.launch {
@@ -175,8 +177,16 @@ internal class MessageConversationViewModel(
             if (error != null) {
                 fail(request, error, UiFailureFallback.LOAD_CONVERSATION)
             } else {
+                val loadedMessages = messageResult.getOrThrow()
                 mutableState.update {
-                    it.copy(messages = messageResult.getOrThrow(), isLoading = false, messagesLoaded = true, loadFailed = false)
+                    val messagesAddedWhileLoading = it.messages.filterNot { message -> message.id in messageIDsAtLoadStart }
+                    val addedIDs = messagesAddedWhileLoading.mapTo(mutableSetOf()) { message -> message.id }
+                    it.copy(
+                        messages = messagesAddedWhileLoading + loadedMessages.filterNot { message -> message.id in addedIDs },
+                        isLoading = false,
+                        messagesLoaded = true,
+                        loadFailed = false,
+                    )
                 }
             }
         }
@@ -200,7 +210,9 @@ internal class MessageConversationViewModel(
             } else {
                 repository.clearDraft(session.member.username, member.username ?: member.id)
                 mutableState.update {
-                    it.copy(messages = listOf(result.getOrThrow()) + it.messages, draft = "", isSending = false, failure = null)
+                    val message = result.getOrThrow()
+                    it.copy(messages = listOf(message) + it.messages, draft = "", isSending = false,
+                        lastSentMessageID = message.id, failure = null)
                 }
             }
         }

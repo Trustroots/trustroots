@@ -20,6 +20,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.trustroots.android.api.CircleMemberGroups
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
@@ -431,6 +432,9 @@ class CirclesViewModelTest {
 
         override suspend fun circleBySlug(slug: String): Result<TrustrootsCircle> =
             Result.success(circles.first { it.slug == slug })
+
+        override suspend fun circleMembers(slug: String): Result<CircleMemberGroups> =
+            Result.success(CircleMemberGroups(emptyList(), emptyList(), emptyList()))
 
         override suspend fun memberships(): Result<Set<String>> = membershipsHandler(++membershipReads)
 

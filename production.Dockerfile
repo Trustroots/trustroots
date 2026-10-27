@@ -28,6 +28,7 @@ WORKDIR /trustroots
 #   the container
 # - Allows docker to reuse previous build layers if these files do not change
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY packages/logger/package.json ./packages/logger/package.json
 # This takes FOREVER if it's run in the passenger container, that's why we
 # created the multi stage build with a build container first.
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store \
@@ -40,6 +41,7 @@ COPY config config
 COPY migrations migrations
 COPY layers layers
 COPY modules modules
+COPY packages packages
 COPY public public
 COPY testutils testutils
 

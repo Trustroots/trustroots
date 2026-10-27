@@ -21,10 +21,12 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.ApiFailureKind
+import org.trustroots.android.api.CircleMemberGroups
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.circles.CircleRepository
 import org.trustroots.android.ui.circles.CirclesFailureKind
@@ -33,6 +35,111 @@ import org.trustroots.android.ui.circles.CirclesSessionInvalidation
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class CircleDetailViewModelTest {
+    @Test
+    fun joinedCircleLoadsMemberGroupsWhileUnjoinedCircleDoesNotRequestThem() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        val groups = CircleMemberGroups(
+            contacts = listOf(MessageMember("contact-id", "calm-lynx", "Calm Lynx")),
+            recommenders = emptyList(),
+            active = listOf(MessageMember("host-id", "steady-heron", "Steady Heron")),
+        )
+        repository.memberGroupsHandler = { _, _ -> Result.success(groups) }
+
+        val joined = CircleDetailViewModel("quiet-circle", repository, scope)
+
+        assertEquals(listOf("quiet-circle"), repository.memberGroupSlugs)
+        assertEquals(groups, joined.state.value.memberGroups)
+        assertFalse(joined.state.value.isLoadingMembers)
+
+        repository.memberGroupSlugs.clear()
+        repository.membershipSet = emptySet()
+        val unjoined = CircleDetailViewModel("quiet-circle", repository, scope)
+        assertTrue(repository.memberGroupSlugs.isEmpty())
+        assertNull(unjoined.state.value.memberGroups)
+    }
+
+    @Test
+    fun circleMemberLoadFailureIsDistinctAndRetryable() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        repository.memberGroupsHandler = { call, _ ->
+            if (call == 1) Result.failure(IOException("Temporary member lookup failure"))
+            else Result.success(CircleMemberGroups(emptyList(), emptyList(), emptyList()))
+        }
+
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+
+        assertTrue(viewModel.state.value.isMember)
+        assertNull(viewModel.state.value.memberGroups)
+        assertEquals(CirclesFailureKind.CIRCLE_MEMBERS_LOAD, viewModel.state.value.failure?.kind)
+        assertTrue(viewModel.state.value.canRetryLoad)
+
+        viewModel.onEvent(CircleDetailEvent.RetryLoad)
+
+        assertEquals(2, repository.memberGroupSlugs.size)
+        assertEquals(CircleMemberGroups(emptyList(), emptyList(), emptyList()), viewModel.state.value.memberGroups)
+        assertNull(viewModel.state.value.failure)
+    }
+
+    @Test
+    fun lateCircleMemberResultAfterLeavingIsIgnored() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        val oldGroups = CompletableDeferred<Result<CircleMemberGroups>>()
+        repository.memberGroupsHandler = { _, _ -> withContext(NonCancellable) { oldGroups.await() } }
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+        assertTrue(viewModel.state.value.isLoadingMembers)
+
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        assertFalse(viewModel.state.value.isMember)
+        assertNull(viewModel.state.value.memberGroups)
+
+        oldGroups.complete(
+            Result.success(
+                CircleMemberGroups(
+                    contacts = listOf(MessageMember("old-contact", "calm-lynx", "Calm Lynx")),
+                    recommenders = emptyList(),
+                    active = emptyList(),
+                ),
+            ),
+        )
+
+        assertFalse(viewModel.state.value.isMember)
+        assertNull(viewModel.state.value.memberGroups)
+        assertFalse(viewModel.state.value.isLoadingMembers)
+    }
+
+    @Test
+    fun lateCircleMemberResultFromPreviousSessionCannotReplaceCurrentGroups() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        val oldGroups = CompletableDeferred<Result<CircleMemberGroups>>()
+        val currentGroups = CircleMemberGroups(
+            contacts = listOf(MessageMember("current-contact", "steady-heron", "Steady Heron")),
+            recommenders = emptyList(),
+            active = emptyList(),
+        )
+        repository.memberGroupsHandler = { call, _ ->
+            if (call == 1) withContext(NonCancellable) { oldGroups.await() }
+            else Result.success(currentGroups)
+        }
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+        assertTrue(viewModel.state.value.isLoadingMembers)
+
+        viewModel.updateEnvironment(api("https://other.example.test"), session("new-cookie"))
+        assertEquals(currentGroups, viewModel.state.value.memberGroups)
+
+        oldGroups.complete(
+            Result.success(
+                CircleMemberGroups(
+                    contacts = listOf(MessageMember("old-contact", "calm-lynx", "Calm Lynx")),
+                    recommenders = emptyList(),
+                    active = emptyList(),
+                ),
+            ),
+        )
+
+        assertEquals(currentGroups, viewModel.state.value.memberGroups)
+        assertFalse(viewModel.state.value.isLoadingMembers)
+    }
+
     @Test
     fun detailLoadsCircleByCanonicalSlugAndLoadsMembershipIndependently() = withDetail { viewModel, repository, _ ->
         assertEquals(listOf("quiet-circle"), repository.detailSlugs)
@@ -450,6 +557,10 @@ class CircleDetailViewModelTest {
             Result.success(circle("quiet-id", slug, "Quiet Circle", 7))
         }
         var membershipsHandler: suspend (Int) -> Result<Set<String>> = { Result.success(membershipSet) }
+        var memberGroupsHandler: suspend (Int, String) -> Result<CircleMemberGroups> = { _, _ ->
+            Result.success(CircleMemberGroups(emptyList(), emptyList(), emptyList()))
+        }
+        val memberGroupSlugs = mutableListOf<String>()
         var updateHandler: suspend () -> Result<Unit> = { Result.success(Unit) }
         private var currentSession = "old-cookie"
         private var currentBackendURL: String? = null
@@ -474,6 +585,10 @@ class CircleDetailViewModelTest {
             return circleHandler(detailSlugs.size, slug)
         }
         override suspend fun memberships(): Result<Set<String>> = membershipsHandler(++membershipReads)
+        override suspend fun circleMembers(slug: String): Result<CircleMemberGroups> {
+            memberGroupSlugs += slug
+            return memberGroupsHandler(memberGroupSlugs.size, slug)
+        }
         override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
             membershipChanges += circleID to isMember
             return updateHandler()

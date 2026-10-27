@@ -5,7 +5,7 @@ import Avatar from './Avatar.component';
 import ProfileEditPage from './ProfileEditPage.component';
 import { update, uploadAvatar } from '../api/users.api';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 import { formatBytes } from '@/modules/core/client/utils/format';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';

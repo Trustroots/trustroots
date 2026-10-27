@@ -41,6 +41,9 @@ data class MemberProfile(
     val locationFrom: String? = null,
     val languages: List<String>,
     val circles: List<TrustrootsCircle> = emptyList(),
+    val lastActiveAtMillis: Long? = null,
+    val replyRate: String? = null,
+    val replyTime: String? = null,
 )
 
 data class ProfileUpdate(
@@ -105,6 +108,12 @@ data class ExperienceCreate(
 )
 
 data class ProfileContact(val id: String, val user: MessageMember)
+
+data class CircleMemberGroups(
+    val contacts: List<MessageMember>,
+    val recommenders: List<MessageMember>,
+    val active: List<MessageMember>,
+)
 
 data class ContactRelationship(
     val id: String?,
@@ -378,6 +387,52 @@ class MobileApiClient(
             }
         }
 
+    /** Loads the viewer's block list directly from the server; block state is never cached offline. */
+    suspend fun blockedMembers(session: MemberSession): Result<List<MessageMember>> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val response = jsonRequest(
+                    "/api/blocked-users", "GET", sessionCookie = session.cookieHeader,
+                    allowResponseCache = false,
+                )
+                val values = JSONArray(response.body)
+                (0 until values.length()).map { parseMessageMember(values.getJSONObject(it)) }
+            }
+        }
+
+    suspend fun setMemberBlocked(
+        session: MemberSession,
+        username: String,
+        blocked: Boolean,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(username.isNotBlank())
+            jsonRequest(
+                "/api/blocked-users/${encode(username).replace("+", "%20")}",
+                if (blocked) "PUT" else "DELETE",
+                sessionCookie = session.cookieHeader,
+            )
+            Unit
+        }
+    }
+
+    suspend fun reportMember(
+        session: MemberSession,
+        username: String,
+        message: String,
+    ): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            require(username.isNotBlank())
+            require(message.isNotBlank())
+            val body = JSONObject()
+                .put("reportMember", username)
+                .put("message", message.trim())
+                .toString()
+            jsonRequest("/api/support", "POST", body, session.cookieHeader)
+            Unit
+        }
+    }
+
     suspend fun updateProfile(session: MemberSession, update: ProfileUpdate): Result<MemberProfile> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -538,6 +593,15 @@ class MobileApiClient(
             }
         }
 
+    suspend fun circleMembers(session: MemberSession, slug: String): Result<CircleMemberGroups> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                parseCircleMemberGroups(JSONObject(jsonRequest(
+                    "/api/tribes/${encode(slug)}/members", "GET", sessionCookie = session.cookieHeader,
+                ).body))
+            }
+        }
+
     suspend fun circleMemberships(session: MemberSession): Result<Set<String>> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -579,6 +643,7 @@ class MobileApiClient(
         sessionCookie: String? = null,
         requestHeaders: Map<String, String> = emptyMap(),
         failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
+        allowResponseCache: Boolean = true,
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -613,7 +678,7 @@ class MobileApiClient(
                     failureKind = failureKind,
                 )
             }
-            if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+            if (allowResponseCache && method == "GET" && sessionCookie != null && cacheAccount != null) {
                 responseCache?.save(baseURL, cacheAccount, path, responseBody)
             } else if (method != "GET" && sessionCookie != null && cacheAccount != null) {
                 when {
@@ -626,6 +691,9 @@ class MobileApiClient(
                     path == "/api/users" -> responseCache?.clearCategories(
                         baseURL, cacheAccount, setOf("own-profile"),
                     )
+                    path.startsWith("/api/blocked-users/") -> responseCache?.clearCategories(
+                        baseURL, cacheAccount, setOf("profile", "profile-detail"),
+                    )
                 }
             }
             mutableOfflineSavedAt.value = null
@@ -634,7 +702,7 @@ class MobileApiClient(
                 sessionCookie = sessionCookieFrom(connection.headerFields),
             )
         } catch (error: IOException) {
-            val cached = if (method == "GET" && sessionCookie != null && cacheAccount != null) {
+            val cached = if (allowResponseCache && method == "GET" && sessionCookie != null && cacheAccount != null) {
                 responseCache?.load(baseURL, cacheAccount, path)
             } else null
             if (cached != null) {
@@ -699,6 +767,9 @@ private fun encode(value: String): String = URLEncoder.encode(value, Charsets.UT
 private fun JSONObject.optionalText(key: String): String? =
     if (isNull(key)) null else optString(key).trim().takeIf { it.isNotEmpty() }
 
+private fun JSONObject.optionalStringText(key: String): String? =
+    (opt(key) as? String)?.trim()?.takeIf(String::isNotEmpty)
+
 internal fun parseMember(value: JSONObject): MemberProfile {
     val username = value.getString("username")
     val languages = value.optJSONArray("languages")
@@ -717,6 +788,10 @@ internal fun parseMember(value: JSONObject): MemberProfile {
         circles = if (memberships == null) emptyList() else (0 until memberships.length())
             .mapNotNull { memberships.optJSONObject(it)?.optJSONObject("tribe") }
             .mapNotNull { parseCircleOrNull(it) },
+        lastActiveAtMillis = value.optionalText("seen")
+            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
+        replyRate = value.optionalStringText("replyRate"),
+        replyTime = value.optionalStringText("replyTime"),
     )
 }
 
@@ -757,6 +832,18 @@ internal fun parseContacts(values: JSONArray): List<ProfileContact> =
         val item = values.optJSONObject(index) ?: return@mapNotNull null
         val user = item.optJSONObject("user") ?: return@mapNotNull null
         ProfileContact(item.optionalText("_id") ?: return@mapNotNull null, parseMessageMember(user))
+    }
+
+internal fun parseCircleMemberGroups(value: JSONObject): CircleMemberGroups = CircleMemberGroups(
+    contacts = parseCircleMemberGroup(value.optJSONArray("contacts")),
+    recommenders = parseCircleMemberGroup(value.optJSONArray("recommenders")),
+    active = parseCircleMemberGroup(value.optJSONArray("active")),
+)
+
+private fun parseCircleMemberGroup(values: JSONArray?): List<MessageMember> =
+    if (values == null) emptyList() else (0 until values.length()).mapNotNull { index ->
+        values.optJSONObject(index)?.let(::parseMessageMember)
+            ?.takeIf { !it.username.isNullOrBlank() }
     }
 
 internal fun parseContactRelationship(value: JSONObject): ContactRelationship =

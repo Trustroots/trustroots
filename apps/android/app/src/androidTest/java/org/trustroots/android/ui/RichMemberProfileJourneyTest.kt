@@ -53,6 +53,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
+import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 import org.junit.After
@@ -109,6 +110,11 @@ class RichMemberProfileJourneyTest {
         compose.onNodeWithText("Maybe hosting").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("A quiet place for one traveller.").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Space for 1 guest").performScrollTo().assertIsDisplayed()
+        val biographyTop = compose.onNodeWithText("Travelling through fictional places.").fetchSemanticsNode().boundsInRoot.top
+        val hostingTop = compose.onNodeWithText("A quiet place for one traveller.").fetchSemanticsNode().boundsInRoot.top
+        val circlesTop = compose.onNodeWithTag("profileCircle-silver-coast").fetchSemanticsNode().boundsInRoot.top
+        assertTrue("Biography should precede hosting details", biographyTop < hostingTop)
+        assertTrue("Hosting details should precede circles", hostingTop < circlesTop)
 
         compose.waitUntil(10_000) {
             requests.any { it.startsWith("GET /api/users/member-main/avatar?size=512 ") } &&
@@ -116,6 +122,47 @@ class RichMemberProfileJourneyTest {
         }
         compose.onNodeWithText("S").performScrollTo().assertIsDisplayed()
         assertTrue(requests.any { it.startsWith("GET /api/offers-by/member-main?types=host ") })
+    }
+
+    @Test fun displaysMandinkaForAnIsoPrefixedProfileLanguage() {
+        val profile = ROOT_PROFILE.replace(
+            "\"languages\":[\"eng\",\"por\"]",
+            "\"languages\":[\"eng\",\"iso_639_3-mnk\",\"iso_639_3-aaa\"]",
+        )
+        startResponder(ROOT_MAYBE_OFFER, profile)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Languages: English, Mandinka, Ghotuo").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun displaysAvailableActivityStatisticsAndOmitsUnavailableFacts() {
+        val seen = Instant.now().minusSeconds(3 * 24 * 60 * 60L).toString()
+        val profile = ROOT_PROFILE.replace(
+            "\"languages\":[\"eng\",\"por\"]",
+            "\"languages\":[\"eng\",\"por\"],\"seen\":\"$seen\",\"replyRate\":\"82%\",\"replyTime\":\"4 hours\"",
+        )
+        startResponder(ROOT_MAYBE_OFFER, profile)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithText("Activity").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityLastActive").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyRate").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("82%").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyTime").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Within 4 hours").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun omitsProfileActivitySectionWhenTheApiHasNoStatistics() {
+        startResponder(ROOT_MAYBE_OFFER)
+        showProfile("quiet-fox")
+
+        waitForText("Quiet Fox")
+        compose.onNodeWithTag("profileSection-about").performClick()
+        compose.onNodeWithTag("profileActivityFacts").assertDoesNotExist()
     }
 
     @Test fun compactProfileCaptionHasReadableContrastOnBrightArtwork() {
@@ -601,6 +648,7 @@ class RichMemberProfileJourneyTest {
     }
 
     private fun fixtureResponse(request: String, rootOffer: String, rootProfile: String): Pair<String, String> = when {
+        request.startsWith("GET /api/blocked-users ") -> "200 OK" to "[]"
         request.startsWith("GET /api/users/quiet-fox ") -> "200 OK" to rootProfile
         request.startsWith("GET /api/users/reference-author ") -> "200 OK" to RELATED_PROFILE
         request.startsWith("GET /api/offers-by/member-main?types=host ") -> "200 OK" to rootOffer

@@ -32,6 +32,47 @@ function event(content: unknown = data, overrides: Partial<Event> = {}): Event {
 }
 
 describe('Hitchwiki ride origins', () => {
+  it('shows unique named hitchhikers in feed order, with Anonymous unlinked', () => {
+    const result = parseHitchhikingLocation(
+      event({
+        ...data,
+        hitchhikers: [
+          { nickname: ' ExampleHiker ' },
+          { nickname: 'Anonymous' },
+          { nickname: 'ExampleHiker' },
+          { nickname: 'Other/Hiker?' },
+          null,
+          {},
+          { nickname: 12 },
+          { nickname: '' },
+          { nickname: '  ' },
+        ],
+      }),
+      now,
+    );
+    expect(result?.facts?.[0]).toEqual({
+      label: 'Hitchhikers',
+      value: [
+        {
+          label: 'ExampleHiker',
+          url: 'https://maps.hitchwiki.org/account/ExampleHiker',
+        },
+        { label: 'Anonymous' },
+        {
+          label: 'Other/Hiker?',
+          url: 'https://maps.hitchwiki.org/account/Other%2FHiker%3F',
+        },
+      ],
+    });
+  });
+  it.each([undefined, null, {}, [], [null, {}, { nickname: false }]])(
+    'omits unavailable hitchhiker names: %j',
+    hitchhikers => {
+      expect(
+        parseHitchhikingLocation(event({ ...data, hitchhikers }), now)?.facts,
+      ).not.toContainEqual(expect.objectContaining({ label: 'Hitchhikers' }));
+    },
+  );
   it('uses origin coordinates and recorded date, with a source link and approximate disclosure', () => {
     expect(parseHitchhikingLocation(event(), now)).toMatchObject({
       latitude: 12,

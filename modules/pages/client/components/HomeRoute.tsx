@@ -3,7 +3,7 @@ import Home from './Home.component';
 import {
   useAppConfig,
   useSettings,
-} from '@/modules/core/client/react-app/AppProviders';
+} from '@/modules/core/client/react-app/app-context';
 import { onClientEvent } from '@/modules/core/client/services/client-runtime';
 import type { PageUser } from '../types';
 import type { Build } from '@/modules/core/client/components/SiteFooter.component';

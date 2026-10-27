@@ -1,4 +1,4 @@
-import { getBootstrapData } from '@/modules/core/client/react-app/bootstrap';
+import { getBootstrapData } from '@/layers/shell/client/bootstrap';
 
 describe('React app bootstrap data', () => {
   const bootstrapKeys = [

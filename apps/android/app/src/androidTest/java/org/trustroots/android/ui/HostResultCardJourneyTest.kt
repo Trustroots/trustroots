@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
+import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -45,7 +46,14 @@ class HostResultCardJourneyTest {
             NativeTestAppFrame(Destination.Search) {
                 HostResultCard(
                     offer = HostOffer("offer-one", "maybe", "A spare room for visiting travellers.", 2, MessageMember(null, "quiet-fox", "Quiet Fox")),
-                    profile = MemberProfile(null, "quiet-fox", "Quiet Fox", "Travelling slowly", null, null, languages = emptyList(), circles = listOf(TrustrootsCircle("circle-one", "wanderers", "Wanderers", null, 12, false, null))),
+                    profile = MemberProfile(
+                        null, "quiet-fox", "Quiet Fox", "Travelling slowly", null, null,
+                        languages = emptyList(),
+                        circles = listOf(TrustrootsCircle("circle-one", "wanderers", "Wanderers", null, 12, false, null)),
+                        lastActiveAtMillis = Instant.now().minusSeconds(3 * 24 * 60 * 60L).toEpochMilli(),
+                        replyRate = "82%",
+                        replyTime = "4 hours",
+                    ),
                     sharedCircleIDs = setOf("circle-one"),
                     isMeet = false,
                     api = MobileApiClient("http://127.0.0.1:1"),
@@ -58,12 +66,55 @@ class HostResultCardJourneyTest {
         compose.onNodeWithText("@quiet-fox").assertIsDisplayed()
         compose.onNodeWithText("Maybe hosting").assertIsDisplayed()
         compose.onNodeWithText("Circles in common: Wanderers").assertIsDisplayed()
+        compose.onNodeWithTag("hostResultLastActive", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("hostResultReplyRate", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Reply rate: 82%").assertIsDisplayed()
         captureUsabilityScreenshot(compose, "android_host_result")
         compose.onNodeWithContentDescription("Close host result").performClick()
         assertTrue(closed.get())
         org.junit.Assert.assertFalse(opened.get())
         compose.onNodeWithTag("hostResultCard").performClick()
         assertTrue(opened.get())
+    }
+
+    @Test fun omitsHostCardActivityFactsWhenTheyAreUnavailable() {
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                HostResultCard(
+                    offer = HostOffer("offer-four", "yes", null, null, MessageMember(null, "quiet-fox", "Quiet Fox")),
+                    profile = MemberProfile(null, "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList()),
+                    sharedCircleIDs = emptySet(),
+                    isMeet = false,
+                    api = MobileApiClient("http://127.0.0.1:1"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onClose = {},
+                    onOpenProfile = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("hostResultActivityFacts", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test fun displaysHostCardReplyRateWhenLastActiveIsUnavailable() {
+        compose.setContent {
+            NativeTestAppFrame(Destination.Search) {
+                HostResultCard(
+                    offer = HostOffer("offer-five", "yes", null, null, MessageMember(null, "quiet-fox", "Quiet Fox")),
+                    profile = MemberProfile(null, "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList(), replyRate = "82%"),
+                    sharedCircleIDs = emptySet(),
+                    isMeet = false,
+                    api = MobileApiClient("http://127.0.0.1:1"),
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onClose = {},
+                    onOpenProfile = {},
+                )
+            }
+        }
+
+        compose.onNodeWithTag("hostResultActivityFacts", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("hostResultReplyRate", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("hostResultLastActive", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test fun keepsLongHostDetailsScrollableWithinSmallHeightAndCloseReachable() {

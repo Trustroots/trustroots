@@ -126,6 +126,7 @@ class AuthenticatedWriteAndOfferFailureJourneysTest {
         val fixture = LocalTransportFixture { request ->
             when (request.method to request.path) {
                 "GET" to "/api/users/quiet-fox" -> LocalTransportFixture.Response(RELATED_PROFILE)
+                "GET" to "/api/blocked-users" -> LocalTransportFixture.Response("[]")
                 "GET" to "/api/users/member-two/avatar?size=512" -> LocalTransportFixture.Response("", status = 404)
                 "GET" to "/api/offers-by/member-two?types=host" ->
                     LocalTransportFixture.Response("""{"message":"Offer service unavailable."}""", status = 503)

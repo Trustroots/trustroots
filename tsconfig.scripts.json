@@ -21,7 +21,8 @@
     "config/config.test.mts",
     "scripts/**/*.cts",
     "scripts/**/*.mts",
-    "scripts/ci/**/*.test.mts"
+    "scripts/ci/**/*.test.mts",
+    "tooling/guards/**/*.mts"
   ],
   "exclude": ["node_modules", "scripts/e2e/**/*.mts"]
 }

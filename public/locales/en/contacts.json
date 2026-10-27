@@ -7,6 +7,8 @@
   "{{count}} contacts_plural": "{{count}} contacts",
   "Add contact": "Add contact",
   "Awaiting publication": "Awaiting publication",
+  "(additional {{count}} pending)_one": "(additional {{count}} pending)",
+  "(additional {{count}} pending)_other": "(additional {{count}} pending)",
   "Cancel": "Cancel",
   "Cancel request": "Cancel request",
   "Change": "Change",
@@ -67,4 +69,8 @@
   "Your answer": "Your answer",
   "Your connection": "Your connection",
   "Your response won't be visible to them.": "Your response won't be visible to them."
+  "{{count}} contacts_one": "{{count}} contact",
+  "{{count}} contacts in common_one": "One contact in common",
+  "{{count}} contacts in common_other": "{{count}} contacts in common",
+  "{{count}} contacts_other": "{{count}} contacts"
 }

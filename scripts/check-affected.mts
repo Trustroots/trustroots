@@ -76,13 +76,14 @@ export function main(
   const commands = reason
     ? [['run', 'check']]
     : [
+        ['run', 'lint:boundaries'],
         ['exec', 'turbo', 'run', 'lint', 'test:client', '--affected'],
         ['run', 'typecheck'],
       ];
   console.log(
     reason
       ? `Running full checks: ${reason}.`
-      : `Running affected module checks against ${base}, then the full typecheck.`,
+      : `Checking package boundaries, then affected modules against ${base} and the full typecheck.`,
   );
   for (const args of commands) {
     const result = run(

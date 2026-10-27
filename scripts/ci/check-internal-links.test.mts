@@ -10,7 +10,7 @@ function check(t: TestContext, source: string): SpawnSyncReturns<string> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'internal-links-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const routes = path.join(root, 'layers/shell/client');
-  const shell = path.join(root, 'modules/core/client/react-app');
+  const shell = path.join(root, 'layers/shell/client');
   fs.mkdirSync(routes, { recursive: true });
   fs.mkdirSync(shell, { recursive: true });
   fs.writeFileSync(

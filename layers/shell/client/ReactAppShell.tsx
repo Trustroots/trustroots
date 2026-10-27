@@ -13,8 +13,11 @@ import {
   getReactRoutePolicy,
   isReactOwnedPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
-import { useAuth } from './auth';
-import { useAppConfig, useSettings } from './AppProviders';
+import { useAuth } from '@/modules/core/client/react-app/auth';
+import {
+  useAppConfig,
+  useSettings,
+} from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
 import type { RoutePolicy } from './routes';
 import { getClientNavigationTarget, signout } from './shell-helpers';

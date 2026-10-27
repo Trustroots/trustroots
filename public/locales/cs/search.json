@@ -3,8 +3,8 @@
     "No members found by this name.": "",
     "Search members": "",
     "Type name, username…": "",
-    "{{count}} members found_0": "",
-    "{{count}} members found_1": "",
-    "{{count}} members found_2": "",
+    "{{count}} members found_one": "",
+    "{{count}} members found_few": "",
+    "{{count}} members found_other": "",
     "Search": "Hledat"
 }

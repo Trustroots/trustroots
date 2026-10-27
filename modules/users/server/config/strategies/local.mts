@@ -1,6 +1,6 @@
 import passport from 'passport';
 import passportLocal from 'passport-local';
-import mongoose, { type FilterQuery } from 'mongoose';
+import mongoose, { type QueryFilter } from 'mongoose';
 import passwordHashing from '../../services/password-hashing.server.service.mts';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../../lib/account-identifier.server.mts';
 import type {
@@ -34,7 +34,7 @@ function rejectCredentials(
 }
 
 async function findUser(
-  filter: FilterQuery<UserServerRecord>,
+  filter: QueryFilter<UserServerRecord>,
 ): Promise<UserServerDocument | null> {
   return User.findOne(filter);
 }

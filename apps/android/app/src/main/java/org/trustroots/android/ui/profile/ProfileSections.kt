@@ -22,6 +22,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import org.trustroots.android.ui.common.languageName
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.pluralStringResource
@@ -133,8 +134,9 @@ internal fun ProfileOverviewSection(
 }
 
 @Composable
-internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
+internal fun ProfileAboutSection(member: MemberProfile) {
     val languageLocale = LocalConfiguration.current.locales[0]
+    val appContext = LocalContext.current.applicationContext
     member.description?.let {
         Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim())
     } ?: Text(
@@ -143,14 +145,18 @@ internal fun ProfileAboutSection(member: MemberProfile, api: MobileApiClient) {
     )
     if (member.languages.isNotEmpty()) {
         Text(
-            stringResource(R.string.profile_languages_prefix, member.languages.joinToString { languageName(it, languageLocale) }),
+            stringResource(R.string.profile_languages_prefix, member.languages.joinToString { languageName(appContext, it, languageLocale) }),
             modifier = Modifier.padding(top = 16.dp),
         )
     }
+}
+
+@Composable
+internal fun ProfileCirclesSection(member: MemberProfile, api: MobileApiClient, onOpenCircle: (String) -> Unit) {
     if (member.circles.isNotEmpty()) {
         Text(stringResource(R.string.profile_circles_heading), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         member.circles.forEach { circle ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+            Row(Modifier.fillMaxWidth().clickable { onOpenCircle(circle.slug) }.testTag("profileCircle-${circle.slug}").padding(vertical = 5.dp)) {
                 RemoteArtwork(
                     url = if (circle.image) api.circleImageURL(circle.slug) else null,
                     sessionCookie = null,

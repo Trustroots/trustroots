@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 
 import axios from 'axios';
 import LocationInput from '@/modules/core/client/components/LocationInput.component';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 
 type LocationInputProps = ComponentProps<typeof LocationInput>;
 type LocationChange = LocationInputProps['onChange'];
@@ -14,7 +14,7 @@ jest.mock('axios', () =>
   jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
 );
 
-jest.mock('@/modules/core/client/react-app/AppProviders', () => ({
+jest.mock('@/modules/core/client/react-app/app-context', () => ({
   useSettings: jest.fn(() => ({
     mapbox: { publicKey: 'pk.test-mapbox-token' },
   })),

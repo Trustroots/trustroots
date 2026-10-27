@@ -16,11 +16,11 @@ export default function SupportForm({ user }: SupportFormProps) {
   const { t } = useTranslation('support');
   // Keep literal keys discoverable by the translation extractor.
   const categoryLabels: Record<SupportCategory, string> = {
-    account: t<string>('Account help'),
-    reportMember: t<string>('Report a member'),
-    reportBug: t<string>('Report a bug'),
-    volunteering: t<string>('Help run Trustroots'),
-    other: t<string>('Other'),
+    account: t('Account help'),
+    reportMember: t('Report a member'),
+    reportBug: t('Report a bug'),
+    volunteering: t('Help run Trustroots'),
+    other: t('Other'),
   };
   const [isSent, setIsSent] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -95,10 +95,10 @@ export default function SupportForm({ user }: SupportFormProps) {
       <>
         <p className="lead">
           <em>
-            {t<string>('Thanks for getting in touch!')}
+            {t('Thanks for getting in touch!')}
             <br />
             <br />
-            {t<string>(
+            {t(
               'Your message has been sent to the Trustroots team. We’re a small team of volunteers, so a reply may take a little time. We appreciate your patience.',
             )}
           </em>
@@ -120,8 +120,8 @@ export default function SupportForm({ user }: SupportFormProps) {
       <div className="panel-heading">
         <h4>
           {category === 'reportMember'
-            ? t<string>('Report member to support')
-            : t<string>('Contact us')}
+            ? t('Report member to support')
+            : t('Contact us')}
         </h4>
       </div>
       <div className="panel-body">
@@ -132,13 +132,9 @@ export default function SupportForm({ user }: SupportFormProps) {
             ref={errorRef}
             tabIndex={-1}
           >
-            <strong>
-              {t<string>('Something went wrong sending your message.')}
-            </strong>
+            <strong>{t('Something went wrong sending your message.')}</strong>
             <br />
-            {t<string>(
-              'Please ensure you are connected to internet and try again.',
-            )}
+            {t('Please ensure you are connected to internet and try again.')}
           </div>
         )}
         <form
@@ -150,7 +146,7 @@ export default function SupportForm({ user }: SupportFormProps) {
         >
           <div className="form-group">
             <label htmlFor="category" className="col-sm-3 control-label">
-              {t<string>('What can we help with?')}
+              {t('What can we help with?')}
             </label>
             <div className="col-sm-9">
               <select
@@ -177,7 +173,7 @@ export default function SupportForm({ user }: SupportFormProps) {
           {category === 'reportMember' && (
             <div className="form-group">
               <label className="col-sm-3 control-label">
-                {t<string>('Reported member')}
+                {t('Reported member')}
               </label>
               <div className="col-sm-9">
                 {reportMember ? (
@@ -186,28 +182,26 @@ export default function SupportForm({ user }: SupportFormProps) {
                   </p>
                 ) : (
                   <p className="help-block">
-                    {t<string>(
-                      'Please include the member’s username in your message.',
-                    )}
+                    {t('Please include the member’s username in your message.')}
                   </p>
                 )}
                 <p className="form-control-static">
                   <em>
-                    {t<string>(
+                    {t(
                       'This message goes to Trustroots support, not to the member.',
                     )}
                   </em>
                 </p>
                 {user && (
                   <p>
-                    {t<string>(
+                    {t(
                       'Reporting this member lets our support team read your entire conversation and all experiences between you, including unpublished feedback. This access continues after the report is resolved.',
                     )}
                   </p>
                 )}
                 <p className="form-control-static">
                   <em>
-                    {t<string>(
+                    {t(
                       'If you or someone you know have witnessed or been a victim of a crime, please report it to the police immediately.',
                     )}
                   </em>
@@ -218,12 +212,12 @@ export default function SupportForm({ user }: SupportFormProps) {
 
           <div className="form-group">
             <label htmlFor="message" className="col-sm-3 control-label">
-              {t<string>('Message')}
+              {t('Message')}
             </label>
             <div className="col-sm-9">
               {category === 'volunteering' && (
                 <p className="help-block" id="volunteering-help">
-                  {t<string>(VOLUNTEERING_DISCLAIMER)}
+                  {t(VOLUNTEERING_DISCLAIMER)}
                 </p>
               )}
               <textarea
@@ -245,7 +239,7 @@ export default function SupportForm({ user }: SupportFormProps) {
               <span className="help-block" id="message-help">
                 {category === 'volunteering' && (
                   <>
-                    {t<string>(
+                    {t(
                       'Briefly tell us about your interests, skills, and availability.',
                     )}{' '}
                     <a
@@ -253,12 +247,12 @@ export default function SupportForm({ user }: SupportFormProps) {
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {t<string>('Team Guide')}
+                      {t('Team Guide')}
                     </a>
                     <br />
                   </>
                 )}
-                {t<string>(
+                {t(
                   'Our support team speaks several languages. Write in whichever language you prefer — English is helpful when you can.',
                 )}
                 <br />
@@ -269,9 +263,7 @@ export default function SupportForm({ user }: SupportFormProps) {
           {/* Name is sent only for logged in users, don't bother to ask it from non-logged users */}
           {user?.displayName && (
             <div className="form-group">
-              <label className="col-sm-3 control-label">
-                {t<string>('Name')}
-              </label>
+              <label className="col-sm-3 control-label">{t('Name')}</label>
               <div className="col-sm-9">
                 <p className="form-control-static">{user.displayName}</p>
               </div>
@@ -280,7 +272,7 @@ export default function SupportForm({ user }: SupportFormProps) {
 
           <div className="form-group">
             <label htmlFor="username" className="col-sm-3 control-label">
-              {t<string>('Username')}
+              {t('Username')}
             </label>
             <div className="col-sm-9">
               {user?.username ? (
@@ -301,7 +293,7 @@ export default function SupportForm({ user }: SupportFormProps) {
 
           <div className="form-group">
             <label htmlFor="email" className="col-sm-3 control-label">
-              {t<string>('Email')}
+              {t('Email')}
             </label>
             <div className="col-sm-9">
               {user?.email ? (
@@ -328,7 +320,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                 className="btn btn-lg btn-primary"
                 disabled={isSending || supportMessage?.trim()?.length === 0}
               >
-                {isSending ? t<string>('Wait…') : t<string>('Send')}
+                {isSending ? t('Wait…') : t('Send')}
               </button>
             </div>
           </div>

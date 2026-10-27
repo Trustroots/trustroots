@@ -81,20 +81,20 @@ export default function LanguageSelect({
         isLoading={isLoading}
         isMulti
         value={selected}
-        loadingMessage={() => t<string>('Loading…')}
+        loadingMessage={() => t('Loading…')}
         noOptionsMessage={({ inputValue }) => {
           return inputValue?.length >= INPUT_MIN_LENGTH
-            ? t<string>('No languages found; try typing something else.')
-            : t<string>('Start typing a language…');
+            ? t('No languages found; try typing something else.')
+            : t('Start typing a language…');
         }}
-        placeholder={placeholder || t<string>('Select…')}
+        placeholder={placeholder || t('Select…')}
         onChange={onChange}
         loadOptions={filteredLanguages}
         {...props}
       />
       {isError && (
         <div className="alert alert-warning" role="alert">
-          {t<string>(
+          {t(
             'Snap! Something went wrong. If this keeps happening, please contact us.',
           )}
         </div>

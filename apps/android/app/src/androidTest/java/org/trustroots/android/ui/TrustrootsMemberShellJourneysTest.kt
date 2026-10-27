@@ -10,6 +10,7 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -206,6 +207,7 @@ class TrustrootsMemberShellJourneysTest {
         compose.onNodeWithText("Quiet Fox").performClick()
         waitForText("A welcoming place to pause.")
         compose.onNodeWithTag("profileSection-experiences").performClick()
+        waitForEnabledText("Send a message")
         compose.onNodeWithText("Send a message").performClick()
         waitForText("Fictional route message")
         assertEquals("the message entry resolves its member independently", 1, requests.count {
@@ -456,6 +458,12 @@ class TrustrootsMemberShellJourneysTest {
         }
     }
 
+    private fun waitForEnabledText(text: String) {
+        compose.waitUntil(10_000) {
+            runCatching { compose.onNodeWithText(text).assertIsEnabled() }.isSuccess
+        }
+    }
+
     private fun revealProfileTabsIfClipped() {
         val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
         val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
@@ -569,6 +577,7 @@ class TrustrootsMemberShellJourneysTest {
             "200 OK",
             """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","tagline":"A welcoming place to pause.","description":"A neighbour who enjoys slow journeys.","languages":["por"]}""",
         )
+        path == "/api/blocked-users" -> FixtureResponse("200 OK", "[]")
         path == "/api/users/mini/member-one" -> FixtureResponse(
             "200 OK",
             """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}""",

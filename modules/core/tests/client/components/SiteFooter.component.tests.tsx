@@ -62,6 +62,7 @@ describe('<SiteFooter />', () => {
       ['FAQ', '/faq'],
       ['Wiki', 'https://wiki.trustroots.org/'],
       ['Privacy', '/privacy'],
+      ['Credits', '/credits'],
       ['Contact', '/contact'],
     ];
     footerLinks.forEach(([name, href]) => {

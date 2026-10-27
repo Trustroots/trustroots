@@ -227,15 +227,18 @@ describe('<LeafletSearchMap />', () => {
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       expect.objectContaining({ maxZoom: 19 }),
     );
-    expect(onMapChange).toHaveBeenCalledWith({
-      bounds: {
-        northEast: { lat: 53, lng: 14 },
-        southWest: { lat: 51, lng: 12 },
+    expect(onMapChange).toHaveBeenCalledWith(
+      {
+        bounds: {
+          northEast: { lat: 53, lng: 14 },
+          southWest: { lat: 51, lng: 12 },
+        },
+        latitude: 52,
+        longitude: 13,
+        zoom: 6,
       },
-      latitude: 52,
-      longitude: 13,
-      zoom: 6,
-    });
+      false,
+    );
     expect(mockMarkers).toHaveLength(1);
     expect(mockCircleMarkers).toHaveLength(2);
     expect(mockMarkers[0].options.bubblingMouseEvents).toBe(false);
@@ -288,6 +291,22 @@ describe('<LeafletSearchMap />', () => {
 
     unmount();
     expect(mockMap.remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks explicit place fits separately from initialisation and later resizing', () => {
+    const onMapChange = jest.fn();
+    renderMap({
+      bounds: {
+        northEast: { lat: 53, lng: 14 },
+        southWest: { lat: 51, lng: 12 },
+      },
+      onMapChange,
+    });
+    expect(onMapChange).toHaveBeenLastCalledWith(expect.any(Object), false);
+    act(() => mockMapHandlers.moveend());
+    expect(onMapChange).toHaveBeenLastCalledWith(expect.any(Object), true);
+    act(() => mockMapHandlers.moveend());
+    expect(onMapChange).toHaveBeenLastCalledWith(expect.any(Object), false);
   });
 
   it('refits selected bounds after mobile layout settles', () => {

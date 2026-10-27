@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 

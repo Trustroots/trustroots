@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-10-25
+goal: Show profile activity facts consistently across Android profile and host
+  search surfaces.

@@ -3,7 +3,7 @@
  */
 import _ from 'lodash';
 import mongoose, {
-  type FilterQuery,
+  type QueryFilter,
   type HydratedDocument,
   type Types,
   type UpdateQuery,
@@ -81,7 +81,6 @@ interface ThreadRecord {
 type UserDocument = HydratedDocument<UserRecord>;
 type ObjectIdInput =
   | string
-  | number
   | Types.ObjectId
   | Buffer
   | Uint8Array
@@ -90,7 +89,6 @@ type ObjectIdInput =
 function isObjectIdInput(value: unknown): value is ObjectIdInput {
   return (
     typeof value === 'string' ||
-    typeof value === 'number' ||
     Buffer.isBuffer(value) ||
     value instanceof Uint8Array ||
     (typeof value === 'object' &&
@@ -372,7 +370,7 @@ function getPotentialMatchReasons(
 
 export async function findPotentialMatches(user: PotentialMatchUser) {
   const signals = getPotentialMatchSignals(user);
-  const querySignals: FilterQuery<UserRecord>[] = signals.identifiers.flatMap(
+  const querySignals: QueryFilter<UserRecord>[] = signals.identifiers.flatMap(
     ({ value }) => [
       { username: createFlexibleIdentifierRegexp(value, false) },
       { email: createFlexibleIdentifierRegexp(value, true) },
@@ -457,7 +455,7 @@ function getMemberListOptions(body: unknown): MemberListOptions | null {
 async function sendMemberList(
   req: AdminListRequest,
   res: AdminResponse,
-  query: FilterQuery<UserRecord>,
+  query: QueryFilter<UserRecord>,
 ): Promise<unknown> {
   const options = getMemberListOptions(req.body);
 
@@ -603,7 +601,8 @@ export const getUser = async (
   }
 
   try {
-    const user = await User.findById(userId)
+    const objectId = new mongoose.Types.ObjectId(userId);
+    const user = await User.findById(objectId)
       // Avoid pulling in sensitive fields from Mongoose
       .select('-password -salt')
       .populate({
@@ -618,37 +617,39 @@ export const getUser = async (
       });
     }
 
-    const messageFromCount = await Message.countDocuments({ userFrom: userId });
+    const messageFromCount = await Message.countDocuments({
+      userFrom: objectId,
+    });
 
-    const messageToCount = await Message.countDocuments({ userTo: userId });
+    const messageToCount = await Message.countDocuments({ userTo: objectId });
 
     const threadCount = await Thread.countDocuments({
-      $or: [{ userFrom: userId }, { userTo: userId }],
+      $or: [{ userFrom: objectId }, { userTo: objectId }],
     });
 
     // @TODO these could be compiled using aggregate grouping
     const threadReferencesSentNo = await ReferenceThread.countDocuments({
-      userFrom: userId,
+      userFrom: objectId,
       reference: 'no',
     });
 
     const threadReferencesReceivedNo = await ReferenceThread.countDocuments({
-      userTo: userId,
+      userTo: objectId,
       reference: 'no',
     });
 
     const threadReferencesReceivedYes = await ReferenceThread.countDocuments({
-      userTo: userId,
+      userTo: objectId,
       reference: 'yes',
     });
 
     const threadReferencesSentYes = await ReferenceThread.countDocuments({
-      userFrom: userId,
+      userFrom: objectId,
       reference: 'yes',
     });
 
     const threadReferences = await ReferenceThread.find({
-      $or: [{ userFrom: userId }, { userTo: userId }],
+      $or: [{ userFrom: objectId }, { userTo: objectId }],
     })
       .sort('-created')
       .limit(100)
@@ -664,7 +665,7 @@ export const getUser = async (
       });
 
     const contacts = await Contact.find({
-      $or: [{ userFrom: userId }, { userTo: userId }],
+      $or: [{ userFrom: objectId }, { userTo: objectId }],
     })
       .populate({
         path: 'userFrom',
@@ -677,7 +678,7 @@ export const getUser = async (
         model: 'User',
       });
 
-    const offers = await Offer.find({ user: userId });
+    const offers = await Offer.find({ user: objectId });
 
     // Aggregations do not cast IDs, unlike Mongoose find queries.
     const experienceUserId = user._id;
@@ -833,7 +834,7 @@ export const changeRole = async (
         currentRoles.some(
           (existingRole, index) => existingRole !== nextRoles[index],
         );
-      const filter: FilterQuery<UserRecord> = { _id: id };
+      const filter: QueryFilter<UserRecord> = { _id: id };
       filter.roles = Object.prototype.hasOwnProperty.call(current, 'roles')
         ? current.roles
         : { $exists: false };

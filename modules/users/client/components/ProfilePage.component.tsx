@@ -24,7 +24,7 @@ import {
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
 import YourConnection from '@/modules/contacts/client/components/YourConnection';

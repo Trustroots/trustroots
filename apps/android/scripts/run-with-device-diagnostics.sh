@@ -15,8 +15,8 @@ else
 fi
 
 mkdir -p "$diagnostics" || exit "$status"
-adb logcat -d -v threadtime > "$diagnostics/logcat.txt" 2>&1 || true
-adb shell dumpsys window windows > "$diagnostics/window.txt" 2>&1 || true
-adb shell dumpsys activity activities > "$diagnostics/activities.txt" 2>&1 || true
-adb shell dumpsys activity lastanr > "$diagnostics/last-anr.txt" 2>&1 || true
+timeout 10 adb logcat -d -v threadtime > "$diagnostics/logcat.txt" 2>&1 || true
+timeout 10 adb shell dumpsys window windows > "$diagnostics/window.txt" 2>&1 || true
+timeout 10 adb shell dumpsys activity activities > "$diagnostics/activities.txt" 2>&1 || true
+timeout 10 adb shell dumpsys activity lastanr > "$diagnostics/last-anr.txt" 2>&1 || true
 exit "$status"

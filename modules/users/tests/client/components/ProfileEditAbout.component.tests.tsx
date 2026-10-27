@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditAbout from '@/modules/users/client/components/ProfileEditAbout.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type TrEditor from '@/modules/core/client/components/TrEditor';

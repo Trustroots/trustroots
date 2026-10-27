@@ -53,6 +53,10 @@ internal fun ProfileActionBar(
     topPadding: Dp,
     horizontalInset: PaddingValues,
     compactTitle: String? = null,
+    isBlocked: Boolean? = false,
+    safetyBusy: Boolean = false,
+    onBlock: () -> Unit = {},
+    onReport: () -> Unit = {},
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Row(
@@ -92,8 +96,9 @@ internal fun ProfileActionBar(
                 Text(stringResource(R.string.profile_edit_your_profile))
             }
         } else {
-            Button(
+            if (isBlocked != true) Button(
                 onClick = onMessage,
+                enabled = isBlocked == false && !safetyBusy,
                 modifier = Modifier.heightIn(min = 48.dp).testTag("profileMessageAction"),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
@@ -131,6 +136,17 @@ internal fun ProfileActionBar(
                             modifier = Modifier.testTag("profileContactAction"),
                         )
                     }
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.profile_report_member)) },
+                        onClick = { menuExpanded = false; onReport() },
+                        modifier = Modifier.testTag("profileReportAction"),
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(if (isBlocked == true) R.string.profile_unblock_member else R.string.profile_block_member)) },
+                        enabled = isBlocked != null && !safetyBusy,
+                        onClick = { menuExpanded = false; onBlock() },
+                        modifier = Modifier.testTag("profileBlockAction"),
+                    )
                 }
             }
         }

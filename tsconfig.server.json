@@ -18,6 +18,7 @@
     "modules/*/server/**/*.mts",
     "config/untyped-modules.d.mts",
     "config/lib/**/*.mts",
+    "packages/logger/**/*.mts",
     "worker.mts"
   ]
 }

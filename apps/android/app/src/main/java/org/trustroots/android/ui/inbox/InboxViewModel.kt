@@ -51,6 +51,17 @@ internal class MobileApiInboxRepository(
 
 internal data class InboxSessionInvalidation(val id: Long)
 
+/** Short-lived data shared across tab visits, without sharing their UI or request state. */
+internal class InboxCache {
+    var threads: List<MessageThread>? = null
+    var loadedAt: Long? = null
+
+    fun clear() {
+        threads = null
+        loadedAt = null
+    }
+}
+
 internal data class InboxUiState(
     val threads: List<MessageThread> = emptyList(),
     val filter: String = "",
@@ -78,6 +89,7 @@ internal data class InboxUiState(
 
 internal sealed interface InboxEvent {
     data class FilterChanged(val value: String) : InboxEvent
+    data object Opened : InboxEvent
     data object Retry : InboxEvent
     data object ReturnFromConversation : InboxEvent
     data class SessionChanged(val session: MemberSession) : InboxEvent
@@ -88,9 +100,14 @@ internal class InboxViewModel(
     private val repository: InboxRepository,
     initialSession: MemberSession,
     scope: CoroutineScope?,
+    private val now: () -> Long = android.os.SystemClock::elapsedRealtime,
+    private val cache: InboxCache = InboxCache(),
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
-    private val mutableState = MutableStateFlow(InboxUiState())
+    private val mutableState = MutableStateFlow(InboxUiState(
+        threads = cache.threads.orEmpty(),
+        hasLoaded = cache.threads != null,
+    ))
     val state = mutableState.asStateFlow()
 
     private var session = initialSession
@@ -98,14 +115,25 @@ internal class InboxViewModel(
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
     private var loadJob: Job? = null
+    private var lastLoadedAt: Long? = cache.loadedAt
+    private var displayed = false
 
     init {
-        load(restart = true)
+        onEvent(InboxEvent.Opened)
+    }
+
+    fun onDisplayed() {
+        // Construction starts the initial load; only later displays need a freshness check.
+        if (displayed) onEvent(InboxEvent.Opened) else displayed = true
     }
 
     fun onEvent(event: InboxEvent) {
         when (event) {
             is InboxEvent.FilterChanged -> mutableState.update { it.copy(filter = event.value) }
+            InboxEvent.Opened -> {
+                val loadedAt = lastLoadedAt
+                if (!mutableState.value.isLoading && (loadedAt == null || now() - loadedAt >= 30_000L)) load(restart = true, force = true)
+            }
             InboxEvent.Retry -> load(restart = false, force = true)
             InboxEvent.ReturnFromConversation -> load(restart = true, force = true)
             is InboxEvent.SessionChanged -> updateSession(event.session)
@@ -137,6 +165,8 @@ internal class InboxViewModel(
         requestGeneration++
         loadJob?.cancel()
         sessionInvalidationEmitted = false
+        lastLoadedAt = null
+        cache.clear()
         mutableState.value = InboxUiState(
             filter = if (resetFilter) "" else mutableState.value.filter,
         )
@@ -155,7 +185,6 @@ internal class InboxViewModel(
         mutableState.update { before ->
             before.copy(
                 isLoading = true,
-                hasLoaded = false,
                 nextPage = startPage,
                 failedPage = null,
                 replaceThreadsOnPageOne = restart,
@@ -198,6 +227,9 @@ internal class InboxViewModel(
                     )
                 }
                 if (batch.size < PAGE_SIZE) {
+                    lastLoadedAt = now()
+                    cache.threads = mutableState.value.threads
+                    cache.loadedAt = lastLoadedAt
                     mutableState.update {
                         it.copy(isLoading = false, hasLoaded = true, failedPage = null)
                     }
@@ -211,6 +243,7 @@ internal class InboxViewModel(
     private fun emitSessionInvalidation(generation: Long) {
         if (generation != requestGeneration || sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
+        cache.clear()
         mutableState.update {
             it.copy(
                 threads = emptyList(),
@@ -235,11 +268,12 @@ internal class InboxViewModel(
         private val repository: InboxRepository,
         private val session: MemberSession,
         private val scope: CoroutineScope? = null,
+        private val cache: InboxCache = InboxCache(),
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(InboxViewModel::class.java))
-            return InboxViewModel(repository, session, scope) as T
+            return InboxViewModel(repository, session, scope, cache = cache) as T
         }
     }
 
@@ -251,11 +285,12 @@ internal class InboxViewModel(
 internal fun ViewModelStoreOwner.inboxViewModel(
     api: MobileApiClient,
     session: MemberSession,
+    cache: InboxCache = InboxCache(),
 ): InboxViewModel {
     val username = session.member.username
     return ViewModelProvider(
         this,
-        InboxViewModel.Factory(MobileApiInboxRepository(api, session), session),
+        InboxViewModel.Factory(MobileApiInboxRepository(api, session), session, cache = cache),
     )["InboxViewModel:$username", InboxViewModel::class.java].also {
         it.updateApi(api)
         it.onEvent(InboxEvent.SessionChanged(session))

@@ -1,4 +1,4 @@
-import { findRoute } from '@/modules/core/client/react-app/routes';
+import { findRoute } from '@/layers/shell/client/routes';
 import { getReactRouteAccessRedirect } from '@/modules/core/shared/react-route-ownership.mts';
 
 describe('Member entry routes', () => {

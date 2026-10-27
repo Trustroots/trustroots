@@ -2,7 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SigninPage from '@/modules/users/client/components/SigninPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import * as clientRuntime from '@/modules/core/client/services/client-runtime';

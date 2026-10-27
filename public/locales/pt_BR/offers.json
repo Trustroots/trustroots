@@ -16,8 +16,8 @@
     "Cannot host currently": "Não posso hospedar agora",
     "Can host": "Posso hospedar",
     "Bigger map": "Mapa ampliado",
-    "At most {{count}} guests.": "No máximo um hóspede.",
-    "At most {{count}} guests._plural": "No máximo {{count}} hóspedes.",
+    "At most {{count}} guests._one": "No máximo um hóspede.",
+    "At most {{count}} guests._other": "No máximo {{count}} hóspedes.",
     "Add it to map!": "Adicionar ao mapa!",
     "Accommodation": "Acomodação"
 }

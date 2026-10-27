@@ -1,6 +1,6 @@
 {
-    "At most {{count}} guests.": "Maximaal één gast.",
-    "At most {{count}} guests._plural": "Maximaal {{count}} gasten.",
+    "At most {{count}} guests._one": "Maximaal één gast.",
+    "At most {{count}} guests._other": "Maximaal {{count}} gasten.",
     "Add it to map!": "Zet het op de kaart!",
     "Change": "Wijzig",
     "Accommodation": "Accommodatie",

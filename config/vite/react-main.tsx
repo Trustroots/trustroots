@@ -3,8 +3,8 @@ import { createRoot } from 'react-dom/client';
 
 import '@vitejs/plugin-react/preamble';
 import '@/config/client/i18n';
-import ReactApp from '@/modules/core/client/react-app/ReactApp';
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import ReactApp from '@/layers/shell/client/ReactApp';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import { enable as enableUnreadMessageCountPolling } from '@/modules/messages/client/services/unread-message-count.client.service';
 import { enable as enableVisibilityWatching } from '@/modules/messages/client/services/visibility.client.service';
 import { enable as enableFaviconUpdater } from '@/modules/messages/client/services/messages-count-favicon-updater.client.service';

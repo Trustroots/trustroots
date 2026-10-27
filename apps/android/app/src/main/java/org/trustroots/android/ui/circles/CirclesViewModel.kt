@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.trustroots.android.api.ApiFailureKind
+import org.trustroots.android.api.CircleMemberGroups
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.TrustrootsCircle
@@ -23,6 +24,7 @@ internal interface CircleRepository {
     fun updateSession(session: MemberSession): Boolean = false
     suspend fun circles(): Result<List<TrustrootsCircle>>
     suspend fun circleBySlug(slug: String): Result<TrustrootsCircle>
+    suspend fun circleMembers(slug: String): Result<CircleMemberGroups>
     suspend fun memberships(): Result<Set<String>>
     suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit>
 }
@@ -52,6 +54,8 @@ internal class MobileApiCircleRepository(
 
     override suspend fun circleBySlug(slug: String): Result<TrustrootsCircle> = api.circle(session, slug)
 
+    override suspend fun circleMembers(slug: String): Result<CircleMemberGroups> = api.circleMembers(session, slug)
+
     override suspend fun memberships(): Result<Set<String>> = api.circleMemberships(session)
 
     override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> =
@@ -63,6 +67,7 @@ internal data class CirclesSessionInvalidation(val id: Long)
 internal enum class CirclesFailureKind {
     CIRCLES_LOAD,
     CIRCLE_DETAIL_LOAD,
+    CIRCLE_MEMBERS_LOAD,
     MEMBERSHIPS_LOAD,
     MEMBERSHIP_UPDATE,
 }

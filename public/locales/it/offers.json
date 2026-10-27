@@ -1,9 +1,5 @@
 {
     "Accommodation": "Sistemazione",
-    "At most {{count}} guests": {
-        "At most {{count}} guests.": "Massimo{{count}}ospite.",
-        "At most {{count}} guests._plural": "Massimo{{count}}ospiti."
-    },
     "Bigger map": "Mappa più grande",
     "Can host": "Posso ospitare",
     "Cannot host currently": "Non posso ospitare",
@@ -26,8 +22,8 @@
         "": "Spiacenti, l'utente non accetta ospiti al momento."
     },
     "Start hosting travellers": "Inizia a ospitare",
-    "At most {{count}} guests.": "Massimo un ospite.",
-    "At most {{count}} guests._plural": "Massimo {{count}} ospiti.",
+    "At most {{count}} guests._one": "Massimo un ospite.",
+    "At most {{count}} guests._other": "Massimo {{count}} ospiti.",
     "Send a message": "Manda un messaggio",
     "Travelling? Organising an event? Just making a dinner and would like to invite people over?": "Stai viaggiando? Organizzi un evento? Stai giusto preparando la cena e vorresti invitare gente?",
     "Just making a dinner and would like to invite people over?": "Stai giusto preparando la cena e vorresti invitare gente?",

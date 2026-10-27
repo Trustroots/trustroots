@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - 'apps/android/**'
+      - 'config/languages/languages.json'
       - '.github/workflows/android-debug-apk.yml'
   workflow_dispatch:
 
@@ -35,7 +36,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git diff --name-only "$BASE_SHA...$HEAD_SHA" > "$RUNNER_TEMP/apk-changed-files"
-          if grep -Eq '^(apps/android/|\.github/workflows/android-debug-apk\.yml$)' "$RUNNER_TEMP/apk-changed-files"; then
+          if grep -Eq '^(apps/android/|apps/shared/|config/languages/languages\.json$|\.github/workflows/android-debug-apk\.yml$)' "$RUNNER_TEMP/apk-changed-files"; then
             echo 'android=true' >> "$GITHUB_OUTPUT"
           else
             echo 'android=false' >> "$GITHUB_OUTPUT"
@@ -57,12 +58,13 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - name: Test, lint and build debug APK
         working-directory: apps/android
-        run: ./gradlew testDebugUnitTest lintDebug assembleDebug
+        run: ./gradlew --build-cache testDebugUnitTest lintDebug assembleDebug
       - name: Record APK checksum
         run: sha256sum apps/android/app/build/outputs/apk/debug/app-debug.apk > apps/android/app/build/outputs/apk/debug/app-debug.apk.sha256
       - name: Upload debug APK
@@ -82,8 +84,8 @@ jobs:
         run: |
           echo "[Download debug APK and checksum]($ARTIFACT_URL)" >> "$GITHUB_STEP_SUMMARY"
 
-  design-journeys:
-    name: Android journeys and coverage
+  coverage-build:
+    name: Build Android coverage inputs
     timeout-minutes: 30
     needs: changes
     if: github.event_name != 'pull_request' || needs.changes.outputs.android == 'true'
@@ -96,21 +98,73 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
       - name: Install Android build SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
       - name: Test coverage reporting scripts
         run: python3 -m unittest discover -s apps/android/scripts
+      - name: Fix build timestamp for all coverage invocations
+        run: echo "ANDROID_BUILD_EPOCH_SECONDS=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Build coverage APKs and run unit tests before starting the emulator
+        run: >-
+          bash apps/android/gradlew -p apps/android --build-cache
+          -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081
+          testDebugUnitTest assembleDebug assembleDebugAndroidTest
+      - name: Package coverage inputs
+        run: |
+          tar -czf android-coverage-inputs.tar.gz -C apps/android/app/build \
+            outputs/apk intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes \
+            intermediates/javac/debug/compileDebugJavaWithJavac/classes \
+            outputs/unit_test_code_coverage reports/tests test-results
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: android-coverage-inputs
+          path: android-coverage-inputs.tar.gz
+          retention-days: 2
+          compression-level: 0
+          if-no-files-found: error
+
+  coverage-device:
+    name: Android coverage (${{ matrix.target }})
+    needs: coverage-build
+    timeout-minutes: 25
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: api36-0
+            api: 36
+            command: bash apps/android/scripts/collect-shard-coverage.sh 0
+          - target: api36-1
+            api: 36
+            command: bash apps/android/scripts/collect-shard-coverage.sh 1
+          - target: api32
+            api: 32
+            command: bash apps/android/scripts/collect-legacy-coverage.sh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: android-coverage-inputs
+      - name: Restore shared APKs
+        run: |
+          mkdir -p apps/android/app/build
+          tar -xzf android-coverage-inputs.tar.gz -C apps/android/app/build outputs/apk
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-      - name: Run API 36 journeys and unit coverage
+      - name: Run device coverage
         uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
         with:
-          api-level: 36
+          api-level: ${{ matrix.api }}
           arch: x86_64
+          # Public ubuntu-latest runners have four vCPUs; leave enough CPU for
+          # Android's System UI and launcher while the instrumentation suite runs.
+          cores: 4
           disable-animations: true
           profile: pixel_6
           script: |
@@ -119,19 +173,62 @@ jobs:
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
             adb shell settings put secure show_ime_with_hard_keyboard 1
-            adb shell ime list -s
-            adb shell settings get secure default_input_method
-            bash apps/android/scripts/run-with-device-diagnostics.sh apps/android/app/build/diagnostics/api36-failure bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable
-      - name: Merge API 32 notification and WebView compatibility coverage
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+            bash apps/android/scripts/run-with-android-boot-health.sh apps/android/app/build/diagnostics/${{ matrix.target }} ${{ matrix.command }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
         with:
-          api-level: 32
-          arch: x86_64
-          disable-animations: true
-          profile: pixel_6
-          script: |
-            bash apps/android/scripts/collect-legacy-coverage.sh
-            bash apps/android/gradlew -p apps/android -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081 debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest -x compileDebugKotlin -x compileDebugJavaWithJavac
+          name: android-device-${{ matrix.target }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            apps/android/app/build/outputs/code_coverage/
+            apps/android/app/build/diagnostics/
+
+  design-journeys:
+    name: Android journeys and coverage
+    needs: [changes, coverage-build, coverage-device]
+    if: >-
+      always() && !cancelled() &&
+      (github.event_name != 'pull_request' || needs.changes.outputs.android == 'true')
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all coverage jobs to pass
+        env:
+          BUILD_RESULT: ${{ needs.coverage-build.result }}
+          DEVICE_RESULT: ${{ needs.coverage-device.result }}
+        run: test "$BUILD_RESULT" = success && test "$DEVICE_RESULT" = success
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          name: android-coverage-inputs
+      - name: Restore original classes and unit coverage
+        run: |
+          mkdir -p apps/android/app/build
+          tar -xzf android-coverage-inputs.tar.gz -C apps/android/app/build
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: android-device-*
+          merge-multiple: true
+          path: apps/android/app/build
+      - name: Require every coverage input
+        run: python3 apps/android/scripts/check-coverage-inputs.py apps/android/app/build
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
+      - name: Install Android build SDK
+        run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
+      - name: Merge coverage without rebuilding classes
+        run: >-
+          bash apps/android/gradlew -p apps/android --build-cache
+          -PtrustrootsCoverage=true -PtrustrootsApiUrl=http://127.0.0.1:38081
+          debugCoverageTable -x testDebugUnitTest -x connectedDebugAndroidTest
+          -x compileDebugKotlin -x compileDebugJavaWithJavac
       - name: Enforce Android coverage ratchet
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
@@ -162,9 +259,9 @@ jobs:
             apps/android/app/build/reports/androidTests/
             apps/android/app/build/reports/tests/
             apps/android/app/build/test-results/
-            apps/android/app/build/diagnostics/api36-failure/
+            apps/android/app/build/diagnostics/
             apps/android/app/build/outputs/androidTest-results/
-            apps/android/app/build/outputs/code_coverage/debugAndroidTest/connected/api32/
+            apps/android/app/build/outputs/code_coverage/
             apps/android/app/build/reports/coverage/
 
   link-pr-apk:

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 
 type GeocodingContext = { id: string; text: string; short_code?: string };
 type GeocodingFeature = {

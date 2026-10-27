@@ -134,7 +134,7 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
   if (!isValidObjectId(req.body.friendUserId)) {
     return errorService.sendInvalidId(res);
   }
-  const friendUserId = req.body.friendUserId;
+  const friendUserId = new mongoose.Types.ObjectId(req.body.friendUserId);
   if (req.user.blocked?.some(id => objectIdEquals(id, friendUserId))) {
     return errorService.sendForbidden(res);
   }

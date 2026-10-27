@@ -82,7 +82,7 @@ const ROLE_DEFINITIONS = {
 };
 
 const source = {
-  adminClient: 'modules/core/client/react-app/routes.tsx',
+  adminClient: 'layers/shell/client/routes.tsx',
   adminServer: 'modules/admin/server/routes/admin.server.routes.mjs',
   contactsClient: 'modules/contacts/client/config/contacts.client.routes.js',
   contactsServer: 'modules/contacts/server/routes/contacts.server.routes.js',
@@ -1232,7 +1232,7 @@ const features = [
     id: 'account.profile-removal',
     area: AREA.authAccount,
     status: STATUS.active,
-    description: 'Members can request and confirm profile removal.',
+    description: 'Members can request, cancel and confirm profile removal.',
     roles: ['member'],
     references: {
       clientRoutes: [
@@ -1243,12 +1243,16 @@ const features = [
       apiRoutes: [
         apiRoute('DELETE', '/api/users', source.usersServer),
         apiRoute('DELETE', '/api/users/remove/:token', source.usersServer),
+        apiRoute('GET', '/api/users/removal/pending', source.usersServer),
+        apiRoute('DELETE', '/api/users/removal/pending', source.usersServer),
       ],
     },
     requiredScenarios: [
       'Removal request sends a deterministic confirmation email/stub.',
       'Valid removal token removes the profile.',
       'Invalid removal token is rejected.',
+      'Pending removal is visible after reloading Account settings.',
+      'Cancellation invalidates the old removal link and allows a fresh request.',
     ],
     relatedSpecs: [],
   },
@@ -1716,6 +1720,7 @@ const features = [
         apiRoute('GET', '/api/offers', source.offersServer),
         apiRoute('GET', '/api/offers/:offerId', source.offersServer),
         apiRoute('GET', '/api/tribes/:tribe', source.tribesServer),
+        apiRoute('GET', '/api/map-default-location', source.coreServer),
       ],
     },
     requiredScenarios: [
@@ -1738,6 +1743,9 @@ const features = [
       'Empty map-offers fixture leaves the search map usable.',
       'Rendered map offer deep-link opens deterministic sidebar data.',
       'Trackpad pinch zoom preserves the centre selected by place search.',
+      'Fresh search uses an approximate location while recent saved positions take precedence.',
+      'Expired and legacy search positions yield to the approximate location.',
+      'Failed or late approximate lookups leave member navigation intact.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'search page loads for a signed in member'),
@@ -1769,6 +1777,30 @@ const features = [
       spec(
         'search-map-rendered.spec.js',
         'offer deep-link uses fixture offer data in the sidebar',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'fresh search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'recent search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'expired search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'legacy search viewport respects approximate location precedence',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'failed approximate lookup leaves search usable',
+      ),
+      spec(
+        'features/search-offers-circles/geoip-map-defaults.spec.ts',
+        'late approximate lookup cannot undo a member zoom',
       ),
     ],
   },
@@ -1967,6 +1999,43 @@ const features = [
       spec(
         'seeded-content.spec.js',
         'circle detail page loads for a seeded tribe',
+      ),
+    ],
+  },
+  {
+    id: 'circles.radio',
+    area: AREA.searchOffersCircles,
+    status: STATUS.active,
+    description:
+      'The Radio circle provides public playback and authenticated shared listening.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('circles.circle', '/circles/:circle', source.tribesClient),
+      ],
+    },
+    requiredScenarios: [
+      'Visitors can listen, save favourites and see shared listener counts.',
+      'Chat and listener identities require login.',
+      'A matching verified signer can publish chat, favourites and listening activity.',
+      'Playback survives relay failures and stops when leaving the circle.',
+    ],
+    relatedSpecs: [
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'visitors can play radio, save favourites and see a deduplicated count without social identities',
+      ),
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'logged-in members can read radio chat but need a matching signer to publish',
+      ),
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'a matching Trustroots Nostr signer can chat, share favourites and announce listening',
+      ),
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'radio remains playable when the shared room is unavailable and stops on navigation',
       ),
     ],
   },

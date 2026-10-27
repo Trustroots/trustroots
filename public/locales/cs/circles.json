@@ -14,7 +14,7 @@
     "No members yet": "",
     "Send us suggestions!": "",
     "Sign up with Trustroots": "",
-    "{{count, number}} members_0": "",
-    "{{count, number}} members_1": "",
-    "{{count, number}} members_2": ""
+    "{{count, number}} members_one": "",
+    "{{count, number}} members_few": "",
+    "{{count, number}} members_other": ""
 }

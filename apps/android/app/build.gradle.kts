@@ -9,6 +9,10 @@ plugins {
     jacoco
 }
 
+dependencies {
+    implementation(project(":shared"))
+}
+
 val coverageEnabled = providers.gradleProperty("trustrootsCoverage").map(String::toBoolean).orElse(false)
 val coverageToolVersion = "0.8.15"
 jacoco { toolVersion = coverageToolVersion }
@@ -28,9 +32,9 @@ val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
 val previewUpdateAlerts = providers.gradleProperty("trustrootsPreviewUpdateAlerts")
     .map { it == "true" }
     .orElse(false)
-val buildEpochSeconds = providers.exec {
+val buildEpochSeconds = providers.environmentVariable("ANDROID_BUILD_EPOCH_SECONDS").orElse(providers.exec {
     commandLine("date", "+%s")
-}.standardOutput.asText.map(String::trim)
+}.standardOutput.asText.map(String::trim))
 val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")
 val releaseKeyAlias = providers.environmentVariable("ANDROID_KEY_ALIAS")
@@ -41,6 +45,12 @@ val releaseSigningConfigured = listOf(
     releaseKeyAlias,
     releaseKeyPassword,
 ).all { it.isPresent }
+
+val languageCatalogueAssets = layout.buildDirectory.dir("generated/languageCatalogueAssets")
+val copyLanguageCatalogue = tasks.register<Sync>("copyLanguageCatalogue") {
+    from(rootProject.file("../../config/languages/languages.json"))
+    into(languageCatalogueAssets)
+}
 
 android {
     namespace = "org.trustroots.android"
@@ -100,6 +110,8 @@ android {
         compose = true
     }
 
+    sourceSets.getByName("main").assets.srcDir(languageCatalogueAssets.get().asFile)
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -112,6 +124,10 @@ android {
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
     }
+}
+
+tasks.named("preBuild").configure {
+    dependsOn(copyLanguageCatalogue)
 }
 
 // Combine host-side unit tests and device journeys against the same debug classes.

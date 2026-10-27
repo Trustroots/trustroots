@@ -1194,7 +1194,7 @@ describe('Offers controller unit tests', () => {
         'find',
       ) as unknown as import('sinon').SinonStub<
         [
-          import('mongoose').FilterQuery<OfferRecord>,
+          import('mongoose').QueryFilter<OfferRecord>,
           (error: Error | null, offers?: OfferDocument[]) => void,
         ],
         void
@@ -1335,7 +1335,7 @@ describe('Offers controller unit tests', () => {
         'deleteMany',
       ) as unknown as import('sinon').SinonStub<
         [
-          import('mongoose').FilterQuery<OfferRecord>,
+          import('mongoose').QueryFilter<OfferRecord>,
           (error?: Error | null) => void,
         ],
         void

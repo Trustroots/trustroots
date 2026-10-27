@@ -1,4 +1,4 @@
-import mongoose, { type FilterQuery, type Types } from 'mongoose';
+import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import { SUPPORT_CATEGORIES } from '../../../support/shared/categories.ts';
 
 interface SupportRequestRecord {
@@ -198,7 +198,7 @@ export const list = handler(async (req, res) => {
   ) {
     throw invalid('Invalid support filters.');
   }
-  const criteria: FilterQuery<SupportRequestRecord> = category
+  const criteria: QueryFilter<SupportRequestRecord> = category
     ? { category: String(category) }
     : {};
   if (status === 'open') {
@@ -262,7 +262,7 @@ export const investigation = handler(async (req, res) => {
   if (!isOneOf(['messages', 'experiences'] as const, kind)) {
     throw invalid('Invalid investigation type.');
   }
-  const criteria: FilterQuery<InvestigationRecord> = {
+  const criteria: QueryFilter<InvestigationRecord> = {
     $or: [
       { userFrom: report.user, userTo: report.reportedUser },
       { userFrom: report.reportedUser, userTo: report.user },

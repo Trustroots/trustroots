@@ -375,7 +375,7 @@ Feature modules SHALL be private source-only pnpm workspace packages. Their work
 
 ### Requirement: Client route table sits outside feature modules
 
-The client route table SHALL live outside `modules/*`. Composing a feature page into that table SHALL NOT add a module-graph link from `core` to that feature. Existing imports of the previous core route module SHALL keep working through a re-export.
+The client route table SHALL live outside `modules/*`. Composing a feature page into that table SHALL NOT add a module-graph link from `core` to that feature. Repository callers SHALL import route helpers directly from the shell owner; the obsolete core route-table re-export SHALL be removed once its callers have been migrated.
 
 #### Scenario: Feature page is added to the route table
 
@@ -384,5 +384,81 @@ The client route table SHALL live outside `modules/*`. Composing a feature page 
 
 #### Scenario: Existing caller imports the previous path
 
-- **WHEN** client code imports the route helpers from `modules/core/client/react-app/routes`
-- **THEN** those helpers resolve to the shell route table
+- **WHEN** an existing repository caller of the previous core route-helper path is migrated
+- **THEN** they reference `layers/shell/client/routes` directly
+- **AND** no production module needs to import that composition layer
+
+### Requirement: Shared package source boundaries
+
+Production source in `packages/*` SHALL depend only on its own package, declared shared workspace packages and external dependencies. A repository import outside `packages/*`, including application configuration, modules, layers, apps and tooling, SHALL fail the boundary guard. Imports of another shared package SHALL require that package to be declared as a `workspace:*` dependency in the importing package's dependencies, optionalDependencies or peerDependencies. Package tests SHALL be excluded from this production-source rule.
+
+Source-bearing shared package directories SHALL have a valid manifest with a package name. Production source files and directories SHALL NOT be symbolic links; the guard SHALL resolve import paths through real filesystem targets to enforce package ownership. Absolute file imports outside the repository SHALL fail.
+
+The guard SHALL inspect static imports, re-exports, import types, CommonJS imports and literal dynamic imports. It SHALL recognise workspace package names and subpaths, repository-root aliases and relative paths, and report the source file and import that violates a boundary. The repository SHALL run the guard and regression tests in CI and expose commands for local use.
+
+#### Scenario: Shared package imports application code
+
+- **WHEN** shared package production source imports a module, layer, app, root configuration or tooling file through a repository alias, relative path or known workspace name
+- **THEN** the guard fails with the source file and offending import
+
+#### Scenario: Shared package imports an undeclared sibling package
+
+- **WHEN** shared package production source imports another shared package without declaring it as a `workspace:*` dependency
+- **THEN** the guard fails even if the import uses a relative or repository-root path
+
+#### Scenario: Shared package uses permitted dependencies
+
+- **WHEN** shared package production source imports its own files, an external dependency or a shared package declared as a `workspace:*` dependency
+- **THEN** the guard passes
+
+#### Scenario: Package integration tests import application code
+
+- **WHEN** package test files or files within package test directories import application code
+- **THEN** those test imports do not count as production package dependencies
+
+#### Scenario: Package source would be skipped or its ownership disguised
+
+- **WHEN** a source-bearing package has a missing or invalid manifest, or production source uses a symbolic link
+- **THEN** the guard fails with a diagnostic instead of silently omitting the source
+
+### Requirement: Feature runtime interfaces are independent of shell composition
+
+Feature production modules SHALL obtain bootstrap settings/context hooks and the browser navigation primitive from core-owned implementations without importing `layers/shell`. The shell SHALL compose those interfaces with authentication and query providers while owning window bootstrap reading, routing and layout.
+
+Current repository consumers and tooling references SHALL import implementation owners directly. Obsolete core-to-shell re-export files SHALL be removed after their consumers are migrated. State identity, navigation behaviour, client coverage and existing browser journeys SHALL be preserved.
+
+#### Scenario: Feature consumes application settings
+
+- **WHEN** a feature reads settings or application configuration through a core hook inside the shell provider tree
+- **THEN** it observes the same bootstrap context and authentication/query state across rerenders
+- **AND** its production imports do not reach the shell
+
+#### Scenario: Feature navigates through the client runtime
+
+- **WHEN** a feature requests same-origin navigation through the core client runtime
+- **THEN** the core browser-navigation primitive preserves history and popstate behaviour
+- **AND** the shell remains responsible for selecting and rendering the route
+
+### Requirement: Modules do not import composition layers or apps
+
+Production source in `modules/*/{client,server,shared}` SHALL NOT import `layers/*` or `apps/*`. The guard SHALL recognise the same supported literal import forms, workspace names, root aliases, relative paths, file URLs and source ownership rules as the shared-package guard. Tests and generated source SHALL be excluded from this production rule. No existing module-to-layer or module-to-app exception list SHALL be required.
+
+Production module source symlinks, unrecognised imports in the repository-owned `@trustroots/*` namespace and file imports outside the repository SHALL fail rather than silently escaping boundary classification. The guard SHALL classify both the lexical import path and its canonical filesystem target so a symlinked app/layer directory cannot hide an upward import.
+
+The repository SHALL run both package and module boundary checks through local lint, affected checks and CI. Existing module-to-module dependency checks SHALL remain authoritative for declared dependencies and the frozen module graph; legacy root configuration imports SHALL remain outside this bounded rule.
+
+#### Scenario: Module imports client shell or application source
+
+- **WHEN** production module source imports a layer or app through a supported literal import spelling
+- **THEN** the module boundary guard fails with the source file and offending import
+
+#### Scenario: Composition and feature dependencies retain their direction
+
+- **WHEN** a layer imports a feature module or feature source imports core interfaces, another module, a shared package, an external dependency or legacy root configuration
+- **THEN** this upward-import guard passes
+- **AND** existing module graph and manifest guards continue checking module dependencies separately
+
+#### Scenario: Tests exercise composed application behaviour
+
+- **WHEN** a module integration test imports shell composition to exercise feature behaviour
+- **THEN** the test is excluded from the production upward-import rule

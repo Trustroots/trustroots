@@ -18,9 +18,30 @@ export function validateChanged(
       .map(entry => [entry.key, entry]),
   );
   return Object.entries(after)
-    .filter(([key, value]) => before[key] !== value)
+    .filter(
+      ([key, value]) => JSON.stringify(before[key]) !== JSON.stringify(value),
+    )
     .flatMap(([key, value]) => {
       const entry = entries.get(key);
+      // A plural-format migration can rename existing text without editing it.
+      // Only recognise removed legacy keys in the same valid plural family.
+      const plural = key.match(/^(.*)_(zero|one|two|few|many|other)$/);
+      if (
+        entry &&
+        plural &&
+        Object.entries(before).some(
+          ([oldKey, oldValue]) =>
+            typeof oldValue === 'string' &&
+            oldValue === value &&
+            !Object.hasOwn(after, oldKey) &&
+            (oldKey === plural[1] ||
+              oldKey === plural[1] + '_plural' ||
+              (/_[0-9]+$/.test(oldKey) &&
+                oldKey.replace(/_[0-9]+$/, '') === plural[1])),
+        )
+      ) {
+        return [];
+      }
       const error = !entry
         ? 'Unknown translation key or plural form.'
         : typeof value !== 'string'

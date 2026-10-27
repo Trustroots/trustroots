@@ -1,7 +1,7 @@
 import React from 'react';
 import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 

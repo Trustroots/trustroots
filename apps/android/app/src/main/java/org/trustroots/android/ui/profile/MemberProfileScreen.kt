@@ -46,6 +46,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
@@ -78,8 +79,11 @@ import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.common.memberLocationLabel
+import org.trustroots.android.ui.common.memberLastActiveLabel
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
+import org.trustroots.android.ui.circles.CircleDetailVisit
+import org.trustroots.android.ui.circledetail.CircleDetailEntry
 
 @Composable
 internal fun MemberProfileScreen(
@@ -142,6 +146,7 @@ internal fun MemberProfileScreen(
                     viewModel = model, onOpenRelated = pushRelated,
                     onOpenConversation = pushConversation,
                     onOpenContactBrowser = pushContactBrowser,
+                    onOpenCircle = { slug -> backStack.add(CircleDetailVisit(slug, nextVisitID++)) },
                     isActiveProfileRoute = isActiveRoute.value,
                     onOpenEditProfile = { backStack.add(MemberProfileEditVisit(route.username, route.visitID, nextVisitID++)) },
                     onOpenExperience = { memberID -> backStack.add(MemberProfileExperienceVisit(route.username, memberID, route.visitID, nextVisitID++)) },
@@ -149,6 +154,15 @@ internal fun MemberProfileScreen(
                     onProfileChanged = { handoffViewModel.retainProfile(route.visitID, it, handoffEnvironment) },
                     completion = handoffs[route.visitID]?.completion,
                     onCompletionHandled = { deliveryID -> handoffViewModel.consumeCompletion(route.visitID, deliveryID) },
+                )
+            }
+            entry<CircleDetailVisit> { route ->
+                CircleDetailEntry(
+                    slug = route.slug, api = api, session = session,
+                    onSessionInvalidated = onSessionInvalidated,
+                    contentPadding = contentPadding, onBack = popProfile,
+                    onMembershipChanged = { _, _ -> },
+                    onOpenProfile = { related -> backStack.add(MemberProfileVisit(related, nextVisitID++)) },
                 )
             }
             entry<MemberProfileEditVisit> { route ->
@@ -219,6 +233,7 @@ private fun MemberProfileContent(
     onOpenRelated: (String) -> Unit,
     onOpenConversation: (String) -> Unit,
     onOpenContactBrowser: (String) -> Unit,
+    onOpenCircle: (String) -> Unit,
     isActiveProfileRoute: Boolean,
     onOpenEditProfile: () -> Unit,
     onOpenExperience: (String) -> Unit,
@@ -244,6 +259,8 @@ private fun MemberProfileContent(
     val relationshipResolved = profileState.relationshipResolved
     var confirmRemoveContact by rememberSaveable(username) { mutableStateOf(false) }
     val removingContact = profileState.isRemovingContact
+    var blockTarget by rememberSaveable(username, api.backendURL, session.member.username, session.cookieHeader) { mutableStateOf<Boolean?>(null) }
+    var reportVisible by rememberSaveable(username, api.backendURL, session.member.username, session.cookieHeader) { mutableStateOf(false) }
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
@@ -262,6 +279,35 @@ private fun MemberProfileContent(
             showingProfileImage -> showingProfileImage = false
             confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
             else -> onBack()
+        }
+    }
+    LaunchedEffect(profileState.isBlocked, profileState.isUpdatingBlock, blockTarget) {
+        if (blockTarget != null && !profileState.isUpdatingBlock && profileState.isBlocked == blockTarget) blockTarget = null
+    }
+    LaunchedEffect(isActiveProfileRoute) {
+        if (isActiveProfileRoute && profileState.profile != null) viewModel.onEvent(MemberProfileEvent.RetryBlockStatus)
+    }
+    if (profile != null && !profile.username.equals(session.member.username, ignoreCase = true)) {
+        blockTarget?.let { target ->
+            ProfileBlockDialog(
+                displayName = profile.displayName,
+                blocked = target,
+                state = profileState,
+                onDismiss = { blockTarget = null },
+                onConfirm = { viewModel.onEvent(MemberProfileEvent.SetBlocked(target)) },
+            )
+        }
+        if (reportVisible) {
+            ProfileReportDialog(
+                displayName = profile.displayName,
+                state = profileState,
+                onDismiss = {
+                    reportVisible = false
+                    viewModel.onEvent(MemberProfileEvent.DismissReport)
+                },
+                onDraftChanged = { viewModel.onEvent(MemberProfileEvent.ReportDraftChanged(it)) },
+                onSubmit = { viewModel.onEvent(MemberProfileEvent.SubmitReport) },
+            )
         }
     }
     if (confirmRemoveContact) {
@@ -336,7 +382,7 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.username == session.member.username
+    val isSelf = profile?.username?.equals(session.member.username, ignoreCase = true) == true
     Column(Modifier.fillMaxSize()) {
         when {
             profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
@@ -419,7 +465,7 @@ private fun MemberProfileContent(
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
                                     onMessage = {
-                                        member.id?.let(onOpenConversation)
+                                        if (profileState.isBlocked == false && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
                                     },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
                                     contactLabel = when {
@@ -442,9 +488,18 @@ private fun MemberProfileContent(
                                     topPadding = contentPadding.calculateTopPadding(),
                                     horizontalInset = contentPadding.horizontalInset(),
                                     compactTitle = member.displayName.takeIf { compactProfileHeader },
+                                    isBlocked = profileState.isBlocked,
+                                    safetyBusy = profileState.isUpdatingBlock || profileState.isLoadingBlock,
+                                    onBlock = { profileState.isBlocked?.let { blockTarget = !it } },
+                                    onReport = { reportVisible = true },
                                 )
                             }
                         }
+                        if (!isSelf) ProfileSafetyNotice(
+                            displayName = member.displayName,
+                            state = profileState,
+                            onRetry = { viewModel.onEvent(MemberProfileEvent.RetryBlockStatus) },
+                        )
                         HorizontalPager(state = profilePager, modifier = Modifier.weight(1f).fillMaxWidth().testTag("profilePager")) { page ->
                             Column(Modifier.fillMaxSize().padding(bottom = contentPadding.calculateBottomPadding()).verticalScroll(rememberScrollState())) {
                                 Column(Modifier.padding(20.dp).padding(contentPadding.horizontalInset())) {
@@ -454,9 +509,11 @@ private fun MemberProfileContent(
                                             memberLocationLabel(member.locationLiving, member.locationFrom)?.let {
                                                 Text(it, modifier = Modifier.padding(vertical = 6.dp))
                                             }
-                                            ProfileAboutSection(member = member, api = api)
+                                            ProfileAboutSection(member = member)
+                                            ProfileActivityFacts(member)
                                             HorizontalDivider(Modifier.padding(vertical = 16.dp))
                                             ProfileHostingSection(hosting = hosting, hostingLoaded = hostingLoaded)
+                                            ProfileCirclesSection(member = member, api = api, onOpenCircle = onOpenCircle)
                                         }
                                         ProfileSection.Experiences -> ProfileOverviewSection(
                                             references = references,
@@ -490,6 +547,54 @@ private fun MemberProfileContent(
             memberLabel = profile?.displayName ?: stringResource(R.string.profile_photo_default_member_label),
             onClose = { showingProfileImage = false },
         )
+    }
+}
+
+@Composable
+private fun ProfileActivityFacts(member: MemberProfile) {
+    val context = LocalContext.current
+    val lastActive = remember(context, member.lastActiveAtMillis) {
+        memberLastActiveLabel(context, member.lastActiveAtMillis)
+    }
+    val replyRate = member.replyRate?.takeIf(String::isNotBlank)
+    val replyTime = member.replyTime?.takeIf(String::isNotBlank)
+    if (lastActive == null && replyRate == null && replyTime == null) return
+
+    Column(
+        Modifier.fillMaxWidth()
+            .padding(top = 18.dp)
+            .testTag("profileActivityFacts"),
+    ) {
+        Text(stringResource(R.string.profile_activity_heading), style = MaterialTheme.typography.titleMedium)
+        lastActive?.let {
+            ProfileActivityFact(
+                label = stringResource(R.string.profile_activity_last_active),
+                value = it,
+                testTag = "profileActivityLastActive",
+            )
+        }
+        replyRate?.let {
+            ProfileActivityFact(
+                label = stringResource(R.string.profile_activity_reply_rate),
+                value = it,
+                testTag = "profileActivityReplyRate",
+            )
+        }
+        replyTime?.let {
+            ProfileActivityFact(
+                label = stringResource(R.string.profile_activity_reply_time),
+                value = stringResource(R.string.profile_activity_reply_time_value, it),
+                testTag = "profileActivityReplyTime",
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProfileActivityFact(label: String, value: String, testTag: String) {
+    Column(Modifier.padding(top = 6.dp).testTag(testTag)) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium)
     }
 }
 

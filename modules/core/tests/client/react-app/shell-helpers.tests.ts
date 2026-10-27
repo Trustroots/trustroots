@@ -1,10 +1,10 @@
 import {
   defaultNavigate,
   getClientNavigationTarget,
-  navigateTo,
   navigation,
   signout,
-} from '@/modules/core/client/react-app/shell-helpers';
+} from '@/layers/shell/client/shell-helpers';
+import { navigateTo } from '@/modules/core/client/services/browser-navigation';
 
 type LocationFixture = Partial<Location> & Pick<Location, 'href'>;
 

@@ -38,6 +38,7 @@ import NotFoundPage from '@/modules/core/client/components/NotFoundPage.componen
 import HomeRoute from '@/modules/pages/client/components/HomeRoute';
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import Contribute from '@/modules/pages/client/components/Contribute.component';
+import Credits from '@/modules/pages/client/components/Credits.component';
 import FaqBugsAndFeatures from '@/modules/pages/client/components/FaqBugsAndFeatures.component';
 import FaqFoundation from '@/modules/pages/client/components/FaqFoundation.component';
 import FaqGeneral from '@/modules/pages/client/components/FaqGeneral.component';
@@ -85,9 +86,9 @@ import ContactConfirmPage from '@/modules/contacts/client/components/ContactConf
 import TribesPage from '@/modules/tribes/client/components/TribesPage.component';
 import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.component';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
-import ReactAppShell from '@/modules/core/client/react-app/ReactAppShell';
-import { signout } from '@/modules/core/client/react-app/shell-helpers';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
+import ReactAppShell from './ReactAppShell';
+import { signout } from './shell-helpers';
 
 type RouteUser = AuthUser;
 type RouteContext = {
@@ -267,6 +268,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/faq/foundation': () => <FaqFoundation />,
     '/faq/technology': () => <FaqTechnology />,
     '/foundation': renderWithUser(Foundation),
+    '/credits': () => <Credits />,
     '/guide': () => <Guide />,
     '/media': () => <Media />,
     '/messages': renderWithUser(Inbox),

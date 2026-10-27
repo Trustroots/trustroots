@@ -9,7 +9,10 @@ export interface CircleLocation {
   latitude: number;
   longitude: number;
   details: string[];
-  facts?: { label: string; value: string }[];
+  facts?: {
+    label: string;
+    value: string | { label: string; url?: string }[];
+  }[];
   link?: { url: string; label: string };
 }
 
@@ -25,7 +28,23 @@ export function locationPopup(location: CircleLocation): HTMLElement {
       const term = document.createElement('dt');
       const definition = document.createElement('dd');
       term.textContent = label;
-      definition.textContent = value;
+      if (typeof value === 'string') {
+        definition.textContent = value;
+      } else {
+        value.forEach((item, index) => {
+          if (index) definition.append(', ');
+          if (item.url && /^https?:\/\//i.test(item.url)) {
+            const link = document.createElement('a');
+            link.href = item.url;
+            link.textContent = item.label;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            definition.append(link);
+          } else {
+            definition.append(item.label);
+          }
+        });
+      }
       facts.append(term, definition);
     });
     root.append(facts);
@@ -65,6 +84,7 @@ export default function CircleLocationMap(props: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.LayerGroup | null>(null);
+  const openLocation = useRef<string | null>(null);
   const initialViewSet = useRef(false);
   useEffect(() => {
     const element = container.current!;
@@ -106,9 +126,10 @@ export default function CircleLocationMap(props: Props) {
   }, []);
   useEffect(() => {
     const markers = markersRef.current!;
+    const selected = openLocation.current;
     markers.clearLayers();
     props.locations.forEach(location => {
-      L.circleMarker([location.latitude, location.longitude], {
+      const marker = L.circleMarker([location.latitude, location.longitude], {
         radius: 8,
         color: '#fff',
         weight: 2,
@@ -116,7 +137,20 @@ export default function CircleLocationMap(props: Props) {
         fillOpacity: 1,
       })
         .bindPopup(locationPopup(location))
+        .on('popupopen', () => {
+          openLocation.current = location.id;
+        })
+        .on('popupclose', () => {
+          openLocation.current = null;
+        })
         .addTo(markers);
+      if (selected === location.id) {
+        const popup = marker.getPopup()!;
+        // Refresh the selected popup without undoing the visitor's map position.
+        popup.options.autoPan = false;
+        marker.openPopup();
+        popup.options.autoPan = true;
+      }
     });
   }, [props.locations, props.markerColor]);
   useEffect(() => {

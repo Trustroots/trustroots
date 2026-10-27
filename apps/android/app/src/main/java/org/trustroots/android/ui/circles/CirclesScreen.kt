@@ -66,6 +66,8 @@ import org.trustroots.android.ui.common.LiveFilterField
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.circledetail.CircleDetailEntry
+import org.trustroots.android.ui.profile.MemberProfileScreen
+import org.trustroots.android.ui.profile.MemberProfileVisit
 
 @Composable
 internal fun CirclesScreen(
@@ -99,6 +101,9 @@ internal fun CirclesNavigationDisplay(
     val popRoute: () -> Unit = { if (backStack.size > 1) backStack.removeLastOrNull() }
     val pushDetail: (String) -> Unit = { slug ->
         backStack.add(CircleDetailVisit(slug, nextVisitID++))
+    }
+    val pushProfile: (String) -> Unit = { username ->
+        backStack.add(MemberProfileVisit(username, nextVisitID++))
     }
     val reportMembershipChange: (String, Boolean) -> Unit = { circleID, isMember ->
         pendingMembershipCircleID = circleID
@@ -136,6 +141,17 @@ internal fun CirclesNavigationDisplay(
                     contentPadding = contentPadding,
                     onBack = popRoute,
                     onMembershipChanged = reportMembershipChange,
+                    onOpenProfile = pushProfile,
+                )
+            }
+            entry<MemberProfileVisit> { route ->
+                MemberProfileScreen(
+                    api = api,
+                    session = session,
+                    username = route.username,
+                    onSessionInvalidated = onSessionInvalidated,
+                    contentPadding = contentPadding,
+                    onBack = popRoute,
                 )
             }
         },
@@ -207,6 +223,7 @@ internal fun circlesFailureMessage(failure: CirclesFailure?): String? = failure?
             fallback = when (it.kind) {
                 CirclesFailureKind.CIRCLES_LOAD, CirclesFailureKind.CIRCLE_DETAIL_LOAD -> UiFailureFallback.CIRCLES_LOAD
                 CirclesFailureKind.MEMBERSHIPS_LOAD -> UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD
+                CirclesFailureKind.CIRCLE_MEMBERS_LOAD -> UiFailureFallback.CIRCLE_MEMBERS_LOAD
                 CirclesFailureKind.MEMBERSHIP_UPDATE -> UiFailureFallback.CIRCLE_MEMBERSHIP_UPDATE
             },
         ),

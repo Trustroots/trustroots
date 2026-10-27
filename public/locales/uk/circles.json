@@ -1,9 +1,9 @@
 {
     "Join": "Приєднатися",
     "Discover circles": "Знайти кола",
-    "{{count, number}} members_0": "{{count,number}} учасник",
-    "{{count, number}} members_1": "{{count, number}} учасника",
-    "{{count, number}} members_2": "{{count, number}} учасників",
+    "{{count, number}} members_one": "{{count,number}} учасник",
+    "{{count, number}} members_few": "{{count, number}} учасника",
+    "{{count, number}} members_many": "{{count, number}} учасників",
     "Sign up with Trustroots": "Зареєструватися з Trustroots",
     "Send us suggestions!": "Запропонуй нам!",
     "No members yet": "Ще немає учасників",

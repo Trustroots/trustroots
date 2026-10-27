@@ -14,7 +14,7 @@
     "No members yet": "אין משתמשים עדיין",
     "Send us suggestions!": "שלח לנו הצעות!",
     "Sign up with Trustroots": "היכנס עם Trustroots",
-    "{{count, number}} members_0": "משתמש אחד",
-    "{{count, number}} members_1": "{{count, number}} משתמשים",
-    "{{count, number}} members_2": "{{count, number}} משתמשים"
+    "{{count, number}} members_one": "משתמש אחד",
+    "{{count, number}} members_two": "{{count, number}} משתמשים",
+    "{{count, number}} members_other": "{{count, number}} משתמשים"
 }

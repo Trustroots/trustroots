@@ -14,6 +14,7 @@ export type NostrRelayStubOptions = {
   events?: SignedNostrEvent[];
   relayUrl?: string;
   unavailable?: boolean;
+  acceptPublishes?: boolean;
 };
 
 /**
@@ -26,6 +27,7 @@ export async function installNostrRelayStub(
     events = [],
     relayUrl = 'wss://relay.trustroots.org',
     unavailable = false,
+    acceptPublishes = false,
   }: NostrRelayStubOptions = {},
 ): Promise<void> {
   await page.addInitScript(
@@ -33,6 +35,7 @@ export async function installNostrRelayStub(
       relayEvents,
       relayUrl: targetRelayUrl,
       unavailable: relayUnavailable,
+      acceptPublishes: relayAcceptPublishes,
     }) => {
       const NativeWebSocket = window.WebSocket;
 
@@ -81,6 +84,32 @@ export async function installNostrRelayStub(
           try {
             message = JSON.parse(data) as unknown;
           } catch {
+            return;
+          }
+
+          if (
+            Array.isArray(message) &&
+            message[0] === 'EVENT' &&
+            relayAcceptPublishes
+          ) {
+            const published = message[1] as SignedNostrEvent;
+            window.dispatchEvent(
+              new CustomEvent('nostr-test-published', { detail: published }),
+            );
+            window.setTimeout(
+              () =>
+                this.emit(
+                  new MessageEvent('message', {
+                    data: JSON.stringify([
+                      'OK',
+                      published.id,
+                      true,
+                      'fixture accepted',
+                    ]),
+                  }),
+                ),
+              0,
+            );
             return;
           }
 
@@ -162,6 +191,6 @@ export async function installNostrRelayStub(
       });
       window.WebSocket = replacement;
     },
-    { relayEvents: events, relayUrl, unavailable },
+    { relayEvents: events, relayUrl, unavailable, acceptPublishes },
   );
 }

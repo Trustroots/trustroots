@@ -8,7 +8,7 @@ import {
   screen,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { AppProviders } from '@/modules/core/client/react-app/AppProviders';
+import { AppProviders } from '@/layers/shell/client/AppProviders';
 
 import * as experiencesApi from '@/modules/experiences/client/api/experiences.api';
 import * as supportApi from '@/modules/support/client/api/support.api';
