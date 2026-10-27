@@ -37,6 +37,16 @@ class LocalizedFailureMessageJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     @Test
+    fun circleMembershipLoadFailureUsesItsOwnFallback() {
+        compose.setContent {
+            Text(resolveFailureMessage(UiFailure(fallback = UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD)))
+        }
+
+        compose.onNodeWithText(compose.activity.getString(R.string.screen_circle_memberships_load_error))
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun retainedFailureUsesUpdatedLocaleAndUnknownMemberUsesResourceLabel() {
         val activity = compose.activity
         val englishConfiguration = Configuration(activity.resources.configuration).apply {

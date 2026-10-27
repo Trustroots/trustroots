@@ -65,4 +65,20 @@ class MemberNavigationBarJourneyTest {
         compose.onNodeWithTag("navigation-messages")
             .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "100 unread conversations"))
     }
+
+    @Test fun zeroUnreadMessagesHasAccessibleStateWithoutShowingABadge() {
+        compose.setContent {
+            NativeTestAppFrame(
+                destination = Destination.Messages,
+                unreadMessageCount = 0,
+            ) {}
+        }
+
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+            .assert(SemanticsMatcher.expectValue(
+                SemanticsProperties.StateDescription,
+                compose.activity.resources.getQuantityString(R.plurals.screen_destination_unread_count, 0, 0),
+            ))
+        compose.onNodeWithText("0", useUnmergedTree = true).assertDoesNotExist()
+    }
 }

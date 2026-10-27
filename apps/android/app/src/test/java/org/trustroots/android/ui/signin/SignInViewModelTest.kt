@@ -260,6 +260,23 @@ class SignInViewModelTest {
     }
 
     @Test
+    fun signInFactoryCreatesAViewModelWithItsDefaultScope() {
+        val store = ViewModelStore()
+        val owner = object : ViewModelStoreOwner {
+            override val viewModelStore = store
+        }
+        val viewModel = ViewModelProvider(
+            owner,
+            SignInViewModelFactory("https://api.example.test", null),
+        ).get(SignInViewModel::class.java)
+
+        viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+        assertEquals("anonymous-heron", viewModel.state.value.username)
+        store.clear()
+        assertEquals(SignInUiState(), viewModel.state.value)
+    }
+
+    @Test
     fun graphHolderResetsOnlyWhenItsDestinationIsClearedOrBackendChanges() {
         val holder = SignInDestinationStoreHolder()
         holder.activateBackend("https://api.example.test/")

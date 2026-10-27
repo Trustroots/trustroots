@@ -122,6 +122,24 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun externalMembershipChangesSurviveAnOlderSnapshot() = withScope { scope ->
+        val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
+        val repository = FakeCircleRepository().apply {
+            membershipsHandler = { pendingMemberships.await() }
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-one", true))
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-two", true))
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-one", false))
+        pendingMemberships.complete(Result.success(setOf("circle-one")))
+
+        assertEquals(setOf("circle-two"), viewModel.state.value.memberships)
+        assertFalse(viewModel.state.value.isLoading)
+        assertTrue(repository.membershipChanges.isEmpty())
+    }
+
+    @Test
     fun loadFailureOffersRetryAndRetryReplacesTheFailureWithLoadedData() = withScope { scope ->
         val repository = FakeCircleRepository()
         repository.circlesHandler = { call ->
