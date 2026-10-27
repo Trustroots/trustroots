@@ -119,7 +119,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(
         page.getByText(/for meetings, but not as a host/),
       ).toBeVisible();
-      await page.getByRole('tab', { name: 'Location' }).click();
       await page.evaluate(() => {
         Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
           publicKey: 'test-geocoding-token',
@@ -236,42 +235,26 @@ test.describe.serial('search offers and circles feature coverage', () => {
     }
   });
 
-  test('hosting tab deep links preserve edits through browser history', async ({
+  test('hosting section links preserve edits through browser history', async ({
     page,
   }) => {
     await page.goto('/offer/host#location');
-    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    await expect(
-      page.getByLabel('Search places', { exact: true }),
-    ).toBeVisible();
-    await page.getByRole('tab', { name: 'Description' }).click();
-    await expect(page).toHaveURL(/\/offer\/host#description$/);
+    await expect(page.locator('#location')).toBeInViewport();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
     );
     await description.fill('An unsaved spare room description.');
-    await page.getByRole('tab', { name: 'Availability' }).click();
-    await expect(page).toHaveURL(/\/offer\/host#availability$/);
+    await page.evaluate(() => {
+      window.location.hash = 'description';
+    });
+    await expect(page.locator('#description')).toBeInViewport();
     await page.goBack();
+    await expect(page.locator('#location')).toBeInViewport();
     await expect(description).toHaveValue('An unsaved spare room description.');
-    await page.goBack();
-    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    await page.goForward();
-    await expect(description).toHaveValue('An unsaved spare room description.');
-    await page.reload();
-    await expect(
-      page.getByRole('tab', { name: 'Description' }),
-    ).toHaveAttribute('aria-selected', 'true');
   });
 
-  test('mobile hosting map keeps search, tabs and save controls accessible', async ({
+  test('mobile hosting map keeps search and save controls accessible', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -299,7 +282,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await expect(
       page.getByRole('button', { name: 'Save and Exit' }),
     ).toBeInViewport();
-    await expect(page.getByRole('tab', { name: 'Location' })).toBeInViewport();
   });
 
   test('mobile offer editors expose working save controls', async ({
@@ -307,7 +289,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/offer/host');
-    await page.getByRole('tab', { name: 'Description' }).click();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
@@ -449,7 +430,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const memberId = await fetchUserIdByUsername(page.request, berlin.username);
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
     await page.goto('/offer/host');
-    await page.getByRole('tab', { name: 'Location' }).click();
     await page.evaluate(() => {
       Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
         publicKey: 'test-geocoding-token',
@@ -503,19 +483,17 @@ test.describe.serial('search offers and circles feature coverage', () => {
     { name: 'desktop', width: 1280, height: 900 },
     { name: 'mobile', width: 390, height: 844 },
   ]) {
-    test(`hosting raster map stays aligned after tab changes and resizing on ${viewport.name}`, async ({
+    test(`hosting raster map stays aligned after resizing on ${viewport.name}`, async ({
       page,
       context,
     }, testInfo) => {
       annotateFeature(testInfo, 'profile.edit-locations', [
-        'Hosting map tiles load after opening the Location tab.',
-        'The location marker stays centred after tab changes and resizing.',
+        'Hosting map tiles load on the offer page.',
+        'The location marker stays centred after resizing.',
       ]);
       await page.setViewportSize(viewport);
       await prepareRasterSearchMap(page, context, { includeMapbox: true });
       await page.goto('/offer/host');
-      const locationTab = page.getByRole('tab', { name: 'Location' });
-      await locationTab.click();
       const map = page.locator('.offer-map .leaflet-container');
       const overlay = page.locator('.offer-location-overlay');
 
@@ -549,12 +527,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
       }
 
       await expectAlignedMap();
-      await page.getByRole('tab', { name: 'Availability' }).click();
       await page.setViewportSize({
         width: viewport.width - 30,
         height: viewport.height - 60,
       });
-      await locationTab.click();
       await expectAlignedMap();
     });
   }
@@ -580,7 +556,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
         Boolean(document.createElement('canvas').getContext('webgl')),
       ),
     ).toBe(true);
-    await page.getByRole('tab', { name: 'Location' }).click();
     const map = page.locator('.offer-map .leaflet-container');
     await expect(map).toBeVisible();
     await expect(page.locator('.offer-map .mapboxgl-canvas')).toHaveCount(0);
