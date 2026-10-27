@@ -28,7 +28,7 @@ export default function MeetingAvailabilityControl({
         {options.map(([status, label]) => (
           <label
             key={status}
-            className={`btn btn-lg ${status === 'not-set' ? 'btn-default' : `btn-offer-hosting btn-offer-hosting-${status}`}${value === status ? ' active' : ''}`}
+            className={`btn btn-lg ${status === 'not-set' ? 'btn-meeting-not-set' : `btn-offer-hosting btn-offer-hosting-${status}`}${value === status ? ' active' : ''}`}
           >
             <input
               checked={value === status}

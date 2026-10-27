@@ -1,4 +1,5 @@
 @import '~less/global-variables';
+@import '~less/layout/typography';
 
 /**
  * View offer
@@ -73,11 +74,18 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 10px;
+  padding: 15px;
 
   > span {
     min-width: 0;
     overflow-wrap: anywhere;
+    font-size: 22px;
+    line-height: 28px;
+    .font-brand-regular();
+
+    @media (max-width: @screen-xs-max) {
+      font-size: 19px;
+    }
   }
 
   > a {
@@ -92,7 +100,13 @@
   legend {
     margin-bottom: 8px;
     border: 0;
-    font-size: inherit;
+    font-size: 22px;
+    line-height: 24px;
+    .font-brand-regular();
+
+    @media (max-width: @screen-xs-max) {
+      font-size: 19px;
+    }
   }
 
   .btn-group {
@@ -102,6 +116,19 @@
 
   .btn {
     padding: 8px 12px;
+  }
+
+  .btn-meeting-not-set {
+    color: @gray-dark;
+    background-color: @gray-lighter;
+    border-color: darken(@gray-lighter, 10%);
+
+    &:hover,
+    &:focus-within,
+    &.active {
+      background-color: darken(@gray-lighter, 10%);
+      border-color: darken(@gray-lighter, 20%);
+    }
   }
 
   .btn:focus-within {
