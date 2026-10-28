@@ -534,7 +534,7 @@ test('administrators can apply historical statuses across rendered request varia
   const historicalUrlRequest = {
     category: 'other',
     email: 'url-request@example.test',
-    message: 'See www.example.test/help for details.',
+    message: 'See www.example.org/help for details.',
   };
   const collisionRequest = {
     category: 'other',
@@ -560,7 +560,7 @@ test('administrators can apply historical statuses across rendered request varia
   });
   const historicalUrlFingerprint = fingerprint({
     ...historicalUrlRequest,
-    message: 'See http://www.example.test/help for details.',
+    message: 'See http://www.example.org/help for details.',
   });
   const collisionBaseFingerprint = fingerprint(collisionRequest);
   const collisionEscapedFingerprint = fingerprint({
