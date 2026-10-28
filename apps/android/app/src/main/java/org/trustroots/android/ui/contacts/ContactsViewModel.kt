@@ -169,7 +169,7 @@ internal class ContactsViewModel(
                 hasAttemptedLoad = true,
                 failure = ContactsFailure(
                     reason = reason,
-                    throwableType = error?.javaClass?.name,
+                    throwableType = error?.let { it.javaClass.name },
                     serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
                     apiKind = (error as? MobileApiException)?.failureKind,
                 ),

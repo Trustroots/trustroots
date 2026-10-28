@@ -129,7 +129,7 @@ internal fun TrustrootsApp(
     val sessionState by sessionViewModel.state.collectAsState()
     val session = sessionState.session
     val starting = sessionState.isStarting
-    val shellGraphOwner = remember(shellGraphStore, starting, session?.member?.username) {
+    val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
         if (starting) null
         else session?.let { shellGraphStore.activateAccount(it.member.username) }
             ?: run {

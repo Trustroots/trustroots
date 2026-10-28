@@ -101,8 +101,9 @@ internal fun ProfileOverviewSection(
     api: MobileApiClient,
     session: MemberSession,
 ) {
-    if (references.isEmpty()) Text(stringResource(R.string.profile_no_experiences), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    if (references.isNotEmpty()) {
+    if (references.isEmpty()) {
+        Text(stringResource(R.string.profile_no_experiences), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    } else {
         Text(stringResource(R.string.profile_section_experiences), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 18.dp))
         (if (showAllReferences) references else references.take(6)).forEach { reference ->
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {

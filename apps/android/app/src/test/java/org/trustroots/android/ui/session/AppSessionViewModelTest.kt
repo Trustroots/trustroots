@@ -5,6 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -110,6 +112,16 @@ class AppSessionViewModelTest {
         assertFalse(model.state.value.isStarting)
         assertTrue(waits.isEmpty())
         assertEquals(session(), model.state.value.session)
+    }
+
+    @Test
+    fun signedOutStateHasNoStartupNameOrMemberIdentity() {
+        val state = AppSessionUiState(isStarting = false)
+        assertNull(state.startupFirstName)
+        assertTrue(state.toString().contains("sessionUsername=null"))
+        val singleName = state.copy(session = session().copy(member = MobileMember("steady-heron", "Heron")))
+        assertEquals("Heron", singleName.startupFirstName)
+        assertTrue(singleName.toString().contains("sessionUsername=steady-heron"))
     }
 
     @Test
@@ -394,6 +406,29 @@ class AppSessionViewModelTest {
         assertNull(model.state.value.session)
         assertNull(model.state.value.signedOutMessage)
         assertEquals(operationsBeforeClear, operations.events)
+    }
+
+    @Test
+    fun cancelledRestoreCannotReplaceASignInEvenWhenStorageFinishesLater() = withScope { scope ->
+        val storedSession = CompletableDeferred<MemberSession?>()
+        val operations = FakeOperations().apply {
+            loadAction = { withContext(NonCancellable) { storedSession.await() } }
+        }
+        val model = AppSessionViewModel(
+            operations,
+            scope = scope,
+            ioDispatcher = Dispatchers.Unconfined,
+            elapsedRealtime = { 0L },
+            wait = {},
+        )
+        val signedIn = session("connect.sid=fresh-session", "steady-heron")
+        model.onEvent(AppSessionEvent.SignedIn(signedIn, ""))
+
+        storedSession.complete(session())
+
+        assertEquals(signedIn, model.state.value.session)
+        assertFalse(model.state.value.isStarting)
+        assertEquals(listOf("save:steady-heron", "clear-sign-in"), operations.events)
     }
 
     @Test

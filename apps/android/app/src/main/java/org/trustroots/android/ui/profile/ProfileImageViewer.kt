@@ -1,7 +1,6 @@
 package org.trustroots.android.ui.profile
 
 import android.graphics.Bitmap
-import android.view.Window
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -61,7 +60,12 @@ import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
 import org.trustroots.android.R
 
-internal val ProfileImageWindowBarsKey = SemanticsPropertyKey<String>("ProfileImageWindowBars")
+internal data class ProfileImageWindowBars(
+    val lightStatusBars: Boolean,
+    val lightNavigationBars: Boolean,
+)
+
+internal val ProfileImageWindowBarsKey = SemanticsPropertyKey<ProfileImageWindowBars?>("ProfileImageWindowBars")
 internal val ProfileImageScaleKey = SemanticsPropertyKey<Float>("ProfileImageScale")
 internal val ProfileImageTranslationKey = SemanticsPropertyKey<String>("ProfileImageTranslation")
 internal val ProfileImageViewportKey = SemanticsPropertyKey<String>("ProfileImageViewport")
@@ -77,11 +81,6 @@ internal fun ProfileImageViewer(
     var viewport by remember { mutableStateOf(IntSize.Zero) }
     var transform by remember(bitmap) { mutableStateOf<ProfileImageTransform?>(null) }
     val imageSize = bitmap?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
-    val fitScale = if (imageSize != IntSize.Zero && viewport != IntSize.Zero) {
-        ProfileImageGeometry.initialScale(imageSize.width, imageSize.height, viewport.width, viewport.height)
-    } else {
-        1f
-    }
     val currentTransform = if (imageSize != IntSize.Zero && viewport != IntSize.Zero) {
         ProfileImageGeometry.clampOrFit(
             transform,
@@ -91,7 +90,7 @@ internal fun ProfileImageViewer(
             viewport.height,
         )
     } else {
-        ProfileImageTransform(scale = fitScale)
+        ProfileImageTransform(scale = 1f)
     }
     val viewerBackground = colorResource(R.color.profile_image_viewer_background)
     val viewerContent = colorResource(R.color.profile_image_viewer_content)
@@ -172,7 +171,7 @@ internal fun ProfileImageViewer(
                             this[ProfileImageViewportKey] = "${viewport.width},${viewport.height}"
                             customActions = accessibilityActions
                         }
-                        .pointerInput(bitmap, viewport, fitScale) {
+                        .pointerInput(bitmap, viewport) {
                             detectTransformGestures { centroid, pan, zoom, _ ->
                                 if (viewport == IntSize.Zero) return@detectTransformGestures
                                 val current = ProfileImageGeometry.clampOrFit(
@@ -280,9 +279,9 @@ internal fun ProfileImageViewer(
 }
 
 @Composable
-private fun rememberProfileImageWindowStyle(): String {
+private fun rememberProfileImageWindowStyle(): ProfileImageWindowBars? {
     val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-    var windowBars by remember(dialogWindow) { mutableStateOf("") }
+    var windowBars by remember(dialogWindow) { mutableStateOf<ProfileImageWindowBars?>(null) }
     DisposableEffect(dialogWindow) {
         if (dialogWindow == null) return@DisposableEffect onDispose {}
         val decorView = dialogWindow.decorView
@@ -291,17 +290,14 @@ private fun rememberProfileImageWindowStyle(): String {
         val originalLightNavigationBars = insetsController.isAppearanceLightNavigationBars
         insetsController.isAppearanceLightStatusBars = false
         insetsController.isAppearanceLightNavigationBars = false
-        windowBars = describeWindowBars(dialogWindow)
+        windowBars = ProfileImageWindowBars(
+            lightStatusBars = insetsController.isAppearanceLightStatusBars,
+            lightNavigationBars = insetsController.isAppearanceLightNavigationBars,
+        )
         onDispose {
             insetsController.isAppearanceLightStatusBars = originalLightStatusBars
             insetsController.isAppearanceLightNavigationBars = originalLightNavigationBars
         }
     }
     return windowBars
-}
-
-private fun describeWindowBars(window: Window): String {
-    val controller = WindowCompat.getInsetsController(window, window.decorView)
-    return "statusWhiteIcons=${!controller.isAppearanceLightStatusBars};" +
-        "navigationWhiteIcons=${!controller.isAppearanceLightNavigationBars}"
 }

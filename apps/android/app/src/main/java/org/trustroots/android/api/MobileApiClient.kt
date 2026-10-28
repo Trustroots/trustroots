@@ -663,17 +663,18 @@ class MobileApiClient(
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.outputStream.use { output -> output.write(it.toByteArray()) }
             }
-            val responseBody = (if (connection.responseCode in 200..299) {
+            val responseCode = connection.responseCode
+            val responseBody = (if (responseCode in 200..299) {
                 connection.inputStream
             } else {
                 connection.errorStream
             })?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (connection.responseCode !in 200..299) {
+            if (responseCode !in 200..299) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
                     .orEmpty()
                 throw MobileApiException(
-                    statusCode = connection.responseCode,
+                    statusCode = responseCode,
                     serverMessage = message.takeIf(String::isNotBlank),
                     failureKind = failureKind,
                 )

@@ -383,7 +383,7 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.username?.equals(session.member.username, ignoreCase = true) == true
+    val isSelf = profile?.let { it.username.equals(session.member.username, ignoreCase = true) } == true
     Column(Modifier.fillMaxSize()) {
         when {
             profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
@@ -472,7 +472,7 @@ private fun MemberProfileContent(
                                     contactLabel = when {
                                         !relationshipResolved -> null
                                         relationship?.id.isNullOrBlank() -> addContactLabel
-                                        relationship?.confirmed == true -> stringResource(R.string.profile_remove_contact)
+                                        relationship.confirmed -> stringResource(R.string.profile_remove_contact)
                                         else -> stringResource(R.string.profile_delete_contact_request)
                                     },
                                 onContactAction = {
@@ -559,7 +559,30 @@ private fun ProfileActivityFacts(member: MemberProfile) {
     }
     val replyRate = member.replyRate?.takeIf(String::isNotBlank)
     val replyTime = member.replyTime?.takeIf(String::isNotBlank)
-    if (lastActive == null && replyRate == null && replyTime == null) return
+    val facts = listOfNotNull(
+        lastActive?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_last_active,
+                value = it,
+                testTag = "profileActivityLastActive",
+            )
+        },
+        replyRate?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_reply_rate,
+                value = it,
+                testTag = "profileActivityReplyRate",
+            )
+        },
+        replyTime?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_reply_time,
+                value = stringResource(R.string.profile_activity_reply_time_value, it),
+                testTag = "profileActivityReplyTime",
+            )
+        },
+    )
+    if (facts.isEmpty()) return
 
     Column(
         Modifier.fillMaxWidth()
@@ -567,29 +590,21 @@ private fun ProfileActivityFacts(member: MemberProfile) {
             .testTag("profileActivityFacts"),
     ) {
         Text(stringResource(R.string.profile_activity_heading), style = MaterialTheme.typography.titleMedium)
-        lastActive?.let {
+        facts.forEach { fact ->
             ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_last_active),
-                value = it,
-                testTag = "profileActivityLastActive",
-            )
-        }
-        replyRate?.let {
-            ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_reply_rate),
-                value = it,
-                testTag = "profileActivityReplyRate",
-            )
-        }
-        replyTime?.let {
-            ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_reply_time),
-                value = stringResource(R.string.profile_activity_reply_time_value, it),
-                testTag = "profileActivityReplyTime",
+                label = stringResource(fact.label),
+                value = fact.value,
+                testTag = fact.testTag,
             )
         }
     }
 }
+
+private data class ProfileActivityFactData(
+    val label: Int,
+    val value: String,
+    val testTag: String,
+)
 
 @Composable
 private fun ProfileActivityFact(label: String, value: String, testTag: String) {

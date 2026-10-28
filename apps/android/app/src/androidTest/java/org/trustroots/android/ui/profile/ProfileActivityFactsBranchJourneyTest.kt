@@ -61,6 +61,19 @@ class ProfileActivityFactsBranchJourneyTest {
         assertNoAvatarRequests()
     }
 
+    @Test fun showsLastActiveWithoutReplyStatistics() {
+        showProfile(LAST_ACTIVE_ONLY)
+
+        openAboutSection()
+        compose.onNodeWithTag("profileActivityFacts").assertIsDisplayed()
+        compose.onNodeWithText("Activity").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Last active").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityLastActive").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("profileActivityReplyRate").assertDoesNotExist()
+        compose.onNodeWithTag("profileActivityReplyTime").assertDoesNotExist()
+        assertNoAvatarRequests()
+    }
+
     @Test fun hidesActivitySectionWhenEveryFactIsMissingOrBlank() {
         showProfile(WITHOUT_ACTIVITY_FACTS)
 
@@ -133,6 +146,14 @@ class ProfileActivityFactsBranchJourneyTest {
             "displayName":"Quiet Fox",
             "seen":null,
             "replyRate":"",
+            "replyTime":null
+        }"""
+
+        const val LAST_ACTIVE_ONLY = """{
+            "username":"quiet-fox",
+            "displayName":"Quiet Fox",
+            "seen":"2025-01-01T00:00:00.000Z",
+            "replyRate":" ",
             "replyTime":null
         }"""
     }

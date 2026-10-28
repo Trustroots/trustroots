@@ -92,7 +92,7 @@ class ProfileImageViewerJourneyTest {
         compose.onNodeWithTag("profileImageViewer").assert(
             SemanticsMatcher.expectValue(
                 ProfileImageWindowBarsKey,
-                "statusWhiteIcons=true;navigationWhiteIcons=true",
+                ProfileImageWindowBars(lightStatusBars = false, lightNavigationBars = false),
             ),
         )
         compose.onNodeWithContentDescription("Profile photo of Sample member").assertIsDisplayed()
