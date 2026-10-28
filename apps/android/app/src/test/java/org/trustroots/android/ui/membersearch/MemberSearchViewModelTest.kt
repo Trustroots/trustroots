@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.membersearch
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -27,6 +28,16 @@ import org.trustroots.android.ui.MemberShellViewModelStoreOwner
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class MemberSearchViewModelTest {
+    @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            MemberSearchViewModel.Factory(FakeMemberSearchRepository())
+                .create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
     @Test
     fun requiresThreeCharactersAndSubmitsTheCurrentQuery() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
@@ -238,6 +249,22 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun reentrantResetDuringSearchKeepsTheResetStateWhenTheOldResultReturns() = withScope { scope ->
+        lateinit var viewModel: MemberSearchViewModel
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = {
+            viewModel.onEvent(MemberSearchEvent.Reset())
+            Result.success(listOf(member("stale-fox", "Stale Fox")))
+        }
+        viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("quiet"))
+
+        viewModel.onEvent(MemberSearchEvent.Submit)
+
+        assertEquals(MemberSearchUiState(), viewModel.state.value)
+    }
+
+    @Test
     fun clearingTheQueryStillDeliversAnExpiredSessionFromTheSubmittedRequest() = withScope { scope ->
         val response = CompletableDeferred<Result<List<MemberProfile>>>()
         val repository = FakeMemberSearchRepository()
@@ -394,6 +421,8 @@ class MemberSearchViewModelTest {
     }
 
     private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class OtherViewModel : ViewModel()
 
     private class FakeMemberSearchRepository : MemberSearchRepository {
         var queries = mutableListOf<String>()

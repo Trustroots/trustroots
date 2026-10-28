@@ -188,6 +188,19 @@ class EditProfileViewModelTest {
     }
 
     @Test
+    fun switchingToAnotherAccountClearsTheProfileDraftWithoutLoadingItForThatAccount() {
+        val repository = FakeRepository()
+        val model = newModel(repository)
+        model.onEvent(EditProfileEvent.NameChanged("Private draft"))
+
+        model.updateEnvironment(api(), session(username = "amber-owl", cookie = "other-account-cookie"))
+
+        assertEquals(EditProfileUiState(isLoading = false), model.state.value)
+        assertEquals(0, repository.profileCalls)
+        assertEquals(0, repository.saveCalls)
+    }
+
+    @Test
     fun loadAuthenticationFailureCanBeAcknowledgedAndRetriedAfterCredentialRefresh() {
         val repository = FakeRepository().apply {
             profileResults += Result.failure(MobileApiException(401, "Fictional session expired."))

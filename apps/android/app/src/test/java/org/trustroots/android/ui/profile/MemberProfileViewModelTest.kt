@@ -260,6 +260,21 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun settingBlockStateToItsCurrentValueDoesNotSendAMutation() {
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(emptyList())
+        }
+        val model = newModel("quiet-fox", repository)
+
+        assertEquals(false, model.state.value.isBlocked)
+        model.onEvent(MemberProfileEvent.SetBlocked(false))
+
+        assertTrue(repository.blockChanges.isEmpty())
+        assertFalse(model.state.value.isUpdatingBlock)
+        assertEquals(false, model.state.value.isBlocked)
+    }
+
+    @Test
     fun inFlightBlockAndReportRequestsCannotBeDuplicatedAndReportUsesTrimmedDraft() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val pendingBlock = CompletableDeferred<Result<Unit>>()

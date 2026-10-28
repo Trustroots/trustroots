@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.hostdetail
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -35,6 +36,14 @@ import org.trustroots.android.ui.search.SearchOfferType
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostDetailViewModelTest {
+    @Test fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            HostDetailViewModel.Factory(FakeRepository()).create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
     @Test fun retryBeforeAHostRouteIsLoadedDoesNotIssueARequest() = withModel { model, repository ->
         model.onEvent(HostDetailEvent.Retry)
 
@@ -102,6 +111,24 @@ class HostDetailViewModelTest {
         assertTrue(model.state.value.failure != null)
         assertNull(model.state.value.offer)
 
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertEquals(listOf("retry-offer", "retry-offer"), repository.offerIDs)
+        assertEquals("retry-offer", model.state.value.offer?.id)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test fun repeatingTheFailedRouteDoesNotRetryUntilRetryIsRequested() = withModel { model, repository ->
+        repository.offerHandler = { call, id ->
+            if (call == 1) Result.failure(IllegalStateException("temporary detail failure"))
+            else Result.success(offerFixture(id))
+        }
+
+        model.onEvent(HostDetailEvent.Load("retry-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("retry-offer", SearchOfferType.Host))
+
+        assertEquals(listOf("retry-offer"), repository.offerIDs)
+        assertTrue(model.state.value.failure != null)
         model.onEvent(HostDetailEvent.Retry)
 
         assertEquals(listOf("retry-offer", "retry-offer"), repository.offerIDs)
@@ -388,6 +415,8 @@ class HostDetailViewModelTest {
             return membershipHandler(membershipCalls)
         }
     }
+
+    private class OtherViewModel : ViewModel()
 
     private companion object {
         fun offerFixture(id: String, username: String = "host-owl") = HostOffer(

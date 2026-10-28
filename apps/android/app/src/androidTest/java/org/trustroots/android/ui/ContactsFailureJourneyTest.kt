@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.EOFException
 import java.io.IOException
@@ -14,6 +15,7 @@ import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -148,6 +150,51 @@ class ContactsFailureJourneyTest {
             requests.any { it == "GET /api/contacts/member-amber HTTP/1.1" }
         }
         assertSuccessContentAbsent()
+    }
+
+    @Test fun retryRecoversContactsAndTheRecoveredRowOpensItsProfile() {
+        val contactLoads = AtomicInteger()
+        val openedProfile = AtomicReference<String?>()
+        startResponder { request ->
+            when {
+                request.startsWith("GET /api/users/quiet-fox ") -> FixtureResponse(
+                    "200 OK",
+                    """{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"}""",
+                )
+                request.startsWith("GET /api/contacts/member-fox ") -> when (contactLoads.incrementAndGet()) {
+                    1 -> FixtureResponse("503 Service Unavailable", """{"message":"Fictional contacts service is unavailable."}""")
+                    else -> FixtureResponse(
+                        "200 OK",
+                        """[{"_id":"contact-lynx","user":{"_id":"member-lynx","username":"calm-lynx","displayName":"Calm Lynx"}}]""",
+                    )
+                }
+                else -> FixtureResponse("404 Not Found", "{}")
+            }
+        }
+        compose.setContent {
+            TrustrootsTheme {
+                ContactsScreen(
+                    api(),
+                    session("quiet-fox"),
+                    onSessionInvalidated = {},
+                    onBack = {},
+                    onOpenProfile = { openedProfile.set(it) },
+                )
+            }
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Fictional contacts service is unavailable.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Try again").assertIsDisplayed().performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Calm Lynx").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Fictional contacts service is unavailable.").assertDoesNotExist()
+        compose.onNodeWithText("Calm Lynx").performClick()
+
+        assertEquals("calm-lynx", openedProfile.get())
+        assertEquals(2, contactLoads.get())
     }
 
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
