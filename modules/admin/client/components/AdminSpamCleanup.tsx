@@ -1,3 +1,4 @@
+import type { SpamCleanupStage } from '../../../users/shared/spam-cleanup';
 import React, { useState } from 'react';
 import http, { getErrorMessage } from '../../../core/client/api/http-client';
 import AdminHeader from './AdminHeader.component';
@@ -9,6 +10,10 @@ interface Batch {
   candidates: number;
   eligible: number;
   protected: number;
+  inactive: number;
+  review: number;
+  unknownLogin: number;
+  inactiveBefore: string;
   page: number;
   pages: number;
   items: Array<{
@@ -16,6 +21,8 @@ interface Batch {
     username: string;
     created: string | null;
     eligible: boolean;
+    stage: SpamCleanupStage | 'protected';
+    lastSeen: string | null;
   }>;
 }
 interface Progress {
@@ -25,16 +32,22 @@ interface Progress {
 }
 export default function AdminSpamCleanup() {
   const [batch, setBatch] = useState<Batch | null>(null);
+  const [stage, setStage] = useState<SpamCleanupStage>('inactive');
   const [selection, setSelection] = useState<'all' | 'selected'>('selected');
   const [exceptions, setExceptions] = useState<Set<string>>(new Set());
   const [confirmed, setConfirmed] = useState(false);
   const [working, setWorking] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState<Progress | null>(null);
+  const stageTotal = batch
+    ? stage === 'inactive'
+      ? batch.inactive
+      : stage === 'review'
+        ? batch.review
+        : batch.eligible
+    : 0;
   const selected =
-    selection === 'all'
-      ? (batch?.eligible ?? 0) - exceptions.size
-      : exceptions.size;
+    selection === 'all' ? stageTotal - exceptions.size : exceptions.size;
   async function preview() {
     setWorking(true);
     setError('');
@@ -42,6 +55,7 @@ export default function AdminSpamCleanup() {
     setBatch(null);
     setResult(null);
     setSelection('selected');
+    setStage('inactive');
     setExceptions(new Set());
     try {
       let response = await http.post<Batch>(
@@ -90,6 +104,7 @@ export default function AdminSpamCleanup() {
     setError('');
     setResult(null);
     const body = {
+      stage,
       previewId,
       confirm: true,
       selection,
@@ -162,6 +177,64 @@ export default function AdminSpamCleanup() {
               eligible; {batch.protected} protected. {selected} selected across
               all pages.
             </p>
+            <table className="table table-striped" aria-label="Cleanup stages">
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Evidence</th>
+                  <th>Accounts</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1. Inactive since 2023 or earlier</td>
+                  <td>
+                    Recorded login before 1 January 2024 UTC; zero threads and
+                    no protected activity.
+                  </td>
+                  <td>{batch.inactive}</td>
+                </tr>
+                <tr>
+                  <td>2. Needs review</td>
+                  <td>
+                    More recent login or no recorded login ({batch.unknownLogin}{' '}
+                    unrecorded).
+                  </td>
+                  <td>{batch.review}</td>
+                </tr>
+                <tr>
+                  <td>3. Protected</td>
+                  <td>
+                    Existing activity or moderation protections; retained.
+                  </td>
+                  <td>{batch.protected}</td>
+                </tr>
+              </tbody>
+            </table>
+            <label htmlFor="spam-cleanup-stage">Cleanup stage</label>
+            <select
+              id="spam-cleanup-stage"
+              className="form-control"
+              value={stage}
+              disabled={working}
+              onChange={event => {
+                setStage(event.target.value as SpamCleanupStage);
+                setSelection('selected');
+                setExceptions(new Set());
+                setConfirmed(false);
+                setResult(null);
+              }}
+            >
+              <option value="inactive">
+                Stage 1: Inactive since 2023 or earlier
+              </option>
+              <option value="review">Stage 2: Needs review</option>
+              <option value="all">All eligible accounts (manual review)</option>
+            </select>
+            <p>
+              Only accounts in the chosen stage can be selected. Missing login
+              dates are not treated as evidence of inactivity.
+            </p>
             <p>
               Expires after 15 minutes of inactivity. Page {batch.page} of{' '}
               {Math.max(1, batch.pages)}.
@@ -176,7 +249,7 @@ export default function AdminSpamCleanup() {
                 setConfirmed(false);
               }}
             >
-              Select all eligible accounts
+              Select all accounts in this stage
             </button>{' '}
             <button
               type="button"
@@ -190,12 +263,14 @@ export default function AdminSpamCleanup() {
             >
               Clear selection
             </button>
-            <table className="table table-striped">
+            <table className="table table-striped" aria-label="Account review">
               <thead>
                 <tr>
                   <th>Select</th>
                   <th>Account</th>
                   <th>Created</th>
+                  <th>Last recorded login</th>
+                  <th>Stage</th>
                   <th>Decision</th>
                 </tr>
               </thead>
@@ -206,9 +281,14 @@ export default function AdminSpamCleanup() {
                       <input
                         type="checkbox"
                         aria-label={`Select ${item.username}`}
-                        disabled={working || !item.eligible}
+                        disabled={
+                          working ||
+                          !item.eligible ||
+                          (stage !== 'all' && item.stage !== stage)
+                        }
                         checked={
                           item.eligible &&
+                          (stage === 'all' || item.stage === stage) &&
                           (selection === 'all'
                             ? !exceptions.has(item.id)
                             : exceptions.has(item.id))
@@ -238,6 +318,12 @@ export default function AdminSpamCleanup() {
                         ? formatAdminDateTime(item.created)
                         : 'Not available'}
                     </td>
+                    <td>
+                      {item.lastSeen
+                        ? formatAdminDateTime(item.lastSeen)
+                        : 'Not recorded'}
+                    </td>
+                    <td>{item.stage}</td>
                     <td>
                       {item.eligible
                         ? 'Eligible for deletion'
