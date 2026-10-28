@@ -81,16 +81,22 @@ public final class FilteredReport {
         writeReport(filteredReport, loader.getSessionInfoStore(), loader.getExecutionDataStore(), coverage,
                 sourceDirectory);
         final int[] filteredBranches = branchCounters(filteredReport);
-        if (rawBranches[0] != filteredBranches[0] || rawBranches[1] != filteredBranches[1]) {
+        int removedBranches = rawBranches[0] + rawBranches[1] - filteredBranches[0] - filteredBranches[1];
+        int expectedRemovedBranches = TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() * 2;
+        if (rawBranches[0] < filteredBranches[0] || rawBranches[1] < filteredBranches[1]
+                || removedBranches != expectedRemovedBranches) {
             Files.deleteIfExists(filteredReport.toPath());
             throw new IllegalStateException(
-                    "Generated-code filtering changed branch counters: raw missed/covered "
+                    "Generated-code filtering changed branch counters without matching audited decisions: raw missed/covered "
                             + rawBranches[0] + "/" + rawBranches[1] + ", filtered "
-                            + filteredBranches[0] + "/" + filteredBranches[1]);
+                            + filteredBranches[0] + "/" + filteredBranches[1] + ", audited decisions "
+                            + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount());
         }
         writeAudit(auditFile, TrustrootsGeneratedCodeFilter.auditEntries());
-        System.out.println("Filtered report written with unchanged raw branch counters: "
-                + filteredBranches[0] + " missed, " + filteredBranches[1] + " covered.");
+        System.out.println("Filtered report written: raw branches " + rawBranches[0] + " missed/"
+                + rawBranches[1] + " covered; filtered " + filteredBranches[0] + "/"
+                + filteredBranches[1] + "; audited decisions "
+                + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + ".");
     }
 
     private static void verifyExecutionClassIds(ExecutionDataStore executionData,
