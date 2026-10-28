@@ -2914,6 +2914,27 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'admin.spam-cleanup',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Administrators review and explicitly delete eligible historical spam accounts.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin', '/admin/spam-cleanup', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [],
+    },
+    requiredScenarios: [
+      'Administrators explicitly delete reviewed eligible spam accounts while protected accounts remain.',
+    ],
+    relatedSpecs: [],
+  },
+  {
     id: 'admin.dashboard',
     area: AREA.adminModeration,
     status: STATUS.active,

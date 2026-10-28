@@ -390,6 +390,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/spam-cleanup',
+    requiresRole: ['admin'],
+    title: 'Admin - Spam account cleanup',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories',
     requiresRole: ['admin', 'welcome-team', 'support-team'],
     title: 'Admin - Acquisition stories',

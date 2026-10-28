@@ -37,7 +37,7 @@ describe('<AdminHeader />', () => {
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
       ['Outreach', ['Acquisition stories', 'Newsletter']],
-      ['Audit', ['Audit log', 'Username changes']],
+      ['Audit', ['Audit log', 'Username changes', 'Spam account cleanup']],
     ] as const) {
       const group = within(screen.getByRole('list', { name }));
       expect(group.getAllByRole('link').map(link => link.textContent)).toEqual(
