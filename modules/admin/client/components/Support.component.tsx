@@ -34,6 +34,20 @@ type InboxLocation = {
   requestId: string | null;
 };
 
+function MemberUsername({
+  username,
+  fallback,
+}: {
+  username?: string;
+  fallback: string;
+}) {
+  return username ? (
+    <a href={`/admin/user/${encodeURIComponent(username)}`}>{username}</a>
+  ) : (
+    <>{fallback}</>
+  );
+}
+
 function readInboxLocation(): InboxLocation {
   const params = new URLSearchParams(window.location.search);
   const rawStatus = params.get('status') || DEFAULT_STATUS;
@@ -527,8 +541,18 @@ function Investigation({
             <article className="panel panel-default" key={item._id}>
               <div className="panel-body">
                 <p>
-                  <strong>{item.userFrom?.username || 'Deleted member'}</strong>{' '}
-                  → {item.userTo?.username || 'Deleted member'} ·{' '}
+                  <strong>
+                    <MemberUsername
+                      username={item.userFrom?.username}
+                      fallback="Deleted member"
+                    />
+                  </strong>{' '}
+                  →{' '}
+                  <MemberUsername
+                    username={item.userTo?.username}
+                    fallback="Deleted member"
+                  />{' '}
+                  ·{' '}
                   <time dateTime={item.created}>
                     {formatAdminDateTime(item.created)}
                   </time>
@@ -662,7 +686,12 @@ function RequestDetails({
       <dl className="support-inbox__metadata">
         <div>
           <dt>From</dt>
-          <dd>{report.username || 'Signed-out visitor'}</dd>
+          <dd>
+            <MemberUsername
+              username={report.username}
+              fallback="Signed-out visitor"
+            />
+          </dd>
         </div>
         <div>
           <dt>Email</dt>
@@ -718,7 +747,12 @@ function RequestDetails({
       <div className="support-inbox__members">
         <div>
           <h3>Reporter</h3>
-          <p>{report.username || 'Signed-out visitor'}</p>
+          <p>
+            <MemberUsername
+              username={report.username}
+              fallback="Signed-out visitor"
+            />
+          </p>
           {report.user && (
             <>
               <CaseMemberStatus
@@ -732,7 +766,14 @@ function RequestDetails({
         {(report.reportMember || report.reportedUser) && (
           <div>
             <h3>Reported member</h3>
-            {report.reportMember && <p>{report.reportMember}</p>}
+            {report.reportMember && (
+              <p>
+                <MemberUsername
+                  username={report.reportMember}
+                  fallback="Deleted member"
+                />
+              </p>
+            )}
             {report.reportedUser && (
               <>
                 <CaseMemberStatus
