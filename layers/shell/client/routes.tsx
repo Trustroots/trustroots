@@ -1,3 +1,4 @@
+import AdminSpamCleanup from '@/modules/admin/client/components/AdminSpamCleanup';
 import {
   createRootRoute,
   createRoute,
@@ -251,6 +252,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
     '/admin/audit-log': () => <AdminAuditLog />,
+    '/admin/spam-cleanup': () => <AdminSpamCleanup />,
     '/admin/username-changes': () => <AdminUsernameChanges />,
     '/admin/messages': () => <AdminMessages />,
     '/admin/location-corrections': () => <AdminLocationCorrections />,

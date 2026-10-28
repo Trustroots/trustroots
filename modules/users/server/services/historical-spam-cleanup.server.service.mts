@@ -288,6 +288,48 @@ service.run = async function ({
   }
   return result;
 };
+/** Bounded admin review; does not change the CLI campaign criteria. */
+export async function previewAdminBatch(after?: Types.ObjectId) {
+  const User = mongoose.model<UserServerRecord>('User');
+  const query = after
+    ? { $and: [candidateQuery(), { _id: { $gt: after } }] }
+    : candidateQuery();
+  const rows = await User.find(query)
+    .select('_id username created')
+    .sort({ _id: 1 })
+    .limit(101)
+    .maxTimeMS(10000)
+    .lean();
+  const batch = rows.slice(0, 100);
+  const protectedIds = await findUsersWithProtectedActivity(
+    batch.map(row => row._id),
+  );
+  return {
+    items: batch.map(row => ({
+      id: String(row._id),
+      username: row.username,
+      created: row.created,
+      eligible: !protectedIds.has(String(row._id)),
+    })),
+    hasMore: rows.length > 100,
+  };
+}
+
+export async function deleteAdminBatch(ids: Types.ObjectId[]) {
+  const User = mongoose.model<UserServerRecord>('User');
+  const current = await User.find({
+    $and: [candidateQuery(), { _id: { $in: ids } }],
+  })
+    .select('_id')
+    .maxTimeMS(10000)
+    .lean();
+  const result = await processBatch(
+    current.map(row => row._id),
+    true,
+  );
+  return { deleted: result.deleted, skipped: ids.length - result.deleted };
+}
+
 const defaultExport = service;
 export default defaultExport;
 export { CAMPAIGN_WINDOWS };
