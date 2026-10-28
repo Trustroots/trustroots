@@ -5,6 +5,7 @@ Kotlin 2.4 emits Compose control flow in compiler-created lambda methods that do
 ## What Changes
 
 - Recognise only structurally proven Compose change-mask, cache and execution scaffolding, using the pinned upstream filter where possible.
+- Recognise inlined Compose library guards only with exact instruction patterns and verified third-party source provenance in primary Kotlin SMAP.
 - Preserve application conditionals and uncertain patterns, with positive and negative bytecode regression fixtures.
 - Keep raw reports and audit generated branch corrections explicitly, including their exact counter differences.
 - Add tests for reachable API and state branches and target a measured branch floor of 100%, preserving the 100% executable-line floor.
