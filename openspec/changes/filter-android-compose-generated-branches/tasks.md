@@ -1,5 +1,6 @@
 - [x] 1. Audit actual missed branches and prototype structural generated-code recognition.
 - [x] 2. Add positive/negative fixtures and audited counter reconciliation.
 - [x] 3. Add meaningful tests for reachable branches.
+- [x] 3a. Keep changed-mask preamble decisions under upstream filters; add default-mask dispatch fixtures, including fail-closed multiple-mask and source-expression cases.
 - [ ] 4. Measure complete matching Android coverage, preserving 100% lines and targeting 100% branches.
 - [ ] 5. Update the ratchet only after the target is measured, validate and archive the specification.

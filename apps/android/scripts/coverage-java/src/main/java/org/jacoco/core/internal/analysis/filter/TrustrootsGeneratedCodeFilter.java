@@ -15,6 +15,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LineNumberNode;
@@ -39,7 +40,8 @@ import org.objectweb.asm.tree.TypeInsnNode;
  * forwarding method in a Kotlin callable-reference subclass, and (6)
  * individual captured-state cache invalidation branches only when they form a
  * compiler mask expression inside a Compose remember marker and feed its
- * remembered-value cache gate.</p>
+ * remembered-value cache gate, and (7) hidden default-mask tests whose
+ * branch-free default assignment targets the corresponding source parameter.</p>
  */
 public final class TrustrootsGeneratedCodeFilter implements IFilter {
 
@@ -55,6 +57,8 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
     private static final String TRANSFORM_GESTURE_DETECTOR_KT =
             "androidx/compose/foundation/gestures/TransformGestureDetectorKt";
     private static final String POINTER_INPUT_SCOPE = "androidx/compose/ui/input/pointer/PointerInputScope";
+    private static final String CAPTURED_REMEMBER_REASON = "captured-state Compose remember cache mask decision";
+    private static final String COMPOSABLE_DEFAULT_REASON = "composable default-argument dispatch decision";
     private static final List<String> AUDIT = Collections.synchronizedList(new ArrayList<>());
     private static volatile Set<String> ENUM_CLASSES = Set.of();
 
@@ -76,7 +80,8 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         synchronized (AUDIT) {
             return (int) AUDIT.stream()
                     .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
-                            || entry.contains("Compose default-argument invalidation decision"))
+                            || entry.contains("Compose default-argument invalidation decision")
+                            || entry.contains(COMPOSABLE_DEFAULT_REASON))
                     .count();
         }
     }
@@ -85,7 +90,8 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         synchronized (AUDIT) {
             return (int) AUDIT.stream()
                     .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
-                            || entry.contains("Compose default-argument invalidation decision"))
+                            || entry.contains("Compose default-argument invalidation decision")
+                            || entry.contains(COMPOSABLE_DEFAULT_REASON))
                     .count() * 2
                     + (int) AUDIT.stream()
                             .filter(entry -> entry.contains("exhaustive Compose enum switch default outcome"))
@@ -104,10 +110,137 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
                 filterLoneComposeGroupClosures(method, context, output);
                 filterRememberCacheMaskBranches(method, context, output);
                 filterComposableDefaultInvalidationBranches(method, context, output);
+                filterComposableDefaultDispatch(method, context, output);
             }
             filterImplicitCoroutineCompletion(method, context, output);
             filterFunctionReferenceForwarder(method, context, output);
         }
+    }
+
+    /** Removes a hidden default-mask test only when its fallthrough computes that parameter's default. */
+    private static void filterComposableDefaultDispatch(MethodNode method,
+            IFilterContext context, IFilterOutput output) {
+        if (!isComposable(method)) return;
+        HiddenComposerParameters parameters = hiddenComposerParameters(method);
+        if (parameters == null || parameters.defaultMaskSlots().size() != 1
+                || parameters.hiddenIntCount() != 2 || parameters.sourceArgumentCount() > 10) return;
+        List<AbstractInsnNode> insns = new ArrayList<>();
+        for (AbstractInsnNode insn : method.instructions) insns.add(insn);
+        int shouldExecute = -1;
+        for (int i = 0; i < insns.size(); i++) {
+            if (isComposerCall(insns.get(i), "shouldExecute", "(ZI)Z")) {
+                shouldExecute = i;
+                break;
+            }
+        }
+        if (shouldExecute < 0) return;
+        for (int i = shouldExecute + 1; i < insns.size(); i++) {
+            AbstractInsnNode insn = insns.get(i);
+            if (!(insn instanceof JumpInsnNode jump) || isAlreadyFilteredBranch(output, insn)) continue;
+            if (!isDefaultMaskDispatch(insns, i, jump, parameters)) continue;
+            output.ignore(insn, insn);
+            audit(context, method, insn, insn, COMPOSABLE_DEFAULT_REASON);
+        }
+    }
+
+    private static boolean isDefaultMaskDispatch(List<AbstractInsnNode> insns, int branchIndex,
+            JumpInsnNode branch, HiddenComposerParameters parameters) {
+        if (branch.getOpcode() != Opcodes.IFEQ) return false;
+        AbstractInsnNode and = previousOpcode(branch.getPrevious());
+        AbstractInsnNode bitNode = previousOpcode(and == null ? null : and.getPrevious());
+        AbstractInsnNode load = previousOpcode(bitNode == null ? null : bitNode.getPrevious());
+        if (and == null || and.getOpcode() != Opcodes.IAND
+                || !(load instanceof VarInsnNode variable) || variable.getOpcode() != Opcodes.ILOAD) return false;
+        Integer bit = integerConstantValue(bitNode);
+        if (bit == null || bit <= 0 || (bit & (bit - 1)) != 0) return false;
+        int parameterIndex = Integer.numberOfTrailingZeros(bit);
+        int maskIndex = parameterIndex / 32;
+        if (maskIndex >= parameters.defaultMaskSlots().size()
+                || variable.var != parameters.defaultMaskSlots().get(maskIndex)
+                || parameterIndex >= parameters.sourceArgumentCount()) return false;
+        int expectedBit = 1 << (parameterIndex % 32);
+        if (bit != expectedBit) return false;
+        int targetSlot = parameters.sourceArgumentSlots().get(parameterIndex);
+        int expectedStore = storeOpcode(parameters.sourceArgumentTypes().get(parameterIndex));
+        int stores = 0;
+        AbstractInsnNode lastOpcode = null;
+        boolean foundTarget = false;
+        for (AbstractInsnNode cursor = branch.getNext(); cursor != null; cursor = cursor.getNext()) {
+            if (cursor == branch.label) {
+                foundTarget = true;
+                break;
+            }
+            if (cursor.getOpcode() < 0) continue;
+            if (cursor instanceof JumpInsnNode || cursor instanceof TableSwitchInsnNode
+                    || cursor instanceof LookupSwitchInsnNode) return false;
+            if (cursor instanceof VarInsnNode store && isStoreOpcode(store.getOpcode())) {
+                if (store.var != targetSlot || store.getOpcode() != expectedStore) return false;
+                stores++;
+            }
+            lastOpcode = cursor;
+        }
+        return foundTarget && stores == 1 && lastOpcode instanceof VarInsnNode store
+                && store.var == targetSlot && store.getOpcode() == expectedStore;
+    }
+
+    private static boolean isStoreOpcode(int opcode) {
+        return opcode == Opcodes.ISTORE || opcode == Opcodes.LSTORE || opcode == Opcodes.FSTORE
+                || opcode == Opcodes.DSTORE || opcode == Opcodes.ASTORE;
+    }
+
+    private static int storeOpcode(Type type) {
+        return switch (type.getSort()) {
+            case Type.BOOLEAN, Type.BYTE, Type.CHAR, Type.SHORT, Type.INT -> Opcodes.ISTORE;
+            case Type.LONG -> Opcodes.LSTORE;
+            case Type.FLOAT -> Opcodes.FSTORE;
+            case Type.DOUBLE -> Opcodes.DSTORE;
+            case Type.ARRAY, Type.OBJECT -> Opcodes.ASTORE;
+            default -> -1;
+        };
+    }
+
+    private static HiddenComposerParameters hiddenComposerParameters(MethodNode method) {
+        if (method.localVariables == null || method.localVariables.isEmpty()) return null;
+        Type[] arguments = Type.getArgumentTypes(method.desc);
+        List<Type> sourceTypes = new ArrayList<>();
+        List<Integer> sourceSlots = new ArrayList<>();
+        int slot = (method.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
+        int composerSlot = -1;
+        int changedSlot = -1;
+        List<Integer> defaultMaskSlots = new ArrayList<>();
+        boolean afterComposer = false;
+        for (Type argument : arguments) {
+            if (!afterComposer) {
+                if (argument.getSort() == Type.OBJECT && COMPOSER.equals(argument.getInternalName())) {
+                    composerSlot = slot;
+                    afterComposer = true;
+                } else {
+                    sourceTypes.add(argument);
+                    sourceSlots.add(slot);
+                }
+            } else {
+                if (argument.getSort() != Type.INT) return null;
+                if (changedSlot < 0) changedSlot = slot;
+                else defaultMaskSlots.add(slot);
+            }
+            slot += argument.getSize();
+        }
+        if (composerSlot < 0 || changedSlot < 0) return null;
+        final int maskSlot = changedSlot;
+        boolean hasChangedName = method.localVariables.stream().anyMatch(local -> local.index == maskSlot
+                && local.name.startsWith("$changed")
+                && "I".equals(local.desc));
+        if (!hasChangedName) return null;
+        if (defaultMaskSlots.stream().anyMatch(defaultSlot -> method.localVariables.stream()
+                .anyMatch(local -> local.index == defaultSlot && local.name.startsWith("$changed")))) return null;
+        return new HiddenComposerParameters(arguments.length - sourceTypes.size() - 1,
+                List.copyOf(defaultMaskSlots),
+                List.copyOf(sourceTypes), List.copyOf(sourceSlots));
+    }
+
+    private record HiddenComposerParameters(int hiddenIntCount, List<Integer> defaultMaskSlots,
+            List<Type> sourceArgumentTypes, List<Integer> sourceArgumentSlots) {
+        int sourceArgumentCount() { return sourceArgumentTypes.size(); }
     }
 
     private static void filterComposableDefaultInvalidationBranches(MethodNode method,
