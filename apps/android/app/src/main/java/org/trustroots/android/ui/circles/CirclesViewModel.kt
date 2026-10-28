@@ -235,13 +235,13 @@ internal class CirclesViewModel(
                 }
             }
         } else {
+            val apiError = error as? org.trustroots.android.api.MobileApiException
             mutableState.update {
                 it.copy(
                     failure = CirclesFailure(
                         kind = kind,
-                        serverMessage = (error as? org.trustroots.android.api.MobileApiException)
-                            ?.serverMessage?.takeIf(String::isNotBlank),
-                        apiFailureKind = (error as? org.trustroots.android.api.MobileApiException)?.failureKind,
+                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        apiFailureKind = apiError?.failureKind,
                     ),
                     canRetryLoad = retryLoad,
                 )

@@ -6,6 +6,32 @@ import org.junit.Test
 
 class ProfileImageGeometryTest {
     @Test
+    fun `missing transform starts at fit scale`() {
+        val fitted = ProfileImageGeometry.clampOrFit(
+            transform = null,
+            imageWidthPx = 2400,
+            imageHeightPx = 1200,
+            viewportWidthPx = 1200,
+            viewportHeightPx = 800,
+        )
+
+        assertEquals(ProfileImageTransform(scale = 0.5f), fitted)
+    }
+
+    @Test
+    fun `existing transform is clamped after viewport changes`() {
+        val resized = ProfileImageGeometry.clampOrFit(
+            transform = ProfileImageTransform(scale = 0.5f, translationX = 500f, translationY = 350f),
+            imageWidthPx = 2400,
+            imageHeightPx = 1600,
+            viewportWidthPx = 1600,
+            viewportHeightPx = 900,
+        )
+
+        assertEquals(ProfileImageTransform(scale = 0.5625f), resized)
+    }
+
+    @Test
     fun `image and viewport dimensions must be positive`() {
         for (invalidSize in listOf(0, -1)) {
             for (dimension in 0..3) {
