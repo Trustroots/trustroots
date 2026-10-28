@@ -184,6 +184,17 @@ test('mobile profile navigation stays compact and readable', async ({
   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
   expect(headerBounds[0]!.x).toBeLessThan(40);
   expect(headerBounds[3]!.right).toBeGreaterThan(350);
+  for (const link of await headerLinks.all()) {
+    const linkBounds = await link.boundingBox();
+    const iconBounds = await link.locator('.icon').boundingBox();
+    expect(
+      Math.abs(
+        iconBounds!.x +
+          iconBounds!.width / 2 -
+          (linkBounds!.x + linkBounds!.width / 2),
+      ),
+    ).toBeLessThan(2);
+  }
 
   const otherMember = SEEDED_MEMBERS[1];
   await page.goto(`/profile/${otherMember.username}/overview`);
