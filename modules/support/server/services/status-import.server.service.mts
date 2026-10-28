@@ -14,7 +14,7 @@ import type {
 } from '../../shared/status-import.ts';
 import {
   normaliseStoredSupportCategory,
-  supportRequestFingerprint,
+  supportRequestImportFingerprints,
 } from './support-fingerprint.server.service.mts';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';
 import type {
@@ -152,7 +152,7 @@ async function audit(
   }).save();
 }
 
-function importFingerprint(record: SupportRequestImportRecord): string | null {
+function importFingerprints(record: SupportRequestImportRecord): string[] {
   const category = normaliseStoredSupportCategory(
     record.category,
     record.reportMember,
@@ -162,9 +162,9 @@ function importFingerprint(record: SupportRequestImportRecord): string | null {
     typeof record.email !== 'string' ||
     typeof record.message !== 'string'
   ) {
-    return null;
+    return [];
   }
-  return supportRequestFingerprint({
+  return supportRequestImportFingerprints({
     category,
     email: record.email,
     message: record.message,
@@ -236,8 +236,7 @@ export async function previewReducedManifest(
   const localByFingerprint = new Map<string, SupportRequestImportRecord[]>();
   const localByTicketId = new Map<number, SupportRequestImportRecord[]>();
   for (const request of requests) {
-    const fingerprint = importFingerprint(request);
-    if (fingerprint) {
+    for (const fingerprint of importFingerprints(request)) {
       const matches = localByFingerprint.get(fingerprint) || [];
       matches.push(request);
       localByFingerprint.set(fingerprint, matches);
@@ -250,7 +249,14 @@ export async function previewReducedManifest(
   }
   const ticketIdCounts = new Map<number, number>();
   const fingerprintCounts = new Map<string, number>();
+  const sourceTicketsByRequest = new Map<string, Set<number>>();
   for (const item of manifest.items) {
+    for (const request of localByFingerprint.get(item.fingerprint) || []) {
+      const id = String(request._id);
+      const ticketIds = sourceTicketsByRequest.get(id) || new Set<number>();
+      ticketIds.add(item.zendeskTicketId);
+      sourceTicketsByRequest.set(id, ticketIds);
+    }
     ticketIdCounts.set(
       item.zendeskTicketId,
       (ticketIdCounts.get(item.zendeskTicketId) || 0) + 1,
@@ -304,8 +310,17 @@ export async function previewReducedManifest(
       continue;
     }
     const request = matches[0]!;
+    if (sourceTicketsByRequest.get(String(request._id))!.size > 1) {
+      entry.reason = 'ambiguous-source-match';
+      countReason(counts, entry.reason);
+      entries.push(entry);
+      continue;
+    }
     const recordSnapshot = snapshot(request);
-    Object.assign(entry, recordSnapshot, { requestId: request._id });
+    Object.assign(entry, recordSnapshot, {
+      requestId: request._id,
+      originalFingerprint: importFingerprints(request)[0],
+    });
     if (
       localByTicketId
         .get(item.zendeskTicketId)
@@ -464,7 +479,11 @@ export async function applyPreview(
       mongoose.model<SupportRequestImportRecord>('SupportRequest');
     for (const entry of ready) {
       const current = await currentRequest(entry);
-      if (!current || importFingerprint(current) !== entry.fingerprint) {
+      if (
+        !current ||
+        importFingerprints(current)[0] !==
+          (entry.originalFingerprint ?? entry.fingerprint)
+      ) {
         result.skipped++;
         continue;
       }
@@ -484,6 +503,7 @@ export async function applyPreview(
         category: current.category,
         email: current.email,
         message: current.message,
+        reportMember: current.reportMember ?? null,
       };
       addSnapshotFilter(filter, 'status', entry.currentStatus);
       addSnapshotFilter(filter, 'statusRevision', entry.statusRevision);

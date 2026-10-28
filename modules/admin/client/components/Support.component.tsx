@@ -150,10 +150,12 @@ function ConversationBody({ body }: { body: string }) {
 function Conversation({
   id,
   requester,
+  requesterUsername,
   onChange,
 }: {
   id: string;
   requester: string;
+  requesterUsername?: string;
   onChange: () => void;
 }) {
   const [page, setPage] = useState(1);
@@ -307,7 +309,19 @@ function Conversation({
                 aria-label={`${author}, ${formatAdminDateTime(item.createdAt)}`}
               >
                 <header>
-                  <strong>{author}</strong>
+                  <strong>
+                    {item.direction === 'inbound' &&
+                    item.kind === 'initial' &&
+                    requesterUsername ? (
+                      <a
+                        href={`/admin/user/${encodeURIComponent(requesterUsername)}`}
+                      >
+                        {requesterUsername}
+                      </a>
+                    ) : (
+                      author
+                    )}
+                  </strong>
                   <time dateTime={item.createdAt}>
                     {formatAdminDateTime(item.createdAt)}
                   </time>
@@ -734,6 +748,7 @@ function RequestDetails({
       <Conversation
         id={id}
         requester={report.username || report.email}
+        requesterUsername={report.username}
         onChange={onChange}
       />
       {linked ? (
@@ -804,7 +819,6 @@ function MemberSearch() {
       className="support-inbox__card support-inbox__search"
       aria-label="Member search"
     >
-      <h2>Member search</h2>
       <form onSubmit={submit}>
         <label htmlFor="support-member-search">Name, username or email</label>
         <input
@@ -835,6 +849,18 @@ function MemberSearch() {
         ))}
       </ul>
     </section>
+  );
+}
+
+export function SupportMemberSearchPage() {
+  return (
+    <>
+      <AdminHeader />
+      <main className="container">
+        <h1>Member search</h1>
+        <MemberSearch />
+      </main>
+    </>
   );
 }
 
@@ -983,7 +1009,6 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
             Triage requests and keep the full support conversation in one place.
           </p>
         </header>
-        <MemberSearch />
         {canImport && <SupportStatusImport />}
         <div className="support-inbox__layout">
           <div className="support-inbox__sidebar">

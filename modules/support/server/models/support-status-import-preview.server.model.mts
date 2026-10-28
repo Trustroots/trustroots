@@ -11,6 +11,7 @@ export interface SupportStatusImportPreviewEntry {
   status: SupportStatus;
   updatedAt: Date;
   fingerprint: string;
+  originalFingerprint?: string;
   state: 'ready' | 'alreadyApplied' | 'skipped';
   reason?:
     | 'invalid'
@@ -18,6 +19,7 @@ export interface SupportStatusImportPreviewEntry {
     | 'duplicate-fingerprint'
     | 'no-match'
     | 'ambiguous-match'
+    | 'ambiguous-source-match'
     | 'newer-local-activity'
     | 'ticket-id-conflict'
     | 'changed-after-preview';
@@ -58,6 +60,7 @@ const SupportStatusImportPreviewSchema =
           status: { type: String, required: true },
           updatedAt: { type: Date, required: true },
           fingerprint: { type: String, required: true },
+          originalFingerprint: { type: String },
           state: { type: String, required: true },
           reason: { type: String },
           currentStatus: { type: String },
