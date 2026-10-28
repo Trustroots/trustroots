@@ -11,6 +11,7 @@ export const NETWORKS = [
   { id: 'facebook', label: 'Facebook' },
   { id: 'twitter', label: 'Twitter' },
   { id: 'github', label: 'GitHub' },
+  { id: 'email', label: 'Email address' },
 ] as const;
 
 export type Network = (typeof NETWORKS)[number]['id'];
@@ -29,6 +30,7 @@ export interface ConnectionHistoryEntry {
 }
 
 interface ConnectionRecord {
+  email?: unknown;
   extSitesCouchers?: unknown;
   extSitesBW?: unknown;
   extSitesCS?: unknown;
@@ -43,6 +45,7 @@ interface ConnectionRecord {
 }
 
 const fields: Record<Network, (record: ConnectionRecord) => unknown> = {
+  email: record => record.email,
   couchers: record => record.extSitesCouchers,
   bewelcome: record => record.extSitesBW,
   couchsurfing: record => record.extSitesCS,
@@ -55,6 +58,7 @@ const fields: Record<Network, (record: ConnectionRecord) => unknown> = {
 };
 
 const profileHosts: Record<Network, string[]> = {
+  email: [],
   couchers: ['couchers.org'],
   bewelcome: ['bewelcome.org'],
   couchsurfing: ['couchsurfing.com'],
@@ -103,6 +107,8 @@ export function connectionUrl(
 ): string | null {
   const encoded = encodeURIComponent(normaliseIdentifier(network, identifier));
   switch (network) {
+    case 'email':
+      return null;
     case 'couchers':
       return `https://couchers.org/user/${encoded}`;
     case 'bewelcome':
@@ -154,6 +160,8 @@ export function parseConnectionSearch(
     const segments = url.pathname.split('/').filter(Boolean);
     let candidate = '';
     switch (network) {
+      case 'email':
+        return null;
       case 'couchers':
         candidate =
           segments[0] === 'user' && segments.length === 2

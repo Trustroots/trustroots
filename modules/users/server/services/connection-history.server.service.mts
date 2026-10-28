@@ -13,6 +13,7 @@ import type {
 } from '../models/user.server.types.mts';
 
 const connectionPaths: Record<Network, string[]> = {
+  email: ['email'],
   couchers: ['extSitesCouchers'],
   bewelcome: ['extSitesBW'],
   couchsurfing: ['extSitesCS'],
@@ -108,13 +109,15 @@ function allHistoryKeys(
 }
 
 function makeInitialEntries(record: object): ConnectionHistoryEntry[] {
-  return currentConnections(record).map(({ network, identifier }) => ({
-    network,
-    oldIdentifier: null,
-    newIdentifier: identifier,
-    changedAt: null,
-    initial: true,
-  }));
+  return currentConnections(record)
+    .filter(({ network }) => network !== 'email')
+    .map(({ network, identifier }) => ({
+      network,
+      oldIdentifier: null,
+      newIdentifier: identifier,
+      changedAt: null,
+      initial: true,
+    }));
 }
 
 export function initialConnectionHistoryState(record: object): {
@@ -144,13 +147,15 @@ export async function trackConnectionHistoryBeforeSave(
   if (user.isNew) {
     const connections = currentConnections(user);
     const now = new Date();
-    user.connectionHistory = connections.map(({ network, identifier }) => ({
-      network,
-      oldIdentifier: null,
-      newIdentifier: identifier,
-      changedAt: now,
-      initial: false,
-    }));
+    user.connectionHistory = connections
+      .filter(({ network }) => network !== 'email')
+      .map(({ network, identifier }) => ({
+        network,
+        oldIdentifier: null,
+        newIdentifier: identifier,
+        changedAt: now,
+        initial: false,
+      }));
     user.connectionSearchKeys = allHistoryKeys(user.connectionHistory, user);
     user.connectionHistoryInitialised = true;
     user.connectionHistoryRevision = 1;
@@ -175,7 +180,7 @@ export async function trackConnectionHistoryBeforeSave(
   const persisted = await User.findById(user._id)
     .select(
       '+connectionHistory +connectionSearchKeys +connectionHistoryInitialised +connectionHistoryRevision ' +
-        'extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData',
+        'email extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData',
     )
     .lean<UserServerRecord>()
     .exec();

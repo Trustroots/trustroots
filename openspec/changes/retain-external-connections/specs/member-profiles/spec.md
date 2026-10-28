@@ -4,6 +4,8 @@
 
 The system SHALL retain public profile identifiers for BeWelcome, Couchers, Couchsurfing, Warmshowers, Servas, Nostr, Facebook, Twitter and GitHub when added, replaced or removed. History SHALL be private, atomic with successful changes, and deleted with the account. Failed or normalised unchanged saves SHALL NOT add changes. Legacy provider credentials SHALL NOT be retained.
 
+The system SHALL also retain previous email addresses when an email change is confirmed. Pending or failed changes SHALL NOT be recorded.
+
 #### Scenario: A member replaces or removes a connection
 
 - **WHEN** a member successfully replaces or removes an external identifier

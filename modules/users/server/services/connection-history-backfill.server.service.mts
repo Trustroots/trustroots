@@ -1,12 +1,13 @@
-import type { FilterQuery, Model, Types } from 'mongoose';
+import type { QueryFilter, Model, Types } from 'mongoose';
 import type { UserServerRecord } from '../models/user.server.types.mts';
 import { initialConnectionHistoryState } from './connection-history.server.service.mts';
 
 const selectedFields =
   '+connectionHistory +connectionSearchKeys +connectionHistoryInitialised +connectionHistoryRevision ' +
-  'extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData';
+  'email extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData';
 
 const identityPaths = [
+  'email',
   'extSitesCouchers',
   'extSitesBW',
   'extSitesCS',
@@ -53,7 +54,7 @@ export async function initialiseConnectionHistoryForUser(
         ? { connectionHistoryRevision: { $exists: false } }
         : { connectionHistoryRevision: revision }),
       ...identityFilter(record),
-    } as FilterQuery<UserServerRecord>;
+    } as QueryFilter<UserServerRecord>;
     const result = await User.updateOne(filter, {
       $set: {
         ...state,

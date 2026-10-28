@@ -4,6 +4,8 @@
 
 Administrators and support-team members SHALL view current and historical external connections on member detail pages and search across members by network and complete current or previous identifier. Recognised profile URLs SHALL be accepted as search input. Results SHALL be paginated in stable pages of 50 and links SHALL use recognised network domains. Reads SHALL follow staff audit conventions.
 
+The same access and search controls SHALL apply to current and previous email addresses.
+
 #### Scenario: Staff inspect a member
 
 - **WHEN** an administrator or support-team member opens connection history
