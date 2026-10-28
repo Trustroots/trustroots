@@ -5,23 +5,33 @@ Administrators can open **Admin → Audit → Spam account cleanup** at
 campaign criteria as `pnpm cleanup:historical-spam`; it is not a general account
 deletion tool. The command remains available and defaults to a dry run.
 
-1. Choose **Preview first batch**. No accounts are changed.
-2. Review the linked accounts, creation dates and eligible/protected decisions.
-   Each preview covers at most 100 candidates, not the entire database.
-3. Tick the permanent-deletion confirmation and choose **Delete N eligible
-   accounts** to apply that reviewed batch. Or preview the next batch without
-   deleting anything.
-4. Preview again to see remaining accounts. Previews expire after 15 minutes,
-   belong to the administrator who created them and cannot be applied by another
-   administrator.
+1. Choose **Preview all accounts**. The page scans the entire matching set,
+   reports progress and stores a snapshot of the reviewed account IDs. No
+   accounts are changed. Keep the page open until scanning completes.
+2. Review the account pages. Choose **Select all eligible accounts** to select
+   the full preview, then untick any individual accounts you want to retain.
+   Selections persist across pages. **Clear selection** lets you choose individual
+   accounts instead. Protected accounts cannot be selected.
+3. Check the selected total, tick the permanent-deletion confirmation and choose
+   **Delete N selected accounts**. That one confirmation applies the selection
+   across every page, reporting cumulative progress. Keep the page open until
+   completion. The visible page size does not limit the cleanup size.
+4. Preview again to see remaining accounts. Previews belong to the administrator
+   who created them and expire after 15 minutes of inactivity.
+
+Both scanning and deletion use bounded internal requests. Reviewed IDs are stored
+in separate chunks so large cleanups do not depend on a single document or an
+unbounded response. Chunk metadata contains IDs only and expires automatically.
 
 Existing protections remain in effect: member activity, messages, contacts,
 offers, experiences, references, moderation notes, memberships, blocks, push
 registrations and uploaded profile images prevent deletion. Restored accounts
-and newly protected activity are checked again before deletion.
+and newly protected activity are checked again before each deletion batch.
+Accounts added after the full preview is completed are not included.
 
-A completed preview returns its saved result if submitted again. An interrupted
-apply is not automatically retried: preview again to check remaining accounts.
-An active or interrupted apply cannot be started twice from the same preview.
-Audit records contain the administrator, action, preview identifier and counts;
-account details are not copied into audit payloads. No email is sent.
+A completed preview returns its saved result if the same selection is submitted
+again. The selection cannot change after deletion starts. Closing the page stops
+further requests. On an interrupted or failed operation, start a fresh preview to
+review remaining accounts; an already claimed step cannot run twice. No email is
+sent. Audit payloads contain the administrator, action, preview identifier and
+counts rather than account details or correspondence.
