@@ -43,6 +43,60 @@ export function supportRequestFingerprint(
     .digest('hex');
 }
 
+/** Formatting equivalence used only to propose a reviewable import candidate. */
+export function normaliseSupportImportMessage(message: string): string {
+  const decoded = message.replace(
+    /&(#(?:x[\da-f]+|\d+)|amp|lt|gt|quot|#39|apos);/gi,
+    entity => {
+      const key = entity.toLowerCase();
+      const named: Record<string, string> = {
+        '&amp;': '&',
+        '&lt;': '<',
+        '&gt;': '>',
+        '&quot;': '"',
+        '&#39;': "'",
+        '&apos;': "'",
+      };
+      if (named[key] !== undefined) return named[key]!;
+      const numeric = key.startsWith('&#x')
+        ? Number.parseInt(key.slice(3, -1), 16)
+        : Number.parseInt(key.slice(2, -1), 10);
+      if (!Number.isInteger(numeric) || numeric < 0 || numeric > 0x10ffff)
+        return entity;
+      return String.fromCodePoint(numeric);
+    },
+  );
+  const lineNormalised = decoded
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.replace(/[\t ]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  // The legacy support mail renderer expands bare www URLs to http URLs.
+  return Autolinker.link(lineNormalised, {
+    urls: true,
+    email: false,
+    phone: false,
+    mention: false,
+    hashtag: false,
+    stripPrefix: false,
+    replaceFn: match => match.getAnchorHref(),
+  });
+}
+
+export function supportImportSenderHash(email: string): string {
+  return createHash('sha256')
+    .update(email.trim().toLowerCase(), 'utf8')
+    .digest('hex');
+}
+
+export function supportImportMessageHash(message: string): string {
+  return createHash('sha256')
+    .update(normaliseSupportImportMessage(message), 'utf8')
+    .digest('hex');
+}
+
 /** The pre-August-2017 mail template escaped these five HTML characters. */
 function escapeHistoricalEmail(value: string): string {
   return value

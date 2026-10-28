@@ -8,17 +8,27 @@ import {
   normaliseSupportStatus,
   type SupportStatus,
 } from '../../modules/support/shared/statuses.ts';
-import { supportRequestFingerprint } from '../../modules/support/server/services/support-fingerprint.server.service.mts';
+import {
+  supportImportMessageHash,
+  supportImportSenderHash,
+  supportRequestFingerprint,
+} from '../../modules/support/server/services/support-fingerprint.server.service.mts';
 
 export interface ReducedZendeskStatusItem {
   zendeskTicketId: number;
   status: SupportStatus;
   updatedAt: string;
   fingerprint: string;
+  evidence?: {
+    senderHash: string;
+    category: keyof typeof SUPPORT_CATEGORIES;
+    submittedAt: string | null;
+    normalisedMessageHash: string;
+  };
 }
 
 export interface ReducedZendeskStatusManifest {
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
   items: ReducedZendeskStatusItem[];
 }
@@ -158,6 +168,7 @@ function parseUpdatedAt(value: unknown): string | null {
 
 export function extractTicketStatusItem(
   ticket: unknown,
+  matchingEvidence = false,
 ): ReducedZendeskStatusItem | null {
   if (!isRecord(ticket)) return null;
   const zendeskTicketId = parseTicketId(ticket.id);
@@ -169,12 +180,21 @@ export function extractTicketStatusItem(
   if (zendeskTicketId === null || status === null || !updatedAt || !request) {
     return null;
   }
-  return {
+  const item: ReducedZendeskStatusItem = {
     zendeskTicketId,
     status,
     updatedAt,
     fingerprint: supportRequestFingerprint(request),
   };
+  if (matchingEvidence) {
+    item.evidence = {
+      senderHash: supportImportSenderHash(request.email),
+      category: request.category,
+      submittedAt: parseUpdatedAt(ticket.created_at),
+      normalisedMessageHash: supportImportMessageHash(request.message),
+    };
+  }
+  return item;
 }
 
 function pageRecords(value: unknown): unknown[] | null {
@@ -189,6 +209,7 @@ function pageRecords(value: unknown): unknown[] | null {
 export function prepareZendeskStatusManifest(
   pages: readonly unknown[],
   exportedAt: Date = new Date(),
+  matchingEvidence = false,
 ): { manifest: ReducedZendeskStatusManifest; counts: PreparationCounts } {
   const counts: PreparationCounts = {
     records: 0,
@@ -205,7 +226,7 @@ export function prepareZendeskStatusManifest(
     }
     counts.records += records.length;
     for (const record of records) {
-      const item = extractTicketStatusItem(record);
+      const item = extractTicketStatusItem(record, matchingEvidence);
       if (item) candidates.push(item);
       else counts.skipped++;
     }
@@ -229,7 +250,11 @@ export function prepareZendeskStatusManifest(
   });
   counts.included = items.length;
   return {
-    manifest: { version: 1, exportedAt: exportedAt.toISOString(), items },
+    manifest: {
+      version: matchingEvidence ? 2 : 1,
+      exportedAt: exportedAt.toISOString(),
+      items,
+    },
     counts,
   };
 }
@@ -252,6 +277,7 @@ function parseInput(contents: string): unknown {
 export async function prepareZendeskStatusFiles(
   inputPaths: readonly string[],
   outputPath: string,
+  matchingEvidence = false,
 ): Promise<PreparationCounts> {
   const expandedPaths: string[] = [];
   for (const inputPath of inputPaths) {
@@ -276,7 +302,11 @@ export async function prepareZendeskStatusFiles(
   const pages = await Promise.all(
     expandedPaths.map(async path => parseInput(await readFile(path, 'utf8'))),
   );
-  const { manifest, counts } = prepareZendeskStatusManifest(pages);
+  const { manifest, counts } = prepareZendeskStatusManifest(
+    pages,
+    new Date(),
+    matchingEvidence,
+  );
   await writeFile(outputPath, `${JSON.stringify(manifest, null, 2)}\n`, {
     encoding: 'utf8',
     mode: 0o600,
@@ -287,11 +317,15 @@ export async function prepareZendeskStatusFiles(
 
 async function main(arguments_: string[]) {
   const args = arguments_[0] === '--' ? arguments_.slice(1) : arguments_;
-  const outputIndex = args.indexOf('--output');
+  const matchingEvidence = args.includes('--matching-evidence');
+  const effectiveArgs = args.filter(
+    argument => argument !== '--matching-evidence',
+  );
+  const outputIndex = effectiveArgs.indexOf('--output');
   if (
     outputIndex < 0 ||
-    !args[outputIndex + 1] ||
-    args.some(
+    !effectiveArgs[outputIndex + 1] ||
+    effectiveArgs.some(
       (argument, index) => argument === '--output' && index !== outputIndex,
     )
   ) {
@@ -299,8 +333,8 @@ async function main(arguments_: string[]) {
       'Usage: prepare-zendesk-statuses.mts --output reduced.json export.json|export-directory [additional inputs ...]',
     );
   }
-  const outputPath = args[outputIndex + 1]!;
-  const inputPaths = args.filter(
+  const outputPath = effectiveArgs[outputIndex + 1]!;
+  const inputPaths = effectiveArgs.filter(
     (_, index) => index !== outputIndex && index !== outputIndex + 1,
   );
   if (!inputPaths.length || inputPaths.includes('--')) {
@@ -308,7 +342,11 @@ async function main(arguments_: string[]) {
       'Usage: prepare-zendesk-statuses.mts --output reduced.json export.json|export-directory [additional inputs ...]',
     );
   }
-  const counts = await prepareZendeskStatusFiles(inputPaths, outputPath);
+  const counts = await prepareZendeskStatusFiles(
+    inputPaths,
+    outputPath,
+    matchingEvidence,
+  );
   console.log(JSON.stringify(counts));
 }
 

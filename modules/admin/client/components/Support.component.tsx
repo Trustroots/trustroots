@@ -68,6 +68,7 @@ function readInboxLocation(): InboxLocation {
   return {
     status:
       status === 'all' ||
+      status === 'unconfirmed' ||
       status === DEFAULT_STATUS ||
       SUPPORT_STATUSES.includes(status as SupportStatus)
         ? status
@@ -680,7 +681,9 @@ function RequestDetails({
           )}
         </div>
         <span className="support-inbox__status" data-status={status}>
-          {SUPPORT_STATUS_LABELS[status]}
+          {report.statusProvenance === 'missing'
+            ? 'Unconfirmed legacy status'
+            : SUPPORT_STATUS_LABELS[status]}
         </span>
       </header>
       <dl className="support-inbox__metadata">
@@ -1050,7 +1053,7 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
             Triage requests and keep the full support conversation in one place.
           </p>
         </header>
-        {canImport && <SupportStatusImport />}
+        {canImport && <SupportStatusImport onApplied={reloadQueue} />}
         <div className="support-inbox__layout">
           <div className="support-inbox__sidebar">
             <section
@@ -1070,6 +1073,9 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                     }}
                   >
                     <option value="unresolved">Unresolved</option>
+                    <option value="unconfirmed">
+                      Unconfirmed legacy status
+                    </option>
                     {SUPPORT_STATUSES.map(value => (
                       <option key={value} value={value}>
                         {SUPPORT_STATUS_LABELS[value]}
@@ -1134,6 +1140,10 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                         <strong>{data.statusCounts[value]}</strong>
                       </li>
                     ))}
+                    <li>
+                      <span>Unconfirmed legacy status</span>
+                      <strong>{data.unconfirmedCount ?? 0}</strong>
+                    </li>
                   </ul>
                   {data.items.length === 0 && (
                     <p className="support-inbox__empty">
@@ -1178,11 +1188,11 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                                 report.status,
                               )}
                             >
-                              {
-                                SUPPORT_STATUS_LABELS[
-                                  normaliseSupportStatus(report.status)
-                                ]
-                              }
+                              {report.statusProvenance === 'missing'
+                                ? 'Unconfirmed legacy status'
+                                : SUPPORT_STATUS_LABELS[
+                                    normaliseSupportStatus(report.status)
+                                  ]}
                             </span>
                           </span>
                         </button>
