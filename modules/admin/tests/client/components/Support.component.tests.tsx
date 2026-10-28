@@ -87,6 +87,7 @@ beforeEach(() => {
       hasMore?: boolean;
       total?: number;
       matchingTotal?: number;
+      unconfirmedCount?: number;
       statusCounts?: Record<string, number>;
     };
     return {
@@ -104,6 +105,9 @@ beforeEach(() => {
         closed: 0,
         ...value.statusCounts,
       },
+      ...(value.unconfirmedCount !== undefined
+        ? { unconfirmedCount: value.unconfirmedCount }
+        : {}),
     };
   });
   loadConversation.mockResolvedValue({
@@ -451,13 +455,28 @@ test('handles missing verified member linkage', async () => {
         user: undefined,
         username: undefined,
         status: undefined,
+        statusProvenance: 'missing',
       };
     return {
-      items: [{ ...report, username: undefined, status: undefined }],
+      items: [
+        {
+          ...report,
+          username: undefined,
+          status: undefined,
+          statusProvenance: 'missing',
+        },
+      ],
       hasMore: false,
     };
   });
   render(<SupportInbox />);
+  const queue = screen.getByRole('region', { name: 'Request queue' });
+  const queueItem = await within(queue).findByRole('button', {
+    name: /reporter@example.test · Report a member/,
+  });
+  expect(
+    within(queueItem).getByText('Unconfirmed legacy status'),
+  ).toBeVisible();
   expect(
     screen.queryByRole('region', { name: 'Member search' }),
   ).not.toBeInTheDocument();
@@ -466,6 +485,10 @@ test('handles missing verified member linkage', async () => {
       name: /reporter@example.test · Report a member/,
     }),
   );
+  const details = await screen.findByRole('region', {
+    name: 'Support request',
+  });
+  expect(within(details).getByText('Unconfirmed legacy status')).toBeVisible();
   expect(
     await screen.findByText(/No verified member pair/),
   ).toBeInTheDocument();

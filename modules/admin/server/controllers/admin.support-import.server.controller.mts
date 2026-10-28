@@ -3,6 +3,7 @@ import {
   applyPreview,
   previewReducedManifest,
 } from '../../../support/server/services/status-import.server.service.mts';
+import type { SupportStatusImportSelection } from '../../../support/shared/status-import.ts';
 
 interface SupportImportRequest {
   body: unknown;
@@ -16,6 +17,22 @@ interface SupportImportResponse {
 
 interface SupportImportError extends Error {
   status?: number;
+}
+
+function isSelection(value: unknown): value is SupportStatusImportSelection {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.keys(value).length === 2 &&
+    'zendeskTicketId' in value &&
+    typeof value.zendeskTicketId === 'number' &&
+    Number.isSafeInteger(value.zendeskTicketId) &&
+    value.zendeskTicketId > 0 &&
+    'requestId' in value &&
+    typeof value.requestId === 'string' &&
+    /^[a-f\d]{24}$/i.test(value.requestId)
+  );
 }
 
 function responseFor(error: unknown) {
@@ -46,19 +63,31 @@ export async function apply(
   res: SupportImportResponse,
 ): Promise<unknown> {
   try {
+    const body = req.body;
     if (
-      typeof req.body !== 'object' ||
-      req.body === null ||
-      Array.isArray(req.body) ||
-      Object.keys(req.body).length !== 1 ||
-      !('previewId' in req.body) ||
-      typeof req.body.previewId !== 'string'
+      typeof body !== 'object' ||
+      body === null ||
+      Array.isArray(body) ||
+      !('previewId' in body) ||
+      typeof body.previewId !== 'string' ||
+      Object.keys(body).some(
+        key => !['previewId', 'selectedMatches'].includes(key),
+      ) ||
+      ('selectedMatches' in body &&
+        (!Array.isArray(body.selectedMatches) ||
+          !body.selectedMatches.every(isSelection)))
     ) {
       return res
         .status(400)
         .send({ message: 'Invalid support status preview.' });
     }
-    return res.send(await applyPreview(req.body.previewId, req.user._id));
+    const selectedMatches =
+      'selectedMatches' in body
+        ? (body.selectedMatches as SupportStatusImportSelection[])
+        : undefined;
+    return res.send(
+      await applyPreview(body.previewId, req.user._id, selectedMatches),
+    );
   } catch (error) {
     const response = responseFor(error);
     return res.status(response.status).send({ message: response.message });

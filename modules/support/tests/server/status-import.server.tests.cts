@@ -13,8 +13,11 @@ const {
   previewReducedManifest,
 }: typeof import('../../server/services/status-import.server.service.mts') = require('../../server/services/status-import.server.service.mts');
 const {
+  normaliseSupportImportMessage,
   normaliseStoredSupportCategory,
   supportRequestFingerprint,
+  supportImportMessageHash,
+  supportImportSenderHash,
   supportRequestImportFingerprints,
 }: typeof import('../../server/services/support-fingerprint.server.service.mts') = require('../../server/services/support-fingerprint.server.service.mts');
 
@@ -136,6 +139,316 @@ describe('conservative support status import', () => {
     assert.equal(updated?.statusRevision, 1);
   });
 
+  it('suggests formatting-equivalent v2 candidates without applying them implicitly', async () => {
+    const localMessage = 'A fictional request & needs help.';
+    const sourceMessage = 'A fictional request  & needs help.';
+    assert.equal(
+      supportImportMessageHash(localMessage),
+      supportImportMessageHash(sourceMessage),
+    );
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message: localMessage } },
+    );
+    const competingRequest = await SupportRequest.create({
+      ...input,
+      message: localMessage,
+      status: 'open',
+      sent: supportRequest.sent,
+    });
+    const source = {
+      version: 2,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      items: [
+        {
+          zendeskTicketId: 891,
+          status: 'pending',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+          fingerprint: supportRequestFingerprint({
+            ...input,
+            message: sourceMessage,
+          }),
+          evidence: {
+            senderHash: supportImportSenderHash(input.email),
+            category: input.category,
+            submittedAt: supportRequest.sent.toISOString(),
+            normalisedMessageHash: supportImportMessageHash(sourceMessage),
+          },
+        },
+      ],
+    };
+    const preview = await previewReducedManifest(source, adminId);
+    assert.equal(preview.counts.eligible, 0);
+    assert.equal(preview.counts.suggested, 1);
+    assert.equal(preview.matchReviews.length, 1);
+    assert.equal(preview.matchReviews[0]?.candidates.length, 2);
+    assert.equal(
+      preview.matchReviews[0]?.candidates[0]?.competingCandidateCount,
+      2,
+    );
+    assert.equal(
+      preview.matchReviews[0]?.candidates[0]?.reason.includes(
+        'within 60 seconds',
+      ),
+      true,
+    );
+    assert.equal(JSON.stringify(preview).includes(input.email), false);
+    assert.equal(JSON.stringify(preview).includes(localMessage), false);
+
+    const withoutSelection = await applyPreview(preview.previewId, adminId);
+    assert.deepEqual(withoutSelection, {
+      applied: 0,
+      alreadyApplied: 0,
+      skipped: 1,
+    });
+    const updated = await SupportRequest.findById(supportRequest._id).lean();
+    assert.equal(updated?.status, 'open');
+    assert.equal(updated?.zendeskTicketId, undefined);
+
+    const secondPreview = await previewReducedManifest(source, adminId);
+    assert.deepEqual(
+      await applyPreview(secondPreview.previewId, adminId, [
+        {
+          zendeskTicketId: 891,
+          requestId: String(competingRequest._id),
+        },
+      ]),
+      { applied: 1, alreadyApplied: 0, skipped: 0 },
+    );
+    assert.equal(
+      (await SupportRequest.findById(competingRequest._id).lean())
+        ?.zendeskTicketId,
+      891,
+    );
+  });
+
+  it('does not suggest when sender, category, message, time, or submission timestamp differs', async () => {
+    const localTime = supportRequest.sent.toISOString();
+    const baseEvidence = {
+      senderHash: supportImportSenderHash(input.email),
+      category: input.category,
+      submittedAt: localTime as string | null,
+      normalisedMessageHash: supportImportMessageHash(input.message),
+    };
+    const alternatives = [
+      { ...baseEvidence, senderHash: 'f'.repeat(64) },
+      { ...baseEvidence, category: 'account' },
+      { ...baseEvidence, normalisedMessageHash: 'e'.repeat(64) },
+      {
+        ...baseEvidence,
+        submittedAt: new Date(
+          new Date(localTime).getTime() + 61_000,
+        ).toISOString(),
+      },
+      { ...baseEvidence, submittedAt: null },
+    ];
+
+    for (const [index, evidence] of alternatives.entries()) {
+      const source = {
+        version: 2,
+        exportedAt: '2025-01-01T00:00:00.000Z',
+        items: [
+          {
+            zendeskTicketId: 910 + index,
+            status: 'pending',
+            updatedAt: '2025-01-01T00:00:00.000Z',
+            fingerprint: supportRequestFingerprint({
+              ...input,
+              message: `Fictional unmatched source ${index}.`,
+            }),
+            evidence,
+          },
+        ],
+      };
+      const preview = await previewReducedManifest(source, adminId);
+      assert.equal(preview.counts.suggested, 0);
+      assert.equal(preview.matchReviews.length, 0);
+      assert.equal(preview.counts.skippedByReason['no-match'], 1);
+    }
+  });
+
+  it('ignores requests without a valid category or sent timestamp and respects an existing same-ticket link', async () => {
+    const sourceFor = (zendeskTicketId: number) => ({
+      version: 2,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      items: [
+        {
+          zendeskTicketId,
+          status: 'pending',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+          fingerprint: supportRequestFingerprint({
+            ...input,
+            message: `Different fictional source ${zendeskTicketId}.`,
+          }),
+          evidence: {
+            senderHash: supportImportSenderHash(input.email),
+            category: input.category,
+            submittedAt: supportRequest.sent.toISOString(),
+            normalisedMessageHash: supportImportMessageHash(input.message),
+          },
+        },
+      ],
+    });
+
+    await SupportRequest.collection.updateOne(
+      { _id: supportRequest._id },
+      { $unset: { sent: '' } },
+    );
+    const noSent = await previewReducedManifest(sourceFor(894), adminId);
+    assert.equal(noSent.counts.suggested, 0);
+    assert.equal(noSent.counts.skippedByReason['no-match'], 1);
+
+    await SupportRequest.collection.updateOne(
+      { _id: supportRequest._id },
+      { $set: { sent: supportRequest.sent, category: 'invalid-category' } },
+    );
+    const noCategory = await previewReducedManifest(sourceFor(894), adminId);
+    assert.equal(noCategory.counts.suggested, 0);
+    assert.equal(noCategory.counts.skippedByReason['no-match'], 1);
+
+    await SupportRequest.collection.updateOne(
+      { _id: supportRequest._id },
+      { $set: { category: 'other', zendeskTicketId: 894 } },
+    );
+    const sameTicket = await previewReducedManifest(sourceFor(894), adminId);
+    assert.equal(sameTicket.counts.suggested, 1);
+    assert.equal(sameTicket.matchReviews[0]?.candidates.length, 1);
+  });
+
+  it('rejects duplicate, exact-overlap, and unknown explicit selections', async () => {
+    const exactPreview = await previewReducedManifest(manifest(), adminId);
+    await assert.rejects(
+      applyPreview(exactPreview.previewId, adminId, [
+        { zendeskTicketId: 789, requestId: String(supportRequest._id) },
+      ]),
+      /one-to-one/,
+    );
+    await assert.rejects(
+      applyPreview(exactPreview.previewId, adminId, [
+        { zendeskTicketId: 789, requestId: 'bad' },
+      ] as never),
+      /Invalid support status selection/,
+    );
+
+    const localMessage = 'A fictional request & needs help.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message: localMessage } },
+    );
+    const source = {
+      version: 2,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      items: [
+        {
+          zendeskTicketId: 892,
+          status: 'pending',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+          fingerprint: supportRequestFingerprint({
+            ...input,
+            message: 'Different source text.',
+          }),
+          evidence: {
+            senderHash: supportImportSenderHash(input.email),
+            category: input.category,
+            submittedAt: supportRequest.sent.toISOString(),
+            normalisedMessageHash: supportImportMessageHash(localMessage),
+          },
+        },
+      ],
+    };
+    const preview = await previewReducedManifest(source, adminId);
+    await assert.rejects(
+      applyPreview(preview.previewId, adminId, [
+        { zendeskTicketId: 892, requestId: String(supportRequest._id) },
+        { zendeskTicketId: 892, requestId: String(supportRequest._id) },
+      ]),
+      /one-to-one/,
+    );
+    await assert.rejects(
+      applyPreview(preview.previewId, adminId, [
+        {
+          zendeskTicketId: 892,
+          requestId: new mongoose.Types.ObjectId().toString(),
+        },
+      ]),
+      /not a suggested match/,
+    );
+  });
+
+  it('rechecks suggested evidence and ticket ownership during apply', async () => {
+    const localMessage = 'A fictional request & needs help.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message: localMessage } },
+    );
+    const source = {
+      version: 2,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      items: [
+        {
+          zendeskTicketId: 893,
+          status: 'pending',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+          fingerprint: supportRequestFingerprint({
+            ...input,
+            message: 'Different source text.',
+          }),
+          evidence: {
+            senderHash: supportImportSenderHash(input.email),
+            category: input.category,
+            submittedAt: supportRequest.sent.toISOString(),
+            normalisedMessageHash: supportImportMessageHash(localMessage),
+          },
+        },
+      ],
+    };
+    const stalePreview = await previewReducedManifest(source, adminId);
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { sent: new Date(supportRequest.sent.getTime() + 61_000) } },
+    );
+    assert.deepEqual(
+      await applyPreview(stalePreview.previewId, adminId, [
+        { zendeskTicketId: 893, requestId: String(supportRequest._id) },
+      ]),
+      { applied: 0, alreadyApplied: 0, skipped: 1 },
+    );
+
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      {
+        $set: {
+          sent: supportRequest.sent,
+          lastActivityAt: new Date('2025-01-02T00:00:00.000Z'),
+        },
+      },
+    );
+    const newerActivityPreview = await previewReducedManifest(source, adminId);
+    assert.deepEqual(
+      await applyPreview(newerActivityPreview.previewId, adminId, [
+        { zendeskTicketId: 893, requestId: String(supportRequest._id) },
+      ]),
+      { applied: 0, alreadyApplied: 0, skipped: 1 },
+    );
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $unset: { lastActivityAt: '' } },
+    );
+    const conflictPreview = await previewReducedManifest(source, adminId);
+    await SupportRequest.create({
+      ...input,
+      status: 'open',
+      sent: new Date('2024-02-01T00:00:00.000Z'),
+      zendeskTicketId: 893,
+    });
+    assert.deepEqual(
+      await applyPreview(conflictPreview.previewId, adminId, [
+        { zendeskTicketId: 893, requestId: String(supportRequest._id) },
+      ]),
+      { applied: 0, alreadyApplied: 0, skipped: 1 },
+    );
+  });
+
   it('normalises known historical category omissions without using usernames', async () => {
     assert.equal(normaliseStoredSupportCategory(undefined), 'other');
     assert.equal(
@@ -241,6 +554,27 @@ describe('conservative support status import', () => {
             'See http://www.example.org/help or write to help@example.org.',
         }),
       ),
+    );
+  });
+
+  it('normalises only conservative message formatting for suggestions', () => {
+    assert.equal(
+      normaliseSupportImportMessage(
+        ' Line  \r\n\twrap \n\n\n&amp; &lt; &gt; &quot; &#39; &apos; &#65; &#x42; &unknown; ',
+      ),
+      `Line\nwrap\n\n& < > " ' ' A B &unknown;`,
+    );
+    assert.equal(
+      normaliseSupportImportMessage('See www.example.org/help.'),
+      normaliseSupportImportMessage('See http://www.example.org/help.'),
+    );
+    assert.equal(
+      normaliseSupportImportMessage('Keep <script> literally.'),
+      'Keep <script> literally.',
+    );
+    assert.equal(
+      normaliseSupportImportMessage('Keep &#99999999; literally.'),
+      'Keep &#99999999; literally.',
     );
   });
 
@@ -532,11 +866,17 @@ describe('conservative support status import', () => {
       { _id: supportRequest._id },
       {
         $set: { email: input.email },
-        $unset: { statusRevision: '', sent: '', statusChangedAt: '' },
+        $unset: {
+          status: '',
+          statusRevision: '',
+          sent: '',
+          statusChangedAt: '',
+        },
       },
     );
     const preview = await previewReducedManifest(manifest(), adminId);
     assert.equal(preview.counts.eligible, 1);
+    assert.equal(preview.changes[0]?.currentStatus, 'unconfirmed');
     assert.deepEqual(await applyPreview(preview.previewId, adminId), {
       applied: 1,
       alreadyApplied: 0,
@@ -829,6 +1169,27 @@ describe('conservative support status import', () => {
     );
     await assert.rejects(
       previewReducedManifest(manifest({ updatedAt: '' }), adminId),
+      /Invalid support status manifest/,
+    );
+    await assert.rejects(
+      previewReducedManifest(
+        {
+          version: 2,
+          exportedAt: '2025-01-01T00:00:00.000Z',
+          items: [
+            {
+              ...manifest().items[0],
+              evidence: {
+                senderHash: 'invalid',
+                category: input.category,
+                submittedAt: null,
+                normalisedMessageHash: supportImportMessageHash(input.message),
+              },
+            },
+          ],
+        },
+        adminId,
+      ),
       /Invalid support status manifest/,
     );
     await assert.rejects(

@@ -433,6 +433,67 @@ test('support request deep links preserve queue filters on reload', async ({
   }
 });
 
+test('support distinguishes requests with missing statuses from explicit open requests', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Support can identify requests whose status was never confirmed.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const support = createUser({ firstName: 'Fictional', lastName: 'Support' });
+  try {
+    await registerViaApi(context.request, support);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: support.username },
+          { $set: { roles: ['user', 'support-team'] } },
+        );
+      await db.collection('supportrequests').insertMany([
+        {
+          category: 'other',
+          message: 'Fictional missing status',
+          email: 'missing@example.test',
+          sent: new Date(),
+        },
+        {
+          category: 'other',
+          message: 'Fictional explicit open',
+          email: 'open@example.test',
+          status: 'open',
+          sent: new Date(),
+        },
+      ]);
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto('/admin/support');
+    await expect(
+      page.getByRole('heading', { name: 'Support inbox' }),
+    ).toBeVisible();
+    const counts = page.getByRole('list', { name: 'Request counts by status' });
+    await expect(counts.getByText('Unconfirmed legacy status')).toBeVisible();
+    await expect(
+      counts
+        .locator('li')
+        .filter({ hasText: 'Unconfirmed legacy status' })
+        .locator('strong'),
+    ).toHaveText('1');
+    await expect(
+      counts.locator('li').filter({ hasText: /^Open/ }).locator('strong'),
+    ).toHaveText('1');
+    await page
+      .getByLabel('Status', { exact: true })
+      .selectOption('unconfirmed');
+    await expect(page.getByText('missing@example.test')).toBeVisible();
+    await expect(page.getByText('open@example.test')).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
 test('administrators can see why a historical status was skipped during matching', async ({
   browser,
   baseURL,

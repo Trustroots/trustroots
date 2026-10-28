@@ -14,6 +14,7 @@ export interface SupportRequest {
   user?: string;
   reportedUser?: string;
   status?: SupportStatus | 'resolved';
+  statusProvenance?: 'explicit' | 'missing';
 }
 export interface Page<T> {
   items: T[];
@@ -24,6 +25,7 @@ export interface SupportQueueResponse extends Page<SupportRequest> {
   total: number;
   matchingTotal: number;
   statusCounts: Record<SupportStatus, number>;
+  unconfirmedCount?: number;
 }
 export interface SupportAttachment {
   filename?: string;

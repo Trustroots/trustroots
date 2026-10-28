@@ -30,15 +30,22 @@ async function previewManifest(manifest: SupportStatusImportManifest) {
   return data;
 }
 
-async function applyStatusPreview(previewId: string) {
+async function applyStatusPreview(
+  previewId: string,
+  selectedMatches: { zendeskTicketId: number; requestId: string }[],
+) {
   const { data } = await http.post<SupportStatusImportApplyResponse>(
     '/api/admin/support-import/apply',
-    { previewId },
+    { previewId, selectedMatches },
   );
   return data;
 }
 
-export default function SupportStatusImport() {
+export default function SupportStatusImport({
+  onApplied,
+}: {
+  onApplied?: () => void;
+}) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] =
     useState<SupportStatusImportPreviewResponse | null>(null);
@@ -50,6 +57,9 @@ export default function SupportStatusImport() {
   const [matchingSkips, setMatchingSkips] = useState<Record<string, number>>(
     {},
   );
+  const [selectedMatches, setSelectedMatches] = useState<
+    Record<number, string>
+  >({});
 
   if (!getCurrentUser()?.roles?.includes('admin')) return null;
 
@@ -58,6 +68,7 @@ export default function SupportStatusImport() {
     setResult(null);
     setPreview(null);
     setMatchingSkips({});
+    setSelectedMatches({});
     if (file.size > MAX_UPLOAD_BYTES) {
       setError('Choose a reduced JSON manifest no larger than 10 MiB.');
       return;
@@ -70,7 +81,7 @@ export default function SupportStatusImport() {
         parsed === null ||
         Array.isArray(parsed) ||
         !('version' in parsed) ||
-        parsed.version !== 1 ||
+        (parsed.version !== 1 && parsed.version !== 2) ||
         !('items' in parsed) ||
         !Array.isArray(parsed.items)
       ) {
@@ -81,6 +92,7 @@ export default function SupportStatusImport() {
       );
       setPreview(reviewed);
       setMatchingSkips(reviewed.counts.skippedByReason);
+      setSelectedMatches({});
     } catch (cause) {
       setError(
         cause instanceof Error && cause.message === 'invalid manifest'
@@ -99,8 +111,16 @@ export default function SupportStatusImport() {
     setError('');
     setWorking(true);
     try {
-      setResult(await applyStatusPreview(previewId));
+      const applied = await applyStatusPreview(
+        previewId,
+        Object.entries(selectedMatches).map(([ticketId, requestId]) => ({
+          zendeskTicketId: Number(ticketId),
+          requestId,
+        })),
+      );
+      setResult(applied);
       setPreview(null);
+      onApplied?.();
     } catch (cause) {
       setError(
         getErrorMessage(cause, 'Unable to apply these support statuses.'),
@@ -133,6 +153,7 @@ export default function SupportStatusImport() {
           setResult(null);
           setError('');
           setMatchingSkips({});
+          setSelectedMatches({});
         }}
       />
       <button
@@ -179,7 +200,8 @@ export default function SupportStatusImport() {
             <time dateTime={preview.expiresAt}>
               {new Date(preview.expiresAt).toLocaleString()}
             </time>
-            .
+            . {preview.counts.suggested || 0} ticket
+            {preview.counts.suggested === 1 ? '' : 's'} with suggestions.
           </p>
           {preview.changes.length > 0 && (
             <div className="table-responsive">
@@ -190,6 +212,7 @@ export default function SupportStatusImport() {
                     <th>Zendesk ticket</th>
                     <th>Current status</th>
                     <th>Imported status</th>
+                    <th>Match</th>
                     <th>Zendesk updated</th>
                   </tr>
                 </thead>
@@ -200,6 +223,7 @@ export default function SupportStatusImport() {
                       <td>{change.zendeskTicketId}</td>
                       <td>{change.currentStatus}</td>
                       <td>{change.importedStatus}</td>
+                      <td>Exact: {change.reason}</td>
                       <td>
                         <time dateTime={change.updatedAt}>
                           {new Date(change.updatedAt).toLocaleString()}
@@ -211,10 +235,101 @@ export default function SupportStatusImport() {
               </table>
             </div>
           )}
+          {(preview.matchReviews || []).length > 0 && (
+            <section aria-label="Suggested request matches">
+              <h3>Suggested matches need your review</h3>
+              <p>
+                Suggestions require the same original sender and category, a
+                submission within 60 seconds, and an equivalent message after
+                formatting cleanup. Correspondence and email addresses are not
+                shown. Select at most one request for each ticket; tickets with
+                competing candidates are never selected automatically.
+              </p>
+              {preview.matchReviews.map(review => (
+                <div key={review.zendeskTicketId}>
+                  <h4>
+                    Zendesk ticket {review.zendeskTicketId} · {review.category}{' '}
+                    · submitted{' '}
+                    {review.submittedAt
+                      ? new Date(review.submittedAt).toLocaleString()
+                      : 'time unavailable'}
+                  </h4>
+                  <ul>
+                    {review.candidates.map(candidate => {
+                      const isSelected =
+                        selectedMatches[review.zendeskTicketId] ===
+                        candidate.requestId;
+                      const selectedForAnotherTicket = Object.entries(
+                        selectedMatches,
+                      ).some(
+                        ([ticketId, requestId]) =>
+                          requestId === candidate.requestId &&
+                          Number(ticketId) !== review.zendeskTicketId,
+                      );
+                      return (
+                        <li key={candidate.requestId}>
+                          <label>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={working || selectedForAnotherTicket}
+                              onChange={() =>
+                                setSelectedMatches(current => {
+                                  const next = { ...current };
+                                  if (isSelected)
+                                    delete next[review.zendeskTicketId];
+                                  else
+                                    next[review.zendeskTicketId] =
+                                      candidate.requestId;
+                                  return next;
+                                })
+                              }
+                            />{' '}
+                            <a
+                              href={`/admin/support/requests/${encodeURIComponent(candidate.requestId)}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Request {candidate.requestId}
+                            </a>{' '}
+                            ({candidate.category}; submitted{' '}
+                            {candidate.submittedAt
+                              ? new Date(candidate.submittedAt).toLocaleString()
+                              : 'time unavailable'}
+                            ){' '}
+                            <span>
+                              Current: {candidate.currentStatus}; imported:{' '}
+                              {candidate.importedStatus}.
+                            </span>
+                          </label>
+                          {selectedForAnotherTicket && (
+                            <p>
+                              This request is already selected for another
+                              Zendesk ticket.
+                            </p>
+                          )}
+                          <p>
+                            {candidate.reason}. Submission times differ by{' '}
+                            {candidate.timeDifferenceSeconds} seconds.{' '}
+                            {candidate.competingCandidateCount > 1 &&
+                              `${candidate.competingCandidateCount} candidates compete for this match.`}
+                          </p>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </section>
+          )}
           <button
             className="btn btn-primary"
             type="button"
-            disabled={working || preview.counts.eligible === 0}
+            disabled={
+              working ||
+              (preview.counts.eligible === 0 &&
+                Object.keys(selectedMatches).length === 0)
+            }
             onClick={() => applyPreview(preview.previewId)}
           >
             {working ? 'Applying…' : 'Apply status changes'}

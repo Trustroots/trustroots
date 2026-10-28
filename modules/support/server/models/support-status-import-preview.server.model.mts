@@ -12,7 +12,13 @@ export interface SupportStatusImportPreviewEntry {
   updatedAt: Date;
   fingerprint: string;
   originalFingerprint?: string;
-  state: 'ready' | 'alreadyApplied' | 'skipped';
+  state: 'ready' | 'suggested' | 'alreadyApplied' | 'skipped';
+  matchKind?: 'exact' | 'suggested';
+  senderHash?: string;
+  category?: string;
+  submittedAt?: Date | null;
+  normalisedMessageHash?: string;
+  competingCandidateCount?: number;
   reason?:
     | 'invalid'
     | 'duplicate-ticket-id'
@@ -61,6 +67,12 @@ const SupportStatusImportPreviewSchema =
           updatedAt: { type: Date, required: true },
           fingerprint: { type: String, required: true },
           originalFingerprint: { type: String },
+          matchKind: { type: String },
+          senderHash: { type: String },
+          category: { type: String },
+          submittedAt: { type: Date },
+          normalisedMessageHash: { type: String },
+          competingCandidateCount: { type: Number },
           state: { type: String, required: true },
           reason: { type: String },
           currentStatus: { type: String },

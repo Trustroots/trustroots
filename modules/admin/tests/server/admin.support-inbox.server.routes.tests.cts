@@ -77,22 +77,39 @@ describe('Shared support inbox', () => {
       message: 'Fictional legacy request',
       sent: new Date(),
     });
+    await Request.collection.insertOne({
+      category: 'other',
+      message: 'Fictional null status request',
+      status: null,
+      sent: new Date(),
+    });
     const initial = await agent.get('/api/admin/support').expect(200);
-    initial.body.total.should.equal(8);
-    initial.body.matchingTotal.should.equal(5);
+    initial.body.total.should.equal(9);
+    initial.body.matchingTotal.should.equal(6);
     initial.body.statusCounts.should.deepEqual({
       new: 1,
-      open: 2,
+      open: 1,
       pending: 1,
       hold: 1,
       solved: 2,
       closed: 1,
     });
+    initial.body.unconfirmedCount.should.equal(2);
+    const unconfirmed = await agent
+      .get('/api/admin/support?status=unconfirmed')
+      .expect(200);
+    unconfirmed.body.matchingTotal.should.equal(2);
+    unconfirmed.body.items
+      .every(
+        (item: { statusProvenance: string }) =>
+          item.statusProvenance === 'missing',
+      )
+      .should.equal(true);
     Object.hasOwn(initial.body.items[0], 'message').should.equal(false);
     const filtered = await agent
       .get('/api/admin/support?status=closed&category=account')
       .expect(200);
-    filtered.body.total.should.equal(8);
+    filtered.body.total.should.equal(9);
     filtered.body.matchingTotal.should.equal(1);
     filtered.body.statusCounts.open.should.equal(1);
     for (const status of [
@@ -104,6 +121,7 @@ describe('Shared support inbox', () => {
       'closed',
       'all',
       'resolved',
+      'unconfirmed',
     ]) {
       await agent
         .get(`/api/admin/support?status=${status}&category=account`)
@@ -131,7 +149,7 @@ describe('Shared support inbox', () => {
       .expect(400);
     (
       await agent.get('/api/admin/support?q=%20%20').expect(200)
-    ).body.total.should.equal(8);
+    ).body.total.should.equal(9);
   });
 
   it('searches replies and identifiers without copying search text into the audit log', async () => {
