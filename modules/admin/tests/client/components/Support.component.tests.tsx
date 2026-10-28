@@ -1393,3 +1393,42 @@ test('decodes support entities once and keeps decoded markup inert', async () =>
   ).toBeVisible();
   expect(conversation.querySelector('img, script, b')).toBeNull();
 });
+
+test('filters from every status count while preserving search and category and resetting pagination', async () => {
+  window.history.replaceState(
+    {},
+    '',
+    '/admin/support?category=other&q=fictional&page=3',
+  );
+  load.mockResolvedValue({ items: [], hasMore: false });
+  render(<SupportInbox />);
+  for (const [label, status] of [
+    ['New', 'new'],
+    ['Open', 'open'],
+    ['Pending', 'pending'],
+    ['On hold', 'hold'],
+    ['Solved', 'solved'],
+    ['Closed', 'closed'],
+    ['Unconfirmed legacy status', 'unconfirmed'],
+  ]) {
+    fireEvent.click(
+      await screen.findByRole('button', { name: new RegExp(`^${label} `) }),
+    );
+    await waitFor(() =>
+      expect(listRequests).toHaveBeenLastCalledWith({
+        category: 'other',
+        q: 'fictional',
+        page: 1,
+        status,
+      }),
+    );
+    expect(window.location.search).toContain(`status=${status}`);
+    expect(window.location.search).not.toContain('page=');
+    expect(
+      await screen.findByRole('button', { name: new RegExp(`^${label} `) }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText('Status', { exact: true })).toHaveValue(
+      status,
+    );
+  }
+});

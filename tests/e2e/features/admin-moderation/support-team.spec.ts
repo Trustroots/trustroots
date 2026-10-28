@@ -484,11 +484,18 @@ test('support distinguishes requests with missing statuses from explicit open re
     await expect(
       counts.locator('li').filter({ hasText: /^Open/ }).locator('strong'),
     ).toHaveText('1');
-    await page
-      .getByLabel('Status', { exact: true })
-      .selectOption('unconfirmed');
+    await counts
+      .getByRole('button', { name: /^Unconfirmed legacy status/ })
+      .click();
+    await expect(page).toHaveURL(/status=unconfirmed/);
+    await expect(
+      counts.getByRole('button', { name: /^Unconfirmed legacy status/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByText('missing@example.test')).toBeVisible();
     await expect(page.getByText('open@example.test')).toHaveCount(0);
+    await counts.getByRole('button', { name: /^Open / }).click();
+    await expect(page.getByText('open@example.test')).toBeVisible();
+    await expect(page.getByText('missing@example.test')).toHaveCount(0);
   } finally {
     await context.close();
   }

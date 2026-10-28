@@ -1153,13 +1153,29 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                   >
                     {SUPPORT_STATUSES.map(value => (
                       <li key={value}>
-                        <span>{SUPPORT_STATUS_LABELS[value]}</span>
-                        <strong>{data.statusCounts[value]}</strong>
+                        <button
+                          type="button"
+                          aria-pressed={location.status === value}
+                          onClick={() =>
+                            updateLocation({ status: value, page: 1 })
+                          }
+                        >
+                          <span>{SUPPORT_STATUS_LABELS[value]}</span>{' '}
+                          <strong>{data.statusCounts[value]}</strong>
+                        </button>
                       </li>
                     ))}
                     <li>
-                      <span>Unconfirmed legacy status</span>
-                      <strong>{data.unconfirmedCount ?? 0}</strong>
+                      <button
+                        type="button"
+                        aria-pressed={location.status === 'unconfirmed'}
+                        onClick={() =>
+                          updateLocation({ status: 'unconfirmed', page: 1 })
+                        }
+                      >
+                        <span>Unconfirmed legacy status</span>{' '}
+                        <strong>{data.unconfirmedCount ?? 0}</strong>
+                      </button>
                     </li>
                   </ul>
                   {data.items.length === 0 && (
