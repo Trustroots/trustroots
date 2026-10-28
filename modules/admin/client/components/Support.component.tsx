@@ -145,8 +145,19 @@ function splitQuotedCorrespondence(body: string) {
   };
 }
 
+function decodeSupportText(text: string): string {
+  // Decode entity tokens only, then let React render the result as text.
+  // Raw markup never enters an HTML parser or the rendered DOM.
+  return text.replace(
+    /&(?:#(?:x[\da-f]{1,8}|\d{1,10})|[a-z][a-z\d]{1,31});/gi,
+    entity => plainText(entity),
+  );
+}
+
 function ConversationBody({ body }: { body: string }) {
-  const { current, quoted } = splitQuotedCorrespondence(body);
+  const { current, quoted } = splitQuotedCorrespondence(
+    decodeSupportText(body),
+  );
   return (
     <>
       {current && <div className="support-inbox__message-body">{current}</div>}
@@ -156,7 +167,11 @@ function ConversationBody({ body }: { body: string }) {
           <div className="support-inbox__message-body">{quoted}</div>
         </details>
       ) : (
-        !current && <div className="support-inbox__message-body">{body}</div>
+        !current && (
+          <div className="support-inbox__message-body">
+            {decodeSupportText(body)}
+          </div>
+        )
       )}
     </>
   );
@@ -677,7 +692,9 @@ function RequestDetails({
             }
           </h2>
           {report.subject && (
-            <p className="support-inbox__subject">{report.subject}</p>
+            <p className="support-inbox__subject">
+              {decodeSupportText(report.subject)}
+            </p>
           )}
         </div>
         <span className="support-inbox__status" data-status={status}>
@@ -1174,7 +1191,7 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                           </strong>
                           {report.subject && (
                             <span className="support-inbox__queue-subject">
-                              {report.subject}
+                              {decodeSupportText(report.subject)}
                             </span>
                           )}
                           <span>{report.username || report.email}</span>

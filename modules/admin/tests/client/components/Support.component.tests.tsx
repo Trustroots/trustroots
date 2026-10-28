@@ -1357,3 +1357,39 @@ test('ignores a failed queue request that settles after unmount', async () => {
     rejectQueue(new Error('Late failure'));
   });
 });
+
+test('decodes support entities once and keeps decoded markup inert', async () => {
+  const body =
+    'A &quot;fictional topic&quot; &amp; &#39;reply&#39; &#x1F642; &lt;img src=x onerror=alert(1)&gt; <b>plain</b> &amp;quot;';
+  loadConversation.mockResolvedValue({
+    items: [
+      {
+        _id: 'entity-message',
+        direction: 'inbound',
+        kind: 'reply',
+        body,
+        createdAt: '2026-01-02T12:00:00Z',
+        deliveryState: 'received',
+      },
+    ],
+  } as never);
+  load.mockImplementation(async path => {
+    if (path === '/api/admin/support/report-1') return report;
+    return { items: [report], hasMore: false };
+  });
+  render(<SupportInbox />);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /fictional-reporter · Report a member/,
+    }),
+  );
+  const conversation = await screen.findByRole('region', {
+    name: 'Support conversation',
+  });
+  expect(
+    await within(conversation).findByText(
+      'A "fictional topic" & \'reply\' 🙂 <img src=x onerror=alert(1)> <b>plain</b> &quot;',
+    ),
+  ).toBeVisible();
+  expect(conversation.querySelector('img, script, b')).toBeNull();
+});

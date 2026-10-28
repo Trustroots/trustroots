@@ -204,36 +204,39 @@ export default function SupportStatusImport({
             {preview.counts.suggested === 1 ? '' : 's'} with suggestions.
           </p>
           {preview.changes.length > 0 && (
-            <div className="table-responsive">
-              <table className="table table-striped">
-                <thead>
-                  <tr>
-                    <th>Request</th>
-                    <th>Zendesk ticket</th>
-                    <th>Current status</th>
-                    <th>Imported status</th>
-                    <th>Match</th>
-                    <th>Zendesk updated</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {preview.changes.map(change => (
-                    <tr key={change.requestId}>
-                      <td>{change.requestId}</td>
-                      <td>{change.zendeskTicketId}</td>
-                      <td>{change.currentStatus}</td>
-                      <td>{change.importedStatus}</td>
-                      <td>Exact: {change.reason}</td>
-                      <td>
-                        <time dateTime={change.updatedAt}>
-                          {new Date(change.updatedAt).toLocaleString()}
-                        </time>
-                      </td>
+            <details>
+              <summary>Exact matches ({preview.changes.length})</summary>
+              <div className="table-responsive">
+                <table className="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Request</th>
+                      <th>Zendesk ticket</th>
+                      <th>Current status</th>
+                      <th>Imported status</th>
+                      <th>Match</th>
+                      <th>Zendesk updated</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {preview.changes.map(change => (
+                      <tr key={change.requestId}>
+                        <td>{change.requestId}</td>
+                        <td>{change.zendeskTicketId}</td>
+                        <td>{change.currentStatus}</td>
+                        <td>{change.importedStatus}</td>
+                        <td>Exact: {change.reason}</td>
+                        <td>
+                          <time dateTime={change.updatedAt}>
+                            {new Date(change.updatedAt).toLocaleString()}
+                          </time>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
           )}
           {(preview.matchReviews || []).length > 0 && (
             <section aria-label="Suggested request matches">
