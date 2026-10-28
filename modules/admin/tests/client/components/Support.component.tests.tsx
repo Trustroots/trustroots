@@ -305,11 +305,11 @@ test('shows linked account roles and renders support dates in UTC', async () => 
   ).toHaveTextContent('shadowban');
   const details = screen.getByRole('region', { name: 'Support request' });
   expect(
-    within(details).getByText('fictional-reporter', { selector: 'p' }),
-  ).toBeInTheDocument();
+    within(details).getAllByRole('link', { name: 'fictional-reporter' })[0],
+  ).toHaveAttribute('href', '/admin/user/fictional-reporter');
   expect(
-    within(details).getByText('fictional-target', { selector: 'p' }),
-  ).toBeInTheDocument();
+    within(details).getByRole('link', { name: 'fictional-target' }),
+  ).toHaveAttribute('href', '/admin/user/fictional-target');
   expect(
     screen.getByRole('link', { name: 'Reporter account and notes' }),
   ).toHaveAttribute('href', '/admin/support/member/renamed-current-reporter');
