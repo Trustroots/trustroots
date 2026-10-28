@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.contacts
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -31,6 +32,16 @@ import org.trustroots.android.api.ProfileContact
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class ContactsViewModelTest {
+    @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            ContactsViewModel.Factory("steady-heron", FakeContactsRepository())
+                .create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
     @Test
     fun successfulLoadRequestsCurrentProfileThenContacts() = withScope { scope ->
         val repository = FakeContactsRepository()
@@ -384,6 +395,8 @@ class ContactsViewModelTest {
     }
 
     private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class OtherViewModel : ViewModel()
 
     private class FakeContactsRepository : ContactsRepository {
         val profileUsernames = mutableListOf<String>()

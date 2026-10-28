@@ -215,6 +215,27 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun authenticationFailureClearsPreviouslyCachedThreads() = withScope { scope ->
+        val staleThread = thread("cached-private-thread", "Quiet Fox")
+        val cache = InboxCache().apply {
+            threads = listOf(staleThread)
+            loadedAt = 0L
+        }
+        val repository = FakeInboxRepository {
+            Result.failure(MobileApiException(401, "Fictional session expired."))
+        }
+        val model = InboxViewModel(repository, session(), scope, now = { 0L }, cache = cache)
+
+        assertEquals(listOf(staleThread), model.state.value.threads)
+        model.onEvent(InboxEvent.Retry)
+
+        assertTrue(model.state.value.threads.isEmpty())
+        assertNull(cache.threads)
+        assertNull(cache.loadedAt)
+        assertTrue(model.state.value.pendingSessionInvalidation != null)
+    }
+
+    @Test
     fun returnRefreshRejectsLateResponseFromPreviousLoad() = withScope { scope ->
         val oldResponse = CompletableDeferred<Result<List<MessageThread>>>()
         var callCount = 0

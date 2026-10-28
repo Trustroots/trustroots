@@ -4,9 +4,11 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
+import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,5 +46,27 @@ class MenuNavigationTest {
         compose.onNodeWithText("Contact and support").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("View your profile").performScrollTo().assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Sign out").fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test fun choosingHostInvokesTheHostOfferRoute() {
+        val hostRouteOpened = AtomicBoolean(false)
+        compose.setContent {
+            MenuScreen(
+                session = MemberSession("connect.sid=test", MobileMember("river-otter", "River Otter")),
+                openProfile = {},
+                openEditProfile = {},
+                openHost = { hostRouteOpened.set(true) },
+                openNostroots = {},
+                openContacts = {},
+                openFindPeople = {},
+                openCircles = {},
+                openAccount = {},
+                openBrowser = {},
+            )
+        }
+
+        compose.onNodeWithText("Host").performScrollTo().performClick()
+
+        assertTrue("Selecting Host should request the host offer route", hostRouteOpened.get())
     }
 }

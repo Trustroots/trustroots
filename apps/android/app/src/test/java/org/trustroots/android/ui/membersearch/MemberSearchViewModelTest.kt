@@ -147,6 +147,19 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun duplicateVersionedResetDoesNotClearStateCreatedAfterItsFirstDelivery() = withScope { scope ->
+        val viewModel = MemberSearchViewModel(FakeMemberSearchRepository(), scope)
+        viewModel.onEvent(MemberSearchEvent.Reset(generation = 8))
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("current query"))
+        viewModel.onEvent(MemberSearchEvent.ResultsScrolled(12))
+
+        viewModel.onEvent(MemberSearchEvent.Reset(generation = 8))
+
+        assertEquals("current query", viewModel.state.value.query)
+        assertEquals(12, viewModel.state.value.resultScrollOffset)
+    }
+
+    @Test
     fun storesOnlyNonblankApiServerMessageAndFailureKind() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
         repository.searchHandler = {
