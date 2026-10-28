@@ -100,10 +100,15 @@ describe('<SupportStatusImport />', () => {
     expect(
       await screen.findByText(/1 eligible, 0 already applied, 0 skipped/),
     ).toBeVisible();
+    const toggle = screen.getByText('Exact matches (1)');
+    expect(toggle.closest('details')).not.toHaveAttribute('open');
+    fireEvent.click(toggle);
     expect(screen.getByRole('cell', { name: 'request-1' })).toBeVisible();
     expect(screen.getByRole('cell', { name: '789' })).toBeVisible();
     expect(screen.getByRole('cell', { name: 'open' })).toBeVisible();
     expect(screen.getByRole('cell', { name: 'pending' })).toBeVisible();
+    fireEvent.click(toggle);
+    expect(toggle.closest('details')).not.toHaveAttribute('open');
     expect(post).toHaveBeenNthCalledWith(
       1,
       '/api/admin/support-import/preview',

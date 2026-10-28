@@ -706,6 +706,15 @@ test('administrators can apply historical statuses across rendered request varia
     await expect(
       importer.getByText(/2 eligible, 0 already applied, 2 skipped/),
     ).toBeVisible();
+    const exactMatches = importer
+      .locator('details')
+      .filter({ hasText: 'Exact matches (2)' });
+    const exactTable = exactMatches.getByRole('table');
+    await expect(exactTable).not.toBeVisible();
+    await exactMatches.locator('summary').click();
+    await expect(exactTable).toBeVisible();
+    await exactMatches.locator('summary').click();
+    await expect(exactTable).not.toBeVisible();
     const breakdown = importer.getByRole('table', {
       name: 'Skipped during matching',
     });
