@@ -37,6 +37,20 @@ import org.trustroots.android.api.ProfileReference
 @Config(sdk = [35], manifest = Config.NONE)
 class MemberProfileViewModelTest {
     @Test
+    fun repositoryDefaultsTreatAnEnvironmentUpdateAsUnchanged() {
+        val repository = object : MemberProfileRepository by FakeMemberProfileRepository() {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<MemberProfileRepository>.updateApi(api)
+
+            override fun updateSession(session: MemberSession): Boolean =
+                super<MemberProfileRepository>.updateSession(session)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+        assertFalse(repository.updateSession(MemberSession("fictional-cookie", org.trustroots.android.api.MobileMember("quiet-fox", "Quiet Fox"))))
+    }
+
+    @Test
     fun loadsProfileAndRelatedSectionsIntoImmutableEntryState() {
         val repository = FakeMemberProfileRepository()
         val model = newModel("quiet-fox", repository)

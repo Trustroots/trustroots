@@ -8,6 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +28,29 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 
 class SignInViewModelTest {
+    @Test
+    fun defaultAuthenticatorSubmitsThroughTheConfiguredApiClient() = runBlocking {
+        val scope = testScope()
+        try {
+            val viewModel = SignInViewModel(
+                apiBaseUrl = "http://127.0.0.1:1",
+                initialMessage = null,
+                scope = scope,
+            )
+            viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+            viewModel.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+
+            viewModel.onEvent(SignInEvent.Submit)
+
+            val state = withTimeout(5_000) {
+                viewModel.state.first { !it.isLoading && it.error != null }
+            }
+            assertEquals(UiFailure(fallback = UiFailureFallback.REACH_TRUSTROOTS), state.error)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test
     fun unexpectedAuthenticatorFailureUsesTheSafeFallbackMessage() {
         val scope = testScope()

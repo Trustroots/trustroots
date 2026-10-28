@@ -1,8 +1,9 @@
 package org.trustroots.android.ui.profile
 
+import org.trustroots.android.ui.common.findActivity
+
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.text.Html
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -370,10 +371,10 @@ private fun MemberProfileContent(
     }
     LaunchedEffect(completion?.deliveryID) {
         val deliveryID = completion?.deliveryID ?: return@LaunchedEffect
-        when (val pending = onCompletionHandled(deliveryID)) {
+        val pending = onCompletionHandled(deliveryID) ?: return@LaunchedEffect
+        when (pending) {
             is ProfileFlowCompletion.ProfileSaved -> viewModel.onEvent(MemberProfileEvent.ProfileSaved(pending.profile))
             is ProfileFlowCompletion.ExperienceCreated -> viewModel.onEvent(MemberProfileEvent.RefreshReferences)
-            null -> Unit
         }
     }
     LaunchedEffect(profileState.contactRemovalSucceeded) {
@@ -601,7 +602,7 @@ private fun ProfileActivityFact(label: String, value: String, testTag: String) {
 @Composable
 private fun ProfileHeaderStatusBarStyle(enabled: Boolean) {
     val view = LocalView.current
-    val window = view.context.findActivity()?.window
+    val window = view.context.findActivity(Activity::class.java)?.window
     val darkAppearance = isSystemInDarkTheme()
     val latestDarkAppearance by rememberUpdatedState(darkAppearance)
     DisposableEffect(window, enabled) {
@@ -612,13 +613,4 @@ private fun ProfileHeaderStatusBarStyle(enabled: Boolean) {
             controller.isAppearanceLightStatusBars = !latestDarkAppearance
         }
     }
-}
-
-private fun Context.findActivity(): Activity? {
-    var current: Context = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return current as? Activity
 }

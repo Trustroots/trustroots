@@ -6,6 +6,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,6 +40,8 @@ private data object HostOfferTestMenuRoute : NavKey
 private data class HostOfferTestRoute(val visitId: Long) : NavKey
 
 class HostOfferNav3TestActivity : ComponentActivity() {
+    internal var sceneBack: (() -> Unit)? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -50,6 +53,7 @@ class HostOfferNav3TestActivity : ComponentActivity() {
                     val leave = { if (backStack.size > 1) backStack.removeLastOrNull() }
                     leaveGuard.value?.invoke(leave) ?: leave()
                 }
+                SideEffect { sceneBack = handleBack }
                 CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
                     NavDisplay(
                         backStack = backStack,

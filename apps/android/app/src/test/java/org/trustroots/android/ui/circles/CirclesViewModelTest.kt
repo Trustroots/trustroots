@@ -31,6 +31,20 @@ import org.trustroots.android.api.TrustrootsCircle
 @Config(sdk = [35], manifest = Config.NONE)
 class CirclesViewModelTest {
     @Test
+    fun repositoryDefaultsTreatApiAndSessionAsUnchanged() {
+        val repository = object : CircleRepository by FakeCircleRepository() {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<CircleRepository>.updateApi(api)
+
+            override fun updateSession(session: MemberSession): Boolean =
+                super<CircleRepository>.updateSession(session)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+        assertFalse(repository.updateSession(MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox"))))
+    }
+
+    @Test
     fun loadsCatalogueAndMembershipsAndDerivesSortedDescriptionFilter() = withScope { scope ->
         val repository = FakeCircleRepository(
             circles = listOf(

@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
@@ -114,6 +116,34 @@ class HostDetailSurfaceJourneyTest {
             .assertIsDisplayed().assertWidthIsAtLeast(48.dp).assertHeightIsAtLeast(48.dp)
             .performClick()
         assertEquals(listOf(1), failureBackCalls)
+    }
+
+    @Test fun offerRemainsVisibleWithProgressWhileItsProfileLoads() {
+        val profileStarted = CompletableDeferred<Unit>()
+        val profileResult = CompletableDeferred<Result<MemberProfile>>()
+        val repository = object : HostDetailRepository {
+            override suspend fun offer(offerID: String) = Result.success(offer())
+            override suspend fun profile(username: String): Result<MemberProfile> {
+                profileStarted.complete(Unit)
+                return profileResult.await()
+            }
+            override suspend fun memberships() = Result.success(emptySet<String>())
+        }
+        render(repository, dark = false, onBack = {})
+
+        compose.waitUntil(10_000) {
+            profileStarted.isCompleted &&
+                compose.onAllNodesWithText("A fictional room above the map.").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue(compose.onAllNodesWithTag("hostDetailLoading").fetchSemanticsNodes().isEmpty())
+        assertEquals(
+            "A separate progress indicator should remain while the visible offer's profile is loading",
+            1,
+            compose.onAllNodes(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).fetchSemanticsNodes().size,
+        )
+        profileResult.complete(
+            Result.success(MemberProfile(null, "quiet-fox", "Quiet Fox", null, null, null, languages = emptyList())),
+        )
     }
 
     private fun render(

@@ -12,6 +12,7 @@ import androidx.compose.material3.TopAppBarState
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performSemanticsAction
@@ -47,6 +48,7 @@ class HeaderTypographyJourneyTest {
                         title = "Shared title",
                         scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(barState),
                         contentPadding = PaddingValues.Zero,
+                        leadingContent = { androidx.compose.material3.Text("Header leading control") },
                     )
                     ArtworkHero(
                         url = null,
@@ -75,6 +77,7 @@ class HeaderTypographyJourneyTest {
             }
         }
         compose.waitForIdle()
+        compose.onNodeWithText("Header leading control").assertIsDisplayed()
         assertSameTypography(expandedProfileStyle, textStyle("Expanded profile"))
 
         compose.runOnIdle {

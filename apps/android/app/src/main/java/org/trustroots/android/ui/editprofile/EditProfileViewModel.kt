@@ -1,11 +1,12 @@
 package org.trustroots.android.ui.editprofile
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.text.Html
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -287,7 +288,7 @@ internal fun rememberEditProfileViewModel(
     username: String,
     initialProfile: MemberProfile? = null,
 ): EditProfileViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner." }
+    val owner = requireNavigationViewModelStoreOwner("Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = EditProfileViewModel::class.java,

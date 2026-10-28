@@ -1,5 +1,7 @@
 package org.trustroots.android.ui.hostoffer
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.text.Html
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.compositionLocalOf
@@ -7,7 +9,6 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -342,9 +343,7 @@ internal fun rememberHostOfferViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): HostOfferViewModel {
-    val owner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Host offer screen must be hosted by its Navigation 3 entry."
-    }
+    val owner: ViewModelStoreOwner = requireNavigationViewModelStoreOwner("Host offer screen must be hosted by its Navigation 3 entry.")
     val repositoryOverride = LocalHostOfferRepository.current
     val repository = remember(owner, repositoryOverride) {
         repositoryOverride ?: MobileApiHostOfferRepository(api, session)

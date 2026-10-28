@@ -1,0 +1,404 @@
+package org.jacoco.core.internal.analysis.filter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
+
+/** Standalone regression harness; run with the regressionTest Gradle task. */
+public final class TrustrootsGeneratedCodeFilterRegression {
+    private static final String COMPOSER = "androidx/compose/runtime/Composer";
+    private static final String COMPOSABLE = "Landroidx/compose/runtime/Composable;";
+    private static final String NO_WHEN = "kotlin/NoWhenBranchMatchedException";
+
+    private TrustrootsGeneratedCodeFilterRegression() {}
+
+    public static void main(String[] args) throws Exception {
+        testExactComposableSwitchFallbackIsIgnoredWithoutIgnoringItsDecision();
+        testSwitchFallbackWithoutComposeScaffoldIsPreserved();
+        testOnlyAStandaloneComposeEndGroupLineIsIgnored();
+        testImplicitSuspendCompletionOnClosingLineIsIgnored();
+        testExplicitUnitReturnIsPreserved();
+        testGenericFlowCompletionIsPreserved();
+        testPointerInputCompletionIsFilteredOnlyAfterKnownLoopingApi();
+        testFunctionReferenceForwarderIsIgnoredButOrdinaryLambdaIsNot();
+        org.trustroots.android.coverage.FilteredReportIntegrationRegression.run();
+        System.out.println("Trustroots generated-code filter regression checks passed.");
+    }
+
+    private static void testExactComposableSwitchFallbackIsIgnoredWithoutIgnoringItsDecision() {
+        MethodNode method = composableMethod("draw", "(Landroidx/compose/runtime/Composer;I)V");
+        LabelNode defaultLabel = new LabelNode();
+        LabelNode caseLabel = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new TableSwitchInsnNode(0, 0, defaultLabel, caseLabel));
+        method.instructions.add(defaultLabel);
+        method.instructions.add(new LineNumberNode(41, defaultLabel));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode(101));
+        method.instructions.add(call("startReplaceGroup", "(I)V"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(call("endReplaceGroup", "()V"));
+        method.instructions.add(new TypeInsnNode(Opcodes.NEW, NO_WHEN));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, NO_WHEN, "<init>", "()V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ATHROW));
+        method.instructions.add(caseLabel);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.maxStack = 3;
+        method.maxLocals = 2;
+
+        RecordingOutput output = apply(method, "sample/Composable", "java/lang/Object");
+        check(output.ignored.size() == 1, "exact generated fallback should be ignored once");
+        AbstractInsnNode[] ignored = output.ignored.get(0);
+        check(ignored[0].getOpcode() == Opcodes.ALOAD, "ignore should begin at generated Compose setup");
+        check(ignored[1].getOpcode() == Opcodes.ATHROW, "ignore should end at the generated throw");
+        check(output.ignored.stream().noneMatch(range -> containsBranch(range[0], range[1])),
+                "switch decision must stay in branch coverage");
+    }
+
+    private static void testSwitchFallbackWithoutComposeScaffoldIsPreserved() {
+        MethodNode method = composableMethod("draw", "(Landroidx/compose/runtime/Composer;I)V");
+        LabelNode defaultLabel = new LabelNode();
+        LabelNode caseLabel = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new TableSwitchInsnNode(0, 0, defaultLabel, caseLabel));
+        method.instructions.add(defaultLabel);
+        method.instructions.add(new TypeInsnNode(Opcodes.NEW, NO_WHEN));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, NO_WHEN, "<init>", "()V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ATHROW));
+        method.instructions.add(caseLabel);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.maxStack = 2;
+        method.maxLocals = 2;
+
+        check(apply(method, "sample/Composable", "java/lang/Object").ignored.isEmpty(),
+                "fallback without the Compose-only bytecode scaffold must remain visible");
+    }
+
+    private static void testOnlyAStandaloneComposeEndGroupLineIsIgnored() {
+        MethodNode method = composableMethod("draw", "(Landroidx/compose/runtime/Composer;)V");
+        LabelNode startLine = new LabelNode();
+        LabelNode closeLine = new LabelNode();
+        LabelNode mixedLine = new LabelNode();
+        method.instructions.add(startLine);
+        method.instructions.add(new LineNumberNode(10, startLine));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(call("startReplaceGroup", "(I)V"));
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode(9));
+        method.instructions.add(closeLine);
+        method.instructions.add(new LineNumberNode(11, closeLine));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        MethodInsnNode generatedClose = call("endReplaceGroup", "()V");
+        method.instructions.add(generatedClose);
+        method.instructions.add(mixedLine);
+        method.instructions.add(new LineNumberNode(12, mixedLine));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(call("endReplaceGroup", "()V"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.maxStack = 2;
+        method.maxLocals = 1;
+
+        RecordingOutput output = apply(method, "sample/Composable", "java/lang/Object");
+        check(output.ignored.size() == 1, "only the generated-only close line should be ignored");
+        check(output.ignored.get(0)[0].getOpcode() == Opcodes.ALOAD
+                        && output.ignored.get(0)[1] == generatedClose,
+                "the source-bearing close line must not be filtered");
+        check(output.ignored.stream().noneMatch(range -> containsBranch(range[0], range[1])),
+                "group-close filtering must not remove branches");
+    }
+
+    private static void testImplicitSuspendCompletionOnClosingLineIsIgnored() throws Exception {
+        MethodNode method = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invokeSuspend",
+                "(Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        LabelNode suspendLine = new LabelNode();
+        method.instructions.add(suspendLine);
+        method.instructions.add(new LineNumberNode(19, suspendLine));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "kotlin/coroutines/Continuation"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+                "androidx/compose/runtime/SnapshotStateKt", "snapshotFlow",
+                "(Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;", false));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+                "kotlinx/coroutines/flow/Flow", "collect",
+                "(Lkotlinx/coroutines/flow/FlowCollector;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;",
+                true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        LabelNode completionLine = new LabelNode();
+        method.instructions.add(completionLine);
+        method.instructions.add(new LineNumberNode(20, completionLine));
+        AbstractInsnNode generatedUnit = new FieldInsnNode(Opcodes.GETSTATIC, "kotlin/Unit", "INSTANCE", "Lkotlin/Unit;");
+        AbstractInsnNode generatedReturn = new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN);
+        method.instructions.add(generatedUnit);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 3));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 9));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.BASTORE));
+        method.instructions.add(generatedReturn);
+        LabelNode invalidState = new LabelNode();
+        method.instructions.add(invalidState);
+        method.instructions.add(new LineNumberNode(21, invalidState));
+        method.instructions.add(new TypeInsnNode(Opcodes.NEW, "java/lang/IllegalStateException"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, "java/lang/IllegalStateException",
+                "<init>", "()V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ATHROW));
+        method.maxStack = 2;
+        method.maxLocals = 2;
+
+        withSourceLine("},", () -> {
+            RecordingOutput output = apply(method, "sample/LoopLambda", SUSPEND_LAMBDA);
+            check(output.ignored.size() == 1, "implicit completion on a source-only closing line should be ignored");
+            check(output.ignored.get(0)[0] == generatedUnit && output.ignored.get(0)[1] == generatedReturn,
+                    "filter should ignore the generated Unit/return tail and its probe store");
+        });
+    }
+
+    private static void testExplicitUnitReturnIsPreserved() throws Exception {
+        MethodNode method = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invokeSuspend",
+                "(Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        LabelNode line = new LabelNode();
+        method.instructions.add(line);
+        method.instructions.add(new LineNumberNode(20, line));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "kotlin/coroutines/Continuation"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+                "androidx/compose/runtime/SnapshotStateKt", "snapshotFlow",
+                "(Lkotlin/jvm/functions/Function0;)Lkotlinx/coroutines/flow/Flow;", false));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+                "kotlinx/coroutines/flow/Flow", "collect",
+                "(Lkotlinx/coroutines/flow/FlowCollector;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;",
+                true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, "kotlin/Unit", "INSTANCE", "Lkotlin/Unit;"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        method.maxStack = 2;
+        method.maxLocals = 2;
+
+        withSourceLine("return Unit", () -> {
+            check(apply(method, "sample/LoopLambda", SUSPEND_LAMBDA).ignored.isEmpty(),
+                    "explicit return Unit must remain covered source code");
+        });
+    }
+
+    private static void testGenericFlowCompletionIsPreserved() throws Exception {
+        MethodNode method = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invokeSuspend",
+                "(Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        LabelNode line = new LabelNode();
+        method.instructions.add(line);
+        method.instructions.add(new LineNumberNode(20, line));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+                "kotlinx/coroutines/flow/Flow", "collect",
+                "(Lkotlinx/coroutines/flow/FlowCollector;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;",
+                true));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, "kotlin/Unit", "INSTANCE", "Lkotlin/Unit;"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        method.maxStack = 2;
+        method.maxLocals = 2;
+
+        withSourceLine("},", () -> {
+            check(apply(method, "sample/LoopLambda", SUSPEND_LAMBDA).ignored.isEmpty(),
+                    "generic Flow.collect completion must remain measurable");
+        });
+    }
+
+    private static void testPointerInputCompletionIsFilteredOnlyAfterKnownLoopingApi() throws Exception {
+        MethodNode method = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invoke",
+                "(Landroidx/compose/ui/input/pointer/PointerInputScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;",
+                null, null);
+        LabelNode callLine = new LabelNode();
+        method.instructions.add(callLine);
+        method.instructions.add(new LineNumberNode(19, callLine));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+                "androidx/compose/ui/input/pointer/PointerInputScope", "awaitPointerEventScope",
+                "(Lkotlin/jvm/functions/Function2;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;", true));
+        LabelNode completionLine = new LabelNode();
+        method.instructions.add(completionLine);
+        method.instructions.add(new LineNumberNode(20, completionLine));
+        AbstractInsnNode generatedUnit = new FieldInsnNode(Opcodes.GETSTATIC, "kotlin/Unit", "INSTANCE", "Lkotlin/Unit;");
+        AbstractInsnNode generatedReturn = new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN);
+        method.instructions.add(generatedUnit);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_2));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.BASTORE));
+        method.instructions.add(generatedReturn);
+        method.maxStack = 2;
+        method.maxLocals = 5;
+
+        withSourceLine("},", () -> {
+            RecordingOutput output = apply(method, "sample/PointerInput", "java/lang/Object");
+            check(output.ignored.size() == 1 && output.ignored.get(0)[0] == generatedUnit
+                            && output.ignored.get(0)[1] == generatedReturn,
+                    "known pointer-input scope loop should permit filtering only the generated tail");
+        });
+
+        MethodNode gestureHandler = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invoke",
+                "(Landroidx/compose/ui/input/pointer/PointerInputScope;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;",
+                null, null);
+        LabelNode gestureLine = new LabelNode();
+        gestureHandler.instructions.add(gestureLine);
+        gestureHandler.instructions.add(new LineNumberNode(19, gestureLine));
+        gestureHandler.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC,
+                "androidx/compose/foundation/gestures/TransformGestureDetectorKt",
+                "detectTransformGestures$default",
+                "(Landroidx/compose/ui/input/pointer/PointerInputScope;ZLkotlin/jvm/functions/Function4;Lkotlin/coroutines/Continuation;ILjava/lang/Object;)Ljava/lang/Object;",
+                false));
+        gestureHandler.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "kotlin/Unit", "INSTANCE", "Lkotlin/Unit;"));
+        LabelNode gestureCompletionLine = new LabelNode();
+        gestureHandler.instructions.add(gestureCompletionLine);
+        gestureHandler.instructions.add(new LineNumberNode(20, gestureCompletionLine));
+        gestureHandler.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        gestureHandler.maxStack = 2;
+        gestureHandler.maxLocals = 3;
+        withSourceLine("},", () -> check(apply(gestureHandler, "sample/GestureInput", "java/lang/Object")
+                        .ignored.size() == 1,
+                "detectTransformGestures completion should match the same narrow generated-tail rule"));
+
+        MethodNode ordinary = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invoke",
+                "()Ljava/lang/Object;", null, null);
+        ordinary.instructions.add(new LabelNode());
+        ordinary.instructions.add(new LineNumberNode(20, (LabelNode) ordinary.instructions.getFirst()));
+        ordinary.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, "kotlin/Unit", "INSTANCE", "Lkotlin/Unit;"));
+        ordinary.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        withSourceLine("},", () -> check(apply(ordinary, "sample/PointerInput", "java/lang/Object").ignored.isEmpty(),
+                "a closing delimiter without a known non-completing API remains measurable"));
+    }
+
+    private static void testFunctionReferenceForwarderIsIgnoredButOrdinaryLambdaIsNot() {
+        MethodNode method = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC, "invoke",
+                "(I)Ljava/lang/Object;", null, null);
+        LabelNode line = new LabelNode();
+        method.instructions.add(line);
+        method.instructions.add(new LineNumberNode(30, line));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "sample/Factory", "create",
+                "(I)Ljava/lang/Object;", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ARETURN));
+        method.maxStack = 2;
+        method.maxLocals = 2;
+
+        RecordingOutput referenceOutput = new RecordingOutput();
+        new TrustrootsGeneratedCodeFilter().filter(method,
+                new FakeContext("sample/FactoryReference$1", "kotlin/jvm/internal/FunctionReferenceImpl"),
+                referenceOutput);
+        check(referenceOutput.ignored.size() == 1,
+                "a branch-free FunctionReferenceImpl forwarding method should be filtered");
+        check(referenceOutput.ignored.stream().noneMatch(range -> containsBranch(range[0], range[1])),
+                "callable-reference forwarding must not alter branch coverage");
+
+        RecordingOutput lambdaOutput = new RecordingOutput();
+        new TrustrootsGeneratedCodeFilter().filter(method,
+                new FakeContext("sample/OrdinaryLambda$1", "kotlin/jvm/internal/Lambda"), lambdaOutput);
+        check(lambdaOutput.ignored.isEmpty(), "ordinary Lambda subclasses must remain fully measurable");
+
+        RecordingOutput javaSubclassOutput = new RecordingOutput();
+        new TrustrootsGeneratedCodeFilter().filter(method,
+                new FakeContext("sample/HandwrittenReference$1",
+                        "kotlin/jvm/internal/FunctionReferenceImpl", false), javaSubclassOutput);
+        check(javaSubclassOutput.ignored.isEmpty(),
+                "a Java class with a callable-reference superclass must not be treated as Kotlin generated code");
+    }
+
+    private static void withSourceLine(String sourceLine, Runnable test) throws Exception {
+        Path temporaryDirectory = Path.of("build/tmp");
+        Files.createDirectories(temporaryDirectory);
+        Path root = Files.createTempDirectory(temporaryDirectory, "trustroots-generated-coverage");
+        Path source = root.resolve("sample/Generated.kt");
+        Files.createDirectories(source.getParent());
+        Files.writeString(source, "\n".repeat(19) + sourceLine + "\n");
+        String previous = System.getProperty("trustroots.coverage.sourceRoot");
+        System.setProperty("trustroots.coverage.sourceRoot", root.toString());
+        try {
+            test.run();
+        } finally {
+            if (previous == null) System.clearProperty("trustroots.coverage.sourceRoot");
+            else System.setProperty("trustroots.coverage.sourceRoot", previous);
+            Files.deleteIfExists(source);
+            Files.deleteIfExists(source.getParent());
+            Files.deleteIfExists(root);
+        }
+    }
+
+    private static MethodNode composableMethod(String name, String descriptor) {
+        MethodNode method = new MethodNode(Opcodes.ASM9, Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+                name, descriptor, null, null);
+        method.visibleAnnotations = new ArrayList<>();
+        method.visibleAnnotations.add(new AnnotationNode(COMPOSABLE));
+        return method;
+    }
+
+    private static MethodInsnNode call(String name, String descriptor) {
+        return new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER, name, descriptor, true);
+    }
+
+    private static RecordingOutput apply(MethodNode method, String className, String superName) {
+        RecordingOutput output = new RecordingOutput();
+        new TrustrootsGeneratedCodeFilter().filter(method, new FakeContext(className, superName), output);
+        return output;
+    }
+
+    private static boolean containsBranch(AbstractInsnNode from, AbstractInsnNode to) {
+        for (AbstractInsnNode insn = from; insn != null; insn = insn.getNext()) {
+            if (insn instanceof JumpInsnNode || insn instanceof TableSwitchInsnNode
+                    || insn instanceof org.objectweb.asm.tree.LookupSwitchInsnNode) return true;
+            if (insn == to) return false;
+        }
+        return false;
+    }
+
+    private static void check(boolean condition, String message) {
+        if (!condition) throw new AssertionError(message);
+    }
+
+    private static final class RecordingOutput implements IFilterOutput {
+        final List<AbstractInsnNode[]> ignored = new ArrayList<>();
+        @Override public void ignore(AbstractInsnNode from, AbstractInsnNode to) {
+            ignored.add(new AbstractInsnNode[] { from, to });
+        }
+        @Override public void merge(AbstractInsnNode first, AbstractInsnNode second) {}
+        @Override public void replaceBranches(AbstractInsnNode source, Replacements replacements) {
+            throw new AssertionError("The generated-code filter must leave branch decisions untouched");
+        }
+    }
+
+    private static final class FakeContext implements IFilterContext {
+        private final String className;
+        private final String superName;
+        private final boolean kotlin;
+        FakeContext(String className, String superName) { this(className, superName, true); }
+        FakeContext(String className, String superName, boolean kotlin) {
+            this.className = className;
+            this.superName = superName;
+            this.kotlin = kotlin;
+        }
+        @Override public String getClassName() { return className; }
+        @Override public String getSuperClassName() { return superName; }
+        @Override public Set<String> getClassAnnotations() {
+            return kotlin ? Set.of(Filters.KOTLIN_METADATA_DESC) : Set.of();
+        }
+        @Override public Set<String> getClassAttributes() { return Set.of(); }
+        @Override public int getClassAccess() { return Opcodes.ACC_PUBLIC; }
+        @Override public String getSourceFileName() { return "Generated.kt"; }
+        @Override public KotlinSMAP getKotlinSMAP() { return null; }
+    }
+
+    private static final String SUSPEND_LAMBDA = "kotlin/coroutines/jvm/internal/SuspendLambda";
+}

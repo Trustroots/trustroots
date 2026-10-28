@@ -1,11 +1,12 @@
 package org.trustroots.android.ui.signin
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -142,9 +143,7 @@ internal class SignInDestinationStoreHolder : ViewModel(), ViewModelStoreOwner {
 
 @Composable
 internal fun rememberSignInViewModel(apiBaseUrl: String, initialMessage: UiFailure?): SignInViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Sign-in screens must be hosted by their Navigation 3 entry."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Sign-in screens must be hosted by their Navigation 3 entry.")
     return rememberEntryViewModel(
         owner,
         SignInViewModel::class.java,

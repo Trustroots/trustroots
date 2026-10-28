@@ -2,6 +2,7 @@ package org.trustroots.android.ui.hostmap
 
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.ViewModelProvider
 import java.io.IOException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,46 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostMapViewModelTest {
+    @Test
+    fun defaultFactoryCreatesFreshEntryStateAndRepositoryDefaultSessionUpdateIsUnchanged() {
+        val repository = FakeHostMapRepository()
+        val factoryRepository = object : HostMapRepository by FakeHostMapRepository() {
+            override fun updateSession(session: MemberSession): Boolean =
+                super<HostMapRepository>.updateSession(session)
+        }
+        val owner = object : ViewModelStoreOwner { override val viewModelStore = ViewModelStore() }
+        try {
+            val model = ViewModelProvider(
+                owner,
+                HostMapViewModel.Factory(repository, { onNote, onError ->
+                    createNostrootsNotesConnection(onNote, onError)
+                }),
+            )
+                .get(HostMapViewModel::class.java)
+
+            assertEquals(HostMapUiState(), model.state.value)
+            assertEquals(0, repository.searchCalls)
+            assertFalse(factoryRepository.updateSession(session("fictional-cookie")))
+        } finally {
+            owner.viewModelStore.clear()
+        }
+    }
+
+    @Test
+    fun directConstructionUsesTheDefaultNotesFactoryWithoutOpeningAConnection() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val viewModel = HostMapViewModel(
+                repository = FakeHostMapRepository(),
+                scope = scope,
+            )
+
+            assertEquals(HostMapUiState(), viewModel.state.value)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test
     fun aFreshSnapshotHydratesANewSearchVisitWithoutRepeatingItsSearch() {
         val now = 10_000L

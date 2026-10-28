@@ -2,8 +2,9 @@
 
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.common.findActivity
+
 import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -90,7 +91,7 @@ internal fun TrustrootsApp(
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
-        requireNotNull(context.findComponentActivity()) { "TrustrootsApp must run in a ComponentActivity." }
+        requireNotNull(context.findActivity(ComponentActivity::class.java)) { "TrustrootsApp must run in a ComponentActivity." }
     }
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
@@ -195,11 +196,6 @@ internal fun TrustrootsApp(
     }
 }
 
-private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.findComponentActivity()
-    else -> null
-}
 
 @Serializable
 internal enum class Destination(@StringRes val label: Int) {
@@ -221,6 +217,9 @@ internal data class MemberTabVisit(
 @Serializable
 internal data class MemberShellVisit(val username: String) : NavKey
 
+internal fun currentMemberTab(backStack: List<NavKey>): MemberTabVisit =
+    backStack.lastOrNull() as? MemberTabVisit ?: MemberTabVisit(Destination.Circles, 0L)
+
 @Composable
 private fun MemberShell(
     analytics: UsageAnalytics,
@@ -237,14 +236,14 @@ private fun MemberShell(
     val nostrootsTitle = stringResource(R.string.screen_nostroots)
     val resetPasswordTitle = stringResource(R.string.screen_reset_password)
     val tabBackStack = rememberNavBackStack(MemberTabVisit(Destination.Circles, 0))
-    val destination = (tabBackStack.lastOrNull() as? MemberTabVisit)?.destination
-        ?: Destination.Circles
+    val activeTab = currentMemberTab(tabBackStack)
+    val destination = activeTab.destination
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
     var menuUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var searchUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var resetActiveMenuVisit by remember { mutableStateOf<(() -> Unit)?>(null) }
     val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
-    val activeVisitID = (tabBackStack.lastOrNull() as? MemberTabVisit)?.visitID ?: 0L
+    val activeVisitID = activeTab.visitID
     val activeMenuScreen = if (menuUsageByVisit.containsKey(activeVisitID)) {
         menuUsageByVisit[activeVisitID]
     } else {

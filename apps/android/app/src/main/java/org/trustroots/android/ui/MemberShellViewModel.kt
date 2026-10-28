@@ -1,9 +1,10 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import kotlinx.coroutines.CoroutineScope
@@ -241,9 +242,7 @@ internal fun rememberMemberShellViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): MemberShellViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "The member shell must be hosted by its root Navigation 3 entry."
-    }
+    val owner = requireNavigationViewModelStoreOwner("The member shell must be hosted by its root Navigation 3 entry.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = MemberShellViewModel::class.java,

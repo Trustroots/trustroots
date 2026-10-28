@@ -34,6 +34,20 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class MessageConversationViewModelTest {
     @Test
+    fun repositoryDefaultApiUpdateKeepsAStaticConversationRepository() {
+        val repository = object : MessageConversationRepository by FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ) {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<MessageConversationRepository>.updateApi(api)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+    }
+
+    @Test
     fun resolvesRecipientWithoutAnInboxAndLoadsMessagesAndSavedDraft() = withScope { scope ->
         val repository = FakeConversationRepository(
             memberResult = Result.success(member),
