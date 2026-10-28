@@ -239,6 +239,34 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun synchronousEnvironmentRefreshDuringReportCannotPublishTheOldSuccess() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = FakeMemberProfileRepository()
+        lateinit var model: MemberProfileViewModel
+        repository.reportHandler = { _, _ ->
+            model.updateEnvironment(
+                MobileApiClient("http://127.0.0.1:2"),
+                MemberSession("connect.sid=refreshed-fictional-session", MobileMember("member-self", "Member Self")),
+            )
+            Result.success(Unit)
+        }
+        try {
+            model = newModel("quiet-fox", repository, scope)
+            model.onEvent(MemberProfileEvent.ReportDraftChanged("A fictional report."))
+
+            model.onEvent(MemberProfileEvent.SubmitReport)
+
+            assertEquals(1, repository.reports.size)
+            assertFalse(model.state.value.isSubmittingReport)
+            assertFalse(model.state.value.reportSubmitted)
+            assertEquals("Quiet Fox", model.state.value.profile?.displayName)
+            assertEquals("", model.state.value.reportDraft)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun blockMutationPreservesKnownStateOnFailureAndUpdatesOnlyAfterSuccess() {
         val repository = FakeMemberProfileRepository().apply {
             setBlockedHandler = { _, blocked ->
@@ -257,6 +285,21 @@ class MemberProfileViewModelTest {
         assertEquals(true, model.state.value.isBlocked)
         assertNull(model.state.value.blockFailure)
         assertEquals(listOf("quiet-fox" to true, "quiet-fox" to true), repository.blockChanges)
+    }
+
+    @Test
+    fun settingBlockStateToItsCurrentValueDoesNotSendAMutation() {
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(emptyList())
+        }
+        val model = newModel("quiet-fox", repository)
+
+        assertEquals(false, model.state.value.isBlocked)
+        model.onEvent(MemberProfileEvent.SetBlocked(false))
+
+        assertTrue(repository.blockChanges.isEmpty())
+        assertFalse(model.state.value.isUpdatingBlock)
+        assertEquals(false, model.state.value.isBlocked)
     }
 
     @Test

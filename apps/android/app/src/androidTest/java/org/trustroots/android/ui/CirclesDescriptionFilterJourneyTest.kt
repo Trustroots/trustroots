@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -86,6 +87,7 @@ class CirclesDescriptionFilterJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Harbour Circle").fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithContentDescription("Back").assertDoesNotExist()
         compose.onNode(hasSetTextAction()).performScrollTo().performTextReplacement("  SEA ")
         compose.onNodeWithText("Harbour Circle").assertIsDisplayed()
         compose.onNodeWithText("Mountain Circle").assertDoesNotExist()

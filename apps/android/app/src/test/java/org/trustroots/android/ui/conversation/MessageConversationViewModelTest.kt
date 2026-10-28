@@ -270,6 +270,32 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun reentrantCredentialRefreshDuringRecipientLoadRejectsTheOldResponse() = withScope { scope ->
+        lateinit var model: MessageConversationViewModel
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        )
+        var memberCalls = 0
+        repository.memberHandler = {
+            if (++memberCalls == 2) {
+                model.onEvent(MessageConversationEvent.SessionChanged(session("connect.sid=renewed-session")))
+            }
+            Result.success(member)
+        }
+        model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.Retry)
+
+        assertEquals(listOf("member-owl", "member-owl", "member-owl"), repository.memberLookups)
+        assertEquals(listOf("member-owl", "member-owl"), repository.messageLookups)
+        assertEquals("steady-heron", model.state.value.currentUsername)
+        assertEquals(listOf(incoming), model.state.value.messages)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
     fun missingRecipientIdentityUsesRequestedIdForDraftsAndCannotBeSent() = withScope { scope ->
         val recipientWithoutIdentity = MessageMember(id = null, username = null, displayName = "Anonymous Member")
         val repository = FakeConversationRepository(

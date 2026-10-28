@@ -5,6 +5,7 @@ import org.trustroots.android.ui.account.AccountSettingsScreen
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -125,6 +126,52 @@ class ProfileAndAccountOptionalStateJourneyTest {
         }
         compose.onNodeWithTag("profileSection-experiences").performClick()
         compose.onNodeWithText("Reference Author").performScrollTo().assertIsDisplayed()
+    }
+
+    @Test fun ownProfileOffersEditingAndOmitsOtherMemberActions() {
+        val local = LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path == "/api/users/steady-heron" ->
+                    LocalTransportFixture.Response(
+                        """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"}""",
+                    )
+                request.method == "GET" && request.path == "/api/offers-by/member-self?types=host" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/contacts/member-self" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/experiences?userTo=member-self" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/contact-by/member-self" ->
+                    LocalTransportFixture.Response("{}", status = 404)
+                request.path.contains("/avatar?") -> LocalTransportFixture.Response("", status = 404)
+                else -> LocalTransportFixture.Response("{}", status = 404)
+            }
+        }.also { fixture = it }
+
+        compose.setContent {
+            MemberProfileScreen(
+                api = MobileApiClient(local.baseURL),
+                session = MemberSession(
+                    "connect.sid=fictional-own-profile-session",
+                    MobileMember("steady-heron", "Steady Heron"),
+                ),
+                username = "steady-heron",
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Steady Heron").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Edit your profile").assertIsDisplayed()
+        compose.onNodeWithText("Send a message").assertDoesNotExist()
+        compose.onNodeWithContentDescription("More profile actions").assertDoesNotExist()
+        compose.onNodeWithText("Report member").assertDoesNotExist()
+        compose.onNodeWithContentDescription("View Steady Heron profile photo").performClick()
+        compose.onNodeWithText("Could not load profile photo.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Close profile photo").performClick()
+        compose.onNodeWithText("Steady Heron").assertIsDisplayed()
     }
 
     private companion object {

@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.membersearch
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -27,6 +28,16 @@ import org.trustroots.android.ui.MemberShellViewModelStoreOwner
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class MemberSearchViewModelTest {
+    @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            MemberSearchViewModel.Factory(FakeMemberSearchRepository())
+                .create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
     @Test
     fun requiresThreeCharactersAndSubmitsTheCurrentQuery() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
@@ -147,6 +158,19 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun duplicateVersionedResetDoesNotClearStateCreatedAfterItsFirstDelivery() = withScope { scope ->
+        val viewModel = MemberSearchViewModel(FakeMemberSearchRepository(), scope)
+        viewModel.onEvent(MemberSearchEvent.Reset(generation = 8))
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("current query"))
+        viewModel.onEvent(MemberSearchEvent.ResultsScrolled(12))
+
+        viewModel.onEvent(MemberSearchEvent.Reset(generation = 8))
+
+        assertEquals("current query", viewModel.state.value.query)
+        assertEquals(12, viewModel.state.value.resultScrollOffset)
+    }
+
+    @Test
     fun storesOnlyNonblankApiServerMessageAndFailureKind() = withScope { scope ->
         val repository = FakeMemberSearchRepository()
         repository.searchHandler = {
@@ -235,6 +259,22 @@ class MemberSearchViewModelTest {
         assertTrue(viewModel.state.value.results.isEmpty())
         assertFalse(viewModel.state.value.hasSearched)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun reentrantResetDuringSearchKeepsTheResetStateWhenTheOldResultReturns() = withScope { scope ->
+        lateinit var viewModel: MemberSearchViewModel
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = {
+            viewModel.onEvent(MemberSearchEvent.Reset())
+            Result.success(listOf(member("stale-fox", "Stale Fox")))
+        }
+        viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("quiet"))
+
+        viewModel.onEvent(MemberSearchEvent.Submit)
+
+        assertEquals(MemberSearchUiState(), viewModel.state.value)
     }
 
     @Test
@@ -394,6 +434,8 @@ class MemberSearchViewModelTest {
     }
 
     private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+
+    private class OtherViewModel : ViewModel()
 
     private class FakeMemberSearchRepository : MemberSearchRepository {
         var queries = mutableListOf<String>()
