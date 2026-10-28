@@ -118,6 +118,11 @@
         text-align: center;
       }
 
+      // The mobile icons are blocks, so text-align alone does not centre them.
+      > li > a > .visible-xs-block {
+        margin-inline: auto;
+      }
+
       > li > a,
       > li > a:hover,
       > li > a:focus {
