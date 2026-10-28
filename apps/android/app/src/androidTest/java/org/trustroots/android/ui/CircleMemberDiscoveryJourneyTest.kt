@@ -1,5 +1,7 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.onAllNodesWithText
+
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -81,12 +83,33 @@ class CircleMemberDiscoveryJourneyTest {
         assertTrue(local.requests.all { it.cookie == TEST_SESSION.cookieHeader })
     }
 
-    private fun discoveryFixture() = LocalTransportFixture { request ->
+    @Test fun joinedCircleShowsEmptyMemberStateWhenAllGroupsAreEmpty() {
+        val local = discoveryFixture(memberGroups = """{"contacts":[],"recommenders":[],"active":[]}""")
+        fixture = local
+        compose.setContent {
+            TrustrootsTheme {
+                CirclesScreen(
+                    api = MobileApiClient(local.baseURL),
+                    session = TEST_SESSION,
+                    onSessionInvalidated = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("Quiet Harbour").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("No members to show yet.").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("No members to show yet.").assertIsDisplayed()
+        assertTrue(local.requests.any { it.method == "GET" && it.path == "/api/tribes/quiet-harbour/members" })
+    }
+
+    private fun discoveryFixture(memberGroups: String = MEMBER_GROUPS) = LocalTransportFixture { request ->
         when (request.method to request.path) {
             "GET" to "/api/tribes?limit=150" -> LocalTransportFixture.Response(CIRCLES)
             "GET" to "/api/users/memberships" -> LocalTransportFixture.Response(MEMBERSHIPS)
             "GET" to "/api/tribes/quiet-harbour" -> LocalTransportFixture.Response(CIRCLE_DETAIL)
-            "GET" to "/api/tribes/quiet-harbour/members" -> LocalTransportFixture.Response(MEMBER_GROUPS)
+            "GET" to "/api/tribes/quiet-harbour/members" -> LocalTransportFixture.Response(memberGroups)
             "GET" to "/api/users/calm-lynx" -> LocalTransportFixture.Response(CONTACT_PROFILE)
             "GET" to "/api/offers-by/contact-id?types=host" -> LocalTransportFixture.Response("[]")
             "GET" to "/api/contacts/contact-id" -> LocalTransportFixture.Response("[]")

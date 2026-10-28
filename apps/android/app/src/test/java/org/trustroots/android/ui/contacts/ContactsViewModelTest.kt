@@ -33,6 +33,16 @@ import org.trustroots.android.api.ProfileContact
 @Config(sdk = [35], manifest = Config.NONE)
 class ContactsViewModelTest {
     @Test
+    fun nonApiContactsFailureDefaultsItsApiKindToUnknown() {
+        val failure = ContactsFailure(
+            reason = ContactsFailureReason.CONTACTS,
+            throwableType = IOException::class.java.name,
+        )
+
+        assertNull(failure.apiKind)
+    }
+
+    @Test
     fun factoryRejectsAnUnrelatedViewModelType() {
         val failure = runCatching {
             ContactsViewModel.Factory("steady-heron", FakeContactsRepository())

@@ -2,6 +2,8 @@
 
 package org.trustroots.android.ui.account
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -45,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.BuildConfig
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
@@ -82,9 +83,7 @@ internal fun AccountSettingsScreen(
     },
 ) {
     val context = LocalContext.current
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Account must be hosted by its decorated Menu Navigation 3 entry."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Account must be hosted by its decorated Menu Navigation 3 entry.")
     val platform = remember(context.applicationContext, previewUpdateAlerts, isUpdateAlertsEnabled, setUpdateAlertsEnabled, checkPreviewUpdates, disableMessageAlerts) {
         AndroidAccountPlatformSettings(
             context = context.applicationContext,

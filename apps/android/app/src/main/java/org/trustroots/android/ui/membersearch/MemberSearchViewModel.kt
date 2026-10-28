@@ -1,10 +1,11 @@
 package org.trustroots.android.ui.membersearch
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -204,9 +205,7 @@ internal fun rememberMemberSearchViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): MemberSearchViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Member search must be hosted by a Navigation 3 ViewModelStoreOwner."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Member search must be hosted by a Navigation 3 ViewModelStoreOwner.")
     return rememberEntryViewModel(
         owner,
         MemberSearchViewModel::class.java,

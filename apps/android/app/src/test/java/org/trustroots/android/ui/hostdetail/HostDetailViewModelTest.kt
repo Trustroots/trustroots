@@ -36,6 +36,20 @@ import org.trustroots.android.ui.search.SearchOfferType
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostDetailViewModelTest {
+    @Test fun repositoryDefaultEnvironmentUpdateDoesNotReplaceTheCurrentClient() {
+        val repository = object : HostDetailRepository by FakeRepository() {
+            override fun updateClientAndSession(api: MobileApiClient, session: MemberSession): Boolean =
+                super<HostDetailRepository>.updateClientAndSession(api, session)
+        }
+
+        assertFalse(
+            repository.updateClientAndSession(
+                MobileApiClient("https://api.example.test"),
+                MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox")),
+            ),
+        )
+    }
+
     @Test fun factoryRejectsAnUnrelatedViewModelType() {
         val failure = runCatching {
             HostDetailViewModel.Factory(FakeRepository()).create(OtherViewModel::class.java)

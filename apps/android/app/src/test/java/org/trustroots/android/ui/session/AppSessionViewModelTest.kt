@@ -25,6 +25,22 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class AppSessionViewModelTest {
     @Test
+    fun defaultFactoryUsesTheEntryLifecycleScopeForItsRestore() {
+        val store = ViewModelStore()
+        val owner = object : ViewModelStoreOwner { override val viewModelStore = store }
+        try {
+            val model = ViewModelProvider(owner, AppSessionViewModel.Factory(FakeOperations()))
+                .get(AppSessionViewModel::class.java)
+
+            assertTrue(model.state.value.isStarting)
+            store.clear()
+            assertFalse(model.state.value.isStarting)
+        } finally {
+            store.clear()
+        }
+    }
+
+    @Test
     fun restoreRunsOnceAndPreservesTheMinimumStartupDurationAndWelcomeName() = withScope { scope ->
         var now = 1_000L
         val operations = FakeOperations().apply { restoredSession = session() }

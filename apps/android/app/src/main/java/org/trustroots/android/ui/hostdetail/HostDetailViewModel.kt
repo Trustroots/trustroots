@@ -1,12 +1,13 @@
 package org.trustroots.android.ui.hostdetail
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -191,9 +192,7 @@ internal fun rememberHostDetailViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): HostDetailViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "HostDetail must be hosted by its Navigation 3 entry ViewModelStoreOwner"
-    }
+    val owner = requireNavigationViewModelStoreOwner("HostDetail must be hosted by its Navigation 3 entry ViewModelStoreOwner")
     val repository = remember(owner, api.backendURL) { MobileHostDetailRepository(api, session) }
     val factory = remember(owner, repository) { HostDetailViewModel.Factory(repository) }
     val model = viewModel<HostDetailViewModel>(viewModelStoreOwner = owner, factory = factory)

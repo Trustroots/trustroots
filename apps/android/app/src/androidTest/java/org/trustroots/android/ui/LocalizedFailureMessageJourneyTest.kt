@@ -47,6 +47,16 @@ class LocalizedFailureMessageJourneyTest {
     }
 
     @Test
+    fun reachTrustrootsFallbackUsesItsLocalisedResource() {
+        compose.setContent {
+            Text(resolveFailureMessage(UiFailure(fallback = UiFailureFallback.REACH_TRUSTROOTS)))
+        }
+
+        compose.onNodeWithText(compose.activity.getString(R.string.screen_could_not_reach_trustroots))
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun retainedFailureUsesUpdatedLocaleAndUnknownMemberUsesResourceLabel() {
         val activity = compose.activity
         val englishConfiguration = Configuration(activity.resources.configuration).apply {

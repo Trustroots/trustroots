@@ -2,6 +2,8 @@
 
 package org.trustroots.android.ui.inbox
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,7 +41,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -166,9 +167,7 @@ private fun rememberInboxViewModel(
     session: MemberSession,
     inboxCache: InboxCache?,
 ): InboxViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Inbox must be hosted by a Navigation 3 ViewModelStoreOwner."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Inbox must be hosted by a Navigation 3 ViewModelStoreOwner.")
     return remember(owner, session.member.username) {
         owner.inboxViewModel(api, session, inboxCache ?: InboxCache())
     }

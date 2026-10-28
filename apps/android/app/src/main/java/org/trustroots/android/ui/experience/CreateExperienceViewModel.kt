@@ -1,10 +1,11 @@
 package org.trustroots.android.ui.experience
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -213,7 +214,7 @@ internal fun rememberCreateExperienceViewModel(
     session: MemberSession,
     memberID: String,
 ): CreateExperienceViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Experience creation must be hosted by a Navigation 3 ViewModelStoreOwner." }
+    val owner = requireNavigationViewModelStoreOwner("Experience creation must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = CreateExperienceViewModel::class.java,

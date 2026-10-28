@@ -28,6 +28,29 @@ import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.updates.AndroidPreviewRelease
 
 class AccountSettingsViewModelTest {
+    @Test fun absentSessionDependenciesLoadAccountAndRepositoryDefaultDoesNotResetSession() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = FakeRepository()
+        val repositoryUsingDefaultSessionUpdate = object : AccountRepository by FakeRepository() {
+            override fun updateSession(session: MemberSession): Boolean =
+                super<AccountRepository>.updateSession(session)
+        }
+        try {
+            val model = AccountSettingsViewModel(
+                username = "quiet-fox",
+                repository = repository,
+                platform = FakePlatform(),
+                scope = scope,
+            )
+
+            assertEquals("member@example.test", model.state.value.details?.email)
+            assertFalse(repositoryUsingDefaultSessionUpdate.updateSession(MemberSession("cookie", MobileMember("quiet-fox", "Quiet Fox"))))
+            assertEquals(1, repository.detailCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test fun factoryRejectsAnUnrelatedViewModelType() {
         val failure = runCatching {
             AccountSettingsViewModel.Factory("quiet-fox", FakeRepository(), FakePlatform())

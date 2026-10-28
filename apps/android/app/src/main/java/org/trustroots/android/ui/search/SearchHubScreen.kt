@@ -171,9 +171,7 @@ internal fun SearchHubScreen(
         )
     }
     LaunchedEffect(currentRoute, searchBackStack.size, ownerVisitID) {
-        if (searchBackStack.size == 1 && currentRoute is SearchHomeVisit) {
-            searchBackStack.add(SearchModeVisit(modeFor(entryInitialTab), nextRouteID++))
-        }
+        nextRouteID = restoreSearchModeIfMissing(searchBackStack, modeFor(entryInitialTab), nextRouteID)
     }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(hostMapViewModel, lifecycleOwner, isActiveTabVisit) {

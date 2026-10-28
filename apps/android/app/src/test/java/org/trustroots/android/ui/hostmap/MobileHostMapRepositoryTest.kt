@@ -22,6 +22,22 @@ class MobileHostMapRepositoryTest {
     private val session = MemberSession("", MobileMember("fictional-member", "Fictional Member"))
 
     @Test
+    fun defaultGeocoderRepositoryRecognisesCredentialAndAccountChanges() {
+        val repository = MobileHostMapRepository(
+            api = MobileApiClient("https://api.example.test"),
+            session = session,
+            applicationContext = org.robolectric.RuntimeEnvironment.getApplication(),
+        )
+        val refreshedCredentials = session.copy(cookieHeader = "fictional-refreshed-cookie")
+        val switchedAccount = refreshedCredentials.copy(member = MobileMember("second-member", "Second Member"))
+
+        assertFalse(repository.updateSession(session))
+        assertTrue(repository.updateSession(refreshedCredentials))
+        assertFalse(repository.updateSession(refreshedCredentials))
+        assertTrue(repository.updateSession(switchedAccount))
+    }
+
+    @Test
     fun placesDropsAddressesWithoutUsableLabelsOrFiniteCoordinates() = runBlocking {
         val repository = repository { _, _, _ ->
             listOf(

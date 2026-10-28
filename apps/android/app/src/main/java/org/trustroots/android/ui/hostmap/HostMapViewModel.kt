@@ -1,5 +1,7 @@
 package org.trustroots.android.ui.hostmap
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.content.Context
 import android.location.Address
 import androidx.compose.runtime.Composable
@@ -8,7 +10,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -72,7 +73,11 @@ private class NostrootsNotesConnection(private val client: NostrootsNotesClient)
 internal fun createNostrootsNotesConnection(
     onNote: (CommunityNote) -> Unit,
     onError: () -> Unit,
-): HostMapNotesConnection = NostrootsNotesConnection(NostrootsNotesClient(onNote, onError))
+    relayUrl: String = "wss://relay.trustroots.org",
+    socketFactory: okhttp3.WebSocket.Factory = NostrootsNotesClient.sharedWebSocketFactory,
+): HostMapNotesConnection = NostrootsNotesConnection(
+    NostrootsNotesClient(onNote, onError, socketFactory = socketFactory, relayUrl = relayUrl),
+)
 
 internal data class HostMapFilters(
     val includeHosts: Boolean = true,
@@ -583,9 +588,7 @@ internal fun rememberHostMapViewModel(
         ::createNostrootsNotesConnection,
     resultsCache: HostMapResultsCache? = null,
 ): HostMapViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "SearchHubScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner"
-    }
+    val owner = requireNavigationViewModelStoreOwner("SearchHubScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner")
     val applicationContext = LocalContext.current.applicationContext
     val cache = resultsCache ?: remember(owner) { HostMapResultsCache() }
     val repository = remember(owner, api, session.member.username, geocoderLookup) {

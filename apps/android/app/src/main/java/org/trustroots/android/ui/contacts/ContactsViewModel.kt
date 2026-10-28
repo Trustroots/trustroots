@@ -1,10 +1,11 @@
 package org.trustroots.android.ui.contacts
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -219,9 +220,7 @@ internal fun rememberContactsViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): ContactsViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Contacts must be hosted by a Navigation 3 ViewModelStoreOwner."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Contacts must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val username = session.member.username
     val viewModel = rememberEntryViewModel(
         owner = owner,

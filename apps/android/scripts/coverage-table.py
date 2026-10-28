@@ -20,6 +20,8 @@ def coverage_table(root):
         "",
         "Measured from combined debug unit tests and device journeys. Only generated",
         "R and BuildConfig classes are excluded; untested production files remain in the totals.",
+        "Proven generated instructions are corrected before line aggregation; raw XML and an audit are retained.",
+        "Branch counters are checked against the raw report and remain unchanged.",
         "A dash means there are no executable lines or branches for that counter.",
         "",
         "| Package | Lines covered / total | Branches covered / total |",

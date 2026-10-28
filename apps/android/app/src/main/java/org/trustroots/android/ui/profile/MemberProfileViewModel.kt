@@ -1,11 +1,12 @@
 package org.trustroots.android.ui.profile
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -402,7 +403,7 @@ internal class MemberProfileViewModel(
 
 @Composable
 internal fun rememberMemberProfileViewModel(api: MobileApiClient, session: MemberSession, username: String): MemberProfileViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Member profiles must be hosted by a Navigation 3 ViewModelStoreOwner." }
+    val owner = requireNavigationViewModelStoreOwner("Member profiles must be hosted by a Navigation 3 ViewModelStoreOwner.")
     return rememberEntryViewModel(
         owner = owner,
         modelClass = MemberProfileViewModel::class.java,
