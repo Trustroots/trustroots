@@ -5,23 +5,36 @@ const utils: typeof import('../../../../testutils/server/data.server.testutil.mt
 const controller: typeof import('../../server/controllers/admin.spam-cleanup.server.controller.mts') = require('../../server/controllers/admin.spam-cleanup.server.controller.mts');
 const User = mongoose.connection.collection('users');
 const Preview = mongoose.model('SpamCleanupPreview');
+const Chunk = mongoose.model('SpamCleanupChunk');
 const Audit = mongoose.model('AuditLog');
+interface Body {
+  previewId: string;
+  eligible: number;
+  protected: number;
+  candidates: number;
+  building: boolean;
+  page: number;
+  pages: number;
+  items: Array<{
+    id: string;
+    username: string;
+    created: string | null;
+    eligible: boolean;
+  }>;
+  deleted: number;
+  skipped: number;
+  done: boolean;
+}
 function response() {
   return {
     statusCode: 200,
-    body: undefined as unknown as {
-      eligible: number;
-      protected: number;
-      previewId: string;
-      hasMore: boolean;
-      items: Array<{ id: string }>;
-    },
+    body: undefined as unknown as Body,
     status(code: number) {
       this.statusCode = code;
       return this;
     },
     send(body: unknown) {
-      this.body = body as typeof this.body;
+      this.body = body as Body;
       return this;
     },
   };
@@ -32,25 +45,40 @@ describe('Administrator spam account cleanup', () => {
     roles: ['user', 'admin'],
   };
   async function candidate(username: string) {
-    const result = await User.insertOne({
-      username,
-      email: `${username}@example.test`,
-      created: new Date('2021-07-04T12:00:00Z'),
-      public: false,
-      roles: ['user', 'suspended'],
-      avatarUploaded: false,
-    });
-    return result.insertedId;
+    return (
+      await User.insertOne({
+        username,
+        email: `${username}@example.test`,
+        created: new Date('2021-07-04T12:00:00Z'),
+        public: false,
+        roles: ['user', 'suspended'],
+        avatarUploaded: false,
+      })
+    ).insertedId;
   }
-  async function preview(body: unknown = {}) {
+  async function preview(body: unknown = {}, actor = admin) {
     const res = response();
-    await controller.preview({ body, user: admin }, res);
+    await controller.preview({ body, user: actor }, res);
     return res;
   }
-  async function apply(previewId: string, actor = admin) {
+  async function fullPreview() {
+    let res = await preview();
+    while (res.body.building)
+      res = await preview({ previewId: res.body.previewId });
+    return res;
+  }
+  async function apply(
+    previewId: string,
+    accountIds: string[] = [],
+    selection = 'all',
+    actor = admin,
+  ) {
     const res = response();
     await controller.apply(
-      { body: { previewId, confirm: true }, user: actor },
+      {
+        body: { previewId, confirm: true, selection, accountIds },
+        user: actor,
+      },
       res,
     );
     return res;
@@ -59,28 +87,69 @@ describe('Administrator spam account cleanup', () => {
     sinon.restore();
     await utils.clearDatabase();
     await Preview.deleteMany({});
+    await Chunk.deleteMany({});
   });
-  it('previews protected accounts, deletes only reviewed eligible accounts and is repeatable', async () => {
-    const eligible = await candidate('fictional-candidate');
+  it('previews the entire snapshot and applies all except exclusions across pages', async () => {
+    for (let i = 0; i < 102; i++) await candidate(`fictional-${i}`);
+    const review = await fullPreview();
+    assert.equal(review.body.eligible, 102);
+    assert.equal(review.body.candidates, 102);
+    assert.equal(review.body.pages, 2);
+    const firstExcluded = review.body.items[0].id;
+    const lastPage = await preview({
+      previewId: review.body.previewId,
+      page: 2,
+    });
+    assert.equal(lastPage.body.items.length, 2);
+    const lastExcluded = lastPage.body.items[1].id;
+    const partial = await apply(review.body.previewId, [
+      firstExcluded.toUpperCase(),
+      lastExcluded,
+    ]);
+    assert.equal(partial.body.done, false);
+    assert.equal(partial.body.deleted, 99);
+    const result = await apply(review.body.previewId, [
+      firstExcluded,
+      lastExcluded,
+    ]);
+    assert.deepEqual(result.body, { deleted: 100, skipped: 0, done: true });
+    assert.equal(await User.countDocuments({}), 2);
+    assert.deepEqual(
+      (await apply(review.body.previewId, [lastExcluded, firstExcluded])).body,
+      result.body,
+    );
+    assert.equal((await apply(review.body.previewId, [])).statusCode, 409);
+    assert.equal(
+      (await preview({ previewId: review.body.previewId })).statusCode,
+      409,
+    );
+  });
+  it('retains protected accounts and applies only individually selected accounts', async () => {
+    const selected = await candidate('fictional-selected');
+    const excluded = await candidate('fictional-excluded');
     const protectedId = await candidate('fictional-protected');
     await mongoose
       .model('AdminNote')
       .create({ user: protectedId, note: 'Fictional moderation record' });
-    const review = await preview();
-    assert.equal(review.body.eligible, 1);
+    const review = await fullPreview();
     assert.equal(review.body.protected, 1);
-    assert.equal(await User.countDocuments({}), 2);
-    const result = await apply(review.body.previewId);
-    assert.deepEqual(result.body, { deleted: 1, skipped: 0 });
-    assert.equal(await User.countDocuments({ _id: eligible }), 0);
-    assert.equal(await User.countDocuments({ _id: protectedId }), 1);
-    assert.deepEqual((await apply(review.body.previewId)).body, result.body);
-    assert.equal((await Audit.find({}).lean()).length, 3);
+    assert.equal(review.body.eligible, 2);
+    assert.deepEqual(
+      (await apply(review.body.previewId, [String(selected)], 'selected')).body,
+      { deleted: 1, skipped: 0, done: true },
+    );
+    assert.equal(
+      await User.countDocuments({ _id: { $in: [excluded, protectedId] } }),
+      2,
+    );
+    const logs = await Audit.find({}).lean();
+    assert.equal(logs.length, 3);
+    assert.equal(JSON.stringify(logs).includes('fictional-'), false);
   });
-  it('rechecks restored accounts and new moderation notes before deletion', async () => {
+  it('rechecks restored accounts and new notes and tolerates an empty preview', async () => {
     const restored = await candidate('fictional-restored');
     const noted = await candidate('fictional-noted');
-    const review = await preview();
+    const review = await fullPreview();
     await User.updateOne({ _id: restored }, { $set: { roles: ['user'] } });
     await mongoose
       .model('AdminNote')
@@ -88,46 +157,91 @@ describe('Administrator spam account cleanup', () => {
     assert.deepEqual((await apply(review.body.previewId)).body, {
       deleted: 0,
       skipped: 2,
+      done: true,
     });
-    assert.equal(await User.countDocuments({}), 2);
+    await User.deleteMany({});
+    const empty = await fullPreview();
+    assert.equal(empty.body.candidates, 0);
+    assert.deepEqual((await apply(empty.body.previewId)).body, {
+      deleted: 0,
+      skipped: 0,
+      done: true,
+    });
   });
-  it('limits pages and binds reviewed IDs to the actor and expiration', async () => {
-    for (let i = 0; i < 102; i++) await candidate(`fictional-${i}`);
-    const first = await preview();
-    assert.equal(first.body.items.length, 100);
-    assert.equal(first.body.hasMore, true);
-    const next = await preview({ after: first.body.items[99].id });
-    assert.equal(next.body.items.length, 2);
+  it('rejects unauthorised, expired, unfinished and concurrent operations', async () => {
+    for (let i = 0; i < 102; i++) await candidate(`fictional-pending-${i}`);
+    const building = await preview();
+    assert.equal(building.body.building, true);
+    assert.equal((await apply(building.body.previewId)).statusCode, 409);
+    await Preview.updateOne(
+      { _id: building.body.previewId },
+      { $set: { claimed: true } },
+    );
     assert.equal(
-      (
-        await apply(first.body.previewId, {
-          ...admin,
-          _id: new mongoose.Types.ObjectId(),
-        })
-      ).statusCode,
+      (await preview({ previewId: building.body.previewId })).statusCode,
+      409,
+    );
+    await Preview.updateOne(
+      { _id: building.body.previewId },
+      { $set: { claimed: false } },
+    );
+    const review = await preview({ previewId: building.body.previewId });
+    assert.equal(
+      (await preview({ previewId: review.body.previewId, page: 3 })).statusCode,
+      400,
+    );
+    const other = { ...admin, _id: new mongoose.Types.ObjectId() };
+    assert.equal(
+      (await apply(review.body.previewId, [], 'all', other)).statusCode,
+      410,
+    );
+    assert.equal(
+      (await preview({ previewId: review.body.previewId }, other)).statusCode,
       410,
     );
     await Preview.updateOne(
-      { _id: first.body.previewId },
-      { $set: { expiresAt: new Date(0) } },
-    );
-    assert.equal((await apply(first.body.previewId)).statusCode, 410);
-    await Preview.updateOne(
-      { _id: next.body.previewId },
+      { _id: review.body.previewId },
       { $set: { claimed: true } },
     );
-    assert.equal((await apply(next.body.previewId)).statusCode, 409);
+    assert.equal((await apply(review.body.previewId)).statusCode, 409);
+    await Preview.updateOne(
+      { _id: review.body.previewId },
+      { $set: { expiresAt: new Date(0) } },
+    );
+    assert.equal((await apply(review.body.previewId)).statusCode, 410);
   });
-  it('rejects unprivileged and malformed requests and fails closed on audit failure', async () => {
+  it('rejects malformed bodies, choices and page requests', async () => {
+    const oid = String(new mongoose.Types.ObjectId());
+    for (const body of [
+      null,
+      [],
+      { extra: true },
+      { previewId: 'invalid' },
+      { page: 1 },
+      { page: 0, previewId: oid },
+      { page: 1.5, previewId: oid },
+      { page: '1', previewId: oid },
+    ])
+      assert.equal((await preview(body)).statusCode, 400);
     for (const body of [
       null,
       [],
       {},
-      { previewId: 'bad', confirm: true },
-      { previewId: String(new mongoose.Types.ObjectId()), confirm: false },
+      { previewId: 'invalid', confirm: true, selection: 'all', accountIds: [] },
+      { previewId: oid, confirm: false, selection: 'all', accountIds: [] },
+      { previewId: oid, confirm: true, selection: 'bad', accountIds: [] },
+      { previewId: oid, confirm: true, selection: 'all', accountIds: null },
       {
-        previewId: String(new mongoose.Types.ObjectId()),
+        previewId: oid,
         confirm: true,
+        selection: 'all',
+        accountIds: ['invalid'],
+      },
+      {
+        previewId: oid,
+        confirm: true,
+        selection: 'all',
+        accountIds: [],
         extra: true,
       },
     ]) {
@@ -135,27 +249,35 @@ describe('Administrator spam account cleanup', () => {
       await controller.apply({ body, user: admin }, res);
       assert.equal(res.statusCode, 400);
     }
-    for (const body of [null, [], { extra: true }, { after: 'invalid' }])
-      assert.equal((await preview(body)).statusCode, 400);
     for (const method of [controller.preview, controller.apply]) {
-      const res = response();
-      await method(
-        { body: {}, user: { ...admin, roles: ['support-team'] } },
-        res,
-      );
-      assert.equal(res.statusCode, 403);
-      const anonymous = response();
-      await method({ body: {} }, anonymous);
-      assert.equal(anonymous.statusCode, 403);
+      for (const user of [undefined, { ...admin, roles: ['support-team'] }]) {
+        const res = response();
+        await method({ body: {}, user }, res);
+        assert.equal(res.statusCode, 403);
+      }
     }
-    sinon.stub(Audit.prototype, 'save').rejects(new Error('fictional failure'));
-    assert.equal((await preview()).statusCode, 500);
   });
-  it('does not delete when apply audit storage fails', async () => {
+  it('fails closed if audit storage or a reviewed chunk is unavailable', async () => {
+    sinon.stub(Audit.prototype, 'save').rejects(new Error('Fictional failure'));
+    assert.equal((await preview()).statusCode, 500);
+    sinon.restore();
     await candidate('fictional-audit');
-    const review = await preview();
-    sinon.stub(Audit.prototype, 'save').rejects(new Error('fictional failure'));
+    const review = await fullPreview();
+    sinon.stub(Audit.prototype, 'save').rejects(new Error('Fictional failure'));
     assert.equal((await apply(review.body.previewId)).statusCode, 500);
     assert.equal(await User.countDocuments({}), 1);
+    sinon.restore();
+    const fresh = await fullPreview();
+    await Chunk.deleteMany({ preview: fresh.body.previewId });
+    assert.equal((await apply(fresh.body.previewId)).statusCode, 500);
+  });
+  it('shows deleted or renamed snapshot accounts without changing the snapshot', async () => {
+    const id = await candidate('fictional-later-deleted');
+    const review = await fullPreview();
+    await User.deleteOne({ _id: id });
+    const page = await preview({ previewId: review.body.previewId, page: 1 });
+    assert.equal(page.body.items[0].username, 'Deleted account');
+    assert.equal(page.body.items[0].eligible, false);
+    assert.equal(page.body.items[0].created, null);
   });
 });

@@ -43,6 +43,13 @@ test('administrators review historical spam accounts and explicitly delete only 
         roles: ['user', 'suspended'],
         public: false,
       });
+      await db.collection('users').insertOne({
+        username: 'fictional-retained-choice',
+        email: 'fictional-retained-choice@example.test',
+        created: new Date('2021-07-04T12:00:00Z'),
+        roles: ['user', 'suspended'],
+        public: false,
+      });
       const protectedUser = await db.collection('users').insertOne({
         username: 'fictional-protected-account',
         email: 'fictional-protected@example.test',
@@ -61,16 +68,28 @@ test('administrators review historical spam accounts and explicitly delete only 
     await expect(
       page.getByRole('heading', { name: 'Spam account cleanup' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: 'Preview first batch' }).click();
+    await page.getByRole('button', { name: 'Preview all accounts' }).click();
     await expect(
       page.getByRole('link', { name: 'fictional-campaign-account' }),
     ).toBeVisible();
-    await expect(page.getByText('Protected activity — retained')).toBeVisible();
+    await expect(
+      page.getByText('Protected or no longer available — retained'),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Select all eligible accounts' })
+      .click();
+    await page
+      .getByRole('checkbox', { name: 'Select fictional-retained-choice' })
+      .uncheck();
     const remove = page.getByRole('button', {
-      name: 'Delete 1 eligible accounts',
+      name: 'Delete 1 selected accounts',
     });
     await expect(remove).toBeDisabled();
-    await page.getByRole('checkbox').check();
+    await page
+      .getByRole('checkbox', {
+        name: 'I reviewed this selection and understand deletion is permanent.',
+      })
+      .check();
     await remove.click();
     await expect(page.getByText(/Deleted 1; skipped 0/)).toBeVisible();
     await withE2eDb(async db => {
@@ -79,6 +98,11 @@ test('administrators review historical spam accounts and explicitly delete only 
           .collection('users')
           .countDocuments({ username: 'fictional-campaign-account' }),
       ).toBe(0);
+      expect(
+        await db
+          .collection('users')
+          .countDocuments({ username: 'fictional-retained-choice' }),
+      ).toBe(1);
       expect(
         await db
           .collection('users')

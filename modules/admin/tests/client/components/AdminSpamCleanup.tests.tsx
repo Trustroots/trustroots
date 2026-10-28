@@ -1,5 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminSpamCleanup from '../../../client/components/AdminSpamCleanup';
 import http from '../../../../core/client/api/http-client';
@@ -16,81 +22,166 @@ jest.mock('../../../../core/client/api/http-client', () => ({
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
 }));
 const post = jest.mocked(http.post);
+const one = {
+  id: 'one',
+  username: 'fictional/spammer',
+  created: '2021-07-04T12:00:00Z',
+  eligible: true,
+};
 const batch = {
   previewId: 'fictional-preview',
   expiresAt: '2030-01-01T00:00:00Z',
-  eligible: 1,
+  building: false,
+  candidates: 102,
+  eligible: 101,
   protected: 1,
-  hasMore: true,
+  page: 1,
+  pages: 2,
   items: [
+    one,
     {
-      id: 'one',
-      username: 'fictional/spammer',
-      created: '2021-07-04T12:00:00Z',
-      eligible: true,
-    },
-    {
-      id: 'two',
-      username: 'fictional-retained',
-      created: '2021-07-04T12:00:00Z',
+      id: 'protected',
+      username: 'fictional-protected',
+      created: null,
       eligible: false,
     },
   ],
 };
+const confirmation =
+  'I reviewed this selection and understand deletion is permanent.';
 beforeEach(() => jest.resetAllMocks());
-test('reviews accounts and explicitly deletes only the previewed batch', async () => {
+test('scans the whole preview and keeps global exclusions across account pages', async () => {
   post
+    .mockResolvedValueOnce({ data: { ...batch, building: true } })
     .mockResolvedValueOnce({ data: batch })
-    .mockResolvedValueOnce({ data: { deleted: 1, skipped: 0 } });
+    .mockResolvedValueOnce({
+      data: {
+        ...batch,
+        page: 2,
+        items: [{ ...one, id: 'two', username: 'fictional-second' }],
+      },
+    })
+    .mockResolvedValueOnce({ data: batch })
+    .mockResolvedValueOnce({ data: { deleted: 99, skipped: 0, done: false } })
+    .mockResolvedValueOnce({ data: { deleted: 100, skipped: 0, done: true } });
   render(<AdminSpamCleanup />);
   expect(post).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole('button', { name: 'Preview first batch' }));
+  fireEvent.click(screen.getByText('Preview all accounts'));
   expect(
     await screen.findByRole('link', { name: 'fictional/spammer' }),
   ).toHaveAttribute('href', '/admin/user/fictional%2Fspammer');
-  const remove = screen.getByRole('button', {
-    name: 'Delete 1 eligible accounts',
-  });
-  expect(remove).toBeDisabled();
-  fireEvent.click(screen.getByRole('checkbox'));
-  fireEvent.click(remove);
-  expect(await screen.findByText(/Deleted 1; skipped 0/)).toBeVisible();
+  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  );
+  expect(screen.getByText('Delete 100 selected accounts')).toBeDisabled();
+  fireEvent.click(screen.getByText('Next accounts'));
+  await screen.findByText('fictional-second');
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional-second' }),
+  ).toBeChecked();
+  fireEvent.click(screen.getByText('Previous accounts'));
+  await screen.findByText('fictional/spammer');
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  ).not.toBeChecked();
+  fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
+  fireEvent.click(screen.getByText('Delete 100 selected accounts'));
+  expect(await screen.findByText(/Complete. Deleted 100/)).toBeVisible();
   expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/apply', {
     previewId: batch.previewId,
     confirm: true,
+    selection: 'all',
+    accountIds: ['one'],
   });
 });
-test('previews later batches without deleting and resets confirmation', async () => {
-  post
-    .mockResolvedValueOnce({ data: batch })
-    .mockResolvedValueOnce({ data: { ...batch, hasMore: false, eligible: 0 } });
+test('supports individual selection, clearing and reticking excluded accounts', async () => {
+  post.mockResolvedValue({ data: { ...batch, pages: 1 } });
   render(<AdminSpamCleanup />);
-  fireEvent.click(screen.getByText('Preview first batch'));
-  fireEvent.click(await screen.findByRole('checkbox'));
-  fireEvent.click(screen.getByText('Preview next batch without deleting'));
-  await waitFor(() =>
-    expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/preview', {
-      after: 'two',
-    }),
-  );
-  expect(await screen.findByRole('checkbox')).not.toBeChecked();
-  expect(screen.getByText('Delete 0 eligible accounts')).toBeDisabled();
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText('fictional/spammer');
+  const checkbox = screen.getByRole('checkbox', {
+    name: 'Select fictional/spammer',
+  });
+  expect(checkbox).not.toBeChecked();
+  fireEvent.click(checkbox);
+  expect(screen.getByText('Delete 1 selected accounts')).toBeDisabled();
+  fireEvent.click(checkbox);
+  expect(screen.getByText('Delete 0 selected accounts')).toBeDisabled();
+  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(checkbox);
+  fireEvent.click(checkbox);
+  expect(screen.getByText('Delete 101 selected accounts')).toBeDisabled();
+  fireEvent.click(screen.getByText('Clear selection'));
+  expect(checkbox).not.toBeChecked();
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional-protected' }),
+  ).toBeDisabled();
 });
-test('reports preview failure and interrupted deletion without automatic retry', async () => {
+test('reports preview, paging and apply errors without automatic retries', async () => {
   post
-    .mockRejectedValueOnce(new Error('unavailable'))
+    .mockRejectedValueOnce(new Error('preview'))
     .mockResolvedValueOnce({ data: batch })
-    .mockRejectedValueOnce(new Error('interrupted'));
+    .mockRejectedValueOnce(new Error('page'))
+    .mockRejectedValueOnce(new Error('apply'));
   render(<AdminSpamCleanup />);
-  fireEvent.click(screen.getByText('Preview first batch'));
+  fireEvent.click(screen.getByText('Preview all accounts'));
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Unable to preview cleanup.',
   );
-  fireEvent.click(screen.getByText('Preview first batch'));
-  fireEvent.click(await screen.findByRole('checkbox'));
-  fireEvent.click(screen.getByText('Delete 1 eligible accounts'));
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText('fictional/spammer');
+  fireEvent.click(screen.getByText('Next accounts'));
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Unable to complete cleanup.',
+    'Unable to load this page.',
   );
-  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
+  fireEvent.click(screen.getByText('Delete 101 selected accounts'));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Cleanup interrupted.',
+  );
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+});
+test('shows cumulative progress while processing all selected accounts', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  post
+    .mockResolvedValueOnce({ data: { ...batch, pages: 0, items: [] } })
+    .mockResolvedValueOnce({ data: { deleted: 100, skipped: 0, done: false } })
+    .mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finish = resolve;
+        }) as never,
+    );
+  render(<AdminSpamCleanup />);
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText(/Full preview/);
+  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
+  fireEvent.click(screen.getByText('Delete 101 selected accounts'));
+  expect(await screen.findByText(/Processing… Deleted 100/)).toBeVisible();
+  await act(async () =>
+    finish?.({ data: { deleted: 101, skipped: 0, done: true } }),
+  );
+  expect(await screen.findByText(/Complete. Deleted 101/)).toBeVisible();
+  await waitFor(() => expect(post).toHaveBeenCalledTimes(3));
+});
+
+test('shows scanning progress before the full preview is ready', async () => {
+  let finish: ((value: unknown) => void) | undefined;
+  post
+    .mockResolvedValueOnce({ data: { ...batch, building: true } })
+    .mockImplementationOnce(
+      () =>
+        new Promise(resolve => {
+          finish = resolve;
+        }) as never,
+    );
+  render(<AdminSpamCleanup />);
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  expect(await screen.findByText(/Scanned 102 candidates/)).toBeVisible();
+  expect(screen.queryByRole('table')).not.toBeInTheDocument();
+  await act(async () => finish?.({ data: batch }));
+  expect(await screen.findByRole('table')).toBeVisible();
 });
