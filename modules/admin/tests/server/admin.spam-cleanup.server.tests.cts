@@ -12,6 +12,9 @@ interface Body {
   eligible: number;
   protected: number;
   candidates: number;
+  inactive: number;
+  review: number;
+  unknownLogin: number;
   building: boolean;
   page: number;
   pages: number;
@@ -44,12 +47,16 @@ describe('Administrator spam account cleanup', () => {
     _id: new mongoose.Types.ObjectId(),
     roles: ['user', 'admin'],
   };
-  async function candidate(username: string) {
+  async function candidate(
+    username: string,
+    seen: Date | null = new Date('2021-07-04T12:00:00Z'),
+  ) {
     return (
       await User.insertOne({
         username,
         email: `${username}@example.test`,
         created: new Date('2021-07-04T12:00:00Z'),
+        ...(seen ? { seen } : {}),
         public: false,
         roles: ['user', 'suspended'],
         avatarUploaded: false,
@@ -72,11 +79,18 @@ describe('Administrator spam account cleanup', () => {
     accountIds: string[] = [],
     selection = 'all',
     actor = admin,
+    stage: string | null = 'all',
   ) {
     const res = response();
     await controller.apply(
       {
-        body: { previewId, confirm: true, selection, accountIds },
+        body: {
+          previewId,
+          confirm: true,
+          selection,
+          accountIds,
+          ...(stage === null ? {} : { stage }),
+        },
         user: actor,
       },
       res,
@@ -90,15 +104,15 @@ describe('Administrator spam account cleanup', () => {
     await Chunk.deleteMany({});
   });
   it('previews the entire snapshot and applies all except exclusions across pages', async () => {
-    for (let i = 0; i < 102; i++) await candidate(`fictional-${i}`);
+    for (let i = 0; i < 1002; i++) await candidate(`fictional-${i}`);
     const review = await fullPreview();
-    assert.equal(review.body.eligible, 102);
-    assert.equal(review.body.candidates, 102);
-    assert.equal(review.body.pages, 2);
+    assert.equal(review.body.eligible, 1002);
+    assert.equal(review.body.candidates, 1002);
+    assert.equal(review.body.pages, 11);
     const firstExcluded = review.body.items[0].id;
     const lastPage = await preview({
       previewId: review.body.previewId,
-      page: 2,
+      page: 11,
     });
     assert.equal(lastPage.body.items.length, 2);
     const lastExcluded = lastPage.body.items[1].id;
@@ -107,12 +121,12 @@ describe('Administrator spam account cleanup', () => {
       lastExcluded,
     ]);
     assert.equal(partial.body.done, false);
-    assert.equal(partial.body.deleted, 99);
+    assert.equal(partial.body.deleted, 999);
     const result = await apply(review.body.previewId, [
       firstExcluded,
       lastExcluded,
     ]);
-    assert.deepEqual(result.body, { deleted: 100, skipped: 0, done: true });
+    assert.deepEqual(result.body, { deleted: 1000, skipped: 0, done: true });
     assert.equal(await User.countDocuments({}), 2);
     assert.deepEqual(
       (await apply(review.body.previewId, [lastExcluded, firstExcluded])).body,
@@ -146,6 +160,150 @@ describe('Administrator spam account cleanup', () => {
     assert.equal(logs.length, 3);
     assert.equal(JSON.stringify(logs).includes('fictional-'), false);
   });
+  it('continues an inactive-only cleanup across scan chunks and preserves the cutoff account', async () => {
+    for (let i = 0; i < 1000; i++) await candidate(`fictional-old-${i}`);
+    const atCutoff = await candidate(
+      'fictional-at-cutoff',
+      new Date('2024-01-01T00:00:00Z'),
+    );
+    const review = await fullPreview();
+    assert.equal(review.body.candidates, 1001);
+    assert.equal(review.body.inactive, 1000);
+    assert.equal(review.body.review, 1);
+    const firstChunk = await apply(
+      review.body.previewId,
+      [],
+      'all',
+      admin,
+      'inactive',
+    );
+    assert.deepEqual(firstChunk.body, {
+      deleted: 1000,
+      skipped: 0,
+      done: false,
+    });
+    const result = await apply(
+      review.body.previewId,
+      [],
+      'all',
+      admin,
+      'inactive',
+    );
+    assert.deepEqual(result.body, { deleted: 1000, skipped: 0, done: true });
+    assert.equal(await User.countDocuments({ _id: atCutoff }), 1);
+  });
+  it('scopes selected IDs and exclusions to the chosen stage', async () => {
+    const inactive = await candidate('fictional-inactive-stage');
+    const reviewAccount = await candidate(
+      'fictional-review-stage',
+      new Date('2024-01-01T00:00:00Z'),
+    );
+    const review = await fullPreview();
+    const selected = await apply(
+      review.body.previewId,
+      [String(inactive), String(reviewAccount)],
+      'selected',
+      admin,
+      'review',
+    );
+    assert.deepEqual(selected.body, { deleted: 1, skipped: 0, done: true });
+    assert.equal(await User.countDocuments({ _id: inactive }), 1);
+
+    const otherReviewAccount = await candidate(
+      'fictional-other-review-stage',
+      new Date('2024-01-01T00:00:00Z'),
+    );
+    const newReview = await fullPreview();
+    assert.deepEqual(
+      (
+        await apply(
+          newReview.body.previewId,
+          [String(otherReviewAccount)],
+          'all',
+          admin,
+          'inactive',
+        )
+      ).body,
+      { deleted: 1, skipped: 0, done: true },
+    );
+    assert.equal(await User.countDocuments({ _id: otherReviewAccount }), 1);
+  });
+  it('rejects changing the stage while continuing an apply across chunks', async () => {
+    for (let i = 0; i < 1000; i++) await candidate(`fictional-stage-${i}`);
+    await candidate('fictional-stage-review', new Date('2024-01-01T00:00:00Z'));
+    const review = await fullPreview();
+    const first = await apply(
+      review.body.previewId,
+      [],
+      'all',
+      admin,
+      'inactive',
+    );
+    assert.equal(first.body.done, false);
+    assert.equal(
+      (await apply(review.body.previewId, [], 'all', admin, 'review'))
+        .statusCode,
+      409,
+    );
+    assert.deepEqual(
+      (await apply(review.body.previewId, [], 'all', admin, 'inactive')).body,
+      { deleted: 1000, skipped: 0, done: true },
+    );
+  });
+  it('defaults to all stages when the stage field is omitted', async () => {
+    await candidate('fictional-omitted-stage-inactive');
+    await candidate(
+      'fictional-omitted-stage-review',
+      new Date('2024-01-01T00:00:00Z'),
+    );
+    const review = await fullPreview();
+    assert.deepEqual(
+      (await apply(review.body.previewId, [], 'all', admin, null)).body,
+      { deleted: 2, skipped: 0, done: true },
+    );
+  });
+  it('classifies recent and missing login activity as review accounts', async () => {
+    await candidate('fictional-recent', new Date('2024-01-01T00:00:00Z'));
+    await candidate('fictional-no-login', null);
+    const review = await fullPreview();
+    assert.equal(review.body.eligible, 2);
+    assert.equal(review.body.inactive, 0);
+    assert.equal(review.body.review, 2);
+    assert.equal(review.body.unknownLogin, 1);
+  });
+  it('skips an inactive account that logs in after preview', async () => {
+    const id = await candidate('fictional-logged-in-later');
+    const review = await fullPreview();
+    assert.equal(review.body.inactive, 1);
+    await User.updateOne(
+      { _id: id },
+      { $set: { seen: new Date('2024-01-01T00:00:00Z') } },
+    );
+    assert.deepEqual(
+      (await apply(review.body.previewId, [], 'all', admin, 'inactive')).body,
+      { deleted: 0, skipped: 1, done: true },
+    );
+    assert.equal(await User.countDocuments({ _id: id }), 1);
+  });
+  it('invalidates previews created with an older scan format', async () => {
+    const review = await fullPreview();
+    await Preview.updateOne(
+      { _id: review.body.previewId },
+      { $set: { scanSize: 500 } },
+    );
+    assert.equal(
+      (await preview({ previewId: review.body.previewId })).statusCode,
+      410,
+    );
+    assert.equal((await apply(review.body.previewId)).statusCode, 410);
+  });
+  it('omits account rows while a preview scan is still in progress', async () => {
+    for (let i = 0; i < 1001; i++)
+      await candidate(`fictional-during-scan-${i}`);
+    const scanning = await preview();
+    assert.equal(scanning.body.building, true);
+    assert.deepEqual(scanning.body.items, []);
+  });
   it('rechecks restored accounts and new notes and tolerates an empty preview', async () => {
     const restored = await candidate('fictional-restored');
     const noted = await candidate('fictional-noted');
@@ -169,7 +327,7 @@ describe('Administrator spam account cleanup', () => {
     });
   });
   it('rejects unauthorised, expired, unfinished and concurrent operations', async () => {
-    for (let i = 0; i < 102; i++) await candidate(`fictional-pending-${i}`);
+    for (let i = 0; i < 1001; i++) await candidate(`fictional-pending-${i}`);
     const building = await preview();
     assert.equal(building.body.building, true);
     assert.equal((await apply(building.body.previewId)).statusCode, 409);
@@ -187,7 +345,8 @@ describe('Administrator spam account cleanup', () => {
     );
     const review = await preview({ previewId: building.body.previewId });
     assert.equal(
-      (await preview({ previewId: review.body.previewId, page: 3 })).statusCode,
+      (await preview({ previewId: review.body.previewId, page: 12 }))
+        .statusCode,
       400,
     );
     const other = { ...admin, _id: new mongoose.Types.ObjectId() };

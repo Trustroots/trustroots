@@ -1,5 +1,8 @@
 import mongoose, { type Types } from 'mongoose';
 export interface SpamCleanupPreview {
+  scanSize?: number;
+  inactive: number;
+  unknownLogin: number;
   actor: Types.ObjectId;
   expiresAt: Date;
   claimed?: boolean;
@@ -22,9 +25,13 @@ export interface SpamCleanupChunk {
   index: number;
   ids: Types.ObjectId[];
   eligibleIds: Types.ObjectId[];
+  inactiveIds: Types.ObjectId[];
   expiresAt: Date;
 }
 const schema = new mongoose.Schema<SpamCleanupPreview>({
+  scanSize: Number,
+  inactive: { type: Number, default: 0 },
+  unknownLogin: { type: Number, default: 0 },
   actor: { type: mongoose.Schema.Types.ObjectId, required: true },
   expiresAt: { type: Date, required: true },
   claimed: Boolean,
@@ -49,6 +56,7 @@ const chunkSchema = new mongoose.Schema<SpamCleanupChunk>({
   index: { type: Number, required: true },
   ids: [mongoose.Schema.Types.ObjectId],
   eligibleIds: [mongoose.Schema.Types.ObjectId],
+  inactiveIds: [mongoose.Schema.Types.ObjectId],
   expiresAt: { type: Date, required: true },
 });
 chunkSchema.index({ preview: 1, index: 1 }, { unique: true });

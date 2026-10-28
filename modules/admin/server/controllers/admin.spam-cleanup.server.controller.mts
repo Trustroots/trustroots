@@ -1,3 +1,8 @@
+import {
+  SPAM_CLEANUP_SCAN_SIZE,
+  SPAM_CLEANUP_PAGE_SIZE,
+  SPAM_INACTIVE_BEFORE,
+} from '../../../users/shared/spam-cleanup.ts';
 import mongoose, { type Types } from 'mongoose';
 import { createHash } from 'node:crypto';
 import {
@@ -64,7 +69,11 @@ export async function preview(req: Request, res: Response) {
         expiresAt: { $gt: new Date() },
       });
     else {
-      record = new Preview({ actor: req.user._id, expiresAt: expiry() });
+      record = new Preview({
+        actor: req.user._id,
+        expiresAt: expiry(),
+        scanSize: SPAM_CLEANUP_SCAN_SIZE,
+      });
       await audit(req.user._id, 'spam-cleanup/preview', record._id, {});
       await record.save();
     }
@@ -72,6 +81,10 @@ export async function preview(req: Request, res: Response) {
       return res
         .status(410)
         .send({ message: 'Preview unavailable or expired. Preview again.' });
+    if (record.scanSize !== SPAM_CLEANUP_SCAN_SIZE)
+      return res
+        .status(410)
+        .send({ message: 'Preview format changed. Start a fresh preview.' });
     if (record.selectionKey)
       return res.status(409).send({
         message:
@@ -104,6 +117,9 @@ export async function preview(req: Request, res: Response) {
           index: record.chunkCount,
           ids,
           eligibleIds,
+          inactiveIds: batch.items
+            .filter(row => row.eligible && row.inactive)
+            .map(row => new mongoose.Types.ObjectId(row.id)),
           expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
         });
         record.chunkCount++;
@@ -111,6 +127,12 @@ export async function preview(req: Request, res: Response) {
       }
       record.candidates += ids.length;
       record.eligible += eligibleIds.length;
+      record.inactive += batch.items.filter(
+        row => row.eligible && row.inactive,
+      ).length;
+      record.unknownLogin += batch.items.filter(
+        row => row.eligible && !row.lastSeen,
+      ).length;
       record.protected += ids.length - eligibleIds.length;
       record.building = batch.hasMore;
       record.claimed = false;
@@ -120,31 +142,57 @@ export async function preview(req: Request, res: Response) {
     record.expiresAt = expiry();
     await record.save();
     const page = Number(body.page ?? 1);
-    if (page > Math.max(1, record.chunkCount))
+    const pages = Math.ceil(record.candidates / SPAM_CLEANUP_PAGE_SIZE);
+    if (page > Math.max(1, pages))
       return res.status(400).send({ message: 'Invalid cleanup page.' });
-    const chunk = await Chunk.findOne({
-      preview: record._id,
-      index: page - 1,
-    }).lean();
-    const users = chunk
+    // Scanning responses contain counts only, avoiding redundant account reads.
+    const offset = (page - 1) * SPAM_CLEANUP_PAGE_SIZE;
+    const chunk = record.building
+      ? null
+      : await Chunk.findOne({
+          preview: record._id,
+          index: Math.floor(offset / SPAM_CLEANUP_SCAN_SIZE),
+        }).lean();
+    const pageIds = (chunk?.ids || []).slice(
+      offset % SPAM_CLEANUP_SCAN_SIZE,
+      (offset % SPAM_CLEANUP_SCAN_SIZE) + SPAM_CLEANUP_PAGE_SIZE,
+    );
+    const users = pageIds.length
       ? await mongoose
           .model('User')
-          .find({ _id: { $in: chunk.ids } })
-          .select('_id username created')
+          .find({ _id: { $in: pageIds } })
+          .select('_id username created seen')
           .lean<
-            Array<{ _id: Types.ObjectId; username: string; created: Date }>
+            Array<{
+              _id: Types.ObjectId;
+              username: string;
+              created: Date;
+              seen?: Date;
+            }>
           >()
       : [];
     const byId = new Map(users.map(user => [String(user._id), user]));
-    const items = (chunk?.ids || []).map(userId => {
-      const user = byId.get(String(userId));
+    const eligibleIds = new Set(
+      (chunk?.eligibleIds || []).map(value => String(value)),
+    );
+    const inactiveIds = new Set(
+      (chunk?.inactiveIds || []).map(value => String(value)),
+    );
+    const items = pageIds.map(userId => {
+      const key = String(userId);
+      const user = byId.get(key);
+      const eligible = Boolean(user && eligibleIds.has(key));
       return {
-        id: String(userId),
+        id: key,
         username: user?.username || 'Deleted account',
         created: user?.created?.toISOString() || null,
-        eligible: Boolean(
-          user && chunk!.eligibleIds.some(value => value.equals(userId)),
-        ),
+        lastSeen: user?.seen?.toISOString() || null,
+        eligible,
+        stage: !eligible
+          ? 'protected'
+          : inactiveIds.has(key)
+            ? 'inactive'
+            : 'review',
       };
     });
     return res.send({
@@ -155,7 +203,11 @@ export async function preview(req: Request, res: Response) {
       eligible: record.eligible,
       protected: record.protected,
       page,
-      pages: record.chunkCount,
+      pages,
+      inactive: record.inactive,
+      review: record.eligible - record.inactive,
+      unknownLogin: record.unknownLogin,
+      inactiveBefore: SPAM_INACTIVE_BEFORE,
       items,
     });
   } catch {
@@ -170,16 +222,24 @@ export async function apply(req: Request, res: Response) {
   const body = req.body;
   if (
     !object(body) ||
-    Object.keys(body).length !== 4 ||
+    Object.keys(body).some(
+      key =>
+        !['previewId', 'confirm', 'selection', 'accountIds', 'stage'].includes(
+          key,
+        ),
+    ) ||
     !id(body.previewId) ||
     body.confirm !== true ||
     !['all', 'selected'].includes(String(body.selection)) ||
     !Array.isArray(body.accountIds) ||
-    !body.accountIds.every(id)
+    !body.accountIds.every(id) ||
+    (body.stage !== undefined &&
+      !['inactive', 'review', 'all'].includes(String(body.stage)))
   )
     return res
       .status(400)
       .send({ message: 'Confirm the reviewed selection before deletion.' });
+  const stage = body.stage ?? 'all';
   const accountIds = [
     ...new Set(
       (body.accountIds as string[]).map(value =>
@@ -188,7 +248,7 @@ export async function apply(req: Request, res: Response) {
     ),
   ].sort();
   const selectionKey = createHash('sha256')
-    .update(JSON.stringify([body.selection, accountIds]))
+    .update(JSON.stringify([body.selection, accountIds, stage]))
     .digest('hex');
   try {
     const filter = {
@@ -201,6 +261,10 @@ export async function apply(req: Request, res: Response) {
       return res
         .status(410)
         .send({ message: 'Preview unavailable or expired. Preview again.' });
+    if (record.scanSize !== SPAM_CLEANUP_SCAN_SIZE)
+      return res
+        .status(410)
+        .send({ message: 'Preview format changed. Start a fresh preview.' });
     if (
       record.building ||
       (record.selectionKey && record.selectionKey !== selectionKey)
@@ -232,12 +296,22 @@ export async function apply(req: Request, res: Response) {
     if (!chunk && record.nextChunk < record.chunkCount)
       throw new Error('Reviewed chunk unavailable.');
     const exceptions = new Set(accountIds);
-    const ids = (chunk?.eligibleIds || []).filter(value =>
+    const inactiveIds = new Set(
+      (chunk?.inactiveIds || []).map(value => String(value)),
+    );
+    const stageIds = (chunk?.eligibleIds || []).filter(
+      value =>
+        stage === 'all' ||
+        (stage === 'inactive'
+          ? inactiveIds.has(String(value))
+          : !inactiveIds.has(String(value))),
+    );
+    const ids = stageIds.filter(value =>
       body.selection === 'all'
         ? !exceptions.has(String(value))
         : exceptions.has(String(value)),
     );
-    const result = await deleteAdminBatch(ids);
+    const result = await deleteAdminBatch(ids, stage === 'inactive');
     record.selectionKey = selectionKey;
     record.selection = body.selection as 'all' | 'selected';
     record.accountIds = accountIds.map(

@@ -27,6 +27,8 @@ const one = {
   username: 'fictional/spammer',
   created: '2021-07-04T12:00:00Z',
   eligible: true,
+  stage: 'inactive' as const,
+  lastSeen: '2023-12-31T23:59:59Z',
 };
 const batch = {
   previewId: 'fictional-preview',
@@ -35,15 +37,29 @@ const batch = {
   candidates: 102,
   eligible: 101,
   protected: 1,
+  inactive: 100,
+  review: 1,
+  unknownLogin: 1,
+  inactiveBefore: '2024-01-01T00:00:00.000Z',
   page: 1,
   pages: 2,
   items: [
     one,
     {
+      id: 'review',
+      username: 'fictional-review',
+      created: '2023-01-04T12:00:00Z',
+      eligible: true,
+      stage: 'review' as const,
+      lastSeen: '2025-01-01T00:00:00Z',
+    },
+    {
       id: 'protected',
       username: 'fictional-protected',
       created: null,
       eligible: false,
+      stage: 'protected',
+      lastSeen: null,
     },
   ],
 };
@@ -70,11 +86,11 @@ test('scans the whole preview and keeps global exclusions across account pages',
   expect(
     await screen.findByRole('link', { name: 'fictional/spammer' }),
   ).toHaveAttribute('href', '/admin/user/fictional%2Fspammer');
-  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
   fireEvent.click(
     screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
   );
-  expect(screen.getByText('Delete 100 selected accounts')).toBeDisabled();
+  expect(screen.getByText('Delete 99 selected accounts')).toBeDisabled();
   fireEvent.click(screen.getByText('Next accounts'));
   await screen.findByText('fictional-second');
   expect(
@@ -86,14 +102,85 @@ test('scans the whole preview and keeps global exclusions across account pages',
     screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
   ).not.toBeChecked();
   fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
-  fireEvent.click(screen.getByText('Delete 100 selected accounts'));
+  fireEvent.click(screen.getByText('Delete 99 selected accounts'));
   expect(await screen.findByText(/Complete. Deleted 100/)).toBeVisible();
   expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/apply', {
+    stage: 'inactive',
     previewId: batch.previewId,
     confirm: true,
     selection: 'all',
     accountIds: ['one'],
   });
+});
+test('limits selection to the chosen stage and sends that stage for deletion', async () => {
+  post
+    .mockResolvedValueOnce({ data: { ...batch, pages: 1 } })
+    .mockResolvedValueOnce({ data: { deleted: 1, skipped: 0, done: true } });
+  render(<AdminSpamCleanup />);
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText('fictional/spammer');
+
+  fireEvent.change(screen.getByLabelText('Cleanup stage'), {
+    target: { value: 'review' },
+  });
+  expect(screen.getByText('Delete 0 selected accounts')).toBeDisabled();
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  ).toBeDisabled();
+  const reviewCheckbox = screen.getByRole('checkbox', {
+    name: 'Select fictional-review',
+  });
+  expect(reviewCheckbox).toBeEnabled();
+  fireEvent.click(reviewCheckbox);
+  fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
+  fireEvent.click(screen.getByText('Delete 1 selected accounts'));
+
+  await screen.findByText(/Complete. Deleted 1/);
+  expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/apply', {
+    stage: 'review',
+    previewId: batch.previewId,
+    confirm: true,
+    selection: 'selected',
+    accountIds: ['review'],
+  });
+});
+test('clears selection and confirmation when switching stages and supports all eligible accounts', async () => {
+  post.mockResolvedValue({ data: { ...batch, pages: 1 } });
+  render(<AdminSpamCleanup />);
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText('fictional/spammer');
+
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  );
+  fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
+  expect(screen.getByText('Delete 1 selected accounts')).toBeEnabled();
+
+  fireEvent.change(screen.getByLabelText('Cleanup stage'), {
+    target: { value: 'review' },
+  });
+  expect(screen.getByText('Delete 0 selected accounts')).toBeDisabled();
+  expect(
+    screen.getByRole('checkbox', { name: confirmation }),
+  ).not.toBeChecked();
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional-review' }),
+  ).not.toBeChecked();
+
+  fireEvent.change(screen.getByLabelText('Cleanup stage'), {
+    target: { value: 'all' },
+  });
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
+  expect(screen.getByText('Delete 101 selected accounts')).toBeDisabled();
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  ).toBeChecked();
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional-review' }),
+  ).toBeChecked();
+  expect(
+    screen.getByRole('checkbox', { name: 'Select fictional-protected' }),
+  ).toBeDisabled();
 });
 test('supports individual selection, clearing and reticking excluded accounts', async () => {
   post.mockResolvedValue({ data: { ...batch, pages: 1 } });
@@ -108,10 +195,10 @@ test('supports individual selection, clearing and reticking excluded accounts', 
   expect(screen.getByText('Delete 1 selected accounts')).toBeDisabled();
   fireEvent.click(checkbox);
   expect(screen.getByText('Delete 0 selected accounts')).toBeDisabled();
-  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
   fireEvent.click(checkbox);
   fireEvent.click(checkbox);
-  expect(screen.getByText('Delete 101 selected accounts')).toBeDisabled();
+  expect(screen.getByText('Delete 100 selected accounts')).toBeDisabled();
   fireEvent.click(screen.getByText('Clear selection'));
   expect(checkbox).not.toBeChecked();
   expect(
@@ -135,9 +222,9 @@ test('reports preview, paging and apply errors without automatic retries', async
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Unable to load this page.',
   );
-  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
   fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
-  fireEvent.click(screen.getByText('Delete 101 selected accounts'));
+  fireEvent.click(screen.getByText('Delete 100 selected accounts'));
   expect(await screen.findByRole('alert')).toHaveTextContent(
     'Cleanup interrupted.',
   );
@@ -157,9 +244,9 @@ test('shows cumulative progress while processing all selected accounts', async (
   render(<AdminSpamCleanup />);
   fireEvent.click(screen.getByText('Preview all accounts'));
   await screen.findByText(/Full preview/);
-  fireEvent.click(screen.getByText('Select all eligible accounts'));
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
   fireEvent.click(screen.getByRole('checkbox', { name: confirmation }));
-  fireEvent.click(screen.getByText('Delete 101 selected accounts'));
+  fireEvent.click(screen.getByText('Delete 100 selected accounts'));
   expect(await screen.findByText(/Processing… Deleted 100/)).toBeVisible();
   await act(async () =>
     finish?.({ data: { deleted: 101, skipped: 0, done: true } }),
@@ -183,5 +270,7 @@ test('shows scanning progress before the full preview is ready', async () => {
   expect(await screen.findByText(/Scanned 102 candidates/)).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
   await act(async () => finish?.({ data: batch }));
-  expect(await screen.findByRole('table')).toBeVisible();
+  expect(
+    await screen.findByRole('table', { name: 'Account review' }),
+  ).toBeVisible();
 });
