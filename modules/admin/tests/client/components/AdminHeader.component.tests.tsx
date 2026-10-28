@@ -27,7 +27,12 @@ describe('<AdminHeader />', () => {
     for (const [name, labels] of [
       [
         'Member support',
-        ['Support inbox', 'Staff blockers', 'Location corrections'],
+        [
+          'Support inbox',
+          'Member search',
+          'Staff blockers',
+          'Location corrections',
+        ],
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
@@ -47,6 +52,10 @@ describe('<AdminHeader />', () => {
     expect(
       screen.getByRole('link', { name: 'Support inbox' }),
     ).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Member search' })).toHaveAttribute(
+      'href',
+      '/admin/support/members',
+    );
     expect(
       screen.getByRole('link', { name: 'Staff blockers' }),
     ).toBeInTheDocument();
@@ -62,6 +71,26 @@ describe('<AdminHeader />', () => {
     expect(
       screen.queryByRole('list', { name: 'Conversations' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('marks only the member search route active within support navigation', () => {
+    window.user = { roles: ['support-team'] };
+    window.history.pushState({}, '', '/admin/support/members');
+    render(<AdminHeader />);
+
+    expect(
+      screen.getByRole('link', { name: 'Member search' }).closest('li'),
+    ).toHaveClass('active');
+    expect(screen.getByRole('link', { name: 'Member search' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Support inbox' }).closest('li'),
+    ).not.toHaveClass('active');
+    expect(
+      screen.getByRole('link', { name: 'Support inbox' }),
+    ).not.toHaveAttribute('aria-current', 'page');
   });
   it.each([
     { roles: ['welcome-team'] },

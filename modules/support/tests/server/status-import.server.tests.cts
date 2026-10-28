@@ -4,6 +4,10 @@ const assert: typeof import('node:assert/strict') = require('node:assert/strict'
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const emailService: typeof import('../../../core/server/services/email.server.service.mjs') = require('../../../core/server/services/email.server.service.mjs');
+const {
+  extractTicketStatusItem,
+}: typeof import('../../../../bin/db-maintenance/prepare-zendesk-statuses.mts') = require('../../../../bin/db-maintenance/prepare-zendesk-statuses.mts');
 const {
   applyPreview,
   previewReducedManifest,
@@ -11,6 +15,7 @@ const {
 const {
   normaliseStoredSupportCategory,
   supportRequestFingerprint,
+  supportRequestImportFingerprints,
 }: typeof import('../../server/services/support-fingerprint.server.service.mts') = require('../../server/services/support-fingerprint.server.service.mts');
 
 interface SupportRequestFixture {
@@ -18,6 +23,7 @@ interface SupportRequestFixture {
   category: string;
   email: string;
   message: string;
+  reportMember?: string;
   status: string;
   statusRevision: number;
   statusChangedAt?: Date;
@@ -76,6 +82,35 @@ describe('conservative support status import', () => {
     };
   }
 
+  function renderSupportRequest(message: string) {
+    return new Promise<string>((resolve, reject) => {
+      emailService.renderEmail(
+        'support-request',
+        {
+          from: 'Trustroots Support <support@example.org>',
+          name: 'Trustroots Support',
+          email: 'support@example.org',
+          replyTo: { address: input.email },
+          subject: 'Support request [Other]',
+          request: {
+            category: 'other',
+            categoryLabel: 'Other',
+            email: input.email,
+            message,
+            username: 'fictional-member',
+            authenticated: 'no',
+          },
+          skipHtmlTemplate: true,
+          sparkpostCampaign: 'support-request',
+        },
+        (error, rendered) => {
+          if (error) reject(error);
+          else resolve(rendered!.text);
+        },
+      );
+    });
+  }
+
   it('previews an exact match, applies once, and remains idempotent', async () => {
     const preview = await previewReducedManifest(manifest(), adminId);
     assert.equal(preview.counts.total, 1);
@@ -130,6 +165,268 @@ describe('conservative support status import', () => {
       adminId,
     );
     assert.equal(reportPreview.counts.eligible, 1);
+  });
+
+  it('atomically rejects a legacy identity change between the apply read and write', async () => {
+    await SupportRequest.collection.updateOne(
+      { _id: supportRequest._id },
+      {
+        $unset: { category: '' },
+        $set: { reportMember: 'fictional-target' },
+      },
+    );
+    const preview = await previewReducedManifest(
+      manifest(
+        {},
+        supportRequestFingerprint({
+          ...input,
+          category: 'reportMember',
+        }),
+      ),
+      adminId,
+    );
+    assert.equal(preview.counts.eligible, 1);
+
+    const originalUpdateOne = SupportRequest.updateOne.bind(SupportRequest);
+    const updateStub = sinon
+      .stub(SupportRequest, 'updateOne')
+      .callsFake((async (
+        ...args: Parameters<typeof SupportRequest.updateOne>
+      ) => {
+        await SupportRequest.collection.updateOne(
+          { _id: supportRequest._id },
+          { $set: { reportMember: 'another-fictional-target' } },
+        );
+        return originalUpdateOne(...args);
+      }) as never);
+
+    assert.deepEqual(await applyPreview(preview.previewId, adminId), {
+      applied: 0,
+      alreadyApplied: 0,
+      skipped: 1,
+    });
+    assert.equal(updateStub.calledOnce, true);
+    const updated = await SupportRequest.findById(supportRequest._id).lean();
+    assert.equal(updated?.status, 'open');
+    assert.equal(updated?.zendeskTicketId, undefined);
+    assert.equal(updated?.reportMember, 'another-fictional-target');
+  });
+
+  it('reproduces historical escaping and URL expansion without changing identity or ordinary text', () => {
+    const original = {
+      ...input,
+      email: 'a&b@example.org',
+      message: `Please compare <one> & "two" with 'three'.`,
+    };
+    assert.deepEqual(supportRequestImportFingerprints(original), [
+      supportRequestFingerprint(original),
+      supportRequestFingerprint({
+        ...original,
+        email: 'a&amp;b@example.org',
+        message:
+          'Please compare &lt;one&gt; &amp; &quot;two&quot; with &#39;three&#39;.',
+      }),
+    ]);
+    assert.deepEqual(supportRequestImportFingerprints(input), [
+      supportRequestFingerprint(input),
+    ]);
+    assert.ok(
+      supportRequestImportFingerprints({
+        ...input,
+        message: 'See www.example.org/help or write to help@example.org.',
+      }).includes(
+        supportRequestFingerprint({
+          ...input,
+          message:
+            'See http://www.example.org/help or write to help@example.org.',
+        }),
+      ),
+    );
+  });
+
+  it('matches URL canonicalisation produced by the email renderer and preparation parser', async () => {
+    const message = 'See www.example.org/help, then reply if needed.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message } },
+    );
+    const renderedBody = await renderSupportRequest(message);
+    const item = extractTicketStatusItem({
+      id: 789,
+      status: 'pending',
+      updated_at: '2025-01-01T00:00:00.000Z',
+      description: renderedBody,
+    });
+    assert.ok(item);
+    assert.equal(
+      item.fingerprint,
+      supportRequestFingerprint({
+        ...input,
+        message: 'See http://www.example.org/help, then reply if needed.',
+      }),
+    );
+    const preview = await previewReducedManifest(
+      manifest(
+        { status: item.status, updatedAt: item.updatedAt },
+        item.fingerprint,
+      ),
+      adminId,
+    );
+    assert.equal(preview.counts.eligible, 1);
+    assert.deepEqual(await applyPreview(preview.previewId, adminId), {
+      applied: 1,
+      alreadyApplied: 0,
+      skipped: 0,
+    });
+  });
+
+  for (const [description, message, rendered] of [
+    [
+      'HTML escaping',
+      `I can't use "account & settings".`,
+      'I can&#39;t use &quot;account &amp; settings&quot;.',
+    ],
+    [
+      'URL expansion',
+      'The link is www.example.org/help.',
+      'The link is http://www.example.org/help.',
+    ],
+  ]) {
+    it(`previews and applies ${description} with the existing manifest and remains idempotent`, async () => {
+      await SupportRequest.updateOne(
+        { _id: supportRequest._id },
+        { $set: { message } },
+      );
+      const source = manifest(
+        { status: 'closed' },
+        supportRequestFingerprint({ ...input, message: rendered! }),
+      );
+      const preview = await previewReducedManifest(source, adminId);
+      assert.equal(preview.counts.eligible, 1);
+      assert.equal(
+        (await SupportRequest.findById(supportRequest._id).lean())?.status,
+        'open',
+      );
+      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
+        applied: 1,
+        alreadyApplied: 0,
+        skipped: 0,
+      });
+      assert.equal(
+        (await previewReducedManifest(source, adminId)).counts.alreadyApplied,
+        1,
+      );
+      const updated = await SupportRequest.findById(supportRequest._id).lean();
+      assert.equal(updated?.message, message);
+      assert.equal(updated?.email, input.email);
+      assert.equal(updated?.zendeskTicketId, 789);
+      assert.equal(updated?.status, 'closed');
+    });
+  }
+
+  it('skips collisions between an original request and another request’s rendered text', async () => {
+    const message = 'Please help with a & b.';
+    const rendered = 'Please help with a &amp; b.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message } },
+    );
+    await SupportRequest.create({
+      ...input,
+      message: rendered,
+      sent: new Date('2024-01-01'),
+    });
+    const preview = await previewReducedManifest(
+      manifest({}, supportRequestFingerprint({ ...input, message: rendered })),
+      adminId,
+    );
+    assert.equal(preview.counts.eligible, 0);
+    assert.equal(preview.counts.skippedByReason['ambiguous-match'], 1);
+    assert.equal((await applyPreview(preview.previewId, adminId)).applied, 0);
+  });
+
+  it('skips every source ticket when different renderings target the same request', async () => {
+    const message = 'Please help with a & b.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message } },
+    );
+    const source = manifest(
+      {},
+      supportRequestFingerprint({ ...input, message }),
+    );
+    source.items.push({
+      ...source.items[0]!,
+      zendeskTicketId: 790,
+      fingerprint: supportRequestFingerprint({
+        ...input,
+        message: 'Please help with a &amp; b.',
+      }),
+    });
+    for (const items of [source.items, [...source.items].reverse()]) {
+      const preview = await previewReducedManifest(
+        { ...source, items },
+        adminId,
+      );
+      assert.equal(preview.counts.eligible, 0);
+      assert.equal(preview.counts.skippedByReason['ambiguous-source-match'], 2);
+      assert.equal((await applyPreview(preview.previewId, adminId)).applied, 0);
+    }
+  });
+
+  it('rejects changed original text even when its new rendering still matches the preview', async () => {
+    const message = 'The link is www.example.org/help.';
+    const rendered = 'The link is http://www.example.org/help.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message } },
+    );
+    const source = manifest(
+      {},
+      supportRequestFingerprint({ ...input, message: rendered }),
+    );
+    const preview = await previewReducedManifest(source, adminId);
+    assert.equal(preview.counts.eligible, 1);
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message: rendered } },
+    );
+    assert.deepEqual(await applyPreview(preview.previewId, adminId), {
+      applied: 0,
+      alreadyApplied: 0,
+      skipped: 1,
+    });
+  });
+
+  it('still skips newer activity for rendered matches and accepts existing exact previews', async () => {
+    const legacyPreview = await previewReducedManifest(manifest(), adminId);
+    await PreviewModel.updateOne(
+      { _id: legacyPreview.previewId },
+      { $unset: { 'entries.0.originalFingerprint': '' } },
+    );
+    assert.equal(
+      (await applyPreview(legacyPreview.previewId, adminId)).applied,
+      1,
+    );
+    const message = 'Please help with a & b.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      {
+        $set: { message, lastActivityAt: new Date('2026-01-01') },
+        $unset: { zendeskTicketId: '' },
+      },
+    );
+    const preview = await previewReducedManifest(
+      manifest(
+        {},
+        supportRequestFingerprint({
+          ...input,
+          message: 'Please help with a &amp; b.',
+        }),
+      ),
+      adminId,
+    );
+    assert.equal(preview.counts.skippedByReason['newer-local-activity'], 1);
   });
 
   it('records a historical resolution time and a current status-change time', async () => {

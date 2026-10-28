@@ -536,6 +536,13 @@ describe('React route ownership', () => {
       path: '/admin/support/requests/:requestId',
       requiresRole: ['admin', 'support-team'],
     });
+
+    expect(findRoute('/admin/support/members')).toMatchObject({
+      path: '/admin/support/members',
+      requiresAuth: true,
+      requiresRole: ['admin', 'support-team'],
+      title: 'Support - Member search',
+    });
   });
 
   it('renders the admin circles route with admin metadata', () => {

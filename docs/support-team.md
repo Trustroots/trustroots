@@ -95,12 +95,20 @@ Historical statuses are matched only by the fingerprint of the original
 category, recorded requester email and original message. Current usernames and
 fuzzy matching are never used. A repeated import is idempotent.
 
+Existing version 1 manifests can be previewed again without regenerating them.
+Matching also recognises the HTML-escaped and URL-expanded renderings used by
+historical email templates, while preserving the fingerprint and identity of
+the original stored request. If different manifest renderings point to the
+same local request, all affected tickets are skipped as an ambiguous source
+match and left unchanged.
+
 The **Skipped during matching** table explains unmatched requests, repeated
-fingerprints, ambiguous local matches, existing ticket links and newer local
-activity. It remains visible after applying. A local request left without an
-imported status can still appear as Open; this does not mean Zendesk considered
-it Open. To investigate an earlier import, preview the same reduced file again
-and review these aggregate reasons before applying further changes.
+fingerprints, ambiguous local matches, rendering collisions, existing ticket
+links and newer local activity. It remains visible after applying. A local
+request left without an imported status can still appear as Open; this does not
+mean Zendesk considered it Open. To investigate an earlier import, preview the
+same reduced file again and review these aggregate reasons before applying
+further changes.
 
 ## Historical reports
 

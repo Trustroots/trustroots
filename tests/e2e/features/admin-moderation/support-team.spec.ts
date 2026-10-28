@@ -1,12 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { ObjectId } from 'mongodb';
-import {
-  annotateFeature,
-  expect,
-  expectPresent,
-  test,
-} from '../../support/fixtures.mts';
+import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import {
   createUser,
   createIsolatedContext,
@@ -125,15 +121,12 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(
       page.getByRole('heading', { name: 'Support inbox' }),
     ).toBeVisible();
+    await page.getByRole('link', { name: 'Member search' }).click();
+    await expect(page).toHaveURL('/admin/support/members');
     const memberSearch = page.getByRole('region', { name: 'Member search' });
     const requestQueue = page.getByRole('region', { name: 'Request queue' });
-    const searchBox = await memberSearch.boundingBox();
-    const requestQueueBox = await requestQueue.boundingBox();
-    expectPresent(searchBox);
-    expectPresent(requestQueueBox);
-    expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(
-      requestQueueBox.y,
-    );
+    await expect(memberSearch).toBeVisible();
+    await expect(requestQueue).toHaveCount(0);
     await page.getByLabel('Name, username or email').fill(target.username);
     await page.getByRole('button', { name: 'Search members' }).click();
     await expect(
@@ -149,6 +142,11 @@ test('support can triage a report and investigate only its verified member pair'
       'href',
       `/admin/support/member/${encodeURIComponent(target.username)}`,
     );
+    await page.getByRole('link', { name: 'Support inbox' }).click();
+    await expect(page).toHaveURL('/admin/support');
+    await expect(
+      page.getByRole('heading', { name: 'Support inbox' }),
+    ).toBeVisible();
     await page.goto(`/admin/support/member/${targetId}`);
     await expect(page).toHaveURL(
       new RegExp(`/admin/support/member/${target.username}$`),
@@ -507,6 +505,190 @@ test('administrators can see why a historical status was skipped during matching
           .collection('supportrequests')
           .countDocuments({ zendeskTicketId: 987654 }),
       ).toBe(0);
+    });
+  } finally {
+    await context.close();
+  }
+});
+
+test('administrators can apply historical statuses across rendered request variants', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Administrators can reconcile historical status manifests with rendered support requests while preserving original request identity.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const administrator = createUser({
+    firstName: 'Fictional',
+    lastName: 'Administrator',
+  });
+  const oldDate = '2024-01-01T00:00:00.000Z';
+  const updateDate = '2025-01-01T00:00:00.000Z';
+  const historicalHtmlRequest = {
+    category: 'other',
+    email: 'a&b@example.test',
+    message: `Please compare <one> & "two" with 'three'.`,
+  };
+  const historicalUrlRequest = {
+    category: 'other',
+    email: 'url-request@example.test',
+    message: 'See www.example.test/help for details.',
+  };
+  const collisionRequest = {
+    category: 'other',
+    email: 'collision@example.test',
+    message: `Compare <one> & "two" with 'three'.`,
+  };
+  const fingerprint = (input: typeof historicalHtmlRequest) =>
+    createHash('sha256')
+      .update(
+        JSON.stringify([
+          input.category,
+          input.email.trim().toLowerCase(),
+          input.message.replace(/\r\n/g, '\n').trim(),
+        ]),
+        'utf8',
+      )
+      .digest('hex');
+  const historicalHtmlFingerprint = fingerprint({
+    ...historicalHtmlRequest,
+    email: 'a&amp;b@example.test',
+    message:
+      'Please compare &lt;one&gt; &amp; &quot;two&quot; with &#39;three&#39;.',
+  });
+  const historicalUrlFingerprint = fingerprint({
+    ...historicalUrlRequest,
+    message: 'See http://www.example.test/help for details.',
+  });
+  const collisionBaseFingerprint = fingerprint(collisionRequest);
+  const collisionEscapedFingerprint = fingerprint({
+    ...collisionRequest,
+    email: 'collision@example.test',
+    message: 'Compare &lt;one&gt; &amp; &quot;two&quot; with &#39;three&#39;.',
+  });
+  const requestIds = {
+    html: new ObjectId(),
+    url: new ObjectId(),
+    collision: new ObjectId(),
+  };
+  try {
+    await registerViaApi(context.request, administrator);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: administrator.username },
+          { $set: { roles: ['user', 'admin'] } },
+        );
+      await db.collection('supportrequests').insertMany([
+        {
+          _id: requestIds.html,
+          ...historicalHtmlRequest,
+          sent: new Date(oldDate),
+          username: 'fictional-html-requester',
+          status: 'new',
+          statusRevision: 0,
+        },
+        {
+          _id: requestIds.url,
+          ...historicalUrlRequest,
+          sent: new Date(oldDate),
+          username: 'fictional-url-requester',
+          status: 'new',
+          statusRevision: 0,
+        },
+        {
+          _id: requestIds.collision,
+          ...collisionRequest,
+          sent: new Date(oldDate),
+          username: 'fictional-collision-requester',
+          status: 'new',
+          statusRevision: 0,
+        },
+      ]);
+    });
+    await signInViaApi(page, context.request, administrator);
+    await page.goto('/admin/support');
+    const importer = page.getByRole('region', {
+      name: 'Zendesk status import',
+    });
+    const manifestItem = (
+      zendeskTicketId: number,
+      itemFingerprint: string,
+    ) => ({
+      zendeskTicketId,
+      status: 'solved',
+      updatedAt: updateDate,
+      fingerprint: itemFingerprint,
+    });
+    await importer.getByLabel('Reduced JSON manifest').setInputFiles({
+      name: 'fictional-rendered-statuses.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          version: 1,
+          exportedAt: updateDate,
+          items: [
+            manifestItem(987661, historicalHtmlFingerprint),
+            manifestItem(987662, historicalUrlFingerprint),
+            manifestItem(987663, collisionBaseFingerprint),
+            manifestItem(987664, collisionEscapedFingerprint),
+          ],
+        }),
+      ),
+    });
+    await importer
+      .getByRole('button', { name: 'Preview status changes' })
+      .click();
+    await expect(
+      importer.getByText(/2 eligible, 0 already applied, 2 skipped/),
+    ).toBeVisible();
+    const breakdown = importer.getByRole('table', {
+      name: 'Skipped during matching',
+    });
+    await expect(
+      breakdown.getByText(
+        'Several Zendesk tickets match different email renderings of one local request',
+      ),
+    ).toBeVisible();
+    await expect(
+      breakdown.getByRole('cell', { name: '2', exact: true }),
+    ).toBeVisible();
+    await importer
+      .getByRole('button', { name: 'Apply status changes' })
+      .click();
+    await expect(
+      importer.getByText(/Applied 2; already applied 0; skipped 2/),
+    ).toBeVisible();
+    await withE2eDb(async db => {
+      const imported = await db
+        .collection('supportrequests')
+        .find({ _id: { $in: [requestIds.html, requestIds.url] } })
+        .toArray();
+      expect(imported).toHaveLength(2);
+      expect(imported.map(request => request.status).sort()).toEqual([
+        'solved',
+        'solved',
+      ]);
+      expect(imported.map(request => request.zendeskTicketId).sort()).toEqual([
+        987661, 987662,
+      ]);
+      expect(
+        imported.find(request => request._id.equals(requestIds.html)),
+      ).toMatchObject(historicalHtmlRequest);
+      expect(
+        imported.find(request => request._id.equals(requestIds.url)),
+      ).toMatchObject(historicalUrlRequest);
+      const collision = await db
+        .collection('supportrequests')
+        .findOne({ _id: requestIds.collision });
+      expect(collision).toMatchObject({
+        ...collisionRequest,
+        status: 'new',
+      });
+      expect(collision?.zendeskTicketId).toBeUndefined();
     });
   } finally {
     await context.close();

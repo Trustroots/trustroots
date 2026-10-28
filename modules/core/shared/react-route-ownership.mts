@@ -362,6 +362,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/support/members',
+    requiresRole: ['admin', 'support-team'],
+    title: 'Support - Member search',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/support/member/:username',
     requiresRole: ['admin', 'support-team'],
     title: 'Support - Member',

@@ -15,6 +15,8 @@ const SKIP_REASON_LABELS: Record<string, string> = {
   'no-match':
     'No local request matches the original category, email and message',
   'ambiguous-match': 'Several local requests match the same original request',
+  'ambiguous-source-match':
+    'Several Zendesk tickets match different email renderings of one local request',
   'ticket-id-conflict':
     'A request or Zendesk ticket is already linked elsewhere',
   'newer-local-activity': 'The local request has newer activity',
