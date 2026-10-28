@@ -21,6 +21,7 @@ test('administrators explicitly choose one suggested request before applying a s
     lastName: 'Administrator',
   });
   let applyBody: unknown;
+  let previewUrl = '';
   try {
     await registerViaApi(context.request, administrator);
     await withE2eDb(async db => {
@@ -32,8 +33,9 @@ test('administrators explicitly choose one suggested request before applying a s
         );
     });
     await signInViaApi(page, context.request, administrator);
-    await page.route('**/api/admin/support-import/preview', route =>
-      route.fulfill({
+    await page.route('**/api/admin/support-import/preview*', route => {
+      previewUrl = route.request().url();
+      return route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
@@ -47,6 +49,7 @@ test('administrators explicitly choose one suggested request before applying a s
             skippedByReason: {},
           },
           changes: [],
+          matchingWindowMinutes: 2,
           matchReviews: [
             {
               zendeskTicketId: 987654,
@@ -80,17 +83,40 @@ test('administrators explicitly choose one suggested request before applying a s
                 },
               ],
             },
+            {
+              zendeskTicketId: 987655,
+              category: 'other',
+              submittedAt: '2025-01-01T00:00:00.000Z',
+              importedStatus: 'pending',
+              candidates: [
+                {
+                  requestId: '333333333333333333333333',
+                  category: 'other',
+                  submittedAt: '2025-01-01T00:00:10.000Z',
+                  matchKind: 'suggested',
+                  reason:
+                    'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation',
+                  senderUsername: 'fictional-requester',
+                  email: 'requester@example.test',
+                  subject: 'Fictional subject',
+                  timeDifferenceSeconds: 10,
+                  competingCandidateCount: 1,
+                  currentStatus: 'open',
+                  importedStatus: 'pending',
+                },
+              ],
+            },
           ],
           expiresAt: '2025-01-01T00:30:00.000Z',
         }),
-      }),
-    );
+      });
+    });
     await page.route('**/api/admin/support-import/apply', async route => {
       applyBody = route.request().postDataJSON();
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ applied: 1, alreadyApplied: 0, skipped: 0 }),
+        body: JSON.stringify({ applied: 2, alreadyApplied: 0, skipped: 0 }),
       });
     });
     await page.goto('/admin/support');
@@ -122,8 +148,19 @@ test('administrators explicitly choose one suggested request before applying a s
       ),
     });
     await importer
+      .getByLabel('Submission-time matching window (minutes)')
+      .press('ArrowRight');
+    await importer
       .getByRole('button', { name: 'Preview status changes' })
       .click();
+    await expect
+      .poll(() =>
+        new URL(
+          previewUrl || '/',
+          baseURL ?? 'http://localhost',
+        ).searchParams.get('matchingWindowMinutes'),
+      )
+      .toBe('2');
     await expect(
       importer.getByRole('heading', {
         name: 'Suggested matches need your review',
@@ -135,22 +172,42 @@ test('administrators explicitly choose one suggested request before applying a s
       'href',
       '/admin/support/requests/111111111111111111111111',
     );
+    await expect(
+      importer.getByRole('link', { name: '@fictional-requester' }).first(),
+    ).toHaveAttribute('href', '/admin/user/fictional-requester');
+    await expect(
+      importer.getByText('requester@example.test').first(),
+    ).toBeVisible();
+    await importer
+      .getByRole('button', { name: 'Select all unambiguous matches' })
+      .click();
+    await expect(
+      importer.getByRole('checkbox', {
+        name: /Request 333333333333333333333333/,
+      }),
+    ).toBeChecked();
+    await expect(
+      importer.getByRole('checkbox', {
+        name: /Request 111111111111111111111111/,
+      }),
+    ).not.toBeChecked();
     const apply = importer.getByRole('button', {
       name: 'Apply status changes',
     });
-    await expect(apply).toBeDisabled();
+    await expect(apply).toBeEnabled();
     const selected = importer.getByRole('checkbox', {
       name: /Request 222222222222222222222222/,
     });
     await selected.check();
     await apply.click();
     await expect(
-      importer.getByText(/Applied 1; already applied 0; skipped 0/),
+      importer.getByText(/Applied 2; already applied 0; skipped 0/),
     ).toBeVisible();
     expect(applyBody).toEqual({
       previewId: 'fictional-preview',
       selectedMatches: [
         { zendeskTicketId: 987654, requestId: '222222222222222222222222' },
+        { zendeskTicketId: 987655, requestId: '333333333333333333333333' },
       ],
     });
   } finally {

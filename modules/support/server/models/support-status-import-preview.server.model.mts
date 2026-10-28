@@ -42,6 +42,7 @@ export interface SupportStatusImportPreviewRecord {
   actor: Types.ObjectId;
   createdAt: Date;
   expiresAt: Date;
+  matchingWindowMinutes?: number;
   appliedAt?: Date;
   applyToken?: string;
   entries: SupportStatusImportPreviewEntry[];
@@ -57,6 +58,7 @@ const SupportStatusImportPreviewSchema =
       actor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
       createdAt: { type: Date, required: true },
       expiresAt: { type: Date, required: true },
+      matchingWindowMinutes: { type: Number, default: 1 },
       appliedAt: { type: Date },
       applyToken: { type: String },
       entries: [

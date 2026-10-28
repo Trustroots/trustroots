@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import http, { getErrorMessage } from '../../../core/client/api/http-client';
 import { getCurrentUser } from '../../../core/client/services/client-runtime';
 import type {
@@ -22,11 +22,21 @@ const SKIP_REASON_LABELS: Record<string, string> = {
   'newer-local-activity': 'The local request has newer activity',
 };
 
-async function previewManifest(manifest: SupportStatusImportManifest) {
-  const { data } = await http.post<SupportStatusImportPreviewResponse>(
-    '/api/admin/support-import/preview',
-    manifest,
-  );
+async function previewManifest(
+  manifest: SupportStatusImportManifest,
+  matchingWindowMinutes: number,
+) {
+  const { data } =
+    matchingWindowMinutes === 1
+      ? await http.post<SupportStatusImportPreviewResponse>(
+          '/api/admin/support-import/preview',
+          manifest,
+        )
+      : await http.post<SupportStatusImportPreviewResponse>(
+          '/api/admin/support-import/preview',
+          manifest,
+          { params: { matchingWindowMinutes } },
+        );
   return data;
 }
 
@@ -47,6 +57,8 @@ export default function SupportStatusImport({
   onApplied?: () => void;
 }) {
   const [file, setFile] = useState<File | null>(null);
+  const [matchingWindowMinutes, setMatchingWindowMinutes] = useState(1);
+  const previewGeneration = useRef(0);
   const [preview, setPreview] =
     useState<SupportStatusImportPreviewResponse | null>(null);
   const [result, setResult] = useState<SupportStatusImportApplyResponse | null>(
@@ -64,6 +76,7 @@ export default function SupportStatusImport({
   if (!getCurrentUser()?.roles?.includes('admin')) return null;
 
   async function reviewFile(file: File) {
+    const generation = ++previewGeneration.current;
     setError('');
     setResult(null);
     setPreview(null);
@@ -89,11 +102,14 @@ export default function SupportStatusImport({
       }
       const reviewed = await previewManifest(
         parsed as SupportStatusImportManifest,
+        matchingWindowMinutes,
       );
+      if (generation !== previewGeneration.current) return;
       setPreview(reviewed);
       setMatchingSkips(reviewed.counts.skippedByReason);
       setSelectedMatches({});
     } catch (cause) {
+      if (generation !== previewGeneration.current) return;
       setError(
         cause instanceof Error && cause.message === 'invalid manifest'
           ? 'Choose a valid reduced status manifest.'
@@ -103,7 +119,7 @@ export default function SupportStatusImport({
             ),
       );
     } finally {
-      setWorking(false);
+      if (generation === previewGeneration.current) setWorking(false);
     }
   }
 
@@ -148,6 +164,8 @@ export default function SupportStatusImport({
         accept=".json,application/json"
         disabled={working}
         onChange={event => {
+          previewGeneration.current += 1;
+          setWorking(false);
           setFile(event.target.files?.[0] || null);
           setPreview(null);
           setResult(null);
@@ -156,6 +174,34 @@ export default function SupportStatusImport({
           setSelectedMatches({});
         }}
       />
+      <label htmlFor="support-status-import-window">
+        Submission-time matching window (minutes)
+      </label>
+      <input
+        className="form-control"
+        id="support-status-import-window"
+        type="range"
+        min={1}
+        max={60}
+        step={1}
+        value={matchingWindowMinutes}
+        disabled={working}
+        onChange={event => {
+          const value = Number(event.target.value);
+          previewGeneration.current += 1;
+          setWorking(false);
+          setMatchingWindowMinutes(value);
+          setPreview(null);
+          setResult(null);
+          setError('');
+          setMatchingSkips({});
+          setSelectedMatches({});
+        }}
+      />
+      <p>
+        Chosen submission-time window: {matchingWindowMinutes} minute
+        {matchingWindowMinutes === 1 ? '' : 's'}.
+      </p>
       <button
         className="btn btn-default"
         type="button"
@@ -243,11 +289,62 @@ export default function SupportStatusImport({
               <h3>Suggested matches need your review</h3>
               <p>
                 Suggestions require the same original sender and category, a
-                submission within 60 seconds, and an equivalent message after
-                formatting cleanup. Correspondence and email addresses are not
-                shown. Select at most one request for each ticket; tickets with
-                competing candidates are never selected automatically.
+                submission within{' '}
+                {preview.matchingWindowMinutes ?? matchingWindowMinutes} minute
+                {(preview.matchingWindowMinutes ?? matchingWindowMinutes) === 1
+                  ? ''
+                  : 's'}
+                , and an equivalent message after formatting cleanup. Review the
+                local requester details and select at most one request for each
+                ticket. Ambiguous and shared targets stay unselected until you
+                review them.
               </p>
+              <p role="status">
+                {Object.keys(selectedMatches).length} selected
+              </p>
+              <button
+                className="btn btn-default"
+                type="button"
+                disabled={working}
+                onClick={() => {
+                  const targetCounts = new Map<string, number>();
+                  for (const review of preview.matchReviews)
+                    for (const candidate of review.candidates)
+                      targetCounts.set(
+                        candidate.requestId,
+                        (targetCounts.get(candidate.requestId) || 0) + 1,
+                      );
+                  const exactTargets = new Set(
+                    preview.changes.map(change => change.requestId),
+                  );
+                  const next: Record<number, string> = { ...selectedMatches };
+                  const alreadySelected = new Set(Object.values(next));
+                  for (const review of preview.matchReviews) {
+                    if (review.candidates.length !== 1) continue;
+                    const [candidate] = review.candidates;
+                    if (
+                      targetCounts.get(candidate.requestId) !== 1 ||
+                      exactTargets.has(candidate.requestId) ||
+                      next[review.zendeskTicketId] ||
+                      alreadySelected.has(candidate.requestId)
+                    )
+                      continue;
+                    next[review.zendeskTicketId] = candidate.requestId;
+                    alreadySelected.add(candidate.requestId);
+                  }
+                  setSelectedMatches(next);
+                }}
+              >
+                Select all unambiguous matches
+              </button>{' '}
+              <button
+                className="btn btn-default"
+                type="button"
+                disabled={working || Object.keys(selectedMatches).length === 0}
+                onClick={() => setSelectedMatches({})}
+              >
+                Clear selection
+              </button>
               {preview.matchReviews.map(review => (
                 <div key={review.zendeskTicketId}>
                   <h4>
@@ -300,11 +397,45 @@ export default function SupportStatusImport({
                               ? new Date(candidate.submittedAt).toLocaleString()
                               : 'time unavailable'}
                             ){' '}
+                            {candidate.senderUsername && (
+                              <a
+                                href={`/admin/user/${encodeURIComponent(candidate.senderUsername)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                @{candidate.senderUsername}
+                              </a>
+                            )}{' '}
+                            {candidate.email && <span>{candidate.email}</span>}{' '}
+                            {candidate.subject && (
+                              <span>{candidate.subject}</span>
+                            )}{' '}
                             <span>
                               Current: {candidate.currentStatus}; imported:{' '}
                               {candidate.importedStatus}.
                             </span>
                           </label>
+                          {(candidate.senderUsername || candidate.email) && (
+                            <p>
+                              Local requester:{' '}
+                              {candidate.senderUsername && (
+                                <a
+                                  href={`/admin/user/${encodeURIComponent(candidate.senderUsername)}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  @{candidate.senderUsername}
+                                </a>
+                              )}
+                              {candidate.senderUsername &&
+                                candidate.email &&
+                                ' · '}
+                              {candidate.email}
+                            </p>
+                          )}
+                          {candidate.subject && (
+                            <p>Subject: {candidate.subject}</p>
+                          )}
                           {selectedForAnotherTicket && (
                             <p>
                               This request is already selected for another

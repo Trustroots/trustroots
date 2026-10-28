@@ -7,6 +7,7 @@ import type { SupportStatusImportSelection } from '../../../support/shared/statu
 
 interface SupportImportRequest {
   body: unknown;
+  query?: Record<string, unknown>;
   user: { _id: Types.ObjectId | string };
 }
 
@@ -51,7 +52,13 @@ export async function preview(
   res: SupportImportResponse,
 ): Promise<unknown> {
   try {
-    return res.send(await previewReducedManifest(req.body, req.user._id));
+    return res.send(
+      await previewReducedManifest(
+        req.body,
+        req.user._id,
+        req.query?.matchingWindowMinutes,
+      ),
+    );
   } catch (error) {
     const response = responseFor(error);
     return res.status(response.status).send({ message: response.message });
