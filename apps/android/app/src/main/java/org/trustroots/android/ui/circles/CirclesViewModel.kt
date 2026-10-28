@@ -222,12 +222,11 @@ internal class CirclesViewModel(
         retryLoad: Boolean = false,
     ) {
         if (error.isAuthenticationFailure()) {
-            if (!sessionInvalidationEmitted && mutableState.value.pendingSessionInvalidation == null) {
+            if (!sessionInvalidationEmitted) {
                 val invalidation = CirclesSessionInvalidation(++nextInvalidationID)
                 sessionInvalidationEmitted = true
                 mutableState.update { current ->
-                    if (current.pendingSessionInvalidation != null) current
-                    else current.copy(
+                    current.copy(
                         pendingSessionInvalidation = invalidation,
                         canRetryLoad = false,
                         failure = null,

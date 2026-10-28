@@ -81,6 +81,7 @@ import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.common.memberLocationLabel
 import org.trustroots.android.ui.common.memberLastActiveLabel
+import org.trustroots.android.ui.common.nonBlankMemberText
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
 import org.trustroots.android.ui.circles.CircleDetailVisit
@@ -275,13 +276,8 @@ private fun MemberProfileContent(
     ProfileHeaderStatusBarStyle(
         enabled = isActiveProfileRoute && profile != null && error == null,
     )
-    BackHandler(enabled = isActiveProfileRoute) {
-        when {
-            showingProfileImage -> showingProfileImage = false
-            confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
-            else -> onBack()
-        }
-    }
+    // Modal windows handle their own Back events and dismissal policy.
+    BackHandler(enabled = isActiveProfileRoute, onBack = onBack)
     LaunchedEffect(profileState.isBlocked, profileState.isUpdatingBlock, blockTarget) {
         if (blockTarget != null && !profileState.isUpdatingBlock && profileState.isBlocked == blockTarget) blockTarget = null
     }
@@ -386,17 +382,17 @@ private fun MemberProfileContent(
     val isSelf = profile?.let { it.username.equals(session.member.username, ignoreCase = true) } == true
     Column(Modifier.fillMaxSize()) {
         when {
-            profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             error != null -> {
                 NativeBackButton(onBack)
                 Text(
-                    resolveFailureMessage(requireNotNull(error)),
+                    resolveFailureMessage(error),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(20.dp),
                 )
             }
+            profile == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             else -> {
-                val member = requireNotNull(profile)
+                val member = profile
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
@@ -465,9 +461,7 @@ private fun MemberProfileContent(
                                     isSelf = isSelf,
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
-                                    onMessage = {
-                                        if (profileState.isBlocked == false && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
-                                    },
+                                    onMessage = { member.id?.let(onOpenConversation) },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
                                     contactLabel = when {
                                         !relationshipResolved -> null
@@ -491,7 +485,7 @@ private fun MemberProfileContent(
                                     compactTitle = member.displayName.takeIf { compactProfileHeader },
                                     isBlocked = profileState.isBlocked,
                                     safetyBusy = profileState.isUpdatingBlock || profileState.isLoadingBlock,
-                                    onBlock = { profileState.isBlocked?.let { blockTarget = !it } },
+                                    onBlock = { blockTarget = it },
                                     onReport = { reportVisible = true },
                                 )
                             }
@@ -557,8 +551,8 @@ private fun ProfileActivityFacts(member: MemberProfile) {
     val lastActive = remember(context, member.lastActiveAtMillis) {
         memberLastActiveLabel(context, member.lastActiveAtMillis)
     }
-    val replyRate = member.replyRate?.takeIf(String::isNotBlank)
-    val replyTime = member.replyTime?.takeIf(String::isNotBlank)
+    val replyRate = nonBlankMemberText(member.replyRate)
+    val replyTime = nonBlankMemberText(member.replyTime)
     val facts = listOfNotNull(
         lastActive?.let {
             ProfileActivityFactData(

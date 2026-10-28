@@ -42,6 +42,7 @@ data class MemberProfile(
     val languages: List<String>,
     val circles: List<TrustrootsCircle> = emptyList(),
     val lastActiveAtMillis: Long? = null,
+    // Optional text is trimmed and blank values become null when API responses are parsed.
     val replyRate: String? = null,
     val replyTime: String? = null,
 )

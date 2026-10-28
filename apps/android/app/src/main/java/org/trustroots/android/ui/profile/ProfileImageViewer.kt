@@ -106,7 +106,8 @@ internal fun ProfileImageViewer(
         }
     }
     fun zoomTo(requestedScale: Float) {
-        if (imageSize == IntSize.Zero || viewport == IntSize.Zero) return
+        // Zoom actions are only exposed for a decoded bitmap with positive dimensions.
+        if (viewport == IntSize.Zero) return
         val current = ProfileImageGeometry.clampOrFit(
             transform,
             imageSize.width,

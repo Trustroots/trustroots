@@ -190,7 +190,7 @@ internal class MemberShellViewModel(
 
     private fun reportFailure(error: Throwable) {
         if (error.isAuthenticationFailure()) {
-            if (!sessionInvalidationEmitted && mutableState.value.pendingSessionInvalidation == null) {
+            if (!sessionInvalidationEmitted) {
                 sessionInvalidationEmitted = true
                 avatarJob?.cancel()
                 avatarGeneration = ++nextRequestGeneration
