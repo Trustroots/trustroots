@@ -7,6 +7,7 @@ import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,6 +86,54 @@ class MobileApiCacheWriteInvalidationTest {
                 if (category in setOf("own-profile", "profile", "profile-detail")) assertFalse(file.exists())
                 else assertTrue(file.exists())
             }
+        }
+    }
+
+    @Test
+    fun profileAndBlockWritesInvalidateOnlyTheirRelatedSnapshots() = runBlocking {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(code = 200, body = """{"username":"quiet-fox","displayName":"Quiet Fox"}"""))
+            server.enqueue(MockResponse(code = 200, body = "{}"))
+            server.start()
+            val account = "profile-write-cache-${System.nanoTime()}"
+            val context = RuntimeEnvironment.getApplication()
+            val baseUrl = server.url("/").toString()
+            val session = MemberSession("connect.sid=fictional-session", MobileMember(account, "Quiet Fox"))
+            val api = MobileApiClient(baseUrl, SecureResponseCache(context), account)
+
+            val profileSnapshots = createSnapshots(
+                context,
+                baseUrl,
+                account,
+                "/api/users/$account" to "own-profile",
+                "/api/users/member-one" to "profile",
+                "/api/contacts/member-one" to "profile-detail",
+            )
+            val profileResult = api.updateProfile(
+                session,
+                ProfileUpdate("Quiet Fox", "", "", "", "", emptyList()),
+            )
+
+            assertTrue(profileResult.isSuccess)
+            assertFalse(profileSnapshots.first { it.first == "own-profile" }.second.exists())
+            assertTrue(profileSnapshots.filterNot { it.first == "own-profile" }.all { it.second.exists() })
+
+            val blockSnapshots = createSnapshots(
+                context,
+                baseUrl,
+                account,
+                "/api/users/$account" to "own-profile",
+                "/api/users/member-one" to "profile",
+                "/api/contacts/member-one" to "profile-detail",
+                "/api/offers/offer-one" to "offer",
+            )
+            val blockResult = api.setMemberBlocked(session, "member-one", blocked = true)
+
+            assertTrue(blockResult.isSuccess)
+            assertTrue(blockSnapshots.filter { it.first in setOf("profile", "profile-detail") }.all { !it.second.exists() })
+            assertTrue(blockSnapshots.filterNot { it.first in setOf("profile", "profile-detail") }.all { it.second.exists() })
+            assertEquals("PUT", server.takeRequest()?.method)
+            assertEquals("PUT", server.takeRequest()?.method)
         }
     }
 
