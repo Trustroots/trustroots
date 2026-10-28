@@ -176,6 +176,37 @@ class AccountPreviewUpdateAlertsJourneyTest {
         responderFailure.get()?.let { throw AssertionError("The local account fixture failed", it) }
     }
 
+    @Test fun enabledPreviewAlertsShowNoUpdateStatusUntilTheMemberChecks() {
+        startAccountFixture()
+        val checks = AtomicInteger()
+        compose.setContent {
+            TrustrootsTheme {
+                AccountSettingsScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    session = MemberSession("connect.sid=fictional-session", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                    onBack = {},
+                    onResetPassword = {},
+                    onSignedOut = {},
+                    previewUpdateAlerts = true,
+                    isUpdateAlertsEnabled = { true },
+                    checkPreviewUpdates = {
+                        checks.incrementAndGet()
+                        ApkUpdateCheckResult.UpToDate
+                    },
+                )
+            }
+        }
+
+        waitForText("member@example.test")
+        compose.onNodeWithText("APK updates").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Check for updates now").performScrollTo().assertIsEnabled()
+        compose.onNodeWithText("You have the latest Android preview.").assertDoesNotExist()
+        compose.onNodeWithText("Could not check for updates. Try again later.").assertDoesNotExist()
+        compose.onNodeWithText("Open release page").assertDoesNotExist()
+        assertEquals("Opening settings should not check for updates automatically", 0, checks.get())
+    }
+
     @Test fun lateReleaseResultCannotTurnAlertsBackOnAfterTheyAreDisabled() {
         startAccountFixture()
         val lateCheck = CompletableDeferred<ApkUpdateCheckResult>()

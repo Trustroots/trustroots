@@ -3,6 +3,8 @@ package org.trustroots.android.ui
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -134,7 +136,9 @@ class ConversationJourneyTest {
             compose.waitUntil(10_000) {
                 compose.onAllNodesWithText("Older fictional note 40").fetchSemanticsNodes().isNotEmpty()
             }
+            compose.onNodeWithContentDescription("Send").assertIsNotEnabled()
             compose.onNodeWithTag("messageComposer").performClick().performTextInput("My new fictional note")
+            compose.onNodeWithContentDescription("Send").assertIsEnabled()
             hideTestKeyboard()
             compose.onNodeWithTag("conversationMessages").performScrollToIndex(39)
             compose.onNodeWithText("Older fictional note 1").assertIsDisplayed()

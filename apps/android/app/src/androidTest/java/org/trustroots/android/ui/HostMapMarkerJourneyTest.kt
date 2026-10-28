@@ -144,6 +144,16 @@ class HostMapMarkerJourneyTest {
         compose.onNodeWithText("Hosting travellers").assertIsDisplayed()
         check(requests.any { it.startsWith("GET /api/offers/offer-one ") })
 
+        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("hostDetailRoute", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithTag("hostMapView").assertIsDisplayed()
+        compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("A fictional spare room.").fetchSemanticsNodes().isNotEmpty()
+        }
+
         val offerSearchesBeforePan = requests.count { it.startsWith("GET /api/offers?") }
         compose.onNodeWithTag("hostMapView").performTouchInput {
             val start = Offset(width * 0.75f, height * 0.32f)

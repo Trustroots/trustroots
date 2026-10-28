@@ -8,6 +8,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,6 +28,15 @@ import org.trustroots.android.updates.ApkUpdateCheckResult
 import org.trustroots.android.updates.AndroidPreviewRelease
 
 class AccountSettingsViewModelTest {
+    @Test fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            AccountSettingsViewModel.Factory("quiet-fox", FakeRepository(), FakePlatform())
+                .create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
     @Test fun loadsOnceSavesEmailAndKeepsSafeStateInTheEntryModel() {
         val repository = FakeRepository()
         val viewModel = model(repository)
@@ -909,6 +919,8 @@ class AccountSettingsViewModelTest {
         initialApi = MobileApiClient("https://api.example.test"),
         initialSession = MemberSession("connect.sid=fixture", MobileMember("quiet-fox", "Quiet Fox")),
     )
+
+    private class OtherViewModel : ViewModel()
 
     private class FakeRepository(private val operations: MutableList<String>? = null) : AccountRepository {
         var detailCalls = 0
