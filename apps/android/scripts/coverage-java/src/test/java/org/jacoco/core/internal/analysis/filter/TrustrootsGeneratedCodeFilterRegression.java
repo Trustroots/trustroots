@@ -27,6 +27,10 @@ public final class TrustrootsGeneratedCodeFilterRegression {
 
     public static void main(String[] args) throws Exception {
         testExactComposableSwitchFallbackIsIgnoredWithoutIgnoringItsDecision();
+        testEnumMappedComposeSwitchDefaultOutcomeIsReplaced();
+        testCustomOrdinalMethodDoesNotPassEnumRegistry();
+        testEnumMappedSwitchWithSourceDefaultIsPreserved();
+        testCustomEnumFilterSkipsUpstreamReplacedSwitch();
         testSwitchFallbackWithoutComposeScaffoldIsPreserved();
         testOnlyAStandaloneComposeEndGroupLineIsIgnored();
         testImplicitSuspendCompletionOnClosingLineIsIgnored();
@@ -34,6 +38,11 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         testGenericFlowCompletionIsPreserved();
         testPointerInputCompletionIsFilteredOnlyAfterKnownLoopingApi();
         testFunctionReferenceForwarderIsIgnoredButOrdinaryLambdaIsNot();
+        testCapturedStateRememberMaskDecisionsAreFilteredIndividually();
+        testSourceDecisionInsideRememberMarkerIsPreserved();
+        testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal();
+        testComposeDefaultMaskDecisionsAreFilteredWithinDefaultsBlock();
+        testCustomDefaultFilterSkipsUpstreamIgnoredBranches();
         org.trustroots.android.coverage.FilteredReportIntegrationRegression.run();
         System.out.println("Trustroots generated-code filter regression checks passed.");
     }
@@ -67,6 +76,107 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         check(ignored[1].getOpcode() == Opcodes.ATHROW, "ignore should end at the generated throw");
         check(output.ignored.stream().noneMatch(range -> containsBranch(range[0], range[1])),
                 "switch decision must stay in branch coverage");
+        check(output.replacements.isEmpty(), "an integer switch must not receive enum-default replacement");
+    }
+
+    private static void testEnumMappedComposeSwitchDefaultOutcomeIsReplaced() {
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(true, "sample/Color");
+        TrustrootsGeneratedCodeFilter.clearAudit();
+
+        RecordingOutput output = apply(method, "sample/EnumComposable", "java/lang/Object");
+
+        check(output.ignored.size() == 1,
+                "the exact Compose generated exception block should be ignored");
+        check(output.replacements.size() == 1 && output.replacements.get(0).source instanceof TableSwitchInsnNode,
+                "the proven enum switch should replace its single impossible default outcome");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() == 0,
+                "a switch outcome must not be counted as a two-outcome conditional decision");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount() == 1,
+                "the enum default replacement should account for exactly one removed outcome");
+    }
+
+    private static void testEnumMappedSwitchWithSourceDefaultIsPreserved() {
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(false, "sample/Color");
+        LabelNode defaultLabel = null;
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof TableSwitchInsnNode table) defaultLabel = table.dflt;
+        }
+        check(defaultLabel != null, "fixture should contain an enum switch");
+        method.instructions.insert(defaultLabel, new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+
+        RecordingOutput output = apply(method, "sample/EnumComposableSourceDefault", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "a source-bearing default case must remain measured even with enum mapping bytecode");
+        check(output.ignored.isEmpty(), "a source-bearing default must not be hidden by the Compose fallback rule");
+    }
+
+    private static void testCustomOrdinalMethodDoesNotPassEnumRegistry() {
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(true, "sample/OrdinalLike");
+
+        RecordingOutput output = apply(method, "sample/EnumComposable", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "an ordinal-shaped call on a non-enum class must not erase an exhaustive switch outcome");
+    }
+
+    private static MethodNode enumComposeSwitch(boolean generatedDefault, String ordinalOwner) {
+        MethodNode method = composableMethod("drawEnum",
+                "(Landroidx/compose/runtime/Composer;Ljava/lang/Enum;)V");
+        LabelNode defaultLabel = new LabelNode();
+        LabelNode caseLabel = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, "sample/EnumComposable$WhenMappings",
+                "$EnumSwitchMapping$0", "[I"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.SWAP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, ordinalOwner,
+                "ordinal", "()I", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IALOAD));
+        method.instructions.add(new TableSwitchInsnNode(1, 1, defaultLabel, caseLabel));
+        method.instructions.add(defaultLabel);
+        if (generatedDefault) {
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+            method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode(101));
+            method.instructions.add(call("startReplaceGroup", "(I)V"));
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+            method.instructions.add(call("endReplaceGroup", "()V"));
+            method.instructions.add(new TypeInsnNode(Opcodes.NEW, NO_WHEN));
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+            method.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, NO_WHEN, "<init>", "()V", false));
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ATHROW));
+        } else {
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.NOP));
+        }
+        method.instructions.add(caseLabel);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.maxStack = 3;
+        method.maxLocals = 2;
+        return method;
+    }
+
+    private static void testCustomEnumFilterSkipsUpstreamReplacedSwitch() {
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(true, "sample/Color");
+        TableSwitchInsnNode switchInsn = null;
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof TableSwitchInsnNode table) switchInsn = table;
+        }
+        check(switchInsn != null, "fixture should contain an enum switch");
+        RecordingOutput delegate = new RecordingOutput();
+        TrackingFilterOutput tracking = new TrackingFilterOutput(delegate);
+        tracking.replaceBranches(switchInsn, Replacements.ignoreDefaultBranch(switchInsn));
+        TrustrootsGeneratedCodeFilter.clearAudit();
+
+        new TrustrootsGeneratedCodeFilter().filter(method,
+                new FakeContext("sample/EnumAlreadyReplaced", "java/lang/Object"), tracking);
+
+        check(delegate.replacements.size() == 1,
+                "the custom filter must not replace an enum switch already handled upstream");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount() == 0,
+                "an upstream replacement must not be counted as a custom audited outcome");
     }
 
     private static void testSwitchFallbackWithoutComposeScaffoldIsPreserved() {
@@ -317,6 +427,285 @@ public final class TrustrootsGeneratedCodeFilterRegression {
                 "a Java class with a callable-reference superclass must not be treated as Kotlin generated code");
     }
 
+    private static void testCapturedStateRememberMaskDecisionsAreFilteredIndividually() {
+        MethodNode method = composableMethod("rememberLambda", "(Landroidx/compose/runtime/Composer;II)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#abc"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+
+        LabelNode set = new LabelNode();
+        LabelNode clear = new LabelNode();
+        LabelNode join = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 14));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 6));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IXOR));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPLE, set));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 8));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changedInstance", "(Ljava/lang/Object;)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(set);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
+        method.instructions.add(clear);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(join);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ISTORE, 3));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 4));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(create);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.instructions.add(cached);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 1));
+
+        RecordingOutput output = apply(method, "sample/Remember", "java/lang/Object");
+        long ignoredBranches = output.ignored.stream()
+                .filter(range -> range[0] instanceof JumpInsnNode && range[0] == range[1]).count();
+        check(ignoredBranches == 3,
+                "only the two mask tests and captured-state comparison should be removed; saw "
+                        + ignoredBranches + " ranges=" + output.ignored.size());
+        check(output.ignored.stream().noneMatch(range -> range[0] instanceof JumpInsnNode
+                        && range[0].getOpcode() == Opcodes.IFNE),
+                "the actual remembered-value invalidation gate must remain measured");
+    }
+
+    private static void testSourceDecisionInsideRememberMarkerIsPreserved() {
+        MethodNode method = composableMethod("rememberWithSourceDecision", "(Landroidx/compose/runtime/Composer;Z)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#source"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+        LabelNode sourceFalse = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        JumpInsnNode sourceDecision = new JumpInsnNode(Opcodes.IFEQ, sourceFalse);
+        method.instructions.add(sourceDecision);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 2));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(create);
+        method.instructions.add(sourceFalse);
+        method.instructions.add(cached);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+
+        RecordingOutput output = apply(method, "sample/RememberSource", "java/lang/Object");
+        check(output.ignored.isEmpty(),
+                "a source-level condition that is not a changed-mask expression must remain measured");
+    }
+
+    private static void testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal() {
+        MethodNode method = composableMethod("sourceMask", "(Landroidx/compose/runtime/Composer;III)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#source-mask"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+        LabelNode sourceFlagFalse = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 2));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, sourceFlagFalse));
+        LabelNode set = new LabelNode();
+        LabelNode clear = new LabelNode();
+        LabelNode join = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 14));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPEQ, set));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 8));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 3));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changedInstance", "(Ljava/lang/Object;)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(set);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
+        method.instructions.add(clear);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(join);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ISTORE, 3));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 4));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(sourceFlagFalse);
+        method.instructions.add(create);
+        method.instructions.add(cached);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 1));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "sourceFlags", "I", null, new LabelNode(), new LabelNode(), 2));
+
+        check(apply(method, "sample/SourceMask", "java/lang/Object").ignored.isEmpty(),
+                "a source bitmask mixed with a valid compiler mask must remain measured in full");
+    }
+
+    private static void testComposeDefaultMaskDecisionsAreFilteredWithinDefaultsBlock() {
+        MethodNode generated = defaultArgumentMethod(true);
+        RecordingOutput generatedOutput = apply(generated, "sample/DefaultArguments", "java/lang/Object");
+        long filteredDecisions = generatedOutput.ignored.stream()
+                .filter(range -> range[0] instanceof JumpInsnNode && range[0] == range[1]).count();
+        check(filteredDecisions == 3,
+                "only the hidden changed/default masks and Composer defaults-invalid check should be filtered");
+        check(generatedOutput.ignored.stream().noneMatch(range -> range[0] instanceof JumpInsnNode jump
+                        && isSourceFlagDecision(jump)),
+                "the source flag branch in the default value expression must remain measured");
+
+        MethodNode incomplete = defaultArgumentMethod(false);
+        check(apply(incomplete, "sample/IncompleteDefaults", "java/lang/Object").ignored.isEmpty(),
+                "mask-shaped branches without the complete Compose defaults framework must remain measured");
+    }
+
+    private static MethodNode defaultArgumentMethod(boolean includeSkipToGroupEnd) {
+        MethodNode method = composableMethod("defaultedComposable",
+                "(ILandroidx/compose/runtime/Composer;II)V");
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "startDefaults", "()V", true));
+        LabelNode useDefaultValue = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 2));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, useDefaultValue));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "getDefaultsInvalid", "()Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, useDefaultValue));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_2));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, useDefaultValue));
+        LabelNode sourceFalse = new LabelNode();
+        JumpInsnNode sourceDecision = new JumpInsnNode(Opcodes.IFEQ, sourceFalse);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(sourceDecision);
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "sample/DefaultValue",
+                "evaluate", "()V", false));
+        method.instructions.add(useDefaultValue);
+        if (includeSkipToGroupEnd) {
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+            method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                    "skipToGroupEnd", "()V", true));
+        }
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "endDefaults", "()V", true));
+        method.instructions.add(sourceFalse);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 2));
+        return method;
+    }
+
+    private static void testCustomDefaultFilterSkipsUpstreamIgnoredBranches() {
+        MethodNode method = defaultArgumentMethod(true);
+        JumpInsnNode alreadyFiltered = null;
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof JumpInsnNode jump && isDefaultMaskFixtureDecision(jump)) {
+                alreadyFiltered = jump;
+                break;
+            }
+        }
+        check(alreadyFiltered != null, "fixture should contain a default-mask branch");
+
+        RecordingOutput delegate = new RecordingOutput();
+        TrackingFilterOutput tracking = new TrackingFilterOutput(delegate);
+        tracking.ignore(alreadyFiltered, alreadyFiltered);
+        TrustrootsGeneratedCodeFilter.clearAudit();
+        new TrustrootsGeneratedCodeFilter().filter(method,
+                new FakeContext("sample/DefaultsAlreadyFiltered", "java/lang/Object"), tracking);
+
+        check(TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() == 2,
+                "the custom audit should omit the branch already removed by an upstream filter");
+        check(delegate.ignored.size() == 3,
+                "only the two remaining compiler decisions should be ignored in addition to the upstream one");
+    }
+
+    private static boolean isDefaultMaskFixtureDecision(JumpInsnNode branch) {
+        AbstractInsnNode and = branch.getPrevious();
+        AbstractInsnNode bit = and == null ? null : and.getPrevious();
+        AbstractInsnNode load = bit == null ? null : bit.getPrevious();
+        return and != null && and.getOpcode() == Opcodes.IAND
+                && bit != null && bit.getOpcode() == Opcodes.ICONST_1
+                && load instanceof org.objectweb.asm.tree.VarInsnNode varLoad
+                && varLoad.getOpcode() == Opcodes.ILOAD && varLoad.var == 2;
+    }
+
+    private static boolean isSourceFlagDecision(JumpInsnNode branch) {
+        AbstractInsnNode and = branch.getPrevious();
+        AbstractInsnNode bit = and == null ? null : and.getPrevious();
+        AbstractInsnNode load = bit == null ? null : bit.getPrevious();
+        return and != null && and.getOpcode() == Opcodes.IAND
+                && bit != null && bit.getOpcode() == Opcodes.ICONST_1
+                && load instanceof org.objectweb.asm.tree.VarInsnNode varLoad
+                && varLoad.getOpcode() == Opcodes.ILOAD && varLoad.var == 0;
+    }
+
     private static void withSourceLine(String sourceLine, Runnable test) throws Exception {
         Path temporaryDirectory = Path.of("build/tmp");
         Files.createDirectories(temporaryDirectory);
@@ -370,14 +759,17 @@ public final class TrustrootsGeneratedCodeFilterRegression {
 
     private static final class RecordingOutput implements IFilterOutput {
         final List<AbstractInsnNode[]> ignored = new ArrayList<>();
+        final List<ReplacementRecord> replacements = new ArrayList<>();
         @Override public void ignore(AbstractInsnNode from, AbstractInsnNode to) {
             ignored.add(new AbstractInsnNode[] { from, to });
         }
         @Override public void merge(AbstractInsnNode first, AbstractInsnNode second) {}
         @Override public void replaceBranches(AbstractInsnNode source, Replacements replacements) {
-            throw new AssertionError("The generated-code filter must leave branch decisions untouched");
+            this.replacements.add(new ReplacementRecord(source, replacements));
         }
     }
+
+    private record ReplacementRecord(AbstractInsnNode source, Replacements replacements) {}
 
     private static final class FakeContext implements IFilterContext {
         private final String className;

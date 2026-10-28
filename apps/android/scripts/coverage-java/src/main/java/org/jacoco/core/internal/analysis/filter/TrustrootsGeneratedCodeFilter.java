@@ -8,7 +8,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldInsnNode;
@@ -19,6 +21,8 @@ import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.LocalVariableNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
@@ -29,9 +33,13 @@ import org.objectweb.asm.tree.TypeInsnNode;
  * construction in a composable exhaustive-switch default arm, (2) a
  * source-line-only Compose group-close call, (3) an implicit coroutine
  * {@code Unit} return on a source-only closing-delimiter line after a
- * specifically recognised Compose coroutine API, and (4) a
- * branch-free forwarding method in a Kotlin callable-reference subclass.
- * It never ignores a branch instruction.</p>
+ * specifically recognised Compose coroutine API, (4) the single default
+ * outcome of an exact Kotlin enum-mapping switch whose default target is the
+ * generated Compose exhaustive-switch exception block, (5) a branch-free
+ * forwarding method in a Kotlin callable-reference subclass, and (6)
+ * individual captured-state cache invalidation branches only when they form a
+ * compiler mask expression inside a Compose remember marker and feed its
+ * remembered-value cache gate.</p>
  */
 public final class TrustrootsGeneratedCodeFilter implements IFilter {
 
@@ -48,6 +56,11 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             "androidx/compose/foundation/gestures/TransformGestureDetectorKt";
     private static final String POINTER_INPUT_SCOPE = "androidx/compose/ui/input/pointer/PointerInputScope";
     private static final List<String> AUDIT = Collections.synchronizedList(new ArrayList<>());
+    private static volatile Set<String> ENUM_CLASSES = Set.of();
+
+    public static void setEnumClassNames(Set<String> enumClassNames) {
+        ENUM_CLASSES = Set.copyOf(enumClassNames);
+    }
 
     public static List<String> auditEntries() {
         synchronized (AUDIT) {
@@ -59,6 +72,27 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         AUDIT.clear();
     }
 
+    public static int filteredBranchDecisionCount() {
+        synchronized (AUDIT) {
+            return (int) AUDIT.stream()
+                    .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
+                            || entry.contains("Compose default-argument invalidation decision"))
+                    .count();
+        }
+    }
+
+    public static int filteredBranchOutcomeCount() {
+        synchronized (AUDIT) {
+            return (int) AUDIT.stream()
+                    .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
+                            || entry.contains("Compose default-argument invalidation decision"))
+                    .count() * 2
+                    + (int) AUDIT.stream()
+                            .filter(entry -> entry.contains("exhaustive Compose enum switch default outcome"))
+                            .count();
+        }
+    }
+
     @Override
     public void filter(final MethodNode method, final IFilterContext context,
             final IFilterOutput output) {
@@ -68,10 +102,337 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             if (composeMethod) {
                 filterSwitchFallbacks(method, context, output);
                 filterLoneComposeGroupClosures(method, context, output);
+                filterRememberCacheMaskBranches(method, context, output);
+                filterComposableDefaultInvalidationBranches(method, context, output);
             }
             filterImplicitCoroutineCompletion(method, context, output);
             filterFunctionReferenceForwarder(method, context, output);
         }
+    }
+
+    private static void filterComposableDefaultInvalidationBranches(MethodNode method,
+            IFilterContext context, IFilterOutput output) {
+        if (method.localVariables == null) return;
+        DefaultArgumentSlots argumentSlots = defaultArgumentSlots(method);
+        if (argumentSlots == null || argumentSlots.defaultMasks().isEmpty()) return;
+        List<AbstractInsnNode> insns = new ArrayList<>();
+        for (AbstractInsnNode insn : method.instructions) insns.add(insn);
+        for (int index = 0; index < insns.size(); index++) {
+            if (!isComposerCall(insns.get(index), "startDefaults", "()V")) continue;
+            int end = findComposerCall(insns, index + 1, "endDefaults", "()V");
+            if (end < 0) continue;
+            boolean hasDefaultsInvalid = false;
+            boolean hasSkipToGroupEnd = false;
+            for (int cursor = index + 1; cursor < end; cursor++) {
+                hasDefaultsInvalid |= isComposerCall(insns.get(cursor), "getDefaultsInvalid", "()Z");
+                hasSkipToGroupEnd |= isComposerCall(insns.get(cursor), "skipToGroupEnd", "()V");
+            }
+            if (!hasDefaultsInvalid || !hasSkipToGroupEnd) continue;
+            for (int cursor = index + 1; cursor < end; cursor++) {
+                AbstractInsnNode insn = insns.get(cursor);
+                if (!(insn instanceof org.objectweb.asm.tree.JumpInsnNode)
+                        || isAlreadyFilteredBranch(output, insn)
+                        || !isDefaultMaskDecision(insns, cursor, argumentSlots)) continue;
+                output.ignore(insn, insn);
+                audit(context, method, insn, insn,
+                        "Compose default-argument invalidation decision");
+            }
+            for (int cursor = index + 1; cursor < end; cursor++) {
+                AbstractInsnNode insn = insns.get(cursor);
+                if (!(insn instanceof org.objectweb.asm.tree.JumpInsnNode)
+                        || isAlreadyFilteredBranch(output, insn)
+                        || (insn.getOpcode() != Opcodes.IFEQ && insn.getOpcode() != Opcodes.IFNE)) continue;
+                AbstractInsnNode previous = previousOpcode(insn.getPrevious());
+                if (previous instanceof MethodInsnNode call && COMPOSER.equals(call.owner)
+                        && "getDefaultsInvalid".equals(call.name) && "()Z".equals(call.desc)) {
+                    output.ignore(insn, insn);
+                    audit(context, method, insn, insn,
+                            "Compose default-argument invalidation decision");
+                }
+            }
+        }
+    }
+
+    private static DefaultArgumentSlots defaultArgumentSlots(MethodNode method) {
+        Type[] arguments = Type.getArgumentTypes(method.desc);
+        int slot = (method.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
+        boolean foundComposer = false;
+        int changedSlot = -1;
+        List<Integer> defaultMasks = new ArrayList<>();
+        for (Type argument : arguments) {
+            if (!foundComposer) {
+                if (argument.getSort() == Type.OBJECT && COMPOSER.equals(argument.getInternalName())) {
+                    foundComposer = true;
+                }
+            } else {
+                if (argument.getSort() != Type.INT) return null;
+                if (changedSlot < 0) {
+                    int parameterSlot = slot;
+                    boolean hasChangedName = method.localVariables.stream().anyMatch(local ->
+                            local.index == parameterSlot && local.name.startsWith("$changed"));
+                    if (!hasChangedName) return null;
+                    changedSlot = slot;
+                } else {
+                    defaultMasks.add(slot);
+                }
+            }
+            slot += argument.getSize();
+        }
+        return changedSlot < 0 ? null : new DefaultArgumentSlots(changedSlot, List.copyOf(defaultMasks));
+    }
+
+    private static int findComposerCall(List<AbstractInsnNode> insns, int start,
+            String name, String descriptor) {
+        for (int index = start; index < insns.size(); index++) {
+            if (isComposerCall(insns.get(index), name, descriptor)) return index;
+            if (isComposerCall(insns.get(index), "startDefaults", "()V")) return -1;
+        }
+        return -1;
+    }
+
+    private static boolean isComposerCall(AbstractInsnNode insn, String name, String descriptor) {
+        return insn instanceof MethodInsnNode call && COMPOSER.equals(call.owner)
+                && name.equals(call.name) && descriptor.equals(call.desc);
+    }
+
+    private static boolean isDefaultMaskDecision(List<AbstractInsnNode> insns, int branchIndex,
+            DefaultArgumentSlots argumentSlots) {
+        AbstractInsnNode branch = insns.get(branchIndex);
+        if (branch.getOpcode() != Opcodes.IFEQ && branch.getOpcode() != Opcodes.IFNE) return false;
+        AbstractInsnNode and = previousOpcode(branch.getPrevious());
+        AbstractInsnNode bit = previousOpcode(and == null ? null : and.getPrevious());
+        AbstractInsnNode load = previousOpcode(bit == null ? null : bit.getPrevious());
+        if (and == null || and.getOpcode() != Opcodes.IAND || !isIntegerConstant(bit)
+                || !(load instanceof VarInsnNode variableLoad) || variableLoad.getOpcode() != Opcodes.ILOAD) return false;
+        Integer maskBit = integerConstantValue(bit);
+        if (maskBit == null || maskBit <= 0 || (maskBit & (maskBit - 1)) != 0) return false;
+        return argumentSlots.defaultMasks().contains(variableLoad.var)
+                || variableLoad.var == argumentSlots.changedMask() && maskBit == 1;
+    }
+
+    private record DefaultArgumentSlots(int changedMask, List<Integer> defaultMasks) {}
+
+    private static Integer integerConstantValue(AbstractInsnNode insn) {
+        int opcode = insn.getOpcode();
+        if (opcode == Opcodes.ICONST_M1) return -1;
+        if (opcode >= Opcodes.ICONST_0 && opcode <= Opcodes.ICONST_5) return opcode - Opcodes.ICONST_0;
+        if (insn instanceof org.objectweb.asm.tree.IntInsnNode intInsn) return intInsn.operand;
+        if (insn instanceof LdcInsnNode ldc && ldc.cst instanceof Integer value) return value;
+        return null;
+    }
+
+    private static void filterRememberCacheMaskBranches(MethodNode method,
+            IFilterContext context, IFilterOutput output) {
+        List<AbstractInsnNode> all = new ArrayList<>();
+        for (AbstractInsnNode insn : method.instructions) all.add(insn);
+        for (int marker = 0; marker < all.size(); marker++) {
+            if (!(all.get(marker) instanceof LdcInsnNode ldc)
+                    || !(ldc.cst instanceof String text) || !text.contains("CC(remember):")) continue;
+            int markerStart = findMarkerCall(all, marker + 1, "sourceInformationMarkerStart",
+                    "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V");
+            if (markerStart < 0) continue;
+            int markerEnd = findMarkerCall(all, markerStart + 1, "sourceInformationMarkerEnd",
+                    "(Landroidx/compose/runtime/Composer;)V");
+            if (markerEnd < 0) continue;
+            int remembered = findCall(all, markerStart + 1, COMPOSER, "rememberedValue", "()Ljava/lang/Object;");
+            if (remembered < 0 || remembered >= markerEnd || !hasRememberCacheGate(all, remembered, markerEnd)) continue;
+            List<AbstractInsnNode> region = all.subList(markerStart + 1, remembered);
+            if (!isCompilerChangedMaskRegion(region)) continue;
+            if (!usesCompilerMaskLocals(method, region)) continue;
+            int changedInstanceCalls = 0;
+            for (AbstractInsnNode insn : region) {
+                if (insn instanceof MethodInsnNode call && COMPOSER.equals(call.owner)
+                        && isComposerChangedCall(call)) changedInstanceCalls++;
+            }
+            if (changedInstanceCalls == 0) continue;
+            for (AbstractInsnNode insn : region) {
+                if (insn instanceof org.objectweb.asm.tree.JumpInsnNode
+                        && !isAlreadyFilteredBranch(output, insn)
+                        && isConditionalDecision(insn.getOpcode())
+                        && isMaskOrChangedStateDecision(region, insn)) {
+                    output.ignore(insn, insn);
+                    audit(context, method, insn, insn,
+                            "captured-state Compose remember cache mask decision");
+                }
+            }
+        }
+    }
+
+    private static boolean isConditionalDecision(int opcode) {
+        return opcode >= Opcodes.IFEQ && opcode <= Opcodes.IF_ACMPNE
+                || opcode == Opcodes.IFNULL || opcode == Opcodes.IFNONNULL;
+    }
+
+    private static boolean isAlreadyFilteredBranch(IFilterOutput output, AbstractInsnNode insn) {
+        return output instanceof TrackingFilterOutput tracking && tracking.isBranchAlreadyFiltered(insn);
+    }
+
+    private static int findCall(List<AbstractInsnNode> insns, int start,
+            String owner, String name, String descriptor) {
+        for (int i = start; i < insns.size(); i++) {
+            if (insns.get(i) instanceof MethodInsnNode call && owner.equals(call.owner)
+                    && name.equals(call.name) && descriptor.equals(call.desc)) return i;
+        }
+        return -1;
+    }
+
+    private static int findMarkerCall(List<AbstractInsnNode> insns, int start,
+            String name, String descriptor) {
+        for (int i = start; i < insns.size(); i++) {
+            if (!(insns.get(i) instanceof MethodInsnNode call)
+                    || !"androidx/compose/runtime/ComposerKt".equals(call.owner)) continue;
+            if (name.equals(call.name) && descriptor.equals(call.desc)) return i;
+            if ("sourceInformationMarkerStart".equals(call.name)
+                    || "sourceInformationMarkerEnd".equals(call.name)) return -1;
+        }
+        return -1;
+    }
+
+    private static boolean hasRememberCacheGate(List<AbstractInsnNode> insns, int remembered, int markerEnd) {
+        int end = Math.min(markerEnd, remembered + 22);
+        boolean sawEmpty = false;
+        for (int i = remembered + 1; i < end; i++) {
+            AbstractInsnNode insn = insns.get(i);
+            if (insn instanceof MethodInsnNode call && "getEmpty".equals(call.name)
+                    && "androidx/compose/runtime/Composer$Companion".equals(call.owner)) sawEmpty = true;
+            if (sawEmpty && insn.getOpcode() == Opcodes.IF_ACMPNE) return true;
+        }
+        return false;
+    }
+
+    private static boolean isCompilerChangedMaskRegion(List<AbstractInsnNode> region) {
+        int ands = 0;
+        int changedCalls = 0;
+        int stores = 0;
+        int conditionals = 0;
+        for (AbstractInsnNode insn : region) {
+            int opcode = insn.getOpcode();
+            if (opcode < 0) continue;
+            if (opcode == Opcodes.IAND) ands++;
+            else if (opcode == Opcodes.ISTORE) stores++;
+            else if (insn instanceof org.objectweb.asm.tree.JumpInsnNode) conditionals++;
+            else if (insn instanceof MethodInsnNode call) {
+                if (COMPOSER.equals(call.owner) && isComposerChangedCall(call)) changedCalls++;
+                else if (!"sourceInformationMarkerStart".equals(call.name)) return false;
+            } else if (!isMaskOpcode(insn)) return false;
+        }
+        return ands >= 2 && changedCalls >= 1 && stores >= 1 && conditionals >= 2;
+    }
+
+    private static boolean isComposerChangedCall(MethodInsnNode call) {
+        return ("changedInstance".equals(call.name) || "changed".equals(call.name))
+                && call.desc.endsWith(")Z");
+    }
+
+    private static boolean usesCompilerMaskLocals(MethodNode method, List<AbstractInsnNode> region) {
+        if (method.localVariables == null || method.localVariables.isEmpty()) return false;
+        Set<Integer> compilerMaskSlots = compilerMaskParameterSlots(method);
+        if (compilerMaskSlots.isEmpty()) return false;
+        compilerMaskSlots.addAll(compilerDerivedDirtySlots(method, compilerMaskSlots));
+        int verifiedMaskLoads = 0;
+        for (int index = 0; index < region.size(); index++) {
+            AbstractInsnNode insn = region.get(index);
+            if (!(insn instanceof VarInsnNode load) || load.getOpcode() != Opcodes.ILOAD) continue;
+            AbstractInsnNode next = nextOpcode(insn);
+            if (next == null || !isIntegerConstant(next)) continue;
+            AbstractInsnNode afterConstant = nextOpcode(next);
+            if (afterConstant == null || afterConstant.getOpcode() != Opcodes.IAND) continue;
+            if (!compilerMaskSlots.contains(load.var)) return false;
+            verifiedMaskLoads++;
+        }
+        return verifiedMaskLoads > 0;
+    }
+
+    private static Set<Integer> compilerMaskParameterSlots(MethodNode method) {
+        Set<Integer> result = new java.util.HashSet<>();
+        int slot = (method.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
+        boolean afterComposer = false;
+        for (Type argument : Type.getArgumentTypes(method.desc)) {
+            if (afterComposer) {
+                if (argument.getSort() != Type.INT) return Set.of();
+                int parameterSlot = slot;
+                for (LocalVariableNode local : method.localVariables) {
+                    if (local.index == parameterSlot && (local.name.startsWith("$changed")
+                            || local.name.startsWith("$dirty"))) result.add(parameterSlot);
+                }
+            }
+            if (argument.getSort() == Type.OBJECT && COMPOSER.equals(argument.getInternalName())) {
+                afterComposer = true;
+            }
+            slot += argument.getSize();
+        }
+        return result;
+    }
+
+    private static Set<Integer> compilerDerivedDirtySlots(MethodNode method, Set<Integer> maskSlots) {
+        Set<Integer> result = new java.util.HashSet<>();
+        if (method.localVariables == null) return result;
+        for (LocalVariableNode local : method.localVariables) {
+            if (!local.name.startsWith("$dirty") || maskSlots.contains(local.index)) continue;
+            for (AbstractInsnNode insn : method.instructions) {
+                if (!(insn instanceof VarInsnNode store) || store.getOpcode() != Opcodes.ISTORE
+                        || store.var != local.index) continue;
+                AbstractInsnNode cursor = previousOpcode(insn.getPrevious());
+                if (cursor instanceof VarInsnNode directCopy && directCopy.getOpcode() == Opcodes.ILOAD
+                        && maskSlots.contains(directCopy.var)) {
+                    result.add(local.index);
+                    continue;
+                }
+                boolean usedMask = false;
+                boolean hadMaskOperation = false;
+                int budget = 20;
+                while (cursor != null && budget-- > 0) {
+                    if (cursor instanceof MethodInsnNode || cursor.getOpcode() == Opcodes.GETFIELD
+                            || cursor.getOpcode() == Opcodes.GETSTATIC) break;
+                    if (cursor instanceof VarInsnNode load && load.getOpcode() == Opcodes.ILOAD
+                            && maskSlots.contains(load.var)) usedMask = true;
+                    if (cursor.getOpcode() == Opcodes.IAND) hadMaskOperation = true;
+                    if (usedMask && hadMaskOperation) break;
+                    cursor = previousOpcode(cursor.getPrevious());
+                }
+                if (usedMask && hadMaskOperation) result.add(local.index);
+            }
+        }
+        return result;
+    }
+
+    private static boolean isMaskOpcode(AbstractInsnNode insn) {
+        int opcode = insn.getOpcode();
+        return opcode == Opcodes.ALOAD || opcode == Opcodes.ILOAD || opcode == Opcodes.ISTORE
+                || opcode == Opcodes.ASTORE || opcode == Opcodes.ICONST_M1
+                || opcode >= Opcodes.ICONST_0 && opcode <= Opcodes.ICONST_5
+                || opcode == Opcodes.BIPUSH || opcode == Opcodes.SIPUSH
+                || opcode == Opcodes.LDC && insn instanceof LdcInsnNode ldc && ldc.cst instanceof Integer
+                || opcode == Opcodes.IAND || opcode == Opcodes.IOR || opcode == Opcodes.IXOR
+                || opcode == Opcodes.IFEQ || opcode == Opcodes.IFNE
+                || opcode >= Opcodes.IF_ICMPEQ && opcode <= Opcodes.IF_ICMPLE
+                || opcode == Opcodes.GOTO || opcode == Opcodes.NOP;
+    }
+
+    private static boolean isMaskOrChangedStateDecision(List<AbstractInsnNode> region,
+            AbstractInsnNode decision) {
+        AbstractInsnNode previous = previousOpcode(decision.getPrevious());
+        if (previous == null) return false;
+        if (decision.getOpcode() >= Opcodes.IF_ICMPEQ && decision.getOpcode() <= Opcodes.IF_ICMPLE) {
+            if (!isIntegerConstant(previous)) return false;
+            AbstractInsnNode beforeConstant = previousOpcode(previous.getPrevious());
+            if (beforeConstant != null && beforeConstant.getOpcode() == Opcodes.IAND) return true;
+            if (beforeConstant == null || beforeConstant.getOpcode() != Opcodes.IXOR) return false;
+            AbstractInsnNode xorMask = previousOpcode(beforeConstant.getPrevious());
+            return xorMask != null && isIntegerConstant(xorMask)
+                    && previousOpcode(xorMask.getPrevious()) != null
+                    && previousOpcode(xorMask.getPrevious()).getOpcode() == Opcodes.IAND;
+        }
+        return previous.getOpcode() == Opcodes.IAND
+                || previous instanceof MethodInsnNode call && isComposerChangedCall(call)
+                        && COMPOSER.equals(call.owner);
+    }
+
+    private static boolean isIntegerConstant(AbstractInsnNode insn) {
+        int opcode = insn.getOpcode();
+        if (opcode >= Opcodes.ICONST_M1 && opcode <= Opcodes.ICONST_5
+                || opcode == Opcodes.BIPUSH || opcode == Opcodes.SIPUSH) return true;
+        return insn instanceof LdcInsnNode ldc && ldc.cst instanceof Integer;
     }
 
     private static void filterFunctionReferenceForwarder(MethodNode method,
@@ -142,15 +503,45 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             if (defaultLabel == null) {
                 continue;
             }
-            List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel);
+            List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel, insn);
             if (isComposeExhaustiveSwitchFallback(block)) {
                 AbstractInsnNode first = block.get(0);
                 AbstractInsnNode thrown = block.get(block.size() - 1);
+                if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn, context)) {
+                    output.replaceBranches(insn, Replacements.ignoreDefaultBranch(insn));
+                    audit(context, method, insn, insn,
+                            "exhaustive Compose enum switch default outcome");
+                }
                 output.ignore(first, thrown);
                 audit(context, method, first, thrown,
                         "composable switch default NoWhenBranchMatchedException");
             }
         }
+    }
+
+    private static boolean isEnumMappingSwitch(AbstractInsnNode insn, IFilterContext context) {
+        if (!(insn instanceof TableSwitchInsnNode || insn instanceof LookupSwitchInsnNode)) return false;
+        AbstractInsnNode arrayLoad = previousOpcode(insn.getPrevious());
+        AbstractInsnNode ordinal = previousOpcode(arrayLoad == null ? null : arrayLoad.getPrevious());
+        AbstractInsnNode swap = previousOpcode(ordinal == null ? null : ordinal.getPrevious());
+        AbstractInsnNode mapping = previousOpcode(swap == null ? null : swap.getPrevious());
+        return arrayLoad != null && arrayLoad.getOpcode() == Opcodes.IALOAD
+                && ordinal instanceof MethodInsnNode ordinalCall
+                && ordinalCall.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && ("java/lang/Enum".equals(ordinalCall.owner) || ENUM_CLASSES.contains(ordinalCall.owner))
+                && "ordinal".equals(ordinalCall.name) && "()I".equals(ordinalCall.desc)
+                && swap != null && swap.getOpcode() == Opcodes.SWAP
+                && mapping instanceof FieldInsnNode field
+                && field.getOpcode() == Opcodes.GETSTATIC
+                && field.name.startsWith("$EnumSwitchMapping$")
+                && isEnclosingWhenMappingsOwner(field.owner, context.getClassName())
+                && "[I".equals(field.desc);
+    }
+
+    private static boolean isEnclosingWhenMappingsOwner(String mappingOwner, String className) {
+        int nestedClass = className.indexOf('$');
+        String enclosingClass = nestedClass < 0 ? className : className.substring(0, nestedClass);
+        return mappingOwner.startsWith(enclosingClass + "$") && mappingOwner.endsWith("$WhenMappings");
     }
 
     private static void filterLoneComposeGroupClosures(final MethodNode method,
@@ -370,14 +761,24 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         }
     }
 
-    private static List<AbstractInsnNode> instructionsUntilThrow(AbstractInsnNode label) {
+    private static List<AbstractInsnNode> instructionsUntilThrow(AbstractInsnNode label,
+            AbstractInsnNode switchInstruction) {
         List<AbstractInsnNode> result = new ArrayList<>();
+        Set<LabelNode> otherCases = new java.util.HashSet<>();
+        if (switchInstruction instanceof TableSwitchInsnNode table) {
+            otherCases.addAll(table.labels);
+            if (otherCases.contains(table.dflt)) return result;
+        } else if (switchInstruction instanceof LookupSwitchInsnNode lookup) {
+            otherCases.addAll(lookup.labels);
+            if (otherCases.contains(lookup.dflt)) return result;
+        }
         for (AbstractInsnNode insn = label.getNext(); insn != null; insn = insn.getNext()) {
             if (insn.getOpcode() >= 0) {
                 result.add(insn);
                 if (insn.getOpcode() == Opcodes.ATHROW) break;
-            } else if (insn instanceof LabelNode && !result.isEmpty()) {
-                // The first label after the switch default starts another case block.
+            } else if (insn instanceof LabelNode caseLabel && !result.isEmpty()
+                    && otherCases.contains(caseLabel)) {
+                // Ignore debug/local-variable labels but stop at the next switch case target.
                 break;
             }
         }

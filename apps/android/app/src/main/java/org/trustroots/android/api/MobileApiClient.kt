@@ -653,7 +653,7 @@ class MobileApiClient(
             connection.readTimeout = 15_000
             connection.setRequestProperty("Accept", "application/json")
             connection.setRequestProperty("User-Agent", "TrustrootsAndroid/0.1")
-            if (method != "GET" && method != "HEAD") {
+            if (method != "GET") {
                 connection.setRequestProperty("X-Trustroots-Request", "1")
             }
             requestHeaders.forEach { (name, value) -> connection.setRequestProperty(name, value) }

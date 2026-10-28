@@ -1,6 +1,7 @@
 package org.trustroots.android.ui.common
 
 import android.view.View
+import android.widget.FrameLayout
 import androidx.compose.runtime.AbstractApplier
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlin.coroutines.EmptyCoroutineContext
 import org.junit.Assert.assertEquals
@@ -51,6 +53,27 @@ class NavigationViewModelOwnerTest {
             }
             assertEquals("Missing navigation entry", error.message)
         }
+    }
+
+    @Test fun inheritsTheOwnerFromTheHostingViewTree() {
+        val store = ViewModelStore()
+        val owner = object : ViewModelStoreOwner { override val viewModelStore = store }
+        val context = RuntimeEnvironment.getApplication()
+        val view = View(context)
+        FrameLayout(context).apply {
+            setViewTreeViewModelStoreOwner(owner)
+            addView(view)
+        }
+        withComposition { composition ->
+            var actual: ViewModelStoreOwner? = null
+            composition.setContent {
+                CompositionLocalProvider(LocalView provides view) {
+                    actual = requireNavigationViewModelStoreOwner("Missing hosting owner")
+                }
+            }
+            assertSame(owner, actual)
+        }
+        store.clear()
     }
 
     private fun withComposition(block: (Composition) -> Unit) {

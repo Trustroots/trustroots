@@ -12,13 +12,23 @@
  *******************************************************************************/
 package org.jacoco.core.internal.analysis.filter;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TableSwitchInsnNode;
 
 /**
  * Factory for all JaCoCo filters.
  *
  * Trustroots build-time extension of the v0.8.15 upstream factory. Standard
- * filters are preserved and the audited Trustroots filter runs last.
+ * filters are preserved and run through a tracker that records branch nodes
+ * they already changed; the audited Trustroots filter runs last and avoids
+ * counting those same nodes again.
  * Source: https://github.com/jacoco/jacoco/blob/v0.8.15/org.jacoco.core/src/org/jacoco/core/internal/analysis/filter/Filters.java
  */
 public final class Filters {
@@ -55,13 +65,14 @@ public final class Filters {
 		return new IFilter() {
 			public void filter(final MethodNode methodNode,
 					final IFilterContext context, final IFilterOutput output) {
-				allCommonFilters.filter(methodNode, context, output);
+				final TrackingFilterOutput trackingOutput = new TrackingFilterOutput(output);
+				allCommonFilters.filter(methodNode, context, trackingOutput);
 				if (isKotlinClass(context)) {
-					allKotlinFilters.filter(methodNode, context, output);
+					allKotlinFilters.filter(methodNode, context, trackingOutput);
 				} else {
-					allNonKotlinFilters.filter(methodNode, context, output);
+					allNonKotlinFilters.filter(methodNode, context, trackingOutput);
 				}
-				trustrootsGeneratedCodeFilter.filter(methodNode, context, output);
+				trustrootsGeneratedCodeFilter.filter(methodNode, context, trackingOutput);
 			}
 		};
 	}
@@ -128,4 +139,52 @@ public final class Filters {
 		return context.getClassAnnotations().contains(KOTLIN_METADATA_DESC);
 	}
 
+}
+
+/** Tracks conditional branches already changed by upstream filters. */
+final class TrackingFilterOutput implements IFilterOutput {
+	private final IFilterOutput delegate;
+	private final Set<AbstractInsnNode> filteredBranches = Collections.newSetFromMap(new IdentityHashMap<>());
+
+	TrackingFilterOutput(final IFilterOutput delegate) {
+		this.delegate = delegate;
+	}
+
+	boolean isBranchAlreadyFiltered(final AbstractInsnNode instruction) {
+		return filteredBranches.contains(instruction);
+	}
+
+	@Override
+	public void ignore(final AbstractInsnNode from, final AbstractInsnNode to) {
+		for (AbstractInsnNode instruction = from; instruction != null; instruction = instruction.getNext()) {
+			trackBranch(instruction);
+			if (instruction == to) break;
+		}
+		delegate.ignore(from, to);
+	}
+
+	@Override
+	public void merge(final AbstractInsnNode first, final AbstractInsnNode second) {
+		trackBranch(first);
+		trackBranch(second);
+		delegate.merge(first, second);
+	}
+
+	@Override
+	public void replaceBranches(final AbstractInsnNode source, final Replacements replacements) {
+		trackBranch(source);
+		delegate.replaceBranches(source, replacements);
+	}
+
+	private void trackBranch(final AbstractInsnNode instruction) {
+		if (instruction == null) {
+			return;
+		}
+		if ((instruction instanceof JumpInsnNode jump
+				&& (jump.getOpcode() >= Opcodes.IFEQ && jump.getOpcode() <= Opcodes.IF_ACMPNE
+						|| jump.getOpcode() == Opcodes.IFNULL || jump.getOpcode() == Opcodes.IFNONNULL))
+				|| instruction instanceof TableSwitchInsnNode || instruction instanceof LookupSwitchInsnNode) {
+			filteredBranches.add(instruction);
+		}
+	}
 }
