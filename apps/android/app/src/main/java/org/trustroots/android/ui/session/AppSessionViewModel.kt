@@ -119,13 +119,13 @@ internal class AppSessionViewModel(
                 if (normaliseBackendURL(event.backendURL) == activeBackendURL) signedIn(event.session)
             }
             is AppSessionEvent.MemberUpdated -> {
-                if (isCurrentSource(event.source)) memberUpdated(event.member)
+                currentSessionForSource(event.source)?.let { current -> memberUpdated(current, event.member) }
             }
             is AppSessionEvent.SignedOut -> {
-                if (isCurrentSource(event.source)) signedOut(expired = false)
+                if (currentSessionForSource(event.source) != null) signedOut(expired = false)
             }
             is AppSessionEvent.SessionInvalidated -> {
-                if (isCurrentSource(event.source)) signedOut(expired = true)
+                if (currentSessionForSource(event.source) != null) signedOut(expired = true)
             }
         }
     }
@@ -154,8 +154,7 @@ internal class AppSessionViewModel(
     }
 
     @MainThread
-    private fun memberUpdated(member: MobileMember) {
-        val current = mutableState.value.session ?: return
+    private fun memberUpdated(current: MemberSession, member: MobileMember) {
         val updated = current.copy(member = member)
         operations.saveSession(updated)
         mutableState.value = mutableState.value.copy(session = updated)
@@ -183,11 +182,13 @@ internal class AppSessionViewModel(
         restoreJob = null
     }
 
-    private fun isCurrentSource(source: AppSessionSource): Boolean {
-        val current = mutableState.value.session ?: return false
-        return source.username == current.member.username &&
-            source.cookieHeader == current.cookieHeader &&
-            source.backendURL == activeBackendURL
+    private fun currentSessionForSource(source: AppSessionSource): MemberSession? {
+        val current = mutableState.value.session ?: return null
+        return current.takeIf {
+            source.username == current.member.username &&
+                source.cookieHeader == current.cookieHeader &&
+                source.backendURL == activeBackendURL
+        }
     }
 
     @MainThread

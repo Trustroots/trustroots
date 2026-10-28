@@ -10,7 +10,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import org.junit.Rule
 import org.junit.Test
@@ -69,6 +71,65 @@ class SearchModeBackNavigationJourneyTest {
             compose.onNodeWithTag("mapStatistics").assertIsDisplayed()
             compose.onNodeWithText("Find a member").assertDoesNotExist()
             org.junit.Assert.assertFalse("Returning to Map should remain inside Search", rootBack.get())
+
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitUntil(5_000) { rootBack.get() }
+        }
+    }
+
+    @Test fun backDismissesPlaceSuggestionsBeforeLeavingSearch() {
+        val rootBack = AtomicBoolean(false)
+        LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path.startsWith("/api/offers?") ->
+                    LocalTransportFixture.Response("{\"features\":[]}")
+                request.method == "GET" && request.path == "/api/tribes?limit=150" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/users/memberships" ->
+                    LocalTransportFixture.Response("[]")
+                else -> LocalTransportFixture.Response("{}")
+            }
+        }.use { fixture ->
+            compose.setContent {
+                NativeTestAppFrame(Destination.Search) {
+                    SearchHubScreen(
+                        api = MobileApiClient(fixture.baseURL),
+                        session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                        geocoderLookup = { _, query, maxResults ->
+                            if (query == "Fictional Harbour" && maxResults == 3) {
+                                listOf(Address(Locale.US).apply {
+                                    latitude = 40.7128
+                                    longitude = -74.0060
+                                    setAddressLine(0, "Fictional Harbour, Somewhere")
+                                })
+                            } else emptyList()
+                        },
+                        notesClientFactory = { _, _ -> HostMapNotesConnection {} },
+                        mapViewFactory = { context ->
+                            org.osmdroid.views.MapView(context).apply { setUseDataConnection(false) }
+                        },
+                        onBackAtRoot = { rootBack.set(true) },
+                    )
+                }
+            }
+
+            compose.waitUntil(15_000) {
+                compose.onAllNodesWithText("0 offers · 0 Nostroots notes in this area")
+                    .fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("placeSearchField").performTextReplacement("Fictional Harbour")
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Fictional Harbour, Somewhere").fetchSemanticsNodes().isNotEmpty()
+            }
+            hideTestKeyboard()
+
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText("Fictional Harbour, Somewhere").fetchSemanticsNodes().isEmpty()
+            }
+            compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
+            org.junit.Assert.assertFalse("Dismissal should keep Search open", rootBack.get())
 
             compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
             compose.waitUntil(5_000) { rootBack.get() }
