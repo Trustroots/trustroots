@@ -6,4 +6,4 @@ The raw XML remains available. The corrected report must reconcile branch and in
 
 ## Validation
 
-Exercise real compiler bytecode and positive/negative fixtures. Generic branches, source lambdas and application state decisions remain measured. Re-run complete unit coverage and combine matching device probes, then confirm zero missed executable lines and an exact branch ratio of at least 95% before raising the floor.
+Exercise real compiler bytecode and positive/negative fixtures. Generic branches, source lambdas and application state decisions remain measured. Re-run complete unit coverage and combine matching device probes, then confirm zero missed executable lines and an exact branch ratio of 100% before raising the floor.

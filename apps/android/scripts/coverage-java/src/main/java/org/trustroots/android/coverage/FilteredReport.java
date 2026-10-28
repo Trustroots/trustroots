@@ -82,7 +82,7 @@ public final class FilteredReport {
                 sourceDirectory);
         final int[] filteredBranches = branchCounters(filteredReport);
         int removedBranches = rawBranches[0] + rawBranches[1] - filteredBranches[0] - filteredBranches[1];
-        int expectedRemovedBranches = TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() * 2;
+        int expectedRemovedBranches = TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount();
         if (rawBranches[0] < filteredBranches[0] || rawBranches[1] < filteredBranches[1]
                 || removedBranches != expectedRemovedBranches) {
             Files.deleteIfExists(filteredReport.toPath());
@@ -90,13 +90,18 @@ public final class FilteredReport {
                     "Generated-code filtering changed branch counters without matching audited decisions: raw missed/covered "
                             + rawBranches[0] + "/" + rawBranches[1] + ", filtered "
                             + filteredBranches[0] + "/" + filteredBranches[1] + ", audited decisions "
-                            + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount());
+                            + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + " conditional decisions and "
+                            + (TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount()
+                                    - TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() * 2)
+                            + " switch outcomes");
         }
         writeAudit(auditFile, TrustrootsGeneratedCodeFilter.auditEntries());
         System.out.println("Filtered report written: raw branches " + rawBranches[0] + " missed/"
                 + rawBranches[1] + " covered; filtered " + filteredBranches[0] + "/"
-                + filteredBranches[1] + "; audited decisions "
-                + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + ".");
+                + filteredBranches[1] + "; audited branch decisions "
+                + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + " and audited switch outcomes "
+                + (TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount()
+                        - TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() * 2) + ".");
     }
 
     private static void verifyExecutionClassIds(ExecutionDataStore executionData,
