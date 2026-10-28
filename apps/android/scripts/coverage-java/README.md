@@ -19,6 +19,15 @@ unreachable. Ordinary source lambdas, branch-bearing forwarding methods and
 explicit source `return Unit` statements remain measured. Every correction
 includes its instruction signature in `generated-code-audit.txt`.
 
+Kotlin 2.4 captured-state invalidation decisions are recognised only inside a
+single `CC(remember)` source-information region when the integer masks use
+integer `$changed` or `$dirty` locals corresponding to `int` parameters after
+the Composer parameter (or a `$dirty` local copied from one), Composer
+`changed` calls feed the mask expression, and the result precedes that region's
+`rememberedValue` cache gate. Source-named integer mask locals reject the whole
+region; branches elsewhere in the method remain measured. Cache-gate branches
+already handled by upstream JaCoCo filters are left to those filters.
+
 Run the regression fixtures from `apps/android`:
 
 ```sh
@@ -26,5 +35,7 @@ Run the regression fixtures from `apps/android`:
 ```
 
 `debugCoverageTable` retains `coverage-raw.xml`, produces the corrected
-`coverage.xml`, and verifies unchanged aggregate branch counters and matching
-execution-probe class identities. An unrecognised pattern stays counted.
+`coverage.xml`, verifies matching execution-probe class identities, and checks
+that every removed branch outcome is explained by exactly one audited
+conditional decision. The raw branch counters remain available for comparison;
+an unrecognised pattern stays counted.

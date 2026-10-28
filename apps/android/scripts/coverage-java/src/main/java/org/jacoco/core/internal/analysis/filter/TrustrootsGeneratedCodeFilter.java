@@ -8,7 +8,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.FieldInsnNode;
@@ -19,6 +21,8 @@ import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.LocalVariableNode;
+import org.objectweb.asm.tree.VarInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
@@ -29,9 +33,11 @@ import org.objectweb.asm.tree.TypeInsnNode;
  * construction in a composable exhaustive-switch default arm, (2) a
  * source-line-only Compose group-close call, (3) an implicit coroutine
  * {@code Unit} return on a source-only closing-delimiter line after a
- * specifically recognised Compose coroutine API, and (4) a
- * branch-free forwarding method in a Kotlin callable-reference subclass.
- * It never ignores a branch instruction.</p>
+ * specifically recognised Compose coroutine API, (4) a branch-free
+ * forwarding method in a Kotlin callable-reference subclass, and (5)
+ * individual captured-state cache invalidation branches only when they form a
+ * compiler mask expression inside a Compose remember marker and feed its
+ * remembered-value cache gate.</p>
  */
 public final class TrustrootsGeneratedCodeFilter implements IFilter {
 
@@ -59,6 +65,14 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         AUDIT.clear();
     }
 
+    public static int filteredBranchDecisionCount() {
+        synchronized (AUDIT) {
+            return (int) AUDIT.stream()
+                    .filter(entry -> entry.contains("captured-state Compose remember cache mask decision"))
+                    .count();
+        }
+    }
+
     @Override
     public void filter(final MethodNode method, final IFilterContext context,
             final IFilterOutput output) {
@@ -68,10 +82,220 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             if (composeMethod) {
                 filterSwitchFallbacks(method, context, output);
                 filterLoneComposeGroupClosures(method, context, output);
+                filterRememberCacheMaskBranches(method, context, output);
             }
             filterImplicitCoroutineCompletion(method, context, output);
             filterFunctionReferenceForwarder(method, context, output);
         }
+    }
+
+    private static void filterRememberCacheMaskBranches(MethodNode method,
+            IFilterContext context, IFilterOutput output) {
+        List<AbstractInsnNode> all = new ArrayList<>();
+        for (AbstractInsnNode insn : method.instructions) all.add(insn);
+        for (int marker = 0; marker < all.size(); marker++) {
+            if (!(all.get(marker) instanceof LdcInsnNode ldc)
+                    || !(ldc.cst instanceof String text) || !text.contains("CC(remember):")) continue;
+            int markerStart = findMarkerCall(all, marker + 1, "sourceInformationMarkerStart",
+                    "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V");
+            if (markerStart < 0) continue;
+            int markerEnd = findMarkerCall(all, markerStart + 1, "sourceInformationMarkerEnd",
+                    "(Landroidx/compose/runtime/Composer;)V");
+            if (markerEnd < 0) continue;
+            int remembered = findCall(all, markerStart + 1, COMPOSER, "rememberedValue", "()Ljava/lang/Object;");
+            if (remembered < 0 || remembered >= markerEnd || !hasRememberCacheGate(all, remembered, markerEnd)) continue;
+            List<AbstractInsnNode> region = all.subList(markerStart + 1, remembered);
+            if (!isCompilerChangedMaskRegion(region)) continue;
+            if (!usesCompilerMaskLocals(method, region)) continue;
+            int changedInstanceCalls = 0;
+            for (AbstractInsnNode insn : region) {
+                if (insn instanceof MethodInsnNode call && COMPOSER.equals(call.owner)
+                        && isComposerChangedCall(call)) changedInstanceCalls++;
+            }
+            if (changedInstanceCalls == 0) continue;
+            for (AbstractInsnNode insn : region) {
+                if (insn instanceof org.objectweb.asm.tree.JumpInsnNode
+                        && isConditionalDecision(insn.getOpcode())
+                        && isMaskOrChangedStateDecision(region, insn)) {
+                    output.ignore(insn, insn);
+                    audit(context, method, insn, insn,
+                            "captured-state Compose remember cache mask decision");
+                }
+            }
+        }
+    }
+
+    private static boolean isConditionalDecision(int opcode) {
+        return opcode >= Opcodes.IFEQ && opcode <= Opcodes.IF_ACMPNE
+                || opcode == Opcodes.IFNULL || opcode == Opcodes.IFNONNULL;
+    }
+
+    private static int findCall(List<AbstractInsnNode> insns, int start,
+            String owner, String name, String descriptor) {
+        for (int i = start; i < insns.size(); i++) {
+            if (insns.get(i) instanceof MethodInsnNode call && owner.equals(call.owner)
+                    && name.equals(call.name) && descriptor.equals(call.desc)) return i;
+        }
+        return -1;
+    }
+
+    private static int findMarkerCall(List<AbstractInsnNode> insns, int start,
+            String name, String descriptor) {
+        for (int i = start; i < insns.size(); i++) {
+            if (!(insns.get(i) instanceof MethodInsnNode call)
+                    || !"androidx/compose/runtime/ComposerKt".equals(call.owner)) continue;
+            if (name.equals(call.name) && descriptor.equals(call.desc)) return i;
+            if ("sourceInformationMarkerStart".equals(call.name)
+                    || "sourceInformationMarkerEnd".equals(call.name)) return -1;
+        }
+        return -1;
+    }
+
+    private static boolean hasRememberCacheGate(List<AbstractInsnNode> insns, int remembered, int markerEnd) {
+        int end = Math.min(markerEnd, remembered + 22);
+        boolean sawEmpty = false;
+        for (int i = remembered + 1; i < end; i++) {
+            AbstractInsnNode insn = insns.get(i);
+            if (insn instanceof MethodInsnNode call && "getEmpty".equals(call.name)
+                    && "androidx/compose/runtime/Composer$Companion".equals(call.owner)) sawEmpty = true;
+            if (sawEmpty && insn.getOpcode() == Opcodes.IF_ACMPNE) return true;
+        }
+        return false;
+    }
+
+    private static boolean isCompilerChangedMaskRegion(List<AbstractInsnNode> region) {
+        int ands = 0;
+        int changedCalls = 0;
+        int stores = 0;
+        int conditionals = 0;
+        for (AbstractInsnNode insn : region) {
+            int opcode = insn.getOpcode();
+            if (opcode < 0) continue;
+            if (opcode == Opcodes.IAND) ands++;
+            else if (opcode == Opcodes.ISTORE) stores++;
+            else if (insn instanceof org.objectweb.asm.tree.JumpInsnNode) conditionals++;
+            else if (insn instanceof MethodInsnNode call) {
+                if (COMPOSER.equals(call.owner) && isComposerChangedCall(call)) changedCalls++;
+                else if (!"sourceInformationMarkerStart".equals(call.name)) return false;
+            } else if (!isMaskOpcode(insn)) return false;
+        }
+        return ands >= 2 && changedCalls >= 1 && stores >= 1 && conditionals >= 2;
+    }
+
+    private static boolean isComposerChangedCall(MethodInsnNode call) {
+        return ("changedInstance".equals(call.name) || "changed".equals(call.name))
+                && call.desc.endsWith(")Z");
+    }
+
+    private static boolean usesCompilerMaskLocals(MethodNode method, List<AbstractInsnNode> region) {
+        if (method.localVariables == null || method.localVariables.isEmpty()) return false;
+        Set<Integer> compilerMaskSlots = compilerMaskParameterSlots(method);
+        if (compilerMaskSlots.isEmpty()) return false;
+        compilerMaskSlots.addAll(compilerDerivedDirtySlots(method, compilerMaskSlots));
+        int verifiedMaskLoads = 0;
+        for (int index = 0; index < region.size(); index++) {
+            AbstractInsnNode insn = region.get(index);
+            if (!(insn instanceof VarInsnNode load) || load.getOpcode() != Opcodes.ILOAD) continue;
+            AbstractInsnNode next = nextOpcode(insn);
+            if (next == null || !isIntegerConstant(next)) continue;
+            AbstractInsnNode afterConstant = nextOpcode(next);
+            if (afterConstant == null || afterConstant.getOpcode() != Opcodes.IAND) continue;
+            if (!compilerMaskSlots.contains(load.var)) return false;
+            verifiedMaskLoads++;
+        }
+        return verifiedMaskLoads > 0;
+    }
+
+    private static Set<Integer> compilerMaskParameterSlots(MethodNode method) {
+        Set<Integer> result = new java.util.HashSet<>();
+        int slot = (method.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
+        boolean afterComposer = false;
+        for (Type argument : Type.getArgumentTypes(method.desc)) {
+            if (afterComposer) {
+                if (argument.getSort() != Type.INT) return Set.of();
+                int parameterSlot = slot;
+                for (LocalVariableNode local : method.localVariables) {
+                    if (local.index == parameterSlot && (local.name.startsWith("$changed")
+                            || local.name.startsWith("$dirty"))) result.add(parameterSlot);
+                }
+            }
+            if (argument.getSort() == Type.OBJECT && COMPOSER.equals(argument.getInternalName())) {
+                afterComposer = true;
+            }
+            slot += argument.getSize();
+        }
+        return result;
+    }
+
+    private static Set<Integer> compilerDerivedDirtySlots(MethodNode method, Set<Integer> maskSlots) {
+        Set<Integer> result = new java.util.HashSet<>();
+        if (method.localVariables == null) return result;
+        for (LocalVariableNode local : method.localVariables) {
+            if (!local.name.startsWith("$dirty") || maskSlots.contains(local.index)) continue;
+            for (AbstractInsnNode insn : method.instructions) {
+                if (!(insn instanceof VarInsnNode store) || store.getOpcode() != Opcodes.ISTORE
+                        || store.var != local.index) continue;
+                AbstractInsnNode cursor = previousOpcode(insn.getPrevious());
+                if (cursor instanceof VarInsnNode directCopy && directCopy.getOpcode() == Opcodes.ILOAD
+                        && maskSlots.contains(directCopy.var)) {
+                    result.add(local.index);
+                    continue;
+                }
+                boolean usedMask = false;
+                boolean hadMaskOperation = false;
+                int budget = 20;
+                while (cursor != null && budget-- > 0) {
+                    if (cursor instanceof MethodInsnNode || cursor.getOpcode() == Opcodes.GETFIELD
+                            || cursor.getOpcode() == Opcodes.GETSTATIC) break;
+                    if (cursor instanceof VarInsnNode load && load.getOpcode() == Opcodes.ILOAD
+                            && maskSlots.contains(load.var)) usedMask = true;
+                    if (cursor.getOpcode() == Opcodes.IAND) hadMaskOperation = true;
+                    if (usedMask && hadMaskOperation) break;
+                    cursor = previousOpcode(cursor.getPrevious());
+                }
+                if (usedMask && hadMaskOperation) result.add(local.index);
+            }
+        }
+        return result;
+    }
+
+    private static boolean isMaskOpcode(AbstractInsnNode insn) {
+        int opcode = insn.getOpcode();
+        return opcode == Opcodes.ALOAD || opcode == Opcodes.ILOAD || opcode == Opcodes.ISTORE
+                || opcode == Opcodes.ASTORE || opcode == Opcodes.ICONST_M1
+                || opcode >= Opcodes.ICONST_0 && opcode <= Opcodes.ICONST_5
+                || opcode == Opcodes.BIPUSH || opcode == Opcodes.SIPUSH
+                || opcode == Opcodes.LDC && insn instanceof LdcInsnNode ldc && ldc.cst instanceof Integer
+                || opcode == Opcodes.IAND || opcode == Opcodes.IOR || opcode == Opcodes.IXOR
+                || opcode == Opcodes.IFEQ || opcode == Opcodes.IFNE
+                || opcode >= Opcodes.IF_ICMPEQ && opcode <= Opcodes.IF_ICMPLE
+                || opcode == Opcodes.GOTO || opcode == Opcodes.NOP;
+    }
+
+    private static boolean isMaskOrChangedStateDecision(List<AbstractInsnNode> region,
+            AbstractInsnNode decision) {
+        AbstractInsnNode previous = previousOpcode(decision.getPrevious());
+        if (previous == null) return false;
+        if (decision.getOpcode() >= Opcodes.IF_ICMPEQ && decision.getOpcode() <= Opcodes.IF_ICMPLE) {
+            if (!isIntegerConstant(previous)) return false;
+            AbstractInsnNode beforeConstant = previousOpcode(previous.getPrevious());
+            if (beforeConstant != null && beforeConstant.getOpcode() == Opcodes.IAND) return true;
+            if (beforeConstant == null || beforeConstant.getOpcode() != Opcodes.IXOR) return false;
+            AbstractInsnNode xorMask = previousOpcode(beforeConstant.getPrevious());
+            return xorMask != null && isIntegerConstant(xorMask)
+                    && previousOpcode(xorMask.getPrevious()) != null
+                    && previousOpcode(xorMask.getPrevious()).getOpcode() == Opcodes.IAND;
+        }
+        return previous.getOpcode() == Opcodes.IAND
+                || previous instanceof MethodInsnNode call && isComposerChangedCall(call)
+                        && COMPOSER.equals(call.owner);
+    }
+
+    private static boolean isIntegerConstant(AbstractInsnNode insn) {
+        int opcode = insn.getOpcode();
+        if (opcode >= Opcodes.ICONST_M1 && opcode <= Opcodes.ICONST_5
+                || opcode == Opcodes.BIPUSH || opcode == Opcodes.SIPUSH) return true;
+        return insn instanceof LdcInsnNode ldc && ldc.cst instanceof Integer;
     }
 
     private static void filterFunctionReferenceForwarder(MethodNode method,

@@ -34,6 +34,9 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         testGenericFlowCompletionIsPreserved();
         testPointerInputCompletionIsFilteredOnlyAfterKnownLoopingApi();
         testFunctionReferenceForwarderIsIgnoredButOrdinaryLambdaIsNot();
+        testCapturedStateRememberMaskDecisionsAreFilteredIndividually();
+        testSourceDecisionInsideRememberMarkerIsPreserved();
+        testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal();
         org.trustroots.android.coverage.FilteredReportIntegrationRegression.run();
         System.out.println("Trustroots generated-code filter regression checks passed.");
     }
@@ -315,6 +318,181 @@ public final class TrustrootsGeneratedCodeFilterRegression {
                         "kotlin/jvm/internal/FunctionReferenceImpl", false), javaSubclassOutput);
         check(javaSubclassOutput.ignored.isEmpty(),
                 "a Java class with a callable-reference superclass must not be treated as Kotlin generated code");
+    }
+
+    private static void testCapturedStateRememberMaskDecisionsAreFilteredIndividually() {
+        MethodNode method = composableMethod("rememberLambda", "(Landroidx/compose/runtime/Composer;II)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#abc"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+
+        LabelNode set = new LabelNode();
+        LabelNode clear = new LabelNode();
+        LabelNode join = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 14));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 6));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IXOR));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPLE, set));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 8));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changedInstance", "(Ljava/lang/Object;)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(set);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
+        method.instructions.add(clear);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(join);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ISTORE, 3));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 4));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(create);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.instructions.add(cached);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 1));
+
+        RecordingOutput output = apply(method, "sample/Remember", "java/lang/Object");
+        long ignoredBranches = output.ignored.stream()
+                .filter(range -> range[0] instanceof JumpInsnNode && range[0] == range[1]).count();
+        check(ignoredBranches == 3,
+                "only the two mask tests and captured-state comparison should be removed; saw "
+                        + ignoredBranches + " ranges=" + output.ignored.size());
+        check(output.ignored.stream().noneMatch(range -> range[0] instanceof JumpInsnNode
+                        && range[0].getOpcode() == Opcodes.IFNE),
+                "the actual remembered-value invalidation gate must remain measured");
+    }
+
+    private static void testSourceDecisionInsideRememberMarkerIsPreserved() {
+        MethodNode method = composableMethod("rememberWithSourceDecision", "(Landroidx/compose/runtime/Composer;Z)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#source"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+        LabelNode sourceFalse = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        JumpInsnNode sourceDecision = new JumpInsnNode(Opcodes.IFEQ, sourceFalse);
+        method.instructions.add(sourceDecision);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 2));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(create);
+        method.instructions.add(sourceFalse);
+        method.instructions.add(cached);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+
+        RecordingOutput output = apply(method, "sample/RememberSource", "java/lang/Object");
+        check(output.ignored.isEmpty(),
+                "a source-level condition that is not a changed-mask expression must remain measured");
+    }
+
+    private static void testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal() {
+        MethodNode method = composableMethod("sourceMask", "(Landroidx/compose/runtime/Composer;III)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#source-mask"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+        LabelNode sourceFlagFalse = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 2));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, sourceFlagFalse));
+        LabelNode set = new LabelNode();
+        LabelNode clear = new LabelNode();
+        LabelNode join = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 14));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPEQ, set));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 8));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 3));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changedInstance", "(Ljava/lang/Object;)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(set);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
+        method.instructions.add(clear);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(join);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ISTORE, 3));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 4));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(sourceFlagFalse);
+        method.instructions.add(create);
+        method.instructions.add(cached);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 1));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "sourceFlags", "I", null, new LabelNode(), new LabelNode(), 2));
+
+        check(apply(method, "sample/SourceMask", "java/lang/Object").ignored.isEmpty(),
+                "a source bitmask mixed with a valid compiler mask must remain measured in full");
     }
 
     private static void withSourceLine(String sourceLine, Runnable test) throws Exception {

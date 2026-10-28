@@ -199,8 +199,11 @@ Compose switch fallbacks, implicit coroutine completion and straight-line
 callable-reference forwarding. It keeps application instructions and branches
 measured. The pinned JaCoCo filter factory is extended before source aggregation;
 regression tests verify positive matches and similar application code that must
-remain counted. Missing class/probe matches or changed branch counters fail the
-report rather than silently accepting a correction. Coverage instrumentation is
+remain counted. Compiler-owned captured-state mask decisions inside Compose
+remember regions are corrected only after validating the hidden mask parameters,
+derived locals and cache structure. Branch differences must reconcile with the
+audited decisions; application conditions remain measured. Missing class/probe
+matches or unexplained counter differences fail the report. Coverage instrumentation is
 opt-in and does not affect ordinary debug or release builds. To generate the
 API 36 report locally, with localhost configured for the offline adapter journeys:
 
