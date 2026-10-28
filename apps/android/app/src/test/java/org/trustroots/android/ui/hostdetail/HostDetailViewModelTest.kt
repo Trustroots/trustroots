@@ -50,6 +50,38 @@ class HostDetailViewModelTest {
         )
     }
 
+    @Test fun mobileRepositoryDetectsBackendCookieAndAccountChangesIndependently() {
+        val originalApi = MobileApiClient("https://api.example.test")
+        val originalSession = MemberSession("connect.sid=first", MobileMember("quiet-fox", "Quiet Fox"))
+        val repository = MobileHostDetailRepository(originalApi, originalSession)
+
+        assertFalse(repository.updateClientAndSession(originalApi, originalSession))
+        assertTrue(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                originalSession,
+            ),
+        )
+        assertTrue(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                MemberSession("connect.sid=second", originalSession.member),
+            ),
+        )
+        assertTrue(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                MemberSession("connect.sid=second", MobileMember("steady-owl", "Steady Owl")),
+            ),
+        )
+        assertFalse(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                MemberSession("connect.sid=second", MobileMember("steady-owl", "Steady Owl")),
+            ),
+        )
+    }
+
     @Test fun factoryRejectsAnUnrelatedViewModelType() {
         val failure = runCatching {
             HostDetailViewModel.Factory(FakeRepository()).create(OtherViewModel::class.java)
