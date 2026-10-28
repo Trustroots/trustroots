@@ -4,31 +4,26 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    qs:
+      specifier: 6.16.1
+      version: 6.16.1
+
 overrides:
-  node-forge: 1.4.0
-  websocket-driver: 0.7.5
-  nan: 2.28.0
-  serialize-javascript: 7.0.5
   browserslist: 4.28.7
   baseline-browser-mapping: 2.11.0
-  fast-uri: 3.1.8
-  decode-uri-component: 0.5.0
   js-yaml@<5: 4.3.2
   brace-expansion@1: 1.1.21
   brace-expansion@2: 2.1.7
   brace-expansion@5: 5.0.12
-  acl>mongodb: 4.17.2
-  acl>redis: 3.1.1
-  mongodb-core>bson: 1.1.6
   socks>ip-address: 10.7.4
-  express>qs: 6.16.0
+  express>qs: 6.16.1
   body-parser@1: 1.20.9
   body-parser@2: 2.4.0
-  '@google-cloud/storage>gaxios': 7.2.0
-  '@google-cloud/storage>retry-request': 8.0.3
-  '@google-cloud/storage>teeny-request': 10.1.3
-  '@google-cloud/storage>fast-xml-parser': 5.10.1
-  sockjs>uuid: 11.1.1
+
+patchedDependencies:
+  deepmerge@4.3.1: 7feb4247f7328467b3a32e1c17ebeceb64ad3ce365230961d7bbfc4ba46f5c19
 
 importers:
 
@@ -182,7 +177,7 @@ importers:
         specifier: 1.5.4
         version: 1.5.4
       qs:
-        specifier: 6.16.1
+        specifier: 'catalog:'
         version: 6.16.1
       react:
         specifier: 19.3.1
@@ -314,9 +309,6 @@ importers:
       '@types/sinon':
         specifier: 22.0.1
         version: 22.0.1
-      '@types/supercluster':
-        specifier: 7.1.3
-        version: 7.1.3
       '@types/supertest':
         specifier: 7.2.1
         version: 7.2.1
@@ -383,9 +375,6 @@ importers:
       istanbul-lib-coverage:
         specifier: 3.2.2
         version: 3.2.2
-      istanbul-lib-instrument:
-        specifier: 6.0.3
-        version: 6.0.3(supports-color@5.5.0)
       jest:
         specifier: 30.5.2
         version: 30.5.2(@types/node@26.6.5)(babel-plugin-macros@3.1.0)(supports-color@5.5.0)
@@ -401,9 +390,6 @@ importers:
       lint-staged:
         specifier: 17.6.0
         version: 17.6.0
-      mjolnir.js:
-        specifier: 2.7.3
-        version: 2.7.3
       nodemon:
         specifier: 3.1.14
         version: 3.1.14
@@ -2390,9 +2376,6 @@ packages:
   '@types/geojson@7946.0.16':
     resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
 
-  '@types/hammerjs@2.0.46':
-    resolution: {integrity: sha512-ynRvcq6wvqexJ9brDMS4BnBLzmr0e14d6ZJTEShTBWKymQiHwlAyGu0ZPEFI2Fh1U53F7tN9ufClWM5KvqkKOw==}
-
   '@types/http-errors@2.0.5':
     resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
 
@@ -2477,9 +2460,6 @@ packages:
 
   '@types/superagent@8.1.11':
     resolution: {integrity: sha512-KA7srSW/HENDtOw9DOqaFLgWuMqN9WgjEw62lh9dpvRaZDkhdOkazASd7X7i2eMUYLHa1U37ZttnePsH5zTDHw==}
-
-  '@types/supercluster@7.1.3':
-    resolution: {integrity: sha512-Z0pOY34GDFl3Q6hUFYf3HkTwKEE02e7QgtJppBt+beEAxnyOpJua+voGFvxINBHa06GwLFFym7gRPY2SiKIfIA==}
 
   '@types/supertest@7.2.1':
     resolution: {integrity: sha512-4CbBvoYVLHL7+yhbYrZET0vsvuyXTC05aRe7dNQkwMzm56auceoy6Yu3K50uZmwfHna1os3CMSgM/3QVkUtPTw==}
@@ -4127,10 +4107,6 @@ packages:
   graceful-fs@4.2.11:
     resolution: {integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==}
 
-  hammerjs@2.0.8:
-    resolution: {integrity: sha512-tSQXBXS/MWQOn/RKckawJ61vvsDpCom87JgxiYdGwHdOa0ht0vzUWDlfioofFCRU0L+6NGDt6XzbgoJvZkMeRQ==}
-    engines: {node: '>=0.8.0'}
-
   has-bigints@1.1.0:
     resolution: {integrity: sha512-R3pbpkcIqv2Pm3dUwgjclDRVmWpTJW2DcMzcIhEXEx1oh/CEMObMm3KLmRJOdvhM7o4uQBnwr8pzRK2sJWIqfg==}
     engines: {node: '>= 0.4'}
@@ -5048,10 +5024,6 @@ packages:
     resolution: {integrity: sha512-tEBHqDnIoM/1rXME1zgka9g6Q2lcoCkxHLuc7ODJ5BxbP5d4c2Z5cGgtXAku59200Cx7diuHTOYfSBD8n6mm8A==}
     engines: {node: '>=16 || 14 >=14.17'}
 
-  mjolnir.js@2.7.3:
-    resolution: {integrity: sha512-Z5z/+FzZqOSO3juSVKV3zcm4R2eAlWwlKMcqHmyFEJAaLILNcDKnIbnb4/kbcGyIuhtdWrzu8WOIR7uM6I34aw==}
-    engines: {node: '>= 4', npm: '>= 3'}
-
   mkdirp@3.0.1:
     resolution: {integrity: sha512-+NsyUUAZDmo6YVHzL/stxSu3t9YS1iljliy3BSDrXJ/dkn1KYdmtZODGGjLcc9XLgVVpH4KshHB8XmZgMhaBXg==}
     engines: {node: '>=10'}
@@ -5580,10 +5552,6 @@ packages:
     resolution: {integrity: sha512-1ca71Zgiu6ORjHqFBDpnSMTR2ReToX4l1Au1VFLyVeBTFavzQnv5JxMFr3ukHVKpSrSA2MCk0lNJSykjUfz7Zg==}
     engines: {node: '>=10.13.0'}
     hasBin: true
-
-  qs@6.16.0:
-    resolution: {integrity: sha512-h6fhOIaRrID2CbEY2fqs+7t+UXZo+MLAnU5gRIq85uFtdiUPCdsApMlHhXogKVM4HM2DVbIjGNTTYH2OcmP1vA==}
-    engines: {node: '>=0.6'}
 
   qs@6.16.1:
     resolution: {integrity: sha512-5Px6J7rfHBAGUhNQ3es4YzcOdBBw0SDcVtThJml4RdnKw4tKs2epA0kPZ+K8X+WiHktT93RHVcQ/3ym5aTCgtg==}
@@ -8759,8 +8727,6 @@ snapshots:
 
   '@types/geojson@7946.0.16': {}
 
-  '@types/hammerjs@2.0.46': {}
-
   '@types/http-errors@2.0.5': {}
 
   '@types/istanbul-lib-coverage@2.0.6': {}
@@ -8849,10 +8815,6 @@ snapshots:
       '@types/methods': 1.1.4
       '@types/node': 26.6.5
       form-data: 4.0.6
-
-  '@types/supercluster@7.1.3':
-    dependencies:
-      '@types/geojson': 7946.0.16
 
   '@types/supertest@7.2.1':
     dependencies:
@@ -9411,7 +9373,7 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.7(supports-color@5.5.0)
       '@babel/types': 7.28.0
-      deepmerge: 4.3.1
+      deepmerge: 4.3.1(patch_hash=7feb4247f7328467b3a32e1c17ebeceb64ad3ce365230961d7bbfc4ba46f5c19)
       i18next: 25.10.10(typescript@6.0.3)
       json-stable-stringify: 1.3.0
     transitivePeerDependencies:
@@ -9942,7 +9904,7 @@ snapshots:
 
   deepmerge-ts@8.0.2: {}
 
-  deepmerge@4.3.1: {}
+  deepmerge@4.3.1(patch_hash=7feb4247f7328467b3a32e1c17ebeceb64ad3ce365230961d7bbfc4ba46f5c19): {}
 
   define-data-property@1.1.4:
     dependencies:
@@ -10479,7 +10441,7 @@ snapshots:
       parseurl: 1.3.3
       path-to-regexp: 0.1.13
       proxy-addr: 2.0.8
-      qs: 6.16.0
+      qs: 6.16.1
       range-parser: 1.2.1
       safe-buffer: 5.2.1
       send: 0.19.2(supports-color@5.5.0)
@@ -10514,7 +10476,7 @@ snapshots:
       once: 1.4.0
       parseurl: 1.3.3
       proxy-addr: 2.0.8
-      qs: 6.16.0
+      qs: 6.16.1
       range-parser: 1.3.0
       router: 2.2.0(supports-color@5.5.0)
       send: 1.2.1(supports-color@5.5.0)
@@ -10770,8 +10732,6 @@ snapshots:
   gopd@1.2.0: {}
 
   graceful-fs@4.2.11: {}
-
-  hammerjs@2.0.8: {}
 
   has-bigints@1.1.0: {}
 
@@ -11235,7 +11195,7 @@ snapshots:
       babel-jest: 30.5.2(@babel/core@7.29.7(supports-color@5.5.0))(supports-color@5.5.0)
       chalk: 4.1.2
       ci-info: 4.4.0
-      deepmerge: 4.3.1
+      deepmerge: 4.3.1(patch_hash=7feb4247f7328467b3a32e1c17ebeceb64ad3ce365230961d7bbfc4ba46f5c19)
       glob: 13.0.6
       graceful-fs: 4.2.11
       jest-circus: 30.5.2(babel-plugin-macros@3.1.0)(supports-color@5.5.0)
@@ -11866,11 +11826,6 @@ snapshots:
 
   minipass@7.1.3: {}
 
-  mjolnir.js@2.7.3:
-    dependencies:
-      '@types/hammerjs': 2.0.46
-      hammerjs: 2.0.8
-
   mkdirp@3.0.1: {}
 
   mmdb-lib@3.0.3: {}
@@ -12378,11 +12333,6 @@ snapshots:
       dijkstrajs: 1.0.3
       pngjs: 5.0.0
       yargs: 15.4.1
-
-  qs@6.16.0:
-    dependencies:
-      es-define-property: 1.0.1
-      side-channel: 1.1.1
 
   qs@6.16.1:
     dependencies:
