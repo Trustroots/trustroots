@@ -65,6 +65,23 @@ class RequestResultTest {
     }
 
     @Test
+    fun cancelledContextDoesNotStartAnotherOperation() {
+        var operationStarted = false
+        assertThrows(CancellationException::class.java) {
+            runBlocking {
+                async {
+                    currentCoroutineContext().cancel()
+                    requestResult {
+                        operationStarted = true
+                        Result.success(Unit)
+                    }
+                }.await()
+            }
+        }
+        assertFalse(operationStarted)
+    }
+
+    @Test
     fun checksTheCoroutineAfterAnOperationCancelsItsJobBeforeReturningSuccess() {
         var delivered = false
         assertThrows(CancellationException::class.java) {

@@ -448,6 +448,23 @@ private fun MemberProfileContent(
                                     null
                                 },
                             )
+                            val contactAction = member.id?.takeIf { relationshipResolved }?.let { memberID ->
+                                when {
+                                    relationship?.id.isNullOrBlank() -> ProfileContactAction(addContactLabel) {
+                                        onOpenContactBrowser(memberID)
+                                    }
+                                    relationship.confirmed -> ProfileContactAction(
+                                        stringResource(R.string.profile_remove_contact),
+                                    ) {
+                                        confirmRemoveContact = true
+                                    }
+                                    else -> ProfileContactAction(
+                                        stringResource(R.string.profile_delete_contact_request),
+                                    ) {
+                                        confirmRemoveContact = true
+                                    }
+                                }
+                            }
                             Box(
                                 Modifier.fillMaxWidth()
                                     .onSizeChanged { size ->
@@ -463,23 +480,7 @@ private fun MemberProfileContent(
                                     onEditProfile = onOpenEditProfile,
                                     onMessage = { member.id?.let(onOpenConversation) },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
-                                    contactLabel = when {
-                                        !relationshipResolved -> null
-                                        relationship?.id.isNullOrBlank() -> addContactLabel
-                                        relationship.confirmed -> stringResource(R.string.profile_remove_contact)
-                                        else -> stringResource(R.string.profile_delete_contact_request)
-                                    },
-                                onContactAction = {
-                                        val current = relationship
-                                        when {
-                                            current?.id.isNullOrBlank() -> {
-                                                member.id?.let { id ->
-                                                    onOpenContactBrowser(id)
-                                                }
-                                            }
-                                            else -> confirmRemoveContact = true
-                                        }
-                                    },
+                                    contactAction = contactAction,
                                     topPadding = contentPadding.calculateTopPadding(),
                                     horizontalInset = contentPadding.horizontalInset(),
                                     compactTitle = member.displayName.takeIf { compactProfileHeader },

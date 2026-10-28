@@ -7,17 +7,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
@@ -72,11 +71,12 @@ internal class MemberSearchViewModel(
     private val mutableState = MutableStateFlow(MemberSearchUiState())
     val state = mutableState.asStateFlow()
 
-    private var requestGeneration = 0L
+    // Query edits invalidate displayed results while still allowing an in-flight auth failure.
+    private var queryRevision = 0L
     private var nextInvalidationID = 0L
     private var lastResetGeneration = 0
     private var sessionInvalidationEmitted = false
-    private var searchJob: Job? = null
+    private val searchRequest = LatestRequest(requestScope)
 
     fun onEvent(event: MemberSearchEvent) {
         when (event) {
@@ -101,7 +101,7 @@ internal class MemberSearchViewModel(
     }
 
     private fun updateQuery(value: String) {
-        requestGeneration++
+        queryRevision++
         mutableState.update {
             it.copy(
                 query = value,
@@ -117,11 +117,10 @@ internal class MemberSearchViewModel(
         val current = mutableState.value
         if (sessionInvalidationEmitted || current.query.trim().length < MIN_QUERY_LENGTH || current.isLoading) return
 
-        val generation = ++requestGeneration
-        searchJob?.cancel()
-        mutableState.update { it.copy(isLoading = true, failure = null) }
+        val generation = ++queryRevision
         val submittedQuery = current.query
-        searchJob = requestScope.launch {
+        searchRequest.launch {
+            mutableState.update { it.copy(isLoading = true, failure = null) }
             val result = requestResult { repository.searchMembers(submittedQuery) }
             val requestFailure = result.exceptionOrNull()
             if (requestFailure?.isAuthenticationFailure() == true) {
@@ -129,7 +128,7 @@ internal class MemberSearchViewModel(
                 mutableState.update { it.copy(isLoading = false) }
                 return@launch
             }
-            if (generation != requestGeneration) {
+            if (generation != queryRevision) {
                 mutableState.update { if (it.isLoading) it.copy(isLoading = false) else it }
                 return@launch
             }
@@ -166,9 +165,8 @@ internal class MemberSearchViewModel(
     }
 
     private fun invalidateSearch() {
-        requestGeneration++
-        searchJob?.cancel()
-        searchJob = null
+        queryRevision++
+        searchRequest.cancel()
     }
 
     private fun emitSessionInvalidation() {

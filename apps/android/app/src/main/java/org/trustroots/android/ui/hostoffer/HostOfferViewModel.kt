@@ -11,20 +11,21 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.ViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.AccommodationOffer
 import org.trustroots.android.api.HostOfferUpdate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
 
 internal const val DEFAULT_HOST_LATITUDE = 48.6908333333
@@ -160,14 +161,13 @@ internal class HostOfferViewModel(
     private val mutableState = MutableStateFlow(HostOfferUiState())
     val state = mutableState.asStateFlow()
 
-    private var loadGeneration = 0L
+    private val loadRequest = LatestRequest(requestScope)
+    private val saveRequest = LatestRequest(requestScope)
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
     private var backendURL: String? = initialApi?.backendURL
     private var username: String? = initialSession?.let { it.member.username }
     private var cookieHeader: String? = initialSession?.cookieHeader
-    private var loadJob: Job? = null
-    private var saveJob: Job? = null
 
     init {
         initialApi?.let(repository::updateApi)
@@ -180,11 +180,6 @@ internal class HostOfferViewModel(
         val accountChanged = username != session.member.username
         val credentialsChanged = cookieHeader != session.cookieHeader
         val environmentChanged = backendChanged || accountChanged || credentialsChanged
-        if (environmentChanged) {
-            loadGeneration++
-            loadJob?.cancel()
-            saveJob?.cancel()
-        }
         repository.updateApi(api)
         repository.updateSession(session)
         if (!environmentChanged) return
@@ -195,9 +190,11 @@ internal class HostOfferViewModel(
         sessionInvalidationEmitted = false
 
         if (backendChanged || accountChanged) {
-            mutableState.value = HostOfferUiState(isLoading = true)
-            load()
+            saveRequest.cancel()
+            load(resetState = true)
         } else {
+            loadRequest.cancel()
+            saveRequest.cancel()
             mutableState.update { current ->
                 current.copy(
                     isLoading = false,
@@ -241,14 +238,16 @@ internal class HostOfferViewModel(
         }
     }
 
-    private fun load() {
-        if (sessionInvalidationEmitted || mutableState.value.isSaving) return
-        val generation = ++loadGeneration
-        loadJob?.cancel()
-        mutableState.update { it.copy(isLoading = true, failure = null, saveSucceeded = false) }
-        loadJob = requestScope.launch {
+    private fun load(resetState: Boolean = false) {
+        if (sessionInvalidationEmitted || (!resetState && mutableState.value.isSaving)) return
+        loadRequest.launch {
+            if (resetState) {
+                mutableState.value = HostOfferUiState(isLoading = true)
+            } else {
+                mutableState.update { it.copy(isLoading = true, failure = null, saveSucceeded = false) }
+            }
+            currentCoroutineContext().ensureActive()
             val result = requestResult { repository.load() }
-            if (generation != loadGeneration) return@launch
             result.fold(
                 onSuccess = { loaded ->
                     val baseline = loaded.toUpdate()
@@ -274,11 +273,10 @@ internal class HostOfferViewModel(
             !beforeSave.canSave || beforeSave.isSaving
         ) return
         val submitted = beforeSave.current
-        val generation = loadGeneration
-        mutableState.update { it.copy(isSaving = true, failure = null, saveSucceeded = false) }
-        saveJob = requestScope.launch {
+        saveRequest.launch {
+            mutableState.update { it.copy(isSaving = true, failure = null, saveSucceeded = false) }
+            currentCoroutineContext().ensureActive()
             val result = requestResult { repository.save(submitted) }
-            if (generation != loadGeneration) return@launch
             result.fold(
                 onSuccess = { saved ->
                     mutableState.update { current ->
@@ -317,9 +315,8 @@ internal class HostOfferViewModel(
 
 
     override fun onCleared() {
-        ++loadGeneration
-        loadJob?.cancel()
-        saveJob?.cancel()
+        loadRequest.cancel()
+        saveRequest.cancel()
         mutableState.value = HostOfferUiState(isLoading = false)
         super.onCleared()
     }
