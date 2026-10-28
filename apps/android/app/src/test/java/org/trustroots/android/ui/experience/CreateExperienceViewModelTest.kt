@@ -113,6 +113,21 @@ class CreateExperienceViewModelTest {
     }
 
     @Test
+    fun recommendationAndFeedbackAloneMakeAMetExperienceDirty() {
+        val model = newModel(FakeRepository())
+
+        model.onEvent(CreateExperienceEvent.RecommendationChanged("no"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(CreateExperienceEvent.RecommendationChanged("yes"))
+        assertFalse(model.state.value.isDirty)
+
+        model.onEvent(CreateExperienceEvent.FeedbackChanged("A fictional note"))
+        assertTrue(model.state.value.isDirty)
+        model.onEvent(CreateExperienceEvent.FeedbackChanged(""))
+        assertFalse(model.state.value.isDirty)
+    }
+
+    @Test
     fun eachPositiveExperienceAnswerIndependentlyAllowsSubmission() {
         val positiveAnswers = listOf(
             CreateExperienceEvent.MetChanged(true) to Triple(true, false, false),

@@ -55,7 +55,7 @@ internal fun ProfileActionBar(
     compactTitle: String? = null,
     isBlocked: Boolean? = false,
     safetyBusy: Boolean = false,
-    onBlock: () -> Unit = {},
+    onBlock: (Boolean) -> Unit = {},
     onReport: () -> Unit = {},
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -141,10 +141,11 @@ internal fun ProfileActionBar(
                         onClick = { menuExpanded = false; onReport() },
                         modifier = Modifier.testTag("profileReportAction"),
                     )
+                    val blockMember = isBlocked != true
                     DropdownMenuItem(
-                        text = { Text(stringResource(if (isBlocked == true) R.string.profile_unblock_member else R.string.profile_block_member)) },
+                        text = { Text(stringResource(if (blockMember) R.string.profile_block_member else R.string.profile_unblock_member)) },
                         enabled = isBlocked != null && !safetyBusy,
-                        onClick = { menuExpanded = false; onBlock() },
+                        onClick = { menuExpanded = false; onBlock(blockMember) },
                         modifier = Modifier.testTag("profileBlockAction"),
                     )
                 }

@@ -81,6 +81,7 @@ import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.common.memberLocationLabel
 import org.trustroots.android.ui.common.memberLastActiveLabel
+import org.trustroots.android.ui.common.nonBlankMemberText
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
 import org.trustroots.android.ui.circles.CircleDetailVisit
@@ -275,13 +276,8 @@ private fun MemberProfileContent(
     ProfileHeaderStatusBarStyle(
         enabled = isActiveProfileRoute && profile != null && error == null,
     )
-    BackHandler(enabled = isActiveProfileRoute) {
-        when {
-            showingProfileImage -> showingProfileImage = false
-            confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
-            else -> onBack()
-        }
-    }
+    // Modal windows handle their own Back events and dismissal policy.
+    BackHandler(enabled = isActiveProfileRoute, onBack = onBack)
     LaunchedEffect(profileState.isBlocked, profileState.isUpdatingBlock, blockTarget) {
         if (blockTarget != null && !profileState.isUpdatingBlock && profileState.isBlocked == blockTarget) blockTarget = null
     }
@@ -383,20 +379,20 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.username?.equals(session.member.username, ignoreCase = true) == true
+    val isSelf = profile?.let { it.username.equals(session.member.username, ignoreCase = true) } == true
     Column(Modifier.fillMaxSize()) {
         when {
-            profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             error != null -> {
                 NativeBackButton(onBack)
                 Text(
-                    resolveFailureMessage(requireNotNull(error)),
+                    resolveFailureMessage(error),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(20.dp),
                 )
             }
+            profile == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             else -> {
-                val member = requireNotNull(profile)
+                val member = profile
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
@@ -465,14 +461,12 @@ private fun MemberProfileContent(
                                     isSelf = isSelf,
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
-                                    onMessage = {
-                                        if (profileState.isBlocked == false && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
-                                    },
+                                    onMessage = { member.id?.let(onOpenConversation) },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
                                     contactLabel = when {
                                         !relationshipResolved -> null
                                         relationship?.id.isNullOrBlank() -> addContactLabel
-                                        relationship?.confirmed == true -> stringResource(R.string.profile_remove_contact)
+                                        relationship.confirmed -> stringResource(R.string.profile_remove_contact)
                                         else -> stringResource(R.string.profile_delete_contact_request)
                                     },
                                 onContactAction = {
@@ -491,7 +485,7 @@ private fun MemberProfileContent(
                                     compactTitle = member.displayName.takeIf { compactProfileHeader },
                                     isBlocked = profileState.isBlocked,
                                     safetyBusy = profileState.isUpdatingBlock || profileState.isLoadingBlock,
-                                    onBlock = { profileState.isBlocked?.let { blockTarget = !it } },
+                                    onBlock = { blockTarget = it },
                                     onReport = { reportVisible = true },
                                 )
                             }
@@ -557,9 +551,32 @@ private fun ProfileActivityFacts(member: MemberProfile) {
     val lastActive = remember(context, member.lastActiveAtMillis) {
         memberLastActiveLabel(context, member.lastActiveAtMillis)
     }
-    val replyRate = member.replyRate?.takeIf(String::isNotBlank)
-    val replyTime = member.replyTime?.takeIf(String::isNotBlank)
-    if (lastActive == null && replyRate == null && replyTime == null) return
+    val replyRate = nonBlankMemberText(member.replyRate)
+    val replyTime = nonBlankMemberText(member.replyTime)
+    val facts = listOfNotNull(
+        lastActive?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_last_active,
+                value = it,
+                testTag = "profileActivityLastActive",
+            )
+        },
+        replyRate?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_reply_rate,
+                value = it,
+                testTag = "profileActivityReplyRate",
+            )
+        },
+        replyTime?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_reply_time,
+                value = stringResource(R.string.profile_activity_reply_time_value, it),
+                testTag = "profileActivityReplyTime",
+            )
+        },
+    )
+    if (facts.isEmpty()) return
 
     Column(
         Modifier.fillMaxWidth()
@@ -567,29 +584,21 @@ private fun ProfileActivityFacts(member: MemberProfile) {
             .testTag("profileActivityFacts"),
     ) {
         Text(stringResource(R.string.profile_activity_heading), style = MaterialTheme.typography.titleMedium)
-        lastActive?.let {
+        facts.forEach { fact ->
             ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_last_active),
-                value = it,
-                testTag = "profileActivityLastActive",
-            )
-        }
-        replyRate?.let {
-            ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_reply_rate),
-                value = it,
-                testTag = "profileActivityReplyRate",
-            )
-        }
-        replyTime?.let {
-            ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_reply_time),
-                value = stringResource(R.string.profile_activity_reply_time_value, it),
-                testTag = "profileActivityReplyTime",
+                label = stringResource(fact.label),
+                value = fact.value,
+                testTag = fact.testTag,
             )
         }
     }
 }
+
+private data class ProfileActivityFactData(
+    val label: Int,
+    val value: String,
+    val testTag: String,
+)
 
 @Composable
 private fun ProfileActivityFact(label: String, value: String, testTag: String) {

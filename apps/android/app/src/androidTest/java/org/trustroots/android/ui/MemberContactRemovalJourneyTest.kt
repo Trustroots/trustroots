@@ -163,6 +163,43 @@ class MemberContactRemovalJourneyTest {
         }
     }
 
+    @Test fun systemBackUsesDialogDismissalUntilConfirmedRemovalFinishes() {
+        deferDeleteResponse = true
+        startResponder(confirmed = true)
+        val profileBacks = AtomicInteger()
+        compose.setContent { profile(onBack = { profileBacks.incrementAndGet() }) }
+
+        try {
+            openContactAction("Remove contact")
+            compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+            pressBackFromNonActivityRoot(compose.activity)
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isEmpty()
+            }
+            assertEquals(0, profileBacks.get())
+
+            openContactAction("Remove contact")
+            compose.onNodeWithText("Confirm").performClick()
+            assertTrue("The local delete request should start", deleteReceived.await(10, TimeUnit.SECONDS))
+            compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+            compose.onNodeWithText("Removing…").assertIsNotEnabled()
+            pressBackFromNonActivityRoot(compose.activity)
+            compose.onNodeWithText("Remove contact?").assertIsDisplayed()
+            compose.onNodeWithText("Removing…").assertIsNotEnabled()
+            assertEquals(0, profileBacks.get())
+
+            releaseDeleteResponse.countDown()
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Remove contact?").fetchSemanticsNodes().isEmpty()
+            }
+            compose.runOnIdle { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitUntil(5_000) { profileBacks.get() == 1 }
+            assertEquals(1, profileBacks.get())
+        } finally {
+            releaseDeleteResponse.countDown()
+        }
+    }
+
     @Composable
     private fun profile(
         onSessionInvalidated: () -> Unit = {},

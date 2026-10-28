@@ -6,7 +6,7 @@ import org.trustroots.android.R
 
 @Composable
 internal fun memberLocationLabel(locationLiving: String?, locationFrom: String?): String? =
-    locationLiving?.takeIf(String::isNotBlank)
-        ?: locationFrom?.takeIf(String::isNotBlank)?.let {
+    nonBlankMemberText(locationLiving)
+        ?: nonBlankMemberText(locationFrom)?.let {
             stringResource(R.string.member_location_from, it)
         }

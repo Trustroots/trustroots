@@ -164,7 +164,7 @@ internal class HostOfferViewModel(
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
     private var backendURL: String? = initialApi?.backendURL
-    private var username: String? = initialSession?.member?.username
+    private var username: String? = initialSession?.let { it.member.username }
     private var cookieHeader: String? = initialSession?.cookieHeader
     private var loadJob: Job? = null
     private var saveJob: Job? = null

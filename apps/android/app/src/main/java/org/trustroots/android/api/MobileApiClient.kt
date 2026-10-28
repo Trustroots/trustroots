@@ -42,6 +42,7 @@ data class MemberProfile(
     val languages: List<String>,
     val circles: List<TrustrootsCircle> = emptyList(),
     val lastActiveAtMillis: Long? = null,
+    // Optional text is trimmed and blank values become null when API responses are parsed.
     val replyRate: String? = null,
     val replyTime: String? = null,
 )
@@ -610,7 +611,7 @@ class MobileApiClient(
                 ).body)
                 (0 until memberships.length()).mapNotNull { index ->
                     memberships.getJSONObject(index).optJSONObject("tribe")?.let {
-                        it.optionalText("_id") ?: it.optionalText("id")
+                        it.optionalID()
                     }
                 }.toSet()
             }
@@ -663,17 +664,18 @@ class MobileApiClient(
                 connection.setRequestProperty("Content-Type", "application/json")
                 connection.outputStream.use { output -> output.write(it.toByteArray()) }
             }
-            val responseBody = (if (connection.responseCode in 200..299) {
+            val responseCode = connection.responseCode
+            val responseBody = (if (responseCode in 200..299) {
                 connection.inputStream
             } else {
                 connection.errorStream
             })?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (connection.responseCode !in 200..299) {
+            if (responseCode !in 200..299) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
                     .orEmpty()
                 throw MobileApiException(
-                    statusCode = connection.responseCode,
+                    statusCode = responseCode,
                     serverMessage = message.takeIf(String::isNotBlank),
                     failureKind = failureKind,
                 )
@@ -767,6 +769,15 @@ private fun encode(value: String): String = URLEncoder.encode(value, Charsets.UT
 private fun JSONObject.optionalText(key: String): String? =
     if (isNull(key)) null else optString(key).trim().takeIf { it.isNotEmpty() }
 
+/** Public responses accept both MongoDB and serialised identity field names. */
+private fun JSONObject.optionalID(): String? = optionalText("_id") ?: optionalText("id")
+
+private fun JSONObject.optionalTimestamp(key: String): Long? =
+    optionalText(key)?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
+
+private fun JSONObject.optionalInt(key: String): Int? =
+    if (isNull(key)) null else optInt(key)
+
 private fun JSONObject.optionalStringText(key: String): String? =
     (opt(key) as? String)?.trim()?.takeIf(String::isNotEmpty)
 
@@ -775,7 +786,7 @@ internal fun parseMember(value: JSONObject): MemberProfile {
     val languages = value.optJSONArray("languages")
     val memberships = value.optJSONArray("member")
     return MemberProfile(
-        id = value.optionalText("_id") ?: value.optionalText("id"),
+        id = value.optionalID(),
         username = username,
         displayName = value.optionalText("displayName") ?: username,
         tagline = value.optionalText("tagline"),
@@ -788,8 +799,7 @@ internal fun parseMember(value: JSONObject): MemberProfile {
         circles = if (memberships == null) emptyList() else (0 until memberships.length())
             .mapNotNull { memberships.optJSONObject(it)?.optJSONObject("tribe") }
             .mapNotNull { parseCircleOrNull(it) },
-        lastActiveAtMillis = value.optionalText("seen")
-            ?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
+        lastActiveAtMillis = value.optionalTimestamp("seen"),
         replyRate = value.optionalStringText("replyRate"),
         replyTime = value.optionalStringText("replyTime"),
     )
@@ -799,7 +809,7 @@ internal fun parseMembers(values: JSONArray): List<MemberProfile> =
     (0 until values.length()).map { parseMember(values.getJSONObject(it)) }
 
 private fun parseMessageMember(value: JSONObject): MessageMember = MessageMember(
-    id = value.optionalText("_id") ?: value.optionalText("id"),
+    id = value.optionalID(),
     username = value.optionalText("username"),
     displayName = value.optionalText("displayName").orEmpty(),
 )
@@ -821,7 +831,7 @@ internal fun parseMessage(value: JSONObject): DirectMessage = DirectMessage(
     id = value.getString("_id"),
     content = value.getString("content"),
     sender = parseMessageMember(value.getJSONObject("userFrom")),
-    createdAt = value.optionalText("created")?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
+    createdAt = value.optionalTimestamp("created"),
 )
 
 internal fun parseMessages(values: JSONArray): List<DirectMessage> =
@@ -889,7 +899,7 @@ internal fun parseHostOffer(value: JSONObject): HostOffer = HostOffer(
     id = value.getString("_id"),
     status = value.optionalText("status"),
     description = value.optionalText("description") ?: value.optionalText("noOfferDescription"),
-    maxGuests = value.optInt("maxGuests").takeIf { value.has("maxGuests") && !value.isNull("maxGuests") },
+    maxGuests = value.optionalInt("maxGuests"),
     user = parseMessageMember(value.getJSONObject("user")),
 )
 
@@ -898,11 +908,11 @@ internal fun parseAccommodationOffer(value: JSONObject): AccommodationOffer {
     val latitude = location?.optDouble(0)?.takeIf { it.isFinite() }
     val longitude = location?.optDouble(1)?.takeIf { it.isFinite() }
     return AccommodationOffer(
-        id = value.optionalText("_id") ?: value.optionalText("id"),
+        id = value.optionalID(),
         status = value.optionalText("status"),
         description = value.optionalText("description"),
         noOfferDescription = value.optionalText("noOfferDescription"),
-        maxGuests = value.optInt("maxGuests").takeIf { value.has("maxGuests") && !value.isNull("maxGuests") },
+        maxGuests = value.optionalInt("maxGuests"),
         showOnlyInMyCircles = value.optBoolean("showOnlyInMyCircles", false),
         latitude = latitude,
         longitude = longitude,
@@ -916,7 +926,7 @@ internal fun parseCircle(value: JSONObject): TrustrootsCircle =
     requireNotNull(parseCircleOrNull(value)) { "Circle response is missing its public identity." }
 
 private fun parseCircleOrNull(value: JSONObject): TrustrootsCircle? {
-    val id = value.optionalText("_id") ?: value.optionalText("id") ?: return null
+    val id = value.optionalID() ?: return null
     val slug = value.optionalText("slug") ?: return null
     val label = value.optionalText("label") ?: return null
     return TrustrootsCircle(

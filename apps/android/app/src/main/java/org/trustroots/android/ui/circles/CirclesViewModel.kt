@@ -222,12 +222,11 @@ internal class CirclesViewModel(
         retryLoad: Boolean = false,
     ) {
         if (error.isAuthenticationFailure()) {
-            if (!sessionInvalidationEmitted && mutableState.value.pendingSessionInvalidation == null) {
+            if (!sessionInvalidationEmitted) {
                 val invalidation = CirclesSessionInvalidation(++nextInvalidationID)
                 sessionInvalidationEmitted = true
                 mutableState.update { current ->
-                    if (current.pendingSessionInvalidation != null) current
-                    else current.copy(
+                    current.copy(
                         pendingSessionInvalidation = invalidation,
                         canRetryLoad = false,
                         failure = null,
@@ -235,13 +234,13 @@ internal class CirclesViewModel(
                 }
             }
         } else {
+            val apiError = error as? org.trustroots.android.api.MobileApiException
             mutableState.update {
                 it.copy(
                     failure = CirclesFailure(
                         kind = kind,
-                        serverMessage = (error as? org.trustroots.android.api.MobileApiException)
-                            ?.serverMessage?.takeIf(String::isNotBlank),
-                        apiFailureKind = (error as? org.trustroots.android.api.MobileApiException)?.failureKind,
+                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        apiFailureKind = apiError?.failureKind,
                     ),
                     canRetryLoad = retryLoad,
                 )

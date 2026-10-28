@@ -200,7 +200,7 @@ internal class InboxViewModel(
                 val error = result.exceptionOrNull()
                 if (error != null) {
                     if (error.isAuthenticationFailure()) {
-                        emitSessionInvalidation(generation)
+                        emitSessionInvalidation()
                     } else {
                         mutableState.update {
                             it.copy(
@@ -240,8 +240,8 @@ internal class InboxViewModel(
         }
     }
 
-    private fun emitSessionInvalidation(generation: Long) {
-        if (generation != requestGeneration || sessionInvalidationEmitted) return
+    // load validates the request generation immediately before calling this non-suspending helper.
+    private fun emitSessionInvalidation() {
         sessionInvalidationEmitted = true
         cache.clear()
         mutableState.update {
