@@ -8,6 +8,10 @@ import statService from '../../../stats/server/services/stats.server.service.mts
 import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
 import crypto from 'crypto';
+import {
+  connectionSearchKey,
+  normaliseIdentifier,
+} from '../../shared/network-connections.ts';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
   UserServerDocument,
@@ -660,6 +664,11 @@ service.confirmEmail = function (req, res) {
       return;
     }
     const result: EmailConfirmationResult = { profileMadePublic: !user.public };
+    const oldEmail = user.email;
+    const emailChanged =
+      oldEmail &&
+      normaliseIdentifier('email', oldEmail) !==
+        normaliseIdentifier('email', user.emailTemporary);
     const authVersion = user.authVersion || 0;
     const authVersionQuery =
       authVersion === 0
@@ -678,6 +687,28 @@ service.confirmEmail = function (req, res) {
             $and: [tokenQuery, authVersionQuery],
           },
           {
+            ...(emailChanged
+              ? {
+                  $push: {
+                    connectionHistory: {
+                      network: 'email',
+                      oldIdentifier: oldEmail,
+                      newIdentifier: user.emailTemporary,
+                      changedAt: now,
+                      initial: false,
+                    },
+                  },
+                  $addToSet: {
+                    connectionSearchKeys: {
+                      $each: [
+                        connectionSearchKey('email', oldEmail),
+                        connectionSearchKey('email', user.emailTemporary),
+                      ],
+                    },
+                  },
+                  $inc: { connectionHistoryRevision: 1 },
+                }
+              : {}),
             $unset: {
               emailTemporary: 1,
               emailToken: 1,

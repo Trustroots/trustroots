@@ -157,6 +157,7 @@ const ConnectionHistorySchema = new Schema<ConnectionHistoryEntry>(
     network: {
       type: String,
       enum: [
+        'email',
         'couchers',
         'bewelcome',
         'couchsurfing',
