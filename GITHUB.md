@@ -28,6 +28,7 @@ Pull requests targeting `main` run the workflows in `.github/workflows/`:
 
 - **Linter** (`lint.yml`): one ESLint scan, reused for reviewdog annotations and lint enforcement, the API input boundary tests, and the module-graph check. Links between `modules/*` are recorded in `module-graph-baseline.json` and CI fails when they differ; see [AGENTS.md](AGENTS.md) for when to update the baseline.
 - **Tests** (`test.yml`): production and dev Docker image builds, client and server checks directly on Node 24 (server tests use a MongoDB service), and the end-to-end tests. The three end-to-end groups download one shared asset build from the same checkout. The final coverage step runs `pnpm run coverage:check --require-full` and fails the run if client or server coverage is below 100%.
+- **Android debug APK** (`android-debug-apk.yml`): `Android journeys and coverage` is required on `main`. For Android changes, it waits for the APK build and lint, coverage build, device journeys and coverage ratchet. Failed or cancelled prerequisites fail the gate. Unrelated pull requests skip the Android jobs.
 - Docs-only changes skip the application builds and tests (`ci-changes.yml`).
 
 Wait for the checks to be green before you mark a pull request ready for review, and before merging. If a check fails, fix it or say in the pull request why the failure is unrelated; do not merge on red.
