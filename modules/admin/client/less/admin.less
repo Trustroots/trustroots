@@ -994,7 +994,7 @@ td:hover .admin-hidden-until-hover {
   margin: 0 0 16px;
   list-style: none;
 
-  li {
+  button {
     display: flex;
     gap: 6px;
     align-items: center;
@@ -1002,6 +1002,20 @@ td:hover .admin-hidden-until-hover {
     border: 1px solid @gray-lighter;
     border-radius: 4px;
     font-size: 12px;
+    color: inherit;
+    background: transparent;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      border-color: @gray;
+      text-decoration: underline;
+    }
+
+    &[aria-pressed='true'] {
+      border-color: @gray;
+      background: @gray-lighter;
+    }
   }
 }
 
