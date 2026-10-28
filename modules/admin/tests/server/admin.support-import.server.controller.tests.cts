@@ -87,10 +87,19 @@ describe('admin support status import controller', () => {
     };
   }
 
-  async function preview(actorId: Types.ObjectId | string, body: unknown) {
+  async function preview(
+    actorId: Types.ObjectId | string,
+    body: unknown,
+    matchingWindowMinutes?: unknown,
+  ) {
     const response = captureResponse();
     await controller.preview(
-      { body, user: { _id: actorId } } as never,
+      {
+        body,
+        query:
+          matchingWindowMinutes === undefined ? {} : { matchingWindowMinutes },
+        user: { _id: actorId },
+      } as never,
       response as never,
     );
     return response;
@@ -163,6 +172,7 @@ describe('admin support status import controller', () => {
       { selectedMatches: [] },
       { previewId: 123 },
       { previewId: 'preview', unexpected: true },
+      { previewId: 'preview', matchingWindowMinutes: 60 },
       { previewId: 'preview', selectedMatches: null },
     ]) {
       const response = await apply(adminId, invalidBody);
@@ -252,6 +262,23 @@ describe('admin support status import controller', () => {
       alreadyApplied: 0,
       skipped: 0,
     });
+  });
+
+  it('passes a canonical matching window and rejects malformed query values', async () => {
+    const accepted = await preview(adminId, manifest(), '60');
+    assert.equal(accepted.statusCode, 200);
+    assert.equal(
+      (accepted.body as { matchingWindowMinutes: number })
+        .matchingWindowMinutes,
+      60,
+    );
+    for (const invalid of ['', '01', '1.5', '61', ['5'], 5]) {
+      const response = await preview(adminId, manifest(), invalid);
+      assert.equal(response.statusCode, 400);
+      assert.deepEqual(response.body, {
+        message: 'Matching window must be an integer from 1 to 60 minutes.',
+      });
+    }
   });
 
   it('maps unexpected actor lookup errors to a generic response', async () => {

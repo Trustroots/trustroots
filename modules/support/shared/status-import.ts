@@ -45,7 +45,10 @@ export interface SupportStatusImportMatchCandidate {
   category: string;
   submittedAt: string | null;
   matchKind: 'suggested';
-  reason: 'same sender, same category, submitted within 60 seconds, equivalent message after formatting normalisation';
+  reason: 'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation';
+  senderUsername?: string;
+  email?: string;
+  subject?: string;
   timeDifferenceSeconds: number;
   competingCandidateCount: number;
   currentStatus: SupportStatus | 'unconfirmed';
@@ -71,6 +74,7 @@ export interface SupportStatusImportPreviewResponse {
   changes: SupportStatusImportChange[];
   matchReviews: SupportStatusImportMatchReview[];
   expiresAt: string;
+  matchingWindowMinutes?: number;
 }
 
 export interface SupportStatusImportApplyResponse {

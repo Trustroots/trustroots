@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  act,
   fireEvent,
   render,
   screen,
@@ -416,6 +417,290 @@ describe('<SupportStatusImport />', () => {
       previewId: 'exact-preview',
       selectedMatches: [],
     });
+  });
+
+  it('bulk-selects only unique candidates that are not shared or exact matches', async () => {
+    const candidate = (requestId: string) => ({
+      requestId,
+      category: 'other',
+      submittedAt: '2025-01-01T00:00:10.000Z',
+      matchKind: 'suggested' as const,
+      reason:
+        'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation' as const,
+      senderUsername: 'fictional-member',
+      email: 'member@example.test',
+      subject: 'Fictional subject',
+      timeDifferenceSeconds: 10,
+      competingCandidateCount: 1,
+      currentStatus: 'open' as const,
+      importedStatus: 'pending' as const,
+    });
+    post.mockResolvedValueOnce({
+      data: {
+        previewId: 'bulk-preview',
+        matchingWindowMinutes: 2,
+        counts: {
+          total: 5,
+          eligible: 0,
+          suggested: 5,
+          alreadyApplied: 0,
+          skipped: 5,
+          skippedByReason: {},
+        },
+        changes: [
+          {
+            requestId: 'exact-target',
+            zendeskTicketId: 700,
+            currentStatus: 'open',
+            importedStatus: 'pending',
+            matchKind: 'exact',
+            reason: 'exact request fingerprint',
+            updatedAt: '2025-01-01T00:00:00.000Z',
+          },
+        ],
+        matchReviews: [
+          {
+            zendeskTicketId: 701,
+            category: 'other',
+            submittedAt: null,
+            importedStatus: 'pending',
+            candidates: [candidate('safe-target')],
+          },
+          {
+            zendeskTicketId: 702,
+            category: 'other',
+            submittedAt: null,
+            importedStatus: 'pending',
+            candidates: [candidate('ambiguous-a'), candidate('ambiguous-b')],
+          },
+          {
+            zendeskTicketId: 703,
+            category: 'other',
+            submittedAt: null,
+            importedStatus: 'pending',
+            candidates: [candidate('shared-target')],
+          },
+          {
+            zendeskTicketId: 704,
+            category: 'other',
+            submittedAt: null,
+            importedStatus: 'pending',
+            candidates: [candidate('shared-target')],
+          },
+          {
+            zendeskTicketId: 705,
+            category: 'other',
+            submittedAt: null,
+            importedStatus: 'pending',
+            candidates: [candidate('exact-target')],
+          },
+        ],
+        expiresAt: '2025-01-01T00:30:00.000Z',
+      },
+    } as never);
+    render(<SupportStatusImport />);
+    fireEvent.change(screen.getByLabelText('Reduced JSON manifest'), {
+      target: {
+        files: [fileFrom(JSON.stringify({ ...manifest, version: 2 }))],
+      },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview status changes' }),
+    );
+    await screen.findByRole('heading', {
+      name: 'Suggested matches need your review',
+    });
+    expect(screen.getByText(/submission within 2 minutes/)).toBeVisible();
+    expect(screen.getAllByText('member@example.test')).toHaveLength(6);
+    expect(screen.getAllByText('Fictional subject')).toHaveLength(6);
+    const requesterLinks = screen.getAllByRole('link', {
+      name: '@fictional-member',
+    });
+    expect(requesterLinks[0]).toHaveAttribute(
+      'href',
+      '/admin/user/fictional-member',
+    );
+    expect(
+      screen.getByRole('link', { name: 'Request safe-target' }),
+    ).toBeVisible();
+
+    const manuallyReviewed = screen.getByRole('checkbox', {
+      name: /Request ambiguous-a/,
+    });
+    fireEvent.click(manuallyReviewed);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Select all unambiguous matches' }),
+    );
+    expect(screen.getByText('2 selected')).toBeVisible();
+    expect(
+      screen.getByRole('checkbox', { name: /Request safe-target/ }),
+    ).toBeChecked();
+    expect(manuallyReviewed).toBeChecked();
+    for (const sharedCandidate of screen.getAllByRole('checkbox', {
+      name: /Request shared-target/,
+    }))
+      expect(sharedCandidate).not.toBeChecked();
+    expect(
+      screen.getByRole('checkbox', { name: /Request exact-target/ }),
+    ).not.toBeChecked();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear selection' }));
+    expect(screen.getByText('0 selected')).toBeVisible();
+    expect(manuallyReviewed).not.toBeChecked();
+  });
+
+  it('clears the reviewed preview when the matching window changes and sends a fresh wider preview', async () => {
+    post
+      .mockResolvedValueOnce({
+        data: {
+          previewId: 'one-minute-preview',
+          matchingWindowMinutes: 1,
+          counts: {
+            total: 1,
+            eligible: 0,
+            suggested: 1,
+            alreadyApplied: 0,
+            skipped: 1,
+            skippedByReason: {},
+          },
+          changes: [],
+          matchReviews: [
+            {
+              zendeskTicketId: 789,
+              category: 'other',
+              submittedAt: null,
+              importedStatus: 'pending',
+              candidates: [
+                {
+                  requestId: 'candidate-id',
+                  category: 'other',
+                  submittedAt: null,
+                  matchKind: 'suggested',
+                  reason:
+                    'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation',
+                  timeDifferenceSeconds: 10,
+                  competingCandidateCount: 1,
+                  currentStatus: 'open',
+                  importedStatus: 'pending',
+                },
+              ],
+            },
+          ],
+          expiresAt: '2025-01-01T00:30:00.000Z',
+        },
+      } as never)
+      .mockResolvedValueOnce({
+        data: {
+          previewId: 'wider-preview',
+          matchingWindowMinutes: 2,
+          counts: {
+            total: 1,
+            eligible: 0,
+            suggested: 0,
+            alreadyApplied: 0,
+            skipped: 1,
+            skippedByReason: {},
+          },
+          changes: [],
+          matchReviews: [],
+          expiresAt: '2025-01-01T00:30:00.000Z',
+        },
+      } as never);
+    render(<SupportStatusImport />);
+    fireEvent.change(screen.getByLabelText('Reduced JSON manifest'), {
+      target: {
+        files: [fileFrom(JSON.stringify({ ...manifest, version: 2 }))],
+      },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview status changes' }),
+    );
+    const candidate = await screen.findByRole('checkbox', {
+      name: /Request candidate-id/,
+    });
+    fireEvent.click(candidate);
+    expect(candidate).toBeChecked();
+    fireEvent.change(
+      screen.getByLabelText('Submission-time matching window (minutes)'),
+      { target: { value: '2' } },
+    );
+    expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Apply status changes' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText('Chosen submission-time window: 2 minutes.'),
+    ).toBeVisible();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview status changes' }),
+    );
+    await screen.findByText(/0 tickets with suggestions/);
+    expect(post).toHaveBeenNthCalledWith(
+      1,
+      '/api/admin/support-import/preview',
+      { ...manifest, version: 2 },
+    );
+    expect(post).toHaveBeenNthCalledWith(
+      2,
+      '/api/admin/support-import/preview',
+      { ...manifest, version: 2 },
+      { params: { matchingWindowMinutes: 2 } },
+    );
+  });
+
+  it('ignores preview responses and errors after the matching window changes', async () => {
+    let resolvePreview!: (value: unknown) => void;
+    post
+      .mockImplementationOnce(
+        () =>
+          new Promise(resolve => {
+            resolvePreview = resolve;
+          }) as never,
+      )
+      .mockRejectedValueOnce(new Error('late preview failure'));
+    render(<SupportStatusImport />);
+    fireEvent.change(screen.getByLabelText('Reduced JSON manifest'), {
+      target: {
+        files: [fileFrom(JSON.stringify({ ...manifest, version: 2 }))],
+      },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview status changes' }),
+    );
+    await waitFor(() => expect(post).toHaveBeenCalledTimes(1));
+    const windowInput = screen.getByLabelText(
+      'Submission-time matching window (minutes)',
+    );
+    fireEvent.change(windowInput, { target: { value: '2' } });
+    await act(async () => {
+      resolvePreview({
+        data: {
+          previewId: 'stale-preview',
+          counts: {
+            total: 1,
+            eligible: 1,
+            alreadyApplied: 0,
+            skipped: 0,
+            skippedByReason: {},
+          },
+          changes: [],
+          matchReviews: [],
+          expiresAt: '2025-01-01T00:30:00.000Z',
+        },
+      });
+    });
+    expect(screen.queryByText(/Preview:/)).not.toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview status changes' }),
+    );
+    fireEvent.change(windowInput, { target: { value: '3' } });
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Preview status changes' }),
+      ).toBeEnabled(),
+    );
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(post).toHaveBeenCalledTimes(2);
   });
 
   it('rejects invalid JSON locally without sending it', async () => {

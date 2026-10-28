@@ -47,6 +47,8 @@ interface SupportRequestImportRecord extends Pick<
   | 'category'
   | 'reportMember'
   | 'email'
+  | 'username'
+  | 'subject'
   | 'message'
   | 'status'
   | 'statusRevision'
@@ -215,11 +217,18 @@ function countReason(
 }
 
 const SUGGESTION_REASON =
-  'same sender, same category, submitted within 60 seconds, equivalent message after formatting normalisation' as const;
+  'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation' as const;
+
+function parseMatchingWindowMinutes(value: unknown): number {
+  if (typeof value === 'string' && /^(?:[1-9]|[1-5]\d|60)$/.test(value))
+    return Number(value);
+  throw fail(400, 'Matching window must be an integer from 1 to 60 minutes.');
+}
 
 function suggestedCandidates(
   item: SupportStatusImportItem,
   requestsByEvidence: Map<string, SupportRequestImportRecord[]>,
+  matchingWindowMinutes: number,
 ) {
   const evidence = item.evidence;
   if (!evidence?.submittedAt) return [];
@@ -228,7 +237,7 @@ function suggestedCandidates(
   return (requestsByEvidence.get(key) || []).flatMap(request => {
     if (!(request.sent instanceof Date)) return [];
     const difference = Math.abs(request.sent.getTime() - submittedAt);
-    if (difference > 60_000) return [];
+    if (difference > matchingWindowMinutes * 60_000) return [];
     return [{ request, timeDifferenceSeconds: Math.floor(difference / 1000) }];
   });
 }
@@ -282,14 +291,18 @@ function snapshot(
 export async function previewReducedManifest(
   source: unknown,
   actorId: Types.ObjectId | string,
+  rawMatchingWindowMinutes: unknown = '1',
 ): Promise<SupportStatusImportPreviewResponse> {
   const actor = await requireAdministrator(actorId);
+  const matchingWindowMinutes = parseMatchingWindowMinutes(
+    rawMatchingWindowMinutes,
+  );
   const manifest = validateManifest(source);
   const SupportRequest =
     mongoose.model<SupportRequestImportRecord>('SupportRequest');
   const requests = await SupportRequest.find({})
     .select(
-      '_id category reportMember email message status statusRevision statusChangedAt lastActivityAt sent zendeskTicketId',
+      '_id category reportMember email username subject message status statusRevision statusChangedAt lastActivityAt sent zendeskTicketId',
     )
     .maxTimeMS(10_000)
     .lean();
@@ -376,7 +389,11 @@ export async function previewReducedManifest(
     }
     const matches = localByFingerprint.get(item.fingerprint) || [];
     if (matches.length === 0) {
-      const candidates = suggestedCandidates(item, requestsByEvidence).filter(
+      const candidates = suggestedCandidates(
+        item,
+        requestsByEvidence,
+        matchingWindowMinutes,
+      ).filter(
         ({ request }) =>
           (request.zendeskTicketId == null ||
             request.zendeskTicketId === item.zendeskTicketId) &&
@@ -395,6 +412,13 @@ export async function previewReducedManifest(
             submittedAt: request.sent.toISOString(),
             matchKind: 'suggested',
             reason: SUGGESTION_REASON,
+            ...(typeof request.username === 'string'
+              ? { senderUsername: request.username }
+              : {}),
+            email: request.email!,
+            ...(typeof request.subject === 'string'
+              ? { subject: request.subject }
+              : {}),
             timeDifferenceSeconds,
             competingCandidateCount: candidates.length,
             currentStatus: statusForPreview(request.status),
@@ -494,6 +518,7 @@ export async function previewReducedManifest(
     actor,
     createdAt: now,
     expiresAt: new Date(now.getTime() + PREVIEW_TTL_MS),
+    matchingWindowMinutes,
     entries,
     counts,
   });
@@ -515,6 +540,7 @@ export async function previewReducedManifest(
     changes,
     matchReviews,
     expiresAt: preview.expiresAt.toISOString(),
+    matchingWindowMinutes,
   };
 }
 
@@ -703,7 +729,8 @@ export async function applyPreview(
             entry.normalisedMessageHash ||
           originalTime === undefined ||
           !(current.sent instanceof Date) ||
-          Math.abs(current.sent.getTime() - originalTime) > 60_000
+          Math.abs(current.sent.getTime() - originalTime) >
+            (claimed.matchingWindowMinutes ?? 1) * 60_000
         ) {
           result.skipped++;
           continue;

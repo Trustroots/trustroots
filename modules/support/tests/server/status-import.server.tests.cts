@@ -1,4 +1,5 @@
 import type { Types } from 'mongoose';
+import type { SupportStatusImportPreviewRecord } from '../../server/models/support-status-import-preview.server.model.mts';
 
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -38,7 +39,9 @@ interface SupportRequestFixture {
 
 const SupportRequest = mongoose.model<SupportRequestFixture>('SupportRequest');
 const AuditLog = mongoose.model('AuditLog');
-const PreviewModel = mongoose.model('SupportStatusImportPreview');
+const PreviewModel = mongoose.model<SupportStatusImportPreviewRecord>(
+  'SupportStatusImportPreview',
+);
 
 describe('conservative support status import', () => {
   let adminId: Types.ObjectId;
@@ -188,11 +191,11 @@ describe('conservative support status import', () => {
     );
     assert.equal(
       preview.matchReviews[0]?.candidates[0]?.reason.includes(
-        'within 60 seconds',
+        'within the selected window',
       ),
       true,
     );
-    assert.equal(JSON.stringify(preview).includes(input.email), false);
+    assert.equal(preview.matchReviews[0]?.candidates[0]?.email, input.email);
     assert.equal(JSON.stringify(preview).includes(localMessage), false);
 
     const withoutSelection = await applyPreview(preview.previewId, adminId);
@@ -219,6 +222,147 @@ describe('conservative support status import', () => {
       (await SupportRequest.findById(competingRequest._id).lean())
         ?.zendeskTicketId,
       891,
+    );
+  });
+
+  it('stores and enforces a wider matching window through apply', async () => {
+    const localMessage = 'A fictional request & needs help.';
+    const sourceMessage = 'A fictional request  & needs help.';
+    const submittedAt = new Date(supportRequest.sent.getTime() - 2 * 60_000);
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      {
+        $set: {
+          message: localMessage,
+          username: 'fictional-name',
+          subject: 'Fictional subject',
+        },
+      },
+    );
+    const source = {
+      version: 2,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      items: [
+        {
+          zendeskTicketId: 892,
+          status: 'pending',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+          fingerprint: supportRequestFingerprint({
+            ...input,
+            message: sourceMessage,
+          }),
+          evidence: {
+            senderHash: supportImportSenderHash(input.email),
+            category: input.category,
+            submittedAt: submittedAt.toISOString(),
+            normalisedMessageHash: supportImportMessageHash(sourceMessage),
+          },
+        },
+      ],
+    };
+    const preview = await previewReducedManifest(source, adminId, '5');
+    assert.equal(preview.matchingWindowMinutes, 5);
+    const candidate = preview.matchReviews[0]?.candidates[0];
+    assert.equal(candidate?.senderUsername, 'fictional-name');
+    assert.equal(candidate?.email, input.email);
+    assert.equal(candidate?.subject, 'Fictional subject');
+    const storedPreview = await PreviewModel.findById(preview.previewId).lean();
+    assert.equal(JSON.stringify(storedPreview).includes(input.email), false);
+    assert.equal(
+      JSON.stringify(storedPreview).includes('fictional-name'),
+      false,
+    );
+    const previewAudit = await AuditLog.findOne({
+      'params.previewId': preview.previewId,
+    }).lean();
+    assert.equal(JSON.stringify(previewAudit).includes(input.email), false);
+    assert.equal(
+      JSON.stringify(previewAudit).includes('Fictional subject'),
+      false,
+    );
+    assert.deepEqual(
+      await applyPreview(preview.previewId, adminId, [
+        { zendeskTicketId: 892, requestId: String(supportRequest._id) },
+      ]),
+      { applied: 1, alreadyApplied: 0, skipped: 0 },
+    );
+    assert.equal(
+      (await PreviewModel.findById(preview.previewId).lean())
+        ?.matchingWindowMinutes,
+      5,
+    );
+  });
+
+  it('rejects non-canonical matching windows and defaults legacy previews to one minute', async () => {
+    for (const invalid of [
+      '',
+      '01',
+      '1.0',
+      '+1',
+      ' 1',
+      '61',
+      '0',
+      '1x',
+      ['1'],
+      null,
+      true,
+    ]) {
+      await assert.rejects(
+        previewReducedManifest(manifest(), adminId, invalid),
+        /Matching window must be an integer/,
+      );
+    }
+    const defaultPreview = await previewReducedManifest(manifest(), adminId);
+    assert.equal(defaultPreview.matchingWindowMinutes, 1);
+    await PreviewModel.updateOne(
+      { _id: defaultPreview.previewId },
+      { $unset: { matchingWindowMinutes: 1 } },
+    );
+    assert.equal(
+      (await PreviewModel.findById(defaultPreview.previewId).lean())
+        ?.matchingWindowMinutes,
+      undefined,
+    );
+  });
+
+  it('uses the one-minute guard when applying a legacy preview without a stored window', async () => {
+    const localMessage = 'A fictional request & needs help.';
+    const sourceMessage = 'A fictional request  & needs help.';
+    await SupportRequest.updateOne(
+      { _id: supportRequest._id },
+      { $set: { message: localMessage } },
+    );
+    const source = {
+      version: 2,
+      exportedAt: '2025-01-01T00:00:00.000Z',
+      items: [
+        {
+          zendeskTicketId: 893,
+          status: 'pending',
+          updatedAt: '2025-01-01T00:00:00.000Z',
+          fingerprint: supportRequestFingerprint({
+            ...input,
+            message: sourceMessage,
+          }),
+          evidence: {
+            senderHash: supportImportSenderHash(input.email),
+            category: input.category,
+            submittedAt: supportRequest.sent.toISOString(),
+            normalisedMessageHash: supportImportMessageHash(sourceMessage),
+          },
+        },
+      ],
+    };
+    const preview = await previewReducedManifest(source, adminId);
+    await PreviewModel.updateOne(
+      { _id: preview.previewId },
+      { $unset: { matchingWindowMinutes: 1 } },
+    );
+    assert.deepEqual(
+      await applyPreview(preview.previewId, adminId, [
+        { zendeskTicketId: 893, requestId: String(supportRequest._id) },
+      ]),
+      { applied: 1, alreadyApplied: 0, skipped: 0 },
     );
   });
 

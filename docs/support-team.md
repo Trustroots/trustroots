@@ -112,16 +112,22 @@ pnpm support:prepare-zendesk-statuses -- --matching-evidence --output /private/p
 Version 2 adds only one-way sender and normalised-message hashes, the original
 category, and the submission time. It does not contain email addresses or
 correspondence. Suggestions require the same original sender and category,
-submission within 60 seconds, and an equivalent message after conservative
+submission within the selected matching window, and an equivalent message after conservative
 formatting normalisation. Missing submission time disables suggestions.
 HTML-escaped and URL-expanded renderings are covered by this normalisation,
 while preserving the fingerprint and identity of the original stored request.
 The preview shows exact matches separately from suggestions and lists every
 competing request by ID, category and submission time, with a link to each
-request. Suggested matches never select themselves: choose at most one request
-checkbox for each Zendesk ticket. Tickets with competing candidates are never
-chosen automatically. If different manifest renderings point to the same local
-request, all affected tickets are skipped as an ambiguous source match and
+request. The submission-time matching window defaults to one minute and can be
+set from one to 60 minutes. Changing it clears the reviewed preview and any
+selections; preview the manifest again before applying. Requester username,
+email and subject appear in this authenticated administrator preview only.
+Suggested matches never select themselves. **Select all unambiguous matches**
+chooses only tickets with one candidate whose request appears once across all
+suggestions and is not already an exact match. You can also select individual
+candidates, at most one request for each Zendesk ticket. **Clear selection**
+removes all choices; bulk selection preserves choices already reviewed manually.
+If different manifest renderings point to the same local request, all affected tickets are skipped as an ambiguous source match and
 left unchanged.
 
 The **Skipped during matching** table explains unmatched requests, repeated
