@@ -24,6 +24,8 @@ import org.jacoco.core.internal.analysis.filter.TrustrootsGeneratedCodeFilter;
 import org.jacoco.core.tools.ExecFileLoader;
 import org.jacoco.report.DirectorySourceFileLocator;
 import org.jacoco.report.xml.XMLFormatter;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
@@ -61,6 +63,7 @@ public final class FilteredReport {
         }
         final CoverageBuilder coverage = new CoverageBuilder();
         TrustrootsGeneratedCodeFilter.clearAudit();
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(indexEnumClassNames(classDirectories));
         final Analyzer analyzer = new Analyzer(loader.getExecutionDataStore(), coverage);
         int analyzedClasses = 0;
         for (String path : classDirectories.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
@@ -145,6 +148,39 @@ public final class FilteredReport {
                 || name.equals("BuildConfig.class")) return 0;
         analyzer.analyzeAll(root);
         return 1;
+    }
+
+    private static Set<String> indexEnumClassNames(String classDirectories) throws IOException {
+        Set<String> enumClassNames = new HashSet<>();
+        for (String path : classDirectories.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
+            File root = new File(path);
+            if (!root.exists()) continue;
+            if (root.isFile()) {
+                addEnumClass(root.toPath(), enumClassNames);
+                continue;
+            }
+            try (var paths = Files.walk(root.toPath())) {
+                for (var classFile : paths.filter(Files::isRegularFile)
+                        .filter(file -> file.toString().endsWith(".class")).toList()) {
+                    String name = classFile.getFileName().toString();
+                    if (name.equals("R.class") || name.startsWith("R$") || name.equals("BuildConfig.class")) {
+                        continue;
+                    }
+                    addEnumClass(classFile, enumClassNames);
+                }
+            }
+        }
+        return Set.copyOf(enumClassNames);
+    }
+
+    private static void addEnumClass(java.nio.file.Path classFile, Set<String> enumClassNames) throws IOException {
+        String fileName = classFile.getFileName().toString();
+        if (!fileName.endsWith(".class") || fileName.equals("R.class") || fileName.startsWith("R$")
+                || fileName.equals("BuildConfig.class")) return;
+        ClassReader classReader = new ClassReader(Files.readAllBytes(classFile));
+        if ((classReader.getAccess() & Opcodes.ACC_ENUM) != 0) {
+            enumClassNames.add(classReader.getClassName());
+        }
     }
 
     private static void writeReport(File destination, SessionInfoStore sessions,

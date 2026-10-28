@@ -28,6 +28,7 @@ public final class TrustrootsGeneratedCodeFilterRegression {
     public static void main(String[] args) throws Exception {
         testExactComposableSwitchFallbackIsIgnoredWithoutIgnoringItsDecision();
         testEnumMappedComposeSwitchDefaultOutcomeIsReplaced();
+        testCustomOrdinalMethodDoesNotPassEnumRegistry();
         testEnumMappedSwitchWithSourceDefaultIsPreserved();
         testCustomEnumFilterSkipsUpstreamReplacedSwitch();
         testSwitchFallbackWithoutComposeScaffoldIsPreserved();
@@ -79,7 +80,8 @@ public final class TrustrootsGeneratedCodeFilterRegression {
     }
 
     private static void testEnumMappedComposeSwitchDefaultOutcomeIsReplaced() {
-        MethodNode method = enumComposeSwitch(true);
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(true, "sample/Color");
         TrustrootsGeneratedCodeFilter.clearAudit();
 
         RecordingOutput output = apply(method, "sample/EnumComposable", "java/lang/Object");
@@ -95,7 +97,8 @@ public final class TrustrootsGeneratedCodeFilterRegression {
     }
 
     private static void testEnumMappedSwitchWithSourceDefaultIsPreserved() {
-        MethodNode method = enumComposeSwitch(false);
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(false, "sample/Color");
         LabelNode defaultLabel = null;
         for (AbstractInsnNode insn : method.instructions) {
             if (insn instanceof TableSwitchInsnNode table) defaultLabel = table.dflt;
@@ -110,16 +113,26 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         check(output.ignored.isEmpty(), "a source-bearing default must not be hidden by the Compose fallback rule");
     }
 
-    private static MethodNode enumComposeSwitch(boolean generatedDefault) {
+    private static void testCustomOrdinalMethodDoesNotPassEnumRegistry() {
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(true, "sample/OrdinalLike");
+
+        RecordingOutput output = apply(method, "sample/EnumComposable", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "an ordinal-shaped call on a non-enum class must not erase an exhaustive switch outcome");
+    }
+
+    private static MethodNode enumComposeSwitch(boolean generatedDefault, String ordinalOwner) {
         MethodNode method = composableMethod("drawEnum",
                 "(Landroidx/compose/runtime/Composer;Ljava/lang/Enum;)V");
         LabelNode defaultLabel = new LabelNode();
         LabelNode caseLabel = new LabelNode();
         method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
-        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, "sample/Draw$WhenMappings",
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, "sample/EnumComposable$WhenMappings",
                 "$EnumSwitchMapping$0", "[I"));
         method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.SWAP));
-        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Enum",
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, ordinalOwner,
                 "ordinal", "()I", false));
         method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IALOAD));
         method.instructions.add(new TableSwitchInsnNode(1, 1, defaultLabel, caseLabel));
@@ -145,7 +158,8 @@ public final class TrustrootsGeneratedCodeFilterRegression {
     }
 
     private static void testCustomEnumFilterSkipsUpstreamReplacedSwitch() {
-        MethodNode method = enumComposeSwitch(true);
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/Color"));
+        MethodNode method = enumComposeSwitch(true, "sample/Color");
         TableSwitchInsnNode switchInsn = null;
         for (AbstractInsnNode insn : method.instructions) {
             if (insn instanceof TableSwitchInsnNode table) switchInsn = table;
