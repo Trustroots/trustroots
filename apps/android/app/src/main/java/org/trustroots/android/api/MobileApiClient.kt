@@ -647,6 +647,12 @@ class MobileApiClient(
         allowResponseCache: Boolean = true,
     ): JsonResponse {
         val endpoint = URL("${baseURL.trimEnd('/')}$path")
+        val readCacheAccount = cacheAccount?.takeIf {
+            allowResponseCache && method == "GET" && sessionCookie != null
+        }
+        val mutationCacheAccount = cacheAccount?.takeIf {
+            method != "GET" && sessionCookie != null
+        }
         val connection = endpoint.openConnection() as HttpURLConnection
         try {
             connection.requestMethod = method
@@ -665,12 +671,13 @@ class MobileApiClient(
                 connection.outputStream.use { output -> output.write(it.toByteArray()) }
             }
             val responseCode = connection.responseCode
-            val responseBody = (if (responseCode in 200..299) {
+            val successful = responseCode in 200..299
+            val responseBody = (if (successful) {
                 connection.inputStream
             } else {
                 connection.errorStream
             })?.bufferedReader()?.use { it.readText() }.orEmpty()
-            if (responseCode !in 200..299) {
+            if (!successful) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
                     .orEmpty()
@@ -680,22 +687,23 @@ class MobileApiClient(
                     failureKind = failureKind,
                 )
             }
-            if (allowResponseCache && method == "GET" && sessionCookie != null && cacheAccount != null) {
-                responseCache?.save(baseURL, cacheAccount, path, responseBody)
-            } else if (method != "GET" && sessionCookie != null && cacheAccount != null) {
-                when {
-                    path == "/api/messages" -> responseCache?.clearCategories(
-                        baseURL, cacheAccount, setOf("inbox", "thread"),
-                    )
-                    path.startsWith("/api/users/memberships/") -> responseCache?.clearCategories(
-                        baseURL, cacheAccount, setOf("own-profile", "profile"),
-                    )
-                    path == "/api/users" -> responseCache?.clearCategories(
-                        baseURL, cacheAccount, setOf("own-profile"),
-                    )
-                    path.startsWith("/api/blocked-users/") -> responseCache?.clearCategories(
-                        baseURL, cacheAccount, setOf("profile", "profile-detail"),
-                    )
+            when {
+                readCacheAccount != null -> responseCache?.save(baseURL, readCacheAccount, path, responseBody)
+                mutationCacheAccount != null -> responseCache?.let { cache ->
+                    when {
+                        path == "/api/messages" -> cache.clearCategories(
+                            baseURL, mutationCacheAccount, setOf("inbox", "thread"),
+                        )
+                        path.startsWith("/api/users/memberships/") -> cache.clearCategories(
+                            baseURL, mutationCacheAccount, setOf("own-profile", "profile"),
+                        )
+                        path == "/api/users" -> cache.clearCategories(
+                            baseURL, mutationCacheAccount, setOf("own-profile"),
+                        )
+                        path.startsWith("/api/blocked-users/") -> cache.clearCategories(
+                            baseURL, mutationCacheAccount, setOf("profile", "profile-detail"),
+                        )
+                    }
                 }
             }
             mutableOfflineSavedAt.value = null
@@ -704,9 +712,7 @@ class MobileApiClient(
                 sessionCookie = sessionCookieFrom(connection.headerFields),
             )
         } catch (error: IOException) {
-            val cached = if (allowResponseCache && method == "GET" && sessionCookie != null && cacheAccount != null) {
-                responseCache?.load(baseURL, cacheAccount, path)
-            } else null
+            val cached = readCacheAccount?.let { account -> responseCache?.load(baseURL, account, path) }
             if (cached != null) {
                 mutableOfflineSavedAt.value = cached.savedAt
                 return JsonResponse(cached.body, null)

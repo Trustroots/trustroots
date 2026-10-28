@@ -97,6 +97,20 @@ class HostDetailViewModelTest {
         assertEquals(HostDetailUiState(), model.state.value)
     }
 
+    @Test fun environmentRefreshBeforeTheFirstRouteKeepsTheDetailEmpty() = withModel { model, repository ->
+        repository.sessionChanged = true
+
+        model.updateClientAndSession(
+            MobileApiClient("https://alternate.example.test"),
+            MemberSession("connect.sid=fresh-session", MobileMember("steady-heron", "Steady Heron")),
+        )
+
+        assertEquals(HostDetailUiState(), model.state.value)
+        assertTrue(repository.offerIDs.isEmpty())
+        assertTrue(repository.profileUsernames.isEmpty())
+        assertEquals(0, repository.membershipCalls)
+    }
+
     @Test fun blankAndRepeatedRouteLoadsDoNotDuplicateDetailRequests() = withModel { model, repository ->
         val pendingOffer = CompletableDeferred<Result<HostOffer>>()
         repository.offerHandler = { call, id ->
