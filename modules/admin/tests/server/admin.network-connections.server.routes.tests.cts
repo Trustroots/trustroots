@@ -42,6 +42,33 @@ describe('Admin network connections routes', () => {
 
   afterEach(utils.clearDatabase);
 
+  it('finds previous and current email addresses for staff only', async () => {
+    const id = savedUsers[2]!._id;
+    await mongoose.connection.collection('users').updateOne(
+      { _id: id },
+      {
+        $set: {
+          email: 'current@example.test',
+          connectionSearchKeys: ['email:previous@example.test'],
+        },
+      },
+    );
+    for (const address of ['previous@example.test', 'current@example.test']) {
+      const response = await supportAgent
+        .get('/api/admin/network-connections')
+        .query({ network: 'email', identifier: address.toUpperCase() })
+        .expect(200);
+      const match = response.body.members.find(
+        (member: { _id: string }) => member._id === String(id),
+      );
+      assert.equal(match.current, address.startsWith('current'));
+      await regularAgent
+        .get('/api/admin/network-connections')
+        .query({ network: 'email', identifier: address })
+        .expect(403);
+    }
+  });
+
   it('allows administrators and support staff, and rejects other roles', async () => {
     await request(app).get('/api/admin/network-connections').expect(403);
     await request(app)
@@ -191,7 +218,7 @@ describe('Admin network connections routes', () => {
     const auditEntries = await mongoose
       .model('AuditLog')
       .find({ user: savedUsers[1]!._id })
-      .lean();
+      .lean<Array<{ route?: string; query: unknown }>>();
     const searchAudit = auditEntries.find(entry =>
       entry.route?.endsWith('/network-connections'),
     );

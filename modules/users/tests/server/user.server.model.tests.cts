@@ -812,7 +812,7 @@ describe('User Model Unit Tests:', function () {
       await second
         .save()
         .should.be.rejectedWith(
-          'An external connection changed in another request',
+          /An external connection changed in another request/,
         );
       const saved = await User.findById(member._id).exec();
       assertPresent(saved);

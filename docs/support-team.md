@@ -98,6 +98,9 @@ Admin and support member pages show current external profile links and their
 history. The **External connection search** staff page searches by network and a complete
 identifier or recognised profile URL, including identifiers that a member has
 replaced or removed. Results distinguish current connections from previous ones.
+The same panel and search also include email addresses; an email change enters
+history only when the new address is confirmed. Earlier addresses that were
+replaced before this feature was deployed cannot be recovered by the backfill.
 An identifier match is not proof that two accounts belong to the same person;
 external usernames may be reassigned.
 

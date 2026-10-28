@@ -24,7 +24,7 @@ const User = mongoose.model<UserServerRecord>('User');
 const AuditLog = mongoose.model('AuditLog');
 const PAGE_SIZE = 50;
 const CONNECTION_FIELDS =
-  'extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData.facebook.id additionalProvidersData.twitter.screen_name additionalProvidersData.github.login';
+  'email extSitesCouchers extSitesBW extSitesCS extSitesWS extSitesServas nostrNpub additionalProvidersData.facebook.id additionalProvidersData.twitter.screen_name additionalProvidersData.github.login';
 
 function pageNumber(value: unknown): number | null {
   if (value === undefined) return 1;
@@ -114,7 +114,11 @@ export async function search(req: StaffRequest, res: StaffResponse) {
   }
   try {
     const key = connectionSearchKey(network, identifier);
-    const members = await User.find({ connectionSearchKeys: key })
+    const members = await User.find(
+      network === 'email'
+        ? { $or: [{ connectionSearchKeys: key }, { email: identifier }] }
+        : { connectionSearchKeys: key },
+    )
       .select(`username displayName ${CONNECTION_FIELDS}`)
       .sort({ _id: 1 })
       .skip((page - 1) * PAGE_SIZE)

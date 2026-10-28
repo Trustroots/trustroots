@@ -50,6 +50,18 @@ test('staff can search and inspect external network connections', async ({
     });
     expect(response.ok()).toBeTruthy();
   }
+  const newEmail = `new-${member.email}`;
+  const change = await request.put('/api/users', {
+    headers: { 'X-Trustroots-Request': '1' },
+    data: { email: newEmail },
+  });
+  expect(change.ok()).toBeTruthy();
+  const { findActionToken } = await import('../../support/db.mts');
+  const token = await findActionToken(member.username, 'emailToken');
+  const confirmed = await request.post(`/api/auth/confirm-email/${token}`, {
+    headers: { 'X-Trustroots-Request': '1' },
+  });
+  expect(confirmed.ok()).toBeTruthy();
 
   await signInViaApi(page, request, support);
   await page.goto('/admin/network-connections');
@@ -87,15 +99,24 @@ test('staff can search and inspect external network connections', async ({
   const history = page.getByRole('table', {
     name: 'External connection changes',
   });
-  await expect(history.locator('tbody tr')).toHaveCount(3);
+  await expect(history.locator('tbody tr')).toHaveCount(4);
   await expect(history.getByText('Removed')).toBeVisible();
   await expect(
     history.getByRole('link', { name: 'Fictional-Old' }).first(),
   ).toHaveAttribute('href', 'https://www.bewelcome.org/members/fictional-old');
-  await expect(history.locator('time')).toHaveCount(3);
+  await expect(history.locator('time')).toHaveCount(4);
+  await expect(history.getByText(member.email).first()).toBeVisible();
 
   await signInViaApi(page, request, SEEDED_ADMIN);
   await page.goto('/admin/network-connections');
+  await page.getByLabel('Network').selectOption('email');
+  await page.getByLabel('Identifier').fill(member.email);
+  await page.getByRole('button', { name: 'Search' }).click();
+  await expect(
+    page
+      .getByRole('list', { name: 'Members with this connection' })
+      .getByText('Previous'),
+  ).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'Search external connections' }),
   ).toBeVisible();

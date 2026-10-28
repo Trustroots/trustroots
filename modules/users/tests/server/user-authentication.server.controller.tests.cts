@@ -271,7 +271,9 @@ describe('Authentication controller OAuth unit tests', () => {
     it('removes the provider data and returns the sanitized user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
 
@@ -944,6 +946,50 @@ describe('Authentication controller OAuth unit tests', () => {
   });
 
   describe('confirmEmail', () => {
+    it('retains the previous address only after a successful confirmation', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const pendingEmail = 'new-address@example.test';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            emailTemporary: pendingEmail,
+            emailToken: 'change-email-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+          },
+        },
+      );
+      const before = await User.findById(saved._id)
+        .select('+connectionHistory')
+        .lean();
+      before!
+        .connectionHistory!.some(entry => entry.newIdentifier === pendingEmail)
+        .should.be.false();
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token: 'change-email-token' },
+          login: (_user: unknown, callback: AuthCallback) => callback(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const after = await User.findById(saved._id)
+        .select('+connectionHistory +connectionSearchKeys')
+        .lean();
+      after!.connectionHistory!.should.containDeep([
+        {
+          network: 'email',
+          oldIdentifier: saved.email,
+          newIdentifier: pendingEmail,
+          initial: false,
+        },
+      ]);
+      after!.connectionSearchKeys!.should.containEql(`email:${saved.email}`);
+      after!.connectionSearchKeys!.should.containEql(`email:${pendingEmail}`);
+    });
     it('redirects invalid email tokens to the invalid confirmation page', async () => {
       const res = deferredResponse();
       authController.validateEmailToken({ params: { token: 'missing' } }, res);
