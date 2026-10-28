@@ -56,6 +56,11 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             "androidx/compose/foundation/gestures/TransformGestureDetectorKt";
     private static final String POINTER_INPUT_SCOPE = "androidx/compose/ui/input/pointer/PointerInputScope";
     private static final List<String> AUDIT = Collections.synchronizedList(new ArrayList<>());
+    private static volatile Set<String> ENUM_CLASSES = Set.of();
+
+    public static void setEnumClassNames(Set<String> enumClassNames) {
+        ENUM_CLASSES = Set.copyOf(enumClassNames);
+    }
 
     public static List<String> auditEntries() {
         synchronized (AUDIT) {
@@ -498,11 +503,11 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             if (defaultLabel == null) {
                 continue;
             }
-            List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel);
+            List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel, insn);
             if (isComposeExhaustiveSwitchFallback(block)) {
                 AbstractInsnNode first = block.get(0);
                 AbstractInsnNode thrown = block.get(block.size() - 1);
-                if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn)) {
+                if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn, context)) {
                     output.replaceBranches(insn, Replacements.ignoreDefaultBranch(insn));
                     audit(context, method, insn, insn,
                             "exhaustive Compose enum switch default outcome");
@@ -514,7 +519,7 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         }
     }
 
-    private static boolean isEnumMappingSwitch(AbstractInsnNode insn) {
+    private static boolean isEnumMappingSwitch(AbstractInsnNode insn, IFilterContext context) {
         if (!(insn instanceof TableSwitchInsnNode || insn instanceof LookupSwitchInsnNode)) return false;
         AbstractInsnNode arrayLoad = previousOpcode(insn.getPrevious());
         AbstractInsnNode ordinal = previousOpcode(arrayLoad == null ? null : arrayLoad.getPrevious());
@@ -523,13 +528,20 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         return arrayLoad != null && arrayLoad.getOpcode() == Opcodes.IALOAD
                 && ordinal instanceof MethodInsnNode ordinalCall
                 && ordinalCall.getOpcode() == Opcodes.INVOKEVIRTUAL
-                && "java/lang/Enum".equals(ordinalCall.owner)
+                && ("java/lang/Enum".equals(ordinalCall.owner) || ENUM_CLASSES.contains(ordinalCall.owner))
                 && "ordinal".equals(ordinalCall.name) && "()I".equals(ordinalCall.desc)
                 && swap != null && swap.getOpcode() == Opcodes.SWAP
                 && mapping instanceof FieldInsnNode field
                 && field.getOpcode() == Opcodes.GETSTATIC
                 && field.name.startsWith("$EnumSwitchMapping$")
-                && field.owner.endsWith("$WhenMappings") && "[I".equals(field.desc);
+                && isEnclosingWhenMappingsOwner(field.owner, context.getClassName())
+                && "[I".equals(field.desc);
+    }
+
+    private static boolean isEnclosingWhenMappingsOwner(String mappingOwner, String className) {
+        int nestedClass = className.indexOf('$');
+        String enclosingClass = nestedClass < 0 ? className : className.substring(0, nestedClass);
+        return mappingOwner.startsWith(enclosingClass + "$") && mappingOwner.endsWith("$WhenMappings");
     }
 
     private static void filterLoneComposeGroupClosures(final MethodNode method,
@@ -749,14 +761,24 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         }
     }
 
-    private static List<AbstractInsnNode> instructionsUntilThrow(AbstractInsnNode label) {
+    private static List<AbstractInsnNode> instructionsUntilThrow(AbstractInsnNode label,
+            AbstractInsnNode switchInstruction) {
         List<AbstractInsnNode> result = new ArrayList<>();
+        Set<LabelNode> otherCases = new java.util.HashSet<>();
+        if (switchInstruction instanceof TableSwitchInsnNode table) {
+            otherCases.addAll(table.labels);
+            if (otherCases.contains(table.dflt)) return result;
+        } else if (switchInstruction instanceof LookupSwitchInsnNode lookup) {
+            otherCases.addAll(lookup.labels);
+            if (otherCases.contains(lookup.dflt)) return result;
+        }
         for (AbstractInsnNode insn = label.getNext(); insn != null; insn = insn.getNext()) {
             if (insn.getOpcode() >= 0) {
                 result.add(insn);
                 if (insn.getOpcode() == Opcodes.ATHROW) break;
-            } else if (insn instanceof LabelNode && !result.isEmpty()) {
-                // The first label after the switch default starts another case block.
+            } else if (insn instanceof LabelNode caseLabel && !result.isEmpty()
+                    && otherCases.contains(caseLabel)) {
+                // Ignore debug/local-variable labels but stop at the next switch case target.
                 break;
             }
         }
