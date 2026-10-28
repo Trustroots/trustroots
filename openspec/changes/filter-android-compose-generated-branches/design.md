@@ -6,4 +6,6 @@ The raw XML remains available. The corrected report must reconcile branch and in
 
 ## Validation
 
+Inlined library guards require both primary Kotlin SMAP provenance outside the application source tree and an exact Compose contract-check pattern. KotlinDebug call-site mappings alone are insufficient. Keep identical application-source checks, insertion/reuse decisions and uncertain patterns measured. This policy does not exclude whole source files or methods.
+
 Exercise real compiler bytecode and positive/negative fixtures. Generic branches, source lambdas and application state decisions remain measured. Re-run complete unit coverage and combine matching device probes, then confirm zero missed executable lines and an exact branch ratio of 100% before raising the floor.

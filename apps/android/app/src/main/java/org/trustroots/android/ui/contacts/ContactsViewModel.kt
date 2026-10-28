@@ -178,7 +178,6 @@ internal class ContactsViewModel(
     }
 
     private fun emitSessionInvalidation() {
-        if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         mutableState.update {
             it.copy(

@@ -2,7 +2,7 @@
 
 ### Requirement: Auditable Android executable-line coverage
 
-Android coverage SHALL remove only bytecode-proven compiler instructions before aggregating line and branch counters. Application behaviour and uncertain paths SHALL remain measured. Reports SHALL preserve raw XML, an instruction audit and reconciled generated-branch counter differences.
+Android coverage SHALL remove only bytecode-proven compiler instructions or verified inlined library guards before aggregating line and branch counters. Application behaviour and uncertain paths SHALL remain measured. Reports SHALL preserve raw XML, an instruction audit and reconciled branch counter differences.
 
 #### Scenario: Proven generated line
 
@@ -20,6 +20,12 @@ Android coverage SHALL remove only bytecode-proven compiler instructions before 
 
 - **WHEN** an application conditional, callable target or ordinary source lambda resembles compiler scaffolding
 - **THEN** its instructions and decisions remain measured
+
+#### Scenario: Verified inlined library guard
+
+- **WHEN** an exact Compose contract-guard instruction sequence maps through primary Kotlin SMAP to third-party library source
+- **THEN** the report may remove that guard and audit its instruction evidence and source provenance
+- **AND** an identical sequence in application source or with uncertain provenance remains measured
 
 #### Scenario: Complete measurement
 
