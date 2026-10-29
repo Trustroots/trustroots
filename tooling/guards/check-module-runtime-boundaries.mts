@@ -31,6 +31,7 @@ function tierAtPath(
 function targetTier(
   specifier: string,
   result: ReturnType<typeof resolveSpecifier>,
+  modulesDir: string,
 ): RuntimeTier | undefined {
   if (!result) return undefined;
   if (
@@ -43,8 +44,11 @@ function targetTier(
     const first = suffix.split('/')[0];
     if (TIERS.includes(first as RuntimeTier)) return first as RuntimeTier;
   }
-  if (result.resolved && result.target) {
-    return tierAtPath(result.target.dir, result.resolved);
+  if (result.resolved && inside(modulesDir, result.resolved)) {
+    const moduleName = path
+      .relative(modulesDir, result.resolved)
+      .split(path.sep)[0];
+    return tierAtPath(path.join(modulesDir, moduleName), result.resolved);
   }
   return undefined;
 }
@@ -82,7 +86,7 @@ export function analyze(
             root,
             packages,
           );
-          const importedTier = targetTier(specifier, result);
+          const importedTier = targetTier(specifier, result, modulesDir);
           if (importedTier && forbidden(sourceTier, importedTier)) {
             violations.push({
               file,

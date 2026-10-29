@@ -68,3 +68,31 @@ test('ignores test files and unrelated repository packages', t => {
 
   assert.deepEqual(analyze(root), []);
 });
+
+test('classifies module paths without relying on valid package manifests', t => {
+  const root = makeRepo(t, {
+    'modules/a/client/entry.ts': [
+      "import relative from '../../b/server/entry';",
+      "import alias from '@/modules/c/server/entry';",
+    ].join('\n'),
+    'modules/b/server/entry.ts': 'export default 1;',
+    'modules/c/package.json': '{ malformed',
+    'modules/c/server/entry.ts': 'export default 1;',
+    'modules/a/server/entry.ts': "import client from '../../b/client/entry';",
+    'modules/b/client/entry.ts': 'export default 1;',
+    'modules/a/shared/entry.ts':
+      "import client from '@/modules/c/client/entry';",
+    'modules/c/client/entry.ts': 'export default 1;',
+  });
+  assert.deepEqual(
+    analyze(root)
+      .map(({ specifier }) => specifier)
+      .sort(),
+    [
+      '../../b/server/entry',
+      '@/modules/c/server/entry',
+      '../../b/client/entry',
+      '@/modules/c/client/entry',
+    ].sort(),
+  );
+});
