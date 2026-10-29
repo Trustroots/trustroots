@@ -74,6 +74,57 @@ async function expectDesignTokens(page: Page) {
   });
 }
 
+async function expectUtilityAndBootstrap(page: Page) {
+  const result = await page.evaluate(() => {
+    const utility = document.createElement('span');
+    utility.className = 'tw:bg-notification';
+    const button = document.createElement('button');
+    button.className = 'btn btn-primary';
+    document.body.append(utility, button);
+    const styles = {
+      utility: getComputedStyle(utility).backgroundColor,
+      button: getComputedStyle(button).backgroundColor,
+      buttonDisplay: getComputedStyle(button).display,
+    };
+    utility.remove();
+    button.remove();
+    return styles;
+  });
+  expect(result).toEqual({
+    utility: 'rgb(217, 83, 79)',
+    button: 'rgb(18, 181, 145)',
+    buttonDisplay: 'inline-block',
+  });
+}
+
+test('prefixed utilities coexist with Bootstrap in LTR and RTL', async ({
+  page,
+  context,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.home', ['Homepage loads for visitors.']);
+  expectPresent(baseURL);
+  await page.goto('/');
+  await expectDesignTokens(page);
+  await expectUtilityAndBootstrap(page);
+
+  await context.addCookies([{ name: 'i18n', value: 'ar', url: baseURL }]);
+  const rtl = page.waitForResponse(
+    response =>
+      new URL(response.url()).pathname === '/assets/react-main.rtl.css',
+  );
+  await page.goto('/');
+  expect((await rtl).ok()).toBeTruthy();
+  await expect
+    .poll(() =>
+      page
+        .locator('#rtl-style')
+        .evaluate(link => Boolean((link as HTMLLinkElement).sheet)),
+    )
+    .toBe(true);
+  await expectUtilityAndBootstrap(page);
+});
+
 test('design tokens resolve on public pages in LTR and RTL', async ({
   page,
   context,

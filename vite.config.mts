@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { readFile } from 'node:fs/promises';
 
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 import { defineConfig, transformWithOxc } from 'vite';
 
 import config from './config/config.mts';
@@ -120,7 +121,13 @@ export default defineConfig({
   root,
   // Express owns public files; copying public/ into public/assets would nest it.
   publicDir: false,
-  plugins: [legacyJsx, legacyCssImports, rtlStylesheetPlugin(), react()],
+  plugins: [
+    legacyJsx,
+    legacyCssImports,
+    tailwindcss(),
+    rtlStylesheetPlugin(),
+    react(),
+  ],
   resolve: {
     alias: {
       ...aliases,
