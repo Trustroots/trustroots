@@ -2,6 +2,7 @@ package org.trustroots.android.ui
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -16,6 +17,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
@@ -97,7 +100,12 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
                 compose.onAllNodesWithTag("messageComposer").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("messageComposer").performTextInput("A fictional message while history loads.")
-        compose.onNodeWithContentDescription("Send").assertIsDisplayed().performClick()
+        hideTestKeyboard()
+        compose.waitUntil(10_000) {
+            ViewCompat.getRootWindowInsets(compose.activity.window.decorView)
+                ?.isVisible(WindowInsetsCompat.Type.ime()) != true
+        }
+        compose.onNodeWithContentDescription("Send").assertIsDisplayed().assertIsEnabled().performClick()
         compose.waitUntil(10_000) { repository.sendStarted.isCompleted }
 
         repository.history.complete(Result.failure(IOException("A fictional history lookup failed.")))
