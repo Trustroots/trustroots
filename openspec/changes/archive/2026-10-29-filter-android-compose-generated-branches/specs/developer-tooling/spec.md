@@ -37,4 +37,5 @@ Android coverage SHALL remove only bytecode-proven compiler instructions or veri
 
 - **WHEN** the coverage ratchet is raised
 - **THEN** it uses complete matching Android unit and device execution probes, including API 32 compatibility coverage
-- **AND** the corrected report retains 100% executable lines and meets the measured branch floor
+- **AND** the corrected report retains 100% executable lines and 100% branch outcomes
+- **AND** both committed coverage floors are 100%, with no branch allowance

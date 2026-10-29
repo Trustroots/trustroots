@@ -6,5 +6,7 @@
 - [x] 3c. Recognise the conditional form of a proven exhaustive single-entry enum fallback, preserving the valid case and similar source comparisons.
 - [x] 3d. Recognise only the verified generated restart-scope null decision at a composable method tail; retain source null checks and validate negative fixtures.
 - [x] 3e. Admit only exact long-key Composer change calls inside verified remember-cache regions, preserving unrelated long source expressions.
-- [ ] 4. Measure complete matching Android coverage, preserving 100% lines and targeting 100% branches.
-- [ ] 5. Update the ratchet only after the target is measured, validate and archive the specification.
+- [x] 4. Measure complete matching Android coverage, preserving 100% lines and targeting 100% branches.
+- [x] 5. Update the ratchet only after the target is measured, validate and archive the specification.
+
+Complete measurement: 9,715/9,715 lines and 4,030/4,030 branches. The complete API 32/API 36 probes from successful CI run 40872551448 and all 723 current JVM tests use 969 byte-identical eligible application classes. Production reporting validates class identities and reconciles the preserved raw report with its generated-code audit. Both committed floors are 100%, with no branch allowance.

@@ -313,6 +313,65 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun replacingAnInFlightSearchClearsLoadingDuringTheNextDebounce() {
+        var waitCount = 0
+        val firstDebounce = CompletableDeferred<Unit>()
+        val firstDebounceStarted = CompletableDeferred<Unit>()
+        val replacementDebounce = CompletableDeferred<Unit>()
+        val replacementDebounceStarted = CompletableDeferred<Unit>()
+        withViewModel(
+            wait = {
+                when (waitCount++) {
+                    0 -> {
+                        firstDebounceStarted.complete(Unit)
+                        firstDebounce.await()
+                    }
+                    1 -> {
+                        replacementDebounceStarted.complete(Unit)
+                        replacementDebounce.await()
+                    }
+                    else -> error("Unexpected extra search debounce")
+                }
+            },
+        ) { viewModel, repository, _ ->
+            val oldSearchResult = CompletableDeferred<Result<List<MapOffer>>>()
+            val oldSearchStarted = CompletableDeferred<Unit>()
+            val replacementOffer = MapOffer("replacement-result", 40.5, -9.5)
+            val replacementBounds = bounds(40.0)
+            repository.searchHandler = { call, _, _ ->
+                if (call == 1) {
+                    oldSearchStarted.complete(Unit)
+                    withContext(NonCancellable) { oldSearchResult.await() }
+                } else {
+                    Result.success(listOf(replacementOffer))
+                }
+            }
+
+            viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(38.5, -9.5, 7.0), bounds(38.0)))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            assertTrue(firstDebounceStarted.isCompleted)
+            firstDebounce.complete(Unit)
+            assertTrue(oldSearchStarted.isCompleted)
+            assertTrue(viewModel.state.value.isLoading)
+
+            viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(40.5, -9.5, 8.0), replacementBounds))
+
+            assertTrue(replacementDebounceStarted.isCompleted)
+            assertEquals(listOf(bounds(38.0)), repository.searchedBounds)
+            assertFalse("The replaced query must stop reporting loading during its debounce", viewModel.state.value.isLoading)
+
+            replacementDebounce.complete(Unit)
+
+            assertEquals(listOf(bounds(38.0), replacementBounds), repository.searchedBounds)
+            assertEquals(listOf(replacementOffer), viewModel.state.value.offers)
+            assertFalse(viewModel.state.value.isLoading)
+
+            oldSearchResult.complete(Result.success(listOf(MapOffer("stale-result", 38.5, -9.5))))
+            assertEquals(listOf(replacementOffer), viewModel.state.value.offers)
+        }
+    }
+
+    @Test
     fun expiredSearchSessionStopsRequestsUntilAChangedSessionIsInstalled() = withViewModel { viewModel, repository, _ ->
         val expectedBounds = bounds()
         repository.searchHandler = { call, _, _ ->
@@ -703,6 +762,7 @@ class HostMapViewModelTest {
     private fun withViewModel(
         nowMillis: () -> Long = android.os.SystemClock::elapsedRealtime,
         resultsCache: HostMapResultsCache = HostMapResultsCache(),
+        wait: suspend (Long) -> Unit = {},
         test: (HostMapViewModel, FakeHostMapRepository, FakeNotesConnections) -> Unit,
     ) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -713,7 +773,7 @@ class HostMapViewModelTest {
                 repository,
                 { onNote, onError -> notes.open(onNote, onError) },
                 scope,
-                wait = {},
+                wait = wait,
                 now = nowMillis,
                 resultsCache = resultsCache,
             )
