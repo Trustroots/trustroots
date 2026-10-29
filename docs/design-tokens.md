@@ -25,6 +25,14 @@ theme object or a DOM lookup during rendering. Consumers that need literal value
 for a non-CSS API must resolve them separately; CSS variables are not colour
 strings for canvas or other non-CSS APIs.
 
+The web Vite build also provides Tailwind utilities with the `tw:` prefix, for
+example `tw:bg-notification`. The `brand-primary`, `brand-secondary` and
+`notification` colours refer to the shared CSS tokens. Tailwind Preflight is not
+loaded while Bootstrap remains in use. Tailwind utilities are in a CSS cascade
+layer, so existing unlayered styles take precedence when they target the same
+property; avoid combining competing Bootstrap and Tailwind styles on an element.
+Use complete, static utility names in source so Tailwind can discover them.
+
 The initial vocabulary covers brand and text colours, surfaces, typography,
 component padding, radii and notification badge colours. Padding names describe
 the existing component sizes, not a new spacing scale. Existing styles continue

@@ -2,7 +2,6 @@ import React, { type ReactNode } from 'react';
 import styled from 'styled-components';
 
 const Dot = styled.div`
-  background: var(--tr-notification-badge-bg);
   border-radius: 50%;
   height: 7px;
   position: absolute;
@@ -20,7 +19,7 @@ export default function Badge({ children, withNotification }: BadgeProps) {
   return (
     <span className="badge">
       {children}
-      {withNotification && <Dot />}
+      {withNotification && <Dot className="tw:bg-notification" />}
     </span>
   );
 }
