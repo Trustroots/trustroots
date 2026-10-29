@@ -1,0 +1,4 @@
+- [x] Add layer-to-app production import boundary analysis to the existing guard.
+- [x] Add regression tests for prohibited imports, allowed imports and excluded tests.
+- [x] Expose the rule through existing local lint and CI boundary checks.
+- [x] Update the living developer-tooling specification.

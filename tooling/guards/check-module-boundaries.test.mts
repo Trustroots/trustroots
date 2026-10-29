@@ -57,6 +57,37 @@ test('allows modules, packages, config, externals and near-prefix names', t => {
   assert.deepEqual(analyze(root), []);
 });
 
+test('rejects production layer imports into apps and ignores layer tests', t => {
+  const root = makeRepo(t, {
+    'layers/shell/package.json': manifest('@trustroots/shell'),
+    'layers/shell/client/entry.ts': [
+      "import app from '@trustroots/web-app/client/entry';",
+      "export { value } from '@/apps/web/client/entry';",
+      "const relative = require('../../../apps/web/client/entry');",
+      "import config from '@/config/config';",
+      "import feature from '@trustroots/core/client/entry';",
+      "import external from 'some-library';",
+    ].join('\n'),
+    'layers/shell/tests/app.tests.ts':
+      "import app from '@trustroots/web-app/client/entry';",
+    'apps/web/package.json': manifest('@trustroots/web-app'),
+    'apps/web/client/entry.ts': 'export const entry = 1;',
+    'modules/core/package.json': manifest('@trustroots/core'),
+    'modules/core/client/entry.ts': 'export const value = 1;',
+    'config/config.ts': 'export default {};',
+  });
+
+  const violations = analyze(root);
+  assert.deepEqual(
+    violations.map(({ file, specifier }) => [file, specifier]),
+    [
+      ['layers/shell/client/entry.ts', '@trustroots/web-app/client/entry'],
+      ['layers/shell/client/entry.ts', '@/apps/web/client/entry'],
+      ['layers/shell/client/entry.ts', '../../../apps/web/client/entry'],
+    ].sort((a, b) => a[1].localeCompare(b[1])),
+  );
+});
+
 test('rejects layer and app imports by package name, alias, root path, relative path and file URL', t => {
   const root = makeRepo(t, {
     'modules/a/package.json': manifest('@trustroots/a'),
@@ -322,5 +353,5 @@ test('an absent modules directory passes and reports a clean result', t => {
   } finally {
     console.log = originalLog;
   }
-  assert.match(output, /Feature module boundaries are satisfied/);
+  assert.match(output, /Layer and feature module boundaries are satisfied/);
 });

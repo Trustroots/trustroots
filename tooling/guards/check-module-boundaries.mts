@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Prevent production feature modules from importing upward into apps or layers. */
+/** Prevent production feature modules and layers from importing upward. */
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -17,6 +17,15 @@ export type Violation = {
 };
 
 type ModuleDirectory = { dir: string; symlink: boolean };
+
+function listDirectories(root: string, group: string): string[] {
+  const groupDir = path.join(root, group);
+  if (!fs.existsSync(groupDir)) return [];
+  return fs
+    .readdirSync(groupDir, { withFileTypes: true })
+    .filter(entry => entry.isDirectory())
+    .map(entry => path.join(groupDir, entry.name));
+}
 
 function listModuleDirectories(root: string): ModuleDirectory[] {
   const modulesDir = path.join(root, 'modules');
@@ -121,6 +130,31 @@ export function analyze(
     }
   }
 
+  for (const layerDir of listDirectories(root, 'layers')) {
+    for (const entry of listSourceFiles(layerDir)) {
+      if (entry.symlink) continue;
+      const file = entry.file;
+      const relativeFile = path.relative(root, file).split(path.sep).join('/');
+      for (const specifier of sourceSpecifiers(file)) {
+        const result = resolveSpecifier(specifier, file, root, packages);
+        if (
+          result &&
+          ((result.target &&
+            inside(path.join(root, 'apps'), result.target.dir)) ||
+            (result.resolved &&
+              inside(path.join(root, 'apps'), result.resolved)) ||
+            (result.lexical && inside(path.join(root, 'apps'), result.lexical)))
+        ) {
+          violations.push({
+            file: relativeFile,
+            specifier,
+            message: 'Composition layers cannot import application code.',
+          });
+        }
+      }
+    }
+  }
+
   return violations.sort(
     (a, b) =>
       a.file.localeCompare(b.file) ||
@@ -136,7 +170,7 @@ export function main(
   const violations = analyze(root);
   if (violations.length) {
     console.error(
-      `Feature module boundary violations:\n${violations
+      `Layer and feature module boundary violations:\n${violations
         .map(
           ({ file, specifier, message }) =>
             `  ${file}: ${specifier} — ${message}`,
@@ -145,7 +179,7 @@ export function main(
     );
     return 1;
   }
-  console.log('Feature module boundaries are satisfied.');
+  console.log('Layer and feature module boundaries are satisfied.');
   return 0;
 }
 

@@ -8,7 +8,9 @@
   - [x] Add source-only Button, Alert, Badge and Spinner primitives and migrate the language warning. The existing token bridge remains in the web stylesheet pending extraction.
 - [ ] Tier guards in `tooling/guards` (separate pull request).
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement.
-  - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions. Layer-to-app, client/server and shared-code rules remain pending.
+  - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions.
+  - [x] Reject production layer imports into apps.
+  - [ ] Enforce client/server and shared-code rules.
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
   - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
