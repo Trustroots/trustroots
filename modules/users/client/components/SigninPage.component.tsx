@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 import Board from '@/modules/core/client/components/Board';
+import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import {
   trackEvent,
   getCurrentRouteParams,
@@ -38,21 +39,11 @@ export default function SigninPage() {
   const [authError, setAuthError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const hasRedirected = useRef(false);
-  const usernameInput = useRef<HTMLInputElement>(null);
+  const usernameInput = useDesktopAutofocus<HTMLInputElement>();
   const signinDestination = useRef({
     continueSignin: Boolean(continueSignin),
     returnTo,
   });
-
-  useEffect(() => {
-    if (
-      window.matchMedia?.(
-        '(min-width: 768px) and (hover: hover) and (pointer: fine)',
-      ).matches
-    ) {
-      usernameInput.current?.focus();
-    }
-  }, []);
 
   useEffect(() => {
     if (user && !hasRedirected.current) {

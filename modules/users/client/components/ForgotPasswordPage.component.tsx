@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 
 import Board from '@/modules/core/client/components/Board';
+import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { readApiError } from '../utils/api-error';
 
 export default function ForgotPasswordPage() {
+  const usernameInput = useDesktopAutofocus<HTMLInputElement>();
   const { userhandle } = getCurrentRouteParams();
   const [credentials, setCredentials] = useState({
     username: userhandle || '',
@@ -72,6 +74,7 @@ export default function ForgotPasswordPage() {
               <div className="form-group text-center">
                 <label htmlFor="username">Email or username</label>
                 <input
+                  ref={usernameInput}
                   type="text"
                   required
                   id="username"

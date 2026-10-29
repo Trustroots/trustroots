@@ -106,6 +106,17 @@ describe('SignupPage', () => {
     );
   }
 
+  it('focuses the primary field on desktop', () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    try {
+      renderPage();
+      expect(screen.getByLabelText('First Name')).toHaveFocus();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
   function fillStepOne({
     acquisitionStory = '',
     ageConfirmed = true,

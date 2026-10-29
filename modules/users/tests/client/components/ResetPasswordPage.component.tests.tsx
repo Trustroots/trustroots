@@ -83,6 +83,17 @@ describe('ResetPasswordPage', () => {
     fireEvent.submit(form);
   }
 
+  it('focuses the primary field on desktop', () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    try {
+      renderPage();
+      expect(screen.getByLabelText('New Password')).toHaveFocus();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
   it('shows a validation error when passwords do not match', async () => {
     renderPage();
 
