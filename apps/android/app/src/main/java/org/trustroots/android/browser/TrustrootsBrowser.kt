@@ -55,9 +55,10 @@ internal val DefaultBrowserContent: @Composable (BrowserRoute, () -> Unit, Paddi
 private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
 
 internal class BrowserEntryStateViewModel : ViewModel() {
-    var savedBrowserState: android.os.Bundle? = null
-    var savedRouteURL: String? = null
+    var savedSnapshot: BrowserSnapshot? = null
 }
+
+internal data class BrowserSnapshot(val routeURL: String, val browserState: android.os.Bundle)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -129,8 +130,10 @@ fun TrustrootsBrowser(
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, url: String?) {
                             applyEmbeddedBrowserStyleAfterLoad(view, url)
-                            browserEntryState.savedRouteURL = route.url
-                            browserEntryState.savedBrowserState = android.os.Bundle().also { view.saveState(it) }
+                            browserEntryState.savedSnapshot = BrowserSnapshot(
+                                route.url,
+                                android.os.Bundle().also { view.saveState(it) },
+                            )
                         }
                         override fun shouldOverrideUrlLoading(
                             view: WebView,
@@ -144,14 +147,14 @@ fun TrustrootsBrowser(
                     }
                     installEmbeddedBrowserStyle(this)
                     applyBrowserSessionCookie(route.url, route.sessionCookie)
-                    val restored = if (browserEntryState.savedRouteURL == route.url) {
-                        browserEntryState.savedBrowserState?.let { restoreState(it) }
-                    } else {
-                        null
+                    val snapshot = browserEntryState.savedSnapshot
+                    val restored = when {
+                        snapshot == null -> null
+                        snapshot.routeURL != route.url -> null
+                        else -> restoreState(snapshot.browserState)
                     }
                     if (restored == null) {
-                        browserEntryState.savedBrowserState = null
-                        browserEntryState.savedRouteURL = route.url
+                        browserEntryState.savedSnapshot = null
                         loadUrl(route.url)
                     }
                     webView = this
@@ -163,8 +166,10 @@ fun TrustrootsBrowser(
                 .padding(contentPadding.horizontalInset())
                 .padding(contentPadding.bottomInset()),
             onRelease = { released ->
-                browserEntryState.savedRouteURL = route.url
-                browserEntryState.savedBrowserState = android.os.Bundle().also { released.saveState(it) }
+                browserEntryState.savedSnapshot = BrowserSnapshot(
+                    route.url,
+                    android.os.Bundle().also { released.saveState(it) },
+                )
                 released.stopLoading()
                 released.destroy()
                 if (webView === released) webView = null

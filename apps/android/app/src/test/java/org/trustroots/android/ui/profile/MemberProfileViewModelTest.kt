@@ -200,6 +200,11 @@ class MemberProfileViewModelTest {
         }
         assertEquals(false, newModel("quiet-fox", mismatchRepository).state.value.isBlocked)
 
+        val differentUsernameRepository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", "unrelated-owl", "Unrelated Owl")))
+        }
+        assertEquals(false, newModel("quiet-fox", differentUsernameRepository).state.value.isBlocked)
+
         val missingIdentityRepository = FakeMemberProfileRepository().apply {
             profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
             blockedMembersResult = Result.success(listOf(MessageMember("another-member", null, "Someone Else")))

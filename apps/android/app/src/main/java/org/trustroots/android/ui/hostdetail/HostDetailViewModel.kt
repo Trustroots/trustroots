@@ -123,7 +123,8 @@ internal class HostDetailViewModel(
     ) {
         if (offerID.isBlank() || invalidationEmitted) return
         val sameRequest = requestedOfferID == offerID && requestedOfferType == offerType
-        if (!force && sameRequest && (loadRequest.isActive || state.value.offer != null || state.value.failure != null)) return
+        // Refreshing an unchanged route is explicit through Retry or an environment change.
+        if (!force && sameRequest) return
         requestedOfferID = offerID
         requestedOfferType = offerType
         loadRequest.launch {

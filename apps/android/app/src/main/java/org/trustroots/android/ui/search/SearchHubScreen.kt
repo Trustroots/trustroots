@@ -158,7 +158,7 @@ internal fun SearchHubScreen(
     val handleBack: () -> Unit = {
         when {
             searchBackStack.size > 2 -> searchBackStack.removeLastOrNull()
-            currentRoute is SearchModeVisit && currentMode == SearchMode.Members && entryInitialTab == 0 ->
+            currentMode == SearchMode.Members && entryInitialTab == 0 ->
                 selectMode(0)
             else -> onBackAtRoot()
         }
@@ -207,8 +207,7 @@ internal fun SearchHubScreen(
         rememberViewModelStoreNavEntryDecorator(),
     )
     BackHandler(
-        enabled = searchBackStack.size == 2 && currentRoute is SearchModeVisit &&
-            currentMode == SearchMode.Members && entryInitialTab == 0,
+        enabled = searchBackStack.size == 2 && currentMode == SearchMode.Members && entryInitialTab == 0,
         onBack = handleBack,
     )
     NavDisplay(

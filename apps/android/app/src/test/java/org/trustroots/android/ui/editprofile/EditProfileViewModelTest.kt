@@ -262,6 +262,36 @@ class EditProfileViewModelTest {
     }
 
     @Test
+    fun cookieRotationDoesNotLoadAnotherMembersProfileWhenTheRouteHasNoBaseline() {
+        val pendingProfile = CompletableDeferred<Result<MemberProfile>>()
+        val repository = FakeRepository().apply {
+            profileOperation = { withContext(NonCancellable) { pendingProfile.await() } }
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val model = EditProfileViewModel(
+                username = "other-member",
+                repository = repository,
+                initialApi = api(),
+                initialSession = session(),
+                scope = scope,
+            )
+
+            assertEquals(1, repository.profileCalls)
+            assertTrue(model.state.value.isLoading)
+            model.updateEnvironment(api(), session(cookie = "rotated-fictional-cookie"))
+            pendingProfile.complete(Result.success(profileFixture("Stale route result")))
+
+            assertEquals(1, repository.profileCalls)
+            assertNull(model.state.value.baseline)
+            assertFalse(model.state.value.isLoading)
+            assertEquals("", model.state.value.name)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun loadAuthenticationFailureCanBeAcknowledgedAndRetriedAfterCredentialRefresh() {
         val repository = FakeRepository().apply {
             profileResults += Result.failure(MobileApiException(401, "Fictional session expired."))
@@ -615,6 +645,7 @@ class EditProfileViewModelTest {
         var profileCalls = 0
         var latestSession: MemberSession? = null
         var beforeSaveResult: (() -> Unit)? = null
+        var profileOperation: (suspend (String) -> Result<MemberProfile>)? = null
         override fun updateApi(api: MobileApiClient): Boolean = true
         override fun updateSession(session: MemberSession): Boolean {
             latestSession = session
@@ -623,6 +654,7 @@ class EditProfileViewModelTest {
         var saveOperation: (suspend () -> Result<MemberProfile>)? = null
         override suspend fun profile(username: String): Result<MemberProfile> {
             profileCalls++
+            profileOperation?.let { return it(username) }
             return if (profileResults.isEmpty()) profileResult else profileResults.removeFirst()
         }
         override suspend fun update(profile: ProfileUpdate): Result<MemberProfile> {

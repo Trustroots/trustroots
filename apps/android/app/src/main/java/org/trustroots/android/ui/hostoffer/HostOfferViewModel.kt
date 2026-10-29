@@ -239,7 +239,7 @@ internal class HostOfferViewModel(
     }
 
     private fun load(resetState: Boolean = false) {
-        if (sessionInvalidationEmitted || (!resetState && mutableState.value.isSaving)) return
+        if (sessionInvalidationEmitted) return
         loadRequest.launch {
             if (resetState) {
                 mutableState.value = HostOfferUiState(isLoading = true)

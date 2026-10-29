@@ -348,6 +348,27 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun blankMessageIsNotSentWhenTheCanonicalRecipientIsLoaded() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "A fictional saved draft",
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        assertEquals(member, model.state.value.member)
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        model.onEvent(MessageConversationEvent.Send("   "))
+        model.onEvent(MessageConversationEvent.Send(""))
+
+        assertEquals(0, repository.sendCalls)
+        assertEquals("A fictional saved draft", model.state.value.draft)
+        assertEquals("A fictional saved draft", repository.savedDraft)
+        assertNull(repository.clearedDraftKey)
+        assertFalse(model.state.value.isSending)
+    }
+
+    @Test
     fun draftPersistsAndSuccessfulSendClearsTheSameAccountCounterpartKey() = withScope { scope ->
         val repository = FakeConversationRepository(
             memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
