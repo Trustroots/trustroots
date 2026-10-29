@@ -38,6 +38,9 @@ importers:
       '@trustroots/logger':
         specifier: workspace:*
         version: link:packages/logger
+      '@trustroots/ui':
+        specifier: workspace:*
+        version: link:packages/ui
       agenda:
         specifier: 4.4.0
         version: 4.4.0(supports-color@5.5.0)
@@ -695,6 +698,12 @@ importers:
       winston:
         specifier: 3.19.0
         version: 3.19.0
+
+  packages/ui:
+    dependencies:
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
 
 packages:
 

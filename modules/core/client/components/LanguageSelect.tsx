@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncSelect from 'react-select/async';
 import type { OnChangeValue } from 'react-select';
 import React, { useState, useEffect } from 'react';
+import { Alert } from '@trustroots/ui/Alert';
 
 // Internal dependencies
 import { useLanguagesQuery, type LanguageOption } from '../api/languages.api';
@@ -93,11 +94,11 @@ export default function LanguageSelect({
         {...props}
       />
       {isError && (
-        <div className="alert alert-warning" role="alert">
+        <Alert>
           {t(
             'Snap! Something went wrong. If this keeps happening, please contact us.',
           )}
-        </div>
+        </Alert>
       )}
     </>
   );
