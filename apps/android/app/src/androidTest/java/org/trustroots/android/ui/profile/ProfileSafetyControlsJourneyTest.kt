@@ -121,4 +121,36 @@ class ProfileSafetyControlsJourneyTest {
         compose.onAllNodesWithText("Retry").assertCountEquals(0)
         compose.onAllNodesWithText("Could not check whether this member is blocked.").assertCountEquals(0)
     }
+
+    @Test fun unresolvedBlockStatusWithoutLoadingOrFailureHasNoSafetyNotice() {
+        compose.setContent {
+            MaterialTheme {
+                ProfileSafetyNotice(
+                    displayName = "Quiet Fox",
+                    state = MemberProfileUiState(),
+                    onRetry = {},
+                )
+            }
+        }
+
+        compose.onAllNodesWithText("Checking member controls…").assertCountEquals(0)
+        compose.onAllNodesWithText("You have blocked Quiet Fox.").assertCountEquals(0)
+        compose.onAllNodesWithText("Could not check whether this member is blocked.").assertCountEquals(0)
+        compose.onAllNodesWithText("Retry").assertCountEquals(0)
+    }
+
+    @Test fun blockedMemberSeesNoticeWithoutRetry() {
+        compose.setContent {
+            MaterialTheme {
+                ProfileSafetyNotice(
+                    displayName = "Quiet Fox",
+                    state = MemberProfileUiState(isBlocked = true),
+                    onRetry = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("You have blocked Quiet Fox.").assertIsDisplayed()
+        compose.onAllNodesWithText("Retry").assertCountEquals(0)
+    }
 }

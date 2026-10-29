@@ -22,6 +22,18 @@ internal sealed interface ProfileFlowCompletion {
     data class ExperienceCreated(override val deliveryID: Long) : ProfileFlowCompletion
 }
 
+internal fun deliverProfileFlowCompletion(
+    completion: ProfileFlowCompletion?,
+    consume: (Long) -> ProfileFlowCompletion?,
+    onEvent: (MemberProfileEvent) -> Unit,
+) {
+    val deliveryID = completion?.deliveryID ?: return
+    when (val pending = consume(deliveryID) ?: return) {
+        is ProfileFlowCompletion.ProfileSaved -> onEvent(MemberProfileEvent.ProfileSaved(pending.profile))
+        is ProfileFlowCompletion.ExperienceCreated -> onEvent(MemberProfileEvent.RefreshReferences)
+    }
+}
+
 internal class ProfileFlowEnvironment(
     val backendURL: String,
     val username: String,

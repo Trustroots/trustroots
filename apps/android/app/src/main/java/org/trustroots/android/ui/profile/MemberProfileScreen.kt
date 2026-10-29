@@ -365,12 +365,7 @@ private fun MemberProfileContent(
         }
     }
     LaunchedEffect(completion?.deliveryID) {
-        val deliveryID = completion?.deliveryID ?: return@LaunchedEffect
-        val pending = onCompletionHandled(deliveryID) ?: return@LaunchedEffect
-        when (pending) {
-            is ProfileFlowCompletion.ProfileSaved -> viewModel.onEvent(MemberProfileEvent.ProfileSaved(pending.profile))
-            is ProfileFlowCompletion.ExperienceCreated -> viewModel.onEvent(MemberProfileEvent.RefreshReferences)
-        }
+        deliverProfileFlowCompletion(completion, onCompletionHandled, viewModel::onEvent)
     }
     LaunchedEffect(profileState.contactRemovalSucceeded) {
         if (profileState.contactRemovalSucceeded) {

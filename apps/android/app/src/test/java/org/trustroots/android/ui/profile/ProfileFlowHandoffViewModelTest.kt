@@ -47,6 +47,45 @@ class ProfileFlowHandoffViewModelTest {
     }
 
     @Test
+    fun completionDeliveryIgnoresStaleSnapshotsAndEmitsCurrentCompletionEvents() {
+        val model = ProfileFlowHandoffViewModel()
+        val api = MobileApiClient("https://api.example.invalid")
+        val firstSession = MemberSession("connect.sid=first-fictional-cookie", MobileMember("member-self", "Member Self"))
+        val firstEnvironment = ProfileFlowEnvironment(api.backendURL, firstSession.member.username, firstSession.cookieHeader)
+        model.updateEnvironment(api, firstSession)
+        val savedProfile = profile("member-one", "Quiet Fox Updated")
+        model.completeProfileSaved(10L, savedProfile, firstEnvironment)
+        val staleSnapshot = requireNotNull(model.handoffs.value[10L]?.completion)
+
+        model.updateEnvironment(
+            api,
+            MemberSession("connect.sid=rotated-fictional-cookie", MobileMember("member-self", "Member Self")),
+        )
+
+        val events = mutableListOf<MemberProfileEvent>()
+        deliverProfileFlowCompletion(null, { error("An absent completion must not be consumed") }, events::add)
+        assertTrue(events.isEmpty())
+        deliverProfileFlowCompletion(staleSnapshot, { deliveryID -> model.consumeCompletion(10L, deliveryID) }, events::add)
+        assertTrue("A completion invalidated by session rotation must not update the profile", events.isEmpty())
+
+        val currentSession = MemberSession("connect.sid=current-fictional-cookie", MobileMember("member-self", "Member Self"))
+        val currentEnvironment = ProfileFlowEnvironment(api.backendURL, currentSession.member.username, currentSession.cookieHeader)
+        model.updateEnvironment(api, currentSession)
+        model.completeProfileSaved(10L, savedProfile, currentEnvironment)
+        val currentSaved = requireNotNull(model.handoffs.value[10L]?.completion)
+        deliverProfileFlowCompletion(currentSaved, { deliveryID -> model.consumeCompletion(10L, deliveryID) }, events::add)
+        assertEquals(listOf(MemberProfileEvent.ProfileSaved(savedProfile)), events)
+
+        model.completeExperienceCreated(10L, currentEnvironment)
+        val currentExperience = requireNotNull(model.handoffs.value[10L]?.completion)
+        deliverProfileFlowCompletion(currentExperience, { deliveryID -> model.consumeCompletion(10L, deliveryID) }, events::add)
+        assertEquals(
+            listOf(MemberProfileEvent.ProfileSaved(savedProfile), MemberProfileEvent.RefreshReferences),
+            events,
+        )
+    }
+
+    @Test
     fun profileSnapshotAndDisplayNameStayWithVisitAndClearWhenRuntimeEnvironmentChanges() {
         val model = ProfileFlowHandoffViewModel()
         val api = MobileApiClient("https://api.example.invalid")
