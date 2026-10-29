@@ -3,5 +3,6 @@
 - [x] 3. Add meaningful tests for reachable branches.
 - [x] 3a. Keep changed-mask preamble decisions under upstream filters; add default-mask dispatch fixtures, including fail-closed multiple-mask and source-expression cases.
 - [x] 3b. Recognise only exact enum-to-Composer cache-key captures inside verified remember regions; prove ordinary enum and integer source decisions remain measured with negative fixtures.
+- [x] 3c. Recognise the conditional form of a proven exhaustive single-entry enum fallback, preserving the valid case and similar source comparisons.
 - [ ] 4. Measure complete matching Android coverage, preserving 100% lines and targeting 100% branches.
 - [ ] 5. Update the ratchet only after the target is measured, validate and archive the specification.

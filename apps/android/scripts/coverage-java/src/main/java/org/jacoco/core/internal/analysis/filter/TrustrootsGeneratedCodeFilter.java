@@ -34,9 +34,10 @@ import org.objectweb.asm.tree.TypeInsnNode;
  * construction in a composable exhaustive-switch default arm, (2) a
  * source-line-only Compose group-close call, (3) an implicit coroutine
  * {@code Unit} return on a source-only closing-delimiter line after a
- * specifically recognised Compose coroutine API, (4) the single default
- * outcome of an exact Kotlin enum-mapping switch whose default target is the
- * generated Compose exhaustive-switch exception block, (5) a branch-free
+ * specifically recognised Compose coroutine API, (4) the default outcome of an
+ * exact Kotlin enum-mapping switch, or compiler dispatch for a one-entry enum,
+ * whose default target is the generated Compose exhaustive-switch exception
+ * block, (5) a branch-free
  * forwarding method in a Kotlin callable-reference subclass, and (6)
  * individual captured-state cache invalidation branches only when they form a
  * compiler mask expression inside a Compose remember marker and feed its
@@ -59,11 +60,18 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
     private static final String POINTER_INPUT_SCOPE = "androidx/compose/ui/input/pointer/PointerInputScope";
     private static final String CAPTURED_REMEMBER_REASON = "captured-state Compose remember cache mask decision";
     private static final String COMPOSABLE_DEFAULT_REASON = "composable default-argument dispatch decision";
+    private static final String SINGLE_ENTRY_ENUM_REASON = "single-entry Compose enum dispatch decision";
+    private static final String ENUM_SWITCH_DEFAULT_REASON = "exhaustive Compose enum switch default outcome";
     private static final List<String> AUDIT = Collections.synchronizedList(new ArrayList<>());
     private static volatile Set<String> ENUM_CLASSES = Set.of();
+    private static volatile Set<String> SINGLE_ENTRY_ENUM_CLASSES = Set.of();
 
     public static void setEnumClassNames(Set<String> enumClassNames) {
         ENUM_CLASSES = Set.copyOf(enumClassNames);
+    }
+
+    public static void setSingleEntryEnumClassNames(Set<String> enumClassNames) {
+        SINGLE_ENTRY_ENUM_CLASSES = Set.copyOf(enumClassNames);
     }
 
     public static List<String> auditEntries() {
@@ -81,7 +89,8 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             return (int) AUDIT.stream()
                     .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
                             || entry.contains("Compose default-argument invalidation decision")
-                            || entry.contains(COMPOSABLE_DEFAULT_REASON))
+                            || entry.contains(COMPOSABLE_DEFAULT_REASON)
+                            || entry.contains(SINGLE_ENTRY_ENUM_REASON))
                     .count();
         }
     }
@@ -91,10 +100,11 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             return (int) AUDIT.stream()
                     .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
                             || entry.contains("Compose default-argument invalidation decision")
-                            || entry.contains(COMPOSABLE_DEFAULT_REASON))
+                            || entry.contains(COMPOSABLE_DEFAULT_REASON)
+                            || entry.contains(SINGLE_ENTRY_ENUM_REASON))
                     .count() * 2
                     + (int) AUDIT.stream()
-                            .filter(entry -> entry.contains("exhaustive Compose enum switch default outcome"))
+                            .filter(entry -> entry.contains(ENUM_SWITCH_DEFAULT_REASON))
                             .count();
         }
     }
@@ -664,23 +674,73 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             } else if (insn instanceof LookupSwitchInsnNode lookup) {
                 defaultLabel = lookup.dflt;
             }
-            if (defaultLabel == null) {
-                continue;
-            }
-            List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel, insn);
-            if (isComposeExhaustiveSwitchFallback(block)) {
-                AbstractInsnNode first = block.get(0);
-                AbstractInsnNode thrown = block.get(block.size() - 1);
-                if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn, context)) {
-                    output.replaceBranches(insn, Replacements.ignoreDefaultBranch(insn));
-                    audit(context, method, insn, insn,
-                            "exhaustive Compose enum switch default outcome");
+            if (defaultLabel != null) {
+                List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel, insn);
+                if (isComposeExhaustiveSwitchFallback(block)) {
+                    AbstractInsnNode first = block.get(0);
+                    AbstractInsnNode thrown = block.get(block.size() - 1);
+                    if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn, context)) {
+                        output.replaceBranches(insn, Replacements.ignoreDefaultBranch(insn));
+                        audit(context, method, insn, insn, ENUM_SWITCH_DEFAULT_REASON);
+                    }
+                    output.ignore(first, thrown);
+                    audit(context, method, first, thrown,
+                            "composable switch default NoWhenBranchMatchedException");
                 }
-                output.ignore(first, thrown);
-                audit(context, method, first, thrown,
-                        "composable switch default NoWhenBranchMatchedException");
+            } else if (insn instanceof JumpInsnNode jump
+                    && !isAlreadyFilteredBranch(output, insn)
+                    && isConditionalEnumDefault(jump, context)) {
+                List<AbstractInsnNode> block = instructionsUntilThrow(jump.label, insn);
+                if (isComposeExhaustiveSwitchFallback(block)) {
+                    AbstractInsnNode first = block.get(0);
+                    AbstractInsnNode thrown = block.get(block.size() - 1);
+                    Replacements replacements = new Replacements();
+                    replacements.add(jump.label, jump, 1);
+                    output.replaceBranches(jump, replacements);
+                    audit(context, method, jump, jump, SINGLE_ENTRY_ENUM_REASON);
+                    output.ignore(first, thrown);
+                    audit(context, method, first, thrown,
+                            "composable switch default NoWhenBranchMatchedException");
+                }
             }
         }
+    }
+
+    /**
+     * Kotlin lowers an exhaustive {@code when} over a one-entry enum to an
+     * integer comparison. Its unequal outcome can only reach the same generated
+     * Compose exception arm as an enum-mapping switch default.
+     */
+    private static boolean isConditionalEnumDefault(JumpInsnNode branch, IFilterContext context) {
+        if (branch.getOpcode() != Opcodes.IF_ICMPNE
+                || !SINGLE_ENTRY_ENUM_CLASSES.contains(enumOrdinalOwner(branch))) return false;
+        AbstractInsnNode caseValue = previousOpcode(branch.getPrevious());
+        AbstractInsnNode arrayLoad = previousOpcode(caseValue == null ? null : caseValue.getPrevious());
+        AbstractInsnNode ordinal = previousOpcode(arrayLoad == null ? null : arrayLoad.getPrevious());
+        AbstractInsnNode swap = previousOpcode(ordinal == null ? null : ordinal.getPrevious());
+        AbstractInsnNode mapping = previousOpcode(swap == null ? null : swap.getPrevious());
+        if (!Integer.valueOf(1).equals(integerConstantValue(caseValue))
+                || arrayLoad == null || arrayLoad.getOpcode() != Opcodes.IALOAD
+                || !(ordinal instanceof MethodInsnNode ordinalCall)
+                || ordinalCall.getOpcode() != Opcodes.INVOKEVIRTUAL
+                || !"ordinal".equals(ordinalCall.name) || !"()I".equals(ordinalCall.desc)
+                || swap == null || swap.getOpcode() != Opcodes.SWAP
+                || !(mapping instanceof FieldInsnNode field)
+                || field.getOpcode() != Opcodes.GETSTATIC
+                || !field.name.startsWith("$EnumSwitchMapping$")
+                || !isEnclosingWhenMappingsOwner(field.owner, context.getClassName())
+                || !"[I".equals(field.desc)) return false;
+        return ENUM_CLASSES.contains(ordinalCall.owner);
+    }
+
+    private static String enumOrdinalOwner(JumpInsnNode branch) {
+        AbstractInsnNode caseValue = previousOpcode(branch.getPrevious());
+        AbstractInsnNode arrayLoad = previousOpcode(caseValue == null ? null : caseValue.getPrevious());
+        AbstractInsnNode ordinal = previousOpcode(arrayLoad == null ? null : arrayLoad.getPrevious());
+        return ordinal instanceof MethodInsnNode ordinalCall
+                && ordinalCall.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && "ordinal".equals(ordinalCall.name) && "()I".equals(ordinalCall.desc)
+                ? ordinalCall.owner : "";
     }
 
     private static boolean isEnumMappingSwitch(AbstractInsnNode insn, IFilterContext context) {

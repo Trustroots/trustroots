@@ -10,6 +10,8 @@ A hidden `$default` mask test may be removed only when an annotated Kotlin compo
 
 The raw XML remains available. The corrected report must reconcile branch and instruction counters against the matched generated sequences; uncertain outcomes stay counted. Every generated correction records class, method, source mapping and instruction evidence. Reject stale execution probes.
 
+An exhaustive single-entry enum `when` may compile to an integer comparison instead of a switch. Recognise only the verified Kotlin enum-mapping array lookup, enum ordinal, single-case comparison and exact generated `NoWhenBranchMatchedException` fallback (including Compose group bookkeeping). Preserve the valid case and ordinary integer or enum application conditions. Require positive and negative regression fixtures for this conditional form.
+
 ## Validation
 
 Inlined library guards require both primary Kotlin SMAP provenance outside the application source tree and an exact Compose contract-check pattern. KotlinDebug call-site mappings alone are insufficient. Keep identical application-source checks, insertion/reuse decisions and uncertain patterns measured. This policy does not exclude whole source files or methods.

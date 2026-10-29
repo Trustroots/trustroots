@@ -28,6 +28,10 @@ public final class TrustrootsGeneratedCodeFilterRegression {
     public static void main(String[] args) throws Exception {
         testExactComposableSwitchFallbackIsIgnoredWithoutIgnoringItsDecision();
         testEnumMappedComposeSwitchDefaultOutcomeIsReplaced();
+        testSingleEntryEnumConditionalComposeDefaultOutcomeIsReplaced();
+        testConditionalEnumDefaultRequiresSingleEntryEnumMapping();
+        testIntegerConditionalComposeDefaultIsPreserved();
+        testConditionalEnumSourceDefaultIsPreserved();
         testCustomOrdinalMethodDoesNotPassEnumRegistry();
         testEnumMappedSwitchWithSourceDefaultIsPreserved();
         testCustomEnumFilterSkipsUpstreamReplacedSwitch();
@@ -99,6 +103,135 @@ public final class TrustrootsGeneratedCodeFilterRegression {
                 "a switch outcome must not be counted as a two-outcome conditional decision");
         check(TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount() == 1,
                 "the enum default replacement should account for exactly one removed outcome");
+    }
+
+    private static void testSingleEntryEnumConditionalComposeDefaultOutcomeIsReplaced() {
+        String enumName = "sample/ProfileBrowserDestination";
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of(enumName));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of(enumName));
+        MethodNode method = enumComposeConditionalDefault(true, enumName, "sample/BrowserRoutesKt$WhenMappings");
+        JumpInsnNode comparison = findConditionalEnumBranch(method);
+        TrustrootsGeneratedCodeFilter.clearAudit();
+
+        RecordingOutput output = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+
+        check(output.ignored.size() == 1,
+                "the exact conditional Compose exception arm should be ignored");
+        AbstractInsnNode[] ignored = output.ignored.get(0);
+        check(ignored[0].getOpcode() == Opcodes.ALOAD && ignored[1].getOpcode() == Opcodes.ATHROW,
+                "only Compose bookkeeping and the generated exception should be ignored");
+        check(output.replacements.size() == 1 && output.replacements.get(0).source == comparison,
+                "the conditional enum should replace its unmatched default target");
+        List<Replacements.InstructionBranch> branches = new ArrayList<>();
+        output.replacements.get(0).replacements.values().forEach(branches::addAll);
+        check(branches.size() == 1 && branches.get(0).instruction == comparison && branches.get(0).branch == 1,
+                "only the conditional's default-target outcome should be replaced");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() == 1,
+                "the compiler-generated enum comparison is one removed conditional decision");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount() == 2,
+                "removing the generated conditional decision should account for both JaCoCo outcomes");
+        check(!containsBranch(ignored[0], ignored[1]),
+                "the valid enum case and conditional decision must remain outside the ignored range");
+    }
+
+    private static void testConditionalEnumDefaultRequiresSingleEntryEnumMapping() {
+        String enumName = "sample/ProfileBrowserDestination";
+        MethodNode method = enumComposeConditionalDefault(true, enumName, "sample/BrowserRoutesKt$WhenMappings");
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of(enumName));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of());
+        RecordingOutput multipleEntries = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+        check(multipleEntries.replacements.isEmpty(),
+                "enum mapping must not erase a conditional unless the enum class has exactly one entry");
+
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/AnotherEnum"));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of("sample/AnotherEnum"));
+        RecordingOutput unknownOwner = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+        check(unknownOwner.replacements.isEmpty(),
+                "an ordinal call on an enum outside the verified class registry must remain measured");
+    }
+
+    private static void testIntegerConditionalComposeDefaultIsPreserved() {
+        MethodNode method = composableMethod("drawIntegerComparison", "(Landroidx/compose/runtime/Composer;I)V");
+        LabelNode fallback = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        JumpInsnNode comparison = new JumpInsnNode(Opcodes.IF_ICMPNE, fallback);
+        method.instructions.add(comparison);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        appendComposeFallback(method, fallback);
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/ProfileBrowserDestination"));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of("sample/ProfileBrowserDestination"));
+
+        RecordingOutput output = apply(method, "sample/IntegerComparisonKt$Composable", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "an integer comparison with the same numeric value must remain measured");
+    }
+
+    private static void testConditionalEnumSourceDefaultIsPreserved() {
+        String enumName = "sample/ProfileBrowserDestination";
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of(enumName));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of(enumName));
+        MethodNode method = enumComposeConditionalDefault(false, enumName, "sample/BrowserRoutesKt$WhenMappings");
+
+        RecordingOutput output = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "a source-bearing conditional default must remain measured despite enum mapping bytecode");
+        check(output.ignored.isEmpty(),
+                "a source default must not be mistaken for the generated Compose exception arm");
+    }
+
+    private static MethodNode enumComposeConditionalDefault(boolean generatedDefault, String enumName,
+            String mappingOwner) {
+        MethodNode method = composableMethod("drawSingleEntryEnum",
+                "(Landroidx/compose/runtime/Composer;L" + enumName + ";)V");
+        LabelNode defaultLabel = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, mappingOwner,
+                "$EnumSwitchMapping$0", "[I"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.SWAP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, enumName,
+                "ordinal", "()I", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IALOAD));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        JumpInsnNode comparison = new JumpInsnNode(Opcodes.IF_ICMPNE, defaultLabel);
+        method.instructions.add(comparison);
+        // The valid sole enum case falls through and remains measured.
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        if (generatedDefault) appendComposeFallback(method, defaultLabel);
+        else {
+            method.instructions.add(defaultLabel);
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.NOP));
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        }
+        method.maxStack = 3;
+        method.maxLocals = 2;
+        return method;
+    }
+
+    private static void appendComposeFallback(MethodNode method, LabelNode label) {
+        method.instructions.add(label);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode(101));
+        method.instructions.add(call("startReplaceGroup", "(I)V"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(call("endReplaceGroup", "()V"));
+        method.instructions.add(new TypeInsnNode(Opcodes.NEW, NO_WHEN));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, NO_WHEN, "<init>", "()V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ATHROW));
+    }
+
+    private static JumpInsnNode findConditionalEnumBranch(MethodNode method) {
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof JumpInsnNode jump && jump.getOpcode() == Opcodes.IF_ICMPNE) return jump;
+        }
+        throw new AssertionError("fixture has no single-entry enum conditional");
     }
 
     private static void testEnumMappedSwitchWithSourceDefaultIsPreserved() {

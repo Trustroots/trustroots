@@ -56,11 +56,15 @@ Run the regression fixtures from `apps/android`:
 `debugCoverageTable` retains `coverage-raw.xml`, produces the corrected
 `coverage.xml`, verifies matching execution-probe class identities, and checks
 that every removed branch outcome is explained by an audited generated-code
-pattern: each conditional decision accounts for two outcomes and each proven
-exhaustive enum-switch default accounts for one. Enum defaults are replaced
+pattern: each removed conditional decision accounts for two outcomes and each
+proven exhaustive enum switch default accounts for one. Enum switch defaults are replaced
 only when the switch input is loaded from Kotlin's `$EnumSwitchMapping$` array,
 looked up by `Enum.ordinal()`, and its default target is the exact Compose
-generated exception block. Integer switches and source-bearing defaults stay
+generated exception block. A conditional default is replaced only for a
+verified single-entry enum whose ordinal mapping is compared with its sole case
+value and whose unequal target is that same generated exception block. Its
+generated conditional decision is removed as a whole, while code in the valid
+case remains measured. Integer comparisons and source-bearing defaults stay
 counted. A tracking output records branches already ignored, merged, or
 replaced by upstream JaCoCo filters, so the custom filter does not count the
 same outcome twice. The raw branch counters remain available for comparison;
