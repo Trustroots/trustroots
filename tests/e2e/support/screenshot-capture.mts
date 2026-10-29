@@ -73,15 +73,15 @@ export async function captureEndOfTestScreenshot(
 
     if (selector) {
       await page.locator(selector).screenshot({ path: screenshotPath });
-      return;
+    } else {
+      // Leave the fixed header as the app renders it. Full-page shots stitch
+      // scrolled slices, so the header can appear part-way down the image.
+      await page.screenshot({
+        path: screenshotPath,
+        fullPage: shouldCaptureFullPage(testInfo),
+      });
     }
-
-    // Leave the fixed header as the app renders it. Full-page shots stitch
-    // scrolled slices, so the header can appear part-way down the image.
-    await page.screenshot({
-      path: screenshotPath,
-      fullPage: shouldCaptureFullPage(testInfo),
-    });
+    fs.writeFileSync(path.join(screenshotsDir, `${fileName}.url`), page.url());
   } catch {
     // Screenshot capture is best-effort and must not fail the test run.
   }

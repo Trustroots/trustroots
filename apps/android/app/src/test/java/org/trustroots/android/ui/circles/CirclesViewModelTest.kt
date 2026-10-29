@@ -31,6 +31,20 @@ import org.trustroots.android.api.TrustrootsCircle
 @Config(sdk = [35], manifest = Config.NONE)
 class CirclesViewModelTest {
     @Test
+    fun repositoryDefaultsTreatApiAndSessionAsUnchanged() {
+        val repository = object : CircleRepository by FakeCircleRepository() {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<CircleRepository>.updateApi(api)
+
+            override fun updateSession(session: MemberSession): Boolean =
+                super<CircleRepository>.updateSession(session)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+        assertFalse(repository.updateSession(MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox"))))
+    }
+
+    @Test
     fun loadsCatalogueAndMembershipsAndDerivesSortedDescriptionFilter() = withScope { scope ->
         val repository = FakeCircleRepository(
             circles = listOf(
@@ -119,6 +133,24 @@ class CirclesViewModelTest {
 
         assertEquals(setOf("circle-one"), viewModel.state.value.memberships)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun externalMembershipChangesSurviveAnOlderSnapshot() = withScope { scope ->
+        val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
+        val repository = FakeCircleRepository().apply {
+            membershipsHandler = { pendingMemberships.await() }
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-one", true))
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-two", true))
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-one", false))
+        pendingMemberships.complete(Result.success(setOf("circle-one")))
+
+        assertEquals(setOf("circle-two"), viewModel.state.value.memberships)
+        assertFalse(viewModel.state.value.isLoading)
+        assertTrue(repository.membershipChanges.isEmpty())
     }
 
     @Test

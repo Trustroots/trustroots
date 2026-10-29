@@ -11,6 +11,32 @@
 
 module.exports = {
   /*
+  // Enable only after outbound mail and the support mailbox are configured.
+  // Leave legacy support forwarding enabled until the worker logs that the
+  // support mailbox cutover is initialised, then disable the legacy forwarder.
+  // This first poll skips existing mail; it does not import mailbox history.
+  supportInbox: {
+    enabled: true,
+    fromName: 'Trustroots Support',
+    fromAddress: 'support@example.org',
+    imap: {
+      enabled: true,
+      host: 'imap.example.org',
+      port: 993,
+      secure: true,
+      user: 'support@example.org',
+      password: 'set-in-private-local-config',
+      mailbox: 'INBOX',
+      pollIntervalMinutes: 1,
+      // Above this raw size, only the sender, subject, IDs and attachment
+      // metadata are stored. Stored message text is capped separately below.
+      maxMessageBytes: 25 * 1024 * 1024,
+      maxStoredBodyBytes: 12 * 1024 * 1024,
+      maxMessagesPerPoll: 50,
+    },
+  },
+  */
+  /*
   featureFlags: {
     ...require('development').featureFlags
     // List your fature flag modifications here

@@ -6,9 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,10 +19,11 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.notifications.MessageAlertStatusMetadata
 import org.trustroots.android.notifications.MessageAlerts
-import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
 import org.trustroots.android.updates.ApkUpdateAlerts
 import org.trustroots.android.updates.ApkUpdateCheckResult
@@ -194,16 +195,13 @@ internal class AccountSettingsViewModel(
         ),
     )
     val state = mutableState.asStateFlow()
-    private var accountGeneration = 0L
-    private var passwordGeneration = 0L
-    private var updateGeneration = 0L
     private var nextEffectID = 0L
-    private var accountJob: Job? = null
-    private var passwordJob: Job? = null
-    private var updateJob: Job? = null
     private var platformJob: Job? = null
-    private var platformActionJob: Job? = null
-    private var signOutJob: Job? = null
+    private val accountRequest = LatestRequest(requestScope)
+    private val passwordRequest = LatestRequest(requestScope)
+    private val updateRequest = LatestRequest(requestScope)
+    private val platformActionRequest = LatestRequest(requestScope)
+    private val signOutRequest = LatestRequest(requestScope)
     private var sessionInvalidated = false
 
     init {
@@ -227,15 +225,11 @@ internal class AccountSettingsViewModel(
         if (platformChanged) {
             this.platform = platform
             observeMessageAlertStatus()
-            mutableState.update {
-                it.copy(
-                    messageAlertsEnabled = platform.messageAlertsEnabled(session.member.username),
-                    messageAlertStatus = platform.messageAlertStatus.value,
-                    updateAlertsEnabled = platform.updateAlertsEnabled(),
-                )
-            }
         }
-        if (!environmentChanged) return
+        if (!environmentChanged) {
+            if (platformChanged) refreshPlatformState(session.member.username)
+            return
+        }
 
         backendURL = api.backendURL
         username = session.member.username
@@ -243,13 +237,16 @@ internal class AccountSettingsViewModel(
         sessionInvalidated = false
 
         if (backendChanged || accountChanged) {
-            mutableState.value = AccountSettingsUiState(
-                messageAlertsEnabled = platform.messageAlertsEnabled(username),
-                messageAlertStatus = platform.messageAlertStatus.value,
-                updateAlertsEnabled = platform.updateAlertsEnabled(),
+            load(
+                resetState = AccountSettingsUiState(
+                    messageAlertsEnabled = platform.messageAlertsEnabled(username),
+                    messageAlertStatus = platform.messageAlertStatus.value,
+                    updateAlertsEnabled = platform.updateAlertsEnabled(),
+                ),
+                refreshPlatformSettings = platformChanged,
             )
-            load()
         } else {
+            if (platformChanged) refreshPlatformState(username)
             mutableState.update { current ->
                 current.copy(
                     isLoading = false,
@@ -271,6 +268,16 @@ internal class AccountSettingsViewModel(
         }
     }
 
+    private fun refreshPlatformState(username: String) {
+        mutableState.update {
+            it.copy(
+                messageAlertsEnabled = platform.messageAlertsEnabled(username),
+                messageAlertStatus = platform.messageAlertStatus.value,
+                updateAlertsEnabled = platform.updateAlertsEnabled(),
+            )
+        }
+    }
+
     private fun observeMessageAlertStatus() {
         platformJob?.cancel()
         platformJob = requestScope.launch {
@@ -281,19 +288,11 @@ internal class AccountSettingsViewModel(
     }
 
     private fun cancelEnvironmentJobs() {
-        accountGeneration++
-        passwordGeneration++
-        updateGeneration++
-        accountJob?.cancel()
-        passwordJob?.cancel()
-        updateJob?.cancel()
-        signOutJob?.cancel()
-        platformActionJob?.cancel()
-        accountJob = null
-        passwordJob = null
-        updateJob = null
-        signOutJob = null
-        platformActionJob = null
+        accountRequest.cancel()
+        passwordRequest.cancel()
+        updateRequest.cancel()
+        signOutRequest.cancel()
+        platformActionRequest.cancel()
     }
 
     fun onEvent(event: AccountEvent) {
@@ -325,26 +324,33 @@ internal class AccountSettingsViewModel(
         }
     }
 
-    private fun load(force: Boolean = false) {
+    private fun load(
+        force: Boolean = false,
+        resetState: AccountSettingsUiState? = null,
+        refreshPlatformSettings: Boolean = false,
+    ) {
         val current = mutableState.value
-        if (sessionInvalidated || current.isLoading || (current.details != null && !force)) return
-        accountGeneration++
-        val generation = accountGeneration
-        accountJob?.cancel()
-        mutableState.update { it.copy(isLoading = true, failure = null) }
-        accountJob = requestScope.launch {
+        if (sessionInvalidated || (resetState == null && (current.isLoading || (current.details != null && !force)))) return
+        accountRequest.launch {
+            if (refreshPlatformSettings) {
+                refreshPlatformState(username)
+                currentCoroutineContext().ensureActive()
+            }
+            if (resetState != null) {
+                mutableState.value = resetState
+                currentCoroutineContext().ensureActive()
+            }
+            mutableState.update { it.copy(isLoading = true, failure = null) }
             requestResult { repository.details() }.fold(
                 onSuccess = { details ->
-                    if (generation != accountGeneration) return@fold
                     mutableState.update {
                         it.copy(details = details, email = details.email, newsletter = details.newsletter, isLoading = false)
                     }
                 },
                 onFailure = { error ->
-                    if (generation == accountGeneration) {
-                        mutableState.update { it.copy(isLoading = false) }
-                        finishFailure(error, UiFailureFallback.ACCOUNT_LOAD)
-                    }
+                    mutableState.update { it.copy(isLoading = false) }
+                    currentCoroutineContext().ensureActive()
+                    finishFailure(error, UiFailureFallback.ACCOUNT_LOAD)
                 },
             )
         }
@@ -353,21 +359,16 @@ internal class AccountSettingsViewModel(
     private fun saveAccount() {
         val current = mutableState.value
         if (sessionInvalidated || current.isSavingAccount || current.email.isBlank()) return
-        accountGeneration++
-        val generation = accountGeneration
-        accountJob?.cancel()
-        mutableState.update { it.copy(isSavingAccount = true, failure = null, notice = null) }
-        accountJob = requestScope.launch {
+        accountRequest.launch {
+            mutableState.update { it.copy(isSavingAccount = true, failure = null, notice = null) }
             requestResult { repository.update(current.email, current.newsletter) }.fold(
                 onSuccess = { details ->
-                    if (generation != accountGeneration) return@fold
                     mutableState.update { it.copy(details = details, isSavingAccount = false, notice = AccountNotice.AccountSaved) }
                 },
                 onFailure = { error ->
-                    if (generation == accountGeneration) {
-                        mutableState.update { it.copy(isSavingAccount = false) }
-                        finishFailure(error, UiFailureFallback.ACCOUNT_SAVE)
-                    }
+                    mutableState.update { it.copy(isSavingAccount = false) }
+                    currentCoroutineContext().ensureActive()
+                    finishFailure(error, UiFailureFallback.ACCOUNT_SAVE)
                 },
             )
         }
@@ -378,14 +379,10 @@ internal class AccountSettingsViewModel(
         if (sessionInvalidated || current.isChangingPassword || current.currentPassword.isBlank() ||
             current.newPassword.isBlank() || current.newPassword != current.verifyPassword
         ) return
-        passwordJob?.cancel()
-        passwordGeneration++
-        val generation = passwordGeneration
-        mutableState.update { it.copy(isChangingPassword = true, failure = null, notice = null) }
-        passwordJob = requestScope.launch {
+        passwordRequest.launch {
+            mutableState.update { it.copy(isChangingPassword = true, failure = null, notice = null) }
             requestResult { repository.changePassword(current.currentPassword, current.newPassword, current.verifyPassword) }.fold(
                 onSuccess = {
-                    if (generation != passwordGeneration) return@fold
                     mutableState.update {
                         it.copy(
                             isChangingPassword = false,
@@ -397,10 +394,9 @@ internal class AccountSettingsViewModel(
                     }
                 },
                 onFailure = { error ->
-                    if (generation == passwordGeneration) {
-                        mutableState.update { it.copy(isChangingPassword = false) }
-                        finishFailure(error, UiFailureFallback.PASSWORD_CHANGE)
-                    }
+                    mutableState.update { it.copy(isChangingPassword = false) }
+                    currentCoroutineContext().ensureActive()
+                    finishFailure(error, UiFailureFallback.PASSWORD_CHANGE)
                 },
             )
         }
@@ -409,8 +405,7 @@ internal class AccountSettingsViewModel(
     private fun toggleMessageAlerts(notificationPermissionGranted: Boolean) {
         val current = mutableState.value
         if (current.messageAlertsEnabled) {
-            platformActionJob?.cancel()
-            platformActionJob = requestScope.launch {
+            platformActionRequest.launch {
                 platform.disableMessageAlerts()
                 currentCoroutineContext().ensureActive()
                 mutableState.update {
@@ -429,8 +424,7 @@ internal class AccountSettingsViewModel(
 
     private fun toggleUpdateAlerts(notificationPermissionGranted: Boolean) {
         if (mutableState.value.updateAlertsEnabled) {
-            updateGeneration++
-            updateJob?.cancel()
+            updateRequest.cancel()
             platform.setUpdateAlertsEnabled(false)
             mutableState.update {
                 it.copy(updateAlertsEnabled = false, isCheckingUpdates = false, updateStatus = AccountUpdateStatus.AlertsOff)
@@ -439,8 +433,7 @@ internal class AccountSettingsViewModel(
             emitEffect { AccountEffect.RequestNotificationPermission(it, AccountPermissionTarget.PREVIEW_UPDATES) }
         } else {
             platform.setUpdateAlertsEnabled(true)
-            mutableState.update { it.copy(updateAlertsEnabled = true, updateStatus = null) }
-            checkUpdates()
+            checkUpdates(enableAlerts = true)
         }
     }
 
@@ -458,22 +451,23 @@ internal class AccountSettingsViewModel(
             AccountPermissionTarget.MESSAGE_ALERTS -> emitEffect { AccountEffect.EnableMessageAlerts(it) }
             AccountPermissionTarget.PREVIEW_UPDATES -> {
                 platform.setUpdateAlertsEnabled(true)
-                mutableState.update { it.copy(updateAlertsEnabled = true, updateStatus = null) }
-                checkUpdates()
+                checkUpdates(enableAlerts = true)
             }
         }
     }
 
-    private fun checkUpdates() {
-        if (!mutableState.value.updateAlertsEnabled) return
-        updateJob?.cancel()
-        val generation = ++updateGeneration
-        mutableState.update { it.copy(isCheckingUpdates = true, updateStatus = null) }
-        updateJob = requestScope.launch {
+    private fun checkUpdates(enableAlerts: Boolean = false) {
+        if (!enableAlerts && !mutableState.value.updateAlertsEnabled) return
+        updateRequest.launch {
+            if (enableAlerts) {
+                mutableState.update { it.copy(updateAlertsEnabled = true, updateStatus = null) }
+                currentCoroutineContext().ensureActive()
+            }
+            mutableState.update { it.copy(isCheckingUpdates = true, updateStatus = null) }
+            currentCoroutineContext().ensureActive()
             val result = try { platform.checkPreviewUpdates() } catch (cancelled: CancellationException) { throw cancelled }
             catch (_: Throwable) { ApkUpdateCheckResult.Unavailable }
             currentCoroutineContext().ensureActive()
-            if (generation != updateGeneration) return@launch
             val status = when (result) {
                 ApkUpdateCheckResult.UpToDate -> AccountUpdateStatus.Latest
                 ApkUpdateCheckResult.Unavailable -> AccountUpdateStatus.Unavailable
@@ -485,15 +479,12 @@ internal class AccountSettingsViewModel(
 
     private fun signOut() {
         if (mutableState.value.isSigningOut) return
-        accountGeneration++
-        passwordGeneration++
-        updateGeneration++
-        accountJob?.cancel()
-        passwordJob?.cancel()
-        updateJob?.cancel()
-        mutableState.update { it.copy(isSigningOut = true, currentPassword = "", newPassword = "", verifyPassword = "", failure = null) }
-        signOutJob?.cancel()
-        signOutJob = requestScope.launch {
+        accountRequest.cancel()
+        passwordRequest.cancel()
+        updateRequest.cancel()
+        signOutRequest.launch {
+            mutableState.update { it.copy(isSigningOut = true, currentPassword = "", newPassword = "", verifyPassword = "", failure = null) }
+            currentCoroutineContext().ensureActive()
             // Clearing local push credentials is best-effort: a distributor or
             // network failure must not strand the user in a signed-in session.
             try {
@@ -537,15 +528,12 @@ internal class AccountSettingsViewModel(
 
 
     override fun onCleared() {
-        accountGeneration++
-        passwordGeneration++
-        updateGeneration++
-        accountJob?.cancel()
-        passwordJob?.cancel()
-        updateJob?.cancel()
+        accountRequest.cancel()
+        passwordRequest.cancel()
+        updateRequest.cancel()
         platformJob?.cancel()
-        platformActionJob?.cancel()
-        signOutJob?.cancel()
+        platformActionRequest.cancel()
+        signOutRequest.cancel()
         mutableState.value = AccountSettingsUiState()
         super.onCleared()
     }

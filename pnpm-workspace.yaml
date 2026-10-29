@@ -2,37 +2,28 @@ packages:
   - 'modules/*'
   - 'packages/*'
 
+catalog:
+  qs: '6.16.1'
+
 overrides:
-  'node-forge': '1.4.0'
-  'websocket-driver': '0.7.5'
-  'nan': '2.28.0'
-  'serialize-javascript': '7.0.5'
   'browserslist': '4.28.7'
   'baseline-browser-mapping': '2.11.0'
-  'fast-uri': '3.1.8'
-  'decode-uri-component': '0.5.0'
   'js-yaml@<5': '4.3.2'
   'brace-expansion@1': '1.1.21'
   'brace-expansion@2': '2.1.7'
   'brace-expansion@5': '5.0.12'
-  'acl>mongodb': '4.17.2'
-  'acl>redis': '3.1.1'
-  'mongodb-core>bson': '1.1.6'
   'socks>ip-address': '10.7.4'
-  'express>qs': '6.16.0'
+  'express>qs': 'catalog:'
   'body-parser@1': '1.20.9'
   'body-parser@2': '2.4.0'
-  '@google-cloud/storage>gaxios': '7.2.0'
-  '@google-cloud/storage>retry-request': '8.0.3'
-  '@google-cloud/storage>teeny-request': '10.1.3'
-  '@google-cloud/storage>fast-xml-parser': '5.10.1'
-  'sockjs>uuid': '11.1.1'
+
+patchedDependencies:
+  'deepmerge@4.3.1': patches/deepmerge@4.3.1.patch
 
 allowBuilds:
   '@parcel/watcher': true
   'unrs-resolver': true
   'core-js': false
-  'core-js-pure': false
 
 peerDependencyRules:
   ignoreMissing:

@@ -8,6 +8,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +28,29 @@ import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileMember
 
 class SignInViewModelTest {
+    @Test
+    fun defaultAuthenticatorSubmitsThroughTheConfiguredApiClient() = runBlocking {
+        val scope = testScope()
+        try {
+            val viewModel = SignInViewModel(
+                apiBaseUrl = "http://127.0.0.1:1",
+                initialMessage = null,
+                scope = scope,
+            )
+            viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+            viewModel.onEvent(SignInEvent.PasswordChanged("fictional-password"))
+
+            viewModel.onEvent(SignInEvent.Submit)
+
+            val state = withTimeout(5_000) {
+                viewModel.state.first { !it.isLoading && it.error != null }
+            }
+            assertEquals(UiFailure(fallback = UiFailureFallback.REACH_TRUSTROOTS), state.error)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test
     fun unexpectedAuthenticatorFailureUsesTheSafeFallbackMessage() {
         val scope = testScope()
@@ -92,6 +118,27 @@ class SignInViewModelTest {
         assertEquals("fictional-password", viewModel.state.value.password)
         assertEquals(UiFailure(fallback = UiFailureFallback.SESSION_EXPIRED), viewModel.state.value.error)
         assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
+    fun successDeliveryBeforeAnyPendingSuccessLeavesTheFormUnchanged() {
+        val scope = testScope()
+        try {
+            val viewModel = SignInViewModel(
+                apiBaseUrl = "https://api.example.test",
+                initialMessage = null,
+                authenticator = SignInAuthenticator { _, _ -> error("Sign-in should not run") },
+                scope = scope,
+            )
+            val initialState = viewModel.state.value
+
+            viewModel.onEvent(SignInEvent.SuccessDelivered(1L))
+
+            assertEquals(initialState, viewModel.state.value)
+            assertNull(viewModel.state.value.pendingSuccess)
+        } finally {
+            scope.cancel()
+        }
     }
 
     @Test
@@ -257,6 +304,23 @@ class SignInViewModelTest {
         val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
 
         assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
+    fun signInFactoryCreatesAViewModelWithItsDefaultScope() {
+        val store = ViewModelStore()
+        val owner = object : ViewModelStoreOwner {
+            override val viewModelStore = store
+        }
+        val viewModel = ViewModelProvider(
+            owner,
+            SignInViewModelFactory("https://api.example.test", null),
+        ).get(SignInViewModel::class.java)
+
+        viewModel.onEvent(SignInEvent.UsernameChanged("anonymous-heron"))
+        assertEquals("anonymous-heron", viewModel.state.value.username)
+        store.clear()
+        assertEquals(SignInUiState(), viewModel.state.value)
     }
 
     @Test

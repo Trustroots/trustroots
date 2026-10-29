@@ -439,6 +439,65 @@ describe('User profile CRUD tests', function () {
       .expect(400);
     malformed.body.message.should.equal('Please enter a valid last name.');
   });
+  it('persists language levels and preserves them for older clients', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const saved = await agent
+      .put('/api/users')
+      .send({
+        languages: ['eng', 'fre'],
+        languageLevels: { eng: 'native', fre: 'basic' },
+      })
+      .expect(200);
+    saved.body.languageLevels.should.deepEqual({ eng: 'native', fre: 'basic' });
+    const profile = await agent.get('/api/users/' + user.username).expect(200);
+    profile.body.languageLevels.should.deepEqual(saved.body.languageLevels);
+    const unchanged = await agent
+      .put('/api/users')
+      .send({ tagline: 'A fictional traveller' })
+      .expect(200);
+    unchanged.body.languageLevels.should.deepEqual(saved.body.languageLevels);
+    const removed = await agent
+      .put('/api/users')
+      .send({ languages: ['eng'] })
+      .expect(200);
+    removed.body.languageLevels.should.deepEqual({ eng: 'native' });
+    const cleared = await agent
+      .put('/api/users')
+      .send({ languageLevels: {} })
+      .expect(200);
+    (cleared.body.languageLevels || {}).should.deepEqual({});
+    await agent.put('/api/users').send({ languages: [] }).expect(200);
+  });
+  it('rejects malformed and unselected language levels', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent
+      .put('/api/users')
+      .send({ languages: ['eng'], languageLevels: { eng: 'intermediate' } })
+      .expect(200);
+    for (const languageLevels of [
+      null,
+      [],
+      'native',
+      42,
+      { eng: 1 },
+      { eng: 'fluent' },
+      { fre: 'basic' },
+    ]) {
+      await agent.put('/api/users').send({ languageLevels }).expect(400);
+    }
+    await agent
+      .put('/api/users')
+      .send({ languages: [], languageLevels: { eng: 'advanced' } })
+      .expect(400);
+    await agent
+      .put('/api/users')
+      .send({ languages: 'eng', languageLevels: {} })
+      .expect(400);
+    const unchanged = await agent
+      .get('/api/users/' + user.username)
+      .expect(200);
+    unchanged.body.languageLevels.should.deepEqual({ eng: 'intermediate' });
+  });
   it('retains and removes existing deprecated languages but rejects new ones', async function () {
     user.languages = ['enm'];
     await user.save();

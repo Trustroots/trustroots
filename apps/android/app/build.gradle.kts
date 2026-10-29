@@ -1,6 +1,7 @@
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
+import java.io.File
 
 plugins {
     id("com.android.application")
@@ -16,6 +17,10 @@ dependencies {
 val coverageEnabled = providers.gradleProperty("trustrootsCoverage").map(String::toBoolean).orElse(false)
 val coverageToolVersion = "0.8.15"
 jacoco { toolVersion = coverageToolVersion }
+val coverageReportTool by configurations.creating {
+    isCanBeConsumed = false
+    attributes.attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+}
 
 tasks.withType<Test>().configureEach {
     extensions.configure<JacocoTaskExtension> {
@@ -153,7 +158,7 @@ val debugCoverageReport = tasks.register<JacocoReport>("debugCoverageReport") {
     reports {
         xml.required.set(true)
         html.required.set(true)
-        xml.outputLocation.set(layout.buildDirectory.file("reports/coverage/debug/coverage.xml"))
+        xml.outputLocation.set(layout.buildDirectory.file("reports/coverage/debug/coverage-raw.xml"))
         html.outputLocation.set(layout.buildDirectory.dir("reports/coverage/debug/html"))
     }
     doFirst {
@@ -162,10 +167,33 @@ val debugCoverageReport = tasks.register<JacocoReport>("debugCoverageReport") {
     }
 }
 
+val debugExecutableCoverageReport = tasks.register<JavaExec>("debugExecutableCoverageReport") {
+    group = "verification"
+    description = "Correct proven compiler-only instructions while retaining raw coverage and an audit."
+    dependsOn(debugCoverageReport, ":coverage-report-tool:regressionTest")
+    classpath = coverageReportTool
+    mainClass.set("org.trustroots.android.coverage.FilteredReport")
+    check(coverageToolVersion == "0.8.15") {
+        "Review the pinned generated-code filter before changing JaCoCo versions."
+    }
+    val reportDirectory = layout.buildDirectory.dir("reports/coverage/debug")
+    args(
+        layout.buildDirectory.dir("outputs").get().asFile.absolutePath,
+        listOf(
+            layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes").get().asFile,
+            layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes").get().asFile,
+        ).joinToString(File.pathSeparator) { it.absolutePath },
+        file("src/main/java").absolutePath,
+        reportDirectory.get().file("coverage-raw.xml").asFile.absolutePath,
+        reportDirectory.get().file("coverage.xml").asFile.absolutePath,
+        reportDirectory.get().file("generated-code-audit.txt").asFile.absolutePath,
+    )
+}
+
 tasks.register<Exec>("debugCoverageTable") {
     group = "verification"
     description = "Write a Markdown table of measured Android source coverage."
-    dependsOn(debugCoverageReport)
+    dependsOn(debugExecutableCoverageReport)
     commandLine(
         "python3", "../scripts/coverage-table.py",
         layout.buildDirectory.file("reports/coverage/debug/coverage.xml").get().asFile,
@@ -175,6 +203,7 @@ tasks.register<Exec>("debugCoverageTable") {
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2026.06.00")
+    add(coverageReportTool.name, project(":coverage-report-tool"))
 
     implementation(composeBom)
     androidTestImplementation(composeBom)

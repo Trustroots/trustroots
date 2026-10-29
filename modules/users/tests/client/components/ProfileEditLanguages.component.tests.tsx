@@ -17,6 +17,9 @@ type LanguageSelectProps = Pick<
   preSelectedLanguages: string[];
 };
 
+jest.mock('@/modules/core/client/api/languages.api', () => ({
+  useLanguagesQuery: () => ({ data: { eng: 'English' } }),
+}));
 jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/core/client/components/LanguageSelect', () => {
   function MockLanguageSelect(props: LanguageSelectProps) {
@@ -116,4 +119,51 @@ describe('<ProfileEditLanguages />', () => {
       screen.getByRole('button', { name: 'Add languages you speak.' }),
     ).toHaveAttribute('data-selected', '');
   });
+});
+
+it('sets, clears and removes optional levels', () => {
+  const onChangeLevels = jest.fn();
+  const { rerender } = render(
+    <ProfileEditLanguages
+      profileLanguages={['eng', 'zzz']}
+      languageLevels={{ eng: 'native', zzz: 'basic' }}
+      onChangeLanguages={jest.fn()}
+      onChangeLevels={onChangeLevels}
+    />,
+  );
+  expect(
+    screen.getByRole('combobox', { name: 'Level for English' }),
+  ).toHaveValue('native');
+  expect(screen.getByRole('combobox', { name: 'Level for zzz' })).toHaveValue(
+    'basic',
+  );
+  for (const level of ['basic', 'intermediate', 'advanced', 'native']) {
+    fireEvent.change(
+      screen.getByRole('combobox', { name: 'Level for English' }),
+      { target: { value: level } },
+    );
+    expect(onChangeLevels).toHaveBeenLastCalledWith({
+      eng: level,
+      zzz: 'basic',
+    });
+  }
+  fireEvent.change(
+    screen.getByRole('combobox', { name: 'Level for English' }),
+    { target: { value: '' } },
+  );
+  expect(onChangeLevels).toHaveBeenLastCalledWith({ zzz: 'basic' });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Add languages you speak.' }),
+  );
+  expect(onChangeLevels).toHaveBeenLastCalledWith({});
+  rerender(
+    <ProfileEditLanguages
+      profileLanguages={['eng']}
+      onChangeLanguages={jest.fn()}
+      onChangeLevels={onChangeLevels}
+    />,
+  );
+  expect(
+    screen.getByRole('combobox', { name: 'Level for English' }),
+  ).toHaveValue('');
 });

@@ -13,12 +13,20 @@ private val legacyLanguageTags = mapOf(
 )
 
 private val iso6393LanguageTags by lazy {
-    Locale.getISOLanguages().mapNotNull { languageTag ->
-        val iso2Locale = Locale.forLanguageTag(languageTag)
-        runCatching { iso2Locale.isO3Language.lowercase(Locale.ROOT) to languageTag }
-            .getOrNull()
-    }.toMap()
+    buildIso6393LanguageTags(
+        Locale.getISOLanguages().asIterable(),
+        iso3Language = { it.isO3Language },
+    )
 }
+
+internal fun buildIso6393LanguageTags(
+    languageTags: Iterable<String>,
+    iso3Language: (Locale) -> String,
+): Map<String, String> = languageTags.mapNotNull { languageTag ->
+    val iso2Locale = Locale.forLanguageTag(languageTag)
+    runCatching { iso3Language(iso2Locale).lowercase(Locale.ROOT) to languageTag }
+        .getOrNull()
+}.toMap()
 
 internal fun languageName(code: String, displayLocale: Locale = Locale.getDefault()): String {
     return languageName(code, displayLocale, emptyMap())
@@ -39,18 +47,34 @@ internal fun languageName(code: String, displayLocale: Locale, catalogue: Map<St
     if (normalised == "mnk" && catalogueName != null) return catalogueName
     val languageTag = legacyLanguageTags[normalised] ?: iso6393LanguageTags[normalised] ?: normalised
     val display = Locale.forLanguageTag(languageTag).getDisplayLanguage(displayLocale)
-    return display.takeIf {
-        it.isNotBlank() && !it.equals(languageTag, true) && !it.equals(normalised, true)
-    }
-        ?: catalogueName
-        ?: code.uppercase(Locale.ROOT)
+    return languageDisplayName(display, languageTag, normalised, catalogueName, code)
 }
 
-private object LanguageCatalogueCache {
+internal fun languageDisplayName(
+    display: String,
+    languageTag: String,
+    normalised: String,
+    catalogueName: String?,
+    originalCode: String,
+): String = display.takeIf {
+    it.isNotBlank() && !it.equals(languageTag, true) && !it.equals(normalised, true)
+}
+    ?: catalogueName
+    ?: originalCode.uppercase(Locale.ROOT)
+
+internal class LanguageCatalogueCache {
     @Volatile private var names: Map<String, String>? = null
 
-    fun get(context: Context): Map<String, String> = names ?: synchronized(this) {
-        names ?: context.applicationContext.assets.open("languages.json").use { stream ->
+    fun get(loader: () -> Map<String, String>): Map<String, String> = names ?: synchronized(this) {
+        names ?: loader().also { names = it }
+    }
+}
+
+private val languageCatalogueCache = LanguageCatalogueCache()
+
+internal fun languageCatalogue(context: Context): Map<String, String> =
+    languageCatalogueCache.get {
+        context.applicationContext.assets.open("languages.json").use { stream ->
             InputStreamReader(stream, Charsets.UTF_8).use { reader ->
                 val json = JSONObject(reader.readText())
                 buildMap(json.length()) {
@@ -61,8 +85,5 @@ private object LanguageCatalogueCache {
                     }
                 }
             }
-        }.also { names = it }
+        }
     }
-}
-
-internal fun languageCatalogue(context: Context): Map<String, String> = LanguageCatalogueCache.get(context)

@@ -2,6 +2,8 @@
 
 package org.trustroots.android.ui.conversation
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.text.Html
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -50,7 +52,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
@@ -71,9 +72,7 @@ internal fun MessageConversationEntryScreen(
     onOpenProfile: ((String) -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Conversation must be hosted by a Navigation 3 ViewModelStoreOwner."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Conversation must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val context = LocalContext.current.applicationContext
     val model = remember(owner, memberID, session.member.username) {
         owner.messageConversationViewModel(memberID, api, session, context)

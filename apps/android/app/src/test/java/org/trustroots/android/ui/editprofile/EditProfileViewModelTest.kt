@@ -26,10 +26,61 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileUpdate
+import org.trustroots.android.ui.common.UiFailureFallback
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class EditProfileViewModelTest {
+    @Test
+    fun apiIndependentFailureDefaultsItsOptionalMetadataToNull() {
+        val failure = EditProfileFailure(fallback = UiFailureFallback.LOAD_PROFILE)
+
+        assertNull(failure.apiKind)
+        assertNull(failure.serverMessage)
+    }
+
+    @Test
+    fun factoryDefaultScopeOwnsAndCancelsAnEntryProfileLoad() {
+        val pendingProfile = CompletableDeferred<Result<MemberProfile>>()
+        var cancelled = false
+        val repository = object : EditProfileRepository {
+            override suspend fun profile(username: String): Result<MemberProfile> = try {
+                pendingProfile.await()
+            } finally {
+                cancelled = true
+            }
+
+            override suspend fun update(profile: ProfileUpdate) = Result.success(profileFixture())
+        }
+        val store = ViewModelStore()
+        val model = ViewModelProvider(
+            Owner(store),
+            EditProfileViewModel.Factory("quiet-fox", repository, api(), session()),
+        )["default-scope", EditProfileViewModel::class.java]
+
+        assertTrue(model.state.value.isLoading)
+        store.clear()
+        pendingProfile.complete(Result.success(profileFixture("Late result")))
+
+        assertTrue(cancelled)
+        assertNull(model.state.value.baseline)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test
+    fun repositoryDefaultsLeaveApiAndSessionUpdatesUnchanged() {
+        val repository = object : EditProfileRepository by FakeRepository() {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<EditProfileRepository>.updateApi(api)
+
+            override fun updateSession(session: MemberSession): Boolean =
+                super<EditProfileRepository>.updateSession(session)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+        assertFalse(repository.updateSession(MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox"))))
+    }
+
     @Test
     fun editsCanonicalFieldsAndSendsTheExistingPayload() = runBlocking {
         val repository = FakeRepository()
@@ -185,6 +236,19 @@ class EditProfileViewModelTest {
         assertTrue(model.state.value.isDirty)
         model.onEvent(EditProfileEvent.LanguageToggled("eng"))
         assertFalse(model.state.value.isDirty)
+    }
+
+    @Test
+    fun switchingToAnotherAccountClearsTheProfileDraftWithoutLoadingItForThatAccount() {
+        val repository = FakeRepository()
+        val model = newModel(repository)
+        model.onEvent(EditProfileEvent.NameChanged("Private draft"))
+
+        model.updateEnvironment(api(), session(username = "amber-owl", cookie = "other-account-cookie"))
+
+        assertEquals(EditProfileUiState(isLoading = false), model.state.value)
+        assertEquals(0, repository.profileCalls)
+        assertEquals(0, repository.saveCalls)
     }
 
     @Test

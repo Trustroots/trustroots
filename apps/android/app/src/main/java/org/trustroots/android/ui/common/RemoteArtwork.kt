@@ -86,7 +86,7 @@ internal fun RemoteArtwork(
                 modifier = Modifier.size(size),
             )
         } else {
-            Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
+            Text(artworkInitial(label), color = readableContentColor(background))
         }
     }
 }
@@ -110,11 +110,6 @@ internal fun ArtworkHero(
     leadingContent: (@Composable () -> Unit)? = null,
 ) {
     val bitmap = rememberArtworkBitmap(url, sessionCookie)
-    val profileImageDescription = if (onProfileImageClick == null) {
-        null
-    } else {
-        stringResource(R.string.view_profile_photo, label)
-    }
     val avatarSize = if (compact) 40.dp else 88.dp
     Box(Modifier.fillMaxWidth().height(heroHeight).background(background).testTag(testTag)) {
         if (bitmap != null) {
@@ -150,7 +145,6 @@ internal fun ArtworkHero(
                         label,
                         background,
                         onClick = onProfileImageClick,
-                        imageDescription = profileImageDescription,
                     )
                     Column(Modifier.weight(1f)) {
                         if (showTitle) {
@@ -183,7 +177,6 @@ internal fun ArtworkHero(
                         label,
                         background,
                         onClick = onProfileImageClick,
-                        imageDescription = profileImageDescription,
                     )
                     if (showTitle) {
                         Text(label, color = colorResource(R.color.artwork_on_scrim), style = expandedTitleStyle)
@@ -202,15 +195,15 @@ private fun ProfileAvatar(
     size: Dp,
     label: String,
     background: Color,
-    onClick: (() -> Unit)? = null,
-    imageDescription: String? = null,
+    onClick: (() -> Unit)?,
 ) {
+    val imageDescription = stringResource(R.string.view_profile_photo, label)
     val clickModifier = if (onClick == null) {
         Modifier.size(size)
     } else {
         Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = requireNotNull(imageDescription) }
+            .semantics { contentDescription = imageDescription }
             .testTag("profileAvatar")
     }
     Box(clickModifier, contentAlignment = Alignment.Center) {
@@ -223,11 +216,13 @@ private fun ProfileAvatar(
                     modifier = Modifier.size(size),
                 )
             } else {
-                Text(label.firstOrNull()?.uppercase().orEmpty(), color = readableContentColor(background))
+                Text(artworkInitial(label), color = readableContentColor(background))
             }
         }
     }
 }
+
+internal fun artworkInitial(label: String): String = label.take(1).uppercase()
 
 @Composable
 private fun readableContentColor(background: Color): Color {

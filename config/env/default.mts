@@ -63,6 +63,28 @@ const service = {
   supportEmail: 'support@trustroots.org',
   // TO-address for support requests
   supportVolunteerNames: ['Dario', 'Noah'],
+  // The new support inbox stays disabled until deployment configures its
+  // outbound sender and (optionally) inbound mailbox credentials.
+  supportInbox: {
+    enabled: false,
+    fromName: 'Trustroots Support',
+    fromAddress: 'support@trustroots.org',
+    imap: {
+      enabled: false,
+      host: '',
+      port: 993,
+      secure: true,
+      user: '',
+      password: '',
+      mailbox: 'INBOX',
+      pollIntervalMinutes: 1,
+      // Messages above this raw wire size are stored as a metadata-only notice.
+      maxMessageBytes: 25 * 1024 * 1024,
+      // Keep the request/message document safely below MongoDB's BSON limit.
+      maxStoredBodyBytes: 12 * 1024 * 1024,
+      maxMessagesPerPoll: 50,
+    },
+  },
   // Used as "from" name to send some automated emails
   surveyReactivateHosts: 'https://ideas.trustroots.org/?p=1302#page-1302',
   // Survey to send with host reactivation emails

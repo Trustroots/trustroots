@@ -74,6 +74,98 @@ async function expectDesignTokens(page: Page) {
   });
 }
 
+async function expectUtilityAndBootstrap(page: Page) {
+  const result = await page.evaluate(() => {
+    const utility = document.createElement('span');
+    utility.className = 'tw:bg-notification';
+    const button = document.createElement('button');
+    button.className = 'btn btn-primary';
+    document.body.append(utility, button);
+    const styles = {
+      utility: getComputedStyle(utility).backgroundColor,
+      button: getComputedStyle(button).backgroundColor,
+      buttonDisplay: getComputedStyle(button).display,
+    };
+    utility.remove();
+    button.remove();
+    return styles;
+  });
+  expect(result).toEqual({
+    utility: 'rgb(217, 83, 79)',
+    button: 'rgb(18, 181, 145)',
+    buttonDisplay: 'inline-block',
+  });
+}
+
+test('prefixed utilities coexist with Bootstrap in LTR and RTL', async ({
+  page,
+  context,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.home', ['Homepage loads for visitors.']);
+  expectPresent(baseURL);
+  await page.goto('/');
+  await expectDesignTokens(page);
+  await expectUtilityAndBootstrap(page);
+
+  await context.addCookies([{ name: 'i18n', value: 'ar', url: baseURL }]);
+  const rtl = page.waitForResponse(
+    response =>
+      new URL(response.url()).pathname === '/assets/react-main.rtl.css',
+  );
+  await page.goto('/');
+  expect((await rtl).ok()).toBeTruthy();
+  await expect
+    .poll(() =>
+      page
+        .locator('#rtl-style')
+        .evaluate(link => Boolean((link as HTMLLinkElement).sheet)),
+    )
+    .toBe(true);
+  await expectUtilityAndBootstrap(page);
+});
+
+test('owned buttons show a contrasting keyboard focus ring on white', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.home', ['Homepage loads for visitors.']);
+  await page.goto('/');
+  await expectDesignTokens(page);
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.id = 'button-focus-probe';
+    host.tabIndex = -1;
+    host.style.backgroundColor = '#fff';
+    for (const variant of ['primary', 'default']) {
+      const button = document.createElement('button');
+      button.className = `tr-button tr-button--${variant}`;
+      button.textContent = `Focus ${variant}`;
+      host.append(button);
+    }
+    document.body.prepend(host);
+    host.focus();
+  });
+  for (const variant of ['primary', 'default']) {
+    await page.keyboard.press('Tab');
+    const button = page.getByRole('button', {
+      name: `Focus ${variant}`,
+      exact: true,
+    });
+    await expect(button).toBeFocused();
+    expect(
+      await button.evaluate(element => element.matches(':focus-visible')),
+    ).toBe(true);
+    await expect(button).toHaveCSS('outline-style', 'solid');
+    await expect(button).toHaveCSS('outline-width', '2px');
+    const colours = await button.evaluate(element => ({
+      ring: getComputedStyle(element).outlineColor,
+      surface: getComputedStyle(element.parentElement!).backgroundColor,
+    }));
+    expect(colours.ring).not.toBe(colours.surface);
+    expect(colours.ring).not.toBe('rgba(0, 0, 0, 0)');
+  }
+});
+
 test('design tokens resolve on public pages in LTR and RTL', async ({
   page,
   context,

@@ -28,7 +28,7 @@ type SourceLinks = {
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const BASELINE_FILE = 'module-graph-baseline.json';
 const SOURCE_DIRS = ['client', 'server', 'shared'];
-const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|tsx)$/;
+const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|cts|tsx)$/;
 
 function listModules(root: string): string[] {
   return fs
@@ -55,7 +55,7 @@ function scriptKind(file: string): ts.ScriptKind {
   if (file.endsWith('.tsx') || file.endsWith('.jsx') || file.endsWith('.js')) {
     return ts.ScriptKind.TSX;
   }
-  if (file.endsWith('.mts') || file.endsWith('.ts')) {
+  if (file.endsWith('.mts') || file.endsWith('.cts') || file.endsWith('.ts')) {
     return ts.ScriptKind.TS;
   }
   return ts.ScriptKind.JS;
@@ -182,6 +182,28 @@ export function analyze(root = ROOT): ModuleGraph {
   return { imports: sortKeys(imports), models: sortKeys(models) };
 }
 
+export function missingModelDependencies(
+  graph: ModuleGraph,
+  root = ROOT,
+): string[] {
+  return Object.entries(graph.models).flatMap(([consumer, owners]) =>
+    owners.flatMap(owner => {
+      const manifestPath = path.join(root, 'modules', consumer, 'package.json');
+      if (!fs.existsSync(manifestPath)) {
+        return [`${consumer} -> ${owner}: missing ${manifestPath}`];
+      }
+      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as {
+        dependencies?: Record<string, string>;
+      };
+      return manifest.dependencies?.[`@trustroots/${owner}`] === 'workspace:*'
+        ? []
+        : [
+            `${consumer} -> ${owner}: missing @trustroots/${owner} workspace dependency`,
+          ];
+    }),
+  );
+}
+
 function sortKeys(object: Graph): Graph {
   return Object.fromEntries(
     Object.entries(object).sort(([a], [b]) => a.localeCompare(b)),
@@ -286,6 +308,16 @@ export function main(argv: string[], root = ROOT): number {
   if (!fs.existsSync(baselinePath)) {
     console.error(
       `${BASELINE_FILE} is missing. Run: npm run modules:update-baseline`,
+    );
+    return 1;
+  }
+
+  const missingDependencies = missingModelDependencies(current, root);
+  if (missingDependencies.length) {
+    console.error(
+      `Undeclared model dependencies:\n${missingDependencies
+        .map(edge => `  ${edge}`)
+        .join('\n')}\nAdd the owning module as a workspace dependency.`,
     );
     return 1;
   }

@@ -1,0 +1,3 @@
+- [x] Add chunked whole-preview scanning and selected apply with progress.
+- [x] Add global selection and individual exclusions across account pages.
+- [x] Update anonymous tests, documentation and living requirements; run checks.

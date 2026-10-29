@@ -356,6 +356,18 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/support/requests/:requestId',
+    requiresRole: ['admin', 'support-team'],
+    title: 'Support request',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/support/members',
+    requiresRole: ['admin', 'support-team'],
+    title: 'Support - Member search',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/support/member/:username',
     requiresRole: ['admin', 'support-team'],
     title: 'Support - Member',
@@ -375,6 +387,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     path: '/admin/username-changes',
     requiresRole: ['admin'],
     title: 'Admin - Username changes',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/spam-cleanup',
+    requiresRole: ['admin'],
+    title: 'Admin - Spam account cleanup',
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,

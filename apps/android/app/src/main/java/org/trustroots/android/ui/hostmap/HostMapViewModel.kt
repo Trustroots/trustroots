@@ -1,5 +1,7 @@
 package org.trustroots.android.ui.hostmap
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.content.Context
 import android.location.Address
 import androidx.compose.runtime.Composable
@@ -8,10 +10,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,6 +29,7 @@ import org.trustroots.android.api.TrustrootsCircle
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
@@ -72,7 +75,11 @@ private class NostrootsNotesConnection(private val client: NostrootsNotesClient)
 internal fun createNostrootsNotesConnection(
     onNote: (CommunityNote) -> Unit,
     onError: () -> Unit,
-): HostMapNotesConnection = NostrootsNotesConnection(NostrootsNotesClient(onNote, onError))
+    relayUrl: String = "wss://relay.trustroots.org",
+    socketFactory: okhttp3.WebSocket.Factory = NostrootsNotesClient.sharedWebSocketFactory,
+): HostMapNotesConnection = NostrootsNotesConnection(
+    NostrootsNotesClient(onNote, onError, socketFactory = socketFactory, relayUrl = relayUrl),
+)
 
 internal data class HostMapFilters(
     val includeHosts: Boolean = true,
@@ -233,14 +240,12 @@ internal class HostMapViewModel(
     )
     val state = mutableState.asStateFlow()
 
-    private var searchJob: Job? = null
-    private var placeJob: Job? = null
-    private var circlesJob: Job? = null
-    private var notesFilterJob: Job? = null
+    private val searchRequest = LatestRequest(workScope)
+    private val placeRequest = LatestRequest(workScope)
+    private val circlesRequest = LatestRequest(workScope)
+    private val notesFilterRequest = LatestRequest(workScope)
     private var notesClient: HostMapNotesConnection? = null
     private val receivedNotes = linkedMapOf<String, CommunityNote>()
-    private var searchGeneration = 0L
-    private var placeGeneration = 0L
     private var notesGeneration = 0L
     private var nextViewportCommand = 0L
     private var nextInvalidationID = 0L
@@ -319,7 +324,6 @@ internal class HostMapViewModel(
 
     override fun onCleared() {
         cancelAllWork()
-        placeGeneration++
         stopNotesSource(clearNotes = true)
         receivedNotes.clear()
         mutableState.value = HostMapUiState(ownerStarted = false)
@@ -330,11 +334,8 @@ internal class HostMapViewModel(
         if (generation <= resetGeneration) return
         resetGeneration = generation
         cancelSearch()
-        placeJob?.cancel()
-        circlesJob?.cancel()
-        circlesJob = null
-        searchGeneration++
-        placeGeneration++
+        placeRequest.cancel()
+        circlesRequest.cancel()
         lastSuccessfulSearch = null
         lastSuccessfulSearchAt = null
         resultsCache.clear()
@@ -372,13 +373,12 @@ internal class HostMapViewModel(
             now() - it < HOST_MAP_RESULTS_FRESHNESS_MS
         } == true
         if (!force && isFresh) return
-        cancelSearch()
-        val generation = ++searchGeneration
-        searchJob = workScope.launch {
+        searchRequest.launch {
+            mutableState.update { if (it.isLoading) it.copy(isLoading = false) else it }
             wait(550)
+            currentCoroutineContext().ensureActive()
             mutableState.update { it.copy(isLoading = true, failure = null) }
             val result = requestResult { repository.searchOffers(bounds, current.filters) }
-            if (generation != searchGeneration) return@launch
             result.fold(
                 onSuccess = { offers ->
                     lastSuccessfulSearch = fingerprint
@@ -417,14 +417,15 @@ internal class HostMapViewModel(
         ).joinToString("|")
 
     private fun loadPlaceSuggestions(query: String) {
-        val generation = ++placeGeneration
-        placeJob?.cancel()
-        mutableState.update { it.copy(suggestions = emptyList()) }
-        if (sessionInvalidationEmitted || query.trim().length < 3) return
-        placeJob = workScope.launch {
+        placeRequest.cancel()
+        if (sessionInvalidationEmitted || query.trim().length < 3) {
+            mutableState.update { it.copy(suggestions = emptyList()) }
+            return
+        }
+        placeRequest.launch {
+            mutableState.update { it.copy(suggestions = emptyList()) }
             wait(400)
             val result = requestResult { repository.places(query.trim(), 3) }
-            if (generation != placeGeneration) return@launch
             result.fold(
                 onSuccess = { places -> mutableState.update { it.copy(suggestions = places) } },
                 onFailure = { error ->
@@ -437,12 +438,9 @@ internal class HostMapViewModel(
     private fun submitPlace() {
         val query = state.value.locationQuery.trim()
         if (sessionInvalidationEmitted || query.isEmpty()) return
-        val generation = ++placeGeneration
-        placeJob?.cancel()
-        mutableState.update { it.copy(suggestions = emptyList(), failure = null, placeFailure = null) }
-        placeJob = workScope.launch {
+        placeRequest.launch {
+            mutableState.update { it.copy(suggestions = emptyList(), failure = null, placeFailure = null) }
             val result = requestResult { repository.places(query, 1) }
-            if (generation != placeGeneration) return@launch
             result.fold(
                 onSuccess = { places ->
                     val place = places.firstOrNull()
@@ -469,8 +467,8 @@ internal class HostMapViewModel(
 
     private fun loadCircles() {
         if (sessionInvalidationEmitted) return
-        if (state.value.circles.isNotEmpty() || circlesJob?.isActive == true) return
-        circlesJob = workScope.launch {
+        if (state.value.circles.isNotEmpty() || circlesRequest.isActive) return
+        circlesRequest.launch {
             requestResult { repository.circles() }.fold(
                 onSuccess = { circles -> mutableState.update { current ->
                     current.copy(
@@ -501,8 +499,7 @@ internal class HostMapViewModel(
     private suspend fun receiveNote(generation: Long, note: CommunityNote) {
         if (generation != notesGeneration) return
         receivedNotes[note.id] = note
-        notesFilterJob?.cancel()
-        notesFilterJob = workScope.launch {
+        notesFilterRequest.launch {
             wait(250)
             val authors = receivedNotes.values.map { it.author }.toSet()
             val visible = requestResult { repository.visibleNostrAuthors(authors) }.getOrElse { error ->
@@ -519,7 +516,7 @@ internal class HostMapViewModel(
         notesGeneration++
         notesClient?.close()
         notesClient = null
-        notesFilterJob?.cancel()
+        notesFilterRequest.cancel()
         if (clearNotes) {
             receivedNotes.clear()
             mutableState.update { it.copy(communityNotes = emptyList(), selectedNotes = emptyList(), noteError = false) }
@@ -545,19 +542,15 @@ internal class HostMapViewModel(
     }
 
     private fun cancelSearch() {
-        searchGeneration++
-        searchJob?.cancel()
-        searchJob = null
+        searchRequest.cancel()
         mutableState.update { if (it.isLoading) it.copy(isLoading = false) else it }
     }
 
     private fun cancelAllWork() {
         cancelSearch()
-        placeJob?.cancel()
-        circlesJob?.cancel()
-        notesFilterJob?.cancel()
-        placeJob = null
-        circlesJob = null
+        placeRequest.cancel()
+        circlesRequest.cancel()
+        notesFilterRequest.cancel()
     }
 
     class Factory(
@@ -583,9 +576,7 @@ internal fun rememberHostMapViewModel(
         ::createNostrootsNotesConnection,
     resultsCache: HostMapResultsCache? = null,
 ): HostMapViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "SearchHubScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner"
-    }
+    val owner = requireNavigationViewModelStoreOwner("SearchHubScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner")
     val applicationContext = LocalContext.current.applicationContext
     val cache = resultsCache ?: remember(owner) { HostMapResultsCache() }
     val repository = remember(owner, api, session.member.username, geocoderLookup) {

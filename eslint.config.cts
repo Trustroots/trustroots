@@ -121,6 +121,7 @@ const legacyConfig = {
       files: [
         'modules/*/client/**/*.{js,ts,tsx}',
         'layers/shell/**/*.{js,ts,tsx}',
+        'packages/ui/**/*.{js,ts,tsx}',
       ],
       extends: ['plugin:jsx-a11y/recommended'],
       rules: {
@@ -309,6 +310,7 @@ const legacyConfig = {
         'config/**/*.d.mts',
         'config/lib/**/*.mts',
         'packages/logger/**/*.mts',
+        'packages/ui/**/*.{ts,tsx}',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',
         'modules/*/tests/server/**/*.{cts,mts}',
         'testutils/client/**/*.{ts,tsx}',

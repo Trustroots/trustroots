@@ -15,5 +15,6 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "TrustrootsAndroid"
-include(":app", ":shared")
+include(":app", ":shared", ":coverage-report-tool")
 project(":shared").projectDir = file("../shared")
+project(":coverage-report-tool").projectDir = file("scripts/coverage-java")

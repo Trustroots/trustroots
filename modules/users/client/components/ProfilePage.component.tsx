@@ -16,6 +16,7 @@ import TopNavigationSmall from './TopNavigationSmall.component';
 import TribesInCommon from './TribesInCommon.component';
 import UserDoesNotExist from './UserDoesNotExist.component';
 import { fetch as fetchProfile } from '../api/users.api';
+import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import {
   getMobileProfileRedirect,
   getProfileViewTab,
@@ -33,6 +34,8 @@ import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import CreateExperience from '@/modules/experiences/client/components/CreateExperience.component';
 import { readReplyRecipient } from '@/modules/experiences/client/api/experiences.api';
 import ListExperiences from '@/modules/experiences/client/components/ListExperiences.component';
+import Experience from '@/modules/experiences/client/components/read-experiences/Experience';
+import type { ExperienceMine } from '@/modules/experiences/shared/experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
@@ -250,11 +253,15 @@ export default function ProfilePage({
   );
   const [isLoading, setIsLoading] = useState(true);
   const [experienceOnly, setExperienceOnly] = useState(false);
+  const [ownExperience, setOwnExperience] = useState<
+    ExperienceMine | undefined
+  >();
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
   const tab = getProfileViewTab(currentPath, username);
   const activePathName = getProfileViewTabStateName(currentPath, username);
-  const canLoadReply = referencesEnabled && tab === 'experiences-new';
+  const canLoadReply = referencesEnabled && !embedded;
+  const isCreatingExperience = tab === 'experiences-new';
   const isSelf = profile?._id === authUser?._id;
 
   const removeContact = useCallback((removedContact: ContactRecord) => {
@@ -301,6 +308,7 @@ export default function ProfilePage({
     async function loadProfile() {
       setIsLoading(true);
       setExperienceOnly(false);
+      setOwnExperience(undefined);
       setContact({ $resolved: false });
       setContacts(Object.assign([], { $resolved: false }));
 
@@ -310,8 +318,10 @@ export default function ProfilePage({
         try {
           loadedProfile = await fetchProfile(username);
         } catch (error) {
-          if (!canLoadReply) throw error;
+          if (!canLoadReply || getErrorResponse(error)?.status !== 404)
+            throw error;
           loadedProfile = await readReplyRecipient(username);
+          setOwnExperience(loadedProfile.ownExperience);
           replyOnly = true;
         }
 
@@ -374,7 +384,7 @@ export default function ProfilePage({
     return () => {
       isMounted = false;
     };
-  }, [authUser?._id, username, canLoadReply]);
+  }, [authUser?._id, username, canLoadReply, isCreatingExperience]);
 
   const handleMembershipUpdated = (data: { user?: UserProfile } | null) => {
     if (data?.user) {
@@ -472,7 +482,29 @@ export default function ProfilePage({
     return (
       <section className="container container-spacer">
         <h2>{profile.displayName}</h2>
-        <CreateExperience userFrom={authUser} userTo={profile} />
+        <ReportMemberButton
+          className="btn btn-sm btn-default"
+          username={profile.username}
+        />
+        {isCreatingExperience ? (
+          <CreateExperience userFrom={authUser} userTo={profile} />
+        ) : ownExperience ? (
+          <Experience
+            experience={{
+              ...ownExperience,
+              userFrom: { _id: authUser._id, username: authUser.username },
+              userTo: profile,
+              response: null,
+            }}
+            onReceiverProfile={false}
+          />
+        ) : (
+          <p>
+            <a href={getProfileExperiencesPath(profile.username)}>
+              {t('Share your experience') as string}
+            </a>
+          </p>
+        )}
       </section>
     );
   }

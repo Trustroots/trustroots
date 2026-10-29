@@ -1,3 +1,4 @@
+import AdminSpamCleanup from '@/modules/admin/client/components/AdminSpamCleanup';
 import {
   createRootRoute,
   createRoute,
@@ -18,6 +19,7 @@ import {
 import Admin from '@/modules/admin/client/components/Admin.component';
 import SupportInbox, {
   SupportMemberPage,
+  SupportMemberSearchPage,
 } from '@/modules/admin/client/components/Support.component';
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
@@ -235,6 +237,10 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/about': renderWithUser(HomeRoute),
     '/admin': () => <Admin />,
     '/admin/support': () => <SupportInbox />,
+    '/admin/support/members': () => <SupportMemberSearchPage />,
+    '/admin/support/requests/:requestId': ({ params }) => (
+      <SupportInbox requestId={params.requestId} />
+    ),
     '/admin/support/member/:username': ({ params }) => (
       <SupportMemberPage id={params.username} />
     ),
@@ -246,6 +252,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/staff-blockers': () => <AdminStaffBlockers />,
     '/admin/acquisition-stories': () => <AdminAcquisitionStories />,
     '/admin/audit-log': () => <AdminAuditLog />,
+    '/admin/spam-cleanup': () => <AdminSpamCleanup />,
     '/admin/username-changes': () => <AdminUsernameChanges />,
     '/admin/messages': () => <AdminMessages />,
     '/admin/location-corrections': () => <AdminLocationCorrections />,

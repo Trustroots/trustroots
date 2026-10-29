@@ -1,25 +1,27 @@
 package org.trustroots.android.ui.contacts
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileContact
-import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.rememberEntryViewModel
+import org.trustroots.android.ui.common.requestResult
 
 internal interface ContactsRepository {
     /** Replaces request dependencies; true means the backend or signed-in account changed. */
@@ -88,10 +90,9 @@ internal class ContactsViewModel(
     private val mutableState = MutableStateFlow(ContactsUiState())
     val state = mutableState.asStateFlow()
 
-    private var requestGeneration = 0L
+    private val request = LatestRequest(requestScope)
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
-    private var requestJob: Job? = null
 
     init {
         load()
@@ -110,40 +111,37 @@ internal class ContactsViewModel(
 
     fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
         if (!repository.updateEnvironment(api, session)) return
-        cancelRequest()
         sessionInvalidationEmitted = false
-        mutableState.value = ContactsUiState()
-        load()
+        load(force = true, resetState = true)
     }
 
-    private fun load(force: Boolean = false) {
+    private fun load(force: Boolean = false, resetState: Boolean = false) {
         val current = mutableState.value
-        if (sessionInvalidationEmitted || current.isLoading || (current.hasAttemptedLoad && !force)) return
+        if (sessionInvalidationEmitted || (current.isLoading && !resetState) || (current.hasAttemptedLoad && !force)) return
 
-        requestGeneration++
-        val generation = requestGeneration
-        requestJob?.cancel()
-        mutableState.update { it.copy(isLoading = true, failure = null) }
-        requestJob = requestScope.launch {
+        request.launch {
+            if (resetState) mutableState.value = ContactsUiState()
+            currentCoroutineContext().ensureActive()
+            mutableState.update { it.copy(isLoading = true, failure = null) }
+            currentCoroutineContext().ensureActive()
             val profileResult = requestResult { repository.profile(username) }
             val profileFailure = profileResult.exceptionOrNull()
             if (profileFailure != null) {
-                finishFailure(generation, ContactsFailureReason.PROFILE, profileFailure)
+                finishFailure(ContactsFailureReason.PROFILE, profileFailure)
                 return@launch
             }
             val memberID = profileResult.getOrThrow().id
             if (memberID == null) {
-                finishFailure(generation, ContactsFailureReason.MISSING_MEMBER_ID, null)
+                finishFailure(ContactsFailureReason.MISSING_MEMBER_ID, null)
                 return@launch
             }
 
             val contactsResult = requestResult { repository.contacts(memberID) }
             val contactsFailure = contactsResult.exceptionOrNull()
             if (contactsFailure != null) {
-                finishFailure(generation, ContactsFailureReason.CONTACTS, contactsFailure)
+                finishFailure(ContactsFailureReason.CONTACTS, contactsFailure)
                 return@launch
             }
-            if (generation != requestGeneration) return@launch
             mutableState.update {
                 it.copy(
                     contacts = contactsResult.getOrThrow().toList(),
@@ -155,10 +153,11 @@ internal class ContactsViewModel(
         }
     }
 
-    private fun finishFailure(generation: Long, reason: ContactsFailureReason, error: Throwable?) {
-        if (generation != requestGeneration) return
+    private suspend fun finishFailure(reason: ContactsFailureReason, error: Throwable?) {
+        currentCoroutineContext().ensureActive()
         if (error?.isAuthenticationFailure() == true) {
             emitSessionInvalidation()
+            currentCoroutineContext().ensureActive()
             mutableState.update { it.copy(isLoading = false, hasAttemptedLoad = true) }
             return
         }
@@ -168,7 +167,7 @@ internal class ContactsViewModel(
                 hasAttemptedLoad = true,
                 failure = ContactsFailure(
                     reason = reason,
-                    throwableType = error?.javaClass?.name,
+                    throwableType = error?.let { it.javaClass.name },
                     serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
                     apiKind = (error as? MobileApiException)?.failureKind,
                 ),
@@ -177,7 +176,6 @@ internal class ContactsViewModel(
     }
 
     private fun emitSessionInvalidation() {
-        if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         mutableState.update {
             it.copy(
@@ -190,9 +188,7 @@ internal class ContactsViewModel(
 
 
     private fun cancelRequest() {
-        requestGeneration++
-        requestJob?.cancel()
-        requestJob = null
+        request.cancel()
     }
 
     override fun onCleared() {
@@ -219,9 +215,7 @@ internal fun rememberContactsViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): ContactsViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Contacts must be hosted by a Navigation 3 ViewModelStoreOwner."
-    }
+    val owner = requireNavigationViewModelStoreOwner("Contacts must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val username = session.member.username
     val viewModel = rememberEntryViewModel(
         owner = owner,

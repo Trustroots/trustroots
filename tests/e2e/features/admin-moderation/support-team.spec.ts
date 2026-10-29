@@ -1,11 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import {
-  annotateFeature,
-  expect,
-  expectPresent,
-  test,
-} from '../../support/fixtures.mts';
+import { createHash } from 'node:crypto';
+import { ObjectId } from 'mongodb';
+import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import {
   createUser,
   createIsolatedContext,
@@ -27,10 +24,15 @@ test('support can triage a report and investigate only its verified member pair'
   const reporter = createUser({ firstName: 'Fictional', lastName: 'Reporter' });
   const target = createUser({ firstName: 'Fictional', lastName: 'Member' });
   const support = createUser({ firstName: 'Fictional', lastName: 'Support' });
+  const supportObserver = createUser({
+    firstName: 'Fictional',
+    lastName: 'Observer',
+  });
   let requestId: string | undefined;
   let targetId: string | undefined;
+  const replyId = new ObjectId();
   try {
-    for (const user of [reporter, target, support])
+    for (const user of [reporter, target, support, supportObserver])
       await registerViaApi(context.request, user);
     await withE2eDb(async db => {
       const reporterDoc = (await db
@@ -43,10 +45,13 @@ test('support can triage a report and investigate only its verified member pair'
       const supportDoc = (await db
         .collection('users')
         .findOne({ username: support.username }))!;
+      const observerDoc = (await db
+        .collection('users')
+        .findOne({ username: supportObserver.username }))!;
       await db
         .collection('users')
-        .updateOne(
-          { _id: supportDoc._id },
+        .updateMany(
+          { _id: { $in: [supportDoc._id, observerDoc._id] } },
           { $set: { roles: ['user', 'support-team'] } },
         );
       await db
@@ -116,15 +121,12 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(
       page.getByRole('heading', { name: 'Support inbox' }),
     ).toBeVisible();
+    await page.getByRole('link', { name: 'Member search' }).click();
+    await expect(page).toHaveURL('/admin/support/members');
     const memberSearch = page.getByRole('region', { name: 'Member search' });
     const requestQueue = page.getByRole('region', { name: 'Request queue' });
-    const searchBox = await memberSearch.boundingBox();
-    const requestQueueBox = await requestQueue.boundingBox();
-    expectPresent(searchBox);
-    expectPresent(requestQueueBox);
-    expect(searchBox.y + searchBox.height).toBeLessThanOrEqual(
-      requestQueueBox.y,
-    );
+    await expect(memberSearch).toBeVisible();
+    await expect(requestQueue).toHaveCount(0);
     await page.getByLabel('Name, username or email').fill(target.username);
     await page.getByRole('button', { name: 'Search members' }).click();
     await expect(
@@ -140,6 +142,11 @@ test('support can triage a report and investigate only its verified member pair'
       'href',
       `/admin/support/member/${encodeURIComponent(target.username)}`,
     );
+    await page.getByRole('link', { name: 'Support inbox' }).click();
+    await expect(page).toHaveURL('/admin/support');
+    await expect(
+      page.getByRole('heading', { name: 'Support inbox' }),
+    ).toBeVisible();
     await page.goto(`/admin/support/member/${targetId}`);
     await expect(page).toHaveURL(
       new RegExp(`/admin/support/member/${target.username}$`),
@@ -153,11 +160,107 @@ test('support can triage a report and investigate only its verified member pair'
     await expect(
       page.getByText('Fictional report for support investigation.'),
     ).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/support/requests/${requestId}$`),
+    );
+    await page.goBack();
+    await expect(page).toHaveURL('/admin/support');
+    await page.goForward();
+    await expect(page).toHaveURL(
+      new RegExp(`/admin/support/requests/${requestId}$`),
+    );
+    await page.getByLabel('Reply to requester').fill('Fictional support reply');
+    await page.getByRole('button', { name: 'Send reply' }).click();
+    await expect(
+      page.getByText(/Reply could not be queued\. Your draft is still here/),
+    ).toBeVisible();
+    await expect(page.getByLabel('Reply to requester')).toHaveValue(
+      'Fictional support reply',
+    );
+    await page.route(
+      `**/api/admin/support/${requestId}/replies`,
+      async route => {
+        if (route.request().method() !== 'POST') return route.continue();
+        await route.fulfill({
+          status: 201,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            _id: replyId.toHexString(),
+            request: requestId,
+            direction: 'outbound',
+            kind: 'reply',
+            body: 'Fictional support reply',
+            createdAt: new Date().toISOString(),
+            authorName: 'Fictional Support',
+            deliveryState: 'captured',
+          }),
+        });
+      },
+    );
+    await page.getByRole('button', { name: 'Send reply' }).click();
+    await expect(page.getByText('Fictional support reply')).toBeVisible();
+    await expect(
+      page.getByText('Captured for testing (not sent)'),
+    ).toBeVisible();
+    await page.unroute(`**/api/admin/support/${requestId}/replies`);
+    await withE2eDb(async db => {
+      const supportDoc = (await db
+        .collection('users')
+        .findOne({ username: support.username }))!;
+      await db.collection('supportmessages').insertOne({
+        _id: replyId,
+        request: new ObjectId(requestId!),
+        direction: 'outbound',
+        kind: 'reply',
+        body: 'Fictional support reply',
+        createdAt: new Date(),
+        authorId: supportDoc._id,
+        authorName: 'Fictional Support',
+        emailFrom: 'support@example.test',
+        emailTo: reporter.email,
+        messageId: `<${replyId.toHexString()}@example.test>`,
+        deliveryState: 'captured',
+        attempts: 1,
+      });
+    });
+    await page
+      .getByLabel('Search requests')
+      .fill('Fictional report for support');
+    await expect(page).toHaveURL(/q=Fictional\+report\+for\+support/);
+    await page.locator('#support-status').selectOption('all');
+    await page.getByLabel('Category').selectOption('reportMember');
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/admin/support/requests/${requestId}\\?status=all&category=reportMember&q=Fictional\\+report\\+for\\+support$`,
+      ),
+    );
+    await page.reload();
+    await expect(page.getByText('Fictional support reply')).toBeVisible();
+    const observerContext = await createIsolatedContext(browser, baseURL);
+    try {
+      const observerPage = await observerContext.newPage();
+      await signInViaApi(
+        observerPage,
+        observerContext.request,
+        supportObserver,
+      );
+      await observerPage.goto(
+        `/admin/support/requests/${requestId}?status=all&category=reportMember&q=Fictional+report+for+support`,
+      );
+      await expect(
+        observerPage.getByText('Fictional support reply'),
+      ).toBeVisible();
+      await expect(
+        observerPage.getByText('Captured for testing (not sent)'),
+      ).toBeVisible();
+    } finally {
+      await observerContext.close();
+    }
     await page.getByRole('button', { name: 'View conversation' }).click();
     await expect(page.getByText('Fictional hidden context')).toBeVisible();
     await expect(page.getByText('Fictional reply')).toBeVisible();
     await expect(page.getByText('Unrelated conversation')).toHaveCount(0);
-    await page.getByRole('button', { name: 'Resolve request' }).click();
+    await page.getByRole('button', { name: 'Mark solved' }).click();
     await expect(
       page.getByRole('button', { name: 'Reopen request' }),
     ).toBeVisible();
@@ -211,6 +314,10 @@ test('support can triage a report and investigate only its verified member pair'
         testInfo.outputPath('support-inbox.png'),
         path.join(screenshotsDir, `${testInfo.project.name}-support-inbox.png`),
       );
+      fs.writeFileSync(
+        path.join(screenshotsDir, `${testInfo.project.name}-support-inbox.url`),
+        page.url(),
+      );
     }
     await page
       .getByRole('link', { name: 'Reported account and notes' })
@@ -259,6 +366,406 @@ test('support can triage a report and investigate only its verified member pair'
           .collection('auditlogs')
           .countDocuments({ 'params.requestId': requestId }),
       ).toBeGreaterThan(0);
+    });
+  } finally {
+    await context.close();
+  }
+});
+
+test('support request deep links preserve queue filters on reload', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Support can open a request from a filterable, shareable inbox URL.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const support = createUser({ firstName: 'Fictional', lastName: 'Agent' });
+  const requestId = new ObjectId();
+  try {
+    await registerViaApi(context.request, support);
+    await withE2eDb(async db => {
+      const supportDoc = (await db
+        .collection('users')
+        .findOne({ username: support.username }))!;
+      await db
+        .collection('users')
+        .updateOne(
+          { _id: supportDoc._id },
+          { $set: { roles: ['user', 'support-team'] } },
+        );
+      await db.collection('supportrequests').insertOne({
+        _id: requestId,
+        category: 'other',
+        sent: new Date(),
+        username: 'fictional-requester',
+        email: 'requester@example.test',
+        message: 'Fictional deep-linked support request',
+        status: 'new',
+        statusRevision: 0,
+      });
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto(
+      `/admin/support/requests/${requestId.toHexString()}?status=new&category=other&q=deep-linked`,
+    );
+    await expect(
+      page.getByText('Fictional deep-linked support request'),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/^Showing 1–1 of 1 matching requests \(\d+ total\)$/),
+    ).toBeVisible();
+    await expect(page).toHaveURL(
+      new RegExp(
+        `/admin/support/requests/${requestId.toHexString()}\\?status=new&category=other&q=deep-linked$`,
+      ),
+    );
+    await page.reload();
+    await expect(
+      page.getByText('Fictional deep-linked support request'),
+    ).toBeVisible();
+    await expect(page.locator('#support-status')).toHaveValue('new');
+    await expect(page.locator('#support-category')).toHaveValue('other');
+    await expect(page.getByLabel('Search requests')).toHaveValue('deep-linked');
+  } finally {
+    await context.close();
+  }
+});
+
+test('support distinguishes requests with missing statuses from explicit open requests', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Support can identify requests whose status was never confirmed.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const support = createUser({ firstName: 'Fictional', lastName: 'Support' });
+  try {
+    await registerViaApi(context.request, support);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: support.username },
+          { $set: { roles: ['user', 'support-team'] } },
+        );
+      await db.collection('supportrequests').insertMany([
+        {
+          category: 'other',
+          message: 'Fictional missing status',
+          email: 'missing@example.test',
+          sent: new Date(),
+        },
+        {
+          category: 'other',
+          message: 'Fictional explicit open',
+          email: 'open@example.test',
+          status: 'open',
+          sent: new Date(),
+        },
+      ]);
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto('/admin/support');
+    await expect(
+      page.getByRole('heading', { name: 'Support inbox' }),
+    ).toBeVisible();
+    const counts = page.getByRole('list', { name: 'Request counts by status' });
+    await expect(counts.getByText('Unconfirmed legacy status')).toBeVisible();
+    await expect(
+      counts
+        .locator('li')
+        .filter({ hasText: 'Unconfirmed legacy status' })
+        .locator('strong'),
+    ).toHaveText('1');
+    await expect(
+      counts.locator('li').filter({ hasText: /^Open/ }).locator('strong'),
+    ).toHaveText('1');
+    await counts
+      .getByRole('button', { name: /^Unconfirmed legacy status/ })
+      .click();
+    await expect(page).toHaveURL(/status=unconfirmed/);
+    await expect(
+      counts.getByRole('button', { name: /^Unconfirmed legacy status/ }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('missing@example.test')).toBeVisible();
+    await expect(page.getByText('open@example.test')).toHaveCount(0);
+    await counts.getByRole('button', { name: /^Open / }).click();
+    await expect(page.getByText('open@example.test')).toBeVisible();
+    await expect(page.getByText('missing@example.test')).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test('administrators can see why a historical status was skipped during matching', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Administrators can preview historical support statuses and see why unmatched tickets remain unchanged.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const administrator = createUser({
+    firstName: 'Fictional',
+    lastName: 'Administrator',
+  });
+  try {
+    await registerViaApi(context.request, administrator);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: administrator.username },
+          { $set: { roles: ['user', 'admin'] } },
+        );
+    });
+    await signInViaApi(page, context.request, administrator);
+    await page.goto('/admin/support');
+    const importer = page.getByRole('region', {
+      name: 'Zendesk status import',
+    });
+    await importer.getByLabel('Reduced JSON manifest').setInputFiles({
+      name: 'fictional-statuses.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          version: 1,
+          exportedAt: '2025-01-01T00:00:00.000Z',
+          items: [
+            {
+              zendeskTicketId: 987654,
+              status: 'closed',
+              updatedAt: '2025-01-01T00:00:00.000Z',
+              fingerprint: '0'.repeat(64),
+            },
+          ],
+        }),
+      ),
+    });
+    await importer
+      .getByRole('button', { name: 'Preview status changes' })
+      .click();
+    await expect(
+      importer.getByText(/0 eligible, 0 already applied, 1 skipped/),
+    ).toBeVisible();
+    const breakdown = importer.getByRole('table', {
+      name: 'Skipped during matching',
+    });
+    await expect(
+      breakdown.getByText(
+        'No local request matches the original category, email and message',
+      ),
+    ).toBeVisible();
+    await expect(
+      breakdown.getByRole('cell', { name: '1', exact: true }),
+    ).toBeVisible();
+    await expect(
+      importer.getByRole('button', { name: 'Apply status changes' }),
+    ).toBeDisabled();
+    await withE2eDb(async db => {
+      expect(
+        await db
+          .collection('supportrequests')
+          .countDocuments({ zendeskTicketId: 987654 }),
+      ).toBe(0);
+    });
+  } finally {
+    await context.close();
+  }
+});
+
+test('administrators can apply historical statuses across rendered request variants', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Administrators can reconcile historical status manifests with rendered support requests while preserving original request identity.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const administrator = createUser({
+    firstName: 'Fictional',
+    lastName: 'Administrator',
+  });
+  const oldDate = '2024-01-01T00:00:00.000Z';
+  const updateDate = '2025-01-01T00:00:00.000Z';
+  const historicalHtmlRequest = {
+    category: 'other',
+    email: 'a&b@example.test',
+    message: `Please compare <one> & "two" with 'three'.`,
+  };
+  const historicalUrlRequest = {
+    category: 'other',
+    email: 'url-request@example.test',
+    message: 'See www.example.org/help for details.',
+  };
+  const collisionRequest = {
+    category: 'other',
+    email: 'collision@example.test',
+    message: `Compare <one> & "two" with 'three'.`,
+  };
+  const fingerprint = (input: typeof historicalHtmlRequest) =>
+    createHash('sha256')
+      .update(
+        JSON.stringify([
+          input.category,
+          input.email.trim().toLowerCase(),
+          input.message.replace(/\r\n/g, '\n').trim(),
+        ]),
+        'utf8',
+      )
+      .digest('hex');
+  const historicalHtmlFingerprint = fingerprint({
+    ...historicalHtmlRequest,
+    email: 'a&amp;b@example.test',
+    message:
+      'Please compare &lt;one&gt; &amp; &quot;two&quot; with &#39;three&#39;.',
+  });
+  const historicalUrlFingerprint = fingerprint({
+    ...historicalUrlRequest,
+    message: 'See http://www.example.org/help for details.',
+  });
+  const collisionBaseFingerprint = fingerprint(collisionRequest);
+  const collisionEscapedFingerprint = fingerprint({
+    ...collisionRequest,
+    email: 'collision@example.test',
+    message: 'Compare &lt;one&gt; &amp; &quot;two&quot; with &#39;three&#39;.',
+  });
+  const requestIds = {
+    html: new ObjectId(),
+    url: new ObjectId(),
+    collision: new ObjectId(),
+  };
+  try {
+    await registerViaApi(context.request, administrator);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: administrator.username },
+          { $set: { roles: ['user', 'admin'] } },
+        );
+      await db.collection('supportrequests').insertMany([
+        {
+          _id: requestIds.html,
+          ...historicalHtmlRequest,
+          sent: new Date(oldDate),
+          username: 'fictional-html-requester',
+          status: 'new',
+          statusRevision: 0,
+        },
+        {
+          _id: requestIds.url,
+          ...historicalUrlRequest,
+          sent: new Date(oldDate),
+          username: 'fictional-url-requester',
+          status: 'new',
+          statusRevision: 0,
+        },
+        {
+          _id: requestIds.collision,
+          ...collisionRequest,
+          sent: new Date(oldDate),
+          username: 'fictional-collision-requester',
+          status: 'new',
+          statusRevision: 0,
+        },
+      ]);
+    });
+    await signInViaApi(page, context.request, administrator);
+    await page.goto('/admin/support');
+    const importer = page.getByRole('region', {
+      name: 'Zendesk status import',
+    });
+    const manifestItem = (
+      zendeskTicketId: number,
+      itemFingerprint: string,
+    ) => ({
+      zendeskTicketId,
+      status: 'solved',
+      updatedAt: updateDate,
+      fingerprint: itemFingerprint,
+    });
+    await importer.getByLabel('Reduced JSON manifest').setInputFiles({
+      name: 'fictional-rendered-statuses.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(
+        JSON.stringify({
+          version: 1,
+          exportedAt: updateDate,
+          items: [
+            manifestItem(987661, historicalHtmlFingerprint),
+            manifestItem(987662, historicalUrlFingerprint),
+            manifestItem(987663, collisionBaseFingerprint),
+            manifestItem(987664, collisionEscapedFingerprint),
+          ],
+        }),
+      ),
+    });
+    await importer
+      .getByRole('button', { name: 'Preview status changes' })
+      .click();
+    await expect(
+      importer.getByText(/2 eligible, 0 already applied, 2 skipped/),
+    ).toBeVisible();
+    const exactMatches = importer
+      .locator('details')
+      .filter({ hasText: 'Exact matches (2)' });
+    const exactTable = exactMatches.getByRole('table');
+    await expect(exactTable).not.toBeVisible();
+    await exactMatches.locator('summary').click();
+    await expect(exactTable).toBeVisible();
+    await exactMatches.locator('summary').click();
+    await expect(exactTable).not.toBeVisible();
+    const breakdown = importer.getByRole('table', {
+      name: 'Skipped during matching',
+    });
+    await expect(
+      breakdown.getByText(
+        'Several Zendesk tickets match different email renderings of one local request',
+      ),
+    ).toBeVisible();
+    await expect(
+      breakdown.getByRole('cell', { name: '2', exact: true }),
+    ).toBeVisible();
+    await importer
+      .getByRole('button', { name: 'Apply status changes' })
+      .click();
+    await expect(
+      importer.getByText(/Applied 2; already applied 0; skipped 2/),
+    ).toBeVisible();
+    await withE2eDb(async db => {
+      const imported = await db
+        .collection('supportrequests')
+        .find({ _id: { $in: [requestIds.html, requestIds.url] } })
+        .toArray();
+      expect(imported).toHaveLength(2);
+      expect(imported.map(request => request.status).sort()).toEqual([
+        'solved',
+        'solved',
+      ]);
+      expect(imported.map(request => request.zendeskTicketId).sort()).toEqual([
+        987661, 987662,
+      ]);
+      expect(
+        imported.find(request => request._id.equals(requestIds.html)),
+      ).toMatchObject(historicalHtmlRequest);
+      expect(
+        imported.find(request => request._id.equals(requestIds.url)),
+      ).toMatchObject(historicalUrlRequest);
+      const collision = await db
+        .collection('supportrequests')
+        .findOne({ _id: requestIds.collision });
+      expect(collision).toMatchObject({
+        ...collisionRequest,
+        status: 'new',
+      });
+      expect(collision?.zendeskTicketId).toBeUndefined();
     });
   } finally {
     await context.close();

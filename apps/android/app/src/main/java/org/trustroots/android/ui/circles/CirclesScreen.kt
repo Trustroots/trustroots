@@ -2,6 +2,8 @@
 
 package org.trustroots.android.ui.circles
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -45,7 +47,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -170,9 +171,7 @@ private fun CircleOverviewEntry(
     pendingMembershipValue: Boolean,
     onMembershipEventConsumed: () -> Unit,
 ) {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "CirclesScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner"
-    }
+    val owner = requireNavigationViewModelStoreOwner("CirclesScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner")
     val factory = remember(owner) {
         CirclesViewModel.Factory(MobileApiCircleRepository(api, session))
     }

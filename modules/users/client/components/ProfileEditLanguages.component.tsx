@@ -6,14 +6,68 @@ import React from 'react';
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
 
+import {
+  languageLevelLabels,
+  type LanguageLevels,
+  type LanguageLevel,
+} from '../../shared/language-levels';
+import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
+
+function LevelSelectors({
+  languages,
+  levels,
+  onChange,
+}: {
+  languages: string[];
+  levels: LanguageLevels;
+  onChange: (levels: LanguageLevels) => void;
+}) {
+  const { t } = useTranslation(['users', 'languages']);
+  const { data: names } = useLanguagesQuery();
+  return languages.map(code => (
+    <div key={code}>
+      <label htmlFor={`language-level-${code}`}>
+        {t('Level for {{language}}', {
+          // i18next-extract-disable-next-line
+          language: names?.[code] ? t(names[code], { ns: 'languages' }) : code,
+        })}
+      </label>
+      <select
+        id={`language-level-${code}`}
+        className="form-control"
+        value={levels[code] || ''}
+        onChange={event => {
+          const next = { ...levels };
+          if (event.target.value)
+            next[code] = event.target.value as LanguageLevel;
+          else delete next[code];
+          onChange(next);
+        }}
+      >
+        <option value="">{t('Not specified')}</option>
+        {Object.entries(languageLevelLabels).map(([value, label]) => (
+          // i18next-extract-disable-next-line
+          <option key={value} value={value}>
+            {t(label)}
+          </option>
+        ))}
+      </select>
+    </div>
+  ));
+}
+
 const queryClient = new QueryClient();
 
 export default function ProfileEditLanguages({
   onChangeLanguages,
   profileLanguages = [],
+  languageLevels = {},
+  onChangeLevels,
 }: {
   onChangeLanguages: (languages: string[]) => void;
   profileLanguages?: string[];
+  languageLevels?: LanguageLevels;
+  onChangeLevels?: (levels: LanguageLevels) => void;
 }) {
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
@@ -22,6 +76,13 @@ export default function ProfileEditLanguages({
   // Keep the parent profile form in sync with language changes.
   const onChange = (languages: string[]) => {
     broadcastClientEvent('userChanged');
+    onChangeLevels?.(
+      Object.fromEntries(
+        Object.entries(languageLevels).filter(([code]) =>
+          languages.includes(code),
+        ),
+      ),
+    );
     if (onChangeLanguages) {
       onChangeLanguages(languages);
     }
@@ -41,6 +102,16 @@ export default function ProfileEditLanguages({
             aria-label={t('Add languages you speak.')}
             preSelectedLanguages={profileLanguages}
           />
+          {onChangeLevels && (
+            <LevelSelectors
+              languages={profileLanguages}
+              levels={languageLevels}
+              onChange={levels => {
+                broadcastClientEvent('userChanged');
+                onChangeLevels(levels);
+              }}
+            />
+          )}
         </QueryClientProvider>
       </div>
     </div>

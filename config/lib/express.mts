@@ -11,6 +11,7 @@ import express, {
   type NextFunction,
 } from 'express';
 import morgan from 'morgan';
+import { redactSupportRequestUrl } from '../../modules/support/shared/request-url.ts';
 import session from 'express-session';
 import csrfProtection from './csrf-protection.mjs';
 import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mjs';
@@ -174,6 +175,9 @@ function initMiddleware(app: Express) {
   // Environment dependent middleware
   if (process.env.NODE_ENV === 'development') {
     // Enable logger (morgan)
+    morgan.token('url', req =>
+      redactSupportRequestUrl(req.originalUrl || req.url || ''),
+    );
     app.use(morgan('dev'));
 
     // Disable views cache
@@ -188,6 +192,8 @@ function initMiddleware(app: Express) {
       extended: true,
     }),
   );
+  // Only reduced import manifests receive this larger bounded JSON allowance.
+  app.use('/api/admin/support-import/preview', express.json({ limit: '10mb' }));
   app.use(
     express.json({
       type: [

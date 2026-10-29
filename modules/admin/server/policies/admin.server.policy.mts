@@ -38,6 +38,18 @@ export const invokeRolesPolicies = () => {
           permissions: ['get', 'patch'],
         },
         {
+          resources: '/api/admin/support/:requestId/conversation',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/admin/support/:requestId/replies',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/support/:requestId/replies/:messageId/retry',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/admin/support/:requestId/:kind',
           permissions: ['get'],
         },
@@ -67,6 +79,13 @@ export const invokeRolesPolicies = () => {
     {
       roles: ['admin'],
       allows: [
+        { resources: '/api/admin/spam-cleanup/preview', permissions: ['post'] },
+        { resources: '/api/admin/spam-cleanup/apply', permissions: ['post'] },
+        {
+          resources: '/api/admin/support-import/preview',
+          permissions: ['post'],
+        },
+        { resources: '/api/admin/support-import/apply', permissions: ['post'] },
         { resources: '/api/admin/circles', permissions: ['get', 'post'] },
         {
           resources: '/api/admin/circles/:circle',

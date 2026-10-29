@@ -47,10 +47,9 @@ jobs:
     outputs:
       artifact-url: ${{ steps.apk.outputs.artifact-url }}
     if: >
-      (github.event.action != 'labeled' || github.event.label.name == 'build-apk') &&
-      (github.event_name != 'pull_request' ||
+      github.event_name != 'pull_request' ||
        contains(github.event.pull_request.labels.*.name, 'build-apk') ||
-       needs.changes.outputs.android == 'true')
+       needs.changes.outputs.android == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -186,18 +185,24 @@ jobs:
 
   design-journeys:
     name: Android journeys and coverage
-    needs: [changes, coverage-build, coverage-device]
+    # Keep this check name stable: main requires it before Android changes merge.
+    needs: [changes, debug-apk, coverage-build, coverage-device]
     if: >-
-      always() && !cancelled() &&
-      (github.event_name != 'pull_request' || needs.changes.outputs.android == 'true')
+      always() &&
+      (github.event_name != 'pull_request' || needs.changes.result != 'success' ||
+       needs.changes.outputs.android == 'true')
     timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
-      - name: Require all coverage jobs to pass
+      - name: Require Android build and coverage jobs to pass
         env:
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          APK_RESULT: ${{ needs.debug-apk.result }}
           BUILD_RESULT: ${{ needs.coverage-build.result }}
           DEVICE_RESULT: ${{ needs.coverage-device.result }}
-        run: test "$BUILD_RESULT" = success && test "$DEVICE_RESULT" = success
+        run: >-
+          test "$CHANGES_RESULT" = success && test "$APK_RESULT" = success &&
+          test "$BUILD_RESULT" = success && test "$DEVICE_RESULT" = success
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2

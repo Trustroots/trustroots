@@ -14,6 +14,18 @@ internal data class ProfileImageTransform(
  * display pixels. At scale 1, one bitmap pixel occupies one display pixel.
  */
 internal object ProfileImageGeometry {
+    fun clampOrFit(
+        transform: ProfileImageTransform?,
+        imageWidthPx: Int,
+        imageHeightPx: Int,
+        viewportWidthPx: Int,
+        viewportHeightPx: Int,
+    ): ProfileImageTransform = transform?.let {
+        clamp(it, imageWidthPx, imageHeightPx, viewportWidthPx, viewportHeightPx)
+    } ?: ProfileImageTransform(
+        scale = initialScale(imageWidthPx, imageHeightPx, viewportWidthPx, viewportHeightPx),
+    )
+
     fun initialScale(
         imageWidthPx: Int,
         imageHeightPx: Int,

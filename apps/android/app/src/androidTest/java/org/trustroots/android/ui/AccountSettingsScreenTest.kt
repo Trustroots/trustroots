@@ -3,6 +3,8 @@ package org.trustroots.android.ui
 import org.trustroots.android.ui.account.AccountSettingsScreen
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -127,6 +129,24 @@ class AccountSettingsScreenTest {
         compose.onNodeWithText("Discard changes?").assertDoesNotExist()
         compose.waitUntil(5_000) { resetPassword.get() }
         assertTrue(resetPassword.get())
+    }
+
+    @Test fun passwordChangeRequiresMatchingNonEmptyNewPasswordFields() {
+        showAccountSettings(onResetPassword = {}, onSignedOut = {})
+
+        compose.onNode(hasText("Change password") and hasClickAction())
+            .performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("Current password").performScrollTo().performTextReplacement("old-fictional-password")
+        compose.onNodeWithText("New password").performScrollTo().performTextReplacement("new-fictional-password")
+        compose.onNodeWithText("Verify new password").performScrollTo().performTextReplacement("different-fictional-password")
+        compose.onNode(hasText("Change password") and hasClickAction())
+            .performScrollTo().assertIsNotEnabled()
+
+        compose.onNodeWithText("Verify new password")
+            .performScrollTo()
+            .performTextReplacement("new-fictional-password")
+        compose.onNode(hasText("Change password") and hasClickAction())
+            .performScrollTo().assertIsEnabled()
     }
 
     private fun showAccountSettings(onResetPassword: () -> Unit, onSignedOut: () -> Unit) {

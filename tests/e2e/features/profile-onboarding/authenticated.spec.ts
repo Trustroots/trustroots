@@ -263,6 +263,90 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
+  test('language loading failure shows an accessible warning', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'About edit form is reachable.',
+    ]);
+    await page.route('**/api/languages?*', route =>
+      route.fulfill({ status: 503, body: 'Unavailable' }),
+    );
+    await page.goto('/profile/edit');
+    const warning = page
+      .getByRole('alert')
+      .filter({ hasText: 'Snap! Something went wrong.' });
+    await expect(warning).toBeVisible();
+    await expect(warning).toHaveClass(/tr-alert/);
+    await expect(warning).toHaveCSS('background-color', 'rgb(255, 243, 205)');
+    const comparison = await warning.evaluate(element => {
+      const legacy = document.createElement('div');
+      legacy.className = 'alert alert-warning';
+      element.parentElement!.append(legacy);
+      const properties = [
+        'color',
+        'backgroundColor',
+        'borderColor',
+        'borderRadius',
+        'padding',
+        'marginBottom',
+      ] as const;
+      const actual = getComputedStyle(element);
+      const original = getComputedStyle(legacy);
+      const matches = properties.every(
+        property => actual[property] === original[property],
+      );
+      legacy.remove();
+      return matches;
+    });
+    expect(comparison).toBe(true);
+  });
+
+  test('profile language levels persist, display and can be cleared', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'Language levels persist and can be cleared.',
+    ]);
+    await page.request.put('/api/users', {
+      data: { languages: ['eng', 'fre'], languageLevels: {} },
+    });
+    await page.goto('/profile/edit');
+    await page
+      .getByRole('combobox', { name: 'Level for English' })
+      .selectOption('native');
+    await page
+      .getByRole('combobox', { name: 'Level for French' })
+      .selectOption('basic');
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .last()
+      .click();
+    await expect(page.getByRole('status')).toHaveText('Profile updated.');
+    await page.reload();
+    await expect(
+      page.getByRole('combobox', { name: 'Level for English' }),
+    ).toHaveValue('native');
+    await page.goto('/profile/' + authenticatedMember!.username);
+    await expect(page.getByText('English — Native')).toBeVisible();
+    await expect(page.getByText('French — Basic')).toBeVisible();
+    await page.goto('/profile/edit');
+    await page
+      .getByRole('combobox', { name: 'Level for English' })
+      .selectOption('');
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .last()
+      .click();
+    await expect(page.getByRole('status')).toHaveText('Profile updated.');
+    await page.reload();
+    await expect(
+      page.getByRole('combobox', { name: 'Level for English' }),
+    ).toHaveValue('');
+    await expect(
+      page.getByRole('combobox', { name: 'Level for French' }),
+    ).toHaveValue('basic');
+  });
   test('deprecated languages cannot be added to a profile', async ({
     page,
   }, testInfo) => {

@@ -1,3 +1,4 @@
+import * as spamCleanup from '../controllers/admin.spam-cleanup.server.controller.mts';
 import adminCircles from '../controllers/admin.circles.server.controller.mjs';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
@@ -9,6 +10,7 @@ import adminUsernameChanges from './../controllers/admin.username-changes.server
 import adminUsers from './../controllers/admin.users.server.controller.mts';
 import adminDashboard from './../controllers/admin.dashboard.server.controller.mts';
 import support from '../controllers/admin.support.server.controller.mts';
+import * as supportImport from '../controllers/admin.support-import.server.controller.mts';
 import adminNotes from './../controllers/admin.notes.server.controller.mts';
 import adminReferenceThreads from './../controllers/admin.reference-threads.server.controller.mts';
 import adminHackerspaces from './../controllers/admin.hackerspaces.server.controller.mts';
@@ -34,12 +36,40 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/spam-cleanup/preview')
+    .all(adminPolicy.isAllowed)
+    .post(spamCleanup.preview);
+  app
+    .route('/api/admin/spam-cleanup/apply')
+    .all(adminPolicy.isAllowed)
+    .post(spamCleanup.apply);
+  app
+    .route('/api/admin/support-import/preview')
+    .all(adminPolicy.isAllowed)
+    .post(supportImport.preview);
+  app
+    .route('/api/admin/support-import/apply')
+    .all(adminPolicy.isAllowed)
+    .post(supportImport.apply);
   app.route('/api/admin/support').all(adminPolicy.isAllowed).get(support.list);
   app
     .route('/api/admin/support/:requestId')
     .all(adminPolicy.isAllowed)
     .get(support.detail)
     .patch(support.setStatus);
+  app
+    .route('/api/admin/support/:requestId/conversation')
+    .all(adminPolicy.isAllowed)
+    .get(support.conversation);
+  app
+    .route('/api/admin/support/:requestId/replies')
+    .all(adminPolicy.isAllowed)
+    .post(support.reply);
+  app
+    .route('/api/admin/support/:requestId/replies/:messageId/retry')
+    .all(adminPolicy.isAllowed)
+    .post(support.retry);
   app
     .route('/api/admin/support/:requestId/:kind')
     .all(adminPolicy.isAllowed)

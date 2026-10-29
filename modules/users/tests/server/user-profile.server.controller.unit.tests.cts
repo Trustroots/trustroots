@@ -250,6 +250,38 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
+    it('rejects a level for an unselected language on a legacy profile without languages', async () => {
+      userDoc.languages = undefined;
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { languageLevels: { eng: 'basic' } } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
+    it('updates languages on a legacy profile without language levels', async () => {
+      userDoc.set('languageLevels', undefined);
+      should.not.exist(userDoc.get('languageLevels'));
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { languages: ['eng'] },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      const saved = await findUser(userDoc._id);
+      should(saved.languages).deepEqual(['eng']);
+      (saved.get('languageLevels') || {}).should.deepEqual({});
+    });
+
     it('rejects an invalid locale', async () => {
       const { res } = await runHandler(res =>
         profileController.update(

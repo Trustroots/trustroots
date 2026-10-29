@@ -1,24 +1,26 @@
 package org.trustroots.android.ui.experience
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.ExperienceCreate
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
-import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal fun interface CreateExperienceRepository {
@@ -95,11 +97,10 @@ internal class CreateExperienceViewModel(
     private val requestScope = scope ?: viewModelScope
     private val mutableState = MutableStateFlow(CreateExperienceUiState())
     val state = mutableState.asStateFlow()
-    private var generation = 0L
     private var nextInvalidationID = 0L
     private var nextSuccessID = 0L
     private var invalidationEmitted = false
-    private var requestJob: Job? = null
+    private val createRequest = LatestRequest(requestScope)
     private var backendURL = initialApi.backendURL
     private var session = initialSession
 
@@ -113,8 +114,7 @@ internal class CreateExperienceViewModel(
 
         backendURL = api.backendURL
         this.session = session
-        generation++
-        requestJob?.cancel()
+        createRequest.cancel()
         invalidationEmitted = false
         if (backendChanged || accountChanged) {
             mutableState.value = CreateExperienceUiState()
@@ -149,9 +149,6 @@ internal class CreateExperienceViewModel(
     private fun submit() {
         val current = mutableState.value
         if (!current.canSave || current.isSaving || current.pendingSuccess != null || invalidationEmitted) return
-        val request = ++generation
-        requestJob?.cancel()
-        mutableState.update { it.copy(isSaving = true, failure = null) }
         val experience = ExperienceCreate(
             userTo = memberID,
             met = current.met,
@@ -160,21 +157,22 @@ internal class CreateExperienceViewModel(
             recommend = current.recommendation,
             feedbackPublic = current.feedback,
         )
-        requestJob = requestScope.launch {
+        createRequest.launch {
+            mutableState.update { it.copy(isSaving = true, failure = null) }
             val result = requestResult { repository.create(experience) }
-            if (request != generation) return@launch
             result.fold(
                 onSuccess = { mutableState.update { it.copy(isSaving = false, pendingSuccess = ExperienceCreated(++nextSuccessID)) } },
                 onFailure = { error ->
-                    if (error.isAuthenticationFailure()) invalidateSession(request)
+                    if (error.isAuthenticationFailure()) invalidateSession()
                     else mutableState.update { it.copy(isSaving = false, failure = failure(error)) }
                 },
             )
         }
     }
 
-    private fun invalidateSession(request: Long) {
-        if (request != generation || invalidationEmitted) return
+    private suspend fun invalidateSession() {
+        currentCoroutineContext().ensureActive()
+        if (invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update { it.copy(isSaving = false, pendingInvalidation = CreateExperienceInvalidation(++nextInvalidationID)) }
     }
@@ -186,8 +184,7 @@ internal class CreateExperienceViewModel(
 
 
     override fun onCleared() {
-        generation++
-        requestJob?.cancel()
+        createRequest.cancel()
         mutableState.value = CreateExperienceUiState()
         super.onCleared()
     }
@@ -213,7 +210,7 @@ internal fun rememberCreateExperienceViewModel(
     session: MemberSession,
     memberID: String,
 ): CreateExperienceViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Experience creation must be hosted by a Navigation 3 ViewModelStoreOwner." }
+    val owner = requireNavigationViewModelStoreOwner("Experience creation must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = CreateExperienceViewModel::class.java,

@@ -42,6 +42,60 @@ async function createPublicUser(
 }
 
 test.describe.serial('experience and reference feature coverage', () => {
+  test('a blocked member can share an Experience and revisit it with the support link', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'experiences.create', [
+      'A blocked member can share an independent Experience.',
+    ]);
+    const context = await createIsolatedContext(browser, baseURL);
+    const page = await context.newPage();
+    try {
+      const blocker = await createPublicUser(context.request);
+      const viewer = await createPublicUser(context.request);
+      const viewerId = await fetchUserIdByUsername(
+        context.request,
+        viewer.username,
+      );
+      await updateUserByUsername(blocker.username, {
+        $set: { blocked: [objectId(viewerId)] },
+      });
+      await signInViaApi(page, context.request, viewer);
+      await page.goto(`/profile/${blocker.username}`);
+      await expect(
+        page.getByRole('link', { name: /Report member .* to support/ }),
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'Share your experience' }).click();
+      await page.getByRole('checkbox', { name: 'Met in person' }).check();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page.getByText('No', { exact: true }).click();
+      await page
+        .getByRole('button', { name: 'Next section', exact: true })
+        .click();
+      await page
+        .getByRole('textbox')
+        .fill('My own experience with this member.');
+      await page
+        .getByRole('button', { name: 'Save experience', exact: true })
+        .click();
+      await expect(
+        page.getByText('Your experience has been saved.'),
+      ).toBeVisible();
+      await page.getByRole('link', { name: 'See their experiences' }).click();
+      await expect(
+        page.getByText('My own experience with this member.'),
+      ).toBeVisible();
+      await expect(
+        page.getByRole('link', { name: /Report member .* to support/ }),
+      ).toBeVisible();
+    } finally {
+      await context.close();
+    }
+  });
+
   test('a blocked recipient can submit an Experience reply through the UI', async ({
     browser,
     baseURL,

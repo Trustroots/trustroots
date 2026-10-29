@@ -34,6 +34,24 @@ export interface Config {
   csrfAllowedOrigins: string[];
   supportEmail: string;
   supportVolunteerNames: string[];
+  supportInbox: {
+    enabled: boolean;
+    fromName: string;
+    fromAddress: string;
+    imap: {
+      enabled: boolean;
+      host: string;
+      port: number;
+      secure: boolean;
+      user: string;
+      password: string;
+      mailbox: string;
+      pollIntervalMinutes: number;
+      maxMessageBytes: number;
+      maxStoredBodyBytes: number;
+      maxMessagesPerPoll: number;
+    };
+  };
   surveyReactivateHosts: string | false;
   profileMinimumLength: number;
   illegalStrings: string[];

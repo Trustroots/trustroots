@@ -5,18 +5,19 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageThread
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.toUiFailure
 
 internal interface InboxRepository {
@@ -111,10 +112,9 @@ internal class InboxViewModel(
     val state = mutableState.asStateFlow()
 
     private var session = initialSession
-    private var requestGeneration = 0L
+    private val request = LatestRequest(requestScope)
     private var nextInvalidationID = 0L
     private var sessionInvalidationEmitted = false
-    private var loadJob: Job? = null
     private var lastLoadedAt: Long? = cache.loadedAt
     private var displayed = false
 
@@ -132,10 +132,10 @@ internal class InboxViewModel(
             is InboxEvent.FilterChanged -> mutableState.update { it.copy(filter = event.value) }
             InboxEvent.Opened -> {
                 val loadedAt = lastLoadedAt
-                if (!mutableState.value.isLoading && (loadedAt == null || now() - loadedAt >= 30_000L)) load(restart = true, force = true)
+                if (!mutableState.value.isLoading && (loadedAt == null || now() - loadedAt >= 30_000L)) load(restart = true)
             }
-            InboxEvent.Retry -> load(restart = false, force = true)
-            InboxEvent.ReturnFromConversation -> load(restart = true, force = true)
+            InboxEvent.Retry -> load(restart = false)
+            InboxEvent.ReturnFromConversation -> load(restart = true)
             is InboxEvent.SessionChanged -> updateSession(event.session)
             is InboxEvent.SessionInvalidationDelivered -> mutableState.update { current ->
                 if (current.pendingSessionInvalidation?.id == event.id) {
@@ -162,45 +162,43 @@ internal class InboxViewModel(
     }
 
     private fun refreshForEnvironmentChange(resetFilter: Boolean) {
-        requestGeneration++
-        loadJob?.cancel()
         sessionInvalidationEmitted = false
         lastLoadedAt = null
         cache.clear()
-        mutableState.value = InboxUiState(
-            filter = if (resetFilter) "" else mutableState.value.filter,
-        )
-        load(restart = true)
+        val filter = if (resetFilter) "" else mutableState.value.filter
+        load(restart = true, resetState = true, initialFilter = filter)
     }
 
-    private fun load(restart: Boolean, force: Boolean = false) {
+    private fun load(
+        restart: Boolean,
+        resetState: Boolean = false,
+        initialFilter: String = "",
+    ) {
         val current = mutableState.value
-        if (sessionInvalidationEmitted || (current.isLoading && !(restart && force)) ||
-            (!force && current.hasLoaded)
-        ) return
+        if (sessionInvalidationEmitted || (current.isLoading && !restart)) return
 
         val startPage = if (restart) 1 else current.failedPage ?: current.nextPage
-        val generation = ++requestGeneration
-        loadJob?.cancel()
-        mutableState.update { before ->
-            before.copy(
-                isLoading = true,
-                nextPage = startPage,
-                failedPage = null,
-                replaceThreadsOnPageOne = restart,
-                failure = null,
-                pendingSessionInvalidation = null,
-            )
-        }
-        loadJob = requestScope.launch {
+        request.launch {
+            if (resetState) mutableState.value = InboxUiState(filter = initialFilter)
+            currentCoroutineContext().ensureActive()
+            mutableState.update { before ->
+                before.copy(
+                    isLoading = true,
+                    nextPage = startPage,
+                    failedPage = null,
+                    replaceThreadsOnPageOne = restart,
+                    failure = null,
+                    pendingSessionInvalidation = null,
+                )
+            }
+            currentCoroutineContext().ensureActive()
             var page = startPage
             while (true) {
                 val result = requestResult { repository.page(page) }
-                if (generation != requestGeneration) return@launch
                 val error = result.exceptionOrNull()
                 if (error != null) {
                     if (error.isAuthenticationFailure()) {
-                        emitSessionInvalidation(generation)
+                        emitSessionInvalidation()
                     } else {
                         mutableState.update {
                             it.copy(
@@ -226,6 +224,7 @@ internal class InboxViewModel(
                         replaceThreadsOnPageOne = false,
                     )
                 }
+                currentCoroutineContext().ensureActive()
                 if (batch.size < PAGE_SIZE) {
                     lastLoadedAt = now()
                     cache.threads = mutableState.value.threads
@@ -240,8 +239,8 @@ internal class InboxViewModel(
         }
     }
 
-    private fun emitSessionInvalidation(generation: Long) {
-        if (generation != requestGeneration || sessionInvalidationEmitted) return
+    // requestResult has checked cancellation before an authentication failure reaches this state update.
+    private fun emitSessionInvalidation() {
         sessionInvalidationEmitted = true
         cache.clear()
         mutableState.update {
@@ -258,8 +257,7 @@ internal class InboxViewModel(
 
 
     override fun onCleared() {
-        requestGeneration++
-        loadJob?.cancel()
+        request.cancel()
         mutableState.value = InboxUiState()
         super.onCleared()
     }

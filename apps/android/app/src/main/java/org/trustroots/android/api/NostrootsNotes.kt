@@ -44,8 +44,9 @@ class NostrootsNotesClient(
         socket.close(1000, null)
     }
 
-    private companion object {
-        val httpClient = OkHttpClient()
+    companion object {
+        internal val sharedWebSocketFactory: WebSocket.Factory get() = httpClient
+        private val httpClient = OkHttpClient()
     }
 }
 
