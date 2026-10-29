@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -69,17 +70,15 @@ fun TrustrootsBrowser(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
-    var webView by remember { mutableStateOf<WebView?>(null) }
+    val closeBrowser by rememberUpdatedState(onClose)
+    var navigateBack by remember { mutableStateOf<() -> Unit>({ closeBrowser() }) }
     var externalURL by remember { mutableStateOf<BrowserLink?>(null) }
     val viewModelStoreOwner = requireNotNull(LocalViewModelStoreOwner.current)
     val browserEntryState = remember(viewModelStoreOwner) {
         ViewModelProvider(viewModelStoreOwner)[BrowserEntryStateViewModel::class.java]
     }
 
-    BackHandler {
-        val browser = webView
-        if (browser?.canGoBack() == true) browser.goBack() else onClose()
-    }
+    BackHandler(onBack = navigateBack)
 
     externalURL?.let { link ->
         AlertDialog(
@@ -157,7 +156,9 @@ fun TrustrootsBrowser(
                         browserEntryState.savedSnapshot = null
                         loadUrl(route.url)
                     }
-                    webView = this
+                    navigateBack = {
+                        if (canGoBack()) goBack() else closeBrowser()
+                    }
                 }
             },
             modifier = Modifier
@@ -172,7 +173,8 @@ fun TrustrootsBrowser(
                 )
                 released.stopLoading()
                 released.destroy()
-                if (webView === released) webView = null
+                // This AndroidView is not pooled; its sole view is released with this composition.
+                navigateBack = { closeBrowser() }
             },
         )
     }

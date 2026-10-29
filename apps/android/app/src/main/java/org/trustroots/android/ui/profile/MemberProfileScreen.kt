@@ -449,7 +449,7 @@ private fun MemberProfileContent(
                             )
                             val contactAction = member.id?.takeIf { relationshipResolved }?.let { memberID ->
                                 when {
-                                    relationship?.id.isNullOrBlank() -> ProfileContactAction(addContactLabel) {
+                                    relationship?.id == null -> ProfileContactAction(addContactLabel) {
                                         onOpenContactBrowser(memberID)
                                     }
                                     relationship.confirmed -> ProfileContactAction(
