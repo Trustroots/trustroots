@@ -306,7 +306,8 @@ private fun MemberShell(
         (tabBackStack.last() as MemberTabVisit).visitID + 1L
 
     fun navigateTo(next: Destination, resetMenuBeforeLeaving: Boolean = false) {
-        if (next != destination) {
+        val current = tabBackStack.last() as MemberTabVisit
+        if (next != current.destination) {
             if (resetMenuBeforeLeaving) {
                 resetActiveMenuVisit?.invoke()
             }

@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import android.location.Address
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -10,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.io.IOException
 import java.net.ServerSocket
@@ -99,32 +101,37 @@ class HostMapLocationClusterJourneyTest {
             }
         }
         compose.setContent {
-            HostMapScreen(
-                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
-                session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
-                onSessionInvalidated = {},
-                geocoderLookup = { _, query, maxResults ->
-                    geocoderCalls += query to maxResults
-                    if (query == "Fictional Harbour") {
-                        listOf(
-                            Address(Locale.US).apply {
-                                latitude = 40.0
-                                longitude = -8.0
-                                setAddressLine(0, "Fictional Harbour East")
-                            },
-                            Address(Locale.US).apply {
-                                latitude = TARGET_LATITUDE
-                                longitude = TARGET_LONGITUDE
-                                setAddressLine(0, "Fictional Harbour, Somewhere")
-                            },
-                        )
-                    } else if (query == "Unmapped Place") {
-                        emptyList()
-                    } else {
-                        null
-                    }
-                },
-            )
+            CompositionLocalProvider(LocalSoftwareKeyboardController provides null) {
+                HostMapScreen(
+                    api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                    mapViewFactory = { context ->
+                        org.osmdroid.views.MapView(context).apply { setUseDataConnection(false) }
+                    },
+                    session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
+                    onSessionInvalidated = {},
+                    geocoderLookup = { _, query, maxResults ->
+                        geocoderCalls += query to maxResults
+                        if (query == "Fictional Harbour") {
+                            listOf(
+                                Address(Locale.US).apply {
+                                    latitude = 40.0
+                                    longitude = -8.0
+                                    setAddressLine(0, "Fictional Harbour East")
+                                },
+                                Address(Locale.US).apply {
+                                    latitude = TARGET_LATITUDE
+                                    longitude = TARGET_LONGITUDE
+                                    setAddressLine(0, "Fictional Harbour, Somewhere")
+                                },
+                            )
+                        } else if (query == "Unmapped Place") {
+                            emptyList()
+                        } else {
+                            null
+                        }
+                    },
+                )
+            }
         }
 
         compose.waitUntil(15_000) { requests.isNotEmpty() }
@@ -140,6 +147,9 @@ class HostMapLocationClusterJourneyTest {
                 compose.onAllNodesWithText("3 offers · 0 Nostroots notes in this area")
                     .fetchSemanticsNodes().isNotEmpty()
         }
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithText("Hosting").assertIsDisplayed()
+        compose.onNodeWithTag("openFilters").performClick()
         val zoomBeforeCluster = requests.last { it.contains(TARGET_LATITUDE, TARGET_LONGITUDE) }
         val requestCountBeforeCluster = requests.size
         compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }

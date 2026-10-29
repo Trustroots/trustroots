@@ -193,6 +193,15 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun unidentifiedBlockedMemberDoesNotMatchAProfileWithKnownID() {
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember(null, null, "Unidentified member")))
+        }
+
+        assertEquals(false, newModel("quiet-fox", repository).state.value.isBlocked)
+    }
+
+    @Test
     fun blockMutationIsIgnoredWhileRefreshingKnownStatus() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val pendingLookup = CompletableDeferred<Result<List<MessageMember>>>()
@@ -501,6 +510,41 @@ class MemberProfileViewModelTest {
             assertFalse(model.state.value.isSubmittingReport)
             assertEquals(1, repository.reports.size)
             assertEquals(1, repository.blockChanges.size)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun pendingBlockSuccessCannotRestoreBlockStateAfterReportAuthenticationFailure() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingBlock = CompletableDeferred<Result<Unit>>()
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(emptyList())
+            setBlockedHandler = { _, _ -> withContext(NonCancellable) { pendingBlock.await() } }
+            reportHandler = { _, _ -> Result.failure(MobileApiException(401, "Fictional session expired.")) }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            assertEquals(false, model.state.value.isBlocked)
+
+            model.onEvent(MemberProfileEvent.SetBlocked(true))
+            assertTrue(model.state.value.isUpdatingBlock)
+            model.onEvent(MemberProfileEvent.ReportDraftChanged("A fictional report."))
+            model.onEvent(MemberProfileEvent.SubmitReport)
+
+            val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+            assertFalse(model.state.value.isUpdatingBlock)
+            assertFalse(model.state.value.isSubmittingReport)
+
+            pendingBlock.complete(Result.success(Unit))
+
+            assertEquals(false, model.state.value.isBlocked)
+            assertFalse(model.state.value.isUpdatingBlock)
+            assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+            assertEquals(1L, model.state.value.pendingSessionInvalidation?.id)
+            assertEquals(listOf("quiet-fox" to true), repository.blockChanges)
+            assertEquals(listOf("quiet-fox" to "A fictional report."), repository.reports)
         } finally {
             scope.cancel()
         }

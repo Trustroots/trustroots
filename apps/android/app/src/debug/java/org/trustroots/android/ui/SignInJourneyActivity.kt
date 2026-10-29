@@ -19,6 +19,7 @@ class SignInJourneyActivity : ComponentActivity() {
         val apiBaseUrl = requireNotNull(intent.getStringExtra(API_BASE_URL_EXTRA))
         setContent {
             TrustrootsTheme {
+                val profileBrowserURL = intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA)
                 TrustrootsApp(
                     apiBaseUrl = apiBaseUrl,
                     reconcileAlerts = { _, _ -> },
@@ -33,10 +34,10 @@ class SignInJourneyActivity : ComponentActivity() {
                                 TextButton(onClick = onClose) { Text("Close fake browser") }
                             }
                         }
-                    } else if (intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA) != null) {
+                    } else if (profileBrowserURL != null) {
                         { route, onClose, contentPadding ->
                             org.trustroots.android.browser.DefaultBrowserContent(
-                                route.copy(url = requireNotNull(intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA))),
+                                route.copy(url = profileBrowserURL),
                                 onClose,
                                 contentPadding,
                             )

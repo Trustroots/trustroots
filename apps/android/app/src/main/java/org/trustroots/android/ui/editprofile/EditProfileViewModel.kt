@@ -287,7 +287,7 @@ internal fun rememberEditProfileViewModel(
     api: MobileApiClient,
     session: MemberSession,
     username: String,
-    initialProfile: MemberProfile? = null,
+    initialProfile: MemberProfile?,
 ): EditProfileViewModel {
     val owner = requireNavigationViewModelStoreOwner("Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val viewModel = rememberEntryViewModel(

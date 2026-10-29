@@ -172,7 +172,7 @@ internal object ApkUpdateAlerts {
         connection.setRequestProperty("User-Agent", "TrustrootsAndroid/${BuildConfig.VERSION_NAME}")
         return try {
             if (connection.responseCode !in 200..299) error("Release request failed")
-            val response = connection.inputStream.bufferedReader().use { it.readText() }
+            val response = connection.inputStream.reader().use { it.readText() }
             latestAndroidPreviewRelease(response, BuildConfig.VERSION_CODE) { versionCode ->
                 context.getString(R.string.android_preview_version, versionCode)
             }

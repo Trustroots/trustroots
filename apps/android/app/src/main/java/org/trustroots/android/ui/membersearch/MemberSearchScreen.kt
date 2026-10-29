@@ -123,7 +123,7 @@ internal fun MemberSearchScreen(
         if (state.hasSearched && state.results.isEmpty()) {
             Text(stringResource(R.string.screen_no_members_found))
         }
-        if (!state.hasSearched && state.results.isEmpty() && !state.isLoading && failure == null) {
+        if (!state.hasSearched && !state.isLoading && failure == null) {
             Column(
                 Modifier.weight(1f).fillMaxWidth().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,

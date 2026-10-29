@@ -681,7 +681,7 @@ class MobileApiClient(
             } else {
                 connection.errorStream
             }
-            val responseBody = responseStream?.use { it.bufferedReader().readText() }.orEmpty()
+            val responseBody = responseStream?.use { it.reader().readText() }.orEmpty()
             if (!successful) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()

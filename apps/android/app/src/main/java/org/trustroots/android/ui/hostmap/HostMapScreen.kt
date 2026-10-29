@@ -151,6 +151,7 @@ internal fun HostMapScreen(
     val includeHosts = mapState.filters.includeHosts
     val includeMeet = mapState.filters.includeMeet
     val seenMonths = mapState.filters.seenMonths
+    val activityMonths = seenMonths ?: 0
     val selectedCircleIDs = mapState.filters.circleIDs
     val selectedLanguages = mapState.filters.languages
     var languageMenuOpen by remember { mutableStateOf(false) }
@@ -351,8 +352,8 @@ internal fun HostMapScreen(
                         Spacer(Modifier.width(6.dp))
                         FilterChip(
                             selected = seenMonths != null,
-                            onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(seenMonths = when (seenMonths) { 1 -> 6; 6 -> null; else -> 1 }))) },
-                            label = { Text(when (seenMonths) {
+                            onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(seenMonths = when (activityMonths) { 1 -> 6; 6 -> null; else -> 1 }))) },
+                            label = { Text(when (activityMonths) {
                                 1 -> lastActiveOneMonth
                                 6 -> lastActiveSixMonths
                                 else -> lastActiveAnyTime
@@ -368,7 +369,10 @@ internal fun HostMapScreen(
                                     Text(
                                         when (selectedCircleIDs.size) {
                                             0 -> allCirclesLabel
-                                            1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: oneCircleLabel
+                                            1 -> {
+                                                val circle = circles.firstOrNull { it.id in selectedCircleIDs }
+                                                if (circle == null) oneCircleLabel else circle.label
+                                            }
                                             else -> pluralStringResource(
                                                 R.plurals.screen_circles_count,
                                                 selectedCircleIDs.size,

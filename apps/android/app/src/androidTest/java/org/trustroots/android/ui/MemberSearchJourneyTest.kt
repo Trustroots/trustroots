@@ -8,6 +8,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
@@ -26,6 +27,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -151,6 +153,46 @@ class MemberSearchJourneyTest {
         compose.onNodeWithText("A thoughtful guest").performScrollTo().assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("Search mode").assertIsDisplayed()
+        responder.join(1_000)
+    }
+
+    @Test fun submitsSearchAndShowsResultsWithoutSoftwareKeyboardController() {
+        val requestedPath = AtomicReference("")
+        val responder = thread(isDaemon = true) {
+            val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
+            connection.use { socket ->
+                val input = socket.getInputStream().bufferedReader()
+                requestedPath.set(input.readLine().orEmpty())
+                while (!input.readLine().isNullOrEmpty()) Unit
+                val payload = """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}]"""
+                val bytes = payload.toByteArray()
+                socket.getOutputStream().write(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                )
+                socket.getOutputStream().write(bytes)
+                socket.getOutputStream().flush()
+            }
+        }
+        compose.setContent {
+            CompositionLocalProvider(LocalSoftwareKeyboardController provides null) {
+                NativeTestAppFrame(Destination.Search) {
+                    MemberSearchScreen(
+                        api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                        session = MemberSession("connect.sid=fictional-search-session", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("memberSearchField").performTextInput("quiet fox")
+        compose.onNodeWithContentDescription("Search members").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        assertTrue(requestedPath.get().contains("/api/users?search=quiet+fox&limit=50"))
         responder.join(1_000)
     }
 
