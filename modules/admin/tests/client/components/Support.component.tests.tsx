@@ -10,6 +10,7 @@ import {
 } from '@testing-library/react';
 import SupportInbox, {
   SupportMemberPage,
+  SupportMemberSearchPage,
 } from '../../../client/components/Support.component';
 import * as api from '../../../client/api/support.api';
 import type { SupportRequest } from '../../../client/api/support.api';
@@ -86,6 +87,7 @@ beforeEach(() => {
       hasMore?: boolean;
       total?: number;
       matchingTotal?: number;
+      unconfirmedCount?: number;
       statusCounts?: Record<string, number>;
     };
     return {
@@ -103,6 +105,9 @@ beforeEach(() => {
         closed: 0,
         ...value.statusCounts,
       },
+      ...(value.unconfirmedCount !== undefined
+        ? { unconfirmedCount: value.unconfirmedCount }
+        : {}),
     };
   });
   loadConversation.mockResolvedValue({
@@ -304,11 +309,11 @@ test('shows linked account roles and renders support dates in UTC', async () => 
   ).toHaveTextContent('shadowban');
   const details = screen.getByRole('region', { name: 'Support request' });
   expect(
-    within(details).getByText('fictional-reporter', { selector: 'p' }),
-  ).toBeInTheDocument();
+    within(details).getAllByRole('link', { name: 'fictional-reporter' })[0],
+  ).toHaveAttribute('href', '/admin/user/fictional-reporter');
   expect(
-    within(details).getByText('fictional-target', { selector: 'p' }),
-  ).toBeInTheDocument();
+    within(details).getByRole('link', { name: 'fictional-target' }),
+  ).toHaveAttribute('href', '/admin/user/fictional-target');
   expect(
     screen.getByRole('link', { name: 'Reporter account and notes' }),
   ).toHaveAttribute('href', '/admin/support/member/renamed-current-reporter');
@@ -319,6 +324,35 @@ test('shows linked account roles and renders support dates in UTC', async () => 
   await waitFor(() =>
     expect(screen.getAllByText('2026-01-02 12:00')).toHaveLength(3),
   );
+});
+
+test('links the original request sender to their admin user page', async () => {
+  const username = 'fictional/reporter name';
+  load.mockImplementation(async path => {
+    if (path === '/api/admin/support/report-1') return { ...report, username };
+    return { items: [report], hasMore: false };
+  });
+  render(<SupportInbox />);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /fictional-reporter · Report a member/,
+    }),
+  );
+
+  const conversation = await screen.findByRole('region', {
+    name: 'Support conversation',
+  });
+  const senderLink = await within(conversation).findByRole('link', {
+    name: username,
+  });
+  expect(senderLink).toHaveAttribute(
+    'href',
+    '/admin/user/fictional%2Freporter%20name',
+  );
+  expect(senderLink.closest('strong')).not.toBeNull();
+  expect(
+    within(conversation).getByText('2026-01-02 12:00'),
+  ).toBeInTheDocument();
 });
 
 test('retries failed case status and falls back to the reporter id link', async () => {
@@ -345,6 +379,19 @@ test('retries failed case status and falls back to the reporter id link', async 
       name: /reporter@example\.test · Report a member/,
     }),
   );
+  const conversation = await screen.findByRole('region', {
+    name: 'Support conversation',
+  });
+  expect(
+    await within(conversation).findByText('reporter@example.test', {
+      selector: 'strong',
+    }),
+  ).toBeInTheDocument();
+  expect(
+    within(conversation).queryByRole('link', {
+      name: 'reporter@example.test',
+    }),
+  ).not.toBeInTheDocument();
   const reporterStatus = await screen.findByRole('group', {
     name: 'Reporter account status',
   });
@@ -399,9 +446,8 @@ test('canonicalizes legacy member IDs and ignores a stale member response', asyn
   expect(window.location.pathname).toBe('/admin/support');
 });
 
-test('handles missing linkage, empty results and search errors', async () => {
+test('handles missing verified member linkage', async () => {
   load.mockImplementation(async path => {
-    if (path.startsWith('/api/admin/support-members')) return [member];
     if (path === '/api/admin/support/report-1')
       return {
         ...report,
@@ -409,52 +455,83 @@ test('handles missing linkage, empty results and search errors', async () => {
         user: undefined,
         username: undefined,
         status: undefined,
+        statusProvenance: 'missing',
       };
     return {
-      items: [{ ...report, username: undefined, status: undefined }],
+      items: [
+        {
+          ...report,
+          username: undefined,
+          status: undefined,
+          statusProvenance: 'missing',
+        },
+      ],
       hasMore: false,
     };
   });
   render(<SupportInbox />);
-  const search = screen.getByRole('region', { name: 'Member search' });
   const queue = screen.getByRole('region', { name: 'Request queue' });
+  const queueItem = await within(queue).findByRole('button', {
+    name: /reporter@example.test · Report a member/,
+  });
   expect(
-    search.compareDocumentPosition(queue) & Node.DOCUMENT_POSITION_FOLLOWING,
-  ).toBeTruthy();
+    within(queueItem).getByText('Unconfirmed legacy status'),
+  ).toBeVisible();
+  expect(
+    screen.queryByRole('region', { name: 'Member search' }),
+  ).not.toBeInTheDocument();
   fireEvent.click(
     await screen.findByRole('button', {
       name: /reporter@example.test · Report a member/,
     }),
   );
+  const details = await screen.findByRole('region', {
+    name: 'Support request',
+  });
+  expect(within(details).getByText('Unconfirmed legacy status')).toBeVisible();
   expect(
     await screen.findByText(/No verified member pair/),
   ).toBeInTheDocument();
   expect(
     screen.queryByRole('button', { name: 'View conversation' }),
   ).not.toBeInTheDocument();
+});
+
+test('searches for members on the dedicated support page', async () => {
+  load.mockImplementation(async path => {
+    if (path.startsWith('/api/admin/support-members')) return [member];
+    return { items: [], hasMore: false };
+  });
+  render(<SupportMemberSearchPage />);
+  expect(
+    screen.getByRole('heading', { name: 'Member search', level: 1 }),
+  ).toBeInTheDocument();
+  const search = screen.getByRole('region', { name: 'Member search' });
   fireEvent.change(screen.getByLabelText('Name, username or email'), {
     target: { value: 'fictional' },
   });
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
   expect(
-    await screen.findByRole('link', {
+    await within(search).findByRole('link', {
       name: 'fictional-target (Fictional Member)',
     }),
   ).toHaveAttribute('href', '/admin/support/member/fictional-target');
   load.mockResolvedValueOnce({ unexpected: true });
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
-  expect(await screen.findByText('No members found.')).toBeInTheDocument();
   expect(
-    screen.queryByRole('link', {
+    await within(search).findByText('No members found.'),
+  ).toBeInTheDocument();
+  expect(
+    within(search).queryByRole('link', {
       name: 'fictional-target (Fictional Member)',
     }),
   ).not.toBeInTheDocument();
   load.mockResolvedValue([]);
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
-  await screen.findByText('No members found.');
+  await within(search).findByText('No members found.');
   load.mockRejectedValue(new Error('Unavailable'));
   fireEvent.click(screen.getByRole('button', { name: 'Search members' }));
-  await screen.findByRole('alert');
+  await within(search).findByRole('alert');
 });
 
 test('shows recoverable inbox and investigation failures and failed status changes', async () => {
@@ -1279,4 +1356,79 @@ test('ignores a failed queue request that settles after unmount', async () => {
   await act(async () => {
     rejectQueue(new Error('Late failure'));
   });
+});
+
+test('decodes support entities once and keeps decoded markup inert', async () => {
+  const body =
+    'A &quot;fictional topic&quot; &amp; &#39;reply&#39; &#x1F642; &lt;img src=x onerror=alert(1)&gt; <b>plain</b> &amp;quot;';
+  loadConversation.mockResolvedValue({
+    items: [
+      {
+        _id: 'entity-message',
+        direction: 'inbound',
+        kind: 'reply',
+        body,
+        createdAt: '2026-01-02T12:00:00Z',
+        deliveryState: 'received',
+      },
+    ],
+  } as never);
+  load.mockImplementation(async path => {
+    if (path === '/api/admin/support/report-1') return report;
+    return { items: [report], hasMore: false };
+  });
+  render(<SupportInbox />);
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: /fictional-reporter · Report a member/,
+    }),
+  );
+  const conversation = await screen.findByRole('region', {
+    name: 'Support conversation',
+  });
+  expect(
+    await within(conversation).findByText(
+      'A "fictional topic" & \'reply\' 🙂 <img src=x onerror=alert(1)> <b>plain</b> &quot;',
+    ),
+  ).toBeVisible();
+  expect(conversation.querySelector('img, script, b')).toBeNull();
+});
+
+test('filters from every status count while preserving search and category and resetting pagination', async () => {
+  window.history.replaceState(
+    {},
+    '',
+    '/admin/support?category=other&q=fictional&page=3',
+  );
+  load.mockResolvedValue({ items: [], hasMore: false });
+  render(<SupportInbox />);
+  for (const [label, status] of [
+    ['New', 'new'],
+    ['Open', 'open'],
+    ['Pending', 'pending'],
+    ['On hold', 'hold'],
+    ['Solved', 'solved'],
+    ['Closed', 'closed'],
+    ['Unconfirmed legacy status', 'unconfirmed'],
+  ]) {
+    fireEvent.click(
+      await screen.findByRole('button', { name: new RegExp(`^${label} `) }),
+    );
+    await waitFor(() =>
+      expect(listRequests).toHaveBeenLastCalledWith({
+        category: 'other',
+        q: 'fictional',
+        page: 1,
+        status,
+      }),
+    );
+    expect(window.location.search).toContain(`status=${status}`);
+    expect(window.location.search).not.toContain('page=');
+    expect(
+      await screen.findByRole('button', { name: new RegExp(`^${label} `) }),
+    ).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText('Status', { exact: true })).toHaveValue(
+      status,
+    );
+  }
 });

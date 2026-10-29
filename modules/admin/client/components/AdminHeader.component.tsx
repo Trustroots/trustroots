@@ -26,6 +26,7 @@ export default function AdminHeader() {
       label: 'Member support',
       pages: [
         { path: 'support', label: 'Support inbox' },
+        { path: 'support/members', label: 'Member search' },
         { path: 'staff-blockers', label: 'Staff blockers' },
         { path: 'location-corrections', label: 'Location corrections' },
       ],
@@ -60,6 +61,7 @@ export default function AdminHeader() {
       pages: [
         { path: 'audit-log', label: 'Audit log' },
         { path: 'username-changes', label: 'Username changes' },
+        { path: 'spam-cleanup', label: 'Spam account cleanup' },
       ],
     },
   ]
@@ -68,7 +70,9 @@ export default function AdminHeader() {
       pages: group.pages.filter(
         page =>
           isAdmin ||
-          (['support', 'experience-changes'].includes(page.path) &&
+          (['support', 'support/members', 'experience-changes'].includes(
+            page.path,
+          ) &&
             isSupport) ||
           (page.path === 'staff-blockers' && (isWelcomeTeam || isSupport)) ||
           page.path === 'acquisition-stories' ||
@@ -78,25 +82,28 @@ export default function AdminHeader() {
     }))
     .filter(group => group.pages.length > 0);
 
-  const renderTab = ({ path, label }: { path: string; label: string }) => (
-    <li
-      key={path}
-      className={classnames({
-        active: currentPath === path || currentPath.startsWith(`${path}/`),
-      })}
-    >
-      <a
-        href={`/admin/${path}`}
-        aria-current={
-          currentPath === path || currentPath.startsWith(`${path}/`)
-            ? 'page'
-            : undefined
-        }
-      >
-        {label}
-      </a>
-    </li>
-  );
+  const isActivePage = (path: string) => {
+    if (path === 'support') {
+      return (
+        currentPath === path ||
+        currentPath.startsWith('support/requests/') ||
+        currentPath.startsWith('support/member/')
+      );
+    }
+    if (path === 'support/members') return currentPath === path;
+    return currentPath === path || currentPath.startsWith(`${path}/`);
+  };
+
+  const renderTab = ({ path, label }: { path: string; label: string }) => {
+    const active = isActivePage(path);
+    return (
+      <li key={path} className={classnames({ active })}>
+        <a href={`/admin/${path}`} aria-current={active ? 'page' : undefined}>
+          {label}
+        </a>
+      </li>
+    );
+  };
 
   return (
     <nav

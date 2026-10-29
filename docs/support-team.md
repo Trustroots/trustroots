@@ -24,14 +24,20 @@ Search includes the original request, replies, requester details and request or
 linked Zendesk ticket IDs. Counts beside statuses respect search and category;
 the overall total includes every request.
 
-| Status  | Meaning                                |
-| ------- | -------------------------------------- |
-| New     | A newly received request               |
-| Open    | Needs a support response               |
-| Pending | Waiting for the requester              |
-| On hold | Waiting for another dependency         |
-| Solved  | Support considers the request resolved |
-| Closed  | Archived as complete                   |
+A request with an explicitly stored Open status is **Open**. A legacy request
+with no stored status is **Unconfirmed**, not Open; the inbox counts and filters
+it separately. **Unresolved** includes Unconfirmed requests as well as New,
+Open, Pending and On hold.
+
+| Status      | Meaning                                |
+| ----------- | -------------------------------------- |
+| New         | A newly received request               |
+| Unconfirmed | No stored status was recorded          |
+| Open        | Needs a support response               |
+| Pending     | Waiting for the requester              |
+| On hold     | Waiting for another dependency         |
+| Solved      | Support considers the request resolved |
+| Closed      | Archived as complete                   |
 
 Replies use the shared Trustroots Support identity and remain visible to the
 whole support team. SMTP acceptance normally moves a request to Pending;
@@ -59,6 +65,9 @@ template used by this repository. Unknown formats, missing requester email,
 unsupported statuses and repeated ticket IDs are skipped. Its output contains
 only ticket IDs, statuses, update times and one-way identity fingerprints; it
 does not include request text, email addresses or usernames.
+The earliest website form is recognised by its complete generated footer,
+including authentication, browser and ID fields, even though it predates the
+later signature separator.
 
 Before importing, run the support inbox migration in dry-run mode and review
 its counts, including historical requests without a category. Applying the
@@ -88,9 +97,46 @@ conflicting ticket IDs, local activity newer than the Zendesk update and request
 changed after preview. Applying statuses does not send email or change member
 links or investigation access.
 
-Historical statuses are matched only by the fingerprint of the original
-category, recorded requester email and original message. Current usernames and
-fuzzy matching are never used. A repeated import is idempotent.
+Exact matches use the original category, recorded requester email and original
+message. Current usernames and fuzzy matching are never used. A repeated
+import is idempotent.
+
+Version 1 manifests remain supported and use exact fingerprint matches only.
+To prepare a version 2 manifest with reduced evidence for reviewing possible
+formatting variants, add `--matching-evidence`:
+
+```sh
+pnpm support:prepare-zendesk-statuses -- --matching-evidence --output /private/path/reduced-statuses-v2.json /private/path/export.json
+```
+
+Version 2 adds only one-way sender and normalised-message hashes, the original
+category, and the submission time. It does not contain email addresses or
+correspondence. Suggestions require the same original sender and category,
+submission within the selected matching window, and an equivalent message after conservative
+formatting normalisation. Missing submission time disables suggestions.
+HTML-escaped and URL-expanded renderings are covered by this normalisation,
+while preserving the fingerprint and identity of the original stored request.
+The preview shows exact matches separately from suggestions and lists every
+competing request by ID, category and submission time, with a link to each
+request. The submission-time matching window defaults to one minute and can be
+set from one to 60 minutes. Changing it clears the reviewed preview and any
+selections; preview the manifest again before applying. Requester username,
+email and subject appear in this authenticated administrator preview only.
+Suggested matches never select themselves. **Select all unambiguous matches**
+chooses only tickets with one candidate whose request appears once across all
+suggestions and is not already an exact match. You can also select individual
+candidates, at most one request for each Zendesk ticket. **Clear selection**
+removes all choices; bulk selection preserves choices already reviewed manually.
+If different manifest renderings point to the same local request, all affected tickets are skipped as an ambiguous source match and
+left unchanged.
+
+The **Skipped during matching** table explains unmatched requests, repeated
+fingerprints, ambiguous local matches, rendering collisions, existing ticket
+links and newer local activity. It remains visible after applying. After
+applying, the inbox refreshes its counts. A local request left without an
+imported status appears as Unconfirmed; it does not mean Zendesk considered it
+Open. To investigate an earlier import, preview the same reduced file again
+and review these aggregate reasons before applying further changes.
 
 ## Historical reports
 

@@ -1,11 +1,12 @@
 package org.trustroots.android.ui.profile
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.security.MessageDigest
@@ -123,9 +124,7 @@ internal fun rememberProfileFlowHandoffViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): ProfileFlowHandoffViewModel {
-    val owner: ViewModelStoreOwner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "Profile route handoffs must use their enclosing decorated Navigation 3 entry owner."
-    }
+    val owner: ViewModelStoreOwner = requireNavigationViewModelStoreOwner("Profile route handoffs must use their enclosing decorated Navigation 3 entry owner.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = ProfileFlowHandoffViewModel::class.java,

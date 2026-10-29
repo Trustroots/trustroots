@@ -11,13 +11,21 @@ export interface SupportStatusImportPreviewEntry {
   status: SupportStatus;
   updatedAt: Date;
   fingerprint: string;
-  state: 'ready' | 'alreadyApplied' | 'skipped';
+  originalFingerprint?: string;
+  state: 'ready' | 'suggested' | 'alreadyApplied' | 'skipped';
+  matchKind?: 'exact' | 'suggested';
+  senderHash?: string;
+  category?: string;
+  submittedAt?: Date | null;
+  normalisedMessageHash?: string;
+  competingCandidateCount?: number;
   reason?:
     | 'invalid'
     | 'duplicate-ticket-id'
     | 'duplicate-fingerprint'
     | 'no-match'
     | 'ambiguous-match'
+    | 'ambiguous-source-match'
     | 'newer-local-activity'
     | 'ticket-id-conflict'
     | 'changed-after-preview';
@@ -34,6 +42,7 @@ export interface SupportStatusImportPreviewRecord {
   actor: Types.ObjectId;
   createdAt: Date;
   expiresAt: Date;
+  matchingWindowMinutes?: number;
   appliedAt?: Date;
   applyToken?: string;
   entries: SupportStatusImportPreviewEntry[];
@@ -49,6 +58,7 @@ const SupportStatusImportPreviewSchema =
       actor: { type: Schema.Types.ObjectId, ref: 'User', required: true },
       createdAt: { type: Date, required: true },
       expiresAt: { type: Date, required: true },
+      matchingWindowMinutes: { type: Number, default: 1 },
       appliedAt: { type: Date },
       applyToken: { type: String },
       entries: [
@@ -58,6 +68,13 @@ const SupportStatusImportPreviewSchema =
           status: { type: String, required: true },
           updatedAt: { type: Date, required: true },
           fingerprint: { type: String, required: true },
+          originalFingerprint: { type: String },
+          matchKind: { type: String },
+          senderHash: { type: String },
+          category: { type: String },
+          submittedAt: { type: Date },
+          normalisedMessageHash: { type: String },
+          competingCandidateCount: { type: Number },
           state: { type: String, required: true },
           reason: { type: String },
           currentStatus: { type: String },

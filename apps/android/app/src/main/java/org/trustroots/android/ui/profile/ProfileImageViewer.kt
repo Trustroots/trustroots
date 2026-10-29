@@ -1,7 +1,6 @@
 package org.trustroots.android.ui.profile
 
 import android.graphics.Bitmap
-import android.view.Window
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -37,9 +36,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.gestures.detectTransformGestures
@@ -63,7 +60,12 @@ import androidx.compose.ui.window.DialogProperties
 import kotlin.math.roundToInt
 import org.trustroots.android.R
 
-internal val ProfileImageWindowBarsKey = SemanticsPropertyKey<String>("ProfileImageWindowBars")
+internal data class ProfileImageWindowBars(
+    val lightStatusBars: Boolean,
+    val lightNavigationBars: Boolean,
+)
+
+internal val ProfileImageWindowBarsKey = SemanticsPropertyKey<ProfileImageWindowBars?>("ProfileImageWindowBars")
 internal val ProfileImageScaleKey = SemanticsPropertyKey<Float>("ProfileImageScale")
 internal val ProfileImageTranslationKey = SemanticsPropertyKey<String>("ProfileImageTranslation")
 internal val ProfileImageViewportKey = SemanticsPropertyKey<String>("ProfileImageViewport")
@@ -79,23 +81,17 @@ internal fun ProfileImageViewer(
     var viewport by remember { mutableStateOf(IntSize.Zero) }
     var transform by remember(bitmap) { mutableStateOf<ProfileImageTransform?>(null) }
     val imageSize = bitmap?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
-    val fitScale = if (imageSize != IntSize.Zero && viewport != IntSize.Zero) {
-        ProfileImageGeometry.initialScale(imageSize.width, imageSize.height, viewport.width, viewport.height)
-    } else {
-        1f
-    }
-    val effectiveTransform = if (imageSize != IntSize.Zero && viewport != IntSize.Zero && transform != null) {
-        ProfileImageGeometry.clamp(
-            requireNotNull(transform),
+    val currentTransform = if (imageSize != IntSize.Zero && viewport != IntSize.Zero) {
+        ProfileImageGeometry.clampOrFit(
+            transform,
             imageSize.width,
             imageSize.height,
             viewport.width,
             viewport.height,
         )
     } else {
-        null
+        ProfileImageTransform(scale = 1f)
     }
-    val currentTransform = effectiveTransform ?: ProfileImageTransform(scale = fitScale)
     val viewerBackground = colorResource(R.color.profile_image_viewer_background)
     val viewerContent = colorResource(R.color.profile_image_viewer_content)
     LaunchedEffect(bitmap, viewport) {
@@ -110,16 +106,15 @@ internal fun ProfileImageViewer(
         }
     }
     fun zoomTo(requestedScale: Float) {
-        if (imageSize == IntSize.Zero || viewport == IntSize.Zero) return
-        val current = transform?.let {
-            ProfileImageGeometry.clamp(
-                it,
-                imageSize.width,
-                imageSize.height,
-                viewport.width,
-                viewport.height,
-            )
-        } ?: ProfileImageTransform(scale = fitScale)
+        // Zoom actions are only exposed for a decoded bitmap with positive dimensions.
+        if (viewport == IntSize.Zero) return
+        val current = ProfileImageGeometry.clampOrFit(
+            transform,
+            imageSize.width,
+            imageSize.height,
+            viewport.width,
+            viewport.height,
+        )
         transform = ProfileImageGeometry.zoomAround(
             current = current,
             requestedScale = requestedScale,
@@ -137,7 +132,7 @@ internal fun ProfileImageViewer(
         onDismissRequest = onClose,
         properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
     ) {
-        val windowBars = rememberProfileImageWindowStyle(viewerBackground)
+        val windowBars = rememberProfileImageWindowStyle()
         Box(
             modifier
                 .fillMaxSize()
@@ -177,18 +172,16 @@ internal fun ProfileImageViewer(
                             this[ProfileImageViewportKey] = "${viewport.width},${viewport.height}"
                             customActions = accessibilityActions
                         }
-                        .pointerInput(bitmap, viewport, fitScale) {
+                        .pointerInput(bitmap, viewport) {
                             detectTransformGestures { centroid, pan, zoom, _ ->
                                 if (viewport == IntSize.Zero) return@detectTransformGestures
-                                val current = transform?.let {
-                                    ProfileImageGeometry.clamp(
-                                        it,
-                                        imageSize.width,
-                                        imageSize.height,
-                                        viewport.width,
-                                        viewport.height,
-                                    )
-                                } ?: ProfileImageTransform(scale = fitScale)
+                                val current = ProfileImageGeometry.clampOrFit(
+                                    transform,
+                                    imageSize.width,
+                                    imageSize.height,
+                                    viewport.width,
+                                    viewport.height,
+                                )
                                 val zoomed = ProfileImageGeometry.zoomAround(
                                     current = current,
                                     requestedScale = current.scale * zoom,
@@ -287,10 +280,9 @@ internal fun ProfileImageViewer(
 }
 
 @Composable
-private fun rememberProfileImageWindowStyle(viewerBackground: Color): String {
+private fun rememberProfileImageWindowStyle(): ProfileImageWindowBars? {
     val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
-    val viewerBackgroundArgb = viewerBackground.toArgb()
-    var windowBars by remember(dialogWindow) { mutableStateOf("") }
+    var windowBars by remember(dialogWindow) { mutableStateOf<ProfileImageWindowBars?>(null) }
     DisposableEffect(dialogWindow) {
         if (dialogWindow == null) return@DisposableEffect onDispose {}
         val decorView = dialogWindow.decorView
@@ -299,17 +291,14 @@ private fun rememberProfileImageWindowStyle(viewerBackground: Color): String {
         val originalLightNavigationBars = insetsController.isAppearanceLightNavigationBars
         insetsController.isAppearanceLightStatusBars = false
         insetsController.isAppearanceLightNavigationBars = false
-        windowBars = describeWindowBars(dialogWindow)
+        windowBars = ProfileImageWindowBars(
+            lightStatusBars = insetsController.isAppearanceLightStatusBars,
+            lightNavigationBars = insetsController.isAppearanceLightNavigationBars,
+        )
         onDispose {
             insetsController.isAppearanceLightStatusBars = originalLightStatusBars
             insetsController.isAppearanceLightNavigationBars = originalLightNavigationBars
         }
     }
     return windowBars
-}
-
-private fun describeWindowBars(window: Window): String {
-    val controller = WindowCompat.getInsetsController(window, window.decorView)
-    return "statusWhiteIcons=${!controller.isAppearanceLightStatusBars};" +
-        "navigationWhiteIcons=${!controller.isAppearanceLightNavigationBars}"
 }

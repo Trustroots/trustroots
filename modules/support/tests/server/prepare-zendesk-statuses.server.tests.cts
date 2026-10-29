@@ -7,6 +7,8 @@ const path: typeof import('node:path') = require('node:path');
 const emailService: typeof import('../../../../modules/core/server/services/email.server.service.mjs') = require('../../../../modules/core/server/services/email.server.service.mjs');
 const {
   supportRequestFingerprint,
+  supportImportMessageHash,
+  supportImportSenderHash,
 } = require('../../server/services/support-fingerprint.server.service.mts');
 const {
   extractTicketStatusItem,
@@ -147,6 +149,61 @@ describe('prepare Zendesk status manifest', () => {
     );
   });
 
+  it('recognises the complete earliest template footer and rejects incomplete or quoted copies', () => {
+    const body =
+      'Fictional early request.\n\nUsername: fictional-member\nEmail: visitor@example.org\nAuthenticated: no\nBrowser: Fictional browser\nID: \n';
+    assert.deepEqual(parseSupportRequestTemplate(body), {
+      category: 'other',
+      email: 'visitor@example.org',
+      message: 'Fictional early request.',
+    });
+    assert.equal(
+      extractTicketStatusItem(ticket(body, { status: 'closed' }))?.status,
+      'closed',
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('Authenticated: no', 'Authenticated: yes'),
+      )?.category,
+      'other',
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('Authenticated: no', 'Authenticated: unknown'),
+      ),
+      null,
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('Browser: Fictional browser\nID: \n', ''),
+      ),
+      null,
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body
+          .split('\n')
+          .map(line => `> ${line}`)
+          .join('\n'),
+      ),
+      null,
+    );
+    assert.equal(
+      parseSupportRequestTemplate(
+        body.replace('visitor@example.org', 'invalid'),
+      ),
+      null,
+    );
+    const embedded = body.replace(
+      'Fictional early request.',
+      'Fictional early request.\n\nUsername: fictional-text-in-message',
+    );
+    assert.equal(
+      parseSupportRequestTemplate(embedded)?.message,
+      'Fictional early request.\n\nUsername: fictional-text-in-message',
+    );
+  });
+
   it('keeps URL text aligned with the stored request fingerprint', async () => {
     const message = 'Please check https://example.org/help?topic=fictional';
     const rendered = await renderedTemplate({ message });
@@ -201,12 +258,41 @@ describe('prepare Zendesk status manifest', () => {
     });
   });
 
+  it('emits reduced matching evidence only when explicitly requested', async () => {
+    const source = ticket(renderedBody, {
+      created_at: '2025-02-03T04:04:30.000Z',
+    });
+    const item = extractTicketStatusItem(source, true);
+    assert.deepEqual(item?.evidence, {
+      senderHash: supportImportSenderHash('visitor@example.org'),
+      category: 'other',
+      submittedAt: '2025-02-03T04:04:30.000Z',
+      normalisedMessageHash: supportImportMessageHash('A fictional request.'),
+    });
+    assert.equal(JSON.stringify(item).includes('visitor@example.org'), false);
+    assert.equal(JSON.stringify(item).includes('fictional request'), false);
+    assert.equal(
+      extractTicketStatusItem(ticket(renderedBody), true)?.evidence
+        ?.submittedAt,
+      null,
+    );
+
+    const { manifest } = prepareZendeskStatusManifest(
+      [[source]],
+      new Date('2026-10-27T00:00:00.000Z'),
+      true,
+    );
+    assert.equal(manifest.version, 2);
+    assert.deepEqual(manifest.items[0]?.evidence, item?.evidence);
+  });
+
   it('reads export pages and writes a private reduced JSON file', async () => {
     const directory = fs.mkdtempSync(
       path.join(process.cwd(), '.tmp-zendesk-status-'),
     );
     const input = path.join(directory, 'export.ndjson');
     const output = path.join(directory, 'reduced.json');
+    const evidenceOutput = path.join(directory, 'reduced-with-evidence.json');
     try {
       fs.writeFileSync(
         input,
@@ -236,6 +322,37 @@ describe('prepare Zendesk status manifest', () => {
         { encoding: 'utf8' },
       );
       assert.deepEqual(JSON.parse(cliCounts), counts);
+
+      const evidenceCliCounts = childProcess.execFileSync(
+        process.execPath,
+        [
+          script,
+          '--',
+          '--matching-evidence',
+          '--output',
+          evidenceOutput,
+          input,
+        ],
+        { encoding: 'utf8' },
+      );
+      assert.deepEqual(JSON.parse(evidenceCliCounts), counts);
+      const evidenceManifest = JSON.parse(
+        fs.readFileSync(evidenceOutput, 'utf8'),
+      ) as { version: number; items: ReducedZendeskStatusItem[] };
+      assert.equal(evidenceManifest.version, 2);
+      assert.equal(evidenceManifest.items[0]?.evidence?.submittedAt, null);
+      assert.equal(
+        JSON.stringify(evidenceManifest).includes('visitor@example.org'),
+        false,
+      );
+
+      const malformedEvidenceOptions = childProcess.spawnSync(
+        process.execPath,
+        [script, '--', '--matching-evidence', '--output'],
+        { encoding: 'utf8' },
+      );
+      assert.equal(malformedEvidenceOptions.status, 1);
+      assert.match(malformedEvidenceOptions.stderr, /preparation failed/i);
     } finally {
       fs.rmSync(directory, { recursive: true, force: true });
     }

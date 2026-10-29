@@ -29,6 +29,23 @@ class MemberPresentationTest {
         assertEquals("Portuguese", languageName("pt-BR", Locale.ENGLISH))
     }
 
+    @Test fun contextOverloadResolvesNamesFromTheBundledLanguageCatalogue() {
+        assertEquals(
+            "Mandinka",
+            languageName(RuntimeEnvironment.getApplication(), "iso_639_3-mnk", Locale.ENGLISH),
+        )
+    }
+
+    @Test fun contextOverloadUsesDefaultDisplayLocale() {
+        val originalLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.ENGLISH)
+            assertEquals("Mandinka", languageName(RuntimeEnvironment.getApplication(), "iso_639_3-mnk"))
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
+    }
+
     @Test fun resolvesRareIso6393LanguagesFromTheBundledCatalogue() {
         val catalogue = languageCatalogue(RuntimeEnvironment.getApplication())
         assertEquals("Ghotuo", languageName("iso_639_3-aaa", Locale.ENGLISH, catalogue))

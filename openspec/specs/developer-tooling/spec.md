@@ -462,3 +462,77 @@ The repository SHALL run both package and module boundary checks through local l
 
 - **WHEN** a module integration test imports shell composition to exercise feature behaviour
 - **THEN** the test is excluded from the production upward-import rule
+
+### Requirement: Layers do not import applications
+
+Production source in `layers/*` SHALL NOT import `apps/*`. The existing source-import guard SHALL recognise supported literal import forms, workspace names, root aliases, relative paths and file URLs. Layer tests SHALL be excluded. Imports from layers to modules, packages, other layers, root configuration and external dependencies SHALL remain permitted.
+
+#### Scenario: Layer imports application source
+
+- **WHEN** production layer source imports an app through a supported literal import spelling
+- **THEN** the boundary guard fails with the source file and offending import
+
+#### Scenario: Layer composes allowed lower tiers
+
+- **WHEN** production layer source imports modules, packages, configuration or external dependencies
+- **THEN** the layer-to-app boundary guard passes
+
+#### Scenario: Layer tests exercise application composition
+
+- **WHEN** a layer test imports application composition
+- **THEN** that test import is excluded from the production boundary rule
+
+### Requirement: Module runtime source boundaries
+
+Production module source SHALL NOT import server code from client source, client
+code from server source, or client/server code from shared source. Imports of
+shared source from any tier SHALL remain permitted. The guard SHALL use the
+same source scanning and path resolution as the module composition boundary
+guard, including workspace package subpaths, repository aliases, relative
+imports and symlink targets. Tests SHALL be excluded. The guard and regression
+tests SHALL run through local lint, affected checks and CI.
+
+#### Scenario: Runtime tier imports cross forbidden directions
+
+- **WHEN** production module source imports a forbidden client/server/shared
+  tier through a supported literal import spelling
+- **THEN** the runtime boundary guard fails with the source file and import
+
+#### Scenario: Runtime tiers use shared source
+
+- **WHEN** client or server source imports shared source, or shared source uses
+  shared source
+- **THEN** the runtime boundary guard passes
+
+#### Scenario: Tests import across runtime tiers
+
+- **WHEN** a module test imports client, server or shared code
+- **THEN** the runtime boundary guard ignores that test
+
+### Requirement: Auditable Android executable-line coverage
+
+Android line coverage SHALL remove only bytecode-proven compiler instructions
+before aggregating line counters. Application behaviour and uncertain paths
+SHALL remain measured. Reports SHALL preserve raw XML, an instruction audit
+and unchanged aggregate branch counters.
+
+#### Scenario: Proven generated line
+
+- **WHEN** the compiled method has a recognised generated-only instruction sequence
+- **THEN** the executable-line report removes only those instructions before
+  aggregating counters and records the evidence while preserving the raw report
+- **AND** recognised patterns are exhaustive-enum fallbacks, Compose cleanup,
+  implicit coroutine completion and straight-line callable-reference forwarding
+
+#### Scenario: Similar application code
+
+- **WHEN** a line contains application instructions or the bytecode cannot prove
+  the generated-only pattern
+- **THEN** those instructions remain measured
+- **AND** callable targets and ordinary source lambdas remain measured
+
+#### Scenario: Complete measurement
+
+- **WHEN** the line ratchet is raised
+- **THEN** it uses a full Android unit and device-suite measurement, including
+  API 32 compatibility probes, and verifies deterministic report generation

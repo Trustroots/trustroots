@@ -1,26 +1,28 @@
 package org.trustroots.android.ui.editprofile
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import android.text.Html
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.ProfileUpdate
-import org.trustroots.android.ui.common.requestResult
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
 
 internal interface EditProfileRepository {
@@ -111,11 +113,10 @@ internal class EditProfileViewModel(
         initialProfile?.toEditState() ?: EditProfileUiState(),
     )
     val state = mutableState.asStateFlow()
-    private var generation = 0L
     private var nextInvalidationID = 0L
     private var nextSaveID = 0L
     private var invalidationEmitted = false
-    private var requestJob: Job? = null
+    private val profileRequest = LatestRequest(requestScope)
     private var backendURL = initialApi.backendURL
     private var session = initialSession
 
@@ -153,8 +154,7 @@ internal class EditProfileViewModel(
 
         backendURL = api.backendURL
         this.session = session
-        generation++
-        requestJob?.cancel()
+        profileRequest.cancel()
         invalidationEmitted = false
 
         if (accountChanged && username != session.member.username) {
@@ -162,32 +162,38 @@ internal class EditProfileViewModel(
             return
         }
         if (backendChanged || accountChanged) {
-            mutableState.value = EditProfileUiState(isLoading = true)
-            load()
+            load(beforeLoad = { EditProfileUiState(isLoading = true) })
         } else {
-            mutableState.update {
-                it.copy(
-                    isLoading = false,
-                    isSaving = false,
-                    failure = null,
-                    pendingInvalidation = null,
-                )
-            }
-            if (mutableState.value.baseline == null && username == session.member.username) load()
+            load(
+                beforeLoad = { current ->
+                    current.copy(
+                        isLoading = false,
+                        isSaving = false,
+                        failure = null,
+                        pendingInvalidation = null,
+                    )
+                },
+                shouldStart = { mutableState.value.baseline == null && username == this.session.member.username },
+            )
         }
     }
 
-    private fun load() {
-        val request = ++generation
-        mutableState.update { it.copy(isLoading = true, failure = null) }
-        requestJob?.cancel()
-        requestJob = requestScope.launch {
+    private fun load(
+        beforeLoad: ((EditProfileUiState) -> EditProfileUiState)? = null,
+        shouldStart: () -> Boolean = { true },
+    ) {
+        profileRequest.launch {
+            if (beforeLoad != null) {
+                mutableState.update(beforeLoad)
+                currentCoroutineContext().ensureActive()
+            }
+            if (!shouldStart()) return@launch
+            mutableState.update { it.copy(isLoading = true, failure = null) }
             val result = requestResult { repository.profile(username) }
-            if (request != generation) return@launch
             result.fold(
                 onSuccess = { profile -> mutableState.value = profile.toEditState() },
                 onFailure = { error ->
-                    if (error.isAuthenticationFailure()) invalidateSession(request)
+                    if (error.isAuthenticationFailure()) invalidateSession()
                     else mutableState.update { it.copy(isLoading = false, failure = failure(UiFailureFallback.LOAD_PROFILE, error)) }
                 },
             )
@@ -197,9 +203,6 @@ internal class EditProfileViewModel(
     private fun save() {
         val current = mutableState.value
         if (current.baseline == null || current.name.isBlank() || current.isSaving || current.pendingSave != null || invalidationEmitted) return
-        val request = ++generation
-        requestJob?.cancel()
-        mutableState.update { it.copy(isSaving = true, failure = null) }
         val update = ProfileUpdate(
             displayName = current.name,
             tagline = current.tagline,
@@ -208,9 +211,9 @@ internal class EditProfileViewModel(
             locationFrom = current.from,
             languages = current.languages.toList(),
         )
-        requestJob = requestScope.launch {
+        profileRequest.launch {
+            mutableState.update { it.copy(isSaving = true, failure = null) }
             val result = requestResult { repository.update(update) }
-            if (request != generation) return@launch
             result.fold(
                 onSuccess = { profile -> mutableState.update { state ->
                     val baseline = requireNotNull(state.baseline)
@@ -226,15 +229,16 @@ internal class EditProfileViewModel(
                     )
                 } },
                 onFailure = { error ->
-                    if (error.isAuthenticationFailure()) invalidateSession(request)
+                    if (error.isAuthenticationFailure()) invalidateSession()
                     else mutableState.update { it.copy(isSaving = false, failure = failure(UiFailureFallback.SAVE_PROFILE, error)) }
                 },
             )
         }
     }
 
-    private fun invalidateSession(request: Long) {
-        if (request != generation || invalidationEmitted) return
+    private suspend fun invalidateSession() {
+        currentCoroutineContext().ensureActive()
+        if (invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update { it.copy(isLoading = false, isSaving = false, pendingInvalidation = EditProfileInvalidation(++nextInvalidationID)) }
     }
@@ -247,8 +251,7 @@ internal class EditProfileViewModel(
 
 
     override fun onCleared() {
-        generation++
-        requestJob?.cancel()
+        profileRequest.cancel()
         mutableState.value = EditProfileUiState(isLoading = false)
         super.onCleared()
     }
@@ -287,7 +290,7 @@ internal fun rememberEditProfileViewModel(
     username: String,
     initialProfile: MemberProfile? = null,
 ): EditProfileViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) { "Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner." }
+    val owner = requireNavigationViewModelStoreOwner("Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = EditProfileViewModel::class.java,

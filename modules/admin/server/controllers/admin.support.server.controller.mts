@@ -30,6 +30,7 @@ interface SupportRequestRecord {
   reportMember?: string;
   message?: string;
   status?: string;
+  statusProvenance?: 'explicit' | 'missing';
   resolvedAt?: Date | null;
   resolvedBy?: Types.ObjectId | string | null;
   subject?: string;
@@ -112,6 +113,7 @@ type SupportError = Error & { status: number };
 const LIST_STATUSES = [
   'all',
   'unresolved',
+  'unconfirmed',
   'resolved',
   ...SUPPORT_STATUSES,
 ] as const;
@@ -300,6 +302,13 @@ export const list = handler(async (req, res) => {
   }
   pipeline.push({
     $set: {
+      statusProvenance: {
+        $cond: [
+          { $in: [{ $type: '$status' }, ['missing', 'null']] },
+          'missing',
+          'explicit',
+        ],
+      },
       canonicalStatus: {
         $switch: {
           branches: [
@@ -315,19 +324,31 @@ export const list = handler(async (req, res) => {
       activity: { $ifNull: ['$lastActivityAt', '$sent'] },
     },
   });
-  const matchStatus =
+  const matchStatus: Record<string, unknown> =
     status === 'all'
       ? {}
       : {
           canonicalStatus:
             status === 'unresolved'
               ? { $in: [...UNRESOLVED_STATUSES] }
-              : normaliseSupportStatus(status),
+              : status === 'unconfirmed'
+                ? undefined
+                : normaliseSupportStatus(status),
         };
+  if (status === 'unconfirmed') {
+    delete matchStatus.canonicalStatus;
+    matchStatus.statusProvenance = 'missing';
+  }
+  if (status === 'open') matchStatus.statusProvenance = 'explicit';
   pipeline.push({
     $facet: {
       statusCounts: [
+        { $match: { statusProvenance: 'explicit' } },
         { $group: { _id: '$canonicalStatus', count: { $sum: 1 } } },
+      ],
+      unconfirmedCount: [
+        { $match: { statusProvenance: 'missing' } },
+        { $count: 'count' },
       ],
       matching: [{ $match: matchStatus }, { $count: 'count' }],
       items: [
@@ -341,6 +362,7 @@ export const list = handler(async (req, res) => {
               LIST_FIELDS.split(' ').map(field => [field, 1]),
             ),
             status: '$canonicalStatus',
+            statusProvenance: 1,
           },
         },
       ],
@@ -351,6 +373,7 @@ export const list = handler(async (req, res) => {
       items: SupportRequestRecord[];
       matching: Array<{ count: number }>;
       statusCounts: Array<{ _id: SupportStatus; count: number }>;
+      unconfirmedCount: Array<{ count: number }>;
     }>(pipeline).option({ maxTimeMS: 10_000 }),
     SupportRequestModel.countDocuments({}),
   ]);
@@ -370,13 +393,21 @@ export const list = handler(async (req, res) => {
     total,
     matchingTotal,
     statusCounts,
+    unconfirmedCount: result.unconfirmedCount[0]?.count || 0,
   });
 });
 
 export const detail = handler(async (req, res) => {
   const report = await requestById(req);
   await audit(req);
-  return res.send({ ...report, status: normaliseSupportStatus(report.status) });
+  return res.send({
+    ...report,
+    status: normaliseSupportStatus(report.status),
+    statusProvenance:
+      report.status === undefined || report.status === null
+        ? 'missing'
+        : 'explicit',
+  });
 });
 
 export const setStatus = handler(async (req, res) => {

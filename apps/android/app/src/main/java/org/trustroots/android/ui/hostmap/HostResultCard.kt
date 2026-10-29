@@ -45,6 +45,7 @@ import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.memberLastActiveLabel
+import org.trustroots.android.ui.common.nonBlankMemberText
 import org.trustroots.android.ui.theme.HostResultCardTheme
 
 @Composable
@@ -115,11 +116,11 @@ internal fun HostResultCard(
                     ) { Icon(Icons.Default.Close, closeHostResult) }
                 }
                 offer.maxGuests?.let { Text(hostGuestCountLabel(it), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp)) }
-                profile?.tagline?.takeIf { it.isNotBlank() }?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp)) }
+                nonBlankMemberText(profile?.tagline)?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp)) }
                 val lastActive = remember(context, profile?.lastActiveAtMillis) {
                     memberLastActiveLabel(context, profile?.lastActiveAtMillis)
                 }
-                val replyRate = profile?.replyRate?.takeIf(String::isNotBlank)
+                val replyRate = nonBlankMemberText(profile?.replyRate)
                 if (lastActive != null || replyRate != null) {
                     Column(Modifier.padding(top = 8.dp).testTag("hostResultActivityFacts")) {
                         lastActive?.let {

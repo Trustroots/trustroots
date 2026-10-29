@@ -10,6 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,10 +31,10 @@ internal data class AppSessionUiState(
     val signedOutMessage: UiFailure? = null,
 ) {
     val startupFirstName: String?
-        get() = session?.member?.displayName?.substringBefore(' ')
+        get() = session?.let { it.member.displayName.substringBefore(' ') }
 
     override fun toString(): String =
-        "AppSessionUiState(isStarting=$isStarting, sessionUsername=${session?.member?.username}, signedOutMessage=$signedOutMessage)"
+        "AppSessionUiState(isStarting=$isStarting, sessionUsername=${session?.let { it.member.username }}, signedOutMessage=$signedOutMessage)"
 }
 
 internal sealed interface AppSessionEvent {
@@ -100,7 +102,6 @@ internal class AppSessionViewModel(
     private val mutableState = MutableStateFlow(AppSessionUiState())
     val state = mutableState.asStateFlow()
 
-    private var restoreGeneration = 0L
     private var restoreJob: Job? = null
     private var activeBackendURL = normaliseBackendURL(initialBackendURL)
     private var isCleared = false
@@ -118,31 +119,29 @@ internal class AppSessionViewModel(
                 if (normaliseBackendURL(event.backendURL) == activeBackendURL) signedIn(event.session)
             }
             is AppSessionEvent.MemberUpdated -> {
-                if (isCurrentSource(event.source)) memberUpdated(event.member)
+                currentSessionForSource(event.source)?.let { current -> memberUpdated(current, event.member) }
             }
             is AppSessionEvent.SignedOut -> {
-                if (isCurrentSource(event.source)) signedOut(expired = false)
+                if (currentSessionForSource(event.source) != null) signedOut(expired = false)
             }
             is AppSessionEvent.SessionInvalidated -> {
-                if (isCurrentSource(event.source)) signedOut(expired = true)
+                if (currentSessionForSource(event.source) != null) signedOut(expired = true)
             }
         }
     }
 
     @MainThread
     private fun restore() {
-        val generation = ++restoreGeneration
-        restoreJob?.cancel()
+        // Restoration runs once. Cancelling its job owns both asynchronous boundaries.
         restoreJob = requestScope.launch {
             val startedAt = elapsedRealtime()
             val restored = withContext(ioDispatcher) { operations.loadSession() }
-            if (generation != restoreGeneration) return@launch
+            currentCoroutineContext().ensureActive()
             mutableState.value = mutableState.value.copy(session = restored)
             val remaining = STARTUP_MINIMUM_MS - (elapsedRealtime() - startedAt)
             if (remaining > 0) wait(remaining)
-            if (generation == restoreGeneration) {
-                mutableState.value = mutableState.value.copy(isStarting = false)
-            }
+            currentCoroutineContext().ensureActive()
+            mutableState.value = mutableState.value.copy(isStarting = false)
         }
     }
 
@@ -155,8 +154,7 @@ internal class AppSessionViewModel(
     }
 
     @MainThread
-    private fun memberUpdated(member: MobileMember) {
-        val current = mutableState.value.session ?: return
+    private fun memberUpdated(current: MemberSession, member: MobileMember) {
         val updated = current.copy(member = member)
         operations.saveSession(updated)
         mutableState.value = mutableState.value.copy(session = updated)
@@ -180,16 +178,17 @@ internal class AppSessionViewModel(
 
     @MainThread
     private fun cancelRestore() {
-        restoreGeneration++
         restoreJob?.cancel()
         restoreJob = null
     }
 
-    private fun isCurrentSource(source: AppSessionSource): Boolean {
-        val current = mutableState.value.session ?: return false
-        return source.username == current.member.username &&
-            source.cookieHeader == current.cookieHeader &&
-            source.backendURL == activeBackendURL
+    private fun currentSessionForSource(source: AppSessionSource): MemberSession? {
+        val current = mutableState.value.session ?: return null
+        return current.takeIf {
+            source.username == current.member.username &&
+                source.cookieHeader == current.cookieHeader &&
+                source.backendURL == activeBackendURL
+        }
     }
 
     @MainThread

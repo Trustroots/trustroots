@@ -260,6 +260,7 @@ export default function ProfilePage({
   const tab = getProfileViewTab(currentPath, username);
   const activePathName = getProfileViewTabStateName(currentPath, username);
   const canLoadReply = referencesEnabled && !embedded;
+  const isCreatingExperience = tab === 'experiences-new';
   const isSelf = profile?._id === authUser?._id;
 
   const removeContact = useCallback((removedContact: ContactRecord) => {
@@ -382,7 +383,7 @@ export default function ProfilePage({
     return () => {
       isMounted = false;
     };
-  }, [authUser?._id, username, canLoadReply]);
+  }, [authUser?._id, username, canLoadReply, isCreatingExperience]);
 
   const handleMembershipUpdated = (data: { user?: UserProfile } | null) => {
     if (data?.user) {
@@ -484,7 +485,7 @@ export default function ProfilePage({
           className="btn btn-sm btn-default"
           username={profile.username}
         />
-        {tab === 'experiences-new' ? (
+        {isCreatingExperience ? (
           <CreateExperience userFrom={authUser} userTo={profile} />
         ) : ownExperience ? (
           <Experience

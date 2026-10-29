@@ -1,8 +1,9 @@
 package org.trustroots.android.ui.profile
 
+import org.trustroots.android.ui.common.findActivity
+
 import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.text.Html
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
@@ -80,6 +81,7 @@ import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.common.rememberArtworkBitmapState
 import org.trustroots.android.ui.common.memberLocationLabel
 import org.trustroots.android.ui.common.memberLastActiveLabel
+import org.trustroots.android.ui.common.nonBlankMemberText
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
 import org.trustroots.android.ui.editprofile.EditProfileScreen
 import org.trustroots.android.ui.circles.CircleDetailVisit
@@ -274,13 +276,8 @@ private fun MemberProfileContent(
     ProfileHeaderStatusBarStyle(
         enabled = isActiveProfileRoute && profile != null && error == null,
     )
-    BackHandler(enabled = isActiveProfileRoute) {
-        when {
-            showingProfileImage -> showingProfileImage = false
-            confirmRemoveContact -> if (!removingContact) confirmRemoveContact = false
-            else -> onBack()
-        }
-    }
+    // Modal windows handle their own Back events and dismissal policy.
+    BackHandler(enabled = isActiveProfileRoute, onBack = onBack)
     LaunchedEffect(profileState.isBlocked, profileState.isUpdatingBlock, blockTarget) {
         if (blockTarget != null && !profileState.isUpdatingBlock && profileState.isBlocked == blockTarget) blockTarget = null
     }
@@ -370,10 +367,10 @@ private fun MemberProfileContent(
     }
     LaunchedEffect(completion?.deliveryID) {
         val deliveryID = completion?.deliveryID ?: return@LaunchedEffect
-        when (val pending = onCompletionHandled(deliveryID)) {
+        val pending = onCompletionHandled(deliveryID) ?: return@LaunchedEffect
+        when (pending) {
             is ProfileFlowCompletion.ProfileSaved -> viewModel.onEvent(MemberProfileEvent.ProfileSaved(pending.profile))
             is ProfileFlowCompletion.ExperienceCreated -> viewModel.onEvent(MemberProfileEvent.RefreshReferences)
-            null -> Unit
         }
     }
     LaunchedEffect(profileState.contactRemovalSucceeded) {
@@ -382,20 +379,20 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.username?.equals(session.member.username, ignoreCase = true) == true
+    val isSelf = profile?.let { it.username.equals(session.member.username, ignoreCase = true) } == true
     Column(Modifier.fillMaxSize()) {
         when {
-            profile == null && error == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             error != null -> {
                 NativeBackButton(onBack)
                 Text(
-                    resolveFailureMessage(requireNotNull(error)),
+                    resolveFailureMessage(error),
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(20.dp),
                 )
             }
+            profile == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             else -> {
-                val member = requireNotNull(profile)
+                val member = profile
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
@@ -451,6 +448,23 @@ private fun MemberProfileContent(
                                     null
                                 },
                             )
+                            val contactAction = member.id?.takeIf { relationshipResolved }?.let { memberID ->
+                                when {
+                                    relationship?.id.isNullOrBlank() -> ProfileContactAction(addContactLabel) {
+                                        onOpenContactBrowser(memberID)
+                                    }
+                                    relationship.confirmed -> ProfileContactAction(
+                                        stringResource(R.string.profile_remove_contact),
+                                    ) {
+                                        confirmRemoveContact = true
+                                    }
+                                    else -> ProfileContactAction(
+                                        stringResource(R.string.profile_delete_contact_request),
+                                    ) {
+                                        confirmRemoveContact = true
+                                    }
+                                }
+                            }
                             Box(
                                 Modifier.fillMaxWidth()
                                     .onSizeChanged { size ->
@@ -464,33 +478,15 @@ private fun MemberProfileContent(
                                     isSelf = isSelf,
                                     onBack = onBack,
                                     onEditProfile = onOpenEditProfile,
-                                    onMessage = {
-                                        if (profileState.isBlocked == false && !profileState.isUpdatingBlock) member.id?.let(onOpenConversation)
-                                    },
+                                    onMessage = { member.id?.let(onOpenConversation) },
                                     onShareExperience = { member.id?.let(onOpenExperience) },
-                                    contactLabel = when {
-                                        !relationshipResolved -> null
-                                        relationship?.id.isNullOrBlank() -> addContactLabel
-                                        relationship?.confirmed == true -> stringResource(R.string.profile_remove_contact)
-                                        else -> stringResource(R.string.profile_delete_contact_request)
-                                    },
-                                onContactAction = {
-                                        val current = relationship
-                                        when {
-                                            current?.id.isNullOrBlank() -> {
-                                                member.id?.let { id ->
-                                                    onOpenContactBrowser(id)
-                                                }
-                                            }
-                                            else -> confirmRemoveContact = true
-                                        }
-                                    },
+                                    contactAction = contactAction,
                                     topPadding = contentPadding.calculateTopPadding(),
                                     horizontalInset = contentPadding.horizontalInset(),
                                     compactTitle = member.displayName.takeIf { compactProfileHeader },
                                     isBlocked = profileState.isBlocked,
                                     safetyBusy = profileState.isUpdatingBlock || profileState.isLoadingBlock,
-                                    onBlock = { profileState.isBlocked?.let { blockTarget = !it } },
+                                    onBlock = { blockTarget = it },
                                     onReport = { reportVisible = true },
                                 )
                             }
@@ -556,9 +552,32 @@ private fun ProfileActivityFacts(member: MemberProfile) {
     val lastActive = remember(context, member.lastActiveAtMillis) {
         memberLastActiveLabel(context, member.lastActiveAtMillis)
     }
-    val replyRate = member.replyRate?.takeIf(String::isNotBlank)
-    val replyTime = member.replyTime?.takeIf(String::isNotBlank)
-    if (lastActive == null && replyRate == null && replyTime == null) return
+    val replyRate = nonBlankMemberText(member.replyRate)
+    val replyTime = nonBlankMemberText(member.replyTime)
+    val facts = listOfNotNull(
+        lastActive?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_last_active,
+                value = it,
+                testTag = "profileActivityLastActive",
+            )
+        },
+        replyRate?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_reply_rate,
+                value = it,
+                testTag = "profileActivityReplyRate",
+            )
+        },
+        replyTime?.let {
+            ProfileActivityFactData(
+                label = R.string.profile_activity_reply_time,
+                value = stringResource(R.string.profile_activity_reply_time_value, it),
+                testTag = "profileActivityReplyTime",
+            )
+        },
+    )
+    if (facts.isEmpty()) return
 
     Column(
         Modifier.fillMaxWidth()
@@ -566,29 +585,21 @@ private fun ProfileActivityFacts(member: MemberProfile) {
             .testTag("profileActivityFacts"),
     ) {
         Text(stringResource(R.string.profile_activity_heading), style = MaterialTheme.typography.titleMedium)
-        lastActive?.let {
+        facts.forEach { fact ->
             ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_last_active),
-                value = it,
-                testTag = "profileActivityLastActive",
-            )
-        }
-        replyRate?.let {
-            ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_reply_rate),
-                value = it,
-                testTag = "profileActivityReplyRate",
-            )
-        }
-        replyTime?.let {
-            ProfileActivityFact(
-                label = stringResource(R.string.profile_activity_reply_time),
-                value = stringResource(R.string.profile_activity_reply_time_value, it),
-                testTag = "profileActivityReplyTime",
+                label = stringResource(fact.label),
+                value = fact.value,
+                testTag = fact.testTag,
             )
         }
     }
 }
+
+private data class ProfileActivityFactData(
+    val label: Int,
+    val value: String,
+    val testTag: String,
+)
 
 @Composable
 private fun ProfileActivityFact(label: String, value: String, testTag: String) {
@@ -601,7 +612,7 @@ private fun ProfileActivityFact(label: String, value: String, testTag: String) {
 @Composable
 private fun ProfileHeaderStatusBarStyle(enabled: Boolean) {
     val view = LocalView.current
-    val window = view.context.findActivity()?.window
+    val window = view.context.findActivity(Activity::class.java)?.window
     val darkAppearance = isSystemInDarkTheme()
     val latestDarkAppearance by rememberUpdatedState(darkAppearance)
     DisposableEffect(window, enabled) {
@@ -612,13 +623,4 @@ private fun ProfileHeaderStatusBarStyle(enabled: Boolean) {
             controller.isAppearanceLightStatusBars = !latestDarkAppearance
         }
     }
-}
-
-private fun Context.findActivity(): Activity? {
-    var current: Context = this
-    while (current is ContextWrapper) {
-        if (current is Activity) return current
-        current = current.baseContext
-    }
-    return current as? Activity
 }

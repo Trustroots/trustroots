@@ -5,11 +5,15 @@
 - [ ] Shared root code into `packages/*` with re-export shims (separate pull request).
   - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve ESM/CommonJS compatibility paths, shared instance identity, runtime installation and coverage.
 - [ ] `packages/ui` with design tokens (separate pull request).
+  - [x] Add source-only Button, Alert, Badge and Spinner primitives and migrate the language warning. The existing token bridge remains in the web stylesheet pending extraction.
 - [ ] Tier guards in `tooling/guards` (separate pull request).
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement.
-  - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions. Layer-to-app, client/server and shared-code rules remain pending.
+  - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions.
+  - [x] Reject production layer imports into apps.
+  - [x] Enforce production module client/server/shared import directions with regression fixtures and local/CI checks.
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
+  - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
 - [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces remain.
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
   - [x] Include shell components in translation extraction and verify client coverage and the production build.

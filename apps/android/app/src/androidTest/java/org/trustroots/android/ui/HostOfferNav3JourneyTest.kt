@@ -57,8 +57,10 @@ class HostOfferNav3JourneyTest {
         compose.onNodeWithText("Keep editing").performClick()
         compose.onNodeWithText("A changed room description").assertIsDisplayed()
 
-        pressSystemBack()
+        pressSceneBack()
         compose.onNodeWithText("Discard changes").performClick()
+        compose.onNodeWithText("Open hosting form").assertIsDisplayed()
+        pressSceneBack()
         compose.onNodeWithText("Open hosting form").assertIsDisplayed()
         compose.onNodeWithText("Open hosting form").performClick()
         compose.onNodeWithText("Maximum guests").assertIsDisplayed()
@@ -94,6 +96,12 @@ class HostOfferNav3JourneyTest {
     private fun pressSystemBack() {
         compose.waitForIdle()
         requireNotNull(scenario).onActivity { it.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+    }
+
+    private fun pressSceneBack() {
+        compose.waitForIdle()
+        requireNotNull(scenario).onActivity { requireNotNull(it.sceneBack).invoke() }
         compose.waitForIdle()
     }
 

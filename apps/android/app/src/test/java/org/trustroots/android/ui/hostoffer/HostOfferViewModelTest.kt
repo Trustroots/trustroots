@@ -322,6 +322,20 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun maximumGuestsInputFiltersTextClampsTheLowerBoundAndKeepsTheLastValueOnOverflow() = withScope { scope ->
+        val viewModel = HostOfferViewModel(FakeHostOfferRepository(), scope)
+
+        viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("guests 5"))
+        assertEquals(5, viewModel.state.value.form.maxGuests)
+
+        viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("0"))
+        assertEquals(1, viewModel.state.value.form.maxGuests)
+
+        viewModel.onEvent(HostOfferEvent.MaximumGuestsChanged("999999999999999999999"))
+        assertEquals(1, viewModel.state.value.form.maxGuests)
+    }
+
+    @Test
     fun saveUsesOneStableSnapshotAndReturnedIDForTheNewBaseline() = withScope { scope ->
         val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
         val repository = FakeHostOfferRepository().apply { saveHandler = { pendingSave.await() } }

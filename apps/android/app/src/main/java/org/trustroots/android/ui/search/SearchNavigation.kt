@@ -28,3 +28,16 @@ internal data class HostDetailVisit(
 /** A profile opened from member results or a host result within this Search visit. */
 @KotlinSerializable
 internal data class SearchMemberProfileVisit(val username: String, val visitID: Long) : NavKey
+
+/** Repairs a restored anchor without replacing an existing search or detail route. */
+internal fun restoreSearchModeIfMissing(
+    backStack: MutableList<NavKey>,
+    mode: SearchMode,
+    nextVisitID: Long,
+): Long {
+    if (backStack.size == 1 && backStack.last() is SearchHomeVisit) {
+        backStack.add(SearchModeVisit(mode, nextVisitID))
+        return nextVisitID + 1
+    }
+    return nextVisitID
+}

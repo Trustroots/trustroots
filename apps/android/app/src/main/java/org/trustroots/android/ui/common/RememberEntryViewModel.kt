@@ -5,6 +5,12 @@ import androidx.compose.runtime.remember
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
+
+/** Fails early when an entry is composed outside its retained navigation store. */
+@Composable
+internal fun requireNavigationViewModelStoreOwner(message: String): ViewModelStoreOwner =
+    checkNotNull(LocalViewModelStoreOwner.current) { message }
 
 /**
  * Remembers an entry-scoped ViewModel for the lifetime of its composition.

@@ -1,5 +1,7 @@
 package org.trustroots.android.ui.circledetail
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -42,7 +44,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import org.trustroots.android.R
 import org.trustroots.android.api.CircleMemberGroups
 import org.trustroots.android.api.MemberSession
@@ -75,9 +76,7 @@ internal fun CircleDetailEntry(
     onMembershipChanged: (String, Boolean) -> Unit,
     onOpenProfile: (String) -> Unit,
 ) {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "CircleDetailVisit must own its CircleDetailViewModel store"
-    }
+    val owner = requireNavigationViewModelStoreOwner("CircleDetailVisit must own its CircleDetailViewModel store")
     val factory = remember(owner, slug) {
         CircleDetailViewModel.Factory(slug, MobileApiCircleRepository(api, session))
     }
@@ -94,7 +93,7 @@ internal fun CircleDetailEntry(
         onMembershipChanged(event.circleID, event.isMember)
         viewModel.onEvent(CircleDetailEvent.OverviewMembershipEventDelivered(event.id))
     }
-    CircleDetailScreen(
+    CircleDetailContent(
         slug = slug,
         circle = state.circle,
         session = session,
@@ -117,7 +116,7 @@ internal fun CircleDetailEntry(
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
-private fun CircleDetailScreen(
+internal fun CircleDetailContent(
     slug: String,
     circle: TrustrootsCircle?,
     session: MemberSession,

@@ -7,6 +7,6 @@ import org.trustroots.android.api.MessageMember
 
 @Composable
 internal fun MessageMember.localizedLabel(): String =
-    displayName.takeIf(String::isNotBlank)
-        ?: username?.takeIf(String::isNotBlank)
+    nonBlankMemberText(displayName)
+        ?: nonBlankMemberText(username)
         ?: stringResource(R.string.profile_photo_default_member_label)

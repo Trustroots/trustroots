@@ -1,0 +1,4 @@
+- [x] Accelerate bounded scanning without inflating table responses.
+- [x] Add overview, stage selection and apply-time inactivity recheck.
+- [x] Add anonymous tests and document stage evidence, cutoff and compatibility.
+- [x] Run required checks and update living requirements.

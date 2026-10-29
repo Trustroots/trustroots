@@ -1,0 +1,4 @@
+- [x] Add validated matching-window preview/apply handling and original requester metadata.
+- [x] Add bulk selection and window controls with explicit fresh-preview behaviour.
+- [x] Add anonymous client/server/e2e regressions and retain coverage.
+- [x] Run required checks, document behaviour and update living requirements.

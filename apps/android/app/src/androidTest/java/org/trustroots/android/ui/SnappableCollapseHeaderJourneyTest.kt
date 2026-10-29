@@ -13,6 +13,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -22,12 +24,15 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Velocity
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.ui.common.rememberSnappableCollapseHeader
+import org.trustroots.android.ui.common.SnappableCollapseHeader
 
 private val expandedHeight = 300.dp
 private val compactHeight = 60.dp
@@ -44,6 +49,7 @@ class SnappableCollapseHeaderJourneyTest {
 
     private var configuration by mutableStateOf(HeaderConfiguration("first", expandedHeight, compactHeight))
     private var headerHeight: (() -> Dp)? = null
+    private var header: SnappableCollapseHeader? = null
 
     private fun setCurrentContent() {
         compose.setContent {
@@ -53,6 +59,7 @@ class SnappableCollapseHeaderJourneyTest {
                 compactHeaderHeight = { currentConfiguration.compactHeight },
                 key = currentConfiguration.key,
             )
+            this.header = header
             headerHeight = { header.headerHeight }
             Column(Modifier.fillMaxSize().nestedScroll(header.connection)) {
                 Box(
@@ -73,6 +80,38 @@ class SnappableCollapseHeaderJourneyTest {
                 }
             }
         }
+    }
+
+    @Test fun flingSnapsInTheVelocityDirectionAndAtTheMidpoint() {
+        setCurrentContent()
+        val connection = requireNotNull(header).connection
+
+        fun scroll(y: Float) = compose.runOnIdle {
+            connection.onPreScroll(Offset(0f, y), NestedScrollSource.UserInput)
+        }
+        fun fling(y: Float) {
+            compose.runOnIdle {
+                runBlocking { connection.onPostFling(Velocity.Zero, Velocity(0f, y)) }
+            }
+            compose.waitForIdle()
+        }
+        fun assertHeight(expected: Dp) = compose.runOnIdle {
+            assertEquals(expected, requireNotNull(headerHeight).invoke())
+        }
+
+        scroll(-10f)
+        fling(-1f)
+        assertHeight(compactHeight)
+        scroll(10f)
+        fling(1f)
+        assertHeight(expandedHeight)
+        scroll(-10f)
+        fling(0f)
+        assertHeight(expandedHeight)
+        scroll(-10000f)
+        scroll(10f)
+        fling(0f)
+        assertHeight(compactHeight)
     }
 
     @Test fun scrollingContentCollapsesHeader() {

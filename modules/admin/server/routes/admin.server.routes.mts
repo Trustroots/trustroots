@@ -1,3 +1,4 @@
+import * as spamCleanup from '../controllers/admin.spam-cleanup.server.controller.mts';
 import adminCircles from '../controllers/admin.circles.server.controller.mjs';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
@@ -35,6 +36,14 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/spam-cleanup/preview')
+    .all(adminPolicy.isAllowed)
+    .post(spamCleanup.preview);
+  app
+    .route('/api/admin/spam-cleanup/apply')
+    .all(adminPolicy.isAllowed)
+    .post(spamCleanup.apply);
   app
     .route('/api/admin/support-import/preview')
     .all(adminPolicy.isAllowed)

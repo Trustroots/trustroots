@@ -73,7 +73,16 @@ async function enqueue(message: SupportMessageRecord) {
   } catch (error) {
     await SupportMessage.updateOne(
       { _id: created._id, deliveryState: 'queued' },
-      { $set: { deliveryState: 'failed', errorCode: 'queue_failed' } },
+      {
+        $set: {
+          // Acknowledgements are sent automatically and can be recovered by
+          // the queued-message sweep. Replies remain failed so an operator
+          // can explicitly choose when to retry them.
+          deliveryState:
+            created.kind === 'acknowledgement' ? 'queued' : 'failed',
+          errorCode: 'queue_failed',
+        },
+      },
     );
     throw error;
   }

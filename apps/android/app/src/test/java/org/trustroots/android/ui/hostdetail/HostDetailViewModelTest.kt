@@ -1,5 +1,6 @@
 package org.trustroots.android.ui.hostdetail
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -35,6 +36,81 @@ import org.trustroots.android.ui.search.SearchOfferType
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class HostDetailViewModelTest {
+    @Test fun repositoryDefaultEnvironmentUpdateDoesNotReplaceTheCurrentClient() {
+        val repository = object : HostDetailRepository by FakeRepository() {
+            override fun updateClientAndSession(api: MobileApiClient, session: MemberSession): Boolean =
+                super<HostDetailRepository>.updateClientAndSession(api, session)
+        }
+
+        assertFalse(
+            repository.updateClientAndSession(
+                MobileApiClient("https://api.example.test"),
+                MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox")),
+            ),
+        )
+    }
+
+    @Test fun mobileRepositoryDetectsBackendCookieAndAccountChangesIndependently() {
+        val originalApi = MobileApiClient("https://api.example.test")
+        val originalSession = MemberSession("connect.sid=first", MobileMember("quiet-fox", "Quiet Fox"))
+        val repository = MobileHostDetailRepository(originalApi, originalSession)
+
+        assertFalse(repository.updateClientAndSession(originalApi, originalSession))
+        assertTrue(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                originalSession,
+            ),
+        )
+        assertTrue(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                MemberSession("connect.sid=second", originalSession.member),
+            ),
+        )
+        assertTrue(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                MemberSession("connect.sid=second", MobileMember("steady-owl", "Steady Owl")),
+            ),
+        )
+        assertFalse(
+            repository.updateClientAndSession(
+                MobileApiClient("https://alternate.example.test"),
+                MemberSession("connect.sid=second", MobileMember("steady-owl", "Steady Owl")),
+            ),
+        )
+    }
+
+    @Test fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            HostDetailViewModel.Factory(FakeRepository()).create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test fun retryBeforeAHostRouteIsLoadedDoesNotIssueARequest() = withModel { model, repository ->
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertTrue(repository.offerIDs.isEmpty())
+        assertEquals(HostDetailUiState(), model.state.value)
+    }
+
+    @Test fun environmentRefreshBeforeTheFirstRouteKeepsTheDetailEmpty() = withModel { model, repository ->
+        repository.sessionChanged = true
+
+        model.updateClientAndSession(
+            MobileApiClient("https://alternate.example.test"),
+            MemberSession("connect.sid=fresh-session", MobileMember("steady-heron", "Steady Heron")),
+        )
+
+        assertEquals(HostDetailUiState(), model.state.value)
+        assertTrue(repository.offerIDs.isEmpty())
+        assertTrue(repository.profileUsernames.isEmpty())
+        assertEquals(0, repository.membershipCalls)
+    }
+
     @Test fun blankAndRepeatedRouteLoadsDoNotDuplicateDetailRequests() = withModel { model, repository ->
         val pendingOffer = CompletableDeferred<Result<HostOffer>>()
         repository.offerHandler = { call, id ->
@@ -95,6 +171,24 @@ class HostDetailViewModelTest {
         assertTrue(model.state.value.failure != null)
         assertNull(model.state.value.offer)
 
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertEquals(listOf("retry-offer", "retry-offer"), repository.offerIDs)
+        assertEquals("retry-offer", model.state.value.offer?.id)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test fun repeatingTheFailedRouteDoesNotRetryUntilRetryIsRequested() = withModel { model, repository ->
+        repository.offerHandler = { call, id ->
+            if (call == 1) Result.failure(IllegalStateException("temporary detail failure"))
+            else Result.success(offerFixture(id))
+        }
+
+        model.onEvent(HostDetailEvent.Load("retry-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("retry-offer", SearchOfferType.Host))
+
+        assertEquals(listOf("retry-offer"), repository.offerIDs)
+        assertTrue(model.state.value.failure != null)
         model.onEvent(HostDetailEvent.Retry)
 
         assertEquals(listOf("retry-offer", "retry-offer"), repository.offerIDs)
@@ -311,6 +405,31 @@ class HostDetailViewModelTest {
         assertEquals(2, repository.membershipCalls)
     }
 
+    @Test fun membershipsReturnedByThePreviousRouteCannotReplaceCurrentRouteData() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = FakeRepository()
+        lateinit var model: HostDetailViewModel
+        model = HostDetailViewModel(repository, scope)
+        repository.membershipHandler = { call ->
+            if (call == 1) {
+                model.onEvent(HostDetailEvent.Load("current-offer", SearchOfferType.Meet))
+                Result.success(setOf("stale-circle"))
+            } else {
+                Result.success(setOf("current-circle"))
+            }
+        }
+        try {
+            model.onEvent(HostDetailEvent.Load("previous-offer", SearchOfferType.Host))
+
+            assertEquals("current-offer", model.state.value.offerID)
+            assertEquals("current-offer", model.state.value.offer?.id)
+            assertEquals(setOf("current-circle"), model.state.value.sharedCircleIDs)
+            assertEquals(2, repository.membershipCalls)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test fun clearingTheEntryCancelsAnInFlightDetailRequest() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         val repository = FakeRepository()
@@ -381,6 +500,8 @@ class HostDetailViewModelTest {
             return membershipHandler(membershipCalls)
         }
     }
+
+    private class OtherViewModel : ViewModel()
 
     private companion object {
         fun offerFixture(id: String, username: String = "host-owl") = HostOffer(

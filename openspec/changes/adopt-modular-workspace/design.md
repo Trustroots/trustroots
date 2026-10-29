@@ -82,7 +82,7 @@ Alternative considered: moon. Rejected for now: it brings a second toolchain man
 - The module-graph baseline moves into `tooling/guards` and keeps its ratchet behaviour.
 - `check-modules`: tier direction, fixed `exports` keys with no wildcard deep exports, and a matching `workspace:*` dependency for every import that crosses a package. It ships with negative fixtures proving each rule fires.
 - ESLint `no-restricted-imports`: client code may not import `*/server`; `shared/` may not import React, Mongoose, client or server code; `packages/ui` imports no modules.
-- A model-ownership check: a lookup of a model the module does not own requires a declared dependency.
+- A model-ownership check: a lookup of a model the module does not own requires a `workspace:*` dependency on its owner in that module's package manifest. The check derives owners from model definitions and links from string model lookups, and reports the consumer and owner modules when the dependency is missing.
 - `AGENTS.md` gets a "Layout" section describing the tiers and the rule "add a dependency between modules only in `package.json`, and say why in the pull request".
 
 ### Migration rules that protect open pull requests

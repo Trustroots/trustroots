@@ -83,6 +83,13 @@ class PopulatedInboxJourneyTest {
         compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("  quiet-fox ")
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Amber Owl").assertDoesNotExist()
+
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("no-such-member")
+        compose.onNodeWithTag("message-thread-thread-fox").assertDoesNotExist()
+        compose.onNodeWithTag("message-thread-thread-owl").assertDoesNotExist()
+        compose.onNodeWithTag("messageInboxFilter").performScrollTo().performTextReplacement("quiet-fox")
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        compose.onNodeWithText("Amber Owl").assertDoesNotExist()
         compose.onNodeWithText("Profile").performClick()
 
         compose.waitUntil(10_000) {

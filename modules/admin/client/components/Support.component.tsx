@@ -34,6 +34,20 @@ type InboxLocation = {
   requestId: string | null;
 };
 
+function MemberUsername({
+  username,
+  fallback,
+}: {
+  username?: string;
+  fallback: string;
+}) {
+  return username ? (
+    <a href={`/admin/user/${encodeURIComponent(username)}`}>{username}</a>
+  ) : (
+    <>{fallback}</>
+  );
+}
+
 function readInboxLocation(): InboxLocation {
   const params = new URLSearchParams(window.location.search);
   const rawStatus = params.get('status') || DEFAULT_STATUS;
@@ -54,6 +68,7 @@ function readInboxLocation(): InboxLocation {
   return {
     status:
       status === 'all' ||
+      status === 'unconfirmed' ||
       status === DEFAULT_STATUS ||
       SUPPORT_STATUSES.includes(status as SupportStatus)
         ? status
@@ -130,8 +145,19 @@ function splitQuotedCorrespondence(body: string) {
   };
 }
 
+function decodeSupportText(text: string): string {
+  // Decode entity tokens only, then let React render the result as text.
+  // Raw markup never enters an HTML parser or the rendered DOM.
+  return text.replace(
+    /&(?:#(?:x[\da-f]{1,8}|\d{1,10})|[a-z][a-z\d]{1,31});/gi,
+    entity => plainText(entity),
+  );
+}
+
 function ConversationBody({ body }: { body: string }) {
-  const { current, quoted } = splitQuotedCorrespondence(body);
+  const { current, quoted } = splitQuotedCorrespondence(
+    decodeSupportText(body),
+  );
   return (
     <>
       {current && <div className="support-inbox__message-body">{current}</div>}
@@ -141,7 +167,11 @@ function ConversationBody({ body }: { body: string }) {
           <div className="support-inbox__message-body">{quoted}</div>
         </details>
       ) : (
-        !current && <div className="support-inbox__message-body">{body}</div>
+        !current && (
+          <div className="support-inbox__message-body">
+            {decodeSupportText(body)}
+          </div>
+        )
       )}
     </>
   );
@@ -150,10 +180,12 @@ function ConversationBody({ body }: { body: string }) {
 function Conversation({
   id,
   requester,
+  requesterUsername,
   onChange,
 }: {
   id: string;
   requester: string;
+  requesterUsername?: string;
   onChange: () => void;
 }) {
   const [page, setPage] = useState(1);
@@ -307,7 +339,19 @@ function Conversation({
                 aria-label={`${author}, ${formatAdminDateTime(item.createdAt)}`}
               >
                 <header>
-                  <strong>{author}</strong>
+                  <strong>
+                    {item.direction === 'inbound' &&
+                    item.kind === 'initial' &&
+                    requesterUsername ? (
+                      <a
+                        href={`/admin/user/${encodeURIComponent(requesterUsername)}`}
+                      >
+                        {requesterUsername}
+                      </a>
+                    ) : (
+                      author
+                    )}
+                  </strong>
                   <time dateTime={item.createdAt}>
                     {formatAdminDateTime(item.createdAt)}
                   </time>
@@ -513,8 +557,18 @@ function Investigation({
             <article className="panel panel-default" key={item._id}>
               <div className="panel-body">
                 <p>
-                  <strong>{item.userFrom?.username || 'Deleted member'}</strong>{' '}
-                  → {item.userTo?.username || 'Deleted member'} ·{' '}
+                  <strong>
+                    <MemberUsername
+                      username={item.userFrom?.username}
+                      fallback="Deleted member"
+                    />
+                  </strong>{' '}
+                  →{' '}
+                  <MemberUsername
+                    username={item.userTo?.username}
+                    fallback="Deleted member"
+                  />{' '}
+                  ·{' '}
                   <time dateTime={item.created}>
                     {formatAdminDateTime(item.created)}
                   </time>
@@ -638,17 +692,26 @@ function RequestDetails({
             }
           </h2>
           {report.subject && (
-            <p className="support-inbox__subject">{report.subject}</p>
+            <p className="support-inbox__subject">
+              {decodeSupportText(report.subject)}
+            </p>
           )}
         </div>
         <span className="support-inbox__status" data-status={status}>
-          {SUPPORT_STATUS_LABELS[status]}
+          {report.statusProvenance === 'missing'
+            ? 'Unconfirmed legacy status'
+            : SUPPORT_STATUS_LABELS[status]}
         </span>
       </header>
       <dl className="support-inbox__metadata">
         <div>
           <dt>From</dt>
-          <dd>{report.username || 'Signed-out visitor'}</dd>
+          <dd>
+            <MemberUsername
+              username={report.username}
+              fallback="Signed-out visitor"
+            />
+          </dd>
         </div>
         <div>
           <dt>Email</dt>
@@ -704,7 +767,12 @@ function RequestDetails({
       <div className="support-inbox__members">
         <div>
           <h3>Reporter</h3>
-          <p>{report.username || 'Signed-out visitor'}</p>
+          <p>
+            <MemberUsername
+              username={report.username}
+              fallback="Signed-out visitor"
+            />
+          </p>
           {report.user && (
             <>
               <CaseMemberStatus
@@ -718,7 +786,14 @@ function RequestDetails({
         {(report.reportMember || report.reportedUser) && (
           <div>
             <h3>Reported member</h3>
-            {report.reportMember && <p>{report.reportMember}</p>}
+            {report.reportMember && (
+              <p>
+                <MemberUsername
+                  username={report.reportMember}
+                  fallback="Deleted member"
+                />
+              </p>
+            )}
             {report.reportedUser && (
               <>
                 <CaseMemberStatus
@@ -734,6 +809,7 @@ function RequestDetails({
       <Conversation
         id={id}
         requester={report.username || report.email}
+        requesterUsername={report.username}
         onChange={onChange}
       />
       {linked ? (
@@ -804,7 +880,6 @@ function MemberSearch() {
       className="support-inbox__card support-inbox__search"
       aria-label="Member search"
     >
-      <h2>Member search</h2>
       <form onSubmit={submit}>
         <label htmlFor="support-member-search">Name, username or email</label>
         <input
@@ -835,6 +910,18 @@ function MemberSearch() {
         ))}
       </ul>
     </section>
+  );
+}
+
+export function SupportMemberSearchPage() {
+  return (
+    <>
+      <AdminHeader />
+      <main className="container">
+        <h1>Member search</h1>
+        <MemberSearch />
+      </main>
+    </>
   );
 }
 
@@ -983,8 +1070,7 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
             Triage requests and keep the full support conversation in one place.
           </p>
         </header>
-        <MemberSearch />
-        {canImport && <SupportStatusImport />}
+        {canImport && <SupportStatusImport onApplied={reloadQueue} />}
         <div className="support-inbox__layout">
           <div className="support-inbox__sidebar">
             <section
@@ -1004,6 +1090,9 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                     }}
                   >
                     <option value="unresolved">Unresolved</option>
+                    <option value="unconfirmed">
+                      Unconfirmed legacy status
+                    </option>
                     {SUPPORT_STATUSES.map(value => (
                       <option key={value} value={value}>
                         {SUPPORT_STATUS_LABELS[value]}
@@ -1064,10 +1153,30 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                   >
                     {SUPPORT_STATUSES.map(value => (
                       <li key={value}>
-                        <span>{SUPPORT_STATUS_LABELS[value]}</span>
-                        <strong>{data.statusCounts[value]}</strong>
+                        <button
+                          type="button"
+                          aria-pressed={location.status === value}
+                          onClick={() =>
+                            updateLocation({ status: value, page: 1 })
+                          }
+                        >
+                          <span>{SUPPORT_STATUS_LABELS[value]}</span>{' '}
+                          <strong>{data.statusCounts[value]}</strong>
+                        </button>
                       </li>
                     ))}
+                    <li>
+                      <button
+                        type="button"
+                        aria-pressed={location.status === 'unconfirmed'}
+                        onClick={() =>
+                          updateLocation({ status: 'unconfirmed', page: 1 })
+                        }
+                      >
+                        <span>Unconfirmed legacy status</span>{' '}
+                        <strong>{data.unconfirmedCount ?? 0}</strong>
+                      </button>
+                    </li>
                   </ul>
                   {data.items.length === 0 && (
                     <p className="support-inbox__empty">
@@ -1098,7 +1207,7 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                           </strong>
                           {report.subject && (
                             <span className="support-inbox__queue-subject">
-                              {report.subject}
+                              {decodeSupportText(report.subject)}
                             </span>
                           )}
                           <span>{report.username || report.email}</span>
@@ -1112,11 +1221,11 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
                                 report.status,
                               )}
                             >
-                              {
-                                SUPPORT_STATUS_LABELS[
-                                  normaliseSupportStatus(report.status)
-                                ]
-                              }
+                              {report.statusProvenance === 'missing'
+                                ? 'Unconfirmed legacy status'
+                                : SUPPORT_STATUS_LABELS[
+                                    normaliseSupportStatus(report.status)
+                                  ]}
                             </span>
                           </span>
                         </button>

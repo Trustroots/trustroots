@@ -1,3 +1,7 @@
+import {
+  SPAM_CLEANUP_SCAN_SIZE,
+  SPAM_INACTIVE_BEFORE,
+} from '../../shared/spam-cleanup.ts';
 import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import type { UserServerRecord } from '../models/user.server.types.mts';
 interface ActivityRecord {
@@ -206,6 +210,7 @@ async function findUsersWithProtectedActivity(
 async function processBatch(
   userIds: Types.ObjectId[],
   deleteAccounts: boolean,
+  inactiveOnly = false,
 ): Promise<BatchResult> {
   const User = mongoose.model<UserServerRecord>('User');
   const protectedIds = await findUsersWithProtectedActivity(userIds);
@@ -225,6 +230,9 @@ async function processBatch(
       const deletion = await User.deleteMany({
         $and: [
           candidateQuery(),
+          ...(inactiveOnly
+            ? [{ seen: { $lt: new Date(SPAM_INACTIVE_BEFORE) } }]
+            : []),
           {
             _id: {
               $in: eligibleIds,
@@ -288,6 +296,62 @@ service.run = async function ({
   }
   return result;
 };
+/** Bounded admin review; does not change the CLI campaign criteria. */
+export async function previewAdminBatch(after?: Types.ObjectId) {
+  const User = mongoose.model<UserServerRecord>('User');
+  const query = after
+    ? { $and: [candidateQuery(), { _id: { $gt: after } }] }
+    : candidateQuery();
+  const rows = await User.find(query)
+    .select('_id username created seen')
+    .sort({ _id: 1 })
+    .limit(SPAM_CLEANUP_SCAN_SIZE + 1)
+    .maxTimeMS(10000)
+    .lean();
+  const batch = rows.slice(0, SPAM_CLEANUP_SCAN_SIZE);
+  const protectedIds = await findUsersWithProtectedActivity(
+    batch.map(row => row._id),
+  );
+  return {
+    items: batch.map(row => ({
+      id: String(row._id),
+      username: row.username,
+      created: row.created,
+      lastSeen: row.seen,
+      inactive:
+        row.seen instanceof Date && row.seen < new Date(SPAM_INACTIVE_BEFORE),
+      eligible: !protectedIds.has(String(row._id)),
+    })),
+    hasMore: rows.length > SPAM_CLEANUP_SCAN_SIZE,
+  };
+}
+
+export async function deleteAdminBatch(
+  ids: Types.ObjectId[],
+  inactiveOnly = false,
+) {
+  const User = mongoose.model<UserServerRecord>('User');
+  if (!ids.length) return { deleted: 0, skipped: 0 };
+  const current = await User.find({
+    $and: [
+      candidateQuery(),
+      { _id: { $in: ids } },
+      ...(inactiveOnly
+        ? [{ seen: { $lt: new Date(SPAM_INACTIVE_BEFORE) } }]
+        : []),
+    ],
+  })
+    .select('_id')
+    .maxTimeMS(10000)
+    .lean();
+  const result = await processBatch(
+    current.map(row => row._id),
+    true,
+    inactiveOnly,
+  );
+  return { deleted: result.deleted, skipped: ids.length - result.deleted };
+}
+
 const defaultExport = service;
 export default defaultExport;
 export { CAMPAIGN_WINDOWS };

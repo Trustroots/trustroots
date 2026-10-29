@@ -2,8 +2,9 @@
 
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.common.findActivity
+
 import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.ComponentActivity
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
@@ -90,7 +91,7 @@ internal fun TrustrootsApp(
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
     val activity = remember(context) {
-        requireNotNull(context.findComponentActivity()) { "TrustrootsApp must run in a ComponentActivity." }
+        requireNotNull(context.findActivity(ComponentActivity::class.java)) { "TrustrootsApp must run in a ComponentActivity." }
     }
     val signInStoreHolder = remember(activity) {
         ViewModelProvider(activity).get(SignInDestinationStoreHolder::class.java)
@@ -128,7 +129,7 @@ internal fun TrustrootsApp(
     val sessionState by sessionViewModel.state.collectAsState()
     val session = sessionState.session
     val starting = sessionState.isStarting
-    val shellGraphOwner = remember(shellGraphStore, starting, session?.member?.username) {
+    val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
         if (starting) null
         else session?.let { shellGraphStore.activateAccount(it.member.username) }
             ?: run {
@@ -195,11 +196,6 @@ internal fun TrustrootsApp(
     }
 }
 
-private tailrec fun Context.findComponentActivity(): ComponentActivity? = when (this) {
-    is ComponentActivity -> this
-    is ContextWrapper -> baseContext.findComponentActivity()
-    else -> null
-}
 
 @Serializable
 internal enum class Destination(@StringRes val label: Int) {
@@ -221,6 +217,9 @@ internal data class MemberTabVisit(
 @Serializable
 internal data class MemberShellVisit(val username: String) : NavKey
 
+internal fun currentMemberTab(backStack: List<NavKey>): MemberTabVisit =
+    backStack.lastOrNull() as? MemberTabVisit ?: MemberTabVisit(Destination.Circles, 0L)
+
 @Composable
 private fun MemberShell(
     analytics: UsageAnalytics,
@@ -237,14 +236,14 @@ private fun MemberShell(
     val nostrootsTitle = stringResource(R.string.screen_nostroots)
     val resetPasswordTitle = stringResource(R.string.screen_reset_password)
     val tabBackStack = rememberNavBackStack(MemberTabVisit(Destination.Circles, 0))
-    val destination = (tabBackStack.lastOrNull() as? MemberTabVisit)?.destination
-        ?: Destination.Circles
+    val activeTab = currentMemberTab(tabBackStack)
+    val destination = activeTab.destination
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
     var menuUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var searchUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var resetActiveMenuVisit by remember { mutableStateOf<(() -> Unit)?>(null) }
     val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
-    val activeVisitID = (tabBackStack.lastOrNull() as? MemberTabVisit)?.visitID ?: 0L
+    val activeVisitID = activeTab.visitID
     val activeMenuScreen = if (menuUsageByVisit.containsKey(activeVisitID)) {
         menuUsageByVisit[activeVisitID]
     } else {
@@ -300,35 +299,25 @@ private fun MemberShell(
         onSessionInvalidated()
         shellViewModel.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
     }
+    // This stack starts with a tab visit and Back always retains its root.
+    fun firstAvailableVisitID(): Long =
+        tabBackStack.maxOf { (it as MemberTabVisit).visitID } + 1L
+
     fun navigateTo(next: Destination, resetMenuBeforeLeaving: Boolean = false) {
         if (next != destination) {
             if (resetMenuBeforeLeaving) {
                 resetActiveMenuVisit?.invoke()
             }
-            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
-                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
-            nextVisitID = maxOf(nextVisitID, firstAvailableID)
+            nextVisitID = maxOf(nextVisitID, firstAvailableVisitID())
             tabBackStack.add(MemberTabVisit(next, nextVisitID))
             nextVisitID++
         }
     }
-    val reselectCircles = {
-        val current = tabBackStack.lastOrNull() as? MemberTabVisit
-        if (current?.destination == Destination.Circles) {
-            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
-                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
-            val replacementID = maxOf(nextVisitID, firstAvailableID)
-            tabBackStack[tabBackStack.lastIndex] = MemberTabVisit(Destination.Circles, replacementID)
-            nextVisitID = replacementID + 1
-        }
-    }
-    val reselectMessages = {
-        val current = tabBackStack.lastOrNull() as? MemberTabVisit
-        if (current?.destination == Destination.Messages) {
-            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
-                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
-            val replacementID = maxOf(nextVisitID, firstAvailableID)
-            tabBackStack[tabBackStack.lastIndex] = MemberTabVisit(Destination.Messages, replacementID)
+    fun reselect(destination: Destination) {
+        val current = tabBackStack.last() as MemberTabVisit
+        if (current.destination == destination) {
+            val replacementID = maxOf(nextVisitID, firstAvailableVisitID())
+            tabBackStack[tabBackStack.lastIndex] = MemberTabVisit(destination, replacementID)
             nextVisitID = replacementID + 1
         }
     }
@@ -343,9 +332,7 @@ private fun MemberShell(
             if (guardedMenuDeparture) {
                 resetActiveMenuVisit?.invoke()
             }
-            val firstAvailableID = (tabBackStack.filterIsInstance<MemberTabVisit>()
-                .maxOfOrNull(MemberTabVisit::visitID) ?: -1L) + 1L
-            nextVisitID = maxOf(nextVisitID, firstAvailableID)
+            nextVisitID = maxOf(nextVisitID, firstAvailableVisitID())
             tabBackStack.add(MemberTabVisit(Destination.Messages, nextVisitID, requested.senderId))
             nextVisitID++
             Unit
@@ -380,9 +367,9 @@ private fun MemberShell(
                         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
                         val action: () -> Unit = {
                             if (item == Destination.Circles && item == destination) {
-                                reselectCircles()
+                                reselect(Destination.Circles)
                             } else if (item == Destination.Messages && item == destination) {
-                                reselectMessages()
+                                reselect(Destination.Messages)
                             } else if (item == Destination.Search && item == destination) {
                                 searchInitialTab = 0
                                 searchResetVisitID = activeVisitID

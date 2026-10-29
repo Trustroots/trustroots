@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +30,37 @@ import org.trustroots.android.api.MobileMember
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class InboxViewModelTest {
+    @Test
+    fun repositoryDefaultApiUpdateDoesNotInvalidateAStaticRepository() {
+        val repository = object : InboxRepository by FakeInboxRepository({ Result.success(emptyList()) }) {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<InboxRepository>.updateApi(api)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+    }
+
+    @Test
+    fun inboxViewModelOwnerUsesDefaultCacheAndKeepsAccountEntriesSeparate() {
+        val store = ViewModelStore()
+        val owner = StoreOwner(store)
+        val api = MobileApiClient("http://127.0.0.1:1")
+        val firstSession = session()
+        try {
+            val first = owner.inboxViewModel(api, firstSession)
+            val repeated = owner.inboxViewModel(api, firstSession)
+            val anotherAccount = owner.inboxViewModel(
+                api,
+                MemberSession("fictional-other-cookie", MobileMember("quiet-owl", "Quiet Owl")),
+            )
+
+            assertSame(first, repeated)
+            assertNotSame(first, anotherAccount)
+        } finally {
+            store.clear()
+        }
+    }
+
     @Test
     fun firstDisplayPreservesAnImmediateFailureAndLaterDisplayRefreshes() = withScope { scope ->
         var calls = 0
@@ -212,6 +244,27 @@ class InboxViewModelTest {
         assertEquals(2, calls)
         assertNull(model.state.value.pendingSessionInvalidation)
         assertEquals(1, model.state.value.threads.size)
+    }
+
+    @Test
+    fun authenticationFailureClearsPreviouslyCachedThreads() = withScope { scope ->
+        val staleThread = thread("cached-private-thread", "Quiet Fox")
+        val cache = InboxCache().apply {
+            threads = listOf(staleThread)
+            loadedAt = 0L
+        }
+        val repository = FakeInboxRepository {
+            Result.failure(MobileApiException(401, "Fictional session expired."))
+        }
+        val model = InboxViewModel(repository, session(), scope, now = { 0L }, cache = cache)
+
+        assertEquals(listOf(staleThread), model.state.value.threads)
+        model.onEvent(InboxEvent.Retry)
+
+        assertTrue(model.state.value.threads.isEmpty())
+        assertNull(cache.threads)
+        assertNull(cache.loadedAt)
+        assertTrue(model.state.value.pendingSessionInvalidation != null)
     }
 
     @Test

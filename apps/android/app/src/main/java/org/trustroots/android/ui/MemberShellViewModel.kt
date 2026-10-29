@@ -1,22 +1,24 @@
 package org.trustroots.android.ui
 
+import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import org.trustroots.android.api.ApiFailureKind
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileApiException
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.isAuthenticationFailure
 import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.rememberEntryViewModel
@@ -82,12 +84,9 @@ internal class MemberShellViewModel(
     private val mutableState = MutableStateFlow(MemberShellUiState())
     val state = mutableState.asStateFlow()
 
-    private var avatarJob: Job? = null
-    private var pollJob: Job? = null
+    private val avatarRequest = LatestRequest(requestScope)
+    private val unreadPolling = LatestRequest(requestScope)
     private var nextInvalidationID = 0L
-    private var nextRequestGeneration = 0L
-    private var avatarGeneration = 0L
-    private var unreadGeneration = 0L
     private var sessionInvalidationEmitted = false
     private var started = false
     private var activeVisitID: Long? = null
@@ -121,10 +120,8 @@ internal class MemberShellViewModel(
 
     private fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
         if (!repository.updateEnvironment(api, session)) return
-        avatarJob?.cancel()
-        pollJob?.cancel()
-        avatarGeneration = ++nextRequestGeneration
-        unreadGeneration = ++nextRequestGeneration
+        avatarRequest.cancel()
+        unreadPolling.cancel()
         sessionInvalidationEmitted = false
         mutableState.value = MemberShellUiState()
         loadAvatar()
@@ -132,55 +129,43 @@ internal class MemberShellViewModel(
     }
 
     private fun loadAvatar() {
-        val generation = ++nextRequestGeneration
-        avatarGeneration = generation
-        avatarJob?.cancel()
-        mutableState.update { it.copy(isAvatarLoading = true, failure = null) }
-        avatarJob = requestScope.launch {
+        avatarRequest.launch {
+            mutableState.update { it.copy(isAvatarLoading = true, failure = null) }
             requestResult { repository.ownAvatarID() }.fold(
                 onSuccess = { id ->
-                    if (generation == avatarGeneration) {
-                        mutableState.update { it.copy(avatarID = id, isAvatarLoading = false) }
-                    }
+                    mutableState.update { it.copy(avatarID = id, isAvatarLoading = false) }
                 },
                 onFailure = { error ->
-                    if (generation == avatarGeneration) {
-                        mutableState.update { it.copy(isAvatarLoading = false) }
-                        reportFailure(error)
-                    }
+                    mutableState.update { it.copy(isAvatarLoading = false) }
+                    reportFailure(error)
                 },
             )
         }
     }
 
     private fun restartPolling() {
-        pollJob?.cancel()
-        pollJob = null
-        unreadGeneration = ++nextRequestGeneration
         if (!started || activeVisitID == null || sessionInvalidationEmitted) {
+            unreadPolling.cancel()
             mutableState.update { it.copy(isUnreadRefreshing = false) }
             return
         }
-        val generation = unreadGeneration
-        pollJob = requestScope.launch {
-            while (generation == unreadGeneration && started) {
+        unreadPolling.launch {
+            // Lifecycle, visit and session changes cancel this slot's job.
+            while (true) {
+                currentCoroutineContext().ensureActive()
                 mutableState.update { it.copy(isUnreadRefreshing = true, failure = null) }
                 requestResult { repository.unreadCount() }.fold(
                     onSuccess = { count ->
-                        if (generation == unreadGeneration) {
-                            mutableState.update {
-                                it.copy(unreadMessageCount = count, isUnreadRefreshing = false)
-                            }
+                        mutableState.update {
+                            it.copy(unreadMessageCount = count, isUnreadRefreshing = false)
                         }
                     },
                     onFailure = { error ->
-                        if (generation == unreadGeneration) {
-                            mutableState.update { it.copy(isUnreadRefreshing = false) }
-                            reportFailure(error)
-                        }
+                        mutableState.update { it.copy(isUnreadRefreshing = false) }
+                        reportFailure(error)
                     },
                 )
-                if (generation != unreadGeneration || !started || sessionInvalidationEmitted) break
+                currentCoroutineContext().ensureActive()
                 waitForNextPoll()
             }
         }
@@ -189,12 +174,10 @@ internal class MemberShellViewModel(
 
     private fun reportFailure(error: Throwable) {
         if (error.isAuthenticationFailure()) {
-            if (!sessionInvalidationEmitted && mutableState.value.pendingSessionInvalidation == null) {
+            if (!sessionInvalidationEmitted) {
                 sessionInvalidationEmitted = true
-                avatarJob?.cancel()
-                avatarGeneration = ++nextRequestGeneration
-                pollJob?.cancel()
-                unreadGeneration = ++nextRequestGeneration
+                avatarRequest.cancel()
+                unreadPolling.cancel()
                 mutableState.update {
                     it.copy(pendingSessionInvalidation = MemberShellInvalidation(++nextInvalidationID))
                 }
@@ -213,12 +196,10 @@ internal class MemberShellViewModel(
     }
 
     override fun onCleared() {
-        avatarGeneration = ++nextRequestGeneration
-        unreadGeneration = ++nextRequestGeneration
         started = false
         activeVisitID = null
-        avatarJob?.cancel()
-        pollJob?.cancel()
+        avatarRequest.cancel()
+        unreadPolling.cancel()
         mutableState.value = MemberShellUiState(isAvatarLoading = false)
         super.onCleared()
     }
@@ -241,9 +222,7 @@ internal fun rememberMemberShellViewModel(
     api: MobileApiClient,
     session: MemberSession,
 ): MemberShellViewModel {
-    val owner = checkNotNull(LocalViewModelStoreOwner.current) {
-        "The member shell must be hosted by its root Navigation 3 entry."
-    }
+    val owner = requireNavigationViewModelStoreOwner("The member shell must be hosted by its root Navigation 3 entry.")
     val viewModel = rememberEntryViewModel(
         owner = owner,
         modelClass = MemberShellViewModel::class.java,

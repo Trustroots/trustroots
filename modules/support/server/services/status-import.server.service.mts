@@ -11,11 +11,16 @@ import type {
   SupportStatusImportItem,
   SupportStatusImportManifest,
   SupportStatusImportPreviewResponse,
+  SupportStatusImportMatchReview,
+  SupportStatusImportSelection,
 } from '../../shared/status-import.ts';
 import {
   normaliseStoredSupportCategory,
-  supportRequestFingerprint,
+  supportImportMessageHash,
+  supportImportSenderHash,
+  supportRequestImportFingerprints,
 } from './support-fingerprint.server.service.mts';
+import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';
 import type {
   SupportStatusImportPreviewEntry as PreviewEntry,
@@ -42,6 +47,8 @@ interface SupportRequestImportRecord extends Pick<
   | 'category'
   | 'reportMember'
   | 'email'
+  | 'username'
+  | 'subject'
   | 'message'
   | 'status'
   | 'statusRevision'
@@ -88,7 +95,7 @@ function validateManifest(value: unknown): SupportStatusImportManifest {
   if (
     !isObject(value) ||
     !hasExactKeys(value, ['version', 'exportedAt', 'items']) ||
-    value.version !== 1 ||
+    (value.version !== 1 && value.version !== 2) ||
     !parseDate(value.exportedAt) ||
     !Array.isArray(value.items) ||
     value.items.length > MAX_MANIFEST_ITEMS
@@ -97,14 +104,13 @@ function validateManifest(value: unknown): SupportStatusImportManifest {
   }
   const items: SupportStatusImportItem[] = [];
   for (const item of value.items) {
+    const keys =
+      value.version === 1
+        ? ['zendeskTicketId', 'status', 'updatedAt', 'fingerprint']
+        : ['zendeskTicketId', 'status', 'updatedAt', 'fingerprint', 'evidence'];
     if (
       !isObject(item) ||
-      !hasExactKeys(item, [
-        'zendeskTicketId',
-        'status',
-        'updatedAt',
-        'fingerprint',
-      ]) ||
+      !hasExactKeys(item, keys) ||
       !Number.isSafeInteger(item.zendeskTicketId) ||
       Number(item.zendeskTicketId) <= 0 ||
       !isSupportStatus(item.status) ||
@@ -114,15 +120,46 @@ function validateManifest(value: unknown): SupportStatusImportManifest {
     ) {
       throw fail(400, 'Invalid support status manifest.');
     }
+    let evidence: SupportStatusImportItem['evidence'];
+    if (value.version === 2) {
+      const raw = item.evidence;
+      if (
+        !isObject(raw) ||
+        !hasExactKeys(raw, [
+          'senderHash',
+          'category',
+          'submittedAt',
+          'normalisedMessageHash',
+        ]) ||
+        typeof raw.senderHash !== 'string' ||
+        !/^[a-f\d]{64}$/.test(raw.senderHash) ||
+        typeof raw.normalisedMessageHash !== 'string' ||
+        !/^[a-f\d]{64}$/.test(raw.normalisedMessageHash) ||
+        typeof raw.category !== 'string' ||
+        !Object.hasOwn(SUPPORT_CATEGORIES, raw.category) ||
+        !(raw.submittedAt === null || parseDate(raw.submittedAt))
+      )
+        throw fail(400, 'Invalid support status manifest.');
+      evidence = {
+        senderHash: raw.senderHash,
+        category: raw.category,
+        submittedAt:
+          raw.submittedAt === null
+            ? null
+            : parseDate(raw.submittedAt)!.toISOString(),
+        normalisedMessageHash: raw.normalisedMessageHash,
+      };
+    }
     items.push({
       zendeskTicketId: Number(item.zendeskTicketId),
       status: item.status,
       updatedAt: parseDate(item.updatedAt)!.toISOString(),
       fingerprint: item.fingerprint,
+      ...(evidence ? { evidence } : {}),
     });
   }
   return {
-    version: 1,
+    version: value.version,
     exportedAt: parseDate(value.exportedAt)!.toISOString(),
     items,
   };
@@ -152,7 +189,7 @@ async function audit(
   }).save();
 }
 
-function importFingerprint(record: SupportRequestImportRecord): string | null {
+function importFingerprints(record: SupportRequestImportRecord): string[] {
   const category = normaliseStoredSupportCategory(
     record.category,
     record.reportMember,
@@ -162,9 +199,9 @@ function importFingerprint(record: SupportRequestImportRecord): string | null {
     typeof record.email !== 'string' ||
     typeof record.message !== 'string'
   ) {
-    return null;
+    return [];
   }
-  return supportRequestFingerprint({
+  return supportRequestImportFingerprints({
     category,
     email: record.email,
     message: record.message,
@@ -179,6 +216,32 @@ function countReason(
   counts.skippedByReason[reason] = (counts.skippedByReason[reason] || 0) + 1;
 }
 
+const SUGGESTION_REASON =
+  'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation' as const;
+
+function parseMatchingWindowMinutes(value: unknown): number {
+  if (typeof value === 'string' && /^(?:[1-9]|[1-5]\d|60)$/.test(value))
+    return Number(value);
+  throw fail(400, 'Matching window must be an integer from 1 to 60 minutes.');
+}
+
+function suggestedCandidates(
+  item: SupportStatusImportItem,
+  requestsByEvidence: Map<string, SupportRequestImportRecord[]>,
+  matchingWindowMinutes: number,
+) {
+  const evidence = item.evidence;
+  if (!evidence?.submittedAt) return [];
+  const submittedAt = new Date(evidence.submittedAt).getTime();
+  const key = `${evidence.senderHash}:${evidence.category}:${evidence.normalisedMessageHash}`;
+  return (requestsByEvidence.get(key) || []).flatMap(request => {
+    if (!(request.sent instanceof Date)) return [];
+    const difference = Math.abs(request.sent.getTime() - submittedAt);
+    if (difference > matchingWindowMinutes * 60_000) return [];
+    return [{ request, timeDifferenceSeconds: Math.floor(difference / 1000) }];
+  });
+}
+
 function sameStatusAndTicket(
   record: SupportRequestImportRecord,
   item: Pick<SupportStatusImportItem, 'status' | 'zendeskTicketId'>,
@@ -187,6 +250,12 @@ function sameStatusAndTicket(
     normaliseSupportStatus(record.status) === item.status &&
     record.zendeskTicketId === item.zendeskTicketId
   );
+}
+
+function statusForPreview(value: string | null | undefined) {
+  return value == null
+    ? ('unconfirmed' as const)
+    : normaliseSupportStatus(value);
 }
 
 function hasNewerActivity(
@@ -222,22 +291,26 @@ function snapshot(
 export async function previewReducedManifest(
   source: unknown,
   actorId: Types.ObjectId | string,
+  rawMatchingWindowMinutes: unknown = '1',
 ): Promise<SupportStatusImportPreviewResponse> {
   const actor = await requireAdministrator(actorId);
+  const matchingWindowMinutes = parseMatchingWindowMinutes(
+    rawMatchingWindowMinutes,
+  );
   const manifest = validateManifest(source);
   const SupportRequest =
     mongoose.model<SupportRequestImportRecord>('SupportRequest');
   const requests = await SupportRequest.find({})
     .select(
-      '_id category reportMember email message status statusRevision statusChangedAt lastActivityAt sent zendeskTicketId',
+      '_id category reportMember email username subject message status statusRevision statusChangedAt lastActivityAt sent zendeskTicketId',
     )
     .maxTimeMS(10_000)
     .lean();
   const localByFingerprint = new Map<string, SupportRequestImportRecord[]>();
   const localByTicketId = new Map<number, SupportRequestImportRecord[]>();
+  const requestsByEvidence = new Map<string, SupportRequestImportRecord[]>();
   for (const request of requests) {
-    const fingerprint = importFingerprint(request);
-    if (fingerprint) {
+    for (const fingerprint of importFingerprints(request)) {
       const matches = localByFingerprint.get(fingerprint) || [];
       matches.push(request);
       localByFingerprint.set(fingerprint, matches);
@@ -247,10 +320,32 @@ export async function previewReducedManifest(
       assigned.push(request);
       localByTicketId.set(request.zendeskTicketId, assigned);
     }
+    if (
+      typeof request.email === 'string' &&
+      typeof request.message === 'string'
+    ) {
+      const category = normaliseStoredSupportCategory(
+        request.category,
+        request.reportMember,
+      );
+      if (category) {
+        const key = `${supportImportSenderHash(request.email)}:${category}:${supportImportMessageHash(request.message)}`;
+        const bucket = requestsByEvidence.get(key) || [];
+        bucket.push(request);
+        requestsByEvidence.set(key, bucket);
+      }
+    }
   }
   const ticketIdCounts = new Map<number, number>();
   const fingerprintCounts = new Map<string, number>();
+  const sourceTicketsByRequest = new Map<string, Set<number>>();
   for (const item of manifest.items) {
+    for (const request of localByFingerprint.get(item.fingerprint) || []) {
+      const id = String(request._id);
+      const ticketIds = sourceTicketsByRequest.get(id) || new Set<number>();
+      ticketIds.add(item.zendeskTicketId);
+      sourceTicketsByRequest.set(id, ticketIds);
+    }
     ticketIdCounts.set(
       item.zendeskTicketId,
       (ticketIdCounts.get(item.zendeskTicketId) || 0) + 1,
@@ -264,12 +359,14 @@ export async function previewReducedManifest(
   const counts: SupportStatusImportCounts = {
     total: manifest.items.length,
     eligible: 0,
+    suggested: 0,
     alreadyApplied: 0,
     skipped: 0,
     skippedByReason: {},
   };
   const entries: PreviewEntry[] = [];
   const changes: SupportStatusImportChange[] = [];
+  const matchReviews: SupportStatusImportMatchReview[] = [];
   for (const item of manifest.items) {
     const entry: PreviewEntry = {
       zendeskTicketId: item.zendeskTicketId,
@@ -292,6 +389,62 @@ export async function previewReducedManifest(
     }
     const matches = localByFingerprint.get(item.fingerprint) || [];
     if (matches.length === 0) {
+      const candidates = suggestedCandidates(
+        item,
+        requestsByEvidence,
+        matchingWindowMinutes,
+      ).filter(
+        ({ request }) =>
+          (request.zendeskTicketId == null ||
+            request.zendeskTicketId === item.zendeskTicketId) &&
+          !sourceTicketsByRequest.get(String(request._id))?.size,
+      );
+      if (candidates.length) {
+        counts.suggested++;
+        matchReviews.push({
+          zendeskTicketId: item.zendeskTicketId,
+          category: item.evidence!.category,
+          submittedAt: item.evidence!.submittedAt,
+          importedStatus: item.status,
+          candidates: candidates.map(({ request, timeDifferenceSeconds }) => ({
+            requestId: String(request._id),
+            category: item.evidence!.category,
+            submittedAt: request.sent.toISOString(),
+            matchKind: 'suggested',
+            reason: SUGGESTION_REASON,
+            ...(typeof request.username === 'string'
+              ? { senderUsername: request.username }
+              : {}),
+            email: request.email!,
+            ...(typeof request.subject === 'string'
+              ? { subject: request.subject }
+              : {}),
+            timeDifferenceSeconds,
+            competingCandidateCount: candidates.length,
+            currentStatus: statusForPreview(request.status),
+            importedStatus: item.status,
+          })),
+        });
+        for (const { request } of candidates) {
+          entries.push({
+            zendeskTicketId: item.zendeskTicketId,
+            status: item.status,
+            updatedAt: new Date(item.updatedAt),
+            fingerprint: item.fingerprint,
+            originalFingerprint: importFingerprints(request)[0],
+            requestId: request._id,
+            state: 'suggested',
+            matchKind: 'suggested',
+            senderHash: item.evidence!.senderHash,
+            category: item.evidence!.category,
+            submittedAt: new Date(item.evidence!.submittedAt!),
+            normalisedMessageHash: item.evidence!.normalisedMessageHash,
+            competingCandidateCount: candidates.length,
+            ...snapshot(request),
+          });
+        }
+        continue;
+      }
       entry.reason = 'no-match';
       countReason(counts, entry.reason);
       entries.push(entry);
@@ -304,8 +457,17 @@ export async function previewReducedManifest(
       continue;
     }
     const request = matches[0]!;
+    if (sourceTicketsByRequest.get(String(request._id))!.size > 1) {
+      entry.reason = 'ambiguous-source-match';
+      countReason(counts, entry.reason);
+      entries.push(entry);
+      continue;
+    }
     const recordSnapshot = snapshot(request);
-    Object.assign(entry, recordSnapshot, { requestId: request._id });
+    Object.assign(entry, recordSnapshot, {
+      requestId: request._id,
+      originalFingerprint: importFingerprints(request)[0],
+    });
     if (
       localByTicketId
         .get(item.zendeskTicketId)
@@ -342,9 +504,11 @@ export async function previewReducedManifest(
     changes.push({
       requestId: String(request._id),
       zendeskTicketId: item.zendeskTicketId,
-      currentStatus: normaliseSupportStatus(request.status),
+      currentStatus: statusForPreview(request.status),
       importedStatus: item.status,
       updatedAt: item.updatedAt,
+      matchKind: 'exact',
+      reason: 'exact request fingerprint',
     });
     entries.push(entry);
   }
@@ -354,6 +518,7 @@ export async function previewReducedManifest(
     actor,
     createdAt: now,
     expiresAt: new Date(now.getTime() + PREVIEW_TTL_MS),
+    matchingWindowMinutes,
     entries,
     counts,
   });
@@ -362,6 +527,7 @@ export async function previewReducedManifest(
     await audit(actor, 'support-status-import/preview', previewId, {
       total: counts.total,
       eligible: counts.eligible,
+      suggested: counts.suggested,
       skipped: counts.skipped,
     });
     await preview.save();
@@ -372,7 +538,9 @@ export async function previewReducedManifest(
     previewId,
     counts,
     changes,
+    matchReviews,
     expiresAt: preview.expiresAt.toISOString(),
+    matchingWindowMinutes,
   };
 }
 
@@ -420,6 +588,7 @@ function stillMatchesSnapshot(
 export async function applyPreview(
   previewId: string,
   actorId: Types.ObjectId | string,
+  selectedMatches: SupportStatusImportSelection[] = [],
 ): Promise<SupportStatusImportApplyResponse> {
   const actor = await requireAdministrator(actorId);
   if (!/^[a-f\d]{24}$/i.test(previewId))
@@ -429,6 +598,56 @@ export async function applyPreview(
   if (preview.expiresAt <= new Date())
     throw fail(410, 'Support status preview has expired.');
   if (preview.result) return preview.result;
+  if (
+    !Array.isArray(selectedMatches) ||
+    selectedMatches.some(
+      selection =>
+        !isObject(selection) ||
+        !hasExactKeys(selection, ['zendeskTicketId', 'requestId']) ||
+        !Number.isSafeInteger(selection.zendeskTicketId) ||
+        typeof selection.requestId !== 'string' ||
+        !/^[a-f\d]{24}$/i.test(selection.requestId),
+    )
+  )
+    throw fail(400, 'Invalid support status selection.');
+  const selectedTicketIds = new Set<number>();
+  const selectedRequestIds = new Set<string>();
+  const automaticTicketIds = new Set(
+    preview.entries
+      .filter(
+        entry => entry.state === 'ready' || entry.state === 'alreadyApplied',
+      )
+      .map(entry => entry.zendeskTicketId),
+  );
+  const automaticRequestIds = new Set(
+    preview.entries
+      .filter(
+        entry =>
+          (entry.state === 'ready' || entry.state === 'alreadyApplied') &&
+          entry.requestId,
+      )
+      .map(entry => String(entry.requestId)),
+  );
+  for (const selection of selectedMatches) {
+    if (
+      selectedTicketIds.has(selection.zendeskTicketId) ||
+      selectedRequestIds.has(selection.requestId) ||
+      automaticTicketIds.has(selection.zendeskTicketId) ||
+      automaticRequestIds.has(selection.requestId)
+    )
+      throw fail(400, 'Support status selections must be one-to-one.');
+    selectedTicketIds.add(selection.zendeskTicketId);
+    selectedRequestIds.add(selection.requestId);
+    if (
+      !preview.entries.some(
+        entry =>
+          entry.state === 'suggested' &&
+          entry.zendeskTicketId === selection.zendeskTicketId &&
+          String(entry.requestId) === selection.requestId,
+      )
+    )
+      throw fail(400, 'Selected support request is not a suggested match.');
+  }
   const applyToken = randomUUID();
   const claimed = await Preview.findOneAndUpdate(
     {
@@ -447,9 +666,29 @@ export async function applyPreview(
   }
 
   try {
-    const ready = claimed.entries.filter(entry => entry.state === 'ready');
+    const selectedKeys = new Set(
+      selectedMatches.map(item => `${item.zendeskTicketId}:${item.requestId}`),
+    );
+    const ready = claimed.entries.filter(
+      entry =>
+        entry.state === 'ready' ||
+        (entry.state === 'suggested' &&
+          selectedKeys.has(
+            `${entry.zendeskTicketId}:${String(entry.requestId)}`,
+          )),
+    );
+    const unresolvedSuggestedTickets = new Set(
+      claimed.entries
+        .filter(
+          entry =>
+            entry.state === 'suggested' &&
+            !selectedTicketIds.has(entry.zendeskTicketId),
+        )
+        .map(entry => entry.zendeskTicketId),
+    );
     await audit(actor, 'support-status-import/apply', previewId, {
       eligible: ready.length,
+      selectedSuggestions: selectedMatches.length,
     });
 
     const result: SupportStatusImportApplyResponse = {
@@ -457,16 +696,45 @@ export async function applyPreview(
       alreadyApplied: claimed.entries.filter(
         entry => entry.state === 'alreadyApplied',
       ).length,
-      skipped: claimed.entries.filter(entry => entry.state === 'skipped')
-        .length,
+      skipped:
+        claimed.entries.filter(entry => entry.state === 'skipped').length +
+        unresolvedSuggestedTickets.size,
     };
     const SupportRequest =
       mongoose.model<SupportRequestImportRecord>('SupportRequest');
     for (const entry of ready) {
       const current = await currentRequest(entry);
-      if (!current || importFingerprint(current) !== entry.fingerprint) {
+      if (
+        !current ||
+        importFingerprints(current)[0] !==
+          (entry.originalFingerprint ?? entry.fingerprint)
+      ) {
         result.skipped++;
         continue;
+      }
+      if (entry.matchKind === 'suggested') {
+        const originalTime = entry.submittedAt?.getTime();
+        if (
+          !entry.senderHash ||
+          !entry.category ||
+          !entry.normalisedMessageHash ||
+          typeof current.email !== 'string' ||
+          typeof current.message !== 'string' ||
+          supportImportSenderHash(current.email) !== entry.senderHash ||
+          normaliseStoredSupportCategory(
+            current.category,
+            current.reportMember,
+          ) !== entry.category ||
+          supportImportMessageHash(current.message) !==
+            entry.normalisedMessageHash ||
+          originalTime === undefined ||
+          !(current.sent instanceof Date) ||
+          Math.abs(current.sent.getTime() - originalTime) >
+            (claimed.matchingWindowMinutes ?? 1) * 60_000
+        ) {
+          result.skipped++;
+          continue;
+        }
       }
       if (sameStatusAndTicket(current, entry)) {
         result.alreadyApplied++;
@@ -479,11 +747,22 @@ export async function applyPreview(
         result.skipped++;
         continue;
       }
+      const ticketOwner = await SupportRequest.findOne({
+        zendeskTicketId: entry.zendeskTicketId,
+        _id: { $ne: current._id },
+      })
+        .select('_id')
+        .lean();
+      if (ticketOwner) {
+        result.skipped++;
+        continue;
+      }
       const filter: Record<string, unknown> = {
         _id: entry.requestId,
         category: current.category,
         email: current.email,
         message: current.message,
+        reportMember: current.reportMember ?? null,
       };
       addSnapshotFilter(filter, 'status', entry.currentStatus);
       addSnapshotFilter(filter, 'statusRevision', entry.statusRevision);

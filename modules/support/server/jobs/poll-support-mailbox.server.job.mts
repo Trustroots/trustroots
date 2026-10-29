@@ -10,6 +10,7 @@ import {
   ImapFlow,
   type MessageEnvelopeObject,
   type MessageStructureObject,
+  type FetchMessageObject,
 } from 'imapflow';
 import mongoose, { type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
@@ -354,6 +355,12 @@ async function processMail(
     return;
   }
 
+  // An external sender can reuse an outbound Message-ID. Keep the inbound
+  // deduplication key, but give this distinct message its own threading ID.
+  const storedMessageId =
+    incomingId && !(await SupportMessage.exists({ messageId: incomingId }))
+      ? incomingId
+      : fallbackMessageId();
   const inbound = await SupportMessage.create({
     request: matchingThread._id,
     direction: 'inbound',
@@ -362,7 +369,7 @@ async function processMail(
     createdAt: activityAt,
     emailFrom: sender,
     emailTo: config.supportInbox.fromAddress,
-    messageId: incomingId || fallbackMessageId(),
+    messageId: storedMessageId,
     ...((parsed.inReplyTo || normaliseMessageId(envelope?.inReplyTo)) && {
       inReplyTo: parsed.inReplyTo || normaliseMessageId(envelope?.inReplyTo),
     }),
@@ -424,6 +431,15 @@ export async function pollSupportMailbox(
     logger: false,
   });
   const heartbeat = startSupportMailboxHeartbeat(job);
+  let connectionError: Error | undefined;
+  client.on('error', error => {
+    connectionError = error;
+    client.close();
+  });
+  function assertHealthy() {
+    if (connectionError) throw connectionError;
+    heartbeat.assertHealthy();
+  }
   try {
     await client.connect();
     const lock = await client.getMailboxLock(mailbox.mailbox, {
@@ -457,6 +473,7 @@ export async function pollSupportMailbox(
         });
         lock.release();
         await client.logout();
+        assertHealthy();
         return done();
       }
 
@@ -479,7 +496,9 @@ export async function pollSupportMailbox(
         );
       }
 
-      let processed = 0;
+      // Finish the FETCH iterator before issuing any download commands on the
+      // same connection. ImapFlow holds the command queue while yielding rows.
+      const batch: FetchMessageObject[] = [];
       for await (const item of client.fetch(
         `${lastUid + 1}:*`,
         {
@@ -497,9 +516,14 @@ export async function pollSupportMailbox(
         },
         { uid: true },
       )) {
-        heartbeat.assertHealthy();
+        assertHealthy();
         if (item.uid <= lastUid) continue;
-        if (processed >= mailbox.maxMessagesPerPoll) break;
+        batch.push(item);
+        if (batch.length >= mailbox.maxMessagesPerPoll) break;
+      }
+      let processed = 0;
+      for (const item of batch) {
+        assertHealthy();
         const inboundKey =
           normaliseMessageId(item.envelope?.messageId) ||
           `imap:${uidValidity}:${item.uid}`;
@@ -529,7 +553,7 @@ export async function pollSupportMailbox(
           lastUid = item.uid;
           processed += 1;
           await touchAgendaJob(job);
-          heartbeat.assertHealthy();
+          assertHealthy();
           continue;
         }
         const oversized = (item.size || 0) > mailbox.maxMessageBytes;
@@ -575,6 +599,7 @@ export async function pollSupportMailbox(
             mailbox.maxMessageBytes,
           );
         }
+        assertHealthy();
         if (!parsed.automated || parsed.deliveryStatus === 'failed') {
           await processMail(
             parsed,
@@ -601,24 +626,27 @@ export async function pollSupportMailbox(
         lastUid = item.uid;
         processed += 1;
         await touchAgendaJob(job);
-        heartbeat.assertHealthy();
+        assertHealthy();
       }
       log('info', 'Support mailbox poll completed #hK4tPq', { processed });
     } finally {
       lock.release();
     }
     await client.logout();
+    assertHealthy();
     return done();
   } catch (error) {
     await client.logout().catch(() => undefined);
-    const mailboxError = error as Error & { code?: unknown };
+    const mailboxError = (connectionError || error) as Error & {
+      code?: unknown;
+    };
     log('error', 'Support mailbox poll failed #Kc8wQm', {
       errorCode:
         typeof mailboxError.code === 'string'
           ? mailboxError.code.slice(0, 50)
           : 'mailbox_error',
     });
-    return done(error as Error);
+    return done(mailboxError);
   } finally {
     heartbeat.stop();
   }

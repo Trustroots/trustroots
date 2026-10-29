@@ -34,6 +34,20 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class MessageConversationViewModelTest {
     @Test
+    fun repositoryDefaultApiUpdateKeepsAStaticConversationRepository() {
+        val repository = object : MessageConversationRepository by FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ) {
+            override fun updateApi(api: MobileApiClient): Boolean =
+                super<MessageConversationRepository>.updateApi(api)
+        }
+
+        assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
+    }
+
+    @Test
     fun resolvesRecipientWithoutAnInboxAndLoadsMessagesAndSavedDraft() = withScope { scope ->
         val repository = FakeConversationRepository(
             memberResult = Result.success(member),
@@ -267,6 +281,32 @@ class MessageConversationViewModelTest {
         assertNull(model.state.value.pendingSessionInvalidation)
         assertTrue(model.state.value.messagesLoaded)
         assertFalse(model.state.value.loadFailed)
+    }
+
+    @Test
+    fun reentrantCredentialRefreshDuringRecipientLoadRejectsTheOldResponse() = withScope { scope ->
+        lateinit var model: MessageConversationViewModel
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(listOf(incoming)),
+            initialDraft = "",
+        )
+        var memberCalls = 0
+        repository.memberHandler = {
+            if (++memberCalls == 2) {
+                model.onEvent(MessageConversationEvent.SessionChanged(session("connect.sid=renewed-session")))
+            }
+            Result.success(member)
+        }
+        model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(MessageConversationEvent.Retry)
+
+        assertEquals(listOf("member-owl", "member-owl", "member-owl"), repository.memberLookups)
+        assertEquals(listOf("member-owl", "member-owl"), repository.messageLookups)
+        assertEquals("steady-heron", model.state.value.currentUsername)
+        assertEquals(listOf(incoming), model.state.value.messages)
+        assertFalse(model.state.value.isLoading)
     }
 
     @Test

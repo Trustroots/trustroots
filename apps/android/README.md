@@ -193,7 +193,17 @@ Missing or empty shard results fail the final coverage check. The workflow publi
 combined line and branch coverage tables
 in its job summary. The report includes every production package and source file,
 including untested files; only generated R and BuildConfig classes are excluded.
-JaCoCo applies its standard Kotlin bytecode filters. Coverage instrumentation is
+JaCoCo applies its standard Kotlin bytecode filters. The report tool additionally
+recognises narrow compiler-generated instruction patterns, including exhaustive
+Compose switch fallbacks, implicit coroutine completion and straight-line
+callable-reference forwarding. It keeps application instructions and branches
+measured. The pinned JaCoCo filter factory is extended before source aggregation;
+regression tests verify positive matches and similar application code that must
+remain counted. Compiler-owned captured-state mask decisions inside Compose
+remember regions are corrected only after validating the hidden mask parameters,
+derived locals and cache structure. Branch differences must reconcile with the
+audited decisions; application conditions remain measured. Missing class/probe
+matches or unexplained counter differences fail the report. Coverage instrumentation is
 opt-in and does not affect ordinary debug or release builds. To generate the
 API 36 report locally, with localhost configured for the offline adapter journeys:
 
@@ -223,8 +233,10 @@ between Android versions can change class identities. The localhost API and
 UnifiedPush distributor fixture belong to device tests; the fake distributor is
 disabled outside its journey and is absent from the application APK.
 
-The generated table is `app/build/reports/coverage/debug/coverage.md`; the XML
-report is beside it, and the HTML report is under `html/index.html`. CI uploads
+The generated table is `app/build/reports/coverage/debug/coverage.md`; the corrected
+XML is `coverage.xml`, the original XML is `coverage-raw.xml`, and
+`generated-code-audit.txt` identifies each corrected bytecode sequence. The HTML
+report under `html/index.html` shows the raw JaCoCo measurement. CI uploads
 these reports with the test results. The global line and branch coverage ratios
 must not fall below `coverage-baseline.json`; comparisons use exact counters, not
 the table's rounded percentages. Per-file figures are informational. The baseline

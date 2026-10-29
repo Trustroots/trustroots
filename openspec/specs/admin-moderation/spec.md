@@ -1027,16 +1027,56 @@ Support correspondence SHALL use stable threading identifiers, a durable idempot
 
 ### Requirement: Conservative historical support status import
 
-Only administrators SHALL preview and apply reduced historical statuses using unique original identity/category/message fingerprints. Imports SHALL be idempotent, preserve ticket identifiers, send no email and grant no investigation permissions. Logs SHALL exclude correspondence, search text, secrets and import payloads.
+Administrators SHALL import statuses using unique original fingerprints or explicitly reviewed one-to-one suggestions. Suggestions SHALL require original sender/category, nearby submission times and equivalent normalised messages. Imports SHALL be idempotent, preserve ticket IDs, send no email and grant no investigation access. Logs SHALL exclude correspondence, search text, secrets and payloads.
 
 #### Scenario: Administrator previews historical statuses
 
 - **WHEN** an administrator uploads a reduced manifest
-- **THEN** the preview reports changes and skipped outcomes without applying them
-- **AND** support volunteers cannot access import endpoints.
+- **THEN** the preview reports exact changes, suggested changes with reasons, and skipped outcomes without applying them
+- **AND** support volunteers cannot access import endpoints
 
 #### Scenario: Import is repeated or a request changes after preview
 
-- **WHEN** an administrator applies a previously reviewed manifest
-- **THEN** unchanged unique matches are updated once and changed or conflicting matches are skipped without sending mail.
-- **AND** ambiguous matches and requests with newer local activity remain unchanged.
+- **WHEN** an administrator applies a reviewed manifest
+- **THEN** unchanged exact matches and explicitly selected one-to-one suggestions are updated once and changed or conflicting matches are skipped without sending mail
+- **AND** unselected suggestions, unresolved competing matches and requests with newer local activity remain unchanged
+
+### Requirement: Explainable historical support reconciliation
+
+Administrators SHALL preview matching reasons before importing historical statuses. Suggestions SHALL require explicit review and retain identity, one-to-one and concurrent activity safeguards. Reduced files SHALL exclude correspondence and email addresses. Unknown or competing matches SHALL NOT silently apply.
+
+#### Scenario: Reviewing a formatting difference
+
+- **WHEN** original sender and category agree, submission times are nearby and conservatively normalised messages agree
+- **THEN** an administrator sees a suggested match with its evidence and must select it before apply
+
+#### Scenario: Unconfirmed historical status
+
+- **WHEN** a request has no stored status
+- **THEN** the inbox identifies it as unconfirmed legacy status and offers a filter and count distinct from confirmed Open while retaining unresolved queue access
+
+### Requirement: Support status count filtering
+
+Support staff SHALL be able to activate any status count, including unconfirmed legacy status, to filter requests. Controls SHALL expose their selected state and support keyboard interaction. Filtering SHALL update the URL, preserve search and category, and reset pagination.
+
+#### Scenario: Filter from a status count
+
+- **WHEN** staff activate a status count
+- **THEN** the inbox shows requests for that status on page one while retaining search and category
+- **AND** the selected count and status dropdown reflect the URL filter
+
+### Requirement: Efficient historical match review
+
+Administrators SHALL be able to select all unambiguous suggestions, clear selection and preview a matching window from one to sixty minutes. Window changes SHALL clear the preview and selections. The server SHALL validate, persist and recheck the chosen window. Bulk selection SHALL exclude competing or shared targets and exact matches. Review SHALL show original local requester details only to administrators, without adding personal data to reduced files or audit logs.
+
+#### Scenario: Wider matching window
+
+- **WHEN** an administrator changes the matching window
+- **THEN** a fresh preview is required and apply checks the window stored with that preview
+- **AND** original sender/category and message equivalence remain required
+
+#### Scenario: Bulk review
+
+- **WHEN** staff choose Select all unambiguous matches
+- **THEN** only unique suggestions without competing source or target assignments are selected
+- **AND** original local sender details are visible to help review the decisions

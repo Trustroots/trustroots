@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change purge-historical-spam-accounts. Update Purpose after archive.
+Define conservative removal of inactive accounts from investigated historical signup campaigns through the maintenance command and reviewed administrator batches.
 
 ## Requirements
 
@@ -53,3 +53,47 @@ explicitly enables deletion.
 - **WHEN** an operator runs the cleanup command with the deletion switch
 - **THEN** the system deletes eligible accounts in bounded batches and reports
   the number deleted
+
+### Requirement: Administrator cleanup review
+
+Only administrators SHALL preview and explicitly delete historical spam accounts through the admin interface. Previews SHALL cover all matching accounts using bounded internal processing and chunked storage, expire and bind reviewed IDs to their administrator. Administrators SHALL select all eligible accounts or individual accounts and deselect exceptions across pages. One explicit apply SHALL process the selected snapshot incrementally, rechecking eligibility and protected activity. Audit logs SHALL contain identifiers and counts without personal content. Cleanup SHALL never start automatically.
+
+#### Scenario: Select all with exceptions
+
+- **WHEN** an administrator selects all eligible accounts and deselects an account on any page
+- **THEN** the selected count reflects the full preview and apply leaves deselected accounts unchanged
+
+#### Scenario: Large cleanup
+
+- **WHEN** the preview contains more than 100 accounts
+- **THEN** one confirmed operation processes all selected accounts in bounded internal batches and reports progress
+
+#### Scenario: Stale or unauthorised cleanup
+
+- **WHEN** a preview expired or another actor attempts to apply it
+- **THEN** no accounts are deleted
+
+#### Scenario: Reviewed cleanup
+
+- **WHEN** an administrator reviews a preview and explicitly confirms deletion
+- **THEN** only selected eligible accounts from that reviewed preview are deleted after rechecking protection rules
+
+### Requirement: Staged campaign cleanup overview
+
+Administrators SHALL see counts for inactive eligible accounts, other eligible accounts needing review, and protected accounts. The inactive stage SHALL require a recorded login before 1 January 2024 UTC and all existing activity protections, including zero threads. Unknown login dates SHALL remain in the review stage. Apply SHALL recheck the cutoff for the inactive stage. Stage changes SHALL reset selections and confirmation. Scan size SHALL be independent of the review page size.
+
+#### Scenario: Prioritise inactive accounts
+
+- **WHEN** staff review a complete preview
+- **THEN** the inactive stage is the default and its evidence and cutoff are displayed
+- **AND** protected accounts cannot be selected
+
+#### Scenario: Activity after preview
+
+- **WHEN** an inactive-stage account has a more recent login before apply
+- **THEN** the account is skipped even if the original preview classified it as inactive
+
+#### Scenario: Large scan
+
+- **WHEN** staff preview a large campaign cohort
+- **THEN** scanning uses 1,000-account internal chunks, omits review rows while building, and presents 100-row review pages after completion
