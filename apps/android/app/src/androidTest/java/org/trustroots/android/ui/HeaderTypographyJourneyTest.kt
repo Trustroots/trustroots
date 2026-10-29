@@ -66,11 +66,14 @@ class HeaderTypographyJourneyTest {
                             onEditProfile = {},
                             onMessage = {},
                             onShareExperience = {},
-                            contactLabel = null,
-                            onContactAction = {},
+                            contactAction = null,
                             topPadding = 0.dp,
                             horizontalInset = PaddingValues.Zero,
                             compactTitle = "Compact profile",
+                            isBlocked = false,
+                            safetyBusy = false,
+                            onBlock = {},
+                            onReport = {},
                         )
                     }
                 }

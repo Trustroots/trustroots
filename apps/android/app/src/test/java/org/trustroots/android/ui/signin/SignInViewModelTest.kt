@@ -121,6 +121,27 @@ class SignInViewModelTest {
     }
 
     @Test
+    fun successDeliveryBeforeAnyPendingSuccessLeavesTheFormUnchanged() {
+        val scope = testScope()
+        try {
+            val viewModel = SignInViewModel(
+                apiBaseUrl = "https://api.example.test",
+                initialMessage = null,
+                authenticator = SignInAuthenticator { _, _ -> error("Sign-in should not run") },
+                scope = scope,
+            )
+            val initialState = viewModel.state.value
+
+            viewModel.onEvent(SignInEvent.SuccessDelivered(1L))
+
+            assertEquals(initialState, viewModel.state.value)
+            assertNull(viewModel.state.value.pendingSuccess)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
     fun submissionTrimsUsernameRetainsProgressUntilResponseAndAcknowledgesSuccess() {
         val response = CompletableDeferred<Result<MemberSession>>()
         val submitted = mutableListOf<Pair<String, String>>()

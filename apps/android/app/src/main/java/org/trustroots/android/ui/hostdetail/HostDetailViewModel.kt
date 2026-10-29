@@ -10,15 +10,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.HostOffer
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
@@ -80,8 +81,7 @@ internal class HostDetailViewModel(
     private val mutableState = MutableStateFlow(HostDetailUiState())
     val state = mutableState.asStateFlow()
 
-    private var loadJob: Job? = null
-    private var generation = 0L
+    private val loadRequest = LatestRequest(workScope)
     private var nextInvalidationID = 0L
     private var invalidationEmitted = false
     private var requestedOfferID: String? = null
@@ -101,10 +101,13 @@ internal class HostDetailViewModel(
 
     fun updateClientAndSession(api: MobileApiClient, session: MemberSession) {
         if (!repository.updateClientAndSession(api, session)) return
-        cancelLoad()
         invalidationEmitted = false
-        mutableState.value = HostDetailUiState()
-        requestedOfferID?.let { load(it, requestedOfferType, force = true) }
+        val offerID = requestedOfferID
+        if (offerID != null) {
+            load(offerID, requestedOfferType, force = true, resetState = true)
+        } else {
+            mutableState.value = HostDetailUiState()
+        }
     }
 
     override fun onCleared() {
@@ -112,35 +115,40 @@ internal class HostDetailViewModel(
         super.onCleared()
     }
 
-    private fun load(offerID: String, offerType: SearchOfferType, force: Boolean = false) {
+    private fun load(
+        offerID: String,
+        offerType: SearchOfferType,
+        force: Boolean = false,
+        resetState: Boolean = false,
+    ) {
         if (offerID.isBlank() || invalidationEmitted) return
         val sameRequest = requestedOfferID == offerID && requestedOfferType == offerType
-        if (!force && sameRequest && (loadJob?.isActive == true || state.value.offer != null || state.value.failure != null)) return
+        if (!force && sameRequest && (loadRequest.isActive || state.value.offer != null || state.value.failure != null)) return
         requestedOfferID = offerID
         requestedOfferType = offerType
-        cancelLoad()
-        val requestGeneration = ++generation
-        mutableState.value = HostDetailUiState(
-            offerID = offerID,
-            offerType = offerType,
-            isLoading = true,
-        )
-        loadJob = workScope.launch {
+        loadRequest.launch {
+            if (resetState) {
+                mutableState.value = HostDetailUiState()
+            }
+            currentCoroutineContext().ensureActive()
+            mutableState.update {
+                it.copy(offerID = offerID, offerType = offerType, isLoading = true, failure = null)
+            }
+            currentCoroutineContext().ensureActive()
             val offerResult = requestResult { repository.offer(offerID) }
-            if (requestGeneration != generation) return@launch
             offerResult.fold(
                 onSuccess = { offer ->
                     mutableState.update { it.copy(offer = offer) }
-                    val username = offer.user.username ?: return@launch finishLoading(requestGeneration)
+                    currentCoroutineContext().ensureActive()
+                    val username = offer.user.username ?: return@launch finishLoading()
                     val profileResult = requestResult { repository.profile(username) }
-                    if (requestGeneration != generation) return@launch
                     profileResult.fold(
                         onSuccess = { profile -> mutableState.update { it.copy(profile = profile) } },
                         onFailure = { handleFailure(it, UiFailureFallback.LOAD_PROFILE) },
                     )
-                    if (invalidationEmitted || requestGeneration != generation) return@launch
+                    currentCoroutineContext().ensureActive()
+                    if (invalidationEmitted) return@launch
                     val membershipsResult = requestResult { repository.memberships() }
-                    if (requestGeneration != generation) return@launch
                     membershipsResult.fold(
                         onSuccess = { memberships -> mutableState.update { it.copy(sharedCircleIDs = memberships) } },
                         onFailure = { handleFailure(it, UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD) },
@@ -148,15 +156,17 @@ internal class HostDetailViewModel(
                 },
                 onFailure = { handleFailure(it, UiFailureFallback.LOAD_HOST) },
             )
-            finishLoading(requestGeneration)
+            finishLoading()
         }
     }
 
-    private suspend fun finishLoading(requestGeneration: Long) {
-        if (requestGeneration == generation) mutableState.update { it.copy(isLoading = false) }
+    private suspend fun finishLoading() {
+        currentCoroutineContext().ensureActive()
+        mutableState.update { it.copy(isLoading = false) }
     }
 
-    private fun handleFailure(error: Throwable, fallback: UiFailureFallback) {
+    private suspend fun handleFailure(error: Throwable, fallback: UiFailureFallback) {
+        currentCoroutineContext().ensureActive()
         if (error.isAuthenticationFailure()) {
             if (!invalidationEmitted) {
                 invalidationEmitted = true
@@ -167,12 +177,11 @@ internal class HostDetailViewModel(
         } else {
             mutableState.update { it.copy(failure = error.toUiFailure(fallback)) }
         }
+        currentCoroutineContext().ensureActive()
     }
 
     private fun cancelLoad() {
-        generation++
-        loadJob?.cancel()
-        loadJob = null
+        loadRequest.cancel()
     }
 
     class Factory(

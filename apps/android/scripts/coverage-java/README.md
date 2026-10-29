@@ -28,6 +28,25 @@ the Composer parameter (or a `$dirty` local copied from one), Composer
 region; branches elsewhere in the method remain measured. Cache-gate branches
 already handled by upstream JaCoCo filters are left to those filters.
 
+The pinned upstream JaCoCo Compose filters own changed-mask preamble decisions;
+the custom classifier leaves those branches to upstream. Its composable
+default-mask rule recognises a branch only in an annotated Kotlin composable
+whose Composer parameter is followed by exactly one `$changed` integer and one
+unnamed default-mask integer. A second hidden slot named in the `$changed`
+family is ambiguous and fails closed. The mask bit must map by source parameter ordinal to the
+exact JVM local that receives the default value. Only the branch is ignored;
+default-expression instructions remain counted. The default-value arm must
+contain no branch and end in a store to that parameter. This handles
+Compose-transformed composables where the compiler omits the hidden default
+mask's local-variable name; the method annotation, Kotlin metadata, parameter
+layout, changed-mask local, and bit-to-store mapping provide the proof.
+
+The custom rule skips branch nodes already changed by upstream JaCoCo filters.
+Regression fixtures cover missing Kotlin/Composable provenance, explicit
+Composer-like source parameters before the compiler Composer parameter, a second
+changed-mask slot, and branching default-value expressions. Ambiguous layouts
+fail closed.
+
 Run the regression fixtures from `apps/android`:
 
 ```sh

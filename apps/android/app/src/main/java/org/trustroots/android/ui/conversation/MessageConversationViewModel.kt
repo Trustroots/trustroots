@@ -6,11 +6,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageDraftStore
@@ -20,6 +20,7 @@ import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.isAuthenticationFailure
+import org.trustroots.android.ui.common.LatestRequest
 import org.trustroots.android.ui.common.toUiFailure
 
 internal interface MessageConversationRepository {
@@ -100,17 +101,16 @@ internal class MessageConversationViewModel(
     scope: CoroutineScope? = null,
 ) : ViewModel() {
     private val requestScope = scope ?: viewModelScope
+    private val loadRequest = LatestRequest(requestScope)
+    private val sendRequest = LatestRequest(requestScope)
     private val mutableState = MutableStateFlow(
         MessageConversationUiState(currentUsername = initialSession.member.username),
     )
     val state = mutableState.asStateFlow()
 
     private var session = initialSession
-    private var generation = 0L
     private var invalidationID = 0L
     private var invalidationEmitted = false
-    private var loadJob: Job? = null
-    private var sendJob: Job? = null
 
     init { load() }
 
@@ -139,9 +139,8 @@ internal class MessageConversationViewModel(
     }
 
     private fun refreshForEnvironmentChange() {
-        generation++
-        loadJob?.cancel()
-        sendJob?.cancel()
+        loadRequest.cancel()
+        sendRequest.cancel()
         invalidationEmitted = false
         mutableState.value = MessageConversationUiState(currentUsername = session.member.username)
         load()
@@ -156,26 +155,26 @@ internal class MessageConversationViewModel(
 
     private fun load(force: Boolean = false) {
         if (invalidationEmitted || (!force && mutableState.value.messagesLoaded)) return
-        val request = ++generation
-        val messageIDsAtLoadStart = mutableState.value.messages.mapTo(mutableSetOf()) { it.id }
-        loadJob?.cancel()
-        mutableState.update { it.copy(isLoading = true, messagesLoaded = false, loadFailed = false, failure = null, pendingSessionInvalidation = null) }
-        loadJob = requestScope.launch {
+        loadRequest.launch {
+            val messageIDsAtLoadStart = mutableState.value.messages.mapTo(mutableSetOf()) { it.id }
+            mutableState.update { it.copy(isLoading = true, messagesLoaded = false, loadFailed = false, failure = null, pendingSessionInvalidation = null) }
+            currentCoroutineContext().ensureActive()
             val memberResult = requestResult { repository.member(memberID) }
-            if (request != generation) return@launch
             val memberError = memberResult.exceptionOrNull()
             if (memberError != null) {
-                fail(request, memberError, UiFailureFallback.LOAD_CONVERSATION)
+                fail(memberError, UiFailureFallback.LOAD_CONVERSATION)
                 return@launch
             }
             val member = memberResult.getOrThrow()
             val draftKey = member.username ?: member.id ?: memberID
-            mutableState.update { it.copy(member = member, draft = repository.loadDraft(session.member.username, draftKey)) }
+            val draft = repository.loadDraft(session.member.username, draftKey)
+            currentCoroutineContext().ensureActive()
+            mutableState.update { it.copy(member = member, draft = draft) }
+            currentCoroutineContext().ensureActive()
             val messageResult = requestResult { repository.messages(memberID) }
-            if (request != generation) return@launch
             val error = messageResult.exceptionOrNull()
             if (error != null) {
-                fail(request, error, UiFailureFallback.LOAD_CONVERSATION)
+                fail(error, UiFailureFallback.LOAD_CONVERSATION)
             } else {
                 val loadedMessages = messageResult.getOrThrow()
                 mutableState.update {
@@ -197,18 +196,17 @@ internal class MessageConversationViewModel(
         val member = current.member ?: return
         val trimmed = content.trim()
         if (trimmed.isBlank() || current.isSending || member.id == null || invalidationEmitted) return
-        val request = generation
-        sendJob?.cancel()
-        mutableState.update { it.copy(isSending = true, failure = null) }
-        sendJob = requestScope.launch {
+        sendRequest.launch {
+            mutableState.update { it.copy(isSending = true, failure = null) }
+            currentCoroutineContext().ensureActive()
             val result = requestResult { repository.send(member.id, trimmed) }
-            if (request != generation) return@launch
             val error = result.exceptionOrNull()
             if (error != null) {
-                if (error.isAuthenticationFailure()) emitSessionInvalidation(request)
+                if (error.isAuthenticationFailure()) emitSessionInvalidation()
                 else mutableState.update { it.copy(isSending = false, failure = error.toUiFailure(UiFailureFallback.SEND_MESSAGE)) }
             } else {
                 repository.clearDraft(session.member.username, member.username ?: member.id)
+                currentCoroutineContext().ensureActive()
                 mutableState.update {
                     val message = result.getOrThrow()
                     it.copy(messages = listOf(message) + it.messages, draft = "", isSending = false,
@@ -218,15 +216,16 @@ internal class MessageConversationViewModel(
         }
     }
 
-    private fun fail(request: Long, error: Throwable, fallback: UiFailureFallback) {
-        if (error.isAuthenticationFailure()) emitSessionInvalidation(request)
+    private suspend fun fail(error: Throwable, fallback: UiFailureFallback) {
+        if (error.isAuthenticationFailure()) emitSessionInvalidation()
         else mutableState.update {
             it.copy(isLoading = false, messagesLoaded = true, loadFailed = true, failure = error.toUiFailure(fallback))
         }
     }
 
-    private fun emitSessionInvalidation(request: Long) {
-        if (request != generation || invalidationEmitted) return
+    private suspend fun emitSessionInvalidation() {
+        currentCoroutineContext().ensureActive()
+        if (invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update {
             it.copy(isLoading = false, messagesLoaded = true, loadFailed = false, isSending = false,
@@ -236,11 +235,8 @@ internal class MessageConversationViewModel(
 
 
     override fun onCleared() {
-        generation++
-        loadJob?.cancel()
-        sendJob?.cancel()
-        loadJob = null
-        sendJob = null
+        loadRequest.cancel()
+        sendRequest.cancel()
         mutableState.value = MessageConversationUiState(isLoading = false)
         super.onCleared()
     }

@@ -41,6 +41,11 @@ import org.trustroots.android.ui.common.NativeBackButton
 /** Matches `config.featureFlags.reference` (enabled in production and development). */
 internal const val referencesEnabled = true
 
+internal data class ProfileContactAction(
+    val label: String,
+    val onClick: () -> Unit,
+)
+
 @Composable
 internal fun ProfileActionBar(
     isSelf: Boolean,
@@ -48,15 +53,14 @@ internal fun ProfileActionBar(
     onEditProfile: () -> Unit,
     onMessage: () -> Unit,
     onShareExperience: () -> Unit,
-    contactLabel: String?,
-    onContactAction: () -> Unit,
+    contactAction: ProfileContactAction?,
     topPadding: Dp,
     horizontalInset: PaddingValues,
-    compactTitle: String? = null,
-    isBlocked: Boolean? = false,
-    safetyBusy: Boolean = false,
-    onBlock: (Boolean) -> Unit = {},
-    onReport: () -> Unit = {},
+    compactTitle: String?,
+    isBlocked: Boolean?,
+    safetyBusy: Boolean,
+    onBlock: (Boolean) -> Unit,
+    onReport: () -> Unit,
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
     Row(
@@ -129,10 +133,10 @@ internal fun ProfileActionBar(
                             modifier = Modifier.testTag("profileShareExperienceAction"),
                         )
                     }
-                    contactLabel?.let { label ->
+                    contactAction?.let { action ->
                         DropdownMenuItem(
-                            text = { Text(label) },
-                            onClick = { menuExpanded = false; onContactAction() },
+                            text = { Text(action.label) },
+                            onClick = { menuExpanded = false; action.onClick() },
                             modifier = Modifier.testTag("profileContactAction"),
                         )
                     }

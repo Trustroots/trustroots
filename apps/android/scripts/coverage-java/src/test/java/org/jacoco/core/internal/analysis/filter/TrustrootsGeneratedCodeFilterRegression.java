@@ -42,6 +42,9 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         testSourceDecisionInsideRememberMarkerIsPreserved();
         testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal();
         testComposeDefaultMaskDecisionsAreFilteredWithinDefaultsBlock();
+        testComposableDefaultMaskDispatchIsFilteredWithoutHidingExpression();
+        testComposableSecondChangedMaskSlotIsNotTreatedAsDefaultMask();
+        testComposableDefaultExpressionBranchIsPreserved();
         testCustomDefaultFilterSkipsUpstreamIgnoredBranches();
         org.trustroots.android.coverage.FilteredReportIntegrationRegression.run();
         System.out.println("Trustroots generated-code filter regression checks passed.");
@@ -660,6 +663,101 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
                 "$changed", "I", null, new LabelNode(), new LabelNode(), 2));
         return method;
+    }
+
+    private static void testComposableDefaultMaskDispatchIsFilteredWithoutHidingExpression() {
+        MethodNode method = composableMethod("defaultDispatch",
+                "(Ljava/lang/Object;Landroidx/compose/runtime/Composer;II)V");
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 2));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "shouldExecute", "(ZI)Z", true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        LabelNode suppliedValue = new LabelNode();
+        JumpInsnNode defaultDecision = new JumpInsnNode(Opcodes.IFEQ, suppliedValue);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(defaultDecision);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ACONST_NULL));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 0));
+        method.instructions.add(suppliedValue);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 2));
+
+        RecordingOutput output = apply(method, "sample/DefaultDispatch", "java/lang/Object");
+        check(output.ignored.size() == 1 && output.ignored.get(0)[0] == defaultDecision,
+                "a hidden default mask may filter only its direct optional-argument assignment decision");
+        check(output.ignored.stream().noneMatch(range -> range[0].getOpcode() == Opcodes.ASTORE),
+                "default argument assignment instructions remain measured");
+    }
+
+    private static void testComposableDefaultExpressionBranchIsPreserved() {
+        MethodNode method = composableMethod("defaultExpressionBranch",
+                "(Ljava/lang/Object;ZLandroidx/compose/runtime/Composer;II)V");
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "shouldExecute", "(ZI)Z", true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        LabelNode suppliedValue = new LabelNode();
+        LabelNode defaultValue = new LabelNode();
+        LabelNode valueJoined = new LabelNode();
+        JumpInsnNode maskDecision = new JumpInsnNode(Opcodes.IFEQ, suppliedValue);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 4));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(maskDecision);
+        JumpInsnNode sourceDefaultDecision = new JumpInsnNode(Opcodes.IFEQ, defaultValue);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(sourceDefaultDecision);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ACONST_NULL));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, valueJoined));
+        method.instructions.add(defaultValue);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ACONST_NULL));
+        method.instructions.add(valueJoined);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 0));
+        method.instructions.add(suppliedValue);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 3));
+
+        check(apply(method, "sample/DefaultExpression", "java/lang/Object").ignored.isEmpty(),
+                "a branch inside a default value expression invalidates the mask match and stays measured");
+    }
+
+    private static void testComposableSecondChangedMaskSlotIsNotTreatedAsDefaultMask() {
+        MethodNode method = composableMethod("secondChangedMask",
+                "(Ljava/lang/Object;Landroidx/compose/runtime/Composer;II)V");
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 2));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "shouldExecute", "(ZI)Z", true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        LabelNode suppliedValue = new LabelNode();
+        JumpInsnNode candidate = new JumpInsnNode(Opcodes.IFEQ, suppliedValue);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(candidate);
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("fallback"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 0));
+        method.instructions.add(suppliedValue);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 2));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed1", "I", null, new LabelNode(), new LabelNode(), 3));
+
+        check(apply(method, "sample/SecondChangedMask", "java/lang/Object").ignored.isEmpty(),
+                "a second compiler changed-mask slot must not be mistaken for the default mask");
     }
 
     private static void testCustomDefaultFilterSkipsUpstreamIgnoredBranches() {

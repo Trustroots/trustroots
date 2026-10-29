@@ -45,4 +45,21 @@ class CircleDescriptionBranchTest {
         assertTrue(nestedQuote.text.contains("┃ Outer again"))
         assertTrue(unmatchedCloser.text.contains("Visible after unmatched closer"))
     }
+
+    @Test
+    fun unterminatedTagInsideBlockedContentStaysHiddenAndWhitespaceOnlyOutputTrimsToEmpty() {
+        val unterminatedBlockedTag = circleDescription("<script>hidden content<")
+        val whitespaceOnly = circleDescription(" \t\n ")
+
+        assertTrue(unterminatedBlockedTag.text.isEmpty())
+        assertTrue(whitespaceOnly.text.isEmpty())
+    }
+
+    @Test
+    fun recognisedInnerTagsStayHiddenUntilTheBlockingTagCloses() {
+        val rendered = circleDescription("<script><b>hidden content</b></script>Visible after script")
+
+        assertTrue(rendered.text.contains("Visible after script"))
+        assertFalse(rendered.text.contains("hidden content"))
+    }
 }

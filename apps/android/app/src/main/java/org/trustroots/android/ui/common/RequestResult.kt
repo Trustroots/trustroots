@@ -6,6 +6,7 @@ import kotlinx.coroutines.ensureActive
 
 /** Runs a result-returning request while preserving coroutine cancellation semantics. */
 internal suspend fun <T> requestResult(operation: suspend () -> Result<T>): Result<T> {
+    currentCoroutineContext().ensureActive()
     val result = try {
         operation()
     } catch (cancelled: CancellationException) {
