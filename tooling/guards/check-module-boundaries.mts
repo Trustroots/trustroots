@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** Prevent production feature modules from importing upward into apps or layers. */
+/** Prevent production feature modules and layers from importing upward. */
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -18,8 +18,11 @@ export type Violation = {
 
 type ModuleDirectory = { dir: string; symlink: boolean };
 
-function listModuleDirectories(root: string): ModuleDirectory[] {
-  const modulesDir = path.join(root, 'modules');
+function listModuleDirectories(
+  root: string,
+  group = 'modules',
+): ModuleDirectory[] {
+  const modulesDir = path.join(root, group);
   if (!fs.existsSync(modulesDir)) return [];
   const result: ModuleDirectory[] = [];
   for (const entry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
@@ -121,6 +124,48 @@ export function analyze(
     }
   }
 
+  for (const layer of listModuleDirectories(root, 'layers')) {
+    const sources = listSourceFiles(layer.dir);
+    if (layer.symlink && sources.length > 0) {
+      violations.push({
+        file: path.relative(root, layer.dir).split(path.sep).join('/'),
+        specifier: '<symlink>',
+        message:
+          'Production layer source cannot live under a symlinked layer directory.',
+      });
+      continue;
+    }
+    for (const entry of sources) {
+      if (entry.symlink) {
+        violations.push({
+          file: path.relative(root, entry.file).split(path.sep).join('/'),
+          specifier: '<symlink>',
+          message: 'Production layer source cannot be a symlink.',
+        });
+        continue;
+      }
+      const file = entry.file;
+      const relativeFile = path.relative(root, file).split(path.sep).join('/');
+      for (const specifier of sourceSpecifiers(file)) {
+        const result = resolveSpecifier(specifier, file, root, packages);
+        if (
+          result &&
+          ((result.target &&
+            inside(path.join(root, 'apps'), result.target.dir)) ||
+            (result.resolved &&
+              inside(path.join(root, 'apps'), result.resolved)) ||
+            (result.lexical && inside(path.join(root, 'apps'), result.lexical)))
+        ) {
+          violations.push({
+            file: relativeFile,
+            specifier,
+            message: 'Composition layers cannot import application code.',
+          });
+        }
+      }
+    }
+  }
+
   return violations.sort(
     (a, b) =>
       a.file.localeCompare(b.file) ||
@@ -136,7 +181,7 @@ export function main(
   const violations = analyze(root);
   if (violations.length) {
     console.error(
-      `Feature module boundary violations:\n${violations
+      `Layer and feature module boundary violations:\n${violations
         .map(
           ({ file, specifier, message }) =>
             `  ${file}: ${specifier} — ${message}`,
@@ -145,7 +190,7 @@ export function main(
     );
     return 1;
   }
-  console.log('Feature module boundaries are satisfied.');
+  console.log('Layer and feature module boundaries are satisfied.');
   return 0;
 }
 
