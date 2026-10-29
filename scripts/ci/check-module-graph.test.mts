@@ -69,6 +69,21 @@ test('requires a declared workspace dependency for cross-module model lookups', 
   assert.match(error.mock.calls.at(-1)!.arguments[0], /a -> b/);
 });
 
+test('checks model ownership and imports in CommonJS TypeScript source', t => {
+  const root = makeRepo({
+    'modules/a/server/use.cts':
+      "const thing = mongoose.model('Thing');\nconst other = require('../../b/server/model.cts');",
+    'modules/a/package.json': JSON.stringify({ dependencies: {} }),
+    'modules/b/server/model.cts': "mongoose.model('Thing', schema);",
+  });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const graph = analyze(root);
+  assert.deepEqual(graph, { imports: { a: ['b'] }, models: { a: ['b'] } });
+  assert.deepEqual(missingModelDependencies(graph, root), [
+    'a -> b: missing @trustroots/b workspace dependency',
+  ]);
+});
+
 test('diffGraphs reports added and removed links', () => {
   const baseline = { imports: { a: ['b'] }, models: {} };
   const current = { imports: { a: ['c'] }, models: { a: ['b'] } };

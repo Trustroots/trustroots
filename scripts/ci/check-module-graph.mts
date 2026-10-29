@@ -28,7 +28,7 @@ type SourceLinks = {
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
 const BASELINE_FILE = 'module-graph-baseline.json';
 const SOURCE_DIRS = ['client', 'server', 'shared'];
-const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|tsx)$/;
+const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|cts|tsx)$/;
 
 function listModules(root: string): string[] {
   return fs
@@ -55,7 +55,7 @@ function scriptKind(file: string): ts.ScriptKind {
   if (file.endsWith('.tsx') || file.endsWith('.jsx') || file.endsWith('.js')) {
     return ts.ScriptKind.TSX;
   }
-  if (file.endsWith('.mts') || file.endsWith('.ts')) {
+  if (file.endsWith('.mts') || file.endsWith('.cts') || file.endsWith('.ts')) {
     return ts.ScriptKind.TS;
   }
   return ts.ScriptKind.JS;
