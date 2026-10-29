@@ -355,3 +355,41 @@ test('an absent modules directory passes and reports a clean result', t => {
   }
   assert.match(output, /Layer and feature module boundaries are satisfied/);
 });
+
+test('rejects layer source file, directory and top-level symlinks', t => {
+  const root = makeRepo(t, {
+    'apps/web/client/entry.ts': 'export default 1;',
+    'layers/shell/client/entry.ts': 'export default 1;',
+  });
+  fs.symlinkSync(
+    path.join(root, 'apps/web/client/entry.ts'),
+    path.join(root, 'layers/shell/client/app.ts'),
+  );
+  fs.symlinkSync(
+    path.join(root, 'apps/web/client'),
+    path.join(root, 'layers/shell/client/app'),
+  );
+  fs.symlinkSync(path.join(root, 'apps/web'), path.join(root, 'layers/alias'));
+  assert.deepEqual(
+    analyze(root).map(({ file, specifier }) => [file, specifier]),
+    [
+      ['layers/alias', '<symlink>'],
+      ['layers/shell/client/app', '<symlink>'],
+      ['layers/shell/client/app.ts', '<symlink>'],
+    ],
+  );
+});
+
+test('ignores layer test and generated directory symlinks', t => {
+  const root = makeRepo(t, {
+    'apps/web/client/entry.ts': 'export default 1;',
+    'layers/shell/client/entry.ts': 'export default 1;',
+  });
+  for (const name of ['tests', 'dist', 'node_modules']) {
+    fs.symlinkSync(
+      path.join(root, 'apps/web'),
+      path.join(root, 'layers/shell', name),
+    );
+  }
+  assert.deepEqual(analyze(root), []);
+});

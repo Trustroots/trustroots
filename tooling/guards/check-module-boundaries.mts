@@ -18,17 +18,11 @@ export type Violation = {
 
 type ModuleDirectory = { dir: string; symlink: boolean };
 
-function listDirectories(root: string, group: string): string[] {
-  const groupDir = path.join(root, group);
-  if (!fs.existsSync(groupDir)) return [];
-  return fs
-    .readdirSync(groupDir, { withFileTypes: true })
-    .filter(entry => entry.isDirectory())
-    .map(entry => path.join(groupDir, entry.name));
-}
-
-function listModuleDirectories(root: string): ModuleDirectory[] {
-  const modulesDir = path.join(root, 'modules');
+function listModuleDirectories(
+  root: string,
+  group = 'modules',
+): ModuleDirectory[] {
+  const modulesDir = path.join(root, group);
   if (!fs.existsSync(modulesDir)) return [];
   const result: ModuleDirectory[] = [];
   for (const entry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
@@ -130,9 +124,26 @@ export function analyze(
     }
   }
 
-  for (const layerDir of listDirectories(root, 'layers')) {
-    for (const entry of listSourceFiles(layerDir)) {
-      if (entry.symlink) continue;
+  for (const layer of listModuleDirectories(root, 'layers')) {
+    const sources = listSourceFiles(layer.dir);
+    if (layer.symlink && sources.length > 0) {
+      violations.push({
+        file: path.relative(root, layer.dir).split(path.sep).join('/'),
+        specifier: '<symlink>',
+        message:
+          'Production layer source cannot live under a symlinked layer directory.',
+      });
+      continue;
+    }
+    for (const entry of sources) {
+      if (entry.symlink) {
+        violations.push({
+          file: path.relative(root, entry.file).split(path.sep).join('/'),
+          specifier: '<symlink>',
+          message: 'Production layer source cannot be a symlink.',
+        });
+        continue;
+      }
       const file = entry.file;
       const relativeFile = path.relative(root, file).split(path.sep).join('/');
       for (const specifier of sourceSpecifiers(file)) {
