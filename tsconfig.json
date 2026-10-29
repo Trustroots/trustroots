@@ -27,6 +27,7 @@
     "config/vite/react-main.tsx",
     "layers/shell/**/*.ts",
     "layers/shell/**/*.tsx",
+    "packages/ui/**/*.tsx",
     "modules/*/client/**/*.ts",
     "modules/*/client/**/*.tsx"
   ],

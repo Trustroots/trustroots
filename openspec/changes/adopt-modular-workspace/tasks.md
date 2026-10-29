@@ -5,6 +5,7 @@
 - [ ] Shared root code into `packages/*` with re-export shims (separate pull request).
   - [x] Extract the logger and its metadata helpers into a private source-only workspace package; preserve ESM/CommonJS compatibility paths, shared instance identity, runtime installation and coverage.
 - [ ] `packages/ui` with design tokens (separate pull request).
+  - [x] Add source-only Button, Alert, Badge and Spinner primitives and migrate the language warning. The existing token bridge remains in the web stylesheet pending extraction.
 - [ ] Tier guards in `tooling/guards` (separate pull request).
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement.
   - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions. Layer-to-app, client/server and shared-code rules remain pending.

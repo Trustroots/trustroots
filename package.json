@@ -128,6 +128,7 @@
     "@tanstack/react-query": "5.104.5",
     "@tanstack/react-router": "1.170.46",
     "@trustroots/logger": "workspace:*",
+    "@trustroots/ui": "workspace:*",
     "agenda": "4.4.0",
     "async": "3.2.6",
     "autolinker": "4.1.5",

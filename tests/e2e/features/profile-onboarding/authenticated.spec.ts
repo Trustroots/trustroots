@@ -263,6 +263,45 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
+  test('language loading failure shows an accessible warning', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'About edit form is reachable.',
+    ]);
+    await page.route('**/api/languages?*', route =>
+      route.fulfill({ status: 503, body: 'Unavailable' }),
+    );
+    await page.goto('/profile/edit');
+    const warning = page
+      .getByRole('alert')
+      .filter({ hasText: 'Snap! Something went wrong.' });
+    await expect(warning).toBeVisible();
+    await expect(warning).toHaveClass(/tr-alert/);
+    await expect(warning).toHaveCSS('background-color', 'rgb(255, 243, 205)');
+    const comparison = await warning.evaluate(element => {
+      const legacy = document.createElement('div');
+      legacy.className = 'alert alert-warning';
+      element.parentElement!.append(legacy);
+      const properties = [
+        'color',
+        'backgroundColor',
+        'borderColor',
+        'borderRadius',
+        'padding',
+        'marginBottom',
+      ] as const;
+      const actual = getComputedStyle(element);
+      const original = getComputedStyle(legacy);
+      const matches = properties.every(
+        property => actual[property] === original[property],
+      );
+      legacy.remove();
+      return matches;
+    });
+    expect(comparison).toBe(true);
+  });
+
   test('profile language levels persist, display and can be cleared', async ({
     page,
   }, testInfo) => {

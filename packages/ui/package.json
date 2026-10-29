@@ -1,0 +1,15 @@
+{
+  "name": "@trustroots/ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./Button": "./Button.tsx",
+    "./Alert": "./Alert.tsx",
+    "./Badge": "./Badge.tsx",
+    "./Spinner": "./Spinner.tsx"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  }
+}
