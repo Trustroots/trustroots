@@ -21,6 +21,12 @@ Android coverage SHALL remove only bytecode-proven compiler instructions or veri
 - **WHEN** an application conditional, callable target or ordinary source lambda resembles compiler scaffolding
 - **THEN** its instructions and decisions remain measured
 
+#### Scenario: Generated enum cache key
+
+- **WHEN** a verified hidden-mask remember region contains the exact enum cast, ordinal and Composer integer-change sequence with a recognised cache gate
+- **THEN** only its proven generated cache decisions may be removed
+- **AND** ordinary enum comparisons and integer source conditions remain measured even within that region
+
 #### Scenario: Verified inlined library guard
 
 - **WHEN** an exact Compose contract-guard instruction sequence maps through primary Kotlin SMAP to third-party library source
@@ -31,4 +37,5 @@ Android coverage SHALL remove only bytecode-proven compiler instructions or veri
 
 - **WHEN** the coverage ratchet is raised
 - **THEN** it uses complete matching Android unit and device execution probes, including API 32 compatibility coverage
-- **AND** the corrected report retains 100% executable lines and meets the measured branch floor
+- **AND** the corrected report retains 100% executable lines and 100% branch outcomes
+- **AND** both committed coverage floors are 100%, with no branch allowance

@@ -130,12 +130,14 @@ internal fun TrustrootsApp(
     val session = sessionState.session
     val starting = sessionState.isStarting
     val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
-        if (starting) null
-        else session?.let { shellGraphStore.activateAccount(it.member.username) }
-            ?: run {
+        if (!starting) {
+            if (session == null) {
                 shellGraphStore.clearAccount()
-                null
+            } else {
+                shellGraphStore.activateAccount(session.member.username)
             }
+        }
+        shellGraphStore
     }
     if (starting) {
         StartupScreen(sessionState.startupFirstName)
@@ -156,10 +158,10 @@ internal fun TrustrootsApp(
         }
     } else {
         CompositionLocalProvider(
-            LocalViewModelStoreOwner provides requireNotNull(shellGraphOwner),
+            LocalViewModelStoreOwner provides shellGraphOwner,
         ) {
-          key(requireNotNull(session).member.username) {
-            val activeSession = requireNotNull(session)
+          key(session.member.username) {
+            val activeSession = session
             val activeSessionSource = AppSessionSource.from(activeSession, apiBaseUrl)
             val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
             val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
@@ -241,7 +243,8 @@ private fun MemberShell(
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
     var menuUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var searchUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
-    var resetActiveMenuVisit by remember { mutableStateOf<(() -> Unit)?>(null) }
+    // A Menu visit has no nested route to reset before it is composed.
+    var resetActiveMenuVisit by remember { mutableStateOf<() -> Unit>({}) }
     val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
     val activeVisitID = activeTab.visitID
     val activeMenuScreen = if (menuUsageByVisit.containsKey(activeVisitID)) {
@@ -299,14 +302,15 @@ private fun MemberShell(
         onSessionInvalidated()
         shellViewModel.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
     }
-    // This stack starts with a tab visit and Back always retains its root.
+    // Visits are appended or replaced with increasing IDs, and Back retains the root.
     fun firstAvailableVisitID(): Long =
-        tabBackStack.maxOf { (it as MemberTabVisit).visitID } + 1L
+        (tabBackStack.last() as MemberTabVisit).visitID + 1L
 
     fun navigateTo(next: Destination, resetMenuBeforeLeaving: Boolean = false) {
-        if (next != destination) {
+        val current = tabBackStack.last() as MemberTabVisit
+        if (next != current.destination) {
             if (resetMenuBeforeLeaving) {
-                resetActiveMenuVisit?.invoke()
+                resetActiveMenuVisit()
             }
             nextVisitID = maxOf(nextVisitID, firstAvailableVisitID())
             tabBackStack.add(MemberTabVisit(next, nextVisitID))
@@ -330,7 +334,7 @@ private fun MemberShell(
         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
         val openConversation = {
             if (guardedMenuDeparture) {
-                resetActiveMenuVisit?.invoke()
+                resetActiveMenuVisit()
             }
             nextVisitID = maxOf(nextVisitID, firstAvailableVisitID())
             tabBackStack.add(MemberTabVisit(Destination.Messages, nextVisitID, requested.senderId))
@@ -344,14 +348,8 @@ private fun MemberShell(
         reconcileAlerts(context, session)
     }
     val handleNavigationBack: () -> Unit = {
-        val leave = {
-            when {
-                tabBackStack.size > 1 -> {
-                    tabBackStack.removeLastOrNull()
-                }
-            }
-        }
-        leaveGuard.value?.invoke(leave) ?: leave()
+        // Form routes own their Back guard; the shell only owns tab history.
+        if (tabBackStack.size > 1) tabBackStack.removeLastOrNull()
     }
     CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
         Scaffold(
@@ -375,7 +373,7 @@ private fun MemberShell(
                                 searchResetVisitID = activeVisitID
                                 searchResetGeneration++
                             } else if (item == Destination.Menu && item == destination) {
-                                resetActiveMenuVisit?.invoke()
+                                resetActiveMenuVisit()
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
                                 navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
@@ -426,9 +424,7 @@ private fun MemberShell(
                                             menuUsageByVisit = menuUsageByVisit + (visitID to screen)
                                         },
                                         isActiveTabVisit = visit.visitID == activeVisitID,
-                                        onResetAvailable = { visitID, reset ->
-                                            if (visitID == activeVisitID) resetActiveMenuVisit = reset
-                                        },
+                                        onResetAvailable = { reset -> resetActiveMenuVisit = reset },
                                         browserContent = browserContent,
                                         contentPadding = contentPadding,
                                         openFindPeople = {

@@ -78,10 +78,13 @@ internal fun ProfileImageViewer(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var viewport by remember { mutableStateOf(IntSize.Zero) }
+    var measuredViewport by remember { mutableStateOf(IntSize.Zero) }
+    // Callbacks must use the same dimensions as the readiness check.
+    val viewport = measuredViewport
     var transform by remember(bitmap) { mutableStateOf<ProfileImageTransform?>(null) }
     val imageSize = bitmap?.let { IntSize(it.width, it.height) } ?: IntSize.Zero
-    val currentTransform = if (imageSize != IntSize.Zero && viewport != IntSize.Zero) {
+    val viewportReady = viewport.width > 0 && viewport.height > 0
+    val currentTransform = if (imageSize != IntSize.Zero && viewportReady) {
         ProfileImageGeometry.clampOrFit(
             transform,
             imageSize.width,
@@ -95,9 +98,10 @@ internal fun ProfileImageViewer(
     val viewerBackground = colorResource(R.color.profile_image_viewer_background)
     val viewerContent = colorResource(R.color.profile_image_viewer_content)
     LaunchedEffect(bitmap, viewport) {
-        if (bitmap != null && viewport != IntSize.Zero && transform != null) {
+        val currentTransform = transform
+        if (bitmap != null && viewportReady && currentTransform != null) {
             transform = ProfileImageGeometry.clamp(
-                requireNotNull(transform),
+                currentTransform,
                 imageSize.width,
                 imageSize.height,
                 viewport.width,
@@ -106,8 +110,7 @@ internal fun ProfileImageViewer(
         }
     }
     fun zoomTo(requestedScale: Float) {
-        // Zoom actions are only exposed for a decoded bitmap with positive dimensions.
-        if (viewport == IntSize.Zero) return
+        // Actions are registered only for a decoded image and a positive viewport.
         val current = ProfileImageGeometry.clampOrFit(
             transform,
             imageSize.width,
@@ -144,25 +147,29 @@ internal fun ProfileImageViewer(
             if (bitmap != null) {
                 val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
                 val imageDescription = stringResource(R.string.profile_photo_description, memberLabel)
-                val accessibilityActions = listOf(
-                    CustomAccessibilityAction(stringResource(R.string.profile_photo_zoom_in)) {
-                        zoomTo(currentTransform.scale * 1.5f)
-                        true
-                    },
-                    CustomAccessibilityAction(stringResource(R.string.profile_photo_zoom_out)) {
-                        zoomTo(currentTransform.scale / 1.5f)
-                        true
-                    },
-                    CustomAccessibilityAction(stringResource(R.string.profile_photo_zoom_reset_short)) {
-                        transform = null
-                        true
-                    },
-                )
+                val accessibilityActions = if (viewportReady) {
+                    listOf(
+                        CustomAccessibilityAction(stringResource(R.string.profile_photo_zoom_in)) {
+                            zoomTo(currentTransform.scale * 1.5f)
+                            true
+                        },
+                        CustomAccessibilityAction(stringResource(R.string.profile_photo_zoom_out)) {
+                            zoomTo(currentTransform.scale / 1.5f)
+                            true
+                        },
+                        CustomAccessibilityAction(stringResource(R.string.profile_photo_zoom_reset_short)) {
+                            transform = null
+                            true
+                        },
+                    )
+                } else {
+                    emptyList()
+                }
                 Canvas(
                     Modifier
                         .fillMaxSize()
                         .clipToBounds()
-                        .onSizeChanged { viewport = it }
+                        .onSizeChanged { measuredViewport = it }
                         .testTag("profileImageCanvas")
                         .semantics {
                             role = Role.Image
@@ -172,9 +179,8 @@ internal fun ProfileImageViewer(
                             this[ProfileImageViewportKey] = "${viewport.width},${viewport.height}"
                             customActions = accessibilityActions
                         }
-                        .pointerInput(bitmap, viewport) {
+                        .then(if (viewportReady) Modifier.pointerInput(bitmap, viewport) {
                             detectTransformGestures { centroid, pan, zoom, _ ->
-                                if (viewport == IntSize.Zero) return@detectTransformGestures
                                 val current = ProfileImageGeometry.clampOrFit(
                                     transform,
                                     imageSize.width,
@@ -203,9 +209,9 @@ internal fun ProfileImageViewer(
                                     viewport.height,
                                 )
                             }
-                        },
+                        } else Modifier),
                 ) {
-                    if (viewport != IntSize.Zero) {
+                    if (viewportReady) {
                         val active = currentTransform
                         val imageWidth = (imageSize.width * active.scale).roundToInt()
                         val imageHeight = (imageSize.height * active.scale).roundToInt()
@@ -252,17 +258,19 @@ internal fun ProfileImageViewer(
                         modifier = Modifier
                             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                             .semantics { contentDescription = resetDescription }
-                            .clickable { transform = null }
+                            .clickable(enabled = viewportReady) { transform = null }
                             .wrapContentSize(Alignment.Center),
                     )
                     IconButton(
                         onClick = { zoomTo(currentTransform.scale / 1.5f) },
+                        enabled = viewportReady,
                         modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
                     ) {
                         Icon(Icons.Default.ZoomOut, contentDescription = stringResource(R.string.profile_photo_zoom_out), tint = viewerContent)
                     }
                     IconButton(
                         onClick = { zoomTo(currentTransform.scale * 1.5f) },
+                        enabled = viewportReady,
                         modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
                     ) {
                         Icon(Icons.Default.ZoomIn, contentDescription = stringResource(R.string.profile_photo_zoom_in), tint = viewerContent)
@@ -281,10 +289,10 @@ internal fun ProfileImageViewer(
 
 @Composable
 private fun rememberProfileImageWindowStyle(): ProfileImageWindowBars? {
-    val dialogWindow = (LocalView.current.parent as? DialogWindowProvider)?.window
+    // Called only inside Dialog, whose composition root owns a non-null Window.
+    val dialogWindow = (LocalView.current.parent as DialogWindowProvider).window
     var windowBars by remember(dialogWindow) { mutableStateOf<ProfileImageWindowBars?>(null) }
     DisposableEffect(dialogWindow) {
-        if (dialogWindow == null) return@DisposableEffect onDispose {}
         val decorView = dialogWindow.decorView
         val insetsController = WindowCompat.getInsetsController(dialogWindow, decorView)
         val originalLightStatusBars = insetsController.isAppearanceLightStatusBars

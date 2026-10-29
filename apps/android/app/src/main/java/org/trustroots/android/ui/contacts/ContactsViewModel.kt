@@ -100,7 +100,7 @@ internal class ContactsViewModel(
 
     fun onEvent(event: ContactsEvent) {
         when (event) {
-            ContactsEvent.Retry -> load(force = true)
+            ContactsEvent.Retry -> load()
             is ContactsEvent.SessionInvalidationDelivered -> mutableState.update { current ->
                 if (current.pendingSessionInvalidation?.id == event.id) {
                     current.copy(pendingSessionInvalidation = null)
@@ -112,12 +112,12 @@ internal class ContactsViewModel(
     fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
         if (!repository.updateEnvironment(api, session)) return
         sessionInvalidationEmitted = false
-        load(force = true, resetState = true)
+        load(resetState = true)
     }
 
-    private fun load(force: Boolean = false, resetState: Boolean = false) {
+    private fun load(resetState: Boolean = false) {
         val current = mutableState.value
-        if (sessionInvalidationEmitted || (current.isLoading && !resetState) || (current.hasAttemptedLoad && !force)) return
+        if (sessionInvalidationEmitted || (current.isLoading && !resetState)) return
 
         request.launch {
             if (resetState) mutableState.value = ContactsUiState()
@@ -168,7 +168,7 @@ internal class ContactsViewModel(
                 failure = ContactsFailure(
                     reason = reason,
                     throwableType = error?.let { it.javaClass.name },
-                    serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+                    serverMessage = (error as? MobileApiException)?.serverMessage,
                     apiKind = (error as? MobileApiException)?.failureKind,
                 ),
             )

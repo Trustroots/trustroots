@@ -31,6 +31,8 @@ import org.trustroots.android.ui.theme.TrustrootsTheme
 /** Debug-only seam; test repository implementations stay in androidTest. */
 internal object HostOfferNav3JourneyProvider {
     var repository: HostOfferRepository? = null
+
+    fun requireRepository(): HostOfferRepository = requireNotNull(repository)
 }
 
 @Serializable
@@ -70,7 +72,7 @@ class HostOfferNav3TestActivity : ComponentActivity() {
                             }
                             entry<HostOfferTestRoute> {
                                 CompositionLocalProvider(
-                                    LocalHostOfferRepository provides requireNotNull(HostOfferNav3JourneyProvider.repository),
+                                    LocalHostOfferRepository provides HostOfferNav3JourneyProvider.requireRepository(),
                                 ) {
                                     HostOfferScreen(
                                         api = MobileApiClient("https://api.example.test"),

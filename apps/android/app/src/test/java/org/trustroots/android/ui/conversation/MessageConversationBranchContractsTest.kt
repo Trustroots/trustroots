@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
@@ -88,7 +89,7 @@ class MessageConversationBranchContractsTest {
 
         override fun updateApi(api: MobileApiClient) = false
 
-        override suspend fun member(memberID: String): Result<MessageMember> {
+        override suspend fun member(memberID: String): Result<ConversationRecipient> {
             memberLookups++
             return Result.success(recipient)
         }
@@ -119,8 +120,9 @@ class MessageConversationBranchContractsTest {
         MemberSession(cookie, MobileMember("steady-heron", "Steady Heron"))
 
     private companion object {
-        val recipient = MessageMember("recipient-id", "steady-owl", "Steady Owl")
-        val incoming = DirectMessage("incoming-id", "A fictional incoming message", recipient)
+        val recipient = ConversationRecipient("recipient-id", "steady-owl", "Steady Owl")
+        val incoming = DirectMessage("incoming-id", "A fictional incoming message",
+            MessageMember(recipient.id, recipient.username, recipient.displayName))
         val sent = DirectMessage("sent-id", "A fictional sent message", MessageMember("self-id", "steady-heron", "Steady Heron"))
     }
 }

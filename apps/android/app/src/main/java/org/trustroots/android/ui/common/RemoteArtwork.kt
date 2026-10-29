@@ -264,7 +264,8 @@ internal fun rememberArtworkBitmapState(
 private fun URL?.orEmpty(): String = this?.toString().orEmpty()
 
 private fun loadArtwork(context: Context, url: URL, sessionCookie: String?, maxDownloadBytes: Int): Bitmap? {
-    val cached = if (url.path.startsWith("/uploads-circle/")) circleImageFile(context, url) else null
+    val cacheDirectory = File(context.cacheDir, "circle-artwork")
+    val cached = if (url.path.startsWith("/uploads-circle/")) circleImageFile(cacheDirectory, url) else null
     if (cached != null && System.currentTimeMillis() - cached.lastModified() < 7L * 24 * 60 * 60 * 1000) {
         BitmapFactory.decodeFile(cached.path)?.let { return it }
     }
@@ -296,9 +297,9 @@ private fun loadArtwork(context: Context, url: URL, sessionCookie: String?, maxD
                         result = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
                         if (result != null && cached != null) {
                             runCatching {
-                                cached.parentFile?.mkdirs()
+                                cacheDirectory.mkdirs()
                                 cached.writeBytes(bytes)
-                                cached.parentFile?.listFiles()?.sortedByDescending(File::lastModified)
+                                cacheDirectory.listFiles()?.sortedByDescending(File::lastModified)
                                     ?.drop(24)?.forEach(File::delete)
                             }
                         }
@@ -328,8 +329,8 @@ private fun loadArtwork(context: Context, url: URL, sessionCookie: String?, maxD
     return downloaded ?: cached?.let { BitmapFactory.decodeFile(it.path) }
 }
 
-private fun circleImageFile(context: Context, url: URL): File {
+private fun circleImageFile(directory: File, url: URL): File {
     val digest = MessageDigest.getInstance("SHA-256").digest(url.toString().toByteArray())
         .joinToString("") { "%02x".format(it) }
-    return File(context.cacheDir, "circle-artwork/$digest")
+    return File(directory, digest)
 }

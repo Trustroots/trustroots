@@ -174,20 +174,18 @@ internal class MemberShellViewModel(
 
     private fun reportFailure(error: Throwable) {
         if (error.isAuthenticationFailure()) {
-            if (!sessionInvalidationEmitted) {
-                sessionInvalidationEmitted = true
-                avatarRequest.cancel()
-                unreadPolling.cancel()
-                mutableState.update {
-                    it.copy(pendingSessionInvalidation = MemberShellInvalidation(++nextInvalidationID))
-                }
+            sessionInvalidationEmitted = true
+            avatarRequest.cancel()
+            unreadPolling.cancel()
+            mutableState.update {
+                it.copy(pendingSessionInvalidation = MemberShellInvalidation(++nextInvalidationID))
             }
         } else {
             val apiError = error as? MobileApiException
             mutableState.update {
                 it.copy(
                     failure = MemberShellFailure(
-                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        serverMessage = apiError?.serverMessage,
                         apiFailureKind = apiError?.failureKind,
                     ),
                 )

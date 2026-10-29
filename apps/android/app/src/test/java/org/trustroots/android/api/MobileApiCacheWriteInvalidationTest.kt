@@ -137,6 +137,35 @@ class MobileApiCacheWriteInvalidationTest {
         }
     }
 
+    @Test
+    fun pushRegistrationChangesPreserveUnrelatedResponseSnapshots() = runBlocking {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(code = 200, body = "{}"))
+            server.start()
+            val account = "push-cache-${System.nanoTime()}"
+            val context = RuntimeEnvironment.getApplication()
+            val baseUrl = server.url("/").toString()
+            val snapshots = createSnapshots(
+                context,
+                baseUrl,
+                account,
+                "/api/users/$account" to "own-profile",
+                "/api/users/member-one" to "profile",
+                "/api/messages?page=1&limit=50" to "inbox",
+            )
+
+            val result = MobileApiClient(baseUrl, SecureResponseCache(context), account)
+                .unregisterMessagePush(
+                    MemberSession("connect.sid=fictional-session", MobileMember(account, "Quiet Fox")),
+                    "https://push.example.test/fictional-endpoint",
+                )
+
+            assertTrue(result.isSuccess)
+            assertEquals("DELETE", server.takeRequest()?.method)
+            assertTrue(snapshots.all { (_, file) -> file.exists() })
+        }
+    }
+
     private fun createSnapshots(
         context: Context,
         server: String,

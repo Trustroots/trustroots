@@ -46,7 +46,7 @@ class MobileApiClientTest {
             runBlocking { MobileApiClient(baseURL).messageMember(session, "member-owl") }
         }
 
-        assertEquals(MessageMember("member-owl", "steady-owl", "Steady Owl"), result.getOrThrow())
+        assertEquals(ConversationRecipient("member-owl", "steady-owl", "Steady Owl"), result.getOrThrow())
         assertEquals("GET /api/users/mini/member-owl HTTP/1.1", request.line)
         assertTrue(request.headers.any { it.equals("Cookie: connect.sid=session-value", ignoreCase = true) })
     }
@@ -61,7 +61,7 @@ class MobileApiClientTest {
             runBlocking { MobileApiClient(baseURL).messageMember(session, "member-owl") }
         }
 
-        assertEquals(MessageMember("member-owl", null, "A fictional traveller"), result.getOrThrow())
+        assertEquals(ConversationRecipient("member-owl", null, "A fictional traveller"), result.getOrThrow())
     }
 
     @Test
@@ -81,6 +81,18 @@ class MobileApiClientTest {
         val (result, request) = withApiResponse(
             status = 200,
             responseBody = """{"username":"steady-owl","displayName":"Steady Owl"}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).messageMember(session, "anonymous-member-id") } }
+
+        assertEquals(IllegalArgumentException::class.java, result.exceptionOrNull()?.javaClass)
+        assertEquals("GET /api/users/mini/anonymous-member-id HTTP/1.1", request.line)
+    }
+
+    @Test
+    fun rejectsMiniUserResponseWithBlankCanonicalMemberID() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"_id":"   ","username":"steady-owl","displayName":"Steady Owl"}""",
         ) { baseURL -> runBlocking { MobileApiClient(baseURL).messageMember(session, "anonymous-member-id") } }
 
         assertEquals(IllegalArgumentException::class.java, result.exceptionOrNull()?.javaClass)
@@ -730,7 +742,7 @@ class MobileApiClientTest {
                 socket.use {
                     val reader = socket.getInputStream().bufferedReader()
                     requests.put(reader.readLine().orEmpty())
-                    while (!reader.readLine().isNullOrEmpty()) Unit
+                    while (reader.readLine()?.isNotEmpty() == true) { }
                     val body = """{"linkedPubkeys":["$linked","$visibleLinked"],"pubkeys":["$visibleLinked"]}"""
                     val bytes = body.toByteArray(Charsets.UTF_8)
                     socket.getOutputStream().write(

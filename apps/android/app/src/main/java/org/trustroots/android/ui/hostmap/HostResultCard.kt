@@ -59,8 +59,9 @@ internal fun HostResultCard(
     maxHeight: Dp = Dp.Unspecified,
     horizontalInset: PaddingValues = PaddingValues.Zero,
     onClose: () -> Unit,
-    onOpenProfile: () -> Unit,
+    onOpenProfile: (String) -> Unit,
 ) {
+    val openProfile = offer.user.username?.let { username -> { onOpenProfile(username) } }
     val availableToMeet = stringResource(R.string.screen_host_available_to_meet)
     val hostingTravellers = stringResource(R.string.screen_hosting_travellers)
     val maybeHosting = stringResource(R.string.screen_maybe_hosting)
@@ -71,8 +72,8 @@ internal fun HostResultCard(
     val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     HostResultCardTheme {
         Card(
-            onClick = onOpenProfile,
-            enabled = offer.user.username != null,
+            onClick = openProfile ?: {},
+            enabled = openProfile != null,
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,

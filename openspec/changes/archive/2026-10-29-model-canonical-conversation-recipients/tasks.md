@@ -1,0 +1,4 @@
+- [x] 1. Add the validated recipient DTO and update the lookup contract and tests.
+- [x] 2. Use the recipient type in conversation state and UI, sharing label formatting.
+- [x] 3. Validate JVM, lint and focused device regressions without weakening coverage.
+- [x] 4. Update the living specification and archive this change.

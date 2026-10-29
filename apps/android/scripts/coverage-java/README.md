@@ -27,6 +27,20 @@ the Composer parameter (or a `$dirty` local copied from one), Composer
 `rememberedValue` cache gate. Source-named integer mask locals reject the whole
 region; branches elsewhere in the method remain measured. Cache-gate branches
 already handled by upstream JaCoCo filters are left to those filters.
+The only non-mask load admitted in a cache-key region is a `LLOAD` immediately
+between the hidden Composer receiver and the exact `Composer.changed(J)Z` call.
+Unrelated long loads, arithmetic and calls reject the region.
+
+The restart-scope rule recognises only an annotated Kotlin composable whose
+hidden Composer parameter is followed by compiler integer flags. The null
+decision must directly test the `ScopeUpdateScope` returned by
+`Composer.endRestartGroup()`, store and reload that exact value, and lead to a
+generated callback factory plus `ScopeUpdateScope.updateScope` on the non-null
+path. The null path must pop the duplicate and return at the method tail. It
+ignores only that `IFNULL`; callback instructions and nearby source null checks
+remain counted. Fixtures reject missing Kotlin/Composable provenance, wrong
+restart-call shape, missing callback installation and ordinary source null
+guards.
 
 The pinned upstream JaCoCo Compose filters own changed-mask preamble decisions;
 the custom classifier leaves those branches to upstream. Its composable
@@ -56,11 +70,15 @@ Run the regression fixtures from `apps/android`:
 `debugCoverageTable` retains `coverage-raw.xml`, produces the corrected
 `coverage.xml`, verifies matching execution-probe class identities, and checks
 that every removed branch outcome is explained by an audited generated-code
-pattern: each conditional decision accounts for two outcomes and each proven
-exhaustive enum-switch default accounts for one. Enum defaults are replaced
+pattern: each removed conditional decision accounts for two outcomes and each
+proven exhaustive enum switch default accounts for one. Enum switch defaults are replaced
 only when the switch input is loaded from Kotlin's `$EnumSwitchMapping$` array,
 looked up by `Enum.ordinal()`, and its default target is the exact Compose
-generated exception block. Integer switches and source-bearing defaults stay
+generated exception block. A conditional default is replaced only for a
+verified single-entry enum whose ordinal mapping is compared with its sole case
+value and whose unequal target is that same generated exception block. Its
+generated conditional decision is removed as a whole, while code in the valid
+case remains measured. Integer comparisons and source-bearing defaults stay
 counted. A tracking output records branches already ignored, merged, or
 replaced by upstream JaCoCo filters, so the custom filter does not count the
 same outcome twice. The raw branch counters remain available for comparison;

@@ -97,6 +97,9 @@ class MemberProfileStatesJourneyTest {
         compose.onNodeWithTag("profileSection-contacts").assertIsSelected()
         compose.onNodeWithText("Contact Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Show fewer").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show fewer").performClick()
+        assertTrue(compose.onAllNodesWithText("Contact Seven").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("1 more contact").performScrollTo().assertIsDisplayed()
 
         revealProfileTabsIfClipped()
         compose.onNodeWithTag("profileSection-experiences").performClick()
@@ -111,6 +114,9 @@ class MemberProfileStatesJourneyTest {
         compose.onNodeWithTag("profileSection-experiences").assertIsSelected()
         compose.onNodeWithText("Reference Seven").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Show fewer").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Show fewer").performClick()
+        assertTrue(compose.onAllNodesWithText("Reference Seven").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithText("1 more experience").performScrollTo().assertIsDisplayed()
     }
 
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")

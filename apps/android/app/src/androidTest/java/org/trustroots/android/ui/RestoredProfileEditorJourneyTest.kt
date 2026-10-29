@@ -59,7 +59,7 @@ class RestoredProfileEditorJourneyTest {
                         initialVisitID = 41L, session = session, api = api,
                         onSessionInvalidated = {}, onMemberUpdated = updated::set, onSignedOut = {},
                         onCurrentUsageScreen = { _, screen -> usage.set(screen) },
-                        isActiveTabVisit = true, onResetAvailable = { _, _ -> },
+                        isActiveTabVisit = true, onResetAvailable = { _ -> },
                         openFindPeople = {}, openCircles = {}, menuBackStack = restored,
                     )
                 }

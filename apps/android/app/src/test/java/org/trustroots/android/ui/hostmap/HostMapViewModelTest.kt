@@ -33,6 +33,17 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class HostMapViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val factory = HostMapViewModel.Factory(
+            FakeHostMapRepository(),
+            { _, _ -> error("The factory must reject the requested type before opening notes") },
+        )
+        val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun defaultFactoryCreatesFreshEntryStateAndRepositoryDefaultSessionUpdateIsUnchanged() {
         val repository = FakeHostMapRepository()
         val factoryRepository = object : HostMapRepository by FakeHostMapRepository() {
@@ -73,6 +84,15 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun invalidationAcknowledgementWithoutPendingInvalidationDoesNotChangeMapState() = withViewModel { viewModel, _, _ ->
+        val before = viewModel.state.value
+
+        viewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, viewModel.state.value)
+    }
+
+    @Test
     fun aFreshSnapshotHydratesANewSearchVisitWithoutRepeatingItsSearch() {
         val now = 10_000L
         val resultsCache = HostMapResultsCache()
@@ -105,6 +125,41 @@ class HostMapViewModelTest {
                 newVisit.onEvent(HostMapEvent.MapVisibilityChanged(true))
 
                 assertEquals(1, repository.searchCalls)
+            } finally {
+                scope.cancel()
+            }
+        }
+    }
+
+    @Test
+    fun snapshotWithoutSearchTimestampIsRefreshedEvenWhenItsFingerprintMatches() {
+        val resultsCache = HostMapResultsCache()
+        withViewModel(nowMillis = { 10_000L }, resultsCache = resultsCache) { viewModel, repository, notes ->
+            val viewport = MapViewport(40.0, -4.0, 8.0)
+            val searchBounds = bounds(39.5)
+            viewModel.onEvent(HostMapEvent.ViewportChanged(viewport, searchBounds))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            assertEquals(1, repository.searchCalls)
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(false))
+
+            val cached = requireNotNull(resultsCache.snapshot)
+            resultsCache.save(cached.copy(searchSucceededAt = null))
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            val newVisit = HostMapViewModel(
+                repository,
+                { onNote, onError -> notes.open(onNote, onError) },
+                scope,
+                wait = {},
+                now = { 10_000L },
+                resultsCache = resultsCache,
+            )
+            try {
+                assertEquals(cached.searchFingerprint, resultsCache.snapshot?.searchFingerprint)
+                newVisit.onEvent(HostMapEvent.MapVisibilityChanged(true))
+
+                assertEquals(2, repository.searchCalls)
+                assertFalse(newVisit.state.value.isLoading)
+                assertEquals(viewport, newVisit.state.value.viewport)
             } finally {
                 scope.cancel()
             }
@@ -255,6 +310,65 @@ class HostMapViewModelTest {
         assertEquals(expectedBounds, repository.searchedBounds.last())
         assertEquals(expectedFilters, repository.searchedFilters.last())
         assertNull(viewModel.state.value.failure)
+    }
+
+    @Test
+    fun replacingAnInFlightSearchClearsLoadingDuringTheNextDebounce() {
+        var waitCount = 0
+        val firstDebounce = CompletableDeferred<Unit>()
+        val firstDebounceStarted = CompletableDeferred<Unit>()
+        val replacementDebounce = CompletableDeferred<Unit>()
+        val replacementDebounceStarted = CompletableDeferred<Unit>()
+        withViewModel(
+            wait = {
+                when (waitCount++) {
+                    0 -> {
+                        firstDebounceStarted.complete(Unit)
+                        firstDebounce.await()
+                    }
+                    1 -> {
+                        replacementDebounceStarted.complete(Unit)
+                        replacementDebounce.await()
+                    }
+                    else -> error("Unexpected extra search debounce")
+                }
+            },
+        ) { viewModel, repository, _ ->
+            val oldSearchResult = CompletableDeferred<Result<List<MapOffer>>>()
+            val oldSearchStarted = CompletableDeferred<Unit>()
+            val replacementOffer = MapOffer("replacement-result", 40.5, -9.5)
+            val replacementBounds = bounds(40.0)
+            repository.searchHandler = { call, _, _ ->
+                if (call == 1) {
+                    oldSearchStarted.complete(Unit)
+                    withContext(NonCancellable) { oldSearchResult.await() }
+                } else {
+                    Result.success(listOf(replacementOffer))
+                }
+            }
+
+            viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(38.5, -9.5, 7.0), bounds(38.0)))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            assertTrue(firstDebounceStarted.isCompleted)
+            firstDebounce.complete(Unit)
+            assertTrue(oldSearchStarted.isCompleted)
+            assertTrue(viewModel.state.value.isLoading)
+
+            viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(40.5, -9.5, 8.0), replacementBounds))
+
+            assertTrue(replacementDebounceStarted.isCompleted)
+            assertEquals(listOf(bounds(38.0)), repository.searchedBounds)
+            assertFalse("The replaced query must stop reporting loading during its debounce", viewModel.state.value.isLoading)
+
+            replacementDebounce.complete(Unit)
+
+            assertEquals(listOf(bounds(38.0), replacementBounds), repository.searchedBounds)
+            assertEquals(listOf(replacementOffer), viewModel.state.value.offers)
+            assertFalse(viewModel.state.value.isLoading)
+
+            oldSearchResult.complete(Result.success(listOf(MapOffer("stale-result", 38.5, -9.5))))
+            assertEquals(listOf(replacementOffer), viewModel.state.value.offers)
+        }
     }
 
     @Test
@@ -451,6 +565,10 @@ class HostMapViewModelTest {
         val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
         assertEquals(1, connection.closeCalls)
 
+        viewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(invalidation.id + 1))
+        assertEquals(invalidation, viewModel.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.circleCalls)
+
         pendingCircles.complete(Result.failure(MobileApiException(401, "Fictional session expired.")))
 
         assertEquals("A concurrent auth failure must not create another callback", invalidation, viewModel.state.value.pendingSessionInvalidation)
@@ -644,6 +762,7 @@ class HostMapViewModelTest {
     private fun withViewModel(
         nowMillis: () -> Long = android.os.SystemClock::elapsedRealtime,
         resultsCache: HostMapResultsCache = HostMapResultsCache(),
+        wait: suspend (Long) -> Unit = {},
         test: (HostMapViewModel, FakeHostMapRepository, FakeNotesConnections) -> Unit,
     ) {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -654,7 +773,7 @@ class HostMapViewModelTest {
                 repository,
                 { onNote, onError -> notes.open(onNote, onError) },
                 scope,
-                wait = {},
+                wait = wait,
                 now = nowMillis,
                 resultsCache = resultsCache,
             )
@@ -726,6 +845,8 @@ class HostMapViewModelTest {
     private class TestStoreOwner : ViewModelStoreOwner {
         override val viewModelStore = ViewModelStore()
     }
+
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private companion object {
         fun bounds(south: Double = 38.0) = MapBounds(south, -10.0, south + 1.0, -9.0)

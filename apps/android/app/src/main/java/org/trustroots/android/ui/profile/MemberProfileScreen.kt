@@ -266,7 +266,7 @@ private fun MemberProfileContent(
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
-    var showingProfileImage by rememberSaveable(username) { mutableStateOf(false) }
+    var showingProfileImage by rememberSaveable(username, profile?.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val profileImageState = rememberArtworkBitmapState(
         url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048) } else null,
@@ -337,7 +337,6 @@ private fun MemberProfileContent(
                 TextButton(
                     enabled = !removingContact && existing?.id != null,
                     onClick = {
-                        if (existing?.id == null) return@TextButton
                         viewModel.onEvent(MemberProfileEvent.ConfirmRemoveContact)
                     },
                 ) { Text(if (removingContact) stringResource(R.string.profile_removing_contact) else stringResource(R.string.profile_confirm)) }
@@ -366,12 +365,7 @@ private fun MemberProfileContent(
         }
     }
     LaunchedEffect(completion?.deliveryID) {
-        val deliveryID = completion?.deliveryID ?: return@LaunchedEffect
-        val pending = onCompletionHandled(deliveryID) ?: return@LaunchedEffect
-        when (pending) {
-            is ProfileFlowCompletion.ProfileSaved -> viewModel.onEvent(MemberProfileEvent.ProfileSaved(pending.profile))
-            is ProfileFlowCompletion.ExperienceCreated -> viewModel.onEvent(MemberProfileEvent.RefreshReferences)
-        }
+        deliverProfileFlowCompletion(completion, onCompletionHandled, viewModel::onEvent)
     }
     LaunchedEffect(profileState.contactRemovalSucceeded) {
         if (profileState.contactRemovalSucceeded) {
@@ -379,7 +373,6 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.let { it.username.equals(session.member.username, ignoreCase = true) } == true
     Column(Modifier.fillMaxSize()) {
         when {
             error != null -> {
@@ -393,6 +386,7 @@ private fun MemberProfileContent(
             profile == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             else -> {
                 val member = profile
+                val isSelf = member.username.equals(session.member.username, ignoreCase = true)
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp
@@ -450,7 +444,7 @@ private fun MemberProfileContent(
                             )
                             val contactAction = member.id?.takeIf { relationshipResolved }?.let { memberID ->
                                 when {
-                                    relationship?.id.isNullOrBlank() -> ProfileContactAction(addContactLabel) {
+                                    relationship?.id == null -> ProfileContactAction(addContactLabel) {
                                         onOpenContactBrowser(memberID)
                                     }
                                     relationship.confirmed -> ProfileContactAction(

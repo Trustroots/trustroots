@@ -32,6 +32,14 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class HostOfferViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() = withScope { scope ->
+        val factory = HostOfferViewModel.Factory(FakeHostOfferRepository(), scope)
+        val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun initialLoadRetainsDefaultsAndDecodedDescriptions() {
         val form = HostOfferForm(
             id = "offer-anonymous",
@@ -363,6 +371,30 @@ class HostOfferViewModelTest {
     }
 
     @Test
+    fun retryLoadDuringSaveDoesNotReplaceThePendingSave() = withScope { scope ->
+        val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
+        val repository = FakeHostOfferRepository().apply { saveHandler = { pendingSave.await() } }
+        val viewModel = HostOfferViewModel(repository, scope)
+        viewModel.onEvent(HostOfferEvent.DescriptionChanged("A suitable room"))
+
+        viewModel.onEvent(HostOfferEvent.Save)
+        viewModel.onEvent(HostOfferEvent.RetryLoad)
+
+        assertEquals(1, repository.loadCalls)
+        assertEquals(1, repository.saveCalls)
+        assertTrue(viewModel.state.value.isSaving)
+        assertFalse(viewModel.state.value.isLoading)
+
+        pendingSave.complete(Result.success(hostOffer("saved-after-retry")))
+
+        assertEquals(1, repository.loadCalls)
+        assertEquals(1, repository.saveCalls)
+        assertEquals("saved-after-retry", viewModel.state.value.form.id)
+        assertTrue(viewModel.state.value.saveSucceeded)
+        assertFalse(viewModel.state.value.isSaving)
+    }
+
+    @Test
     fun sameBackendClientReplacementLeavesPendingSaveObservedExactlyOnce() = withScope { scope ->
         val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
         val repository = FakeHostOfferRepository().apply { saveHandler = { pendingSave.await() } }
@@ -579,6 +611,7 @@ class HostOfferViewModelTest {
     }
 
     private class TestStoreOwner(override val viewModelStore: ViewModelStore) : androidx.lifecycle.ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private class FakeHostOfferRepository(
         private val loadResult: Result<HostOfferForm> = Result.success(HostOfferForm()),

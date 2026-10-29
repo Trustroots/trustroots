@@ -4,11 +4,19 @@ A Composer parameter or generated method name alone is insufficient evidence. Ma
 
 The pinned upstream JaCoCo Compose filters own parameter changed-mask preamble decisions. Do not add a custom preamble matcher that overlaps those filters.
 
+Within a verified hidden-mask `CC(remember)` cache region, an enum capture may use exactly `CHECKCAST java/lang/Enum`, `Enum.ordinal()I`, and `Composer.changed(I)Z` as consecutive executable instructions. Recognise that sequence only as a cache-key comparison, with the existing Composer provenance and remembered-value gate checks. Only hidden-mask or direct Composer change decisions may be removed. Ordinary enum comparisons and integer source conditions remain measured, including inside otherwise valid cache regions.
+
 A hidden `$default` mask test may be removed only when an annotated Kotlin composable has an unambiguous Composer/changed/default-mask parameter layout, the mask bit maps to an optional source parameter, and the branch only assigns that parameter's declared default before rejoining. Keep the default expression and all application decisions within that expression measured. Fail closed for missing metadata, multiple changed-mask slots, ambiguous slot/bit mapping, interleaved source logic, non-Composer methods, or branches already handled by upstream JaCoCo filters. Regression fixtures must prove matching compiler shapes are filtered while invalid Composer provenance, second changed-mask slots, and source-bearing default expressions remain measured.
 
 The raw XML remains available. The corrected report must reconcile branch and instruction counters against the matched generated sequences; uncertain outcomes stay counted. Every generated correction records class, method, source mapping and instruction evidence. Reject stale execution probes.
 
+An exhaustive single-entry enum `when` may compile to an integer comparison instead of a switch. Recognise only the verified Kotlin enum-mapping array lookup, enum ordinal, single-case comparison and exact generated `NoWhenBranchMatchedException` fallback (including Compose group bookkeeping). Preserve the valid case and ordinary integer or enum application conditions. Require positive and negative regression fixtures for this conditional form.
+
 ## Validation
+
+A long remember key may use only the exact verified Composer receiver load, `LLOAD` and `Composer.changed(J)Z` sequence within a validated cache region. This permits the captured value load; it does not permit arbitrary long arithmetic, source comparisons, other calls or additional branch candidates. Negative fixtures must retain those shapes.
+
+A generated restart tail may remove only the null decision on the verified hidden Composer's `endRestartGroup()` result. Require the exact scope-result store/load/null test, generated callback construction and `ScopeUpdateScope.updateScope` call, null-arm pop and method return. Preserve callback instructions and all source decisions. Reject wrong owners, missing calls, unrelated nullable values and methods without Kotlin/Composable provenance.
 
 Inlined library guards require both primary Kotlin SMAP provenance outside the application source tree and an exact Compose contract-check pattern. KotlinDebug call-site mappings alone are insufficient. Keep identical application-source checks, insertion/reuse decisions and uncertain patterns measured. This policy does not exclude whole source files or methods.
 

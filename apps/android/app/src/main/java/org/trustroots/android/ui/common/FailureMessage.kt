@@ -41,7 +41,7 @@ internal enum class UiFailureFallback {
 internal fun Throwable.toUiFailure(fallback: UiFailureFallback): UiFailure {
     val apiFailure = this as? MobileApiException
     return UiFailure(
-        serverMessage = apiFailure?.serverMessage?.takeIf(String::isNotBlank),
+        serverMessage = apiFailure?.serverMessage,
         apiKind = apiFailure?.failureKind,
         fallback = fallback,
     )

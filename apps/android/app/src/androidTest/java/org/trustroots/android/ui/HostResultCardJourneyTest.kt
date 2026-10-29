@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 import java.time.Instant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -41,6 +42,7 @@ class HostResultCardJourneyTest {
 
     @Test fun displaysHostContextAndOpensProfileFromCard() {
         val opened = AtomicBoolean(false)
+        val openedUsername = AtomicReference<String?>()
         val closed = AtomicBoolean(false)
         compose.setContent {
             NativeTestAppFrame(Destination.Search) {
@@ -59,7 +61,10 @@ class HostResultCardJourneyTest {
                     api = MobileApiClient("http://127.0.0.1:1"),
                     session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron")),
                     onClose = { closed.set(true) },
-                    onOpenProfile = { opened.set(true) },
+                    onOpenProfile = { username ->
+                        openedUsername.set(username)
+                        opened.set(true)
+                    },
                 )
             }
         }
@@ -75,6 +80,7 @@ class HostResultCardJourneyTest {
         org.junit.Assert.assertFalse(opened.get())
         compose.onNodeWithTag("hostResultCard").performClick()
         assertTrue(opened.get())
+        assertEquals("quiet-fox", openedUsername.get())
     }
 
     @Test fun omitsHostCardActivityFactsWhenTheyAreUnavailable() {

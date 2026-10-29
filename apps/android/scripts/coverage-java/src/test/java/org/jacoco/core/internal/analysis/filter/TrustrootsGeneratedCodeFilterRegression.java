@@ -16,6 +16,7 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
+import org.objectweb.asm.tree.VarInsnNode;
 
 /** Standalone regression harness; run with the regressionTest Gradle task. */
 public final class TrustrootsGeneratedCodeFilterRegression {
@@ -28,6 +29,10 @@ public final class TrustrootsGeneratedCodeFilterRegression {
     public static void main(String[] args) throws Exception {
         testExactComposableSwitchFallbackIsIgnoredWithoutIgnoringItsDecision();
         testEnumMappedComposeSwitchDefaultOutcomeIsReplaced();
+        testSingleEntryEnumConditionalComposeDefaultOutcomeIsReplaced();
+        testConditionalEnumDefaultRequiresSingleEntryEnumMapping();
+        testIntegerConditionalComposeDefaultIsPreserved();
+        testConditionalEnumSourceDefaultIsPreserved();
         testCustomOrdinalMethodDoesNotPassEnumRegistry();
         testEnumMappedSwitchWithSourceDefaultIsPreserved();
         testCustomEnumFilterSkipsUpstreamReplacedSwitch();
@@ -39,6 +44,8 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         testPointerInputCompletionIsFilteredOnlyAfterKnownLoopingApi();
         testFunctionReferenceForwarderIsIgnoredButOrdinaryLambdaIsNot();
         testCapturedStateRememberMaskDecisionsAreFilteredIndividually();
+        testEnumCaptureInRememberMaskRegionIsFilteredWithoutHidingSourceConditions();
+        testEnumOrdinalSourceDecisionInRememberRegionIsPreserved();
         testSourceDecisionInsideRememberMarkerIsPreserved();
         testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal();
         testComposeDefaultMaskDecisionsAreFilteredWithinDefaultsBlock();
@@ -46,6 +53,8 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         testComposableSecondChangedMaskSlotIsNotTreatedAsDefaultMask();
         testComposableDefaultExpressionBranchIsPreserved();
         testCustomDefaultFilterSkipsUpstreamIgnoredBranches();
+        testGeneratedRestartScopeNullDecisionIsIgnoredButCallbackIsRetained();
+        testRestartScopeMatcherPreservesSourceNullChecksAndRejectsIncompleteTail();
         org.trustroots.android.coverage.FilteredReportIntegrationRegression.run();
         System.out.println("Trustroots generated-code filter regression checks passed.");
     }
@@ -97,6 +106,135 @@ public final class TrustrootsGeneratedCodeFilterRegression {
                 "a switch outcome must not be counted as a two-outcome conditional decision");
         check(TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount() == 1,
                 "the enum default replacement should account for exactly one removed outcome");
+    }
+
+    private static void testSingleEntryEnumConditionalComposeDefaultOutcomeIsReplaced() {
+        String enumName = "sample/ProfileBrowserDestination";
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of(enumName));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of(enumName));
+        MethodNode method = enumComposeConditionalDefault(true, enumName, "sample/BrowserRoutesKt$WhenMappings");
+        JumpInsnNode comparison = findConditionalEnumBranch(method);
+        TrustrootsGeneratedCodeFilter.clearAudit();
+
+        RecordingOutput output = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+
+        check(output.ignored.size() == 1,
+                "the exact conditional Compose exception arm should be ignored");
+        AbstractInsnNode[] ignored = output.ignored.get(0);
+        check(ignored[0].getOpcode() == Opcodes.ALOAD && ignored[1].getOpcode() == Opcodes.ATHROW,
+                "only Compose bookkeeping and the generated exception should be ignored");
+        check(output.replacements.size() == 1 && output.replacements.get(0).source == comparison,
+                "the conditional enum should replace its unmatched default target");
+        List<Replacements.InstructionBranch> branches = new ArrayList<>();
+        output.replacements.get(0).replacements.values().forEach(branches::addAll);
+        check(branches.size() == 1 && branches.get(0).instruction == comparison && branches.get(0).branch == 1,
+                "only the conditional's default-target outcome should be replaced");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() == 1,
+                "the compiler-generated enum comparison is one removed conditional decision");
+        check(TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount() == 2,
+                "removing the generated conditional decision should account for both JaCoCo outcomes");
+        check(!containsBranch(ignored[0], ignored[1]),
+                "the valid enum case and conditional decision must remain outside the ignored range");
+    }
+
+    private static void testConditionalEnumDefaultRequiresSingleEntryEnumMapping() {
+        String enumName = "sample/ProfileBrowserDestination";
+        MethodNode method = enumComposeConditionalDefault(true, enumName, "sample/BrowserRoutesKt$WhenMappings");
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of(enumName));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of());
+        RecordingOutput multipleEntries = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+        check(multipleEntries.replacements.isEmpty(),
+                "enum mapping must not erase a conditional unless the enum class has exactly one entry");
+
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/AnotherEnum"));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of("sample/AnotherEnum"));
+        RecordingOutput unknownOwner = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+        check(unknownOwner.replacements.isEmpty(),
+                "an ordinal call on an enum outside the verified class registry must remain measured");
+    }
+
+    private static void testIntegerConditionalComposeDefaultIsPreserved() {
+        MethodNode method = composableMethod("drawIntegerComparison", "(Landroidx/compose/runtime/Composer;I)V");
+        LabelNode fallback = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        JumpInsnNode comparison = new JumpInsnNode(Opcodes.IF_ICMPNE, fallback);
+        method.instructions.add(comparison);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        appendComposeFallback(method, fallback);
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of("sample/ProfileBrowserDestination"));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of("sample/ProfileBrowserDestination"));
+
+        RecordingOutput output = apply(method, "sample/IntegerComparisonKt$Composable", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "an integer comparison with the same numeric value must remain measured");
+    }
+
+    private static void testConditionalEnumSourceDefaultIsPreserved() {
+        String enumName = "sample/ProfileBrowserDestination";
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(Set.of(enumName));
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(Set.of(enumName));
+        MethodNode method = enumComposeConditionalDefault(false, enumName, "sample/BrowserRoutesKt$WhenMappings");
+
+        RecordingOutput output = apply(method,
+                "sample/BrowserRoutesKt$MemberProfileScreen$lambda$12$5", "java/lang/Object");
+
+        check(output.replacements.isEmpty(),
+                "a source-bearing conditional default must remain measured despite enum mapping bytecode");
+        check(output.ignored.isEmpty(),
+                "a source default must not be mistaken for the generated Compose exception arm");
+    }
+
+    private static MethodNode enumComposeConditionalDefault(boolean generatedDefault, String enumName,
+            String mappingOwner) {
+        MethodNode method = composableMethod("drawSingleEntryEnum",
+                "(Landroidx/compose/runtime/Composer;L" + enumName + ";)V");
+        LabelNode defaultLabel = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC, mappingOwner,
+                "$EnumSwitchMapping$0", "[I"));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.SWAP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, enumName,
+                "ordinal", "()I", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IALOAD));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        JumpInsnNode comparison = new JumpInsnNode(Opcodes.IF_ICMPNE, defaultLabel);
+        method.instructions.add(comparison);
+        // The valid sole enum case falls through and remains measured.
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        if (generatedDefault) appendComposeFallback(method, defaultLabel);
+        else {
+            method.instructions.add(defaultLabel);
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.NOP));
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        }
+        method.maxStack = 3;
+        method.maxLocals = 2;
+        return method;
+    }
+
+    private static void appendComposeFallback(MethodNode method, LabelNode label) {
+        method.instructions.add(label);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode(101));
+        method.instructions.add(call("startReplaceGroup", "(I)V"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(call("endReplaceGroup", "()V"));
+        method.instructions.add(new TypeInsnNode(Opcodes.NEW, NO_WHEN));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESPECIAL, NO_WHEN, "<init>", "()V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ATHROW));
+    }
+
+    private static JumpInsnNode findConditionalEnumBranch(MethodNode method) {
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof JumpInsnNode jump && jump.getOpcode() == Opcodes.IF_ICMPNE) return jump;
+        }
+        throw new AssertionError("fixture has no single-entry enum conditional");
     }
 
     private static void testEnumMappedSwitchWithSourceDefaultIsPreserved() {
@@ -457,6 +595,11 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
                 "changedInstance", "(Ljava/lang/Object;)Z", true));
         method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.LLOAD, 3));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changed", "(J)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
         method.instructions.add(set);
         method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
         method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
@@ -492,12 +635,159 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         RecordingOutput output = apply(method, "sample/Remember", "java/lang/Object");
         long ignoredBranches = output.ignored.stream()
                 .filter(range -> range[0] instanceof JumpInsnNode && range[0] == range[1]).count();
-        check(ignoredBranches == 3,
-                "only the two mask tests and captured-state comparison should be removed; saw "
+        check(ignoredBranches == 4,
+                "only the two mask tests and two captured-state comparisons should be removed; saw "
                         + ignoredBranches + " ranges=" + output.ignored.size());
         check(output.ignored.stream().noneMatch(range -> range[0] instanceof JumpInsnNode
                         && range[0].getOpcode() == Opcodes.IFNE),
                 "the actual remembered-value invalidation gate must remain measured");
+
+        MethodNode wrongReceiver = copyMethod(method);
+        for (AbstractInsnNode insn : wrongReceiver.instructions) {
+            if (insn instanceof VarInsnNode load && load.getOpcode() == Opcodes.ALOAD && load.var == 0
+                    && nextOpcodeForFixture(load) instanceof VarInsnNode longLoad
+                    && longLoad.getOpcode() == Opcodes.LLOAD) {
+                load.var = 2;
+                break;
+            }
+        }
+        check(apply(wrongReceiver, "sample/RememberLongWrongReceiver", "java/lang/Object").ignored.isEmpty(),
+                "a long load not received by the hidden Composer must reject the remember region");
+
+        MethodNode wrongComparison = copyMethod(method);
+        for (AbstractInsnNode insn : wrongComparison.instructions) {
+            if (insn instanceof MethodInsnNode call && call.owner.equals(COMPOSER)
+                    && "changed".equals(call.name) && "(J)Z".equals(call.desc)) {
+                call.owner = "sample/ComposerLike";
+                break;
+            }
+        }
+        check(apply(wrongComparison, "sample/RememberLongWrongCall", "java/lang/Object").ignored.isEmpty(),
+                "a long load sent to a different method must reject the remember region");
+    }
+
+    private static MethodNode copyMethod(MethodNode method) {
+        MethodNode copy = new MethodNode(Opcodes.ASM9, method.access, method.name, method.desc,
+                method.signature, method.exceptions == null ? null : method.exceptions.toArray(String[]::new));
+        method.accept(copy);
+        return copy;
+    }
+
+    private static AbstractInsnNode nextOpcodeForFixture(AbstractInsnNode insn) {
+        AbstractInsnNode next = insn.getNext();
+        while (next != null && next.getOpcode() < 0) next = next.getNext();
+        return next;
+    }
+
+    private static void testEnumCaptureInRememberMaskRegionIsFilteredWithoutHidingSourceConditions() {
+        MethodNode method = enumRememberMaskMethod(true, false);
+        RecordingOutput output = apply(method, "sample/RememberEnum", "java/lang/Object");
+        List<JumpInsnNode> ignoredBranches = output.ignored.stream()
+                .filter(range -> range[0] instanceof JumpInsnNode && range[0] == range[1])
+                .map(range -> (JumpInsnNode) range[0])
+                .toList();
+        check(ignoredBranches.size() == 3,
+                "only compiler mask decisions around the enum cache key should be ignored; found "
+                        + ignoredBranches.size() + " ignored ranges " + output.ignored.size());
+        check(ignoredBranches.stream().noneMatch(branch -> branch.getOpcode() == Opcodes.IFEQ
+                        && branch.getPrevious() != null
+                        && branch.getPrevious().getOpcode() == Opcodes.ILOAD),
+                "the ordinary source boolean decision in the same remember region must remain measured");
+    }
+
+    private static void testEnumOrdinalSourceDecisionInRememberRegionIsPreserved() {
+        MethodNode method = enumRememberMaskMethod(false, true);
+        RecordingOutput output = apply(method, "sample/RememberEnumSource", "java/lang/Object");
+        check(output.ignored.isEmpty(),
+                "an enum ordinal used by a source condition must prevent the remember mask match");
+    }
+
+    private static MethodNode enumRememberMaskMethod(boolean includeSourceBoolean, boolean includeSourceEnumDecision) {
+        MethodNode method = composableMethod("rememberEnumLambda",
+                "(Landroidx/compose/runtime/Composer;I)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#enum-key"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+
+        LabelNode set = new LabelNode();
+        LabelNode clear = new LabelNode();
+        LabelNode join = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 14));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPEQ, set));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 8));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Enum"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Enum", "ordinal", "()I", false));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changed", "(I)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+
+        LabelNode sourceBooleanFalse = new LabelNode();
+        if (includeSourceBoolean) {
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+            method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, sourceBooleanFalse));
+            method.instructions.add(sourceBooleanFalse);
+        }
+        if (includeSourceEnumDecision) {
+            LabelNode sourceEnumFalse = new LabelNode();
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+            method.instructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Enum"));
+            method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Enum", "ordinal", "()I", false));
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+            method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPNE, sourceEnumFalse));
+            method.instructions.add(sourceEnumFalse);
+        }
+
+        method.instructions.add(set);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
+        method.instructions.add(clear);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(join);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ISTORE, 4));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 5));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 5));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        method.instructions.add(create);
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.instructions.add(cached);
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 1));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "destination", "Lsample/Mode;", null, new LabelNode(), new LabelNode(), 2));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "sourceBoolean", "Z", null, new LabelNode(), new LabelNode(), 3));
+        return method;
     }
 
     private static void testSourceDecisionInsideRememberMarkerIsPreserved() {
@@ -782,6 +1072,121 @@ public final class TrustrootsGeneratedCodeFilterRegression {
                 "the custom audit should omit the branch already removed by an upstream filter");
         check(delegate.ignored.size() == 3,
                 "only the two remaining compiler decisions should be ignored in addition to the upstream one");
+    }
+
+    private static void testGeneratedRestartScopeNullDecisionIsIgnoredButCallbackIsRetained() {
+        MethodNode method = restartScopeMethod(true);
+        JumpInsnNode restartDecision = findRestartScopeDecision(method);
+        RecordingOutput output = apply(method, "sample/RestartComposable", "java/lang/Object");
+
+        check(output.ignored.size() == 1 && output.ignored.get(0)[0] == restartDecision,
+                "only the generated endRestartGroup null decision should be ignored");
+        check(TrustrootsGeneratedCodeFilter.auditEntries().stream()
+                        .anyMatch(entry -> entry.contains("generated Compose restart-scope null decision")),
+                "restart-scope decision should have a specific audit entry");
+        boolean callbackRetained = false;
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof MethodInsnNode call && "updateScope".equals(call.name)
+                    && "androidx/compose/runtime/ScopeUpdateScope".equals(call.owner)) callbackRetained = true;
+        }
+        check(callbackRetained, "the generated restart callback remains in the method");
+    }
+
+    private static void testRestartScopeMatcherPreservesSourceNullChecksAndRejectsIncompleteTail() {
+        MethodNode method = restartScopeMethod(true);
+        LabelNode sourceNull = new LabelNode();
+        LabelNode sourceJoin = new LabelNode();
+        org.objectweb.asm.tree.InsnList sourceGuard = new org.objectweb.asm.tree.InsnList();
+        sourceGuard.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        sourceGuard.add(new JumpInsnNode(Opcodes.IFNULL, sourceNull));
+        sourceGuard.add(new JumpInsnNode(Opcodes.GOTO, sourceJoin));
+        sourceGuard.add(sourceNull);
+        sourceGuard.add(new org.objectweb.asm.tree.InsnNode(Opcodes.NOP));
+        sourceGuard.add(sourceJoin);
+        method.instructions.insert(sourceGuard);
+        JumpInsnNode sourceDecision = null;
+        JumpInsnNode restartDecision = null;
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof JumpInsnNode jump && jump.getOpcode() == Opcodes.IFNULL) {
+                if (sourceDecision == null) sourceDecision = jump;
+                else restartDecision = jump;
+            }
+        }
+        RecordingOutput output = apply(method, "sample/RestartComposableWithSourceNull", "java/lang/Object");
+        check(output.ignored.size() == 1 && output.ignored.get(0)[0] == restartDecision,
+                "ordinary source null check must remain while the exact restart tail is ignored");
+        check(sourceDecision != null, "fixture includes the source null check");
+
+        MethodNode missingUpdateScope = restartScopeMethod(false);
+        RecordingOutput incompleteOutput = apply(missingUpdateScope,
+                "sample/IncompleteRestartComposable", "java/lang/Object");
+        check(incompleteOutput.ignored.isEmpty(),
+                "a nullable tail without the generated callback updateScope call must remain measured");
+
+        MethodNode wrongOwner = restartScopeMethod(true);
+        for (AbstractInsnNode insn : wrongOwner.instructions) {
+            if (insn instanceof MethodInsnNode call && "endRestartGroup".equals(call.name)) {
+                call.owner = "sample/ComposerLike";
+            }
+        }
+        check(apply(wrongOwner, "sample/WrongRestartOwner", "java/lang/Object").ignored.isEmpty(),
+                "a lookalike restart method on another owner must remain measured");
+
+        MethodNode nonTail = restartScopeMethod(true);
+        nonTail.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.NOP));
+        check(apply(nonTail, "sample/NonTailRestart", "java/lang/Object").ignored.isEmpty(),
+                "a restart-like null check before additional method instructions must remain measured");
+
+        MethodNode unannotated = restartScopeMethod(true);
+        unannotated.visibleAnnotations.clear();
+        RecordingOutput unannotatedOutput = apply(unannotated,
+                "sample/UnannotatedRestart", "java/lang/Object");
+        check(unannotatedOutput.ignored.isEmpty(), "method without @Composable provenance must remain measured");
+
+        MethodNode javaMethod = restartScopeMethod(true);
+        RecordingOutput javaOutput = new RecordingOutput();
+        new TrustrootsGeneratedCodeFilter().filter(javaMethod,
+                new FakeContext("sample/JavaLikeRestart", "java/lang/Object", false), javaOutput);
+        check(javaOutput.ignored.isEmpty(), "method without Kotlin metadata must remain measured");
+    }
+
+    private static MethodNode restartScopeMethod(boolean includeUpdateScope) {
+        MethodNode method = composableMethod("restart",
+                "(Ljava/lang/Object;Landroidx/compose/runtime/Composer;II)V");
+        LabelNode nullScope = new LabelNode();
+        LabelNode done = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 1));
+        method.instructions.add(call("endRestartGroup", "()Landroidx/compose/runtime/ScopeUpdateScope;"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 4));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.DUP));
+        JumpInsnNode decision = new JumpInsnNode(Opcodes.IFNULL, nullScope);
+        method.instructions.add(decision);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 4));
+        method.instructions.add(new org.objectweb.asm.tree.InvokeDynamicInsnNode(
+                "invoke", "()Lkotlin/jvm/functions/Function2;", null));
+        if (includeUpdateScope) {
+            method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE,
+                    "androidx/compose/runtime/ScopeUpdateScope", "updateScope",
+                    "(Lkotlin/jvm/functions/Function2;)V", true));
+        } else {
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        }
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, done));
+        method.instructions.add(nullScope);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        method.instructions.add(done);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.maxStack = 2;
+        method.maxLocals = 5;
+        return method;
+    }
+
+    private static JumpInsnNode findRestartScopeDecision(MethodNode method) {
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof JumpInsnNode jump && jump.getOpcode() == Opcodes.IFNULL) return jump;
+        }
+        throw new AssertionError("restart-scope IFNULL not found");
     }
 
     private static boolean isDefaultMaskFixtureDecision(JumpInsnNode branch) {

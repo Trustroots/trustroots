@@ -571,9 +571,8 @@ internal class HostMapViewModel(
 internal fun rememberHostMapViewModel(
     api: MobileApiClient,
     session: MemberSession,
-    geocoderLookup: (Context, String, Int) -> List<Address>? = ::lookupAndroidPlaces,
-    notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
-        ::createNostrootsNotesConnection,
+    geocoderLookup: (Context, String, Int) -> List<Address>?,
+    notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection),
     resultsCache: HostMapResultsCache? = null,
 ): HostMapViewModel {
     val owner = requireNavigationViewModelStoreOwner("SearchHubScreen must be hosted by a Navigation 3 entry ViewModelStoreOwner")

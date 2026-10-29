@@ -45,7 +45,7 @@ internal fun MenuNavigationDisplay(
     onSignedOut: () -> Unit,
     onCurrentUsageScreen: (Long, org.trustroots.android.analytics.UsageScreen?) -> Unit,
     isActiveTabVisit: Boolean,
-    onResetAvailable: (Long, () -> Unit) -> Unit,
+    onResetAvailable: (() -> Unit) -> Unit,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
     contentPadding: PaddingValues = PaddingValues.Zero,
     openFindPeople: () -> Unit,
@@ -85,7 +85,7 @@ internal fun MenuNavigationDisplay(
                 else -> null
             },
         )
-        if (isActiveTabVisit) onResetAvailable(initialVisitID, resetMenuFromNavigation)
+        if (isActiveTabVisit) onResetAvailable(resetMenuFromNavigation)
     }
     val popRoute: () -> Unit = {
         if (menuBackStack.size > 1) menuBackStack.removeLastOrNull()

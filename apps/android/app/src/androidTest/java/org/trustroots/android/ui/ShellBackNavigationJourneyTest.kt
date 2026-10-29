@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -167,6 +168,58 @@ class ShellBackNavigationJourneyTest {
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
     }
 
+    @Test fun queuedSystemBackActionsStopAtTheCirclesRoot() {
+        showShell()
+        waitForText("Discover circles")
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+
+        compose.runOnUiThread {
+            compose.activity.onBackPressedDispatcher.onBackPressed()
+            compose.activity.onBackPressedDispatcher.onBackPressed()
+        }
+
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
+        assertTrue("Repeated Back at the Circles root must not finish the Activity", !compose.activity.isFinishing)
+    }
+
+    @Test fun queuedFindPeopleActionsNavigateToSearchOnlyOnce() {
+        showShell()
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        waitForText("Find people")
+
+        val findPeople = clickAction("Find people")
+        compose.runOnUiThread {
+            findPeople()
+            findPeople()
+        }
+        waitForText("Find a member")
+
+        pressSystemBack()
+        compose.onNodeWithText("View your profile").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-menu").assertIsSelected()
+    }
+
+    @Test fun queuedCirclesReselectDoesNotReplaceANewerMessagesDestination() {
+        showShell()
+        waitForText("Discover circles")
+
+        val circles = clickActionForTag("navigation-circles")
+        val messages = clickActionForTag("navigation-messages")
+        compose.runOnUiThread {
+            messages()
+            circles()
+        }
+
+        waitForText("No conversations yet.")
+        compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+    }
+
     private fun showShell() {
         SecureMobileSessionStore(context).save(session)
         compose.setContent {
@@ -184,6 +237,14 @@ class ShellBackNavigationJourneyTest {
             compose.onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
         }
     }
+
+    private fun clickAction(text: String): () -> Boolean = requireNotNull(
+        compose.onNodeWithText(text).fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+    )
+
+    private fun clickActionForTag(tag: String): () -> Boolean = requireNotNull(
+        compose.onNodeWithTag(tag).fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+    )
 
     private fun pressSystemBack() {
         compose.activity.onBackPressedDispatcher.onBackPressed()

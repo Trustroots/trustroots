@@ -129,7 +129,8 @@ internal class MemberSearchViewModel(
                 return@launch
             }
             if (generation != queryRevision) {
-                mutableState.update { if (it.isLoading) it.copy(isLoading = false) else it }
+                // Query edits invalidate results but do not clear this in-flight request's loading flag.
+                mutableState.update { it.copy(isLoading = false) }
                 return@launch
             }
             result.fold(
@@ -149,7 +150,7 @@ internal class MemberSearchViewModel(
                             isLoading = false,
                             failure = MemberSearchFailure(
                                 kind = MemberSearchFailureKind.SEARCH,
-                                serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+                                serverMessage = (error as? MobileApiException)?.serverMessage,
                                 apiKind = (error as? MobileApiException)?.failureKind,
                             ),
                         )
@@ -170,7 +171,6 @@ internal class MemberSearchViewModel(
     }
 
     private fun emitSessionInvalidation() {
-        if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         val invalidation = MemberSearchSessionInvalidation(++nextInvalidationID)
         mutableState.update { it.copy(pendingSessionInvalidation = invalidation) }

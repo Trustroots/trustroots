@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -70,7 +71,6 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
-import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -138,8 +138,8 @@ internal fun HostMapScreen(
     val closeLabel = stringResource(R.string.screen_close)
     val notesUnavailable = stringResource(R.string.screen_nostroots_notes_unavailable)
     val searchingArea = stringResource(R.string.screen_searching_area)
-    val openStreetMapAttribution = stringResource(R.string.screen_openstreetmap_attribution)
-    val mapboxAttribution = stringResource(R.string.screen_mapbox_attribution)
+    val tiles = remember { hostMapTiles(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN) }
+    val attribution = stringResource(tiles.attribution)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val offers = mapState.offers
@@ -152,6 +152,7 @@ internal fun HostMapScreen(
     val includeHosts = mapState.filters.includeHosts
     val includeMeet = mapState.filters.includeMeet
     val seenMonths = mapState.filters.seenMonths
+    val activityMonths = seenMonths ?: 0
     val selectedCircleIDs = mapState.filters.circleIDs
     val selectedLanguages = mapState.filters.languages
     var languageMenuOpen by remember { mutableStateOf(false) }
@@ -167,7 +168,7 @@ internal fun HostMapScreen(
         when {
             showSuggestions -> showSuggestions = false
             showFilters -> showFilters = false
-            selectedNotes.isNotEmpty() -> mapViewModel.onEvent(HostMapEvent.NotesDismissed)
+            else -> mapViewModel.onEvent(HostMapEvent.NotesDismissed)
         }
     }
     val map = remember(context) {
@@ -183,7 +184,7 @@ internal fun HostMapScreen(
             // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a
             // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
             setDestroyMode(false)
-            setTileSource(hostMapTileSource(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN))
+            setTileSource(tiles.source)
             setBackgroundColor(mapBackground.toArgb())
             setMultiTouchControls(true)
             controller.setZoom(mapState.viewport.zoom)
@@ -279,13 +280,10 @@ internal fun HostMapScreen(
                     view.overlays.add(marker)
                 }
                 val groupedNotes = communityNotes.groupBy { it.latitude to it.longitude }
-                val noteOffers = groupedNotes.map { (point, notes) ->
-                    MapOffer(notes.first().id, point.first, point.second)
-                }
-                val notesByID = groupedNotes.values.associateBy { it.first().id }
-                clusterOffers(noteOffers, view).forEach { cluster ->
-                    val notes = cluster.flatMap { notesByID[it.id].orEmpty() }
-                    if (notes.isEmpty()) return@forEach
+                clusterMapItems(groupedNotes.entries.toList(), view) {
+                    GeoPoint(it.key.first, it.key.second)
+                }.forEach { cluster ->
+                    val notes = cluster.flatMap { it.value }
                     val marker = Marker(view).apply {
                         position = GeoPoint(notes.map { it.latitude }.average(), notes.map { it.longitude }.average())
                         title = if (notes.size == 1) communityNoteLabel else resources.getQuantityString(R.plurals.screen_community_notes_count, notes.size, notes.size)
@@ -303,7 +301,8 @@ internal fun HostMapScreen(
                 }
                 view.invalidate()
             },
-            modifier = Modifier.fillMaxSize().testTag("hostMapView"),
+            modifier = Modifier.fillMaxSize().testTag("hostMapView")
+                .onSizeChanged { map.post { dispatchViewport() } },
         )
         Column(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()
@@ -355,8 +354,8 @@ internal fun HostMapScreen(
                         Spacer(Modifier.width(6.dp))
                         FilterChip(
                             selected = seenMonths != null,
-                            onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(seenMonths = when (seenMonths) { 1 -> 6; 6 -> null; else -> 1 }))) },
-                            label = { Text(when (seenMonths) {
+                            onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(seenMonths = when (activityMonths) { 1 -> 6; 6 -> null; else -> 1 }))) },
+                            label = { Text(when (activityMonths) {
                                 1 -> lastActiveOneMonth
                                 6 -> lastActiveSixMonths
                                 else -> lastActiveAnyTime
@@ -372,7 +371,10 @@ internal fun HostMapScreen(
                                     Text(
                                         when (selectedCircleIDs.size) {
                                             0 -> allCirclesLabel
-                                            1 -> circles.firstOrNull { it.id in selectedCircleIDs }?.label ?: oneCircleLabel
+                                            1 -> {
+                                                val circle = circles.firstOrNull { it.id in selectedCircleIDs }
+                                                if (circle == null) oneCircleLabel else circle.label
+                                            }
                                             else -> pluralStringResource(
                                                 R.plurals.screen_circles_count,
                                                 selectedCircleIDs.size,
@@ -477,7 +479,7 @@ internal fun HostMapScreen(
                 }
             }
         }
-        if (noteError && includeMeet) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
+        if (noteError) Text(notesUnavailable, color = MaterialTheme.colorScheme.error, modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(4.dp))
         Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface.copy(alpha = 0.94f)).padding(5.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 if (loading) searchingArea else mapStatisticsLabel(
@@ -488,7 +490,7 @@ internal fun HostMapScreen(
                 modifier = Modifier.weight(1f).testTag("mapStatistics"),
             )
             Text(
-                if (org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN.isBlank()) openStreetMapAttribution else mapboxAttribution,
+                attribution,
                 style = MaterialTheme.typography.labelSmall,
             )
         }
@@ -496,27 +498,19 @@ internal fun HostMapScreen(
     }
 }
 
-internal fun hostMapTileSource(mapboxToken: String): XYTileSource = if (mapboxToken.isNotBlank()) {
-    XYTileSource(
-        "Mapbox Streets", 0, 19, 256, ".png?access_token=$mapboxToken",
-        arrayOf("https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/"),
-    )
-} else {
-    XYTileSource(
-        "OpenStreetMap", 0, 19, 256, ".png",
-        arrayOf("https://tile.openstreetmap.org/"),
-    )
-}
-
 private val mapFilterLanguages = listOf(
     "eng", "por", "spa", "fra", "deu", "ita", "nld", "rus", "ara", "zho", "hin", "jpn", "tur", "pol", "swe", "ukr", "fin",
 )
 
 internal fun clusterOffers(offers: List<MapOffer>, map: MapView): List<List<MapOffer>> {
-    if (map.zoomLevelDouble >= 14) return offers.map(::listOf)
+    return clusterMapItems(offers, map) { GeoPoint(it.latitude, it.longitude) }
+}
+
+private fun <T> clusterMapItems(items: List<T>, map: MapView, location: (T) -> GeoPoint): List<List<T>> {
+    if (map.zoomLevelDouble >= 14) return items.map(::listOf)
     val cell = (50 * map.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-    return offers.groupBy { offer ->
-        val point = map.projection.toPixels(GeoPoint(offer.latitude, offer.longitude), Point())
+    return items.groupBy { item ->
+        val point = map.projection.toPixels(location(item), Point())
         point.x / cell to point.y / cell
     }.values.flatMap { group -> if (group.size >= 3) listOf(group) else group.map(::listOf) }
 }

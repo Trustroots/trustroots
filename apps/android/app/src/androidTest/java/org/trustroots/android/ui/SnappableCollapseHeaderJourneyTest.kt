@@ -114,6 +114,26 @@ class SnappableCollapseHeaderJourneyTest {
         assertHeight(compactHeight)
     }
 
+    @Test fun reversingAFlingCancelsThePendingSnapAndUsesTheNewDirection() {
+        setCurrentContent()
+        val connection = requireNotNull(header).connection
+        compose.mainClock.autoAdvance = false
+        compose.runOnIdle {
+            connection.onPreScroll(Offset(0f, -10f), NestedScrollSource.UserInput)
+            runBlocking {
+                connection.onPostFling(Velocity.Zero, Velocity(0f, -1f))
+                connection.onPostFling(Velocity.Zero, Velocity(0f, 1f))
+            }
+        }
+
+        compose.mainClock.advanceTimeBy(500)
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+        compose.runOnIdle {
+            assertEquals(expandedHeight, requireNotNull(headerHeight).invoke())
+        }
+    }
+
     @Test fun scrollingContentCollapsesHeader() {
         setCurrentContent()
         compose.onNodeWithTag("collapsibleContent").performTouchInput { swipeUp() }

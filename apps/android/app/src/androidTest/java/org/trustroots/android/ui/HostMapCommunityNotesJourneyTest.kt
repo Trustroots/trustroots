@@ -128,6 +128,7 @@ class HostMapCommunityNotesJourneyTest {
 
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { failedConnection.socket.closes.isNotEmpty() }
+        compose.onNodeWithText("Nostroots notes are temporarily unavailable.").assertDoesNotExist()
         compose.onNodeWithText("Meet").performClick()
         compose.waitUntil(5_000) { sockets.connections.size == 2 }
         val recoveredConnection = sockets.connections[1]

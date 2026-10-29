@@ -203,6 +203,7 @@ internal class EditProfileViewModel(
     private fun save() {
         val current = mutableState.value
         if (current.baseline == null || current.name.isBlank() || current.isSaving || current.pendingSave != null || invalidationEmitted) return
+        val baseline = current.baseline
         val update = ProfileUpdate(
             displayName = current.name,
             tagline = current.tagline,
@@ -216,7 +217,6 @@ internal class EditProfileViewModel(
             val result = requestResult { repository.update(update) }
             result.fold(
                 onSuccess = { profile -> mutableState.update { state ->
-                    val baseline = requireNotNull(state.baseline)
                     val savedProfile = profile.copy(
                         lastActiveAtMillis = profile.lastActiveAtMillis ?: baseline.lastActiveAtMillis,
                         replyRate = profile.replyRate ?: baseline.replyRate,
@@ -238,7 +238,6 @@ internal class EditProfileViewModel(
 
     private suspend fun invalidateSession() {
         currentCoroutineContext().ensureActive()
-        if (invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update { it.copy(isLoading = false, isSaving = false, pendingInvalidation = EditProfileInvalidation(++nextInvalidationID)) }
     }
@@ -246,7 +245,7 @@ internal class EditProfileViewModel(
     private fun failure(fallback: UiFailureFallback, error: Throwable) = EditProfileFailure(
         fallback = fallback,
         apiKind = (error as? MobileApiException)?.failureKind,
-        serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+        serverMessage = (error as? MobileApiException)?.serverMessage,
     )
 
 
@@ -288,7 +287,7 @@ internal fun rememberEditProfileViewModel(
     api: MobileApiClient,
     session: MemberSession,
     username: String,
-    initialProfile: MemberProfile? = null,
+    initialProfile: MemberProfile?,
 ): EditProfileViewModel {
     val owner = requireNavigationViewModelStoreOwner("Edit Profile must be hosted by a Navigation 3 ViewModelStoreOwner.")
     val viewModel = rememberEntryViewModel(

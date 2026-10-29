@@ -360,6 +360,31 @@ class InboxViewModelTest {
     }
 
     @Test
+    fun changingTheAccountWithoutChangingTheCookieClearsTheFilterAndReloads() = withScope { scope ->
+        val repository = FakeInboxRepository { page -> Result.success(listOf(thread("thread-$page", "Quiet Fox"))) }
+        val model = InboxViewModel(repository, session(), scope)
+        model.onEvent(InboxEvent.FilterChanged("quiet"))
+
+        model.onEvent(InboxEvent.SessionChanged(session("connect.sid=fictional-session", "calm-lynx")))
+
+        assertEquals(listOf(1, 1), repository.pages)
+        assertEquals("", model.state.value.filter)
+        assertEquals(listOf("thread-1"), model.state.value.threads.map(MessageThread::id))
+        assertTrue(model.state.value.hasLoaded)
+    }
+
+    @Test
+    fun invalidationAcknowledgementBeforeAnyInvalidationLeavesTheInboxUnchanged() = withScope { scope ->
+        val repository = FakeInboxRepository { Result.success(listOf(thread("thread-one", "Quiet Fox"))) }
+        val model = InboxViewModel(repository, session(), scope)
+        val before = model.state.value
+
+        model.onEvent(InboxEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, model.state.value)
+    }
+
+    @Test
     fun visibleThreadsSearchesUsernameAndExcerptWhenDisplayNameIsBlank() = withScope { scope ->
         val repository = FakeInboxRepository {
             Result.success(

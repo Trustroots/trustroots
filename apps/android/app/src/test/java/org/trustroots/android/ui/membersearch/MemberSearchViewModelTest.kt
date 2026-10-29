@@ -241,6 +241,28 @@ class MemberSearchViewModelTest {
     }
 
     @Test
+    fun replacedQueryDoesNotExposeThePreviousSearchFailure() = withScope { scope ->
+        val oldResponse = CompletableDeferred<Result<List<MemberProfile>>>()
+        val repository = FakeMemberSearchRepository()
+        repository.searchHandler = { call ->
+            if (call == 1) withContext(NonCancellable) { oldResponse.await() }
+            else Result.success(listOf(member("current-owl", "Current Owl")))
+        }
+        val viewModel = MemberSearchViewModel(repository, scope)
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("old query"))
+        viewModel.onEvent(MemberSearchEvent.Submit)
+
+        viewModel.onEvent(MemberSearchEvent.QueryChanged("current query"))
+        oldResponse.complete(Result.failure(IOException("A stale fictional search failure.")))
+
+        assertEquals("current query", viewModel.state.value.query)
+        assertNull(viewModel.state.value.failure)
+        assertTrue(viewModel.state.value.results.isEmpty())
+        assertFalse(viewModel.state.value.isLoading)
+        assertFalse(viewModel.state.value.hasSearched)
+    }
+
+    @Test
     fun queryChangedReentrantlyDuringSearchDoesNotPublishResultsForTheOldQuery() = withScope { scope ->
         lateinit var viewModel: MemberSearchViewModel
         val repository = FakeMemberSearchRepository()

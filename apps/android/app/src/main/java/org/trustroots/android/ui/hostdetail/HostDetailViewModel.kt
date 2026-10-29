@@ -123,7 +123,8 @@ internal class HostDetailViewModel(
     ) {
         if (offerID.isBlank() || invalidationEmitted) return
         val sameRequest = requestedOfferID == offerID && requestedOfferType == offerType
-        if (!force && sameRequest && (loadRequest.isActive || state.value.offer != null || state.value.failure != null)) return
+        // Refreshing an unchanged route is explicit through Retry or an environment change.
+        if (!force && sameRequest) return
         requestedOfferID = offerID
         requestedOfferType = offerType
         loadRequest.launch {
@@ -168,11 +169,9 @@ internal class HostDetailViewModel(
     private suspend fun handleFailure(error: Throwable, fallback: UiFailureFallback) {
         currentCoroutineContext().ensureActive()
         if (error.isAuthenticationFailure()) {
-            if (!invalidationEmitted) {
-                invalidationEmitted = true
-                mutableState.update {
-                    it.copy(pendingSessionInvalidation = HostDetailSessionInvalidation(++nextInvalidationID))
-                }
+            invalidationEmitted = true
+            mutableState.update {
+                it.copy(pendingSessionInvalidation = HostDetailSessionInvalidation(++nextInvalidationID))
             }
         } else {
             mutableState.update { it.copy(failure = error.toUiFailure(fallback)) }

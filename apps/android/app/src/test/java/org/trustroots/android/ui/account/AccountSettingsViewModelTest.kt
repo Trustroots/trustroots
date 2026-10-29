@@ -5,6 +5,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
@@ -136,6 +137,28 @@ class AccountSettingsViewModelTest {
         } finally {
             scope.cancel()
         }
+    }
+
+    @Test fun explicitRetryAfterSuccessfulLoadRefreshesAccountDetails() {
+        val repository = FakeRepository().apply {
+            detailsHandler = { call ->
+                Result.success(
+                    AccountDetails(
+                        "quiet-fox",
+                        "Quiet Fox",
+                        if (call == 1) "first@example.test" else "latest@example.test",
+                        newsletter = false,
+                    ),
+                )
+            }
+        }
+        val viewModel = model(repository)
+
+        viewModel.onEvent(AccountEvent.RetryLoad)
+
+        assertEquals(2, repository.detailCalls)
+        assertEquals("latest@example.test", viewModel.state.value.email)
+        assertFalse(viewModel.state.value.isLoading)
     }
 
     @Test fun busyStateTracksAccountSavePasswordChangeAndSignOutOperations() {
@@ -579,6 +602,40 @@ class AccountSettingsViewModelTest {
         assertEquals(null, viewModel.state.value.pendingEffect)
     }
 
+    @Test fun concurrentAuthenticationFailuresPublishOnlyOneSessionInvalidationEffect() {
+        val accountResponse = CompletableDeferred<Result<AccountDetails>>()
+        val passwordResponse = CompletableDeferred<Result<Unit>>()
+        val repository = FakeRepository().apply {
+            updateHandler = { _, _, _ -> accountResponse.await() }
+            passwordHandler = { _, _, _ -> passwordResponse.await() }
+        }
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val viewModel = AccountSettingsViewModel(
+                "quiet-fox", repository, FakePlatform(), scope,
+                MobileApiClient("https://api.example.test"),
+                MemberSession("connect.sid=fixture", MobileMember("quiet-fox", "Quiet Fox")),
+            )
+            viewModel.onEvent(AccountEvent.EmailChanged("new@example.test"))
+            viewModel.onEvent(AccountEvent.SaveAccount)
+            viewModel.onEvent(AccountEvent.CurrentPasswordChanged("fictional-current"))
+            viewModel.onEvent(AccountEvent.NewPasswordChanged("fictional-new"))
+            viewModel.onEvent(AccountEvent.VerifyPasswordChanged("fictional-new"))
+            viewModel.onEvent(AccountEvent.ChangePassword)
+
+            accountResponse.complete(Result.failure(MobileApiException(401, "Fictional expired session.")))
+            val firstEffect = requireNotNull(viewModel.state.value.pendingEffect)
+            assertTrue(firstEffect is AccountEffect.SessionInvalidated)
+            passwordResponse.complete(Result.failure(MobileApiException(401, "Another fictional auth failure.")))
+
+            assertEquals(firstEffect, viewModel.state.value.pendingEffect)
+            assertFalse(viewModel.state.value.isChangingPassword)
+            assertFalse(viewModel.state.value.isSavingAccount)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test fun mobileRepositoryDetectsBackendCookieAndAccountIdentityChanges() {
         val originalApi = MobileApiClient("https://api.example.test")
         val originalSession = MemberSession("connect.sid=old", MobileMember("quiet-fox", "Quiet Fox"))
@@ -840,6 +897,80 @@ class AccountSettingsViewModelTest {
         kotlinx.coroutines.runBlocking {
             exerciseCancellation(duringRepository = false)
             exerciseCancellation(duringRepository = true)
+        }
+    }
+
+    @Test fun clearingEntryCancelsAccountPasswordAndPlatformActionsAndResetsState() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val store = ViewModelStore()
+        val updateCancelled = CompletableDeferred<Unit>()
+        val passwordCancelled = CompletableDeferred<Unit>()
+        val alertsCancelled = CompletableDeferred<Unit>()
+        val checkCancelled = CompletableDeferred<Unit>()
+        val repository = FakeRepository().apply {
+            updateHandler = { _, _, _ ->
+                try {
+                    awaitCancellation()
+                } finally {
+                    updateCancelled.complete(Unit)
+                }
+            }
+            passwordHandler = { _, _, _ ->
+                try {
+                    awaitCancellation()
+                } finally {
+                    passwordCancelled.complete(Unit)
+                }
+            }
+        }
+        val platform = FakePlatform().apply {
+            enabled = true
+            updateEnabled = true
+            disableHandler = {
+                try {
+                    awaitCancellation()
+                } finally {
+                    alertsCancelled.complete(Unit)
+                }
+            }
+            previewCheckHandler = {
+                try {
+                    awaitCancellation()
+                } finally {
+                    checkCancelled.complete(Unit)
+                }
+            }
+        }
+        val viewModel = AccountSettingsViewModel(
+            "quiet-fox", repository, platform, scope,
+            MobileApiClient("https://api.example.test"),
+            MemberSession("connect.sid=fixture", MobileMember("quiet-fox", "Quiet Fox")),
+        )
+        store.put("account-settings", viewModel)
+        try {
+            viewModel.onEvent(AccountEvent.EmailChanged("new@example.test"))
+            viewModel.onEvent(AccountEvent.SaveAccount)
+            viewModel.onEvent(AccountEvent.CurrentPasswordChanged("fictional-current"))
+            viewModel.onEvent(AccountEvent.NewPasswordChanged("fictional-new"))
+            viewModel.onEvent(AccountEvent.VerifyPasswordChanged("fictional-new"))
+            viewModel.onEvent(AccountEvent.ChangePassword)
+            viewModel.onEvent(AccountEvent.ToggleMessageAlerts(notificationPermissionGranted = true))
+            viewModel.onEvent(AccountEvent.CheckPreviewUpdates)
+
+            assertTrue(viewModel.state.value.isSavingAccount)
+            assertTrue(viewModel.state.value.isChangingPassword)
+            assertTrue(viewModel.state.value.isCheckingUpdates)
+
+            store.clear()
+
+            assertTrue(updateCancelled.isCompleted)
+            assertTrue(passwordCancelled.isCompleted)
+            assertTrue(alertsCancelled.isCompleted)
+            assertTrue(checkCancelled.isCompleted)
+            assertEquals(AccountSettingsUiState(), viewModel.state.value)
+        } finally {
+            store.clear()
+            scope.cancel()
         }
     }
 

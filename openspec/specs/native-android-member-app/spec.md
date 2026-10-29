@@ -1910,3 +1910,61 @@ empty result and SHALL offer a retry.
 - **THEN** Android explains that circle members could not be loaded
 - **AND** provides an action to retry the request
 - **AND** does not present the failure as an empty member list
+
+### Requirement: Replaceable Android work has explicit cancellable request ownership
+
+Replaceable Android ViewModel coroutine requests SHALL use one cancellable slot per operation.
+Replacement, account/backend changes and entry removal SHALL cancel the
+corresponding work. Superseded requests SHALL NOT publish state, including
+during synchronous cancellation or startup callbacks.
+
+#### Scenario: A newer request replaces the prior request
+
+- **WHEN** a request slot receives a replacement request
+- **THEN** the new job becomes current before the prior job is cancelled or the
+  new job starts
+- **AND** the prior job and its child work are cancelled
+- **AND** the prior request cannot publish a late result
+
+#### Scenario: The profile entry changes environment or is removed
+
+- **WHEN** the authenticated account or backend changes, or Navigation 3
+  removes the profile entry
+- **THEN** each matching request slot is cancelled
+- **AND** results from the prior environment or removed entry do not update
+  state
+
+#### Scenario: Session invalidation is emitted during other profile work
+
+- **WHEN** a profile request reports an authentication failure while another
+  request is active
+- **THEN** the existing single-delivery invalidation event is preserved
+- **AND** invalidation does not implicitly replace the request-slot
+  cancellation policy
+
+#### Scenario: Initial sections and explicit reference refreshes retain their ownership
+
+- **WHEN** a member profile loads its sections or explicitly refreshes references
+- **THEN** initial section requests remain children of the initial profile load
+- **AND** explicit reference refreshes remain independently replaceable
+
+### Requirement: Canonical Android conversation recipients
+
+The authenticated conversation recipient lookup SHALL expose a non-null,
+non-blank canonical member ID after validation. Conversation state SHALL carry
+that validated recipient separately from sparse generic member records. An
+unresolved recipient SHALL remain distinguishable from a resolved recipient.
+Optional usernames, label fallback and persisted draft-key precedence SHALL
+remain unchanged.
+
+#### Scenario: Canonical recipient has no username
+
+- **WHEN** the mini-user endpoint returns a valid canonical ID without a username
+- **THEN** the conversation can use the canonical ID for sending and draft identity
+- **AND** the profile action remains unavailable until a public username is known
+
+#### Scenario: Mini-user response lacks a canonical ID
+
+- **WHEN** the mini-user endpoint omits its ID or returns a blank ID
+- **THEN** the lookup fails before publishing a resolved conversation recipient
+- **AND** sparse inbox and host records retain their existing nullable-ID contract

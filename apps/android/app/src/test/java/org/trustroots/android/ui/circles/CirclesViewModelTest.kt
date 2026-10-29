@@ -31,6 +31,15 @@ import org.trustroots.android.api.TrustrootsCircle
 @Config(sdk = [35], manifest = Config.NONE)
 class CirclesViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            CirclesViewModel.Factory(FakeCircleRepository()).create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun repositoryDefaultsTreatApiAndSessionAsUnchanged() {
         val repository = object : CircleRepository by FakeCircleRepository() {
             override fun updateApi(api: MobileApiClient): Boolean =
@@ -42,6 +51,19 @@ class CirclesViewModelTest {
 
         assertFalse(repository.updateApi(MobileApiClient("https://api.example.test")))
         assertFalse(repository.updateSession(MemberSession("fictional-cookie", MobileMember("quiet-fox", "Quiet Fox"))))
+    }
+
+    @Test
+    fun acknowledgementWithoutPendingInvalidationLeavesCircleCatalogueUnchanged() = withScope { scope ->
+        val repository = FakeCircleRepository()
+        val viewModel = CirclesViewModel(repository, scope = scope)
+        val before = viewModel.state.value
+
+        viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, viewModel.state.value)
+        assertEquals(1, repository.circleReads)
+        assertEquals(1, repository.membershipReads)
     }
 
     @Test
@@ -315,6 +337,21 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun overviewMembershipChangesAreIgnoredAfterInvalidationEvenWhenAcknowledged() = withScope { scope ->
+        val repository = FakeCircleRepository().apply {
+            circlesHandler = { Result.failure(MobileApiException(401, "Fictional expired session.")) }
+        }
+        val viewModel = CirclesViewModel(repository, scope = scope)
+        val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
+
+        viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(invalidation.id))
+        viewModel.onEvent(CirclesEvent.MembershipChanged("circle-from-overview", isMember = true))
+
+        assertNull(viewModel.state.value.pendingSessionInvalidation)
+        assertTrue(viewModel.state.value.memberships.isEmpty())
+    }
+
+    @Test
     fun renewedSessionCancelsOldAccountStateAndRetriesAfterAuthenticationInvalidation() = withScope { scope ->
         val repository = FakeCircleRepository()
         repository.updateSession(session("connect.sid=old-session"))
@@ -430,6 +467,7 @@ class CirclesViewModelTest {
     }
 
     private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private class FakeCircleRepository(
         var circles: List<TrustrootsCircle> = emptyList(),

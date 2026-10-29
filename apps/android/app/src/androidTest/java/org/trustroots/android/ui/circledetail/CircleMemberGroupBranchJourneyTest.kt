@@ -102,4 +102,48 @@ class CircleMemberGroupBranchJourneyTest {
         )
         assertTrue(local.requests.all { it.cookie == session.cookieHeader })
     }
+
+    @Test fun memberWithNoDisplayNameOrUsernameRemainsSafeAndCannotNavigate() {
+        val openedProfiles = mutableListOf<String>()
+        val session = MemberSession(
+            "connect.sid=fictional-circle-session",
+            MobileMember("steady-heron", "Steady Heron"),
+        )
+        val member = MessageMember(id = null, username = null, displayName = " \t ")
+
+        compose.setContent {
+            TrustrootsTheme {
+                CircleDetailContent(
+                    slug = "quiet-harbour",
+                    circle = TrustrootsCircle(
+                        id = "fictional-circle-id",
+                        slug = "quiet-harbour",
+                        label = "Quiet Harbour",
+                        description = null,
+                        count = 1,
+                        image = false,
+                        color = null,
+                    ),
+                    session = session,
+                    memberGroups = CircleMemberGroups(contacts = listOf(member), recommenders = emptyList(), active = emptyList()),
+                    isLoadingMembers = false,
+                    api = MobileApiClient("http://127.0.0.1:1"),
+                    membershipsLoaded = true,
+                    isMember = true,
+                    isLoading = false,
+                    isUpdating = false,
+                    failure = null,
+                    canRetryLoad = false,
+                    onRetry = {},
+                    contentPadding = PaddingValues.Zero,
+                    onBack = {},
+                    onToggleMembership = {},
+                    onOpenProfile = { openedProfiles += it },
+                )
+            }
+        }
+
+        compose.onNodeWithTag("circleMember-null").assertIsDisplayed().performClick()
+        assertTrue("An unidentified row must not navigate to a profile", openedProfiles.isEmpty())
+    }
 }

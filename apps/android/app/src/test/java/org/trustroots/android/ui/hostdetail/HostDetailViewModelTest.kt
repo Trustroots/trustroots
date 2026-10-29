@@ -97,6 +97,50 @@ class HostDetailViewModelTest {
         assertEquals(HostDetailUiState(), model.state.value)
     }
 
+    @Test fun repeatedLoadForTheActiveRouteDoesNotRestartItsRequest() = withModel { model, repository ->
+        val pendingOffer = CompletableDeferred<Result<HostOffer>>()
+        repository.offerHandler = { _, _ -> pendingOffer.await() }
+
+        model.onEvent(HostDetailEvent.Load("same-route-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("same-route-offer", SearchOfferType.Host))
+
+        assertEquals(listOf("same-route-offer"), repository.offerIDs)
+        assertTrue(model.state.value.isLoading)
+
+        pendingOffer.complete(Result.success(offerFixture("same-route-offer")))
+
+        assertEquals(listOf("same-route-offer"), repository.offerIDs)
+        assertEquals("same-route-offer", model.state.value.offer?.id)
+        assertFalse(model.state.value.isLoading)
+    }
+
+    @Test fun invalidationAcknowledgementWithoutPendingInvalidationLeavesDetailUnchanged() = withModel { model, repository ->
+        val before = model.state.value
+
+        model.onEvent(HostDetailEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, model.state.value)
+        assertTrue(repository.offerIDs.isEmpty())
+    }
+
+    @Test fun unchangedEnvironmentDoesNotReloadTheSelectedHost() = withModel { model, repository ->
+        model.onEvent(HostDetailEvent.Load("stable-route-offer", SearchOfferType.Host))
+        val before = model.state.value
+        repository.offerIDs.clear()
+        repository.profileUsernames.clear()
+        repository.membershipCalls = 0
+
+        model.updateClientAndSession(
+            MobileApiClient("https://api.example.test/"),
+            MemberSession("connect.sid=unchanged", MobileMember("member-self", "Member Self")),
+        )
+
+        assertEquals(before, model.state.value)
+        assertTrue(repository.offerIDs.isEmpty())
+        assertTrue(repository.profileUsernames.isEmpty())
+        assertEquals(0, repository.membershipCalls)
+    }
+
     @Test fun environmentRefreshBeforeTheFirstRouteKeepsTheDetailEmpty() = withModel { model, repository ->
         repository.sessionChanged = true
 
@@ -276,6 +320,26 @@ class HostDetailViewModelTest {
         assertEquals(listOf("host-owl", "host-owl"), repository.profileUsernames)
         assertEquals(2, repository.membershipCalls)
         assertEquals("host-owl", model.state.value.profile?.username)
+        assertNull(model.state.value.failure)
+    }
+
+    @Test fun failedRouteIsNotImplicitlyRetriedByDuplicateLoadButExplicitRetryWorks() = withModel { model, repository ->
+        repository.offerHandler = { call, id ->
+            if (call == 1) Result.failure(IOException("A fictional temporary offer failure."))
+            else Result.success(offerFixture(id))
+        }
+
+        model.onEvent(HostDetailEvent.Load("retryable-route-offer", SearchOfferType.Host))
+        assertEquals(UiFailureFallback.LOAD_HOST, model.state.value.failure?.fallback)
+        assertFalse(model.state.value.isLoading)
+
+        model.onEvent(HostDetailEvent.Load("retryable-route-offer", SearchOfferType.Host))
+        assertEquals(listOf("retryable-route-offer"), repository.offerIDs)
+
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertEquals(listOf("retryable-route-offer", "retryable-route-offer"), repository.offerIDs)
+        assertEquals("retryable-route-offer", model.state.value.offer?.id)
         assertNull(model.state.value.failure)
     }
 

@@ -122,10 +122,10 @@ internal class AppSessionViewModel(
                 currentSessionForSource(event.source)?.let { current -> memberUpdated(current, event.member) }
             }
             is AppSessionEvent.SignedOut -> {
-                if (currentSessionForSource(event.source) != null) signedOut(expired = false)
+                currentSessionForSource(event.source)?.let { current -> signedOut(current, expired = false) }
             }
             is AppSessionEvent.SessionInvalidated -> {
-                if (currentSessionForSource(event.source) != null) signedOut(expired = true)
+                currentSessionForSource(event.source)?.let { current -> signedOut(current, expired = true) }
             }
         }
     }
@@ -161,12 +161,9 @@ internal class AppSessionViewModel(
     }
 
     @MainThread
-    private fun signedOut(expired: Boolean) {
+    private fun signedOut(session: MemberSession, expired: Boolean) {
         cancelRestore()
-        val session = mutableState.value.session
-        if (session != null) {
-            operations.clearResponseCache(activeBackendURL, session.member.username)
-        }
+        operations.clearResponseCache(activeBackendURL, session.member.username)
         operations.clearSession()
         operations.clearSignInDestination()
         operations.clearShellAccount()

@@ -98,7 +98,6 @@ internal class CircleDetailViewModel(
     }
 
     private fun load(resetState: Boolean = false) {
-        if (sessionInvalidationEmitted) return
         // Keep a pending mutation alive; a completed mutation's group fetch is replaceable by this load.
         if (!mutableState.value.isUpdating) membershipUpdate.cancel()
         val membershipRevisionAtLoad = membershipRevision
@@ -229,7 +228,7 @@ internal class CircleDetailViewModel(
                 it.copy(
                     failure = CirclesFailure(
                         kind = kind,
-                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        serverMessage = apiError?.serverMessage,
                         apiFailureKind = apiError?.failureKind,
                     ),
                     canRetryLoad = retryLoad,

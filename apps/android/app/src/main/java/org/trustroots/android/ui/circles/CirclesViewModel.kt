@@ -241,7 +241,7 @@ internal class CirclesViewModel(
                 it.copy(
                     failure = CirclesFailure(
                         kind = kind,
-                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        serverMessage = apiError?.serverMessage,
                         apiFailureKind = apiError?.failureKind,
                     ),
                     canRetryLoad = retryLoad,

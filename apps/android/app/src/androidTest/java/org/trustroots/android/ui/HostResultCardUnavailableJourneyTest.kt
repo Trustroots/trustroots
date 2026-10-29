@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -38,6 +39,7 @@ class HostResultCardUnavailableJourneyTest {
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
         compose.onNodeWithText("Not hosting currently").assertIsDisplayed()
         compose.onNodeWithTag("hostResultCard").assertIsDisplayed()
+        compose.onNodeWithTag("hostResultCard").assertIsNotEnabled()
         compose.onNodeWithText("Up to").assertDoesNotExist()
     }
 }

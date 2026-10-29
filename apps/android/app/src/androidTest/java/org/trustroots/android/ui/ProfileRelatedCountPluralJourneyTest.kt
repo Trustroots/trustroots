@@ -2,9 +2,12 @@ package org.trustroots.android.ui
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.activity.ComponentActivity
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +52,53 @@ class ProfileRelatedCountPluralJourneyTest {
         compose.onNodeWithText("2 more contacts").assertExists()
         compose.onNodeWithText("1 more experience").assertExists()
         compose.onNodeWithText("2 more experiences").assertExists()
+    }
+
+    @Test
+    fun profileRelatedEntriesWithoutUsernamesDoNotOpenRelatedProfiles() {
+        val openedProfiles = AtomicInteger()
+        val api = MobileApiClient("https://example.invalid")
+        val session = MemberSession("connect.sid=fictional-profile-count-session", MobileMember("steady-heron", "Steady Heron"))
+        compose.setContent {
+            TrustrootsTheme {
+                Column {
+                    ProfileContactsSection(
+                        contacts = listOf(
+                            ProfileContact(
+                                id = "anonymous-contact",
+                                user = MessageMember(id = null, username = null, displayName = "Unnamed Contact"),
+                            ),
+                        ),
+                        showAllContacts = false,
+                        onToggleContacts = {},
+                        onOpenRelated = { openedProfiles.incrementAndGet() },
+                        api = api,
+                        session = session,
+                    )
+                    ProfileOverviewSection(
+                        references = listOf(
+                            ProfileReference(
+                                id = "anonymous-reference",
+                                author = MessageMember(id = null, username = null, displayName = "Unnamed Author"),
+                                feedback = "A fictional reference.",
+                                recommendation = "yes",
+                                response = null,
+                            ),
+                        ),
+                        showAllReferences = false,
+                        onToggleReferences = {},
+                        onOpenRelated = { openedProfiles.incrementAndGet() },
+                        api = api,
+                        session = session,
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("profileContact-anonymous-contact").performClick()
+        compose.onNodeWithText("Unnamed Author").performClick()
+
+        org.junit.Assert.assertEquals("Entries without usernames have no profile destination", 0, openedProfiles.get())
     }
 
     private fun contact(index: Int) = ProfileContact(

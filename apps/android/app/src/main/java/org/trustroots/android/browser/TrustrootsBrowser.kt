@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -55,9 +56,10 @@ internal val DefaultBrowserContent: @Composable (BrowserRoute, () -> Unit, Paddi
 private const val EMBEDDED_SITE_TEXT_ZOOM_PERCENT = 90
 
 internal class BrowserEntryStateViewModel : ViewModel() {
-    var savedBrowserState: android.os.Bundle? = null
-    var savedRouteURL: String? = null
+    var savedSnapshot: BrowserSnapshot? = null
 }
+
+internal data class BrowserSnapshot(val routeURL: String, val browserState: android.os.Bundle)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,26 +70,25 @@ fun TrustrootsBrowser(
     contentPadding: PaddingValues = PaddingValues.Zero,
 ) {
     val context = LocalContext.current
-    var webView by remember { mutableStateOf<WebView?>(null) }
-    var externalURL by remember { mutableStateOf<String?>(null) }
+    val closeBrowser by rememberUpdatedState(onClose)
+    var navigateBack by remember { mutableStateOf<() -> Unit>({ closeBrowser() }) }
+    var externalURL by remember { mutableStateOf<BrowserLink?>(null) }
     val viewModelStoreOwner = requireNotNull(LocalViewModelStoreOwner.current)
     val browserEntryState = remember(viewModelStoreOwner) {
         ViewModelProvider(viewModelStoreOwner)[BrowserEntryStateViewModel::class.java]
     }
 
-    BackHandler {
-        if (webView?.canGoBack() == true) webView?.goBack() else onClose()
-    }
+    BackHandler { navigateBack() }
 
-    externalURL?.let { url ->
+    externalURL?.let { link ->
         AlertDialog(
             onDismissRequest = { externalURL = null },
             title = { Text(stringResource(R.string.browser_external_website_title)) },
-            text = { Text(runCatching { URI(url).host }.getOrNull() ?: url) },
+            text = { Text(link.host) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
                         externalURL = null
                     },
                 ) { Text(stringResource(R.string.browser_open_external)) }
@@ -128,37 +129,36 @@ fun TrustrootsBrowser(
                     webViewClient = object : WebViewClient() {
                         override fun onPageFinished(view: WebView, url: String?) {
                             applyEmbeddedBrowserStyleAfterLoad(view, url)
-                            browserEntryState.savedRouteURL = route.url
-                            browserEntryState.savedBrowserState = android.os.Bundle().also { view.saveState(it) }
+                            browserEntryState.savedSnapshot = BrowserSnapshot(
+                                route.url,
+                                android.os.Bundle().also { view.saveState(it) },
+                            )
                         }
                         override fun shouldOverrideUrlLoading(
                             view: WebView,
                             request: WebResourceRequest,
                         ): Boolean {
-                            val requestedURL = request.url.toString()
-                            return if (isAllowedTrustrootsURL(requestedURL)) {
-                                false
-                            } else if (isSafeExternalURL(requestedURL)) {
-                                externalURL = requestedURL
-                                true
-                            } else {
-                                true
-                            }
+                            val link = BrowserLink.parse(request.url.toString()) ?: return true
+                            if (link.canEmbed) return false
+                            externalURL = link
+                            return true
                         }
                     }
                     installEmbeddedBrowserStyle(this)
                     applyBrowserSessionCookie(route.url, route.sessionCookie)
-                    val restored = if (browserEntryState.savedRouteURL == route.url) {
-                        browserEntryState.savedBrowserState?.let { restoreState(it) }
-                    } else {
-                        null
+                    val snapshot = browserEntryState.savedSnapshot
+                    val restored = when {
+                        snapshot == null -> null
+                        snapshot.routeURL != route.url -> null
+                        else -> restoreState(snapshot.browserState)
                     }
                     if (restored == null) {
-                        browserEntryState.savedBrowserState = null
-                        browserEntryState.savedRouteURL = route.url
+                        browserEntryState.savedSnapshot = null
                         loadUrl(route.url)
                     }
-                    webView = this
+                    navigateBack = {
+                        if (canGoBack()) goBack() else closeBrowser()
+                    }
                 }
             },
             modifier = Modifier
@@ -167,11 +167,14 @@ fun TrustrootsBrowser(
                 .padding(contentPadding.horizontalInset())
                 .padding(contentPadding.bottomInset()),
             onRelease = { released ->
-                browserEntryState.savedRouteURL = route.url
-                browserEntryState.savedBrowserState = android.os.Bundle().also { released.saveState(it) }
+                browserEntryState.savedSnapshot = BrowserSnapshot(
+                    route.url,
+                    android.os.Bundle().also { released.saveState(it) },
+                )
                 released.stopLoading()
                 released.destroy()
-                if (webView === released) webView = null
+                // This AndroidView is not pooled; its sole view is released with this composition.
+                navigateBack = { closeBrowser() }
             },
         )
     }
@@ -229,20 +232,3 @@ internal val embeddedBrowserStyle = """
       (document.head || document.documentElement).appendChild(style);
     })();
 """.trimIndent()
-
-internal fun isAllowedTrustrootsURL(url: String): Boolean = runCatching {
-    val uri = URI(url)
-    val host = uri.host?.lowercase() ?: return@runCatching false
-    uri.scheme.equals("https", ignoreCase = true) &&
-        (
-            host == "trustroots.org" ||
-                host.endsWith(".trustroots.org") ||
-                host == "hitchwiki.org" ||
-                host.endsWith(".hitchwiki.org")
-        )
-}.getOrDefault(false)
-
-internal fun isSafeExternalURL(url: String): Boolean = runCatching {
-    val uri = URI(url)
-    uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
-}.getOrDefault(false)

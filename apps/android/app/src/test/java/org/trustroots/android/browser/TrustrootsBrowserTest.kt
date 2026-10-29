@@ -1,11 +1,27 @@
 package org.trustroots.android.browser
 
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TrustrootsBrowserTest {
+    @Test fun navigationConfirmationKeepsHostAndOriginalAddressTogether() {
+        val url = "https://reader@EXAMPLE.test:8443/a%20b?view=compact#help"
+        val link = requireNotNull(BrowserLink.parse(url))
+
+        assertEquals(url, link.url)
+        assertEquals("EXAMPLE.test", link.host)
+        assertFalse(link.canEmbed)
+    }
+
+    @Test fun emptyAddressesDoNotProduceBrowserLinks() {
+        assertNull(BrowserLink.parse(""))
+        assertNull(BrowserLink.parse(" \t "))
+    }
+
     @Test
     fun hidesWebsiteHeaderAndRemovesItsSpacing() {
         assertTrue(embeddedBrowserStyle.contains("#tr-header { display: none !important; }"))
@@ -14,27 +30,27 @@ class TrustrootsBrowserTest {
     }
     @Test
     fun allowsTrustrootsHttpsPages() {
-        assertTrue(isAllowedTrustrootsURL("https://www.trustroots.org/faq"))
-        assertTrue(isAllowedTrustrootsURL("https://community.trustroots.org/password/forgot"))
-        assertTrue(isAllowedTrustrootsURL("https://trustroots.org/rules"))
-        assertTrue(isAllowedTrustrootsURL("https://wiki.hitchwiki.org/places"))
+        assertTrue(BrowserLink.parse("https://www.trustroots.org/faq")?.canEmbed == true)
+        assertTrue(BrowserLink.parse("https://community.trustroots.org/password/forgot")?.canEmbed == true)
+        assertTrue(BrowserLink.parse("https://trustroots.org/rules")?.canEmbed == true)
+        assertTrue(BrowserLink.parse("https://wiki.hitchwiki.org/places")?.canEmbed == true)
     }
 
     @Test
     fun rejectsLookalikeAndInsecurePages() {
-        assertFalse(isAllowedTrustrootsURL("https://trustroots.org.example.test/faq"))
-        assertFalse(isAllowedTrustrootsURL("http://www.trustroots.org/faq"))
-        assertFalse(isAllowedTrustrootsURL("javascript:alert(1)"))
-        assertFalse(isAllowedTrustrootsURL("not a url"))
-        assertFalse(isAllowedTrustrootsURL("https://hitchwiki.org.example.test"))
+        assertFalse(BrowserLink.parse("https://trustroots.org.example.test/faq")?.canEmbed == true)
+        assertFalse(BrowserLink.parse("http://www.trustroots.org/faq")?.canEmbed == true)
+        assertFalse(BrowserLink.parse("javascript:alert(1)")?.canEmbed == true)
+        assertFalse(BrowserLink.parse("not a url")?.canEmbed == true)
+        assertFalse(BrowserLink.parse("https://hitchwiki.org.example.test")?.canEmbed == true)
     }
 
     @Test
     fun onlyOffersSafeHttpsExternalLinksToTheSystemBrowser() {
-        assertTrue(isSafeExternalURL("https://example.test/help"))
-        assertFalse(isSafeExternalURL("http://example.test/help"))
-        assertFalse(isSafeExternalURL("javascript:alert(1)"))
-        assertFalse(isSafeExternalURL("file:///data/local/tmp/secret"))
+        assertNotNull(BrowserLink.parse("https://example.test/help"))
+        assertNull(BrowserLink.parse("http://example.test/help"))
+        assertNull(BrowserLink.parse("javascript:alert(1)"))
+        assertNull(BrowserLink.parse("file:///data/local/tmp/secret"))
     }
 
     @Test
@@ -50,16 +66,16 @@ class TrustrootsBrowserTest {
     }
 
     @Test fun recognisesBareHitchwikiAndCaseInsensitiveHosts() {
-        assertTrue(isAllowedTrustrootsURL("https://hitchwiki.org/"))
-        assertTrue(isAllowedTrustrootsURL("HTTPS://WWW.TRUSTROOTS.ORG/"))
-        assertFalse(isAllowedTrustrootsURL("https:///faq"))
-        assertFalse(isAllowedTrustrootsURL("/faq"))
+        assertTrue(BrowserLink.parse("https://hitchwiki.org/")?.canEmbed == true)
+        assertTrue(BrowserLink.parse("HTTPS://WWW.TRUSTROOTS.ORG/")?.canEmbed == true)
+        assertFalse(BrowserLink.parse("https:///faq")?.canEmbed == true)
+        assertFalse(BrowserLink.parse("/faq")?.canEmbed == true)
     }
 
     @Test fun malformedExternalUrlsAndCookieAttributesAreIgnored() {
-        assertFalse(isSafeExternalURL("not a valid URI"))
-        assertFalse(isSafeExternalURL("https:///faq"))
-        assertFalse(isSafeExternalURL("/faq"))
+        assertNull(BrowserLink.parse("not a valid URI"))
+        assertNull(BrowserLink.parse("https:///faq"))
+        assertNull(BrowserLink.parse("/faq"))
         assertEquals(
             listOf("session=fictional", "other=a=b"),
             cookiePairsForWebView(" ; Secure; HttpOnly; pAtH=/; dOmAiN=example.test; session=fictional; other=a=b"),

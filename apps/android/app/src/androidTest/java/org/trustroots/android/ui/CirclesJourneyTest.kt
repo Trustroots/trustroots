@@ -10,6 +10,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -101,8 +102,16 @@ class CirclesJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Leave circle").fetchSemanticsNodes().isNotEmpty()
         }
-        compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+        val back = requireNotNull(
+            compose.onNodeWithContentDescription("Back").fetchSemanticsNode()
+                .config[SemanticsActions.OnClick].action,
+        )
+        compose.runOnUiThread {
+            back.invoke()
+            back.invoke()
+        }
         compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        assertTrue("Queued Back actions must keep the Circles root open", !compose.activity.isFinishing)
         captureUsabilityScreenshot(compose, "android_navigation")
         responder.join(1_000)
     }

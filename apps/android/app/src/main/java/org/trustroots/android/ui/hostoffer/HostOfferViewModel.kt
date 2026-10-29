@@ -239,7 +239,7 @@ internal class HostOfferViewModel(
     }
 
     private fun load(resetState: Boolean = false) {
-        if (sessionInvalidationEmitted || (!resetState && mutableState.value.isSaving)) return
+        if (sessionInvalidationEmitted) return
         loadRequest.launch {
             if (resetState) {
                 mutableState.value = HostOfferUiState(isLoading = true)
@@ -269,9 +269,7 @@ internal class HostOfferViewModel(
 
     private fun save() {
         val beforeSave = mutableState.value
-        if (sessionInvalidationEmitted || beforeSave.pendingSessionInvalidation != null ||
-            !beforeSave.canSave || beforeSave.isSaving
-        ) return
+        if (sessionInvalidationEmitted || !beforeSave.canSave) return
         val submitted = beforeSave.current
         saveRequest.launch {
             mutableState.update { it.copy(isSaving = true, failure = null, saveSucceeded = false) }
@@ -300,7 +298,6 @@ internal class HostOfferViewModel(
     }
 
     private fun emitSessionInvalidation(isSaving: Boolean = mutableState.value.isSaving) {
-        if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         val invalidation = HostOfferSessionInvalidation(++nextInvalidationID)
         mutableState.update {

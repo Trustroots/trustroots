@@ -8,8 +8,10 @@ import androidx.compose.ui.test.hasAnyAncestor
 
 import android.graphics.Bitmap
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -25,7 +27,12 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import java.io.ByteArrayOutputStream
 import java.net.ServerSocket
 import java.util.concurrent.atomic.AtomicInteger
@@ -38,11 +45,15 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.R
 import org.trustroots.android.testing.pressBackFromNonActivityRoot
 import org.trustroots.android.ui.membersearch.MemberSearchScreen
+import org.trustroots.android.ui.membersearch.MemberSearchEvent
+import org.trustroots.android.ui.membersearch.MemberSearchRepository
+import org.trustroots.android.ui.membersearch.MemberSearchViewModel
 import org.trustroots.android.ui.search.SearchHubScreen
 
 @RunWith(AndroidJUnit4::class)
@@ -145,6 +156,46 @@ class MemberSearchJourneyTest {
         responder.join(1_000)
     }
 
+    @Test fun submitsSearchAndShowsResultsWithoutSoftwareKeyboardController() {
+        val requestedPath = AtomicReference("")
+        val responder = thread(isDaemon = true) {
+            val connection = runCatching { server.accept() }.getOrNull() ?: return@thread
+            connection.use { socket ->
+                val input = socket.getInputStream().bufferedReader()
+                requestedPath.set(input.readLine().orEmpty())
+                while (!input.readLine().isNullOrEmpty()) Unit
+                val payload = """[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}]"""
+                val bytes = payload.toByteArray()
+                socket.getOutputStream().write(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ${bytes.size}\r\nConnection: close\r\n\r\n".toByteArray(),
+                )
+                socket.getOutputStream().write(bytes)
+                socket.getOutputStream().flush()
+            }
+        }
+        compose.setContent {
+            CompositionLocalProvider(LocalSoftwareKeyboardController provides null) {
+                NativeTestAppFrame(Destination.Search) {
+                    MemberSearchScreen(
+                        api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                        session = MemberSession("connect.sid=fictional-search-session", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithTag("memberSearchField").performTextInput("quiet fox")
+        compose.onNodeWithContentDescription("Search members").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
+        assertTrue(requestedPath.get().contains("/api/users?search=quiet+fox&limit=50"))
+        responder.join(1_000)
+    }
+
     private fun revealProfileTabsIfClipped() {
         val heroBottom = compose.onNodeWithTag("profileHero").fetchSemanticsNode().boundsInRoot.bottom
         val tabs = compose.onAllNodesWithTag("profileSections").fetchSemanticsNodes().firstOrNull()
@@ -242,5 +293,52 @@ class MemberSearchJourneyTest {
         assertEquals(2, requestCount.get())
         assertTrue(compose.onAllNodesWithText("Search temporarily unavailable.").fetchSemanticsNodes().isEmpty())
         responder.join(1_000)
+    }
+
+    @Test fun memberSearchScrollPositionFollowsRestoredAndResetViewModelOffset() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val repository = MemberSearchRepository {
+            Result.success((0 until 40).map { index ->
+                MemberProfile(
+                    id = "member-$index",
+                    username = "quiet-fox-$index",
+                    displayName = "Fictional Member $index",
+                    tagline = null,
+                    description = null,
+                    location = null,
+                    languages = emptyList(),
+                )
+            })
+        }
+        val viewModel = MemberSearchViewModel(repository, scope)
+        try {
+            compose.setContent {
+                NativeTestAppFrame(Destination.Search) {
+                    MemberSearchScreen(
+                        api = MobileApiClient("https://api.example.test"),
+                        session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                        viewModel = viewModel,
+                    )
+                }
+            }
+            compose.onNodeWithText("Find a member").assertIsDisplayed()
+            compose.runOnUiThread {
+                viewModel.onEvent(MemberSearchEvent.QueryChanged("quiet fox"))
+                viewModel.onEvent(MemberSearchEvent.Submit)
+            }
+            compose.onNodeWithText("Fictional Member 0").assertIsDisplayed()
+            compose.runOnUiThread { viewModel.onEvent(MemberSearchEvent.ResultsScrolled(500)) }
+            compose.onNodeWithText("Fictional Member 0").assertIsNotDisplayed()
+
+            compose.runOnUiThread { viewModel.onEvent(MemberSearchEvent.ResultsScrolled(0)) }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText("Fictional Member 0").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithText("Fictional Member 0").assertIsDisplayed()
+            compose.onNodeWithText("Fictional Member 39").assertIsNotDisplayed()
+        } finally {
+            scope.cancel()
+        }
     }
 }

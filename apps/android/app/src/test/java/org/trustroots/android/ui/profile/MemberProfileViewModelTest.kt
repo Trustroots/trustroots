@@ -112,6 +112,21 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun blockStatusFallsBackToUsernameWhenProfileHasNoIDAndBlockedEntryHasAnotherID() {
+        val repository = FakeMemberProfileRepository().apply {
+            profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", "QUIET-FOX", "Quiet Fox")))
+        }
+
+        val state = newModel("quiet-fox", repository).state.value
+
+        assertEquals(true, state.isBlocked)
+        assertFalse(state.isLoadingBlock)
+        assertNull(state.blockFailure)
+        assertEquals(1, repository.blockedMembersCalls)
+    }
+
+    @Test
     fun failedBlockStatusRemainsUnknownAndCanBeRetried() {
         val repository = FakeMemberProfileRepository().apply {
             blockedMembersResult = Result.failure(IOException("Temporary block lookup failure"))
@@ -175,16 +190,95 @@ class MemberProfileViewModelTest {
         }
         assertEquals(true, newModel("quiet-fox", usernameMatchRepository).state.value.isBlocked)
 
+        val differentIDUsernameMatchRepository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", "QUIET-FOX", "Quiet Fox")))
+        }
+        assertEquals(true, newModel("quiet-fox", differentIDUsernameMatchRepository).state.value.isBlocked)
+
         val mismatchRepository = FakeMemberProfileRepository().apply {
             blockedMembersResult = Result.success(listOf(MessageMember("another-member", null, "Someone Else")))
         }
         assertEquals(false, newModel("quiet-fox", mismatchRepository).state.value.isBlocked)
+
+        val differentUsernameRepository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", "unrelated-owl", "Unrelated Owl")))
+        }
+        assertEquals(false, newModel("quiet-fox", differentUsernameRepository).state.value.isBlocked)
 
         val missingIdentityRepository = FakeMemberProfileRepository().apply {
             profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
             blockedMembersResult = Result.success(listOf(MessageMember("another-member", null, "Someone Else")))
         }
         assertEquals(false, newModel("quiet-fox", missingIdentityRepository).state.value.isBlocked)
+    }
+
+    @Test
+    fun unidentifiedBlockedMemberDoesNotMatchAProfileWithKnownID() {
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(listOf(MessageMember(null, null, "Unidentified member")))
+        }
+
+        assertEquals(false, newModel("quiet-fox", repository).state.value.isBlocked)
+    }
+
+    @Test
+    fun blockMutationIsIgnoredWhileRefreshingKnownStatus() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingLookup = CompletableDeferred<Result<List<MessageMember>>>()
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(emptyList())
+            blockedMembersHandler = { call ->
+                if (call == 2) withContext(NonCancellable) { pendingLookup.await() }
+                else Result.success(emptyList())
+            }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            assertEquals(false, model.state.value.isBlocked)
+
+            model.onEvent(MemberProfileEvent.RetryBlockStatus)
+            model.onEvent(MemberProfileEvent.SetBlocked(true))
+
+            assertTrue(model.state.value.isLoadingBlock)
+            assertEquals(false, model.state.value.isBlocked)
+            assertTrue(repository.blockChanges.isEmpty())
+
+            pendingLookup.complete(Result.success(listOf(MessageMember("member-quiet-fox", "quiet-fox", "Quiet Fox"))))
+            assertEquals(true, model.state.value.isBlocked)
+            assertTrue(repository.blockChanges.isEmpty())
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun reportAuthenticationFailureClearsPendingBlockStatusAndRejectsItsLateResult() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingBlockStatus = CompletableDeferred<Result<List<MessageMember>>>()
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersHandler = { withContext(NonCancellable) { pendingBlockStatus.await() } }
+            reportResult = Result.failure(MobileApiException(401, "Fictional session expired."))
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            assertTrue(model.state.value.isLoadingBlock)
+            model.onEvent(MemberProfileEvent.ReportDraftChanged("A fictional report."))
+
+            model.onEvent(MemberProfileEvent.SubmitReport)
+            val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+            assertFalse(model.state.value.isLoadingBlock)
+
+            pendingBlockStatus.complete(
+                Result.success(listOf(MessageMember("member-quiet-fox", "quiet-fox", "Quiet Fox"))),
+            )
+
+            assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+            assertNull(model.state.value.isBlocked)
+            assertFalse(model.state.value.isLoadingBlock)
+            assertEquals(1, repository.blockedMembersCalls)
+        } finally {
+            scope.cancel()
+        }
     }
 
     @Test
@@ -436,6 +530,41 @@ class MemberProfileViewModelTest {
             assertFalse(model.state.value.isSubmittingReport)
             assertEquals(1, repository.reports.size)
             assertEquals(1, repository.blockChanges.size)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun pendingBlockSuccessCannotRestoreBlockStateAfterReportAuthenticationFailure() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        val pendingBlock = CompletableDeferred<Result<Unit>>()
+        val repository = FakeMemberProfileRepository().apply {
+            blockedMembersResult = Result.success(emptyList())
+            setBlockedHandler = { _, _ -> withContext(NonCancellable) { pendingBlock.await() } }
+            reportHandler = { _, _ -> Result.failure(MobileApiException(401, "Fictional session expired.")) }
+        }
+        try {
+            val model = newModel("quiet-fox", repository, scope)
+            assertEquals(false, model.state.value.isBlocked)
+
+            model.onEvent(MemberProfileEvent.SetBlocked(true))
+            assertTrue(model.state.value.isUpdatingBlock)
+            model.onEvent(MemberProfileEvent.ReportDraftChanged("A fictional report."))
+            model.onEvent(MemberProfileEvent.SubmitReport)
+
+            val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+            assertFalse(model.state.value.isUpdatingBlock)
+            assertFalse(model.state.value.isSubmittingReport)
+
+            pendingBlock.complete(Result.success(Unit))
+
+            assertEquals(false, model.state.value.isBlocked)
+            assertFalse(model.state.value.isUpdatingBlock)
+            assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+            assertEquals(1L, model.state.value.pendingSessionInvalidation?.id)
+            assertEquals(listOf("quiet-fox" to true), repository.blockChanges)
+            assertEquals(listOf("quiet-fox" to "A fictional report."), repository.reports)
         } finally {
             scope.cancel()
         }

@@ -34,14 +34,17 @@ import org.objectweb.asm.tree.TypeInsnNode;
  * construction in a composable exhaustive-switch default arm, (2) a
  * source-line-only Compose group-close call, (3) an implicit coroutine
  * {@code Unit} return on a source-only closing-delimiter line after a
- * specifically recognised Compose coroutine API, (4) the single default
- * outcome of an exact Kotlin enum-mapping switch whose default target is the
- * generated Compose exhaustive-switch exception block, (5) a branch-free
+ * specifically recognised Compose coroutine API, (4) the default outcome of an
+ * exact Kotlin enum-mapping switch, or compiler dispatch for a one-entry enum,
+ * whose default target is the generated Compose exhaustive-switch exception
+ * block, (5) a branch-free
  * forwarding method in a Kotlin callable-reference subclass, and (6)
  * individual captured-state cache invalidation branches only when they form a
  * compiler mask expression inside a Compose remember marker and feed its
  * remembered-value cache gate, and (7) hidden default-mask tests whose
- * branch-free default assignment targets the corresponding source parameter.</p>
+ * branch-free default assignment targets the corresponding source parameter,
+ * and (8) the exact Compose restart-scope null decision at a composable method
+ * tail.</p>
  */
 public final class TrustrootsGeneratedCodeFilter implements IFilter {
 
@@ -59,11 +62,19 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
     private static final String POINTER_INPUT_SCOPE = "androidx/compose/ui/input/pointer/PointerInputScope";
     private static final String CAPTURED_REMEMBER_REASON = "captured-state Compose remember cache mask decision";
     private static final String COMPOSABLE_DEFAULT_REASON = "composable default-argument dispatch decision";
+    private static final String SINGLE_ENTRY_ENUM_REASON = "single-entry Compose enum dispatch decision";
+    private static final String ENUM_SWITCH_DEFAULT_REASON = "exhaustive Compose enum switch default outcome";
+    private static final String RESTART_SCOPE_REASON = "generated Compose restart-scope null decision";
     private static final List<String> AUDIT = Collections.synchronizedList(new ArrayList<>());
     private static volatile Set<String> ENUM_CLASSES = Set.of();
+    private static volatile Set<String> SINGLE_ENTRY_ENUM_CLASSES = Set.of();
 
     public static void setEnumClassNames(Set<String> enumClassNames) {
         ENUM_CLASSES = Set.copyOf(enumClassNames);
+    }
+
+    public static void setSingleEntryEnumClassNames(Set<String> enumClassNames) {
+        SINGLE_ENTRY_ENUM_CLASSES = Set.copyOf(enumClassNames);
     }
 
     public static List<String> auditEntries() {
@@ -81,7 +92,9 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             return (int) AUDIT.stream()
                     .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
                             || entry.contains("Compose default-argument invalidation decision")
-                            || entry.contains(COMPOSABLE_DEFAULT_REASON))
+                            || entry.contains(COMPOSABLE_DEFAULT_REASON)
+                            || entry.contains(SINGLE_ENTRY_ENUM_REASON)
+                            || entry.contains(RESTART_SCOPE_REASON))
                     .count();
         }
     }
@@ -91,10 +104,12 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             return (int) AUDIT.stream()
                     .filter(entry -> entry.contains("captured-state Compose remember cache mask decision")
                             || entry.contains("Compose default-argument invalidation decision")
-                            || entry.contains(COMPOSABLE_DEFAULT_REASON))
+                            || entry.contains(COMPOSABLE_DEFAULT_REASON)
+                            || entry.contains(SINGLE_ENTRY_ENUM_REASON)
+                            || entry.contains(RESTART_SCOPE_REASON))
                     .count() * 2
                     + (int) AUDIT.stream()
-                            .filter(entry -> entry.contains("exhaustive Compose enum switch default outcome"))
+                            .filter(entry -> entry.contains(ENUM_SWITCH_DEFAULT_REASON))
                             .count();
         }
     }
@@ -111,10 +126,98 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
                 filterRememberCacheMaskBranches(method, context, output);
                 filterComposableDefaultInvalidationBranches(method, context, output);
                 filterComposableDefaultDispatch(method, context, output);
+                filterRestartScopeNullDecision(method, context, output);
             }
             filterImplicitCoroutineCompletion(method, context, output);
             filterFunctionReferenceForwarder(method, context, output);
         }
+    }
+
+    /** Removes only the generated null check around the scope returned by endRestartGroup. */
+    private static void filterRestartScopeNullDecision(MethodNode method,
+            IFilterContext context, IFilterOutput output) {
+        if (!isComposable(method)) return;
+        int composerSlot = hiddenComposerParameterSlot(method);
+        if (composerSlot < 0) return;
+
+        List<AbstractInsnNode> insns = new ArrayList<>();
+        for (AbstractInsnNode insn : method.instructions) insns.add(insn);
+        for (int i = 0; i < insns.size(); i++) {
+            if (!(insns.get(i) instanceof MethodInsnNode endRestart)
+                    || endRestart.getOpcode() != Opcodes.INVOKEINTERFACE
+                    || !COMPOSER.equals(endRestart.owner)
+                    || !"endRestartGroup".equals(endRestart.name)
+                    || !"()Landroidx/compose/runtime/ScopeUpdateScope;".equals(endRestart.desc)) continue;
+
+            AbstractInsnNode receiver = previousOpcode(endRestart.getPrevious());
+            if (!(receiver instanceof VarInsnNode composerLoad)
+                    || composerLoad.getOpcode() != Opcodes.ALOAD
+                    || composerSlot != composerLoad.var) continue;
+            AbstractInsnNode store = nextOpcode(endRestart);
+            if (!(store instanceof VarInsnNode scopeStore) || scopeStore.getOpcode() != Opcodes.ASTORE) continue;
+            AbstractInsnNode reload = nextOpcode(store);
+            if (!(reload instanceof VarInsnNode scopeLoad) || scopeLoad.getOpcode() != Opcodes.ALOAD
+                    || scopeLoad.var != scopeStore.var) continue;
+            AbstractInsnNode duplicate = nextOpcode(reload);
+            AbstractInsnNode decision = nextOpcode(duplicate);
+            if (duplicate == null || duplicate.getOpcode() != Opcodes.DUP
+                    || !(decision instanceof JumpInsnNode jump) || jump.getOpcode() != Opcodes.IFNULL
+                    || isAlreadyFilteredBranch(output, decision)) continue;
+
+            if (!isGeneratedRestartCallbackPath(decision.getNext(), jump.label)) continue;
+            AbstractInsnNode pop = nextOpcode(jump.label);
+            AbstractInsnNode returned = nextOpcode(pop);
+            if (!isMethodTail(returned)) continue;
+            output.ignore(decision, decision);
+            audit(context, method, decision, decision, RESTART_SCOPE_REASON);
+        }
+    }
+
+    private static int hiddenComposerParameterSlot(MethodNode method) {
+        int slot = (method.access & Opcodes.ACC_STATIC) == 0 ? 1 : 0;
+        Type[] arguments = Type.getArgumentTypes(method.desc);
+        for (int index = 0; index < arguments.length; index++) {
+            Type argument = arguments[index];
+            if (argument.getSort() == Type.OBJECT && COMPOSER.equals(argument.getInternalName())) {
+                int trailingIntCount = 0;
+                boolean onlyCompilerIntsFollow = true;
+                for (int tail = index + 1; tail < arguments.length; tail++) {
+                    if (arguments[tail].getSort() != Type.INT) {
+                        onlyCompilerIntsFollow = false;
+                        break;
+                    }
+                    trailingIntCount++;
+                }
+                if (onlyCompilerIntsFollow && trailingIntCount > 0) return slot;
+            }
+            slot += argument.getSize();
+        }
+        return -1;
+    }
+
+    private static boolean isMethodTail(AbstractInsnNode insn) {
+        if (insn == null || insn.getOpcode() != Opcodes.RETURN) return false;
+        for (AbstractInsnNode cursor = insn.getNext(); cursor != null; cursor = cursor.getNext()) {
+            if (cursor.getOpcode() >= 0) return false;
+        }
+        return true;
+    }
+
+    private static boolean isGeneratedRestartCallbackPath(AbstractInsnNode start, AbstractInsnNode nullArm) {
+        boolean callbackFactory = false;
+        boolean updateScope = false;
+        for (AbstractInsnNode insn = start; insn != null && insn != nullArm; insn = insn.getNext()) {
+            if (insn instanceof org.objectweb.asm.tree.InvokeDynamicInsnNode) callbackFactory = true;
+            if (insn instanceof MethodInsnNode call && call.getOpcode() == Opcodes.INVOKEINTERFACE
+                    && "androidx/compose/runtime/ScopeUpdateScope".equals(call.owner)
+                    && "updateScope".equals(call.name)
+                    && "(Lkotlin/jvm/functions/Function2;)V".equals(call.desc)) updateScope = true;
+        }
+        if (!callbackFactory || !updateScope || nullArm == null) return false;
+        AbstractInsnNode pop = nextOpcode(nullArm);
+        AbstractInsnNode returned = nextOpcode(pop);
+        return pop != null && pop.getOpcode() == Opcodes.POP
+                && returned != null && returned.getOpcode() == Opcodes.RETURN;
     }
 
     /** Removes a hidden default-mask test only when its fallthrough computes that parameter's default. */
@@ -370,14 +473,14 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             int remembered = findCall(all, markerStart + 1, COMPOSER, "rememberedValue", "()Ljava/lang/Object;");
             if (remembered < 0 || remembered >= markerEnd || !hasRememberCacheGate(all, remembered, markerEnd)) continue;
             List<AbstractInsnNode> region = all.subList(markerStart + 1, remembered);
-            if (!isCompilerChangedMaskRegion(region)) continue;
+            if (!isCompilerChangedMaskRegion(method, region)) continue;
             if (!usesCompilerMaskLocals(method, region)) continue;
-            int changedInstanceCalls = 0;
+            int composerChangedCalls = 0;
             for (AbstractInsnNode insn : region) {
                 if (insn instanceof MethodInsnNode call && COMPOSER.equals(call.owner)
-                        && isComposerChangedCall(call)) changedInstanceCalls++;
+                        && isComposerChangedCall(call)) composerChangedCalls++;
             }
-            if (changedInstanceCalls == 0) continue;
+            if (composerChangedCalls == 0) continue;
             for (AbstractInsnNode insn : region) {
                 if (insn instanceof org.objectweb.asm.tree.JumpInsnNode
                         && !isAlreadyFilteredBranch(output, insn)
@@ -433,12 +536,13 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         return false;
     }
 
-    private static boolean isCompilerChangedMaskRegion(List<AbstractInsnNode> region) {
+    private static boolean isCompilerChangedMaskRegion(MethodNode method, List<AbstractInsnNode> region) {
         int ands = 0;
         int changedCalls = 0;
         int stores = 0;
         int conditionals = 0;
-        for (AbstractInsnNode insn : region) {
+        for (int index = 0; index < region.size(); index++) {
+            AbstractInsnNode insn = region.get(index);
             int opcode = insn.getOpcode();
             if (opcode < 0) continue;
             if (opcode == Opcodes.IAND) ands++;
@@ -446,10 +550,57 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             else if (insn instanceof org.objectweb.asm.tree.JumpInsnNode) conditionals++;
             else if (insn instanceof MethodInsnNode call) {
                 if (COMPOSER.equals(call.owner) && isComposerChangedCall(call)) changedCalls++;
-                else if (!"sourceInformationMarkerStart".equals(call.name)) return false;
+                else if (!"sourceInformationMarkerStart".equals(call.name)
+                        && !isEnumOrdinalCapturePart(region, index)) return false;
+            } else if (insn instanceof TypeInsnNode && isEnumOrdinalCapturePart(region, index)) {
+                // Compose represents a stable enum capture as enum.ordinal() passed directly to changed(int).
+            } else if (opcode == Opcodes.LLOAD && isLongChangedCapturePart(method, region, insn)) {
+                // A long captured key is allowed only as the direct value argument to Composer.changed(long).
             } else if (!isMaskOpcode(insn)) return false;
         }
         return ands >= 2 && changedCalls >= 1 && stores >= 1 && conditionals >= 2;
+    }
+
+    private static boolean isLongChangedCapturePart(MethodNode method,
+            List<AbstractInsnNode> region, AbstractInsnNode load) {
+        int composerSlot = hiddenComposerParameterSlot(method);
+        if (composerSlot < 0) return false;
+        AbstractInsnNode receiver = previousOpcode(load.getPrevious());
+        AbstractInsnNode comparison = nextOpcode(load);
+        return receiver instanceof VarInsnNode composerLoad
+                && composerLoad.getOpcode() == Opcodes.ALOAD && composerLoad.var == composerSlot
+                && comparison instanceof MethodInsnNode call
+                && call.getOpcode() == Opcodes.INVOKEINTERFACE
+                && COMPOSER.equals(call.owner) && "changed".equals(call.name)
+                && "(J)Z".equals(call.desc)
+                && region.contains(receiver) && region.contains(comparison);
+    }
+
+    /**
+     * Recognises only the compiler's enum-key encoding when ordinal() directly
+     * supplies Composer.changed(int). An ordinal used by an application
+     * condition or any other call sequence does not satisfy this pattern.
+     */
+    private static boolean isEnumOrdinalCapturePart(List<AbstractInsnNode> region, int index) {
+        AbstractInsnNode insn = region.get(index);
+        AbstractInsnNode cast = insn instanceof TypeInsnNode typeInsn
+                && typeInsn.getOpcode() == Opcodes.CHECKCAST
+                ? insn
+                : previousOpcode(insn.getPrevious());
+        if (!(cast instanceof TypeInsnNode typeInsn)
+                || typeInsn.getOpcode() != Opcodes.CHECKCAST || !"java/lang/Enum".equals(typeInsn.desc)) {
+            return false;
+        }
+        AbstractInsnNode ordinal = nextOpcode(cast);
+        AbstractInsnNode changed = ordinal == null ? null : nextOpcode(ordinal);
+        return ordinal instanceof MethodInsnNode ordinalCall
+                && ordinalCall.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && "java/lang/Enum".equals(ordinalCall.owner)
+                && "ordinal".equals(ordinalCall.name) && "()I".equals(ordinalCall.desc)
+                && changed instanceof MethodInsnNode changedCall
+                && changedCall.getOpcode() == Opcodes.INVOKEINTERFACE
+                && COMPOSER.equals(changedCall.owner)
+                && "changed".equals(changedCall.name) && "(I)Z".equals(changedCall.desc);
     }
 
     private static boolean isComposerChangedCall(MethodInsnNode call) {
@@ -633,23 +784,73 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             } else if (insn instanceof LookupSwitchInsnNode lookup) {
                 defaultLabel = lookup.dflt;
             }
-            if (defaultLabel == null) {
-                continue;
-            }
-            List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel, insn);
-            if (isComposeExhaustiveSwitchFallback(block)) {
-                AbstractInsnNode first = block.get(0);
-                AbstractInsnNode thrown = block.get(block.size() - 1);
-                if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn, context)) {
-                    output.replaceBranches(insn, Replacements.ignoreDefaultBranch(insn));
-                    audit(context, method, insn, insn,
-                            "exhaustive Compose enum switch default outcome");
+            if (defaultLabel != null) {
+                List<AbstractInsnNode> block = instructionsUntilThrow(defaultLabel, insn);
+                if (isComposeExhaustiveSwitchFallback(block)) {
+                    AbstractInsnNode first = block.get(0);
+                    AbstractInsnNode thrown = block.get(block.size() - 1);
+                    if (!isAlreadyFilteredBranch(output, insn) && isEnumMappingSwitch(insn, context)) {
+                        output.replaceBranches(insn, Replacements.ignoreDefaultBranch(insn));
+                        audit(context, method, insn, insn, ENUM_SWITCH_DEFAULT_REASON);
+                    }
+                    output.ignore(first, thrown);
+                    audit(context, method, first, thrown,
+                            "composable switch default NoWhenBranchMatchedException");
                 }
-                output.ignore(first, thrown);
-                audit(context, method, first, thrown,
-                        "composable switch default NoWhenBranchMatchedException");
+            } else if (insn instanceof JumpInsnNode jump
+                    && !isAlreadyFilteredBranch(output, insn)
+                    && isConditionalEnumDefault(jump, context)) {
+                List<AbstractInsnNode> block = instructionsUntilThrow(jump.label, insn);
+                if (isComposeExhaustiveSwitchFallback(block)) {
+                    AbstractInsnNode first = block.get(0);
+                    AbstractInsnNode thrown = block.get(block.size() - 1);
+                    Replacements replacements = new Replacements();
+                    replacements.add(jump.label, jump, 1);
+                    output.replaceBranches(jump, replacements);
+                    audit(context, method, jump, jump, SINGLE_ENTRY_ENUM_REASON);
+                    output.ignore(first, thrown);
+                    audit(context, method, first, thrown,
+                            "composable switch default NoWhenBranchMatchedException");
+                }
             }
         }
+    }
+
+    /**
+     * Kotlin lowers an exhaustive {@code when} over a one-entry enum to an
+     * integer comparison. Its unequal outcome can only reach the same generated
+     * Compose exception arm as an enum-mapping switch default.
+     */
+    private static boolean isConditionalEnumDefault(JumpInsnNode branch, IFilterContext context) {
+        if (branch.getOpcode() != Opcodes.IF_ICMPNE
+                || !SINGLE_ENTRY_ENUM_CLASSES.contains(enumOrdinalOwner(branch))) return false;
+        AbstractInsnNode caseValue = previousOpcode(branch.getPrevious());
+        AbstractInsnNode arrayLoad = previousOpcode(caseValue == null ? null : caseValue.getPrevious());
+        AbstractInsnNode ordinal = previousOpcode(arrayLoad == null ? null : arrayLoad.getPrevious());
+        AbstractInsnNode swap = previousOpcode(ordinal == null ? null : ordinal.getPrevious());
+        AbstractInsnNode mapping = previousOpcode(swap == null ? null : swap.getPrevious());
+        if (!Integer.valueOf(1).equals(integerConstantValue(caseValue))
+                || arrayLoad == null || arrayLoad.getOpcode() != Opcodes.IALOAD
+                || !(ordinal instanceof MethodInsnNode ordinalCall)
+                || ordinalCall.getOpcode() != Opcodes.INVOKEVIRTUAL
+                || !"ordinal".equals(ordinalCall.name) || !"()I".equals(ordinalCall.desc)
+                || swap == null || swap.getOpcode() != Opcodes.SWAP
+                || !(mapping instanceof FieldInsnNode field)
+                || field.getOpcode() != Opcodes.GETSTATIC
+                || !field.name.startsWith("$EnumSwitchMapping$")
+                || !isEnclosingWhenMappingsOwner(field.owner, context.getClassName())
+                || !"[I".equals(field.desc)) return false;
+        return ENUM_CLASSES.contains(ordinalCall.owner);
+    }
+
+    private static String enumOrdinalOwner(JumpInsnNode branch) {
+        AbstractInsnNode caseValue = previousOpcode(branch.getPrevious());
+        AbstractInsnNode arrayLoad = previousOpcode(caseValue == null ? null : caseValue.getPrevious());
+        AbstractInsnNode ordinal = previousOpcode(arrayLoad == null ? null : arrayLoad.getPrevious());
+        return ordinal instanceof MethodInsnNode ordinalCall
+                && ordinalCall.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && "ordinal".equals(ordinalCall.name) && "()I".equals(ordinalCall.desc)
+                ? ordinalCall.owner : "";
     }
 
     private static boolean isEnumMappingSwitch(AbstractInsnNode insn, IFilterContext context) {

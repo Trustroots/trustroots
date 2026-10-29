@@ -115,7 +115,7 @@ internal fun MessageConversationEntryScreen(
                 leadingContent = member?.let {
                     {
                         RemoteArtwork(
-                            url = it.id?.let { id -> api.avatarURL(id, 64) },
+                            url = api.avatarURL(it.id, 64),
                             sessionCookie = session.cookieHeader,
                             label = it.localizedLabel(),
                             size = 36.dp,
@@ -150,31 +150,33 @@ internal fun MessageConversationEntryScreen(
             }
             if (state.isLoading && member == null) CircularProgressIndicator()
             LazyColumn(Modifier.weight(1f).testTag("conversationMessages"), state = messageListState, reverseLayout = true) {
-                items(state.messages, key = { it.id }) { message ->
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (message.sender.username == state.currentUsername) Arrangement.End else Arrangement.Start,
-                    ) {
-                        if (message.sender.username != state.currentUsername && member != null) {
-                            RemoteArtwork(
-                                url = member.id?.let { api.avatarURL(it, 64) },
-                                sessionCookie = session.cookieHeader,
-                                label = member.localizedLabel(),
-                                size = 30.dp,
-                            )
-                        }
-                        Surface(
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (message.sender.username == state.currentUsername) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
-                            modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 8.dp)
-                                .widthIn(max = 280.dp)
-                                .testTag(if (message.sender.username == state.currentUsername) "outgoingMessage" else "incomingMessage"),
+                if (member != null) {
+                    items(state.messages, key = { it.id }) { message ->
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = if (message.sender.username == state.currentUsername) Arrangement.End else Arrangement.Start,
                         ) {
-                            Column(Modifier.padding(12.dp)) {
-                                Text(Html.fromHtml(message.content, Html.FROM_HTML_MODE_COMPACT).toString().trim())
-                                message.createdAt?.let { created ->
-                                    Text(messageTime(LocalContext.current.resources, created), style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            if (message.sender.username != state.currentUsername) {
+                                RemoteArtwork(
+                                    url = api.avatarURL(member.id, 64),
+                                    sessionCookie = session.cookieHeader,
+                                    label = member.localizedLabel(),
+                                    size = 30.dp,
+                                )
+                            }
+                            Surface(
+                                shape = RoundedCornerShape(16.dp),
+                                color = if (message.sender.username == state.currentUsername) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                                modifier = Modifier.padding(start = 6.dp, top = 8.dp, bottom = 8.dp)
+                                    .widthIn(max = 280.dp)
+                                    .testTag(if (message.sender.username == state.currentUsername) "outgoingMessage" else "incomingMessage"),
+                            ) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(Html.fromHtml(message.content, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                                    message.createdAt?.let { created ->
+                                        Text(messageTime(LocalContext.current.resources, created), style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    }
                                 }
                             }
                         }
@@ -182,12 +184,12 @@ internal fun MessageConversationEntryScreen(
                 }
             }
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            if (state.showQuickReply) {
+            if (member != null && state.showQuickReply) {
                 QuickReplyBar(
                     onHostYes = { quickReply(yesMessage) },
                     onHostNo = { quickReply(noMessage) },
                     onWriteBack = { composerFocus.requestFocus() },
-                    enabled = !state.isSending && member?.id != null,
+                    enabled = !state.isSending,
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -203,7 +205,7 @@ internal fun MessageConversationEntryScreen(
                 trailingIcon = {
                     IconButton(
                         onClick = { send(state.draft) },
-                        enabled = member?.id != null && state.draft.isNotBlank() && !state.isSending,
+                        enabled = member != null && state.draft.isNotBlank() && !state.isSending,
                     ) {
                         Icon(Icons.AutoMirrored.Filled.Send,
                             contentDescription = stringResource(if (state.isSending) R.string.form_sending_message else R.string.form_send_message))

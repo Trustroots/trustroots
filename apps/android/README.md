@@ -243,11 +243,12 @@ the table's rounded percentages. Per-file figures are informational. The baselin
 is measured with all unit and device tests, so do not use a filtered test run to
 update it.
 
-Repeat the complete suite before raising the floor. The saved `branchMargin`
-allows ten branches when calculating a new branch floor: the initial measurements
-varied by six branches between local and CI emulators, and by three between local
-runs. The line floor uses the measured ratio without an allowance. The allowance
-does not relax checks against the saved floor and cannot lower an existing floor.
+Both saved floors require 100% coverage. The saved `branchMargin` is zero, so
+baseline updates retain complete line and branch coverage without an allowance.
+Use complete unit and device execution data from matching application bytecode
+when updating the baseline; unchanged classes may reuse their verified CI probes.
+The report generator rejects mismatched class identities, and baseline updates
+cannot lower an existing floor.
 
 When coverage improves, raise the baseline and commit it with the change:
 

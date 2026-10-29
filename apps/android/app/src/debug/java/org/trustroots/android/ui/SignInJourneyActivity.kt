@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Column
@@ -13,12 +14,16 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
+internal fun Intent.requireJourneyApiBaseUrl(): String =
+    requireNotNull(getStringExtra(SignInJourneyActivity.API_BASE_URL_EXTRA))
+
 class SignInJourneyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
-        val apiBaseUrl = requireNotNull(intent.getStringExtra(API_BASE_URL_EXTRA))
+        val apiBaseUrl = intent.requireJourneyApiBaseUrl()
         setContent {
             TrustrootsTheme {
+                val profileBrowserURL = intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA)
                 TrustrootsApp(
                     apiBaseUrl = apiBaseUrl,
                     reconcileAlerts = { _, _ -> },
@@ -33,10 +38,10 @@ class SignInJourneyActivity : ComponentActivity() {
                                 TextButton(onClick = onClose) { Text("Close fake browser") }
                             }
                         }
-                    } else if (intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA) != null) {
+                    } else if (profileBrowserURL != null) {
                         { route, onClose, contentPadding ->
                             org.trustroots.android.browser.DefaultBrowserContent(
-                                route.copy(url = requireNotNull(intent.getStringExtra(PROFILE_BROWSER_URL_EXTRA))),
+                                route.copy(url = profileBrowserURL),
                                 onClose,
                                 contentPadding,
                             )

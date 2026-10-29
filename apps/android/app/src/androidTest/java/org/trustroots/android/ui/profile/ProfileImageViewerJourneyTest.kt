@@ -382,6 +382,78 @@ class ProfileImageViewerJourneyTest {
         assertEquals(grownFit, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
     }
 
+    @Test fun replacingBitmapWhileViewerIsOpenResetsZoomForTheNewPhoto() {
+        val bitmap = mutableStateOf(Bitmap.createBitmap(2_000, 1_500, Bitmap.Config.ARGB_8888))
+        compose.setContent {
+            MaterialTheme {
+                ProfileImageViewer(
+                    bitmap = bitmap.value,
+                    isLoading = false,
+                    memberLabel = "Sample member",
+                    onClose = {},
+                )
+            }
+        }
+
+        val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
+        compose.waitUntil(2_000) { imageViewport(image) != IntSize.Zero }
+        repeat(12) { compose.onNodeWithContentDescription("Zoom in").performClick() }
+        assertEquals(1f, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
+
+        val replacement = Bitmap.createBitmap(3_200, 2_000, Bitmap.Config.ARGB_8888)
+        val viewport = imageViewport(image)
+        val replacementFit = minOf(
+            1f,
+            viewport.width.toFloat() / replacement.width,
+            viewport.height.toFloat() / replacement.height,
+        )
+        bitmap.value = replacement
+
+        compose.waitUntil(2_000) {
+            image.fetchSemanticsNode().config[ProfileImageScaleKey] == replacementFit &&
+                imageTranslation(image) == (0f to 0f)
+        }
+        assertEquals(replacementFit, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
+    }
+
+    @Test fun zeroHeightViewportKeepsZoomUnavailableUntilBothDimensionsArePositive() {
+        val bitmap = Bitmap.createBitmap(2_000, 1_500, Bitmap.Config.ARGB_8888)
+        val viewportHeight = mutableStateOf(0.dp)
+        compose.setContent {
+            MaterialTheme {
+                ProfileImageViewer(
+                    bitmap = bitmap,
+                    isLoading = false,
+                    memberLabel = "Sample member",
+                    onClose = {},
+                    modifier = Modifier.size(320.dp, viewportHeight.value),
+                )
+            }
+        }
+
+        val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
+        compose.waitUntil(2_000) { imageViewport(image).width > 0 }
+        assertEquals(0, imageViewport(image).height)
+        assertTrue(
+            "Zoom accessibility actions should not be offered before the viewport is usable",
+            image.fetchSemanticsNode().config[SemanticsActions.CustomActions].isEmpty(),
+        )
+        compose.onNodeWithContentDescription("Zoom in").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Zoom out").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Reset profile photo zoom").assertIsNotEnabled()
+
+        viewportHeight.value = 320.dp
+        compose.waitUntil(2_000) {
+            val viewport = imageViewport(image)
+            viewport.width > 0 && viewport.height > 0
+        }
+        val viewport = imageViewport(image)
+        val expectedFit = ProfileImageGeometry.initialScale(bitmap.width, bitmap.height, viewport.width, viewport.height)
+        assertEquals(expectedFit, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
+        compose.onNodeWithContentDescription("Zoom in").assertIsEnabled()
+        assertEquals(3, image.fetchSemanticsNode().config[SemanticsActions.CustomActions].size)
+    }
+
     private fun imageViewport(image: SemanticsNodeInteraction): IntSize =
         image.fetchSemanticsNode().config[ProfileImageViewportKey].split(',').let { parts ->
             IntSize(parts[0].toInt(), parts[1].toInt())

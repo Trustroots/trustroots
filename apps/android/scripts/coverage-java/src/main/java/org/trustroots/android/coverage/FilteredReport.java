@@ -26,6 +26,7 @@ import org.jacoco.report.DirectorySourceFileLocator;
 import org.jacoco.report.xml.XMLFormatter;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.tree.ClassNode;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
@@ -63,7 +64,9 @@ public final class FilteredReport {
         }
         final CoverageBuilder coverage = new CoverageBuilder();
         TrustrootsGeneratedCodeFilter.clearAudit();
-        TrustrootsGeneratedCodeFilter.setEnumClassNames(indexEnumClassNames(classDirectories));
+        EnumClassIndex enumClasses = indexEnumClasses(classDirectories);
+        TrustrootsGeneratedCodeFilter.setEnumClassNames(enumClasses.names());
+        TrustrootsGeneratedCodeFilter.setSingleEntryEnumClassNames(enumClasses.singleEntryNames());
         final Analyzer analyzer = new Analyzer(loader.getExecutionDataStore(), coverage);
         int analyzedClasses = 0;
         for (String path : classDirectories.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
@@ -96,13 +99,13 @@ public final class FilteredReport {
                             + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + " conditional decisions and "
                             + (TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount()
                                     - TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() * 2)
-                            + " switch outcomes");
+                            + " enum switch default outcomes");
         }
         writeAudit(auditFile, TrustrootsGeneratedCodeFilter.auditEntries());
         System.out.println("Filtered report written: raw branches " + rawBranches[0] + " missed/"
                 + rawBranches[1] + " covered; filtered " + filteredBranches[0] + "/"
                 + filteredBranches[1] + "; audited branch decisions "
-                + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + " and audited switch outcomes "
+                + TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() + " and audited enum switch default outcomes "
                 + (TrustrootsGeneratedCodeFilter.filteredBranchOutcomeCount()
                         - TrustrootsGeneratedCodeFilter.filteredBranchDecisionCount() * 2) + ".");
     }
@@ -150,13 +153,14 @@ public final class FilteredReport {
         return 1;
     }
 
-    private static Set<String> indexEnumClassNames(String classDirectories) throws IOException {
+    private static EnumClassIndex indexEnumClasses(String classDirectories) throws IOException {
         Set<String> enumClassNames = new HashSet<>();
+        Set<String> singleEntryEnumClassNames = new HashSet<>();
         for (String path : classDirectories.split(java.util.regex.Pattern.quote(File.pathSeparator))) {
             File root = new File(path);
             if (!root.exists()) continue;
             if (root.isFile()) {
-                addEnumClass(root.toPath(), enumClassNames);
+                addEnumClass(root.toPath(), enumClassNames, singleEntryEnumClassNames);
                 continue;
             }
             try (var paths = Files.walk(root.toPath())) {
@@ -166,22 +170,31 @@ public final class FilteredReport {
                     if (name.equals("R.class") || name.startsWith("R$") || name.equals("BuildConfig.class")) {
                         continue;
                     }
-                    addEnumClass(classFile, enumClassNames);
+                    addEnumClass(classFile, enumClassNames, singleEntryEnumClassNames);
                 }
             }
         }
-        return Set.copyOf(enumClassNames);
+        return new EnumClassIndex(Set.copyOf(enumClassNames), Set.copyOf(singleEntryEnumClassNames));
     }
 
-    private static void addEnumClass(java.nio.file.Path classFile, Set<String> enumClassNames) throws IOException {
+    private static void addEnumClass(java.nio.file.Path classFile, Set<String> enumClassNames,
+            Set<String> singleEntryEnumClassNames) throws IOException {
         String fileName = classFile.getFileName().toString();
         if (!fileName.endsWith(".class") || fileName.equals("R.class") || fileName.startsWith("R$")
                 || fileName.equals("BuildConfig.class")) return;
-        ClassReader classReader = new ClassReader(Files.readAllBytes(classFile));
-        if ((classReader.getAccess() & Opcodes.ACC_ENUM) != 0) {
-            enumClassNames.add(classReader.getClassName());
+        ClassNode classNode = new ClassNode(Opcodes.ASM9);
+        new ClassReader(Files.readAllBytes(classFile)).accept(classNode,
+                ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG | ClassReader.SKIP_FRAMES);
+        if ((classNode.access & Opcodes.ACC_ENUM) != 0) {
+            enumClassNames.add(classNode.name);
+            long enumConstants = classNode.fields.stream()
+                    .filter(field -> (field.access & Opcodes.ACC_ENUM) != 0)
+                    .count();
+            if (enumConstants == 1) singleEntryEnumClassNames.add(classNode.name);
         }
     }
+
+    private record EnumClassIndex(Set<String> names, Set<String> singleEntryNames) {}
 
     private static void writeReport(File destination, SessionInfoStore sessions,
             ExecutionDataStore executionData, CoverageBuilder coverage, File sourceDirectory) throws IOException {

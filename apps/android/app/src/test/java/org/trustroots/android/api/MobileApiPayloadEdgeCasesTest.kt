@@ -2,6 +2,7 @@ package org.trustroots.android.api
 
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -32,6 +33,16 @@ class MobileApiPayloadEdgeCasesTest {
         assertEquals("valid-feature", offers.single().id)
         assertEquals(12.5, offers.single().latitude, 0.0001)
         assertEquals(-45.25, offers.single().longitude, 0.0001)
+    }
+
+    @Test fun contactRelationshipNormalisesBlankIdentifiersAtTheApiBoundary() {
+        for (id in listOf("", "   ")) {
+            val relationship = parseContactRelationship(JSONObject().put("_id", id).put("confirmed", true))
+            assertNull(relationship.id)
+            assertTrue(relationship.confirmed)
+        }
+        val relationship = parseContactRelationship(JSONObject().put("_id", " contact-edge "))
+        assertEquals("contact-edge", relationship.id)
     }
 
     @Test fun contactRelationshipDefaultsUnexpectedBooleanAndMissingId() {
