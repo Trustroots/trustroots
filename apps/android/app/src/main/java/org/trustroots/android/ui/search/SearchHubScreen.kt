@@ -147,8 +147,7 @@ internal fun SearchHubScreen(
     val selectMode: (Int) -> Unit = { tab ->
         val mode = modeFor(tab)
         if (currentMode != mode) {
-            // Mode controls replace the active mode route that owns them.
-            searchBackStack.removeLastOrNull()
+            if (searchBackStack.lastOrNull() is SearchModeVisit) searchBackStack.removeLastOrNull()
             searchBackStack.add(SearchModeVisit(mode, nextRouteID++))
         }
     }
