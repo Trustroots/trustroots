@@ -24,7 +24,7 @@
   cursor: not-allowed;
 }
 .tr-button:focus-visible {
-  outline: 2px solid currentColor;
+  outline: 2px solid var(--tr-text-color);
   outline-offset: 2px;
 }
 .tr-alert {

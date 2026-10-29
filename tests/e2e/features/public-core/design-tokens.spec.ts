@@ -125,6 +125,47 @@ test('prefixed utilities coexist with Bootstrap in LTR and RTL', async ({
   await expectUtilityAndBootstrap(page);
 });
 
+test('owned buttons show a contrasting keyboard focus ring on white', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.home', ['Homepage loads for visitors.']);
+  await page.goto('/');
+  await expectDesignTokens(page);
+  await page.evaluate(() => {
+    const host = document.createElement('div');
+    host.id = 'button-focus-probe';
+    host.tabIndex = -1;
+    host.style.backgroundColor = '#fff';
+    for (const variant of ['primary', 'default']) {
+      const button = document.createElement('button');
+      button.className = `tr-button tr-button--${variant}`;
+      button.textContent = `Focus ${variant}`;
+      host.append(button);
+    }
+    document.body.prepend(host);
+    host.focus();
+  });
+  for (const variant of ['primary', 'default']) {
+    await page.keyboard.press('Tab');
+    const button = page.getByRole('button', {
+      name: `Focus ${variant}`,
+      exact: true,
+    });
+    await expect(button).toBeFocused();
+    expect(
+      await button.evaluate(element => element.matches(':focus-visible')),
+    ).toBe(true);
+    await expect(button).toHaveCSS('outline-style', 'solid');
+    await expect(button).toHaveCSS('outline-width', '2px');
+    const colours = await button.evaluate(element => ({
+      ring: getComputedStyle(element).outlineColor,
+      surface: getComputedStyle(element.parentElement!).backgroundColor,
+    }));
+    expect(colours.ring).not.toBe(colours.surface);
+    expect(colours.ring).not.toBe('rgba(0, 0, 0, 0)');
+  }
+});
+
 test('design tokens resolve on public pages in LTR and RTL', async ({
   page,
   context,
