@@ -166,6 +166,7 @@ class PopulatedInboxJourneyTest {
         }
         val rootBounds = compose.onRoot().fetchSemanticsNode().boundsInRoot
         val row = compose.onNodeWithTag("message-thread-thread-fox")
+        compose.onNodeWithText("Just now").assertIsDisplayed()
         val rowBounds = row.fetchSemanticsNode().boundsInRoot
         val edgeTolerance = with(compose.density) { 1.dp.toPx() }
         assertTrue("Inbox row should start at the list's full-width edge", rowBounds.left <= rootBounds.left + edgeTolerance)
@@ -192,7 +193,7 @@ class PopulatedInboxJourneyTest {
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
 
     private fun inboxPayload(): String =
-        """[{"_id":"thread-fox","userFrom":{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"},"userTo":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional message from a neighbour."},"read":false},{"_id":"thread-owl","userFrom":{"_id":"member-owl","username":"amber-owl","displayName":"Amber Owl"},"userTo":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional note about a bicycle."},"read":true}]"""
+        """[{"_id":"thread-fox","updated":"2099-01-01T00:00:00Z","userFrom":{"_id":"member-fox","username":"quiet-fox","displayName":"Quiet Fox"},"userTo":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional message from a neighbour."},"read":false},{"_id":"thread-owl","userFrom":{"_id":"member-owl","username":"amber-owl","displayName":"Amber Owl"},"userTo":{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron"},"message":{"excerpt":"A fictional note about a bicycle."},"read":true}]"""
 
     private fun startResponder(responseFor: (String) -> Pair<String, String>) {
         responder = thread(isDaemon = true, name = "populated-inbox-local-api") {

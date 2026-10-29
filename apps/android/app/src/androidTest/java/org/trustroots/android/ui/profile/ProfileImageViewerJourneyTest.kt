@@ -36,6 +36,13 @@ import org.trustroots.android.ui.theme.TrustrootsTheme
 class ProfileImageViewerJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+    private fun activateImageAction(image: SemanticsNodeInteraction, label: String) {
+        val action = image.fetchSemanticsNode().config[SemanticsActions.CustomActions]
+            .single { it.label == label }
+        compose.runOnIdle { assertTrue(action.action()) }
+        compose.waitForIdle()
+    }
+
     @Test fun compactProfileAvatarKeepsItsTouchTargetAndIdentityRowFits() {
         var avatarClicked = false
         compose.setContent {
@@ -213,6 +220,9 @@ class ProfileImageViewerJourneyTest {
         }
 
         val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
+        compose.onNodeWithContentDescription("Zoom in").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Zoom out").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Reset profile photo zoom").assertDoesNotExist()
         compose.waitUntil(2_000) { imageViewport(image) != IntSize.Zero }
         val viewport = imageViewport(image)
         val expectedFitScale = minOf(
@@ -221,12 +231,12 @@ class ProfileImageViewerJourneyTest {
             viewport.height.toFloat() / bitmap.height,
         )
         assertEquals(expectedFitScale, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
-        repeat(12) { compose.onNodeWithContentDescription("Zoom in").performClick() }
+        repeat(12) { activateImageAction(image, "Zoom in") }
         image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, 1f))
-        compose.onNodeWithContentDescription("Reset profile photo zoom").performClick()
+        activateImageAction(image, "Reset")
         image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, expectedFitScale))
-        compose.onNodeWithContentDescription("Zoom in").performClick()
-        compose.onNodeWithContentDescription("Zoom out").performClick()
+        activateImageAction(image, "Zoom in")
+        activateImageAction(image, "Zoom out")
         image.assert(SemanticsMatcher.expectValue(ProfileImageScaleKey, expectedFitScale))
     }
 
@@ -336,7 +346,7 @@ class ProfileImageViewerJourneyTest {
 
         val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
         compose.waitUntil(2_000) { imageViewport(image) != IntSize.Zero }
-        repeat(12) { compose.onNodeWithContentDescription("Zoom in").performClick() }
+        repeat(12) { activateImageAction(image, "Zoom in") }
         compose.waitUntil(2_000) { image.fetchSemanticsNode().config[ProfileImageScaleKey] == 1f }
         repeat(8) {
             image.performTouchInput {
@@ -364,7 +374,7 @@ class ProfileImageViewerJourneyTest {
         assertTrue(resizedMaximumPanX < oldMaximumPanX)
         assertTrue(kotlin.math.abs(resizedTranslationX) <= resizedMaximumPanX + 1f)
 
-        repeat(12) { compose.onNodeWithContentDescription("Zoom out").performClick() }
+        repeat(12) { activateImageAction(image, "Zoom out") }
         val fitBeforeGrowth = image.fetchSemanticsNode().config[ProfileImageScaleKey]
         viewportDp.value = IntSize(320, 480)
         compose.waitUntil(2_000) {
@@ -397,7 +407,7 @@ class ProfileImageViewerJourneyTest {
 
         val image = compose.onNodeWithContentDescription("Profile photo of Sample member")
         compose.waitUntil(2_000) { imageViewport(image) != IntSize.Zero }
-        repeat(12) { compose.onNodeWithContentDescription("Zoom in").performClick() }
+        repeat(12) { activateImageAction(image, "Zoom in") }
         assertEquals(1f, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
 
         val replacement = Bitmap.createBitmap(3_200, 2_000, Bitmap.Config.ARGB_8888)
@@ -438,9 +448,9 @@ class ProfileImageViewerJourneyTest {
             "Zoom accessibility actions should not be offered before the viewport is usable",
             image.fetchSemanticsNode().config[SemanticsActions.CustomActions].isEmpty(),
         )
-        compose.onNodeWithContentDescription("Zoom in").assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Zoom out").assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Reset profile photo zoom").assertIsNotEnabled()
+        compose.onNodeWithContentDescription("Zoom in").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Zoom out").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Reset profile photo zoom").assertDoesNotExist()
 
         viewportHeight.value = 320.dp
         compose.waitUntil(2_000) {
@@ -450,7 +460,7 @@ class ProfileImageViewerJourneyTest {
         val viewport = imageViewport(image)
         val expectedFit = ProfileImageGeometry.initialScale(bitmap.width, bitmap.height, viewport.width, viewport.height)
         assertEquals(expectedFit, image.fetchSemanticsNode().config[ProfileImageScaleKey], 0.001f)
-        compose.onNodeWithContentDescription("Zoom in").assertIsEnabled()
+        compose.onNodeWithContentDescription("Zoom in").assertDoesNotExist()
         assertEquals(3, image.fetchSemanticsNode().config[SemanticsActions.CustomActions].size)
     }
 

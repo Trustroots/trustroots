@@ -85,6 +85,7 @@ class MemberProfileStatesJourneyTest {
         }
 
         awaitProfileRequests()
+        compose.onNodeWithText("Experiences (7)").assertIsDisplayed()
         compose.onNodeWithTag("profileSection-contacts").performClick()
         compose.onNodeWithText("1 more contact").performScrollTo().performClick()
         compose.onNodeWithText("Contact Seven").performScrollTo().assertIsDisplayed()

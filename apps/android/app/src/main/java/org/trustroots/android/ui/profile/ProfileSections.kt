@@ -49,6 +49,7 @@ internal enum class ProfileSection(val label: Int) {
 internal fun ProfileSectionBar(
     selected: ProfileSection,
     contactCount: Int,
+    experienceCount: Int,
     onSelect: (ProfileSection) -> Unit,
 ) {
     val artworkForeground = colorResource(R.color.artwork_on_scrim)
@@ -70,10 +71,12 @@ internal fun ProfileSectionBar(
                 }.testTag("profileSection-${section.name.lowercase()}"),
                 text = {
                     Text(
-                        if (section == ProfileSection.Contacts && contactCount > 0) {
-                            pluralStringResource(R.plurals.profile_section_contacts_count, contactCount, contactCount)
-                        } else {
-                            stringResource(section.label)
+                        when {
+                            section == ProfileSection.Contacts && contactCount > 0 ->
+                                pluralStringResource(R.plurals.profile_section_contacts_count, contactCount, contactCount)
+                            section == ProfileSection.Experiences && experienceCount > 0 ->
+                                pluralStringResource(R.plurals.profile_section_experiences_count, experienceCount, experienceCount)
+                            else -> stringResource(section.label)
                         },
                         color = artworkForeground,
                         fontWeight = if (section == selected) FontWeight.SemiBold else FontWeight.Normal,

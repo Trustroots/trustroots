@@ -32,6 +32,7 @@ class MobileApiClientTest {
         assertEquals("other", threads.single().otherMember.id)
         assertEquals("Steady Heron", threads.single().otherMember.displayName)
         assertFalse(threads.single().read)
+        assertEquals(null, threads.single().updatedAt)
         val messages = parseMessages(JSONArray("""[{"_id":"message-one","content":"Hello","userFrom":{"username":"quiet-fox"}}]"""))
         assertEquals("Hello", messages.single().content)
     }
@@ -103,7 +104,7 @@ class MobileApiClientTest {
     fun usesTheOtherConversationDirectionAndDefaultsMissingThreadFields() {
         val threads = parseThreads(
             JSONArray(
-                """[{"_id":"thread-two","userFrom":{"username":"calm-lynx"},"userTo":{"username":"quiet-fox"},"message":"unexpected","read":"unexpected"}]""",
+                """[{"_id":"thread-two","updated":"invalid","userFrom":{"username":"calm-lynx"},"userTo":{"username":"quiet-fox"},"message":"unexpected","read":"unexpected"}]""",
             ),
             "quiet-fox",
         )
@@ -111,6 +112,13 @@ class MobileApiClientTest {
         assertEquals("calm-lynx", threads.single().otherMember.username)
         assertEquals("", threads.single().excerpt)
         assertTrue(threads.single().read)
+        assertEquals(null, threads.single().updatedAt)
+    }
+
+    @Test
+    fun parsesThreadLastMessageTime() {
+        val threads = parseThreads(JSONArray("""[{"_id":"thread-one","updated":"2025-02-03T04:05:06Z","userFrom":{"username":"quiet-fox"},"userTo":{"username":"steady-heron"}}]"""), "quiet-fox")
+        assertEquals(java.time.Instant.parse("2025-02-03T04:05:06Z").toEpochMilli(), threads.single().updatedAt)
     }
 
     @Test

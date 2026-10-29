@@ -68,6 +68,7 @@ class MenuAndAccountCoverageJourneyTest {
         compose.onNodeWithText("Circles").performScrollTo().performClick()
         compose.onNodeWithText("Account").performScrollTo().performClick()
         compose.onNodeWithText("FAQ").performScrollTo().performClick()
+        compose.onNodeWithText("Media").assertDoesNotExist()
 
         assertEquals(
             listOf("profile", "edit profile", "host", "Nostroots", "contacts", "find people", "circles", "account"),
