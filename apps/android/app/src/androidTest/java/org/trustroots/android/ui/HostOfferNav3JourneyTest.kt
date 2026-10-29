@@ -1,7 +1,10 @@
 package org.trustroots.android.ui
 
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
@@ -91,6 +94,29 @@ class HostOfferNav3JourneyTest {
         compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
         assertEquals(1, repository.saveCalls.get())
         assertEquals("existing-entry", repository.submitted.single().id)
+    }
+
+    @Test
+    fun notHostingReasonIsDisabledUntilItsSaveCompletes() {
+        val pendingSave = CompletableDeferred<Result<AccommodationOffer>>()
+        val repository = JourneyHostOfferRepository(
+            loadHandler = { Result.success(HostOfferForm(id = "existing-entry")) },
+            saveHandler = { pendingSave.await() },
+        )
+        launch(repository)
+        compose.onNodeWithText("Open hosting form").performClick()
+        compose.onNodeWithText("No").performClick()
+        compose.onNodeWithText("Why you are not hosting").performTextReplacement("Away for a while")
+        compose.onNodeWithText("Save changes").performClick()
+        compose.waitUntil(5_000) { repository.saveCalls.get() == 1 }
+
+        compose.onNodeWithText("Why you are not hosting").assertIsNotEnabled()
+
+        pendingSave.complete(Result.success(hostOffer("existing-entry")))
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Hosting offer saved.").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
+        compose.onNodeWithText("Why you are not hosting").assertIsEnabled()
+        assertEquals(1, repository.saveCalls.get())
     }
 
     private fun pressSystemBack() {

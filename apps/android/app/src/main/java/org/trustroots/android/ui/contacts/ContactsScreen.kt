@@ -56,6 +56,7 @@ internal fun ContactsScreen(
 ) {
     val model = viewModel ?: rememberContactsViewModel(api, session)
     val state by model.state.collectAsState()
+    val failure = state.failure
     val contactsTitle = stringResource(R.string.screen_contacts_title)
     val contactsEmpty = stringResource(R.string.screen_contacts_empty)
     val usernameHandleFormat = stringResource(R.string.screen_username_handle)
@@ -90,13 +91,12 @@ internal fun ContactsScreen(
                 CircularProgressIndicator(modifier = Modifier.padding(top = 20.dp))
             }
             state.isSessionInvalidated -> Unit
-            state.failure != null -> Box(
+            failure != null -> Box(
                 Modifier.fillMaxSize()
                     .padding(top = appBarPadding.calculateTopPadding(), bottom = bottomPadding)
                     .padding(20.dp),
             ) {
                 Column(Modifier.padding(top = 16.dp)) {
-                    val failure = requireNotNull(state.failure)
                     Text(
                         resolveFailureMessage(
                             UiFailure(
