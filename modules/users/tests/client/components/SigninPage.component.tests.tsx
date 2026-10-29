@@ -68,6 +68,24 @@ describe('SigninPage', () => {
     expect(screen.getByLabelText('Password')).toBeInTheDocument();
   });
 
+  it.each([true, false])(
+    'focuses the username field only on desktop (%s)',
+    desktop => {
+      const originalMatchMedia = window.matchMedia;
+      window.matchMedia = jest.fn().mockReturnValue({ matches: desktop });
+      try {
+        renderPage();
+        if (desktop) {
+          expect(screen.getByLabelText('Email or username')).toHaveFocus();
+        } else {
+          expect(screen.getByLabelText('Email or username')).not.toHaveFocus();
+        }
+      } finally {
+        window.matchMedia = originalMatchMedia;
+      }
+    },
+  );
+
   it('submits credentials and redirects after success', async () => {
     signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
 

@@ -38,10 +38,21 @@ export default function SigninPage() {
   const [authError, setAuthError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const hasRedirected = useRef(false);
+  const usernameInput = useRef<HTMLInputElement>(null);
   const signinDestination = useRef({
     continueSignin: Boolean(continueSignin),
     returnTo,
   });
+
+  useEffect(() => {
+    if (
+      window.matchMedia?.(
+        '(min-width: 768px) and (hover: hover) and (pointer: fine)',
+      ).matches
+    ) {
+      usernameInput.current?.focus();
+    }
+  }, []);
 
   useEffect(() => {
     if (user && !hasRedirected.current) {
@@ -134,6 +145,7 @@ export default function SigninPage() {
                       Email or username
                     </label>
                     <input
+                      ref={usernameInput}
                       type="text"
                       autoCapitalize="off"
                       required
