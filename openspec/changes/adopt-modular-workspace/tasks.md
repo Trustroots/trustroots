@@ -11,6 +11,7 @@
   - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions. Layer-to-app, client/server and shared-code rules remain pending.
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
+  - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
 - [ ] Complete `layers/shell` composition. Route-table extraction landed in #3256; header/navigation, router/layout and provider composition are tracked below. Module route interfaces remain.
   - [x] Move the header and its logged-in/logged-out navigation into `layers/shell`, updating imports directly and retaining existing behaviour tests.
   - [x] Include shell components in translation extraction and verify client coverage and the production build.

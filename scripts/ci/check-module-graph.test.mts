@@ -8,6 +8,7 @@ import {
   diffGraphs,
   findCycles,
   main,
+  missingModelDependencies,
 } from './check-module-graph.mts';
 
 function makeRepo(files: Record<string, string>): string {
@@ -38,6 +39,49 @@ test('records imports across all three styles and model lookups, ignoring tests 
     imports: { a: ['b', 'c'], b: ['a'] },
     models: { c: ['b'] },
   });
+});
+
+test('requires a declared workspace dependency for cross-module model lookups', t => {
+  t.mock.method(console, 'log', () => {});
+  const error = t.mock.method(console, 'error', () => {});
+  const root = makeRepo({
+    'modules/a/server/use.mts': "mongoose.model('Thing');",
+    'modules/a/package.json': JSON.stringify({
+      dependencies: { '@trustroots/b': 'workspace:*' },
+    }),
+    'modules/b/server/model.mts': "mongoose.model('Thing', schema);",
+    'modules/b/package.json': JSON.stringify({ dependencies: {} }),
+  });
+  assert.deepEqual(missingModelDependencies(analyze(root), root), []);
+
+  fs.writeFileSync(
+    path.join(root, 'modules/a/package.json'),
+    JSON.stringify({ dependencies: {} }),
+  );
+  assert.deepEqual(missingModelDependencies(analyze(root), root), [
+    'a -> b: missing @trustroots/b workspace dependency',
+  ]);
+  fs.writeFileSync(
+    path.join(root, 'module-graph-baseline.json'),
+    JSON.stringify({ imports: {}, models: { a: ['b'] } }),
+  );
+  assert.equal(main([], root), 1);
+  assert.match(error.mock.calls.at(-1)!.arguments[0], /a -> b/);
+});
+
+test('checks model ownership and imports in CommonJS TypeScript source', t => {
+  const root = makeRepo({
+    'modules/a/server/use.cts':
+      "const thing = mongoose.model('Thing');\nconst other = require('../../b/server/model.cts');",
+    'modules/a/package.json': JSON.stringify({ dependencies: {} }),
+    'modules/b/server/model.cts': "mongoose.model('Thing', schema);",
+  });
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const graph = analyze(root);
+  assert.deepEqual(graph, { imports: { a: ['b'] }, models: { a: ['b'] } });
+  assert.deepEqual(missingModelDependencies(graph, root), [
+    'a -> b: missing @trustroots/b workspace dependency',
+  ]);
 });
 
 test('diffGraphs reports added and removed links', () => {
@@ -179,7 +223,12 @@ test('findCycles returns only components with more than one module', () => {
 test('main fails on a new link, fails on a stale baseline and passes when equal', t => {
   t.mock.method(console, 'log', () => {});
   const error = t.mock.method(console, 'error', () => {});
-  const root = makeRepo(FIXTURE);
+  const root = makeRepo({
+    ...FIXTURE,
+    'modules/c/package.json': JSON.stringify({
+      dependencies: { '@trustroots/b': 'workspace:*' },
+    }),
+  });
   assert.equal(main([], root), 1);
   assert.equal(main(['--update'], root), 0);
   assert.equal(main([], root), 0);
