@@ -64,7 +64,7 @@ class MenuNavigationContactsRouteTest {
                     onSignedOut = {},
                     onCurrentUsageScreen = { _, screen -> currentUsage.set(screen) },
                     isActiveTabVisit = true,
-                    onResetAvailable = { _, reset -> resetMenu.set(reset) },
+                    onResetAvailable = { reset -> resetMenu.set(reset) },
                     browserContent = { _, _, _ -> },
                     contentPadding = androidx.compose.foundation.layout.PaddingValues.Zero,
                     openFindPeople = {},

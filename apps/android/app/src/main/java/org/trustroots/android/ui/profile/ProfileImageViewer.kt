@@ -98,9 +98,10 @@ internal fun ProfileImageViewer(
     val viewerBackground = colorResource(R.color.profile_image_viewer_background)
     val viewerContent = colorResource(R.color.profile_image_viewer_content)
     LaunchedEffect(bitmap, viewport) {
-        if (bitmap != null && viewportReady && transform != null) {
+        val currentTransform = transform
+        if (bitmap != null && viewportReady && currentTransform != null) {
             transform = ProfileImageGeometry.clamp(
-                requireNotNull(transform),
+                currentTransform,
                 imageSize.width,
                 imageSize.height,
                 viewport.width,

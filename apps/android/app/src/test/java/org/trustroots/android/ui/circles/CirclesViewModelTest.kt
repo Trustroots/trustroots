@@ -54,6 +54,19 @@ class CirclesViewModelTest {
     }
 
     @Test
+    fun acknowledgementWithoutPendingInvalidationLeavesCircleCatalogueUnchanged() = withScope { scope ->
+        val repository = FakeCircleRepository()
+        val viewModel = CirclesViewModel(repository, scope = scope)
+        val before = viewModel.state.value
+
+        viewModel.onEvent(CirclesEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, viewModel.state.value)
+        assertEquals(1, repository.circleReads)
+        assertEquals(1, repository.membershipReads)
+    }
+
+    @Test
     fun loadsCatalogueAndMembershipsAndDerivesSortedDescriptionFilter() = withScope { scope ->
         val repository = FakeCircleRepository(
             circles = listOf(

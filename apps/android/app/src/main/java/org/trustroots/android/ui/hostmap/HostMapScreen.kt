@@ -60,6 +60,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -300,7 +301,8 @@ internal fun HostMapScreen(
                 }
                 view.invalidate()
             },
-            modifier = Modifier.fillMaxSize().testTag("hostMapView"),
+            modifier = Modifier.fillMaxSize().testTag("hostMapView")
+                .onSizeChanged { map.post { dispatchViewport() } },
         )
         Column(
             modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth()

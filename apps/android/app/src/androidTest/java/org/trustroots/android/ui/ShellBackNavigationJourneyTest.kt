@@ -168,6 +168,24 @@ class ShellBackNavigationJourneyTest {
         compose.onNodeWithTag("navigation-circles").assertIsSelected()
     }
 
+    @Test fun queuedSystemBackActionsStopAtTheCirclesRoot() {
+        showShell()
+        waitForText("Discover circles")
+
+        compose.onNodeWithTag("navigation-messages").performClick()
+        waitForText("No conversations yet.")
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+
+        compose.runOnUiThread {
+            compose.activity.onBackPressedDispatcher.onBackPressed()
+            compose.activity.onBackPressedDispatcher.onBackPressed()
+        }
+
+        compose.onNodeWithText("Discover circles").assertIsDisplayed()
+        compose.onNodeWithTag("navigation-circles").assertIsSelected()
+        assertTrue("Repeated Back at the Circles root must not finish the Activity", !compose.activity.isFinishing)
+    }
+
     @Test fun queuedFindPeopleActionsNavigateToSearchOnlyOnce() {
         showShell()
         waitForText("Discover circles")

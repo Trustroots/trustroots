@@ -39,6 +39,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
@@ -350,6 +351,41 @@ class SignInDestinationJourneyTest {
         scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         waitForSignIn()
         assertEditableText("signin-username", "anonymous-heron")
+        assertEquals(0, requests.count { it.line.startsWith("POST /api/auth/signin ") })
+    }
+
+    @Test
+    fun forgotPasswordToolbarBackReturnsToSignInOnceAndKeepsUsername() {
+        startResponder { request ->
+            if (request.line.startsWith("GET /browser/password/forgot ")) {
+                Response(
+                    "200 OK",
+                    "<html><head><title>Local password recovery</title></head><body>Password help</body></html>",
+                    contentType = "text/html; charset=utf-8",
+                )
+            } else {
+                Response("404 Not Found", "Missing local browser page")
+            }
+        }
+        val scenario = launchActivity(browserBaseUrl = "$apiBaseUrl/browser")
+        composeScenario = scenario
+        waitForSignIn()
+        compose.onNodeWithTag("signin-username").performTextInput("anonymous-otter")
+        compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
+
+        val recoveryURL = "$apiBaseUrl/browser/password/forgot"
+        awaitWebViewPage(scenario, recoveryURL, "Local password recovery", canGoBack = false)
+        val toolbarBack = requireNotNull(
+            compose.onNodeWithContentDescription("Back")
+                .fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+        )
+        compose.runOnUiThread {
+            toolbarBack()
+            toolbarBack()
+        }
+
+        waitForSignIn()
+        assertEditableText("signin-username", "anonymous-otter")
         assertEquals(0, requests.count { it.line.startsWith("POST /api/auth/signin ") })
     }
 

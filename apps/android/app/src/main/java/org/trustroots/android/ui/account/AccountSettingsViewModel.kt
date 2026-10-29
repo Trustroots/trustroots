@@ -1,6 +1,7 @@
 package org.trustroots.android.ui.account
 
 import android.content.Context
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import org.trustroots.android.R
 import org.trustroots.android.api.AccountDetails
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
@@ -109,11 +111,25 @@ internal sealed interface AccountNotice {
 }
 
 internal sealed interface AccountUpdateStatus {
-    data object AlertsOff : AccountUpdateStatus
-    data object PermissionDenied : AccountUpdateStatus
-    data object Latest : AccountUpdateStatus
-    data object Unavailable : AccountUpdateStatus
-    data class NewVersion(val versionName: String, val pageUrl: String) : AccountUpdateStatus
+    @get:StringRes val resourceId: Int
+    val formatArgs: List<Any> get() = emptyList()
+
+    data object AlertsOff : AccountUpdateStatus {
+        @get:StringRes override val resourceId: Int get() = R.string.screen_update_alerts_off
+    }
+    data object PermissionDenied : AccountUpdateStatus {
+        @get:StringRes override val resourceId: Int get() = R.string.screen_allow_update_notifications
+    }
+    data object Latest : AccountUpdateStatus {
+        @get:StringRes override val resourceId: Int get() = R.string.screen_latest_android_preview
+    }
+    data object Unavailable : AccountUpdateStatus {
+        @get:StringRes override val resourceId: Int get() = R.string.screen_update_check_error
+    }
+    data class NewVersion(val versionName: String, val pageUrl: String) : AccountUpdateStatus {
+        @get:StringRes override val resourceId: Int get() = R.string.screen_update_available
+        override val formatArgs: List<Any> get() = listOf(versionName)
+    }
 }
 
 internal enum class AccountPermissionTarget { MESSAGE_ALERTS, PREVIEW_UPDATES }
@@ -196,7 +212,7 @@ internal class AccountSettingsViewModel(
     )
     val state = mutableState.asStateFlow()
     private var nextEffectID = 0L
-    private var platformJob: Job? = null
+    private var platformJob: Job
     private val accountRequest = LatestRequest(requestScope)
     private val passwordRequest = LatestRequest(requestScope)
     private val updateRequest = LatestRequest(requestScope)
@@ -208,7 +224,7 @@ internal class AccountSettingsViewModel(
         initialApi?.let(repository::updateApi)
         initialSession?.let(repository::updateSession)
         initialSession?.let(platform::updateSession)
-        observeMessageAlertStatus()
+        platformJob = observeMessageAlertStatus()
         load()
     }
 
@@ -224,7 +240,8 @@ internal class AccountSettingsViewModel(
         val platformChanged = this.platform !== platform
         if (platformChanged) {
             this.platform = platform
-            observeMessageAlertStatus()
+            platformJob.cancel()
+            platformJob = observeMessageAlertStatus()
         }
         if (!environmentChanged) {
             if (platformChanged) refreshPlatformState(session.member.username)
@@ -278,12 +295,9 @@ internal class AccountSettingsViewModel(
         }
     }
 
-    private fun observeMessageAlertStatus() {
-        platformJob?.cancel()
-        platformJob = requestScope.launch {
-            platform.messageAlertStatus.collect { status ->
-                mutableState.update { it.copy(messageAlertStatus = status) }
-            }
+    private fun observeMessageAlertStatus(): Job = requestScope.launch {
+        platform.messageAlertStatus.collect { status ->
+            mutableState.update { it.copy(messageAlertStatus = status) }
         }
     }
 
@@ -530,7 +544,7 @@ internal class AccountSettingsViewModel(
         accountRequest.cancel()
         passwordRequest.cancel()
         updateRequest.cancel()
-        platformJob?.cancel()
+        platformJob.cancel()
         platformActionRequest.cancel()
         signOutRequest.cancel()
         mutableState.value = AccountSettingsUiState()

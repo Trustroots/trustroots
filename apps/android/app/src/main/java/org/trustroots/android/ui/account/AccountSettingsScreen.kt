@@ -128,11 +128,6 @@ internal fun AccountSettingsScreen(
     val signOutLabel = stringResource(R.string.screen_sign_out)
     val savingLabel = stringResource(R.string.saving)
     val changingLabel = stringResource(R.string.screen_changing_password)
-    val latestAndroidPreview = stringResource(R.string.screen_latest_android_preview)
-    val updateAvailableFormat = stringResource(R.string.screen_update_available)
-    val updateCheckError = stringResource(R.string.screen_update_check_error)
-    val allowUpdateNotifications = stringResource(R.string.screen_allow_update_notifications)
-    val updateAlertsOff = stringResource(R.string.screen_update_alerts_off)
     val uiLocale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
     val leave = rememberFormLeave(state.isDirty, state.isBusy, onBack)
 
@@ -171,13 +166,8 @@ internal fun AccountSettingsScreen(
     val messageStatus = state.messageAlertStatus?.let { status ->
         stringResource(status.resourceId, *status.formatArgs.toTypedArray())
     }
-    val updateStatus = when (val status = state.updateStatus) {
-        AccountUpdateStatus.AlertsOff -> updateAlertsOff
-        AccountUpdateStatus.PermissionDenied -> allowUpdateNotifications
-        AccountUpdateStatus.Latest -> latestAndroidPreview
-        AccountUpdateStatus.Unavailable -> updateCheckError
-        is AccountUpdateStatus.NewVersion -> String.format(uiLocale, updateAvailableFormat, status.versionName)
-        null -> null
+    val updateStatus = state.updateStatus?.let { status ->
+        stringResource(status.resourceId, *status.formatArgs.toTypedArray())
     }
     val updateReleaseUrl = (state.updateStatus as? AccountUpdateStatus.NewVersion)?.pageUrl
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()

@@ -91,9 +91,7 @@ internal fun HostDetailScreen(
                             session = session,
                             maxHeight = maxCardHeight,
                             onClose = onBack,
-                            onOpenProfile = {
-                                offer.user.username?.let(onOpenProfile)
-                            },
+                            onOpenProfile = onOpenProfile,
                         )
                         else -> Row(
                             Modifier.fillMaxWidth(),

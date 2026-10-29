@@ -506,6 +506,10 @@ class HostMapViewModelTest {
         val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
         assertEquals(1, connection.closeCalls)
 
+        viewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(invalidation.id + 1))
+        assertEquals(invalidation, viewModel.state.value.pendingSessionInvalidation)
+        assertEquals(1, repository.circleCalls)
+
         pendingCircles.complete(Result.failure(MobileApiException(401, "Fictional session expired.")))
 
         assertEquals("A concurrent auth failure must not create another callback", invalidation, viewModel.state.value.pendingSessionInvalidation)

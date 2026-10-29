@@ -243,7 +243,8 @@ private fun MemberShell(
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
     var menuUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
     var searchUsageByVisit by remember { mutableStateOf<Map<Long, UsageScreen?>>(emptyMap()) }
-    var resetActiveMenuVisit by remember { mutableStateOf<(() -> Unit)?>(null) }
+    // A Menu visit has no nested route to reset before it is composed.
+    var resetActiveMenuVisit by remember { mutableStateOf<() -> Unit>({}) }
     val leaveGuard = remember { mutableStateOf<LeaveGuard?>(null) }
     val activeVisitID = activeTab.visitID
     val activeMenuScreen = if (menuUsageByVisit.containsKey(activeVisitID)) {
@@ -309,7 +310,7 @@ private fun MemberShell(
         val current = tabBackStack.last() as MemberTabVisit
         if (next != current.destination) {
             if (resetMenuBeforeLeaving) {
-                resetActiveMenuVisit?.invoke()
+                resetActiveMenuVisit()
             }
             nextVisitID = maxOf(nextVisitID, firstAvailableVisitID())
             tabBackStack.add(MemberTabVisit(next, nextVisitID))
@@ -333,7 +334,7 @@ private fun MemberShell(
         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null
         val openConversation = {
             if (guardedMenuDeparture) {
-                resetActiveMenuVisit?.invoke()
+                resetActiveMenuVisit()
             }
             nextVisitID = maxOf(nextVisitID, firstAvailableVisitID())
             tabBackStack.add(MemberTabVisit(Destination.Messages, nextVisitID, requested.senderId))
@@ -347,14 +348,8 @@ private fun MemberShell(
         reconcileAlerts(context, session)
     }
     val handleNavigationBack: () -> Unit = {
-        val leave = {
-            when {
-                tabBackStack.size > 1 -> {
-                    tabBackStack.removeLastOrNull()
-                }
-            }
-        }
-        leaveGuard.value?.invoke(leave) ?: leave()
+        // Form routes own their Back guard; the shell only owns tab history.
+        if (tabBackStack.size > 1) tabBackStack.removeLastOrNull()
     }
     CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
         Scaffold(
@@ -378,7 +373,7 @@ private fun MemberShell(
                                 searchResetVisitID = activeVisitID
                                 searchResetGeneration++
                             } else if (item == Destination.Menu && item == destination) {
-                                resetActiveMenuVisit?.invoke()
+                                resetActiveMenuVisit()
                             } else if (item == Destination.Search) {
                                 searchInitialTab = 0
                                 navigateTo(item, resetMenuBeforeLeaving = guardedMenuDeparture)
@@ -429,9 +424,7 @@ private fun MemberShell(
                                             menuUsageByVisit = menuUsageByVisit + (visitID to screen)
                                         },
                                         isActiveTabVisit = visit.visitID == activeVisitID,
-                                        onResetAvailable = { visitID, reset ->
-                                            if (visitID == activeVisitID) resetActiveMenuVisit = reset
-                                        },
+                                        onResetAvailable = { reset -> resetActiveMenuVisit = reset },
                                         browserContent = browserContent,
                                         contentPadding = contentPadding,
                                         openFindPeople = {
