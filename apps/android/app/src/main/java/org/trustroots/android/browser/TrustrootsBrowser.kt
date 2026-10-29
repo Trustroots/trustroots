@@ -78,7 +78,7 @@ fun TrustrootsBrowser(
         ViewModelProvider(viewModelStoreOwner)[BrowserEntryStateViewModel::class.java]
     }
 
-    BackHandler(onBack = navigateBack)
+    BackHandler { navigateBack() }
 
     externalURL?.let { link ->
         AlertDialog(
