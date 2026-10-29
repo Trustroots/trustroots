@@ -251,7 +251,7 @@ internal fun ViewModelStoreOwner.messageConversationViewModel(
     memberID, MobileApiMessageConversationRepository(api, session, context), session,
 )).get(MessageConversationViewModel::class.java)
 
-private class MessageConversationViewModelFactory(
+internal class MessageConversationViewModelFactory(
     private val memberID: String,
     private val repository: MessageConversationRepository,
     private val session: MemberSession,

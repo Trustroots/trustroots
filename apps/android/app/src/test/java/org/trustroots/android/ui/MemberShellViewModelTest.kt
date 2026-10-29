@@ -36,6 +36,15 @@ import org.trustroots.android.api.MobileMember
 @Config(sdk = [35], manifest = Config.NONE)
 class MemberShellViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            MemberShellViewModel.Factory(FakeMemberShellRepository()).create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun activityGraphStoreRetainsOneAccountAndClearsItsEntryStoresOnAccountChange() {
         val activityStore = ViewModelStore()
         val activityOwner = TestStoreOwner(activityStore)
@@ -530,6 +539,8 @@ class MemberShellViewModelTest {
         override fun onCleared() { cleared = true }
     }
 
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
+
     private class TestStoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
 
     private class ShellApiServer : AutoCloseable {
@@ -543,7 +554,7 @@ class MemberShellViewModelTest {
                     val request = input.readLine().orEmpty()
                     val path = request.substringAfter(' ').substringBefore(' ')
                     requests += request
-                    while (!input.readLine().isNullOrEmpty()) Unit
+                    while (!input.readLine().isNullOrEmpty()) {}
                     val body = if (path.startsWith("/api/users/")) {
                         """{"_id":"member-safe-id","username":"quiet-heron","displayName":"Quiet Heron"}"""
                     } else "[]"

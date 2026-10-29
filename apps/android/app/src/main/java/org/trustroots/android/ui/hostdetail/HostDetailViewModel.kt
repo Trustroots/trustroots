@@ -168,11 +168,9 @@ internal class HostDetailViewModel(
     private suspend fun handleFailure(error: Throwable, fallback: UiFailureFallback) {
         currentCoroutineContext().ensureActive()
         if (error.isAuthenticationFailure()) {
-            if (!invalidationEmitted) {
-                invalidationEmitted = true
-                mutableState.update {
-                    it.copy(pendingSessionInvalidation = HostDetailSessionInvalidation(++nextInvalidationID))
-                }
+            invalidationEmitted = true
+            mutableState.update {
+                it.copy(pendingSessionInvalidation = HostDetailSessionInvalidation(++nextInvalidationID))
             }
         } else {
             mutableState.update { it.copy(failure = error.toUiFailure(fallback)) }

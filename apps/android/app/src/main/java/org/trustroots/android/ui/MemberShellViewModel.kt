@@ -187,7 +187,7 @@ internal class MemberShellViewModel(
             mutableState.update {
                 it.copy(
                     failure = MemberShellFailure(
-                        serverMessage = apiError?.serverMessage?.takeIf(String::isNotBlank),
+                        serverMessage = apiError?.serverMessage,
                         apiFailureKind = apiError?.failureKind,
                     ),
                 )

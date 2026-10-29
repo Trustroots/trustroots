@@ -143,25 +143,32 @@ enum class ApiFailureKind { SIGN_IN_REJECTED, MISSING_SESSION, REQUEST_REJECTED 
 
 class MobileApiException(
     val statusCode: Int,
-    val serverMessage: String? = null,
+    serverMessage: String? = null,
     val failureKind: ApiFailureKind? = null,
 ) : Exception(serverMessage?.takeIf(String::isNotBlank)) {
+    val serverMessage: String? get() = message
+
     val isAuthenticationFailure: Boolean
         get() = statusCode == HttpURLConnection.HTTP_UNAUTHORIZED
 }
 
 class MobileApiClient(
     baseURL: String,
-    private val responseCache: SecureResponseCache? = null,
-    private val cacheAccount: String? = null,
+    responseCache: SecureResponseCache? = null,
+    cacheAccount: String? = null,
 ) {
+    private class ResponseCacheScope(val cache: SecureResponseCache, val account: String)
+
     internal val backendURL = secureApiBaseURL(baseURL)
     private val baseURL get() = backendURL
+    private val responseCacheScope = if (responseCache != null && cacheAccount != null) {
+        ResponseCacheScope(responseCache, cacheAccount)
+    } else null
     private val mutableOfflineSavedAt = MutableStateFlow<Long?>(null)
     val offlineSavedAt = mutableOfflineSavedAt.asStateFlow()
 
     fun clearCachedAccount() {
-        cacheAccount?.let { responseCache?.clear(baseURL, it) }
+        responseCacheScope?.let { it.cache.clear(baseURL, it.account) }
         mutableOfflineSavedAt.value = null
     }
     fun circleImageURL(slug: String): URL =
@@ -383,7 +390,7 @@ class MobileApiClient(
                 val member = parseMessageMember(JSONObject(jsonRequest(
                     "/api/users/mini/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
                 ).body))
-                require(!member.id.isNullOrBlank())
+                require(member.id != null)
                 member
             }
         }
@@ -646,11 +653,11 @@ class MobileApiClient(
         failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
         allowResponseCache: Boolean = true,
     ): JsonResponse {
-        val endpoint = URL("${baseURL.trimEnd('/')}$path")
-        val readCacheAccount = cacheAccount?.takeIf {
+        val endpoint = URL("$baseURL$path")
+        val readCacheScope = responseCacheScope?.takeIf {
             allowResponseCache && method == "GET" && sessionCookie != null
         }
-        val mutationCacheAccount = cacheAccount?.takeIf {
+        val mutationCacheScope = responseCacheScope?.takeIf {
             method != "GET" && sessionCookie != null
         }
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -683,25 +690,27 @@ class MobileApiClient(
                     .orEmpty()
                 throw MobileApiException(
                     statusCode = responseCode,
-                    serverMessage = message.takeIf(String::isNotBlank),
+                    serverMessage = message,
                     failureKind = failureKind,
                 )
             }
             when {
-                readCacheAccount != null -> responseCache?.save(baseURL, readCacheAccount, path, responseBody)
-                mutationCacheAccount != null -> responseCache?.let { cache ->
+                readCacheScope != null -> readCacheScope.cache.save(
+                    baseURL, readCacheScope.account, path, responseBody,
+                )
+                mutationCacheScope != null -> {
                     when {
-                        path == "/api/messages" -> cache.clearCategories(
-                            baseURL, mutationCacheAccount, setOf("inbox", "thread"),
+                        path == "/api/messages" -> mutationCacheScope.cache.clearCategories(
+                            baseURL, mutationCacheScope.account, setOf("inbox", "thread"),
                         )
-                        path.startsWith("/api/users/memberships/") -> cache.clearCategories(
-                            baseURL, mutationCacheAccount, setOf("own-profile", "profile"),
+                        path.startsWith("/api/users/memberships/") -> mutationCacheScope.cache.clearCategories(
+                            baseURL, mutationCacheScope.account, setOf("own-profile", "profile"),
                         )
-                        path == "/api/users" -> cache.clearCategories(
-                            baseURL, mutationCacheAccount, setOf("own-profile"),
+                        path == "/api/users" -> mutationCacheScope.cache.clearCategories(
+                            baseURL, mutationCacheScope.account, setOf("own-profile"),
                         )
-                        path.startsWith("/api/blocked-users/") -> cache.clearCategories(
-                            baseURL, mutationCacheAccount, setOf("profile", "profile-detail"),
+                        path.startsWith("/api/blocked-users/") -> mutationCacheScope.cache.clearCategories(
+                            baseURL, mutationCacheScope.account, setOf("profile", "profile-detail"),
                         )
                     }
                 }
@@ -712,7 +721,7 @@ class MobileApiClient(
                 sessionCookie = sessionCookieFrom(connection.headerFields),
             )
         } catch (error: IOException) {
-            val cached = readCacheAccount?.let { account -> responseCache?.load(baseURL, account, path) }
+            val cached = readCacheScope?.let { it.cache.load(baseURL, it.account, path) }
             if (cached != null) {
                 mutableOfflineSavedAt.value = cached.savedAt
                 return JsonResponse(cached.body, null)

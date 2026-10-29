@@ -70,7 +70,6 @@ import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapListener
 import org.osmdroid.events.ScrollEvent
 import org.osmdroid.events.ZoomEvent
-import org.osmdroid.tileprovider.tilesource.XYTileSource
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -138,8 +137,8 @@ internal fun HostMapScreen(
     val closeLabel = stringResource(R.string.screen_close)
     val notesUnavailable = stringResource(R.string.screen_nostroots_notes_unavailable)
     val searchingArea = stringResource(R.string.screen_searching_area)
-    val openStreetMapAttribution = stringResource(R.string.screen_openstreetmap_attribution)
-    val mapboxAttribution = stringResource(R.string.screen_mapbox_attribution)
+    val tiles = remember { hostMapTiles(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN) }
+    val attribution = stringResource(tiles.attribution)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val offers = mapState.offers
@@ -183,7 +182,7 @@ internal fun HostMapScreen(
             // calls onDetach(), invalidating MapViewRepository (getRepository() then dereferences a
             // null MapView when building the default MarkerInfoWindow -> NPE on re-attach).
             setDestroyMode(false)
-            setTileSource(hostMapTileSource(org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN))
+            setTileSource(tiles.source)
             setBackgroundColor(mapBackground.toArgb())
             setMultiTouchControls(true)
             controller.setZoom(mapState.viewport.zoom)
@@ -488,24 +487,12 @@ internal fun HostMapScreen(
                 modifier = Modifier.weight(1f).testTag("mapStatistics"),
             )
             Text(
-                if (org.trustroots.android.BuildConfig.MAPBOX_PUBLIC_TOKEN.isBlank()) openStreetMapAttribution else mapboxAttribution,
+                attribution,
                 style = MaterialTheme.typography.labelSmall,
             )
         }
         }
     }
-}
-
-internal fun hostMapTileSource(mapboxToken: String): XYTileSource = if (mapboxToken.isNotBlank()) {
-    XYTileSource(
-        "Mapbox Streets", 0, 19, 256, ".png?access_token=$mapboxToken",
-        arrayOf("https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/256/"),
-    )
-} else {
-    XYTileSource(
-        "OpenStreetMap", 0, 19, 256, ".png",
-        arrayOf("https://tile.openstreetmap.org/"),
-    )
 }
 
 private val mapFilterLanguages = listOf(

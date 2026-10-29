@@ -47,9 +47,54 @@ class CircleDetailBranchContractsTest {
     }
 
     @Test
+    fun mutationCompletingDuringRetriedCircleReadStopsTheStaleMembershipSnapshot() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        val pendingUpdate = CompletableDeferred<Result<Unit>>()
+        val pendingCircle = CompletableDeferred<Result<TrustrootsCircle>>()
+        repository.updateHandler = { withContext(NonCancellable) { pendingUpdate.await() } }
+        repository.circleHandler = { call ->
+            if (call == 2) withContext(NonCancellable) { pendingCircle.await() }
+            else Result.success(circle())
+        }
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.RetryLoad)
+        pendingUpdate.complete(Result.success(Unit))
+        pendingCircle.complete(Result.success(circle().copy(label = "Stale circle snapshot")))
+
+        assertEquals("Quiet Circle", viewModel.state.value.circle?.label)
+        assertEquals(1, repository.membershipReads)
+        assertFalse(viewModel.state.value.membershipsLoaded)
+    }
+
+    @Test
+    fun mutationCompletingDuringRetriedMembershipReadStopsStaleMembershipPublication() = withRepository { repository, scope ->
+        repository.membershipSet = setOf("quiet-id")
+        val pendingUpdate = CompletableDeferred<Result<Unit>>()
+        val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
+        repository.updateHandler = { withContext(NonCancellable) { pendingUpdate.await() } }
+        repository.membershipsHandler = { call ->
+            if (call == 2) withContext(NonCancellable) { pendingMemberships.await() }
+            else Result.success(repository.membershipSet)
+        }
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+        val initialGroupReads = repository.memberGroupSlugs.toList()
+
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.RetryLoad)
+        pendingUpdate.complete(Result.success(Unit))
+        pendingMemberships.complete(Result.success(setOf("quiet-id")))
+
+        assertFalse(viewModel.state.value.membershipsLoaded)
+        assertFalse(viewModel.state.value.isMember)
+        assertEquals(initialGroupReads, repository.memberGroupSlugs)
+    }
+
+    @Test
     fun toggleBeforeMembershipsResolveDoesNotSubmitAnUpdate() = withRepository { repository, scope ->
         val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
-        repository.membershipsHandler = { withContext(NonCancellable) { pendingMemberships.await() } }
+        repository.membershipsHandler = { _ -> withContext(NonCancellable) { pendingMemberships.await() } }
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
         assertEquals("quiet-id", viewModel.state.value.circle?.id)
@@ -152,7 +197,10 @@ class CircleDetailBranchContractsTest {
     private class BranchRepository : CircleRepository {
         val membershipChanges = mutableListOf<Pair<String, Boolean>>()
         val memberGroupSlugs = mutableListOf<String>()
-        var membershipsHandler: suspend () -> Result<Set<String>> = { Result.success(membershipSet) }
+        var circleHandler: suspend (Int) -> Result<TrustrootsCircle> = { Result.success(circle()) }
+        var circleReads = 0
+        var membershipReads = 0
+        var membershipsHandler: suspend (Int) -> Result<Set<String>> = { Result.success(membershipSet) }
         var memberGroupsHandler: suspend (Int, String) -> Result<CircleMemberGroups> = { _, _ ->
             Result.success(CircleMemberGroups(emptyList(), emptyList(), emptyList()))
         }
@@ -175,9 +223,9 @@ class CircleDetailBranchContractsTest {
 
         override suspend fun circles(): Result<List<TrustrootsCircle>> = Result.success(listOf(circle()))
 
-        override suspend fun circleBySlug(slug: String): Result<TrustrootsCircle> = Result.success(circle())
+        override suspend fun circleBySlug(slug: String): Result<TrustrootsCircle> = circleHandler(++circleReads)
 
-        override suspend fun memberships(): Result<Set<String>> = membershipsHandler()
+        override suspend fun memberships(): Result<Set<String>> = membershipsHandler(++membershipReads)
 
         override suspend fun circleMembers(slug: String): Result<CircleMemberGroups> {
             memberGroupSlugs += slug

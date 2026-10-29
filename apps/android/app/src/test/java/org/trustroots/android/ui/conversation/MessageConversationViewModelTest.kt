@@ -34,6 +34,21 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class MessageConversationViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        )
+        val failure = runCatching {
+            MessageConversationViewModelFactory("member-owl", repository, session())
+                .create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun repositoryDefaultApiUpdateKeepsAStaticConversationRepository() {
         val repository = object : MessageConversationRepository by FakeConversationRepository(
             memberResult = Result.success(member),
@@ -437,6 +452,35 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun authenticationFailuresFromHistoryAndSendShareOneInvalidation() = withScope { scope ->
+        val pendingMessages = CompletableDeferred<Result<List<DirectMessage>>>()
+        val pendingSend = CompletableDeferred<Result<DirectMessage>>()
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member),
+            messagesResult = Result.success(emptyList()),
+            initialDraft = "",
+        ).apply {
+            messagesHandler = { withContext(NonCancellable) { pendingMessages.await() } }
+            sendHandler = { _, _ -> withContext(NonCancellable) { pendingSend.await() } }
+        }
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        assertTrue(model.state.value.isLoading)
+        model.onEvent(MessageConversationEvent.Send("A fictional note"))
+        assertTrue(model.state.value.isSending)
+        pendingSend.complete(Result.failure(MobileApiException(401, "Fictional send session expired.")))
+        val invalidation = requireNotNull(model.state.value.pendingSessionInvalidation)
+
+        pendingMessages.complete(Result.failure(MobileApiException(401, "Fictional history session expired.")))
+
+        assertEquals(invalidation, model.state.value.pendingSessionInvalidation)
+        assertFalse(model.state.value.isLoading)
+        assertFalse(model.state.value.isSending)
+        assertEquals(1, repository.sendCalls)
+        assertEquals(1, repository.messageLookups.size)
+    }
+
+    @Test
     fun renewingCredentialsReloadsAndDoesNotExposeCookieInState() = withScope { scope ->
         val repository = FakeConversationRepository(
             memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)),
@@ -588,6 +632,25 @@ class MessageConversationViewModelTest {
     }
 
     @Test
+    fun changingAccountWithTheSameCookieRefreshesConversationIdentity() = withScope { scope ->
+        val repository = FakeConversationRepository(
+            memberResult = Result.success(member), messagesResult = Result.success(listOf(incoming)), initialDraft = "",
+        )
+        val model = MessageConversationViewModel("member-owl", repository, session(), scope)
+
+        model.onEvent(
+            MessageConversationEvent.SessionChanged(
+                MemberSession("connect.sid=fictional-session", MobileMember("calm-lynx", "Calm Lynx")),
+            ),
+        )
+
+        assertEquals("calm-lynx", model.state.value.currentUsername)
+        assertEquals(listOf("member-owl", "member-owl"), repository.memberLookups)
+        assertEquals(listOf("member-owl", "member-owl"), repository.messageLookups)
+        assertEquals(listOf(incoming), model.state.value.messages)
+    }
+
+    @Test
     fun mobileRepositoryComparesNormalizedBackendIdentity() {
         val context = RuntimeEnvironment.getApplication() as Context
         val originalSession = session()
@@ -670,6 +733,7 @@ class MessageConversationViewModelTest {
     }
 
     private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private class MessageConversationViewModelFactoryForTest(
         private val memberID: String,

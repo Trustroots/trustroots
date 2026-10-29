@@ -69,25 +69,26 @@ fun TrustrootsBrowser(
 ) {
     val context = LocalContext.current
     var webView by remember { mutableStateOf<WebView?>(null) }
-    var externalURL by remember { mutableStateOf<String?>(null) }
+    var externalURL by remember { mutableStateOf<BrowserLink?>(null) }
     val viewModelStoreOwner = requireNotNull(LocalViewModelStoreOwner.current)
     val browserEntryState = remember(viewModelStoreOwner) {
         ViewModelProvider(viewModelStoreOwner)[BrowserEntryStateViewModel::class.java]
     }
 
     BackHandler {
-        if (webView?.canGoBack() == true) webView?.goBack() else onClose()
+        val browser = webView
+        if (browser?.canGoBack() == true) browser.goBack() else onClose()
     }
 
-    externalURL?.let { url ->
+    externalURL?.let { link ->
         AlertDialog(
             onDismissRequest = { externalURL = null },
             title = { Text(stringResource(R.string.browser_external_website_title)) },
-            text = { Text(runCatching { URI(url).host }.getOrNull() ?: url) },
+            text = { Text(link.host) },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link.url)))
                         externalURL = null
                     },
                 ) { Text(stringResource(R.string.browser_open_external)) }
@@ -135,15 +136,10 @@ fun TrustrootsBrowser(
                             view: WebView,
                             request: WebResourceRequest,
                         ): Boolean {
-                            val requestedURL = request.url.toString()
-                            return if (isAllowedTrustrootsURL(requestedURL)) {
-                                false
-                            } else if (isSafeExternalURL(requestedURL)) {
-                                externalURL = requestedURL
-                                true
-                            } else {
-                                true
-                            }
+                            val link = BrowserLink.parse(request.url.toString()) ?: return true
+                            if (link.canEmbed) return false
+                            externalURL = link
+                            return true
                         }
                     }
                     installEmbeddedBrowserStyle(this)
@@ -229,20 +225,3 @@ internal val embeddedBrowserStyle = """
       (document.head || document.documentElement).appendChild(style);
     })();
 """.trimIndent()
-
-internal fun isAllowedTrustrootsURL(url: String): Boolean = runCatching {
-    val uri = URI(url)
-    val host = uri.host?.lowercase() ?: return@runCatching false
-    uri.scheme.equals("https", ignoreCase = true) &&
-        (
-            host == "trustroots.org" ||
-                host.endsWith(".trustroots.org") ||
-                host == "hitchwiki.org" ||
-                host.endsWith(".hitchwiki.org")
-        )
-}.getOrDefault(false)
-
-internal fun isSafeExternalURL(url: String): Boolean = runCatching {
-    val uri = URI(url)
-    uri.scheme.equals("https", ignoreCase = true) && !uri.host.isNullOrBlank()
-}.getOrDefault(false)

@@ -68,6 +68,28 @@ class MobileApiJsonRequestCacheBoundaryTest {
         assertNull(api.offlineSavedAt.value)
     }
 
+    @Test fun partialCacheConfigurationDoesNotEnableOfflineFallback() = runBlocking {
+        val context = RuntimeEnvironment.getApplication()
+        val account = "quiet-fox-${System.nanoTime()}"
+        val unusedPort = ServerSocket(0).use { it.localPort }
+        val baseUrl = "http://127.0.0.1:$unusedPort"
+        val session = MemberSession(
+            "connect.sid=fictional-session",
+            MobileMember(account, "Quiet Fox"),
+        )
+        val clients = listOf(
+            MobileApiClient(baseUrl, responseCache = null, cacheAccount = account),
+            MobileApiClient(baseUrl, responseCache = SecureResponseCache(context), cacheAccount = null),
+        )
+
+        clients.forEach { api ->
+            val result = api.accountDetails(session)
+
+            assertTrue(result.exceptionOrNull() is IOException)
+            assertNull(api.offlineSavedAt.value)
+        }
+    }
+
     private fun scopeDigest(baseUrl: String, account: String): String =
         digest("${baseUrl.trimEnd('/')}|${account.lowercase()}")
 

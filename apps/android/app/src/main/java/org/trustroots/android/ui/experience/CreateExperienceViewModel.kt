@@ -172,14 +172,13 @@ internal class CreateExperienceViewModel(
 
     private suspend fun invalidateSession() {
         currentCoroutineContext().ensureActive()
-        if (invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update { it.copy(isSaving = false, pendingInvalidation = CreateExperienceInvalidation(++nextInvalidationID)) }
     }
 
     private fun failure(error: Throwable) = CreateExperienceFailure(
         apiKind = (error as? MobileApiException)?.failureKind,
-        serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+        serverMessage = (error as? MobileApiException)?.serverMessage,
     )
 
 

@@ -149,7 +149,7 @@ internal class MemberSearchViewModel(
                             isLoading = false,
                             failure = MemberSearchFailure(
                                 kind = MemberSearchFailureKind.SEARCH,
-                                serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+                                serverMessage = (error as? MobileApiException)?.serverMessage,
                                 apiKind = (error as? MobileApiException)?.failureKind,
                             ),
                         )
@@ -170,7 +170,6 @@ internal class MemberSearchViewModel(
     }
 
     private fun emitSessionInvalidation() {
-        if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         val invalidation = MemberSearchSessionInvalidation(++nextInvalidationID)
         mutableState.update { it.copy(pendingSessionInvalidation = invalidation) }

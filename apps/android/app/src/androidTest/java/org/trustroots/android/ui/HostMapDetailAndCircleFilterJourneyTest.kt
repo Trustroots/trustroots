@@ -9,6 +9,9 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -59,6 +62,35 @@ class HostMapDetailAndCircleFilterJourneyTest {
         } finally {
             responderFailure.get()?.let { throw AssertionError("The local map fixture failed", it) }
         }
+    }
+
+    @Test fun queuedPreviewCloseActionsKeepTheExistingSearchEntryAndItsFilters() {
+        startFixture()
+        showMap()
+        waitForInitialOffers()
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithContentDescription("Hide filters").assertIsDisplayed()
+        compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("Close host result").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        val close = requireNotNull(
+            compose.onNodeWithContentDescription("Close host result")
+                .fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+        )
+        // Two queued accessibility clicks can reach the outgoing preview in the same frame.
+        compose.runOnUiThread {
+            assertTrue(close())
+            assertTrue(close())
+        }
+
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("hostDetailRoute").fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithTag("placeSearchField").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Hide filters").assertIsDisplayed()
+        assertEquals(0, invalidations.get())
     }
 
     @Test fun showsServiceFailureAfterOpeningAHostMarker() {

@@ -65,4 +65,24 @@ class ProfileSafetyControlsJourneyTest {
         compose.onNodeWithText("Could not check whether this member is blocked.").assertDoesNotExist()
         compose.onNodeWithText("The request was not accepted.").assertIsDisplayed()
     }
+
+    @Test fun blockFailurePrefersAProvidedServerMessage() {
+        compose.setContent {
+            MaterialTheme {
+                ProfileSafetyNotice(
+                    displayName = "Quiet Fox",
+                    state = MemberProfileUiState(
+                        blockFailure = MemberProfileFailure(
+                            MemberProfileFailureReason.BLOCK_STATUS,
+                            serverMessage = "The block list is temporarily unavailable.",
+                        ),
+                    ),
+                    onRetry = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("The block list is temporarily unavailable.").assertIsDisplayed()
+        compose.onNodeWithText("Could not check whether this member is blocked.").assertDoesNotExist()
+    }
 }

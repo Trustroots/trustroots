@@ -347,7 +347,7 @@ internal class MemberProfileViewModel(
     private fun failure(reason: MemberProfileFailureReason, error: Throwable) = MemberProfileFailure(
         reason = reason,
         apiKind = (error as? MobileApiException)?.failureKind,
-        serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+        serverMessage = (error as? MobileApiException)?.serverMessage,
     )
 
 

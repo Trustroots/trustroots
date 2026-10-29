@@ -33,6 +33,17 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class HostMapViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val factory = HostMapViewModel.Factory(
+            FakeHostMapRepository(),
+            { _, _ -> error("The factory must reject the requested type before opening notes") },
+        )
+        val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun defaultFactoryCreatesFreshEntryStateAndRepositoryDefaultSessionUpdateIsUnchanged() {
         val repository = FakeHostMapRepository()
         val factoryRepository = object : HostMapRepository by FakeHostMapRepository() {
@@ -70,6 +81,15 @@ class HostMapViewModelTest {
         } finally {
             scope.cancel()
         }
+    }
+
+    @Test
+    fun invalidationAcknowledgementWithoutPendingInvalidationDoesNotChangeMapState() = withViewModel { viewModel, _, _ ->
+        val before = viewModel.state.value
+
+        viewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, viewModel.state.value)
     }
 
     @Test
@@ -726,6 +746,8 @@ class HostMapViewModelTest {
     private class TestStoreOwner : ViewModelStoreOwner {
         override val viewModelStore = ViewModelStore()
     }
+
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private companion object {
         fun bounds(south: Double = 38.0) = MapBounds(south, -10.0, south + 1.0, -9.0)

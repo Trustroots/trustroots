@@ -32,6 +32,16 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class EditProfileViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            EditProfileViewModel.Factory("quiet-fox", FakeRepository(), api(), session())
+                .create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun apiIndependentFailureDefaultsItsOptionalMetadataToNull() {
         val failure = EditProfileFailure(fallback = UiFailureFallback.LOAD_PROFILE)
 
@@ -553,7 +563,7 @@ class EditProfileViewModelTest {
         val pending = kotlinx.coroutines.CompletableDeferred<Result<MemberProfile>>()
         val repository = object : EditProfileRepository {
             override suspend fun profile(username: String) = pending.await()
-            override suspend fun update(update: ProfileUpdate) = Result.success(profileFixture())
+            override suspend fun update(profile: ProfileUpdate) = Result.success(profileFixture())
         }
         val store = ViewModelStore()
         val model = ViewModelProvider(
@@ -594,6 +604,7 @@ class EditProfileViewModelTest {
     )["EditProfileViewModel:quiet-fox", EditProfileViewModel::class.java]
 
     private class Owner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private class FakeRepository : EditProfileRepository {
         var profileResult: Result<MemberProfile> = Result.success(profileFixture())

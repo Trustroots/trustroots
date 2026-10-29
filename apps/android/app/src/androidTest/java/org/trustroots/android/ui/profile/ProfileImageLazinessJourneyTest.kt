@@ -22,8 +22,11 @@ import java.net.Socket
 import java.net.SocketException
 import java.net.SocketTimeoutException
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.Random
+import java.util.UUID
 import kotlin.concurrent.thread
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -45,10 +48,19 @@ class ProfileImageLazinessJourneyTest {
     private val server = ServerSocket(0).apply { soTimeout = 250 }
     private val requests = CopyOnWriteArrayList<ObservedRequest>()
     private val fixtureFailure = AtomicReference<Throwable?>()
+    private val fullAvatarRequestStarted = CountDownLatch(1)
+    private val releaseFullAvatarResponse = CountDownLatch(1)
+    private val profileReloadStarted = CountDownLatch(1)
+    private val releaseProfileReloadResponse = CountDownLatch(1)
     private var responder: Thread? = null
     @Volatile private var activeSocket: Socket? = null
+    @Volatile private var deferFullAvatarResponse = false
+    @Volatile private var deferProfileReloadResponse = false
+    @Volatile private var profileReloadCookie: String? = null
 
     @After fun closeServer() {
+        releaseFullAvatarResponse.countDown()
+        releaseProfileReloadResponse.countDown()
         runCatching { activeSocket?.close() }
         runCatching { server.close() }
         responder?.join(1_000)
@@ -126,6 +138,71 @@ class ProfileImageLazinessJourneyTest {
         assertEquals(1, requests.count { it.path == "/api/users/member-main/avatar?size=2048" })
     }
 
+    @Test fun imageViewerShowsLoadingAndClosesWhenProfileStateIsCleared() {
+        deferFullAvatarResponse = true
+        deferProfileReloadResponse = true
+        val imageBytes = pngBytes(Bitmap.createBitmap(32, 24, Bitmap.Config.ARGB_8888))
+        val cookieSuffix = UUID.randomUUID().toString().replace("-", "")
+        val initialCookie = "connect.sid=original-$cookieSuffix"
+        val refreshedCookie = "connect.sid=rotated-$cookieSuffix"
+        profileReloadCookie = refreshedCookie
+        responder = thread(isDaemon = true, name = "profile-image-profile-reload-fixture") {
+            serveRequests(imageBytes)
+        }
+        val session = androidx.compose.runtime.mutableStateOf(
+            MemberSession(initialCookie, MobileMember("steady-heron", "Steady Heron")),
+        )
+        compose.setContent {
+            MemberProfileScreen(
+                api = MobileApiClient("http://127.0.0.1:${server.localPort}"),
+                session = session.value,
+                username = "quiet-fox",
+                onSessionInvalidated = {},
+                onBack = {},
+            )
+        }
+
+        compose.waitUntil(10_000) {
+            requests.any { it.path == "/api/users/quiet-fox" && it.cookie == initialCookie } &&
+                compose.onAllNodesWithText("Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+        foregroundActivityTask(compose, compose.activity, InstrumentationRegistry.getInstrumentation().uiAutomation)
+        compose.onNodeWithTag("profileAvatar").assertIsDisplayed().performClick()
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithTag("profileImageViewer").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.waitUntil(5_000) { fullAvatarRequestStarted.count == 0L }
+        assertTrue("The full-size avatar request should start; requests=${requests.map { it.path to it.cookie }}", requests.any {
+            it.path == "/api/users/member-main/avatar?size=2048"
+        })
+        compose.onNodeWithText("Loading profile photo…").assertIsDisplayed()
+
+        releaseFullAvatarResponse.countDown()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithContentDescription("Profile photo of Quiet Fox").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.runOnIdle {
+            session.value = MemberSession(
+                refreshedCookie,
+                MobileMember("steady-heron", "Steady Heron"),
+            )
+        }
+        compose.waitUntil(10_000) { profileReloadStarted.count == 0L }
+        try {
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithTag("profileImageViewer").fetchSemanticsNodes().isEmpty()
+            }
+        } finally {
+            releaseProfileReloadResponse.countDown()
+        }
+        compose.waitUntil(10_000) {
+            requests.any { it.path == "/api/users/quiet-fox" && it.cookie == refreshedCookie } &&
+                compose.onAllNodesWithTag("profilePager").fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue("The viewer stays closed after the replacement profile loads", compose.onAllNodesWithTag("profileImageViewer").fetchSemanticsNodes().isEmpty())
+    }
+
     private fun serveRequests(imageBytes: ByteArray) {
         val thumbnailBytes = pngBytes(Bitmap.createBitmap(4, 3, Bitmap.Config.ARGB_8888))
         while (!server.isClosed) {
@@ -154,6 +231,14 @@ class ProfileImageLazinessJourneyTest {
                     }
                     val path = requestLine.substringAfter(' ').substringBefore(' ')
                     requests += ObservedRequest(path, cookie)
+                    if (path == "/api/users/quiet-fox" && cookie == profileReloadCookie && deferProfileReloadResponse) {
+                        profileReloadStarted.countDown()
+                        check(releaseProfileReloadResponse.await(10, TimeUnit.SECONDS)) { "The replacement profile request was not released" }
+                    }
+                    if (path == "/api/users/member-main/avatar?size=2048" && deferFullAvatarResponse) {
+                        fullAvatarRequestStarted.countDown()
+                        check(releaseFullAvatarResponse.await(10, TimeUnit.SECONDS)) { "The full-size avatar request was not released" }
+                    }
                     val (status, contentType, body) = when (path) {
                         "/api/users/quiet-fox" -> Triple(
                             "200 OK",

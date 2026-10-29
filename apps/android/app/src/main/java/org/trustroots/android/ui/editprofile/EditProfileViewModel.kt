@@ -238,7 +238,6 @@ internal class EditProfileViewModel(
 
     private suspend fun invalidateSession() {
         currentCoroutineContext().ensureActive()
-        if (invalidationEmitted) return
         invalidationEmitted = true
         mutableState.update { it.copy(isLoading = false, isSaving = false, pendingInvalidation = EditProfileInvalidation(++nextInvalidationID)) }
     }
@@ -246,7 +245,7 @@ internal class EditProfileViewModel(
     private fun failure(fallback: UiFailureFallback, error: Throwable) = EditProfileFailure(
         fallback = fallback,
         apiKind = (error as? MobileApiException)?.failureKind,
-        serverMessage = (error as? MobileApiException)?.serverMessage?.takeIf(String::isNotBlank),
+        serverMessage = (error as? MobileApiException)?.serverMessage,
     )
 
 

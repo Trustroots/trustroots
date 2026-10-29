@@ -266,7 +266,7 @@ private fun MemberProfileContent(
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
-    var showingProfileImage by rememberSaveable(username) { mutableStateOf(false) }
+    var showingProfileImage by rememberSaveable(username, profile?.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val profileImageState = rememberArtworkBitmapState(
         url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048) } else null,
@@ -337,7 +337,6 @@ private fun MemberProfileContent(
                 TextButton(
                     enabled = !removingContact && existing?.id != null,
                     onClick = {
-                        if (existing?.id == null) return@TextButton
                         viewModel.onEvent(MemberProfileEvent.ConfirmRemoveContact)
                     },
                 ) { Text(if (removingContact) stringResource(R.string.profile_removing_contact) else stringResource(R.string.profile_confirm)) }
