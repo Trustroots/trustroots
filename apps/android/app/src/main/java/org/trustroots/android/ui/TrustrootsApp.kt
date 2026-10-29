@@ -129,13 +129,14 @@ internal fun TrustrootsApp(
     val sessionState by sessionViewModel.state.collectAsState()
     val session = sessionState.session
     val starting = sessionState.isStarting
-    val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
-        if (starting) null
-        else session?.let { shellGraphStore.activateAccount(it.member.username) }
-            ?: run {
+    remember(shellGraphStore, starting, session?.let { it.member.username }) {
+        if (!starting) {
+            if (session == null) {
                 shellGraphStore.clearAccount()
-                null
+            } else {
+                shellGraphStore.activateAccount(session.member.username)
             }
+        }
     }
     if (starting) {
         StartupScreen(sessionState.startupFirstName)
@@ -156,7 +157,7 @@ internal fun TrustrootsApp(
         }
     } else {
         CompositionLocalProvider(
-            LocalViewModelStoreOwner provides requireNotNull(shellGraphOwner),
+            LocalViewModelStoreOwner provides shellGraphStore,
         ) {
           key(session.member.username) {
             val activeSession = session

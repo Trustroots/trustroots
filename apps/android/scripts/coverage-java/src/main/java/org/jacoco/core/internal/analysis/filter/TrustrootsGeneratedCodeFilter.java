@@ -372,12 +372,12 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             List<AbstractInsnNode> region = all.subList(markerStart + 1, remembered);
             if (!isCompilerChangedMaskRegion(region)) continue;
             if (!usesCompilerMaskLocals(method, region)) continue;
-            int changedInstanceCalls = 0;
+            int composerChangedCalls = 0;
             for (AbstractInsnNode insn : region) {
                 if (insn instanceof MethodInsnNode call && COMPOSER.equals(call.owner)
-                        && isComposerChangedCall(call)) changedInstanceCalls++;
+                        && isComposerChangedCall(call)) composerChangedCalls++;
             }
-            if (changedInstanceCalls == 0) continue;
+            if (composerChangedCalls == 0) continue;
             for (AbstractInsnNode insn : region) {
                 if (insn instanceof org.objectweb.asm.tree.JumpInsnNode
                         && !isAlreadyFilteredBranch(output, insn)
@@ -438,7 +438,8 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
         int changedCalls = 0;
         int stores = 0;
         int conditionals = 0;
-        for (AbstractInsnNode insn : region) {
+        for (int index = 0; index < region.size(); index++) {
+            AbstractInsnNode insn = region.get(index);
             int opcode = insn.getOpcode();
             if (opcode < 0) continue;
             if (opcode == Opcodes.IAND) ands++;
@@ -446,10 +447,40 @@ public final class TrustrootsGeneratedCodeFilter implements IFilter {
             else if (insn instanceof org.objectweb.asm.tree.JumpInsnNode) conditionals++;
             else if (insn instanceof MethodInsnNode call) {
                 if (COMPOSER.equals(call.owner) && isComposerChangedCall(call)) changedCalls++;
-                else if (!"sourceInformationMarkerStart".equals(call.name)) return false;
+                else if (!"sourceInformationMarkerStart".equals(call.name)
+                        && !isEnumOrdinalCapturePart(region, index)) return false;
+            } else if (insn instanceof TypeInsnNode && isEnumOrdinalCapturePart(region, index)) {
+                // Compose represents a stable enum capture as enum.ordinal() passed directly to changed(int).
             } else if (!isMaskOpcode(insn)) return false;
         }
         return ands >= 2 && changedCalls >= 1 && stores >= 1 && conditionals >= 2;
+    }
+
+    /**
+     * Recognises only the compiler's enum-key encoding when ordinal() directly
+     * supplies Composer.changed(int). An ordinal used by an application
+     * condition or any other call sequence does not satisfy this pattern.
+     */
+    private static boolean isEnumOrdinalCapturePart(List<AbstractInsnNode> region, int index) {
+        AbstractInsnNode insn = region.get(index);
+        AbstractInsnNode cast = insn instanceof TypeInsnNode typeInsn
+                && typeInsn.getOpcode() == Opcodes.CHECKCAST
+                ? insn
+                : previousOpcode(insn.getPrevious());
+        if (!(cast instanceof TypeInsnNode typeInsn)
+                || typeInsn.getOpcode() != Opcodes.CHECKCAST || !"java/lang/Enum".equals(typeInsn.desc)) {
+            return false;
+        }
+        AbstractInsnNode ordinal = nextOpcode(cast);
+        AbstractInsnNode changed = ordinal == null ? null : nextOpcode(ordinal);
+        return ordinal instanceof MethodInsnNode ordinalCall
+                && ordinalCall.getOpcode() == Opcodes.INVOKEVIRTUAL
+                && "java/lang/Enum".equals(ordinalCall.owner)
+                && "ordinal".equals(ordinalCall.name) && "()I".equals(ordinalCall.desc)
+                && changed instanceof MethodInsnNode changedCall
+                && changedCall.getOpcode() == Opcodes.INVOKEINTERFACE
+                && COMPOSER.equals(changedCall.owner)
+                && "changed".equals(changedCall.name) && "(I)Z".equals(changedCall.desc);
     }
 
     private static boolean isComposerChangedCall(MethodInsnNode call) {

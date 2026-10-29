@@ -10,6 +10,7 @@ import kotlinx.coroutines.runBlocking
 import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -21,6 +22,31 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class MobileApiJsonRequestCacheBoundaryTest {
+    @Test fun unauthenticatedSignInDoesNotUseConfiguredAccountCache() = runBlocking {
+        MockWebServer().use { server ->
+            server.enqueue(
+                MockResponse(
+                    code = 200,
+                    body = """{"username":"quiet-fox","displayName":"Quiet Fox"}""",
+                ),
+            )
+            server.start()
+            val context: Context = RuntimeEnvironment.getApplication()
+            val account = "quiet-fox-${System.nanoTime()}"
+            val cacheRoot = File(context.noBackupFilesDir, "response-cache")
+            val baseUrl = server.url("/").toString()
+            val api = MobileApiClient(baseUrl, SecureResponseCache(context), account)
+
+            val result = api.signIn(account, "fictional password")
+            val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+
+            assertEquals(ApiFailureKind.MISSING_SESSION, (result.exceptionOrNull() as MobileApiException).failureKind)
+            assertEquals("POST", request.method)
+            assertFalse(request.headers.names().any { it.equals("Cookie", ignoreCase = true) })
+            assertFalse(File(cacheRoot, scopeDigest(baseUrl, account)).exists())
+        }
+    }
+
     @Test fun liveGetRemainsSuccessfulWhenItsCacheSnapshotCannotBeWritten() = runBlocking {
         MockWebServer().use { server ->
             server.enqueue(

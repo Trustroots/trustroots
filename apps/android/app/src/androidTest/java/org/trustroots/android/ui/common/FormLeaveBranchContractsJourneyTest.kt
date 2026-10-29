@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -17,6 +18,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,6 +26,30 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class FormLeaveBranchContractsJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun queuedDiscardConfirmationsCompleteThePendingNavigationOnlyOnce() {
+        val completed = java.util.concurrent.atomic.AtomicInteger()
+        compose.setContent {
+            MaterialTheme {
+                val leave = rememberFormLeave(dirty = true, saving = false, onCancel = {})
+                TextButton(onClick = { leave { completed.incrementAndGet() } }) { Text("Leave form") }
+            }
+        }
+        compose.onNodeWithText("Leave form").performClick()
+        val confirm = requireNotNull(
+            compose.onNodeWithText("Discard changes")
+                .fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+        )
+
+        // Both accessibility actions can arrive before the dialog's next composition.
+        compose.runOnUiThread {
+            confirm()
+            confirm()
+        }
+
+        compose.onNodeWithText("Discard changes?").assertDoesNotExist()
+        assertEquals(1, completed.get())
+    }
 
     @Test
     fun registeredGuardHandlesCleanDirtySavingAndPendingActions() {

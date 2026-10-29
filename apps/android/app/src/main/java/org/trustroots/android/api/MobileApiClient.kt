@@ -654,12 +654,9 @@ class MobileApiClient(
         allowResponseCache: Boolean = true,
     ): JsonResponse {
         val endpoint = URL("$baseURL$path")
-        val readCacheScope = responseCacheScope?.takeIf {
-            allowResponseCache && method == "GET" && sessionCookie != null
-        }
-        val mutationCacheScope = responseCacheScope?.takeIf {
-            method != "GET" && sessionCookie != null
-        }
+        val authenticatedCacheScope = responseCacheScope?.takeIf { sessionCookie != null }
+        val readCacheScope = authenticatedCacheScope?.takeIf { allowResponseCache && method == "GET" }
+        val mutationCacheScope = authenticatedCacheScope?.takeIf { method != "GET" }
         val connection = endpoint.openConnection() as HttpURLConnection
         try {
             connection.requestMethod = method

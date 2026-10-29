@@ -109,6 +109,23 @@ class ShellDestinationRecoveryJourneyTest {
         assertTrue(requests.none { it.startsWith("GET /api/messages/member-sender?limit=100 ") })
     }
 
+    @Test fun matchingNotificationLeavesCleanMenuWithoutADiscardPrompt() {
+        startResponder(populatedInbox = true)
+        showShell(destination = null)
+        waitForText("Discover circles")
+        compose.onNodeWithTag("navigation-menu").performClick()
+        waitForText("Edit profile")
+
+        compose.runOnIdle {
+            MessageAlerts.destination.value = MessageDestination("steady-heron", "member-sender")
+        }
+
+        waitForText("A fictional message opened from an alert.")
+        compose.onNodeWithTag("navigation-messages").assertIsSelected()
+        compose.waitUntil(5_000) { MessageAlerts.destination.value == null }
+        assertTrue(requests.any { it.startsWith("GET /api/messages/member-sender?limit=100 ") })
+    }
+
     @Test fun matchingNotificationWaitsForDirtyProfileDecisionBeforeOpeningConversation() {
         startResponder(populatedInbox = true)
         showShell(destination = null)

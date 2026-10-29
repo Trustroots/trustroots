@@ -39,6 +39,8 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         testPointerInputCompletionIsFilteredOnlyAfterKnownLoopingApi();
         testFunctionReferenceForwarderIsIgnoredButOrdinaryLambdaIsNot();
         testCapturedStateRememberMaskDecisionsAreFilteredIndividually();
+        testEnumCaptureInRememberMaskRegionIsFilteredWithoutHidingSourceConditions();
+        testEnumOrdinalSourceDecisionInRememberRegionIsPreserved();
         testSourceDecisionInsideRememberMarkerIsPreserved();
         testSourceBitmaskUsingChangedInstanceIsPreservedWithoutCompilerLocal();
         testComposeDefaultMaskDecisionsAreFilteredWithinDefaultsBlock();
@@ -498,6 +500,117 @@ public final class TrustrootsGeneratedCodeFilterRegression {
         check(output.ignored.stream().noneMatch(range -> range[0] instanceof JumpInsnNode
                         && range[0].getOpcode() == Opcodes.IFNE),
                 "the actual remembered-value invalidation gate must remain measured");
+    }
+
+    private static void testEnumCaptureInRememberMaskRegionIsFilteredWithoutHidingSourceConditions() {
+        MethodNode method = enumRememberMaskMethod(true, false);
+        RecordingOutput output = apply(method, "sample/RememberEnum", "java/lang/Object");
+        List<JumpInsnNode> ignoredBranches = output.ignored.stream()
+                .filter(range -> range[0] instanceof JumpInsnNode && range[0] == range[1])
+                .map(range -> (JumpInsnNode) range[0])
+                .toList();
+        check(ignoredBranches.size() == 3,
+                "only compiler mask decisions around the enum cache key should be ignored; found "
+                        + ignoredBranches.size() + " ignored ranges " + output.ignored.size());
+        check(ignoredBranches.stream().noneMatch(branch -> branch.getOpcode() == Opcodes.IFEQ
+                        && branch.getPrevious() != null
+                        && branch.getPrevious().getOpcode() == Opcodes.ILOAD),
+                "the ordinary source boolean decision in the same remember region must remain measured");
+    }
+
+    private static void testEnumOrdinalSourceDecisionInRememberRegionIsPreserved() {
+        MethodNode method = enumRememberMaskMethod(false, true);
+        RecordingOutput output = apply(method, "sample/RememberEnumSource", "java/lang/Object");
+        check(output.ignored.isEmpty(),
+                "an enum ordinal used by a source condition must prevent the remember mask match");
+    }
+
+    private static MethodNode enumRememberMaskMethod(boolean includeSourceBoolean, boolean includeSourceEnumDecision) {
+        MethodNode method = composableMethod("rememberEnumLambda",
+                "(Landroidx/compose/runtime/Composer;I)V");
+        method.instructions.add(new org.objectweb.asm.tree.LdcInsnNode("CC(remember):Sample.kt#enum-key"));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerStart", "(Landroidx/compose/runtime/Composer;ILjava/lang/String;)V", false));
+
+        LabelNode set = new LabelNode();
+        LabelNode clear = new LabelNode();
+        LabelNode join = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 14));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPEQ, set));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 1));
+        method.instructions.add(new org.objectweb.asm.tree.IntInsnNode(Opcodes.BIPUSH, 8));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.IAND));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+        method.instructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Enum"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Enum", "ordinal", "()I", false));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "changed", "(I)Z", true));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, clear));
+
+        LabelNode sourceBooleanFalse = new LabelNode();
+        if (includeSourceBoolean) {
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 3));
+            method.instructions.add(new JumpInsnNode(Opcodes.IFEQ, sourceBooleanFalse));
+            method.instructions.add(sourceBooleanFalse);
+        }
+        if (includeSourceEnumDecision) {
+            LabelNode sourceEnumFalse = new LabelNode();
+            method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 2));
+            method.instructions.add(new TypeInsnNode(Opcodes.CHECKCAST, "java/lang/Enum"));
+            method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, "java/lang/Enum", "ordinal", "()I", false));
+            method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+            method.instructions.add(new JumpInsnNode(Opcodes.IF_ICMPNE, sourceEnumFalse));
+            method.instructions.add(sourceEnumFalse);
+        }
+
+        method.instructions.add(set);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_1));
+        method.instructions.add(new JumpInsnNode(Opcodes.GOTO, join));
+        method.instructions.add(clear);
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.ICONST_0));
+        method.instructions.add(join);
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ISTORE, 4));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ASTORE, 5));
+        LabelNode create = new LabelNode();
+        LabelNode cached = new LabelNode();
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ILOAD, 4));
+        method.instructions.add(new JumpInsnNode(Opcodes.IFNE, create));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 5));
+        method.instructions.add(new FieldInsnNode(Opcodes.GETSTATIC,
+                "androidx/compose/runtime/Composer", "Companion", "Landroidx/compose/runtime/Composer$Companion;"));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL,
+                "androidx/compose/runtime/Composer$Companion", "getEmpty", "()Ljava/lang/Object;", false));
+        method.instructions.add(new JumpInsnNode(Opcodes.IF_ACMPNE, cached));
+        method.instructions.add(new org.objectweb.asm.tree.VarInsnNode(Opcodes.ALOAD, 0));
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKEINTERFACE, COMPOSER,
+                "rememberedValue", "()Ljava/lang/Object;", true));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.POP));
+        method.instructions.add(create);
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.instructions.add(cached);
+        method.instructions.add(new MethodInsnNode(Opcodes.INVOKESTATIC, "androidx/compose/runtime/ComposerKt",
+                "sourceInformationMarkerEnd", "(Landroidx/compose/runtime/Composer;)V", false));
+        method.instructions.add(new org.objectweb.asm.tree.InsnNode(Opcodes.RETURN));
+        method.localVariables = new ArrayList<>();
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "$changed", "I", null, new LabelNode(), new LabelNode(), 1));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "destination", "Lsample/Mode;", null, new LabelNode(), new LabelNode(), 2));
+        method.localVariables.add(new org.objectweb.asm.tree.LocalVariableNode(
+                "sourceBoolean", "Z", null, new LabelNode(), new LabelNode(), 3));
+        return method;
     }
 
     private static void testSourceDecisionInsideRememberMarkerIsPreserved() {

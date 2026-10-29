@@ -132,6 +132,41 @@ class HostMapViewModelTest {
     }
 
     @Test
+    fun snapshotWithoutSearchTimestampIsRefreshedEvenWhenItsFingerprintMatches() {
+        val resultsCache = HostMapResultsCache()
+        withViewModel(nowMillis = { 10_000L }, resultsCache = resultsCache) { viewModel, repository, notes ->
+            val viewport = MapViewport(40.0, -4.0, 8.0)
+            val searchBounds = bounds(39.5)
+            viewModel.onEvent(HostMapEvent.ViewportChanged(viewport, searchBounds))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            assertEquals(1, repository.searchCalls)
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(false))
+
+            val cached = requireNotNull(resultsCache.snapshot)
+            resultsCache.save(cached.copy(searchSucceededAt = null))
+            val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+            val newVisit = HostMapViewModel(
+                repository,
+                { onNote, onError -> notes.open(onNote, onError) },
+                scope,
+                wait = {},
+                now = { 10_000L },
+                resultsCache = resultsCache,
+            )
+            try {
+                assertEquals(cached.searchFingerprint, resultsCache.snapshot?.searchFingerprint)
+                newVisit.onEvent(HostMapEvent.MapVisibilityChanged(true))
+
+                assertEquals(2, repository.searchCalls)
+                assertFalse(newVisit.state.value.isLoading)
+                assertEquals(viewport, newVisit.state.value.viewport)
+            } finally {
+                scope.cancel()
+            }
+        }
+    }
+
+    @Test
     fun aStoppedSearchVisitCannotOverwriteTheLatestSharedSnapshot() {
         val resultsCache = HostMapResultsCache()
         withViewModel(resultsCache = resultsCache) { viewModel, repository, _ ->
