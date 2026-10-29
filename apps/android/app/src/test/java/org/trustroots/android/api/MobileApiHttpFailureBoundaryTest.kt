@@ -36,6 +36,41 @@ class MobileApiHttpFailureBoundaryTest {
         }
     }
 
+    @Test fun acceptsTheLastStatusCodeInTheSuccessfulHttpRange() {
+        MockWebServer().use { server ->
+            server.enqueue(MockResponse(code = 299, body = """{"enabled":false}"""))
+            server.start()
+
+            val result = runBlocking {
+                MobileApiClient(server.url("/").toString()).messagePushConfiguration(session)
+            }
+            val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+
+            assertTrue(result.isSuccess)
+            assertNull(result.getOrThrow())
+            assertEquals("/api/users/unified-push", request.url.encodedPath)
+        }
+    }
+
+    @Test fun rejectsAnInvalidStatusBelowTheSuccessfulHttpRange() {
+        MockWebServer().use { server ->
+            server.enqueue(
+                MockResponse.Builder()
+                    .status("HTTP/1.1 000 Invalid status")
+                    .addHeader("Connection", "close")
+                    .build(),
+            )
+            server.start()
+
+            val result = runBlocking { MobileApiClient(server.url("/").toString()).accountDetails(session) }
+            val request = requireNotNull(server.takeRequest(5, TimeUnit.SECONDS))
+            val error = result.exceptionOrNull() as MobileApiException
+
+            assertEquals("/api/users/quiet-fox", request.url.encodedPath)
+            assertEquals(0, error.statusCode)
+        }
+    }
+
     @Test fun connectionFailureWithoutCacheRemainsAnIoErrorAndDoesNotSetOfflineTimestamp() {
         val unusedPort = ServerSocket(0).use { it.localPort }
         val api = MobileApiClient("http://127.0.0.1:$unusedPort")

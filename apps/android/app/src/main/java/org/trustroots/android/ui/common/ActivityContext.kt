@@ -11,5 +11,6 @@ internal fun <T : Activity> Context.findActivity(type: Class<T>): T? {
         if (type.isInstance(context)) return type.cast(context)
         context = context.baseContext
     }
-    return if (type.isInstance(context)) type.cast(context) else null
+    // Activity inherits ContextWrapper, so a remaining unwrapped context cannot be one.
+    return null
 }

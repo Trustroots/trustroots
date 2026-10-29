@@ -36,6 +36,15 @@ import org.trustroots.android.ui.circles.CirclesSessionInvalidation
 @Config(sdk = [35], manifest = Config.NONE)
 class CircleDetailViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() {
+        val failure = runCatching {
+            CircleDetailViewModel.Factory("quiet-circle", FakeCircleRepository()).create(OtherViewModel::class.java)
+        }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun joinedCircleLoadsMemberGroupsWhileUnjoinedCircleDoesNotRequestThem() = withRepository { repository, scope ->
         repository.membershipSet = setOf("quiet-id")
         val groups = CircleMemberGroups(
@@ -362,6 +371,21 @@ class CircleDetailViewModelTest {
     }
 
     @Test
+    fun credentialOnlyEnvironmentChangeReloadsCircleAndMembership() = withRepository { repository, scope ->
+        repository.updateApi(api())
+        repository.updateSession(session("stable-cookie"))
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+        val loadedCircle = viewModel.state.value.circle
+
+        viewModel.updateEnvironment(api("https://api.example.test/"), session("rotated-cookie"))
+
+        assertEquals(loadedCircle, viewModel.state.value.circle)
+        assertEquals(listOf("quiet-circle", "quiet-circle"), repository.detailSlugs)
+        assertEquals(2, repository.membershipReads)
+        assertFalse(viewModel.state.value.isLoading)
+    }
+
+    @Test
     fun sameBackendClientReplacementDoesNotRepeatPendingMembershipMutation() = withRepository { repository, scope ->
         repository.updateApi(api("https://api.example.test"))
         repository.updateSession(session("stable-cookie"))
@@ -596,6 +620,7 @@ class CircleDetailViewModelTest {
     }
 
     private class StoreOwner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private companion object {
         fun api(baseURL: String = "https://api.example.test") = MobileApiClient(baseURL)

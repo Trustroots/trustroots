@@ -269,9 +269,7 @@ internal class HostOfferViewModel(
 
     private fun save() {
         val beforeSave = mutableState.value
-        if (sessionInvalidationEmitted || beforeSave.pendingSessionInvalidation != null ||
-            !beforeSave.canSave || beforeSave.isSaving
-        ) return
+        if (sessionInvalidationEmitted || !beforeSave.canSave) return
         val submitted = beforeSave.current
         saveRequest.launch {
             mutableState.update { it.copy(isSaving = true, failure = null, saveSucceeded = false) }

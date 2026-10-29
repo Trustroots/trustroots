@@ -30,6 +30,14 @@ import org.trustroots.android.api.MobileMember
 @Config(sdk = [35], manifest = Config.NONE)
 class CreateExperienceViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() = withScope { scope ->
+        val factory = CreateExperienceViewModel.Factory("member-owl", FakeRepository(), api(), session(), scope)
+        val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun mobileRepositoryTracksBackendCookieAndAccountIdentity() {
         val api = api()
         val original = session(cookie = "connect.sid=old")
@@ -125,6 +133,40 @@ class CreateExperienceViewModelTest {
         assertTrue(model.state.value.isDirty)
         model.onEvent(CreateExperienceEvent.FeedbackChanged(""))
         assertFalse(model.state.value.isDirty)
+    }
+
+    @Test
+    fun guestOnlyAnswerMakesAnOtherwiseDefaultExperienceDirty() = withScope { scope ->
+        val model = CreateExperienceViewModel("member-owl", FakeRepository(), api(), session(), scope)
+
+        model.onEvent(CreateExperienceEvent.WasGuestChanged(true))
+
+        assertTrue(model.state.value.isDirty)
+        assertTrue(model.state.value.canSave)
+        model.onEvent(CreateExperienceEvent.WasGuestChanged(false))
+        assertFalse(model.state.value.isDirty)
+    }
+
+    @Test
+    fun successAcknowledgementBeforeSubmissionLeavesTheExperienceFormUnchanged() = withScope { scope ->
+        val model = CreateExperienceViewModel("member-owl", FakeRepository(), api(), session(), scope)
+        val before = model.state.value
+
+        model.onEvent(CreateExperienceEvent.SuccessDelivered(1L))
+
+        assertEquals(before, model.state.value)
+        assertNull(model.state.value.pendingSuccess)
+    }
+
+    @Test
+    fun invalidationAcknowledgementBeforeSubmissionLeavesTheExperienceFormUnchanged() = withScope { scope ->
+        val model = CreateExperienceViewModel("member-owl", FakeRepository(), api(), session(), scope)
+        val before = model.state.value
+
+        model.onEvent(CreateExperienceEvent.InvalidationDelivered(1L))
+
+        assertEquals(before, model.state.value)
+        assertNull(model.state.value.pendingInvalidation)
     }
 
     @Test
@@ -422,6 +464,7 @@ class CreateExperienceViewModelTest {
     }
 
     private class Owner(override val viewModelStore: ViewModelStore) : ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private companion object {
         fun api() = MobileApiClient("https://api.example.test/")

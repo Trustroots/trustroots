@@ -7,6 +7,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -24,7 +26,8 @@ import org.trustroots.android.ui.theme.TrustrootsTheme
 class CircleMemberSparseGroupsJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
-    @Test fun recommenderOnlyAndActiveOnlyGroupsRemainDiscoverable() {
+    @Test fun sparseGroupsAndMembersWithoutDisplayNamesRemainDiscoverable() {
+        val openedProfile = java.util.concurrent.atomic.AtomicReference<String?>()
         val groups = mutableStateOf(
             CircleMemberGroups(
                 contacts = emptyList(),
@@ -62,7 +65,7 @@ class CircleMemberSparseGroupsJourneyTest {
                     contentPadding = PaddingValues.Zero,
                     onBack = {},
                     onToggleMembership = {},
-                    onOpenProfile = {},
+                    onOpenProfile = { openedProfile.set(it) },
                 )
             }
         }
@@ -82,5 +85,17 @@ class CircleMemberSparseGroupsJourneyTest {
         compose.onNodeWithText("Other active members").assertIsDisplayed()
         compose.onNodeWithText("Calm Lynx").assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("People who recommend you").fetchSemanticsNodes().isEmpty())
+
+        compose.runOnIdle {
+            groups.value = CircleMemberGroups(
+                contacts = listOf(MessageMember(id = null, username = "quiet-marten", displayName = " ")),
+                recommenders = emptyList(),
+                active = emptyList(),
+            )
+        }
+        compose.onNodeWithText("quiet-marten").assertIsDisplayed()
+        compose.onNodeWithText("@quiet-marten").assertIsDisplayed()
+        compose.onNodeWithTag("circleMember-quiet-marten").performClick()
+        org.junit.Assert.assertEquals("quiet-marten", openedProfile.get())
     }
 }

@@ -10,6 +10,10 @@ import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -69,6 +73,33 @@ class BrowserNavigationJourneyTest {
         compose.onNodeWithText("Open external website?").assertDoesNotExist()
         compose.onNodeWithContentDescription("Back").performClick()
         assertEquals(1, closed)
+    }
+
+    @Test fun closingBrowserRouteReleasesItsWebView() {
+        val closed = java.util.concurrent.atomic.AtomicInteger()
+        var browserVisible by mutableStateOf(true)
+        compose.setContent {
+            if (browserVisible) {
+                TrustrootsBrowser(BrowserRoute("Local help", "about:blank"), {
+                    closed.incrementAndGet()
+                    browserVisible = false
+                })
+            } else {
+                Text("Browser route closed")
+            }
+        }
+
+        compose.waitUntil(10_000) {
+            var present = false
+            compose.runOnIdle { present = findWebView(compose.activity.window.decorView) != null }
+            present
+        }
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Browser route closed").assertExists()
+        compose.runOnIdle {
+            assertEquals(1, closed.get())
+            assertEquals("Closing the route should remove its embedded WebView", null, findWebView(compose.activity.window.decorView))
+        }
     }
 
     @Test fun sessionCookieInjectionIgnoresAttributesAndInvalidDestinations() {

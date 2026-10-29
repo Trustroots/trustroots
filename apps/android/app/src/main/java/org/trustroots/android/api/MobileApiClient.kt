@@ -859,7 +859,7 @@ internal fun parseCircleMemberGroups(value: JSONObject): CircleMemberGroups = Ci
 private fun parseCircleMemberGroup(values: JSONArray?): List<MessageMember> =
     if (values == null) emptyList() else (0 until values.length()).mapNotNull { index ->
         values.optJSONObject(index)?.let(::parseMessageMember)
-            ?.takeIf { !it.username.isNullOrBlank() }
+            ?.takeIf { it.username != null }
     }
 
 internal fun parseContactRelationship(value: JSONObject): ContactRelationship =

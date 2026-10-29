@@ -15,6 +15,8 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -27,12 +29,38 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.PinnedTopAppBar
+import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.profile.ProfileActionBar
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
 class HeaderTypographyJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun compactArtworkKeepsItsLeadingNavigationActionAlongsideTheIdentity() {
+        val backClicks = java.util.concurrent.atomic.AtomicInteger()
+        compose.setContent {
+            TrustrootsTheme {
+                ArtworkHero(
+                    url = null,
+                    sessionCookie = null,
+                    label = "Quiet Heron",
+                    subtitle = "Fictional member",
+                    background = MaterialTheme.colorScheme.primary,
+                    blurBackground = false,
+                    testTag = "compactIdentityArtwork",
+                    compact = true,
+                    heroHeight = 80.dp,
+                    leadingContent = { NativeBackButton(onBack = { backClicks.incrementAndGet() }) },
+                )
+            }
+        }
+
+        compose.onNodeWithText("Quiet Heron").assertIsDisplayed()
+        compose.onNodeWithText("Fictional member").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        assertEquals(1, backClicks.get())
+    }
 
     @Test fun expandedProfileUsesLargeTypographyAndCompactTitleMatchesSharedAppBar() {
         lateinit var barState: TopAppBarState

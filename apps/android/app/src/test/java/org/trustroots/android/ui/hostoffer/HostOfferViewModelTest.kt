@@ -32,6 +32,14 @@ import org.trustroots.android.ui.common.UiFailureFallback
 @Config(sdk = [35], manifest = Config.NONE)
 class HostOfferViewModelTest {
     @Test
+    fun factoryRejectsAnUnrelatedViewModelType() = withScope { scope ->
+        val factory = HostOfferViewModel.Factory(FakeHostOfferRepository(), scope)
+        val failure = runCatching { factory.create(OtherViewModel::class.java) }.exceptionOrNull()
+
+        assertTrue(failure is IllegalArgumentException)
+    }
+
+    @Test
     fun initialLoadRetainsDefaultsAndDecodedDescriptions() {
         val form = HostOfferForm(
             id = "offer-anonymous",
@@ -579,6 +587,7 @@ class HostOfferViewModelTest {
     }
 
     private class TestStoreOwner(override val viewModelStore: ViewModelStore) : androidx.lifecycle.ViewModelStoreOwner
+    private class OtherViewModel : androidx.lifecycle.ViewModel()
 
     private class FakeHostOfferRepository(
         private val loadResult: Result<HostOfferForm> = Result.success(HostOfferForm()),

@@ -158,8 +158,8 @@ internal fun TrustrootsApp(
         CompositionLocalProvider(
             LocalViewModelStoreOwner provides requireNotNull(shellGraphOwner),
         ) {
-          key(requireNotNull(session).member.username) {
-            val activeSession = requireNotNull(session)
+          key(session.member.username) {
+            val activeSession = session
             val activeSessionSource = AppSessionSource.from(activeSession, apiBaseUrl)
             val rootBackStack = rememberNavBackStack(MemberShellVisit(activeSession.member.username))
             val rootDecorators: List<NavEntryDecorator<NavKey>> = listOf(
@@ -299,9 +299,9 @@ private fun MemberShell(
         onSessionInvalidated()
         shellViewModel.onEvent(MemberShellEvent.InvalidationDelivered(pending.id))
     }
-    // This stack starts with a tab visit and Back always retains its root.
+    // Visits are appended or replaced with increasing IDs, and Back retains the root.
     fun firstAvailableVisitID(): Long =
-        tabBackStack.maxOf { (it as MemberTabVisit).visitID } + 1L
+        (tabBackStack.last() as MemberTabVisit).visitID + 1L
 
     fun navigateTo(next: Destination, resetMenuBeforeLeaving: Boolean = false) {
         if (next != destination) {

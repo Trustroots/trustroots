@@ -88,6 +88,18 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun rejectsMiniUserResponseWithBlankCanonicalMemberID() {
+        val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"_id":"   ","username":"steady-owl","displayName":"Steady Owl"}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).messageMember(session, "anonymous-member-id") } }
+
+        assertEquals(IllegalArgumentException::class.java, result.exceptionOrNull()?.javaClass)
+        assertEquals("GET /api/users/mini/anonymous-member-id HTTP/1.1", request.line)
+    }
+
+    @Test
     fun usesTheOtherConversationDirectionAndDefaultsMissingThreadFields() {
         val threads = parseThreads(
             JSONArray(
@@ -730,7 +742,7 @@ class MobileApiClientTest {
                 socket.use {
                     val reader = socket.getInputStream().bufferedReader()
                     requests.put(reader.readLine().orEmpty())
-                    while (!reader.readLine().isNullOrEmpty()) Unit
+                    while (reader.readLine()?.isNotEmpty() == true) { }
                     val body = """{"linkedPubkeys":["$linked","$visibleLinked"],"pubkeys":["$visibleLinked"]}"""
                     val bytes = body.toByteArray(Charsets.UTF_8)
                     socket.getOutputStream().write(

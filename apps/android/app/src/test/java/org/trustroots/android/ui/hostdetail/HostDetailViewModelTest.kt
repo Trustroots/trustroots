@@ -97,6 +97,33 @@ class HostDetailViewModelTest {
         assertEquals(HostDetailUiState(), model.state.value)
     }
 
+    @Test fun invalidationAcknowledgementWithoutPendingInvalidationLeavesDetailUnchanged() = withModel { model, repository ->
+        val before = model.state.value
+
+        model.onEvent(HostDetailEvent.SessionInvalidationDelivered(1L))
+
+        assertEquals(before, model.state.value)
+        assertTrue(repository.offerIDs.isEmpty())
+    }
+
+    @Test fun unchangedEnvironmentDoesNotReloadTheSelectedHost() = withModel { model, repository ->
+        model.onEvent(HostDetailEvent.Load("stable-route-offer", SearchOfferType.Host))
+        val before = model.state.value
+        repository.offerIDs.clear()
+        repository.profileUsernames.clear()
+        repository.membershipCalls = 0
+
+        model.updateClientAndSession(
+            MobileApiClient("https://api.example.test/"),
+            MemberSession("connect.sid=unchanged", MobileMember("member-self", "Member Self")),
+        )
+
+        assertEquals(before, model.state.value)
+        assertTrue(repository.offerIDs.isEmpty())
+        assertTrue(repository.profileUsernames.isEmpty())
+        assertEquals(0, repository.membershipCalls)
+    }
+
     @Test fun environmentRefreshBeforeTheFirstRouteKeepsTheDetailEmpty() = withModel { model, repository ->
         repository.sessionChanged = true
 

@@ -302,7 +302,7 @@ internal class AccountSettingsViewModel(
             is AccountEvent.CurrentPasswordChanged -> mutableState.update { it.copy(currentPassword = event.value) }
             is AccountEvent.NewPasswordChanged -> mutableState.update { it.copy(newPassword = event.value) }
             is AccountEvent.VerifyPasswordChanged -> mutableState.update { it.copy(verifyPassword = event.value) }
-            AccountEvent.RetryLoad -> load(force = true)
+            AccountEvent.RetryLoad -> load()
             AccountEvent.SaveAccount -> saveAccount()
             AccountEvent.ChangePassword -> changePassword()
             is AccountEvent.ToggleMessageAlerts -> toggleMessageAlerts(event.notificationPermissionGranted)
@@ -325,12 +325,11 @@ internal class AccountSettingsViewModel(
     }
 
     private fun load(
-        force: Boolean = false,
         resetState: AccountSettingsUiState? = null,
         refreshPlatformSettings: Boolean = false,
     ) {
         val current = mutableState.value
-        if (sessionInvalidated || (resetState == null && (current.isLoading || (current.details != null && !force)))) return
+        if (sessionInvalidated || (resetState == null && current.isLoading)) return
         accountRequest.launch {
             if (refreshPlatformSettings) {
                 refreshPlatformState(username)

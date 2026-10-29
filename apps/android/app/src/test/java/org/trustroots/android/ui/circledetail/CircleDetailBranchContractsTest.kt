@@ -28,6 +28,25 @@ import org.trustroots.android.ui.circles.CircleRepository
 @Config(sdk = [35], manifest = Config.NONE)
 class CircleDetailBranchContractsTest {
     @Test
+    fun retryingTheMembershipSnapshotWhileMutationIsPendingKeepsTheMutationAlive() = withRepository { repository, scope ->
+        val pendingUpdate = CompletableDeferred<Result<Unit>>()
+        repository.updateHandler = { withContext(NonCancellable) { pendingUpdate.await() } }
+        val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
+
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        assertTrue(viewModel.state.value.isUpdating)
+        viewModel.onEvent(CircleDetailEvent.RetryLoad)
+
+        assertTrue(viewModel.state.value.isUpdating)
+        assertEquals(listOf("quiet-id" to false), repository.membershipChanges)
+        pendingUpdate.complete(Result.success(Unit))
+
+        assertTrue(viewModel.state.value.isMember)
+        assertFalse(viewModel.state.value.isUpdating)
+        assertEquals(1, repository.membershipChanges.size)
+    }
+
+    @Test
     fun toggleBeforeMembershipsResolveDoesNotSubmitAnUpdate() = withRepository { repository, scope ->
         val pendingMemberships = CompletableDeferred<Result<Set<String>>>()
         repository.membershipsHandler = { withContext(NonCancellable) { pendingMemberships.await() } }

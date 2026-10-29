@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -26,6 +27,43 @@ import org.trustroots.android.ui.search.SearchHubScreen
 @RunWith(AndroidJUnit4::class)
 class SearchModeBackNavigationJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun selectingTheCurrentMemberModeKeepsTheQueryAndRootBackBehaviour() {
+        val rootBack = AtomicBoolean(false)
+        LocalTransportFixture { request ->
+            when (request.path) {
+                "/api/tribes?limit=150", "/api/users/memberships" -> LocalTransportFixture.Response("[]")
+                else -> LocalTransportFixture.Response("{\"features\":[]}")
+            }
+        }.use { fixture ->
+            compose.setContent {
+                NativeTestAppFrame(Destination.Search) {
+                    SearchHubScreen(
+                        api = MobileApiClient(fixture.baseURL),
+                        session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                        initialTab = 1,
+                        geocoderLookup = { _, _, _ -> emptyList<Address>() },
+                        notesClientFactory = { _, _ -> HostMapNotesConnection {} },
+                        mapViewFactory = { context ->
+                            org.osmdroid.views.MapView(context).apply { setUseDataConnection(false) }
+                        },
+                        onBackAtRoot = { rootBack.set(true) },
+                    )
+                }
+            }
+
+            compose.onNodeWithTag("memberSearchField").performTextReplacement("quiet heron")
+            hideTestKeyboard()
+            compose.onNodeWithContentDescription("Search mode").performClick()
+            compose.onNodeWithText("Members").performClick()
+
+            compose.onNodeWithTag("memberSearchField").assertTextContains("quiet heron")
+            org.junit.Assert.assertFalse(rootBack.get())
+            compose.runOnUiThread { compose.activity.onBackPressedDispatcher.onBackPressed() }
+            compose.waitUntil(5_000) { rootBack.get() }
+        }
+    }
 
     @Test fun backFromMembersReturnsToMapAndBackAtMapLeavesSearch() {
         val rootBack = AtomicBoolean(false)
