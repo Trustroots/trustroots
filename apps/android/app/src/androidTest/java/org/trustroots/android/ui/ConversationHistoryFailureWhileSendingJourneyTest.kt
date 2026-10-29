@@ -29,6 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -136,6 +137,98 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
         assertEquals(1, repository.messageCalls.get())
     }
 
+    @Test fun quickReplyActionsStayDisabledUntilPendingSendCompletes() {
+        val repository = DeferredConversationRepository()
+        val session = MemberSession(
+            "connect.sid=fictional-session",
+            MobileMember("steady-heron", "Steady Heron"),
+        )
+        val api = MobileApiClient("https://example.invalid")
+        lateinit var model: MessageConversationViewModel
+
+        compose.runOnUiThread {
+            val prepared = MessageConversationViewModel(
+                memberID = "fictional-member-id",
+                repository = repository,
+                initialSession = session,
+                scope = requestScope,
+            )
+            model = ViewModelProvider(
+                owner,
+                object : ViewModelProvider.Factory {
+                    @Suppress("UNCHECKED_CAST")
+                    override fun <T : ViewModel> create(modelClass: Class<T>): T = prepared as T
+                },
+            ).get(MessageConversationViewModel::class.java)
+        }
+
+        compose.setContent {
+            TrustrootsTheme {
+                androidx.compose.runtime.CompositionLocalProvider(
+                    LocalViewModelStoreOwner provides owner,
+                ) {
+                    MessageConversationEntryScreen(
+                        memberID = "fictional-member-id",
+                        api = api,
+                        session = session,
+                        onSessionInvalidated = {},
+                        onBack = {},
+                    )
+                }
+            }
+        }
+
+        compose.waitUntil(10_000) {
+            model.state.value.member != null && repository.messageCalls.get() == 1
+        }
+        repository.history.complete(
+            Result.success(
+                listOf(
+                    DirectMessage(
+                        id = "fictional-incoming-message",
+                        content = "Can you host?",
+                        sender = MessageMember("fictional-member-id", "quiet-fox", "Quiet Fox"),
+                    ),
+                ),
+            ),
+        )
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithText("Yes, I can host!").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Yes, I can host!").assertIsEnabled().performClick()
+        compose.waitUntil(10_000) { repository.sendStarted.isCompleted }
+        compose.waitUntil(5_000) {
+            listOf("Yes, I can host!", "Sorry I can't host", "Write back").all { label ->
+                runCatching { compose.onNodeWithText(label).assertIsNotEnabled() }.isSuccess
+            }
+        }
+        compose.onNodeWithText("Yes, I can host!").assertIsNotEnabled()
+        compose.onNodeWithText("Sorry I can't host").assertIsNotEnabled()
+        compose.onNodeWithText("Write back").assertIsNotEnabled()
+        assertEquals(1, repository.sendCalls.get())
+
+        repository.sendResult.complete(
+            Result.success(
+                DirectMessage(
+                    id = "fictional-sent-quick-reply",
+                    content = "<p data-hosting=\"yes\"><b><i>Yes, I can host!</i></b></p>",
+                    sender = MessageMember("fictional-self-id", "steady-heron", "Steady Heron"),
+                ),
+            ),
+        )
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("quickReply").fetchSemanticsNodes().isEmpty() &&
+                compose.onAllNodesWithText("Yes, I can host!").fetchSemanticsNodes().isNotEmpty() &&
+                compose.onAllNodesWithTag("outgoingMessage").fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("outgoingMessage").assertIsDisplayed()
+        compose.onNodeWithText("Sorry I can't host").assertDoesNotExist()
+        assertTrue(model.state.value.messages.any { it.id == "fictional-sent-quick-reply" })
+        assertEquals(1, repository.sendCalls.get())
+    }
+
     private class TestConversationOwner : ViewModelStoreOwner {
         override val viewModelStore = ViewModelStore()
     }
@@ -145,6 +238,7 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
         val sendStarted = CompletableDeferred<Unit>()
         val sendResult = CompletableDeferred<Result<DirectMessage>>()
         val messageCalls = AtomicInteger()
+        val sendCalls = AtomicInteger()
 
         override suspend fun member(memberID: String): Result<ConversationRecipient> =
             Result.success(ConversationRecipient(memberID, "quiet-fox", "Quiet Fox"))
@@ -155,6 +249,7 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
         }
 
         override suspend fun send(memberID: String, content: String): Result<DirectMessage> {
+            sendCalls.incrementAndGet()
             sendStarted.complete(Unit)
             return sendResult.await()
         }
