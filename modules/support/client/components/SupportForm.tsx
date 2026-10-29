@@ -1,5 +1,6 @@
 // External dependencies
 import React, { useState, useEffect, useRef } from 'react';
+import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { Trans, useTranslation } from 'react-i18next';
 
 // Internal dependencies
@@ -13,6 +14,7 @@ type SupportFormProps = { user?: SupportUser | null };
 type SupportCategory = keyof typeof SUPPORT_CATEGORIES;
 
 export default function SupportForm({ user }: SupportFormProps) {
+  const categoryInput = useDesktopAutofocus<HTMLSelectElement>();
   const { t } = useTranslation('support');
   // Keep literal keys discoverable by the translation extractor.
   const categoryLabels: Record<SupportCategory, string> = {
@@ -150,6 +152,7 @@ export default function SupportForm({ user }: SupportFormProps) {
             </label>
             <div className="col-sm-9">
               <select
+                ref={categoryInput}
                 id="category"
                 className="form-control input-lg"
                 value={category}

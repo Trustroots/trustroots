@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 
 import Board from '@/modules/core/client/components/Board';
+import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import {
   getCurrentRouteParams,
   navigate,
@@ -11,6 +12,7 @@ import { applyAuthenticatedUser } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';
 
 export default function ResetPasswordPage() {
+  const passwordInput = useDesktopAutofocus<HTMLInputElement>();
   const { token } = getCurrentRouteParams();
   const { setUser } = useAuth() as {
     setUser: (user: { _id: string; username: string; email?: string }) => void;
@@ -85,6 +87,7 @@ export default function ResetPasswordPage() {
               <div className="form-group">
                 <label htmlFor="newPassword">New Password</label>
                 <input
+                  ref={passwordInput}
                   type="password"
                   required
                   id="newPassword"

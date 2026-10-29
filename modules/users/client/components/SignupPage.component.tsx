@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
@@ -109,6 +110,7 @@ function getCurrentUsernameFieldErrors(username: string): UsernameFieldErrors {
 }
 
 export default function SignupPage() {
+  const firstNameInput = useDesktopAutofocus<HTMLInputElement>();
   const { t } = useTranslation('users');
   const { user, setUser } = useAuth() as {
     user: UserProfile | null;
@@ -389,6 +391,7 @@ export default function SignupPage() {
                   </label>
                   <div className="col-sm-8">
                     <input
+                      ref={firstNameInput}
                       type="text"
                       required
                       id="firstName"

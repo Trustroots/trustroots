@@ -24,6 +24,17 @@ const forgotPassword = jest.mocked(authApi.forgotPassword);
 const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
 describe('ForgotPasswordPage', () => {
+  it('focuses the primary field on desktop', () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    try {
+      render(<ForgotPasswordPage />);
+      expect(screen.getByLabelText('Email or username')).toHaveFocus();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
     routeParams.mockReturnValue({ userhandle: 'member-one' });

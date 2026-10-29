@@ -34,6 +34,17 @@ afterEach(() => {
 });
 
 describe('<SupportForm />', () => {
+  it('focuses the primary field on desktop', () => {
+    const originalMatchMedia = window.matchMedia;
+    window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+    try {
+      render(<SupportForm user={{}} />);
+      expect(screen.getByLabelText('What can we help with?')).toHaveFocus();
+    } finally {
+      window.matchMedia = originalMatchMedia;
+    }
+  });
+
   it('opens and submits the bug-report category without a reported member', async () => {
     sendMock.mockResolvedValueOnce({});
     window.history.pushState({}, '', '/support?category=reportBug');
