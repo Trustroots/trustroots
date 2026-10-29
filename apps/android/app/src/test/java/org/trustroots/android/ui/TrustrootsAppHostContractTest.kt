@@ -1,10 +1,13 @@
 package org.trustroots.android.ui
 
+import android.view.View
 import androidx.compose.runtime.AbstractApplier
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Composition
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Recomposer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import kotlin.coroutines.EmptyCoroutineContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -13,12 +16,36 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.trustroots.android.browser.BrowserRoute
+import org.trustroots.android.browser.TrustrootsBrowser
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
 class TrustrootsAppHostContractTest {
     @Test
     fun rejectsAContextWithoutAComponentActivity() {
+        val error = compositionFailure {
+            CompositionLocalProvider(LocalContext provides RuntimeEnvironment.getApplication()) {
+                TrustrootsApp()
+            }
+        }
+        assertEquals("TrustrootsApp must run in a ComponentActivity.", error.message)
+    }
+
+    @Test
+    fun browserRejectsAHostWithoutAnEntryViewModelStore() {
+        val context = RuntimeEnvironment.getApplication()
+        compositionFailure {
+            CompositionLocalProvider(
+                LocalContext provides context,
+                LocalView provides View(context),
+            ) {
+                TrustrootsBrowser(BrowserRoute(title = "Fictional page", url = "https://example.test"), onClose = {})
+            }
+        }
+    }
+
+    private fun compositionFailure(content: @Composable () -> Unit): IllegalArgumentException {
         val recomposer = Recomposer(EmptyCoroutineContext)
         val composition = Composition(object : AbstractApplier<Unit>(Unit) {
             override fun insertTopDown(index: Int, instance: Unit) = Unit
@@ -29,15 +56,9 @@ class TrustrootsAppHostContractTest {
         }, recomposer)
 
         try {
-            val error = assertThrows(IllegalArgumentException::class.java) {
-                composition.setContent {
-                    CompositionLocalProvider(LocalContext provides RuntimeEnvironment.getApplication()) {
-                        TrustrootsApp()
-                    }
-                }
+            return assertThrows(IllegalArgumentException::class.java) {
+                composition.setContent(content)
             }
-
-            assertEquals("TrustrootsApp must run in a ComponentActivity.", error.message)
         } finally {
             composition.dispose()
             recomposer.cancel()

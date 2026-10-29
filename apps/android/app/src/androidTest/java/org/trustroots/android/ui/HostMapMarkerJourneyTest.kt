@@ -1,6 +1,7 @@
 package org.trustroots.android.ui
 
 import android.graphics.Point
+import android.graphics.drawable.BitmapDrawable
 import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
@@ -35,6 +36,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
@@ -87,7 +89,7 @@ class HostMapMarkerJourneyTest {
                             request.startsWith("GET /api/nostr/author-visibility?") ->
                                 """{"linkedPubkeys":[],"pubkeys":[]}"""
                             request.startsWith("GET /api/offers?") ->
-                                """{"features":[{"properties":{"id":"offer-one","type":"host","status":"yes"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
+                            """{"features":[{"properties":{"id":"offer-one","type":"host","status":"maybe"},"geometry":{"coordinates":[-9.1393,38.7223]}}]}"""
                             request.startsWith("GET /api/offers/offer-one") ->
                                 """{"_id":"offer-one","status":"yes","description":"A fictional spare room.","maxGuests":2,"user":{"username":"quiet-fox","displayName":"Quiet Fox"}}"""
                             request.startsWith("GET /api/users/quiet-fox") ->
@@ -134,6 +136,15 @@ class HostMapMarkerJourneyTest {
 
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("1 offer · 0 Nostroots notes in this area").fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.runOnUiThread {
+            val marker = mapView.overlays.filterIsInstance<Marker>().single { it.title == "Potential host" }
+            val bitmap = (marker.icon as BitmapDrawable).bitmap
+            val expectedMaybeColour = mapView.resources.getColor(
+                org.trustroots.android.R.color.map_marker_maybe,
+                mapView.context.theme,
+            )
+            assertEquals(expectedMaybeColour, bitmap.getPixel(bitmap.width / 2, bitmap.height / 2))
         }
         compose.onNodeWithTag("hostMapView").performTouchInput { click(center) }
         compose.waitUntil(10_000) {

@@ -39,7 +39,7 @@ internal fun ProfileSafetyNotice(
                 Text(stringResource(R.string.profile_blocked_notice, displayName), modifier = Modifier.testTag("profileBlockedNotice"))
             } else if (state.blockFailure != null) {
                 Text(
-                    safetyFailureMessage(requireNotNull(state.blockFailure), R.string.profile_block_load_error),
+                    safetyFailureMessage(state.blockFailure, R.string.profile_block_load_error),
                     color = MaterialTheme.colorScheme.error,
                 )
                 TextButton(onClick = onRetry, enabled = !state.isLoadingBlock) {

@@ -131,11 +131,17 @@ class HostMapDetailAndCircleFilterJourneyTest {
         compose.onNodeWithText("All circles").performClick()
         compose.onNodeWithTag("circleFilterOption-all").assertIsSelected()
         waitForText("Quiet Circle")
+        val tribeRequestCount = requests.count { it.startsWith("GET /api/tribes?limit=150 ") }
+        compose.onNodeWithTag("openFilters").performClick()
+        compose.onNodeWithTag("openFilters").performClick()
+        assertEquals(tribeRequestCount, requests.count { it.startsWith("GET /api/tribes?limit=150 ") })
         compose.onNodeWithTag("circleFilterOption-circle-one").assertIsNotSelected()
-        compose.onNodeWithText("Quiet Circle").performClick()
+        compose.onNodeWithTag("circleFilterOption-circle-two").performClick()
         compose.onNodeWithTag("circleFilterOption-circle-two").assertIsSelected()
-        compose.onNodeWithText("Wanderers").performClick()
+        assertEquals(2, compose.onAllNodesWithText("Quiet Circle").fetchSemanticsNodes().size)
+        compose.onNodeWithTag("circleFilterOption-circle-one").performClick()
         compose.onNodeWithTag("circleFilterOption-circle-one").assertIsSelected()
+        compose.onNodeWithText("2 circles").assertIsDisplayed()
         compose.waitUntil(15_000) {
             offerFilters.any { it.contains("\"tribes\":[\"circle-one\",\"circle-two\"]") }
         }
@@ -143,6 +149,7 @@ class HostMapDetailAndCircleFilterJourneyTest {
         compose.onNodeWithTag("circleFilterOption-circle-two").performClick()
         compose.onNodeWithTag("circleFilterOption-circle-two").assertIsNotSelected()
         compose.onNodeWithTag("circleFilterOption-all").assertIsNotSelected()
+        assertEquals(2, compose.onAllNodesWithText("Wanderers").fetchSemanticsNodes().size)
 
         compose.waitUntil(15_000) {
             offerFilters.drop(filterCountBeforeDeselect)

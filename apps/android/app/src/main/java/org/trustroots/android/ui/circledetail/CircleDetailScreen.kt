@@ -135,7 +135,7 @@ internal fun CircleDetailContent(
     onToggleMembership: () -> Unit,
     onOpenProfile: (String) -> Unit,
 ) {
-    val failureMessage = circlesFailureMessage(failure)
+    val failureMessage = failure?.let { circlesFailureMessage(it) }
     val topPadding = contentPadding.calculateTopPadding()
     val compactHeaderHeight = 64.dp
     val collapsibleHeader = rememberSnappableCollapseHeader(
@@ -234,7 +234,7 @@ internal fun CircleDetailContent(
                                     CircularProgressIndicator(Modifier.padding(top = 20.dp))
                                 } else if (failure?.kind == CirclesFailureKind.CIRCLE_MEMBERS_LOAD) {
                                     Text(
-                                        failureMessage ?: stringResource(R.string.screen_circle_members_load_error),
+                                        circlesFailureMessage(failure),
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(top = 20.dp),
                                     )

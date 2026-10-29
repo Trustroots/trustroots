@@ -178,7 +178,7 @@ private fun CircleOverviewEntry(
     val viewModel = rememberEntryViewModel(owner, CirclesViewModel::class.java, factory)
     SideEffect { viewModel.updateEnvironment(api, session) }
     val state by viewModel.state.collectAsState()
-    val failureMessage = circlesFailureMessage(state.failure)
+    val failureMessage = state.failure?.let { circlesFailureMessage(it) }
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
     LaunchedEffect(viewModel, state.pendingSessionInvalidation?.id) {
@@ -214,12 +214,12 @@ private fun CircleOverviewEntry(
 }
 
 @Composable
-internal fun circlesFailureMessage(failure: CirclesFailure?): String? = failure?.let {
+internal fun circlesFailureMessage(failure: CirclesFailure): String =
     resolveFailureMessage(
         UiFailure(
-            serverMessage = it.serverMessage,
-            apiKind = it.apiFailureKind,
-            fallback = when (it.kind) {
+            serverMessage = failure.serverMessage,
+            apiKind = failure.apiFailureKind,
+            fallback = when (failure.kind) {
                 CirclesFailureKind.CIRCLES_LOAD, CirclesFailureKind.CIRCLE_DETAIL_LOAD -> UiFailureFallback.CIRCLES_LOAD
                 CirclesFailureKind.MEMBERSHIPS_LOAD -> UiFailureFallback.CIRCLE_MEMBERSHIPS_LOAD
                 CirclesFailureKind.CIRCLE_MEMBERS_LOAD -> UiFailureFallback.CIRCLE_MEMBERS_LOAD
@@ -227,7 +227,6 @@ internal fun circlesFailureMessage(failure: CirclesFailure?): String? = failure?
             },
         ),
     )
-}
 
 @Composable
 private fun CircleOverviewScreen(

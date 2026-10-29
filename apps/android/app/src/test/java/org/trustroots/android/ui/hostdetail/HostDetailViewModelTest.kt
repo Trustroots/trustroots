@@ -97,6 +97,23 @@ class HostDetailViewModelTest {
         assertEquals(HostDetailUiState(), model.state.value)
     }
 
+    @Test fun repeatedLoadForTheActiveRouteDoesNotRestartItsRequest() = withModel { model, repository ->
+        val pendingOffer = CompletableDeferred<Result<HostOffer>>()
+        repository.offerHandler = { _, _ -> pendingOffer.await() }
+
+        model.onEvent(HostDetailEvent.Load("same-route-offer", SearchOfferType.Host))
+        model.onEvent(HostDetailEvent.Load("same-route-offer", SearchOfferType.Host))
+
+        assertEquals(listOf("same-route-offer"), repository.offerIDs)
+        assertTrue(model.state.value.isLoading)
+
+        pendingOffer.complete(Result.success(offerFixture("same-route-offer")))
+
+        assertEquals(listOf("same-route-offer"), repository.offerIDs)
+        assertEquals("same-route-offer", model.state.value.offer?.id)
+        assertFalse(model.state.value.isLoading)
+    }
+
     @Test fun invalidationAcknowledgementWithoutPendingInvalidationLeavesDetailUnchanged() = withModel { model, repository ->
         val before = model.state.value
 

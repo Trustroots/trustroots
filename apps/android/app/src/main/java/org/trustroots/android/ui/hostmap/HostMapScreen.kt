@@ -278,13 +278,10 @@ internal fun HostMapScreen(
                     view.overlays.add(marker)
                 }
                 val groupedNotes = communityNotes.groupBy { it.latitude to it.longitude }
-                val noteOffers = groupedNotes.map { (point, notes) ->
-                    MapOffer(notes.first().id, point.first, point.second)
-                }
-                val notesByID = groupedNotes.values.associateBy { it.first().id }
-                clusterOffers(noteOffers, view).forEach { cluster ->
-                    val notes = cluster.flatMap { notesByID[it.id].orEmpty() }
-                    if (notes.isEmpty()) return@forEach
+                clusterMapItems(groupedNotes.entries.toList(), view) {
+                    GeoPoint(it.key.first, it.key.second)
+                }.forEach { cluster ->
+                    val notes = cluster.flatMap { it.value }
                     val marker = Marker(view).apply {
                         position = GeoPoint(notes.map { it.latitude }.average(), notes.map { it.longitude }.average())
                         title = if (notes.size == 1) communityNoteLabel else resources.getQuantityString(R.plurals.screen_community_notes_count, notes.size, notes.size)
@@ -500,10 +497,14 @@ private val mapFilterLanguages = listOf(
 )
 
 internal fun clusterOffers(offers: List<MapOffer>, map: MapView): List<List<MapOffer>> {
-    if (map.zoomLevelDouble >= 14) return offers.map(::listOf)
+    return clusterMapItems(offers, map) { GeoPoint(it.latitude, it.longitude) }
+}
+
+private fun <T> clusterMapItems(items: List<T>, map: MapView, location: (T) -> GeoPoint): List<List<T>> {
+    if (map.zoomLevelDouble >= 14) return items.map(::listOf)
     val cell = (50 * map.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-    return offers.groupBy { offer ->
-        val point = map.projection.toPixels(GeoPoint(offer.latitude, offer.longitude), Point())
+    return items.groupBy { item ->
+        val point = map.projection.toPixels(location(item), Point())
         point.x / cell to point.y / cell
     }.values.flatMap { group -> if (group.size >= 3) listOf(group) else group.map(::listOf) }
 }

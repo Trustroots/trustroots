@@ -3,7 +3,9 @@ package org.trustroots.android.ui.profile
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Rule
@@ -84,5 +86,39 @@ class ProfileSafetyControlsJourneyTest {
 
         compose.onNodeWithText("The block list is temporarily unavailable.").assertIsDisplayed()
         compose.onNodeWithText("Could not check whether this member is blocked.").assertDoesNotExist()
+    }
+
+    @Test fun whitespaceOnlyServerMessageUsesTheBlockFailureFallback() {
+        compose.setContent {
+            MaterialTheme {
+                ProfileSafetyNotice(
+                    displayName = "Quiet Fox",
+                    state = MemberProfileUiState(
+                        blockFailure = MemberProfileFailure(
+                            MemberProfileFailureReason.BLOCK_STATUS,
+                            serverMessage = " \t ",
+                        ),
+                    ),
+                    onRetry = {},
+                )
+            }
+        }
+
+        compose.onNodeWithText("Could not check whether this member is blocked.").assertIsDisplayed()
+    }
+
+    @Test fun successfullyUnblockedMemberHasNoSafetyNotice() {
+        compose.setContent {
+            MaterialTheme {
+                ProfileSafetyNotice(
+                    displayName = "Quiet Fox",
+                    state = MemberProfileUiState(isBlocked = false),
+                    onRetry = {},
+                )
+            }
+        }
+
+        compose.onAllNodesWithText("Retry").assertCountEquals(0)
+        compose.onAllNodesWithText("Could not check whether this member is blocked.").assertCountEquals(0)
     }
 }

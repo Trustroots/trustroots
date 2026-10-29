@@ -106,11 +106,18 @@ class HostMapLocationClusterJourneyTest {
                 geocoderLookup = { _, query, maxResults ->
                     geocoderCalls += query to maxResults
                     if (query == "Fictional Harbour") {
-                        listOf(Address(Locale.US).apply {
-                            latitude = TARGET_LATITUDE
-                            longitude = TARGET_LONGITUDE
-                            setAddressLine(0, "Fictional Harbour, Somewhere")
-                        })
+                        listOf(
+                            Address(Locale.US).apply {
+                                latitude = 40.0
+                                longitude = -8.0
+                                setAddressLine(0, "Fictional Harbour East")
+                            },
+                            Address(Locale.US).apply {
+                                latitude = TARGET_LATITUDE
+                                longitude = TARGET_LONGITUDE
+                                setAddressLine(0, "Fictional Harbour, Somewhere")
+                            },
+                        )
                     } else if (query == "Unmapped Place") {
                         emptyList()
                     } else {
@@ -126,6 +133,7 @@ class HostMapLocationClusterJourneyTest {
             compose.onAllNodesWithText("Fictional Harbour, Somewhere").fetchSemanticsNodes().isNotEmpty()
         }
         assertTrue(geocoderCalls.any { it == ("Fictional Harbour" to 3) })
+        compose.onNodeWithText("Fictional Harbour East").assertIsDisplayed()
         compose.onNodeWithText("Fictional Harbour, Somewhere").performClick()
         compose.waitUntil(15_000) {
             requests.any { it.contains(TARGET_LATITUDE, TARGET_LONGITUDE) } &&

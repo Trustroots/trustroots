@@ -4,6 +4,10 @@ import android.location.Address
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -12,6 +16,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.setValue
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
@@ -27,6 +35,58 @@ import org.trustroots.android.ui.search.SearchHubScreen
 @RunWith(AndroidJUnit4::class)
 class SearchModeBackNavigationJourneyTest {
     @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+    @Test fun resetForAnotherSearchVisitDoesNotClearThisVisit() {
+        var resetGeneration by mutableIntStateOf(0)
+        var resetVisitID by mutableLongStateOf(99L)
+        LocalTransportFixture { request ->
+            when {
+                request.method == "GET" && request.path.startsWith("/api/offers?") ->
+                    LocalTransportFixture.Response("{\"features\":[]}")
+                request.method == "GET" && request.path == "/api/tribes?limit=150" ->
+                    LocalTransportFixture.Response("[]")
+                request.method == "GET" && request.path == "/api/users/memberships" ->
+                    LocalTransportFixture.Response("[]")
+                else -> LocalTransportFixture.Response("[]")
+            }
+        }.use { fixture ->
+            compose.setContent {
+                NativeTestAppFrame(Destination.Search) {
+                    SearchHubScreen(
+                        api = MobileApiClient(fixture.baseURL),
+                        session = MemberSession("connect.sid=fictional", MobileMember("steady-heron", "Steady Heron")),
+                        onSessionInvalidated = {},
+                        initialTab = 1,
+                        resetGeneration = resetGeneration,
+                        resetVisitID = resetVisitID,
+                        ownerVisitID = 41L,
+                        geocoderLookup = { _, _, _ -> emptyList<Address>() },
+                        notesClientFactory = { _, _ -> HostMapNotesConnection {} },
+                        mapViewFactory = { context ->
+                            org.osmdroid.views.MapView(context).apply { setUseDataConnection(false) }
+                        },
+                    )
+                }
+            }
+
+            compose.onNodeWithTag("memberSearchField").performTextReplacement("quiet fox")
+            resetGeneration = 1
+            compose.waitForIdle()
+            compose.onNodeWithTag("memberSearchField").assertTextContains("quiet fox")
+
+            resetVisitID = 41L
+            resetGeneration = 2
+            compose.waitUntil(10_000) {
+                compose.onAllNodesWithText("Search places").fetchSemanticsNodes().isNotEmpty()
+            }
+            compose.onNodeWithTag("memberSearchField").assertDoesNotExist()
+            compose.onNodeWithContentDescription("Search mode").performClick()
+            compose.onNodeWithText("Members").performClick()
+            compose.onNodeWithTag("memberSearchField").assert(
+                SemanticsMatcher.expectValue(SemanticsProperties.EditableText, AnnotatedString("")),
+            )
+        }
+    }
 
     @Test fun selectingTheCurrentMemberModeKeepsTheQueryAndRootBackBehaviour() {
         val rootBack = AtomicBoolean(false)
