@@ -14,6 +14,10 @@ An exhaustive single-entry enum `when` may compile to an integer comparison inst
 
 ## Validation
 
+A long remember key may use only the exact verified Composer receiver load, `LLOAD` and `Composer.changed(J)Z` sequence within a validated cache region. This permits the captured value load; it does not permit arbitrary long arithmetic, source comparisons, other calls or additional branch candidates. Negative fixtures must retain those shapes.
+
+A generated restart tail may remove only the null decision on the verified hidden Composer's `endRestartGroup()` result. Require the exact scope-result store/load/null test, generated callback construction and `ScopeUpdateScope.updateScope` call, null-arm pop and method return. Preserve callback instructions and all source decisions. Reject wrong owners, missing calls, unrelated nullable values and methods without Kotlin/Composable provenance.
+
 Inlined library guards require both primary Kotlin SMAP provenance outside the application source tree and an exact Compose contract-check pattern. KotlinDebug call-site mappings alone are insufficient. Keep identical application-source checks, insertion/reuse decisions and uncertain patterns measured. This policy does not exclude whole source files or methods.
 
 Exercise real compiler bytecode and positive/negative fixtures. Generic branches, source lambdas and application state decisions remain measured. Re-run complete unit coverage and combine matching device probes, then confirm zero missed executable lines and an exact branch ratio of 100% before raising the floor.

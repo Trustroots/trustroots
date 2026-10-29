@@ -18,6 +18,10 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.browser.TrustrootsBrowser
+import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileMember
+import org.trustroots.android.ui.editprofile.EditProfileScreen
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], manifest = Config.NONE)
@@ -43,6 +47,20 @@ class TrustrootsAppHostContractTest {
                 TrustrootsBrowser(BrowserRoute(title = "Fictional page", url = "https://example.test"), onClose = {})
             }
         }
+    }
+
+    @Test
+    fun editProfileRequiresAUsernameWhenNoCanonicalProfileIsProvided() {
+        val error = compositionFailure {
+            EditProfileScreen(
+                api = MobileApiClient("https://api.example.test"),
+                session = MemberSession("connect.sid=fictional-session", MobileMember("quiet-fox", "Quiet Fox")),
+                onSessionInvalidated = {},
+                onCancel = {},
+                onSaved = {},
+            )
+        }
+        assertEquals("A username or canonical profile is required.", error.message)
     }
 
     private fun compositionFailure(content: @Composable () -> Unit): IllegalArgumentException {

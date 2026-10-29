@@ -27,6 +27,20 @@ the Composer parameter (or a `$dirty` local copied from one), Composer
 `rememberedValue` cache gate. Source-named integer mask locals reject the whole
 region; branches elsewhere in the method remain measured. Cache-gate branches
 already handled by upstream JaCoCo filters are left to those filters.
+The only non-mask load admitted in a cache-key region is a `LLOAD` immediately
+between the hidden Composer receiver and the exact `Composer.changed(J)Z` call.
+Unrelated long loads, arithmetic and calls reject the region.
+
+The restart-scope rule recognises only an annotated Kotlin composable whose
+hidden Composer parameter is followed by compiler integer flags. The null
+decision must directly test the `ScopeUpdateScope` returned by
+`Composer.endRestartGroup()`, store and reload that exact value, and lead to a
+generated callback factory plus `ScopeUpdateScope.updateScope` on the non-null
+path. The null path must pop the duplicate and return at the method tail. It
+ignores only that `IFNULL`; callback instructions and nearby source null checks
+remain counted. Fixtures reject missing Kotlin/Composable provenance, wrong
+restart-call shape, missing callback installation and ordinary source null
+guards.
 
 The pinned upstream JaCoCo Compose filters own changed-mask preamble decisions;
 the custom classifier leaves those branches to upstream. Its composable

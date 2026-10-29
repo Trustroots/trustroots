@@ -323,6 +323,26 @@ class HostDetailViewModelTest {
         assertNull(model.state.value.failure)
     }
 
+    @Test fun failedRouteIsNotImplicitlyRetriedByDuplicateLoadButExplicitRetryWorks() = withModel { model, repository ->
+        repository.offerHandler = { call, id ->
+            if (call == 1) Result.failure(IOException("A fictional temporary offer failure."))
+            else Result.success(offerFixture(id))
+        }
+
+        model.onEvent(HostDetailEvent.Load("retryable-route-offer", SearchOfferType.Host))
+        assertEquals(UiFailureFallback.LOAD_HOST, model.state.value.failure?.fallback)
+        assertFalse(model.state.value.isLoading)
+
+        model.onEvent(HostDetailEvent.Load("retryable-route-offer", SearchOfferType.Host))
+        assertEquals(listOf("retryable-route-offer"), repository.offerIDs)
+
+        model.onEvent(HostDetailEvent.Retry)
+
+        assertEquals(listOf("retryable-route-offer", "retryable-route-offer"), repository.offerIDs)
+        assertEquals("retryable-route-offer", model.state.value.offer?.id)
+        assertNull(model.state.value.failure)
+    }
+
     @Test fun expiredProfileSessionInvalidatesOnceAndSkipsMembershipRead() = withModel { model, repository ->
         repository.profileHandler = { _, _ -> Result.failure(MobileApiException(401, "Expired")) }
 

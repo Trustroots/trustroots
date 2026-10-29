@@ -166,7 +166,7 @@ internal fun HostMapScreen(
         when {
             showSuggestions -> showSuggestions = false
             showFilters -> showFilters = false
-            selectedNotes.isNotEmpty() -> mapViewModel.onEvent(HostMapEvent.NotesDismissed)
+            else -> mapViewModel.onEvent(HostMapEvent.NotesDismissed)
         }
     }
     val map = remember(context) {

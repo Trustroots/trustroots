@@ -116,7 +116,7 @@ internal class MessageConversationViewModel(
 
     fun onEvent(event: MessageConversationEvent) {
         when (event) {
-            MessageConversationEvent.Retry -> if (!mutableState.value.isSending) load(force = true)
+            MessageConversationEvent.Retry -> if (!mutableState.value.isSending) load()
             is MessageConversationEvent.DraftChanged -> updateDraft(event.value)
             is MessageConversationEvent.Send -> send(event.content)
             is MessageConversationEvent.QuickReply -> send(event.content)
@@ -153,8 +153,8 @@ internal class MessageConversationViewModel(
         repository.saveDraft(session.member.username, draftKey, value)
     }
 
-    private fun load(force: Boolean = false) {
-        if (invalidationEmitted || (!force && mutableState.value.messagesLoaded)) return
+    private fun load() {
+        if (invalidationEmitted) return
         loadRequest.launch {
             val messageIDsAtLoadStart = mutableState.value.messages.mapTo(mutableSetOf()) { it.id }
             mutableState.update { it.copy(isLoading = true, messagesLoaded = false, loadFailed = false, failure = null, pendingSessionInvalidation = null) }

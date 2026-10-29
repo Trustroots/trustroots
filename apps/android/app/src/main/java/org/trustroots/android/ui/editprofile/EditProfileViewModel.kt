@@ -203,6 +203,7 @@ internal class EditProfileViewModel(
     private fun save() {
         val current = mutableState.value
         if (current.baseline == null || current.name.isBlank() || current.isSaving || current.pendingSave != null || invalidationEmitted) return
+        val baseline = current.baseline
         val update = ProfileUpdate(
             displayName = current.name,
             tagline = current.tagline,
@@ -216,7 +217,6 @@ internal class EditProfileViewModel(
             val result = requestResult { repository.update(update) }
             result.fold(
                 onSuccess = { profile -> mutableState.update { state ->
-                    val baseline = requireNotNull(state.baseline)
                     val savedProfile = profile.copy(
                         lastActiveAtMillis = profile.lastActiveAtMillis ?: baseline.lastActiveAtMillis,
                         replyRate = profile.replyRate ?: baseline.replyRate,

@@ -298,7 +298,6 @@ internal class HostOfferViewModel(
     }
 
     private fun emitSessionInvalidation(isSaving: Boolean = mutableState.value.isSaving) {
-        if (sessionInvalidationEmitted) return
         sessionInvalidationEmitted = true
         val invalidation = HostOfferSessionInvalidation(++nextInvalidationID)
         mutableState.update {

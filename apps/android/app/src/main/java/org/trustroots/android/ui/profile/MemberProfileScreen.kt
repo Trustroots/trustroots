@@ -378,7 +378,6 @@ private fun MemberProfileContent(
             viewModel.onEvent(MemberProfileEvent.DismissRemoveContact)
         }
     }
-    val isSelf = profile?.let { it.username.equals(session.member.username, ignoreCase = true) } == true
     Column(Modifier.fillMaxSize()) {
         when {
             error != null -> {
@@ -392,6 +391,7 @@ private fun MemberProfileContent(
             profile == null -> CircularProgressIndicator(Modifier.padding(20.dp))
             else -> {
                 val member = profile
+                val isSelf = member.username.equals(session.member.username, ignoreCase = true)
                 BoxWithConstraints(Modifier.fillMaxSize()) {
                     val compactHeader = maxHeight < 560.dp
                     val sectionContentTarget = if (maxHeight >= 360.dp) 96.dp else 48.dp

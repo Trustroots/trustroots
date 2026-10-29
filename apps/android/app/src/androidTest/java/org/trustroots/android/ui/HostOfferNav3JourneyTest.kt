@@ -5,9 +5,11 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createEmptyComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CopyOnWriteArrayList
@@ -117,6 +119,28 @@ class HostOfferNav3JourneyTest {
         compose.onNodeWithText("Hosting offer saved.").assertIsDisplayed()
         compose.onNodeWithText("Why you are not hosting").assertIsEnabled()
         assertEquals(1, repository.saveCalls.get())
+    }
+
+    @Test
+    fun rapidToolbarCancelReturnsToTheRootOnce() {
+        val repository = JourneyHostOfferRepository(
+            loadHandler = { Result.success(HostOfferForm(id = "existing-entry", description = "A quiet room")) },
+        )
+        launch(repository)
+        compose.onNodeWithText("Open hosting form").performClick()
+        compose.onNodeWithText("A quiet room").assertIsDisplayed()
+
+        val cancel = requireNotNull(
+            compose.onNodeWithContentDescription("Cancel")
+                .fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+        )
+        compose.runOnUiThread {
+            cancel()
+            cancel()
+        }
+
+        compose.onNodeWithText("Open hosting form").assertIsDisplayed()
+        assertEquals("The queued second cancel must not reopen or pop the root", 1, repository.loadCalls.get())
     }
 
     private fun pressSystemBack() {

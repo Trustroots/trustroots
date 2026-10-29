@@ -52,9 +52,8 @@ internal fun ContactsScreen(
     onBack: () -> Unit,
     onOpenProfile: (String) -> Unit,
     contentPadding: PaddingValues = PaddingValues.Zero,
-    viewModel: ContactsViewModel? = null,
 ) {
-    val model = viewModel ?: rememberContactsViewModel(api, session)
+    val model = rememberContactsViewModel(api, session)
     val state by model.state.collectAsState()
     val failure = state.failure
     val contactsTitle = stringResource(R.string.screen_contacts_title)

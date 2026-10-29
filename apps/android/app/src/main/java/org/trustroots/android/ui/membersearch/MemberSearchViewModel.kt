@@ -129,7 +129,8 @@ internal class MemberSearchViewModel(
                 return@launch
             }
             if (generation != queryRevision) {
-                mutableState.update { if (it.isLoading) it.copy(isLoading = false) else it }
+                // Query edits invalidate results but do not clear this in-flight request's loading flag.
+                mutableState.update { it.copy(isLoading = false) }
                 return@launch
             }
             result.fold(
