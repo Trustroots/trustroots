@@ -1,5 +1,9 @@
+FROM node:24.22.1-bookworm-slim AS node-runtime
+
 FROM phusion/passenger-nodejs:3.1.10 AS builder
-RUN node -e "if (process.versions.node.split('.')[0] !== '24') process.exit(1)"
+COPY --from=node-runtime /usr/local/bin/node /usr/bin/node
+RUN ln -s /usr/bin/node /usr/local/bin/node
+RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1)) process.exit(1)"
 
 # Install prerequisites
 # https://docs.docker.com/engine/articles/dockerfile_best-practices/#apt-get
@@ -61,7 +65,9 @@ RUN CI=true pnpm prune --prod --ignore-scripts
 # ------------------------------------------------------------------------------
 
 FROM phusion/passenger-nodejs:3.1.10
-RUN node -e "if (process.versions.node.split('.')[0] !== '24') process.exit(1)"
+COPY --from=node-runtime /usr/local/bin/node /usr/bin/node
+RUN ln -s /usr/bin/node /usr/local/bin/node
+RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1)) process.exit(1)"
 
 ARG TRUSTROOTS_BUILD_COMMIT
 ARG TRUSTROOTS_BUILD_COMMITTED_AT
