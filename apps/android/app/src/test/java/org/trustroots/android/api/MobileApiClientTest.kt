@@ -46,7 +46,7 @@ class MobileApiClientTest {
             runBlocking { MobileApiClient(baseURL).messageMember(session, "member-owl") }
         }
 
-        assertEquals(MessageMember("member-owl", "steady-owl", "Steady Owl"), result.getOrThrow())
+        assertEquals(ConversationRecipient("member-owl", "steady-owl", "Steady Owl"), result.getOrThrow())
         assertEquals("GET /api/users/mini/member-owl HTTP/1.1", request.line)
         assertTrue(request.headers.any { it.equals("Cookie: connect.sid=session-value", ignoreCase = true) })
     }
@@ -61,7 +61,7 @@ class MobileApiClientTest {
             runBlocking { MobileApiClient(baseURL).messageMember(session, "member-owl") }
         }
 
-        assertEquals(MessageMember("member-owl", null, "A fictional traveller"), result.getOrThrow())
+        assertEquals(ConversationRecipient("member-owl", null, "A fictional traveller"), result.getOrThrow())
     }
 
     @Test

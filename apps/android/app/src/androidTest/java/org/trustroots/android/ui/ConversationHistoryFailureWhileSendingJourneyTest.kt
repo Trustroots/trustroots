@@ -32,6 +32,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
@@ -145,8 +146,8 @@ class ConversationHistoryFailureWhileSendingJourneyTest {
         val sendResult = CompletableDeferred<Result<DirectMessage>>()
         val messageCalls = AtomicInteger()
 
-        override suspend fun member(memberID: String): Result<MessageMember> =
-            Result.success(MessageMember(memberID, "quiet-fox", "Quiet Fox"))
+        override suspend fun member(memberID: String): Result<ConversationRecipient> =
+            Result.success(ConversationRecipient(memberID, "quiet-fox", "Quiet Fox"))
 
         override suspend fun messages(memberID: String): Result<List<DirectMessage>> {
             messageCalls.incrementAndGet()

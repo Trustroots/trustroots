@@ -23,6 +23,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.trustroots.android.api.DirectMessage
+import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
@@ -82,7 +83,7 @@ class MessageConversationViewModelTest {
     @Test
     fun draftAndSendAreIgnoredUntilTheRecipientLoads() = withScope { scope ->
         val lookupStarted = CompletableDeferred<Unit>()
-        val loadedMember = CompletableDeferred<Result<MessageMember>>()
+        val loadedMember = CompletableDeferred<Result<ConversationRecipient>>()
         val repository = FakeConversationRepository(
             memberResult = Result.success(member),
             messagesResult = Result.success(emptyList()),
@@ -161,7 +162,7 @@ class MessageConversationViewModelTest {
 
     @Test
     fun refreshedMessagesReplaceOldMessagesButKeepMessagesSentDuringTheRefresh() = withScope { scope ->
-        val oldMessage = DirectMessage("old-message", "A fictional old note", member)
+        val oldMessage = DirectMessage("old-message", "A fictional old note", incomingSender)
         val refreshStarted = CompletableDeferred<Unit>()
         val refreshedMessages = CompletableDeferred<Result<List<DirectMessage>>>()
         val repository = FakeConversationRepository(
@@ -325,22 +326,22 @@ class MessageConversationViewModelTest {
     }
 
     @Test
-    fun missingRecipientIdentityUsesRequestedIdForDraftsAndCannotBeSent() = withScope { scope ->
-        val recipientWithoutIdentity = MessageMember(id = null, username = null, displayName = "Anonymous Member")
+    fun missingRecipientIDIsARejectedLookupAndCannotBeSent() = withScope { scope ->
         val repository = FakeConversationRepository(
-            memberResult = Result.success(recipientWithoutIdentity),
+            memberResult = Result.failure(IllegalArgumentException("A resolved conversation recipient must have an ID.")),
             messagesResult = Result.success(emptyList()),
             initialDraft = "A fictional saved draft",
         )
         val model = MessageConversationViewModel("requested-member-id", repository, session(), scope)
 
-        assertEquals("requested-member-id", repository.loadedDraftKey)
-        assertEquals("A fictional saved draft", model.state.value.draft)
+        assertNull(repository.loadedDraftKey)
+        assertTrue(model.state.value.loadFailed)
         model.onEvent(MessageConversationEvent.DraftChanged("A draft for the unresolved recipient"))
-        assertEquals("requested-member-id", repository.savedDraftKey)
         model.onEvent(MessageConversationEvent.Send("   "))
         model.onEvent(MessageConversationEvent.Send("A message that must not be sent without a recipient ID"))
 
+        assertEquals("", model.state.value.draft)
+        assertNull(repository.savedDraftKey)
         assertNull(repository.sentContent)
         assertNull(repository.clearedDraftKey)
         assertFalse(model.state.value.isSending)
@@ -412,7 +413,7 @@ class MessageConversationViewModelTest {
 
     @Test
     fun recipientIDIsUsedForDraftAndClearWhenUsernameIsUnavailable() = withScope { scope ->
-        val recipient = MessageMember(id = "recipient-without-username", username = null, displayName = "Anonymous Recipient")
+        val recipient = ConversationRecipient(id = "recipient-without-username", username = null, displayName = "Anonymous Recipient")
         val repository = FakeConversationRepository(
             memberResult = Result.success(recipient), messagesResult = Result.success(emptyList()),
             initialDraft = "A saved note",
@@ -497,7 +498,7 @@ class MessageConversationViewModelTest {
 
     @Test
     fun clearingConversationEntryCancelsItsLoadAndClearsEntryState() = withScope { scope ->
-        val waiting = CompletableDeferred<Result<MessageMember>>()
+        val waiting = CompletableDeferred<Result<ConversationRecipient>>()
         val cancelled = CompletableDeferred<Unit>()
         val repository = FakeConversationRepository(
             memberResult = Result.success(member), messagesResult = Result.success(emptyList()), initialDraft = "",
@@ -577,7 +578,7 @@ class MessageConversationViewModelTest {
         model.onEvent(MessageConversationEvent.SessionChanged(session("connect.sid=renewed-fictional-session")))
         assertEquals("Keep this fictional note", model.state.value.draft)
         assertFalse(model.state.value.isSending)
-        lateSend.complete(Result.success(DirectMessage("stale-send", "Stale fictional note", member)))
+        lateSend.complete(Result.success(DirectMessage("stale-send", "Stale fictional note", incomingSender)))
 
         assertEquals(listOf(incoming), model.state.value.messages)
         assertEquals("Keep this fictional note", model.state.value.draft)
@@ -600,7 +601,7 @@ class MessageConversationViewModelTest {
         model.updateApi(replacementApi)
         assertSame(replacementApi, repository.currentApi)
         assertEquals("A draft for the current backend", model.state.value.draft)
-        lateSend.complete(Result.success(DirectMessage("old-backend-send", "Stale note", member)))
+        lateSend.complete(Result.success(DirectMessage("old-backend-send", "Stale note", incomingSender)))
 
         assertEquals(listOf(incoming), model.state.value.messages)
         assertEquals("A draft for the current backend", model.state.value.draft)
@@ -675,7 +676,7 @@ class MessageConversationViewModelTest {
     }
 
     private class FakeConversationRepository(
-        var memberResult: Result<MessageMember>,
+        var memberResult: Result<ConversationRecipient>,
         private val messagesResult: Result<List<DirectMessage>>,
         private val initialDraft: String,
         private val sendResult: Result<DirectMessage> = Result.success(sent),
@@ -690,7 +691,7 @@ class MessageConversationViewModelTest {
         var clearedDraftKey: Pair<String, String>? = null
         var sentContent: String? = null
         var sendCalls = 0
-        var memberHandler: suspend (String) -> Result<MessageMember> = { memberResult }
+        var memberHandler: suspend (String) -> Result<ConversationRecipient> = { memberResult }
         var messagesHandler: suspend (String) -> Result<List<DirectMessage>> = { messagesResult }
         var sendHandler: suspend (String, String) -> Result<DirectMessage> = { _, _ -> sendResult }
 
@@ -700,7 +701,7 @@ class MessageConversationViewModelTest {
             return changed
         }
 
-        override suspend fun member(memberID: String): Result<MessageMember> {
+        override suspend fun member(memberID: String): Result<ConversationRecipient> {
             memberLookups += memberID
             return memberHandler(memberID)
         }
@@ -757,8 +758,9 @@ class MessageConversationViewModelTest {
         MemberSession(cookie, MobileMember("steady-heron", "Steady Heron"))
 
     private companion object {
-        val member = MessageMember("member-owl", "steady-owl", "Steady Owl")
-        val incoming = DirectMessage("incoming-message", "A fictional incoming note", member)
+        val member = ConversationRecipient("member-owl", "steady-owl", "Steady Owl")
+        val incomingSender = MessageMember(member.id, member.username, member.displayName)
+        val incoming = DirectMessage("incoming-message", "A fictional incoming note", incomingSender)
         val sent = DirectMessage("sent-message", "A fictional sent note", MessageMember("self", "steady-heron", "Steady Heron"))
     }
 }

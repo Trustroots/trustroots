@@ -383,15 +383,14 @@ class MobileApiClient(
         }
 
     /** Resolves the small, authenticated member record needed by an alert-opened conversation. */
-    suspend fun messageMember(session: MemberSession, memberID: String): Result<MessageMember> =
+    suspend fun messageMember(session: MemberSession, memberID: String): Result<ConversationRecipient> =
         withContext(Dispatchers.IO) {
             runCatching {
                 require(memberID.isNotBlank())
                 val member = parseMessageMember(JSONObject(jsonRequest(
                     "/api/users/mini/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
                 ).body))
-                require(member.id != null)
-                member
+                ConversationRecipient(requireNotNull(member.id), member.username, member.displayName)
             }
         }
 

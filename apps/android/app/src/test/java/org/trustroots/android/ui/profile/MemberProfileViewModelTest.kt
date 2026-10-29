@@ -112,6 +112,21 @@ class MemberProfileViewModelTest {
     }
 
     @Test
+    fun blockStatusFallsBackToUsernameWhenProfileHasNoIDAndBlockedEntryHasAnotherID() {
+        val repository = FakeMemberProfileRepository().apply {
+            profileResult = Result.success(profile("quiet-fox", "Quiet Fox").copy(id = null))
+            blockedMembersResult = Result.success(listOf(MessageMember("another-member", "QUIET-FOX", "Quiet Fox")))
+        }
+
+        val state = newModel("quiet-fox", repository).state.value
+
+        assertEquals(true, state.isBlocked)
+        assertFalse(state.isLoadingBlock)
+        assertNull(state.blockFailure)
+        assertEquals(1, repository.blockedMembersCalls)
+    }
+
+    @Test
     fun failedBlockStatusRemainsUnknownAndCanBeRetried() {
         val repository = FakeMemberProfileRepository().apply {
             blockedMembersResult = Result.failure(IOException("Temporary block lookup failure"))

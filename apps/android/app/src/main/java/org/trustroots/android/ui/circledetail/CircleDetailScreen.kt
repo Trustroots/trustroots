@@ -238,7 +238,7 @@ internal fun CircleDetailContent(
                                         color = MaterialTheme.colorScheme.error,
                                         modifier = Modifier.padding(top = 20.dp),
                                     )
-                                    if (canRetryLoad) Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+                                    Button(onClick = onRetry) { Text(stringResource(R.string.retry)) }
                                 } else if (memberGroups != null) {
                                     CircleMemberDiscovery(
                                         groups = memberGroups,

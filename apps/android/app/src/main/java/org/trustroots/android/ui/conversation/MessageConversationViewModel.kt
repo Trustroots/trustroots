@@ -11,10 +11,10 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import org.trustroots.android.api.ConversationRecipient
 import org.trustroots.android.api.DirectMessage
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MessageDraftStore
-import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.requestResult
 import org.trustroots.android.ui.common.UiFailure
@@ -26,7 +26,7 @@ import org.trustroots.android.ui.common.toUiFailure
 internal interface MessageConversationRepository {
     fun updateSession(session: MemberSession): Boolean = false
     fun updateApi(api: MobileApiClient): Boolean = false
-    suspend fun member(memberID: String): Result<MessageMember>
+    suspend fun member(memberID: String): Result<ConversationRecipient>
     suspend fun messages(memberID: String): Result<List<DirectMessage>>
     suspend fun send(memberID: String, content: String): Result<DirectMessage>
     fun loadDraft(selfUsername: String, otherKey: String): String
@@ -68,7 +68,7 @@ internal class MobileApiMessageConversationRepository(
 internal data class ConversationSessionInvalidation(val id: Long)
 
 internal data class MessageConversationUiState(
-    val member: MessageMember? = null,
+    val member: ConversationRecipient? = null,
     val messages: List<DirectMessage> = emptyList(),
     val draft: String = "",
     val isLoading: Boolean = true,
@@ -148,7 +148,7 @@ internal class MessageConversationViewModel(
 
     private fun updateDraft(value: String) {
         val member = mutableState.value.member ?: return
-        val draftKey = member.username ?: member.id ?: memberID
+        val draftKey = member.username ?: member.id
         mutableState.update { it.copy(draft = value) }
         repository.saveDraft(session.member.username, draftKey, value)
     }
@@ -166,7 +166,7 @@ internal class MessageConversationViewModel(
                 return@launch
             }
             val member = memberResult.getOrThrow()
-            val draftKey = member.username ?: member.id ?: memberID
+            val draftKey = member.username ?: member.id
             val draft = repository.loadDraft(session.member.username, draftKey)
             currentCoroutineContext().ensureActive()
             mutableState.update { it.copy(member = member, draft = draft) }
@@ -195,7 +195,7 @@ internal class MessageConversationViewModel(
         val current = mutableState.value
         val member = current.member ?: return
         val trimmed = content.trim()
-        if (trimmed.isBlank() || current.isSending || member.id == null || invalidationEmitted) return
+        if (trimmed.isBlank() || current.isSending || invalidationEmitted) return
         sendRequest.launch {
             mutableState.update { it.copy(isSending = true, failure = null) }
             currentCoroutineContext().ensureActive()
