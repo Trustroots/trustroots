@@ -10,7 +10,7 @@
   - [x] Guard shared package production imports against application code and undeclared shared workspace dependencies, with regression fixtures and local/CI enforcement.
   - [x] Reject production module imports into layers/apps, sharing literal-import analysis with the package guard and requiring no compatibility exceptions.
   - [x] Reject production layer imports into apps.
-  - [ ] Enforce client/server and shared-code rules.
+  - [x] Enforce production module client/server/shared import directions with regression fixtures and local/CI checks.
 - [ ] `layers/server` composition and per-module server entries (separate pull request).
 - [ ] Model-ownership guard (separate pull request).
   - [x] Enforce that cross-module model lookups have a declared workspace dependency on the owning module; cover missing dependencies with a focused regression test.
