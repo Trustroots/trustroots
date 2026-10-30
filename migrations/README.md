@@ -20,16 +20,24 @@ pnpm exec migrate create migration-name-here
 
 Run these commands from the repository root. Migration state is stored in
 the `.migrate` file there by default.
-Only migration scripts directly inside `migrations/` are run; scripts in
-`migrations/archived/` are retained for reference and are not run automatically.
-When `.migrate` is missing, all active migration scripts in `migrations/` are
-run. There are currently no active migration scripts in that directory, so a
-new installation does not replay the archived migrations.
+Only migration scripts directly inside `migrations/` are run. When `.migrate`
+is missing, all migration scripts in `migrations/` are run. There are currently
+no migration scripts in that directory.
 
 The filename filter selects timestamped migration scripts and excludes this
-README, `package.json`, and the archive directory from the migration loader.
+README and `package.json` from the migration loader.
 
 [See documentation](https://www.npmjs.com/package/migrate) for more.
+
+### Archived migrations
+
+Older migrations, all of which have already run in production, used to live in
+`migrations/archived/`. They were removed to keep the codebase lean and remain
+available in git history. To restore them locally for reference:
+
+```bash
+git checkout 5ec71e146e7de5ed3a0b47b22a014a4ef9aebd9d -- migrations/archived
+```
 
 ### Database maintenance
 
