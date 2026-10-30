@@ -62,6 +62,10 @@ interface BackendFactory {
   (sourcePath: string | null): ProcessorCommand;
 }
 interface FsHooks {
+  mkdir?: (
+    path: string,
+    options: { recursive?: boolean; mode?: number },
+  ) => Promise<string | undefined>;
   stat?: (path: string) => Promise<{ size: number }>;
   rename?: (oldPath: string, newPath: string) => Promise<void>;
   copyFile?: (source: string, destination: string) => Promise<void>;
@@ -571,7 +575,7 @@ describe('Avatar processing failure handling', () => {
     }
   });
 
-  it('forwards queue processing failures to each callback and rejects a full queue', async () => {
+  it('calls throwing failure callbacks once and rejects a full queue', async () => {
     const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
@@ -589,6 +593,7 @@ describe('Avatar processing failure handling', () => {
             callback: error => {
               callbacks.push(error);
               resolve(error);
+              throw new Error('callback failed');
             },
           });
           accepted.should.be.true();
@@ -606,32 +611,59 @@ describe('Avatar processing failure handling', () => {
       }
       error.message.should.match(/Invalid avatar owner id/);
     });
+    await new Promise(resolve => setImmediate(resolve));
     callbacks.should.have.length(2);
   });
 
-  it('rejects uploads when the pending queue reaches its configured limit', () => {
-    const pending: AvatarJob[] = [];
-    const service = proxyquire<AvatarFailureService>(
-      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
+  it('limits active processing to two and drains a full pending queue after failures', async () => {
+    const releases: Array<() => void> = [];
+    let started = 0;
+    const { inputPath, service } = await makeService(
+      {},
       {
-        async: {
-          queue: () => ({
-            length: () => pending.length,
-            push: (job: AvatarJob) => pending.push(job),
+        mkdir: () =>
+          new Promise((_resolve, reject) => {
+            started++;
+            releases.push(() => reject(new Error('staging failed')));
           }),
-        },
-        './../../../../config/config.mts': config,
-        gm: require('gm'),
       },
     );
-
-    for (let index = 0; index < service.maxQueuedUploads; index += 1) {
-      service.enqueueAvatarProcessing({ callback() {} }).should.be.true();
-    }
-    service.enqueueAvatarProcessing({ callback() {} }).should.be.false();
+    const completed: Array<Promise<void>> = [];
+    const enqueue = () => {
+      let finish!: () => void;
+      completed.push(
+        new Promise<void>(resolve => {
+          finish = resolve;
+        }),
+      );
+      return service.enqueueAvatarProcessing({
+        sourcePath: inputPath,
+        userId: validUserId,
+        callback: error => {
+          assert.equal(error?.message, 'staging failed');
+          finish();
+        },
+      });
+    };
+    assert.equal(enqueue(), true);
+    assert.equal(enqueue(), true);
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assert.equal(started, 2);
+    for (let i = 0; i < service.maxQueuedUploads; i++)
+      assert.equal(enqueue(), true);
+    assert.equal(service.enqueueAvatarProcessing({ callback() {} }), false);
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assert.equal(started, 2);
+    releases.shift()!();
+    await new Promise<void>(resolve => setImmediate(resolve));
+    assert.equal(started, 3);
+    while (releases.length) releases.shift()!();
+    await new Promise<void>(resolve => setImmediate(resolve));
+    while (releases.length) releases.shift()!();
+    await Promise.all(completed);
   });
 
-  it('forwards a successful queued upload result to its callback', async () => {
+  it('calls a throwing success callback once with the upload result', async () => {
     process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
     const inputPath = path.join(temporaryRoot, 'queue-input.png');
     await fs.writeFile(inputPath, 'anonymous source bytes');
@@ -646,23 +678,28 @@ describe('Avatar processing failure handling', () => {
         gm: require('gm'),
       },
     );
+    let callbackCount = 0;
     const result = await new Promise<AvatarServiceResult>((resolve, reject) => {
       service
         .enqueueAvatarProcessing({
           sourcePath: inputPath,
           userId: validUserId,
           callback: (error, value) => {
+            callbackCount++;
             if (error) {
               reject(error);
             } else if (!value) {
               reject(new Error('Expected queued upload result'));
             } else {
               resolve(value);
+              throw new Error('success callback failed');
             }
           },
         })
         .should.be.true();
     });
+    await new Promise(resolve => setImmediate(resolve));
+    callbackCount.should.equal(1);
     (await fs.readdir(result.versionDirectory)).should.have.length(7);
   });
 });

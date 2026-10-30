@@ -190,6 +190,8 @@ jobs:
         run: pnpm run test:links && pnpm run check:links
       - name: Type-check client TypeScript
         run: pnpm run typecheck
+      - name: Test native promise script flows
+        run: pnpm run test:promise-flows
       - name: Test Vite RTL stylesheet and development scripts
         run: pnpm run test:vite:rtl
       - name: Build Vite client assets

@@ -8,7 +8,7 @@
 /**
  * Module dependencies.
  */
-import async from 'async';
+import { promisify } from 'node:util';
 import statsService from './../../../stats/server/services/stats.server.service.mts';
 import statistics from './../controllers/statistics.server.controller.mjs';
 import log from './../../../../config/lib/logger.mjs';
@@ -16,7 +16,6 @@ import type { StatObject } from '../../../stats/server/services/stats.server.ser
 import type moment from 'moment';
 
 type JobDone = (error?: Error | null) => void;
-type WaterfallDone = (error?: unknown, ...results: unknown[]) => void;
 type StatisticsService =
   typeof import('../controllers/statistics.server.controller.mts').default;
 type InfluxDeliveryError = Error & {
@@ -26,235 +25,112 @@ type InfluxDeliveryError = Error & {
 const statisticsService: StatisticsService = statistics;
 
 const defaultInterop = function (_job: unknown, agendaDone: JobDone): void {
-  let totalUserCount: number | undefined;
-  async.waterfall(
-    [
-      // Member count
-      function (done: WaterfallDone) {
-        statisticsService.getUsersCount(function (err, count) {
-          if (err) {
-            logFailure('Daily statistics: failed fetching user count.', err);
-            return done();
-          }
-          totalUserCount = count;
-
-          // Write number to stats
-          writeDailyStat(
-            {
-              namespace: 'members',
-              values: {
-                count: count!,
-              },
-              tags: {
-                members: 'members',
-              },
-            },
-            done,
-          );
+  async function collect(): Promise<void> {
+    let totalUserCount: number | undefined;
+    try {
+      totalUserCount = await promisify(statisticsService.getUsersCount)();
+    } catch (err) {
+      logFailure('Daily statistics: failed fetching user count.', err);
+    }
+    if (totalUserCount !== undefined) {
+      await promisify(writeDailyStat)({
+        namespace: 'members',
+        values: { count: totalUserCount },
+        tags: { members: 'members' },
+      });
+    }
+    for (const [period, namespace] of [
+      [{ days: 7 }, 'memberLastSeenPast7days'],
+      [{ days: 14 }, 'memberLastSeenPast14days'],
+      [{ days: 30 }, 'memberLastSeenPast30days'],
+      [{ months: 6 }, 'memberLastSeenPast6months'],
+      [{ months: 12 }, 'memberLastSeenPast12months'],
+    ] as const) {
+      await promisify(collectLastSeen)(period, namespace, totalUserCount);
+    }
+    let hostOfferCounts: { yes: number; maybe: number; no: number } | undefined;
+    try {
+      hostOfferCounts = await promisify(statisticsService.getHostOffersCount)();
+    } catch (err) {
+      logFailure(
+        'Daily statistics: failed fetching hosting offer counts.',
+        err,
+      );
+    }
+    if (hostOfferCounts) {
+      for (const [status, count] of Object.entries(hostOfferCounts)) {
+        await promisify(writeDailyStat)({
+          namespace: 'offers',
+          values: { count, percentage: (count / totalUserCount!) * 100 },
+          tags: { type: 'host', status },
         });
-      },
-      // Future push: optionally count historical pushRegistration rows here
-      // (previously getPushRegistrationCount → pushRegistrations measurement).
-
-      function (done: WaterfallDone) {
-        collectLastSeen(
-          {
-            days: 7,
-          },
-          'memberLastSeenPast7days',
-          totalUserCount,
-          done,
-        );
-      },
-      function (done: WaterfallDone) {
-        collectLastSeen(
-          {
-            days: 14,
-          },
-          'memberLastSeenPast14days',
-          totalUserCount,
-          done,
-        );
-      },
-      function (done: WaterfallDone) {
-        collectLastSeen(
-          {
-            days: 30,
-          },
-          'memberLastSeenPast30days',
-          totalUserCount,
-          done,
-        );
-      },
-      function (done: WaterfallDone) {
-        collectLastSeen(
-          {
-            months: 6,
-          },
-          'memberLastSeenPast6months',
-          totalUserCount,
-          done,
-        );
-      },
-      function (done: WaterfallDone) {
-        collectLastSeen(
-          {
-            months: 12,
-          },
-          'memberLastSeenPast12months',
-          totalUserCount,
-          done,
-        );
-      },
-      // Hosting offer count
-      function (done: WaterfallDone) {
-        statisticsService.getHostOffersCount(function (err, hostOfferCounts) {
-          if (err) {
-            logFailure(
-              'Daily statistics: failed fetching hosting offer counts.',
-              err,
-            );
-            return done();
-          }
-
-          // Write numbers to stats
-          async.eachOfSeries(
-            hostOfferCounts!,
-            function (count, offerStatus, doneStatus) {
-              writeDailyStat(
-                {
-                  namespace: 'offers',
-                  values: {
-                    count,
-                    percentage: (count / totalUserCount!) * 100,
-                  },
-                  tags: {
-                    type: 'host',
-                    status: String(offerStatus), // `yes|maybe|no`
-                  },
-                },
-                doneStatus,
-              );
-            },
-            done,
-          );
-        });
-      },
-      // Meet offer count
-      function (done: WaterfallDone) {
-        statisticsService.getMeetOffersCount(function (err, count) {
-          if (err) {
-            logFailure('Daily statistics: failed fetching meet count.', err);
-            return done();
-          }
-
-          // Write number to stats
-          writeDailyStat(
-            {
-              namespace: 'offers',
-              values: {
-                count: count!,
-              },
-              tags: {
-                type: 'meet',
-              },
-            },
-            done,
-          );
-        });
-      },
-      // Connected to networks counters
-      function (done: WaterfallDone) {
-        const networks = [
-          'couchsurfing',
-          'warmshowers',
-          'bewelcome',
-          'facebook',
-          'twitter',
-          'github',
-        ];
-
-        // Loop trough each network in series
-        async.eachSeries(
-          networks,
-          function (networkName, doneNetwork) {
-            // Get count for this network
-            statisticsService.getExternalSiteCount(
-              networkName,
-              function (err, count) {
-                if (err) {
-                  logFailure(
-                    'Daily statistics: failed fetching network "' +
-                      networkName +
-                      '" count.',
-                    err,
-                  );
-                  return doneNetwork(err as Error);
-                }
-
-                // Write number to stats
-                writeDailyStat(
-                  {
-                    namespace: 'membersInNetworks',
-                    values: {
-                      count: count!,
-                      percentage: (count! / totalUserCount!) * 100,
-                    },
-                    tags: {
-                      network: networkName,
-                    },
-                  },
-                  doneNetwork,
-                );
-              },
-            );
-          },
-          done,
-        );
-      },
-      // Get statistics for top 40 spoken languages
-      function (done: WaterfallDone) {
-        statisticsService.getUserLanguagesCount(
-          40,
-          function (err, languageCounts) {
-            if (err) {
-              logFailure(
-                'Daily statistics: failed fetching spoken languages counts.',
-                err,
-              );
-              return done();
-            }
-
-            // Write numbers to stats
-            async.eachOfSeries(
-              languageCounts!,
-              function ({ _id, count }, index, doneLanguage) {
-                writeDailyStat(
-                  {
-                    namespace: 'language',
-                    values: {
-                      count,
-                      percentage: (count / totalUserCount!) * 100,
-                    },
-                    tags: {
-                      language: _id,
-                    },
-                  },
-                  doneLanguage,
-                );
-              },
-              done,
-            );
-          },
-        );
-      },
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        logFailure('Daily statistics error', err);
       }
-
-      // Don't fail job on errors by passing `err` to `agendaDone()`
+    }
+    let meetCount: number | undefined;
+    try {
+      meetCount = await promisify(statisticsService.getMeetOffersCount)();
+    } catch (err) {
+      logFailure('Daily statistics: failed fetching meet count.', err);
+    }
+    if (meetCount !== undefined) {
+      await promisify(writeDailyStat)({
+        namespace: 'offers',
+        values: { count: meetCount },
+        tags: { type: 'meet' },
+      });
+    }
+    for (const network of [
+      'couchsurfing',
+      'warmshowers',
+      'bewelcome',
+      'facebook',
+      'twitter',
+      'github',
+    ]) {
+      let count: number;
+      try {
+        count = (await promisify(statisticsService.getExternalSiteCount)(
+          network,
+        ))!;
+      } catch (err) {
+        logFailure(
+          'Daily statistics: failed fetching network "' + network + '" count.',
+          err,
+        );
+        throw err;
+      }
+      await promisify(writeDailyStat)({
+        namespace: 'membersInNetworks',
+        values: { count, percentage: (count / totalUserCount!) * 100 },
+        tags: { network },
+      });
+    }
+    let languageCounts: Array<{ _id: string; count: number }> | undefined;
+    try {
+      languageCounts = await promisify(statisticsService.getUserLanguagesCount)(
+        40,
+      );
+    } catch (err) {
+      logFailure(
+        'Daily statistics: failed fetching spoken languages counts.',
+        err,
+      );
+    }
+    if (languageCounts) {
+      for (const { _id, count } of languageCounts) {
+        await promisify(writeDailyStat)({
+          namespace: 'language',
+          values: { count, percentage: (count / totalUserCount!) * 100 },
+          tags: { language: _id },
+        });
+      }
+    }
+  }
+  collect().then(
+    () => agendaDone(),
+    err => {
+      logFailure('Daily statistics error', err);
+      // Retrying would duplicate writes to endpoints that succeeded.
       agendaDone();
     },
   );

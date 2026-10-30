@@ -101,4 +101,18 @@ describe('Job: reactivate hosts unit tests', () => {
       done();
     });
   });
+
+  it('stops after an update fails', function (done) {
+    const send = sinon
+      .stub(emailService, 'sendReactivateHosts')
+      .callsFake((_, cb) => cb());
+    sinon.stub(Offer, 'findByIdAndUpdate').rejects(new Error('update failed'));
+
+    reactivateHostsJobHandler({}, function (err?: Error | null) {
+      if (!err) return done(new Error('Expected update failure'));
+      err.message.should.equal('update failed');
+      send.callCount.should.equal(1);
+      done();
+    });
+  });
 });

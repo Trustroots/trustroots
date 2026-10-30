@@ -14,12 +14,7 @@ import type { OfferPayload } from '../../shared/offer.js';
  * with mock req/res/next against the test database.
  */
 const mongoose: typeof import('mongoose') = require('mongoose');
-const asyncLib: {
-  waterfall(
-    tasks: unknown[],
-    callback: (error?: Error | null, result?: unknown) => void,
-  ): void;
-} = require('async');
+
 const sinon: typeof import('sinon') = require('sinon');
 
 const config: TestConfigModule = require('./../../../../config/config.mts');
@@ -523,29 +518,6 @@ describe('Offers controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(400);
-    });
-
-    it('ignores a successful final update callback', () => {
-      sinon.stub(asyncLib, 'waterfall').callsArg(1);
-      const controller = offersController;
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.update(
-        {
-          user: owner,
-          offer: { user: { _id: owner._id }, type: 'host' },
-          body: { location: [1, 2] },
-        },
-        res,
-      );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
     });
   });
 
@@ -1059,25 +1031,6 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.type.should.equal('host');
-    });
-
-    it('ignores a successful final getOffer callback', () => {
-      sinon.stub(asyncLib, 'waterfall').callsArg(1);
-      const controller = offersController;
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.getOffer(
-        { user: owner, offer: { user: owner, location: [1, 2] } },
-        res,
-      );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
     });
   });
 

@@ -1,5 +1,4 @@
 import type {
-  SignupAsync,
   ConnectionHelper,
   CountUsers,
   LegacyMongoose,
@@ -22,7 +21,6 @@ import type {
 /**
  * Script dependencies
  */
-const async = require('async') as SignupAsync;
 const mongoose = require('mongoose') as LegacyMongoose;
 const argv = require('yargs/yargs')(process.argv.slice(2)).parseSync() as {
   dry?: unknown;
@@ -51,45 +49,21 @@ const query = {
   },
 };
 
-async.waterfall(
-  [
-    function connectMongo(done) {
-      // Connect to MongoDB
-      mongooseHelper.connect(function () {
-        done();
-      });
-    },
-
-    // count all docs to be able to show progress
-    function countAll(done) {
-      User.countDocuments(query).then(
-        function (count) {
-          done(null, count);
-        },
-        function (err) {
-          done(err, 0);
-        },
-      );
-    },
-
-    function findAndProcess(count, done) {
-      // Nothing found
-      if (count === 0) {
-        console.log('---');
-        console.warn('No documents to process!');
-        console.log('---');
-        return done(null, 0, 0);
-      }
-
-      console.log('Found ' + count + ' documents\n');
-      console.log('Processing and adding the records to Influx now\n');
-
-      // settings how often the progress will be printed to console
-      // every PROGRESS_INTERVAL %
-      const PROGRESS_INTERVAL = 0.1; // percent
-      let progress = 0; // progress counter
-
-      const q = async.queue<CountUsers>(function (doc, callback) {
+async function fillSignups(): Promise<[number, number]> {
+  await new Promise<void>(resolve => mongooseHelper.connect(() => resolve()));
+  const count = await User.countDocuments(query);
+  if (!count) {
+    console.warn('No documents to process!');
+    return [0, 0];
+  }
+  const docs = await User.find(query).exec();
+  const PROGRESS_INTERVAL = 0.1;
+  let progress = 0;
+  let nextDoc = 0;
+  await Promise.all(
+    Array.from({ length: 5 }, async () => {
+      while (nextDoc < docs.length) {
+        const doc = docs[nextDoc++];
         // showing a progress
         if (progress % Math.ceil((count / 100) * PROGRESS_INTERVAL) === 0) {
           // update the progress instead of logging to newline
@@ -102,71 +76,62 @@ async.waterfall(
         }
         ++progress;
 
-        // processing and saving the point to stats
-        if (argv.dry) {
-          // Don't push to stats (dry run)
-          callback();
-        } else {
-          // Push to stats for real
-          statService.stat(
-            {
-              namespace: 'signup',
-              time: new Date(doc.created.getTime()),
-              counts: {
-                count: 1,
+        if (!argv.dry)
+          await new Promise<void>(resolve => {
+            statService.stat(
+              {
+                namespace: 'signup',
+                time: new Date(doc.created.getTime()),
+                counts: {
+                  count: 1,
+                },
+                tags: {
+                  status: 'success',
+                },
               },
-              tags: {
-                status: 'success',
-              },
-            },
-            callback,
-          );
-        }
-      }, 5); // How many docs to process at once?
+              () => resolve(),
+            );
+          });
+      }
+    }),
+  );
+  return [progress, count];
+}
+function finish(
+  err?: unknown,
+  processedCount?: number,
+  totalCount?: number,
+): void {
+  // finish writing the progress bar
+  process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(
+    (Math.floor((Number(processedCount) / Number(totalCount)) * 100) || 100) +
+      '% (' +
+      processedCount +
+      '/' +
+      totalCount +
+      ') (done)\n\n',
+  );
 
-      // Get docs and start processing them
-      User.find(query)
-        .exec()
-        .then(function (docs) {
-          q.push(docs);
-        });
+  if (err) {
+    console.log('Error:');
+    console.error(err);
+    return;
+  }
 
-      // Done with all docs
-      q.drain(function () {
-        if (progress === count) {
-          return done(null, progress, count);
-        }
-      });
-    },
-  ],
-  function (err, processedCount, totalCount) {
-    // finish writing the progress bar
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(
-      (Math.floor((Number(processedCount) / Number(totalCount)) * 100) || 100) +
-        '% (' +
-        processedCount +
-        '/' +
-        totalCount +
-        ') (done)\n\n',
-    );
-
-    if (err) {
-      console.log('Error:');
-      console.error(err);
-      return;
+  // Disconnect DB
+  mongooseHelper.disconnect(function (disconnectErr) {
+    if (disconnectErr) {
+      console.log('Could not disconnect MongoDB.');
+      console.error(disconnectErr);
     }
 
-    // Disconnect DB
-    mongooseHelper.disconnect(function (disconnectErr) {
-      if (disconnectErr) {
-        console.log('Could not disconnect MongoDB.');
-        console.error(disconnectErr);
-      }
-
-      console.log('All done!');
-      process.exit(1);
-    });
-  },
+    console.log('All done!');
+    process.exit(1);
+  });
+}
+fillSignups().then(
+  ([processed, total]) => finish(null, processed, total),
+  err => finish(err),
 );

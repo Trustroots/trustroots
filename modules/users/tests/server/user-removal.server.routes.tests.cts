@@ -1,20 +1,10 @@
+const { promisify }: typeof import('node:util') = require('node:util');
 const fs: typeof import('fs') = require('fs');
 const actionTokenService: typeof import('../../server/services/action-token.server.service.mjs') = require('../../server/services/action-token.server.service.mjs');
 const { hashToken } = actionTokenService;
-interface AsyncTestApi {
-  each<T>(
-    items: T[],
-    iteratee: (item: T, callback: (error?: Error | null) => void) => void,
-    callback: (error?: Error | null) => void,
-  ): void;
-  waterfall(
-    tasks: Array<(...args: never[]) => void>,
-    callback: (error?: Error | null, result?: unknown) => void,
-  ): void;
-}
+
 type StepCallback = (error?: unknown, result?: unknown) => void;
 type DoneCallback = (error?: unknown) => void;
-const async = require('async') as AsyncTestApi;
 const should: typeof import('should') = require('should');
 const sinon: typeof import('sinon') = require('sinon');
 const request: typeof import('supertest') = require('supertest');
@@ -694,327 +684,282 @@ describe('User removal CRUD tests', function () {
           cb(e);
         }
       }
-      async.waterfall(
-        [
-          // Avatar should not exist yet
-          checkAvatarExistence.bind(null, false),
-          // Upload avatar image
-          function (cb: StepCallback) {
-            agent
-              .post('/api/users-avatar')
-              .set('X-Trustroots-Request', '1')
-              .attach('avatar', './modules/users/tests/server/img/avatar.png')
-              .expect(200)
-              .end(function (err: Error | null) {
-                cb(err);
-              });
-          },
-          // Avatar should now exist
-          checkAvatarExistence.bind(null, true),
-          sendDeleteRequest,
-          // Avatar should not exist anymore
-          checkAvatarExistence.bind(null, false),
-        ],
-        done,
-      );
+      (async () => {
+        await promisify(checkAvatarExistence.bind(null, false))();
+        await promisify(function (cb: StepCallback) {
+          agent
+            .post('/api/users-avatar')
+            .set('X-Trustroots-Request', '1')
+            .attach('avatar', './modules/users/tests/server/img/avatar.png')
+            .expect(200)
+            .end(function (err: Error | null) {
+              cb(err);
+            });
+        })();
+        await promisify(checkAvatarExistence.bind(null, true))();
+        await promisify(sendDeleteRequest)();
+        const step4 = await promisify(checkAvatarExistence.bind(null, false))();
+        return step4;
+      })().then(() => done(), done);
     });
     it('should mark all messages to the removed user as notified and keep the ones from her untouched', function (done: DoneCallback) {
-      async.waterfall(
-        [
-          // create some unnotified messages between the users
-          function (cb: StepCallback) {
-            const messageAB = new Message({
-              content: 'Message content',
-              userFrom: userA._id,
-              userTo: userB._id,
-              read: false,
-            });
-            const messageBA = new Message({
-              content: 'Message content',
-              userFrom: userB._id,
-              userTo: userA._id,
-              read: false,
-            });
-            async.each(
-              [messageAB, messageBA],
-              function (msg, callback) {
-                msg
-                  .save()
-                  .then(() => callback())
-                  .catch(callback);
-              },
-              cb,
-            );
-          },
-          sendDeleteRequest,
-          // check that the messages to the removed user are notificationCount: 2
-          function (cb: StepCallback) {
-            Message.findOne({
-              userTo: userA._id,
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          const messageAB = new Message({
+            content: 'Message content',
+            userFrom: userA._id,
+            userTo: userB._id,
+            read: false,
+          });
+          const messageBA = new Message({
+            content: 'Message content',
+            userFrom: userB._id,
+            userTo: userA._id,
+            read: false,
+          });
+          Promise.all([messageAB, messageBA].map(msg => msg.save())).then(
+            () => cb(),
+            cb,
+          );
+        })();
+        await promisify(sendDeleteRequest)();
+        await promisify(function (cb: StepCallback) {
+          Message.findOne({
+            userTo: userA._id,
+          })
+            .then((msg: MessageRecord | null) => {
+              if (!msg) return done(new Error('Expected test message'));
+              try {
+                should(msg.notificationCount).eql(2);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
             })
-              .then((msg: MessageRecord | null) => {
-                if (!msg) return done(new Error('Expected test message'));
-                try {
-                  should(msg.notificationCount).eql(2);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-          // check that the messages from the removed user are left unchanged
-          function (cb: StepCallback) {
-            Message.findOne({
-              userFrom: userA._id,
+            .catch(cb);
+        })();
+        const step3 = await promisify(function (cb: StepCallback) {
+          Message.findOne({
+            userFrom: userA._id,
+          })
+            .then((msg: MessageRecord | null) => {
+              if (!msg) return done(new Error('Expected test message'));
+              try {
+                should(msg.notificationCount).eql(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
             })
-              .then((msg: MessageRecord | null) => {
-                if (!msg) return done(new Error('Expected test message'));
-                try {
-                  should(msg.notificationCount).eql(0);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-        ],
-        done,
-      );
+            .catch(cb);
+        })();
+        return step3;
+      })().then(() => done(), done);
     });
     it('should subtract 1 from tribes.count for each tribe user is member of', function (done: DoneCallback) {
       let tribeA: import('mongoose').HydratedDocument<TribeRecord>;
       let tribeB: import('mongoose').HydratedDocument<TribeRecord>;
-      async.waterfall(
-        [
-          // Create some tribes
-          function (cb: StepCallback) {
-            tribeA = new Tribe({
-              label: 'Tribe A',
-              attribution: 'Photo credits',
-              attribution_url: 'http://www.trustroots.org/team',
-              image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
-              description: 'Lorem ipsum.',
-              count: 5,
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          tribeA = new Tribe({
+            label: 'Tribe A',
+            attribution: 'Photo credits',
+            attribution_url: 'http://www.trustroots.org/team',
+            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6c',
+            description: 'Lorem ipsum.',
+            count: 5,
+          });
+          tribeB = new Tribe({
+            label: 'Tribe B',
+            attribution: 'Photo credits',
+            attribution_url: 'http://www.trustroots.org/team2',
+            image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
+            description: 'Lorem ipsum.',
+            count: 5,
+          });
+          Promise.all([tribeA, tribeB].map(tribe => tribe.save())).then(
+            () => cb(),
+            cb,
+          );
+        })();
+        await promisify(function (cb: StepCallback) {
+          agent
+            .post('/api/users/memberships/' + tribeA._id)
+            .set('X-Trustroots-Request', '1')
+            .send()
+            .expect(200)
+            .end(function (err: Error | null) {
+              cb(err);
             });
-            tribeB = new Tribe({
-              label: 'Tribe B',
-              attribution: 'Photo credits',
-              attribution_url: 'http://www.trustroots.org/team2',
-              image_UUID: '3c8bb9f1-e313-4baa-bf4c-1d8994fd6c6d',
-              description: 'Lorem ipsum.',
-              count: 5,
-            });
-            async.each(
-              [tribeA, tribeB],
-              function (tribe, callback) {
-                tribe
-                  .save()
-                  .then(() => callback())
-                  .catch(callback);
-              },
-              cb,
-            );
-          },
-          // join the tribeA with the removed user
-          function (cb: StepCallback) {
-            agent
-              .post('/api/users/memberships/' + tribeA._id)
-              .set('X-Trustroots-Request', '1')
-              .send()
-              .expect(200)
-              .end(function (err: Error | null) {
-                cb(err);
-              });
-          },
-          // now the tribeA should have count 6
-          function (cb: StepCallback) {
-            Tribe.findById(tribeA._id)
-              .then((tribe: TribeRecord | null) => {
-                if (!tribe) throw new Error('Expected test tribe');
-                try {
-                  should(tribe.count).eql(6);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-          sendDeleteRequest,
-          // tribeA should have lower count by 1 (5 -> 6 -> 5 now)
-          function (cb: StepCallback) {
-            Tribe.findById(tribeA._id)
-              .then((tribe: TribeRecord | null) => {
-                if (!tribe) throw new Error('Expected test tribe');
-                try {
-                  should(tribe.count).eql(5);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-          // tribeB should have count 5 all the time
-          function (cb: StepCallback) {
-            Tribe.findById(tribeB._id)
-              .then((tribe: TribeRecord | null) => {
-                if (!tribe) throw new Error('Expected test tribe');
-                try {
-                  should(tribe.count).eql(5);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-        ],
-        done,
-      );
+        })();
+        await promisify(function (cb: StepCallback) {
+          Tribe.findById(tribeA._id)
+            .then((tribe: TribeRecord | null) => {
+              if (!tribe) throw new Error('Expected test tribe');
+              try {
+                should(tribe.count).eql(6);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        await promisify(sendDeleteRequest)();
+        await promisify(function (cb: StepCallback) {
+          Tribe.findById(tribeA._id)
+            .then((tribe: TribeRecord | null) => {
+              if (!tribe) throw new Error('Expected test tribe');
+              try {
+                should(tribe.count).eql(5);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        const step5 = await promisify(function (cb: StepCallback) {
+          Tribe.findById(tribeB._id)
+            .then((tribe: TribeRecord | null) => {
+              if (!tribe) throw new Error('Expected test tribe');
+              try {
+                should(tribe.count).eql(5);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        return step5;
+      })().then(() => done(), done);
     });
     it('should remove hosting offer of the user', function (done: DoneCallback) {
-      async.waterfall(
-        [
-          // Create an offer for the user
-          function (cb: StepCallback) {
-            const offer = new Offer({
-              user: userA._id,
-              location: [0, 0],
-            });
-            offer
-              .save()
-              .then(() => {
-                cb(null);
-              })
-              .catch(cb);
-          },
-          // at the beginning 1 offer should exist in database
-          function (cb: StepCallback) {
-            Offer.find({
-              user: userA._id,
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          const offer = new Offer({
+            user: userA._id,
+            location: [0, 0],
+          });
+          offer
+            .save()
+            .then(() => {
+              cb(null);
             })
-              .then((offer: OfferRecord[]) => {
-                try {
-                  should(offer).length(1);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-          sendDeleteRequest,
-          // now the offer shouldn't be there
-          function (cb: StepCallback) {
-            Offer.find({
-              user: userA._id,
+            .catch(cb);
+        })();
+        await promisify(function (cb: StepCallback) {
+          Offer.find({
+            user: userA._id,
+          })
+            .then((offer: OfferRecord[]) => {
+              try {
+                should(offer).length(1);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
             })
-              .then((offers: OfferRecord[]) => {
-                try {
-                  should(offers).length(0);
-                  cb();
-                } catch (e) {
-                  cb(e);
-                }
-              })
-              .catch(cb);
-          },
-        ],
-        done,
-      );
+            .catch(cb);
+        })();
+        await promisify(sendDeleteRequest)();
+        const step3 = await promisify(function (cb: StepCallback) {
+          Offer.find({
+            user: userA._id,
+          })
+            .then((offers: OfferRecord[]) => {
+              try {
+                should(offers).length(0);
+                cb();
+              } catch (e) {
+                cb(e);
+              }
+            })
+            .catch(cb);
+        })();
+        return step3;
+      })().then(() => done(), done);
     });
     it('should remove contacts of the user', function (done: DoneCallback) {
       let userC: UserModelDocument;
-      async.waterfall(
-        [
-          // create a 3rd user
-          function (cb: StepCallback) {
-            userC = new User({
-              public: true,
-              firstName: 'Full',
-              lastName: 'Name C',
-              displayName: 'Full Name C',
-              email: 'user_c@example.com',
-              username: 'userc',
-              password: '**********asdfasdf',
-              provider: 'local',
-            });
-            userC
-              .save()
-              .then(() => {
-                cb(null);
-              })
-              .catch(cb);
-          },
-          // add contacts between the users
-          function (cb: StepCallback) {
-            const contactAB = new Contact({
-              userFrom: userA._id,
-              userTo: userB._id,
-              confirmed: true,
-            });
-            const contactBC = new Contact({
-              userFrom: userB._id,
-              userTo: userC._id,
-              confirmed: true,
-            });
-            const contactCA = new Contact({
-              userFrom: userC._id,
-              userTo: userA._id,
-              confirmed: false,
-            });
-            async.each(
-              [contactAB, contactBC, contactCA],
-              function (contact, callback) {
-                contact
-                  .save()
-                  .then(() => callback())
-                  .catch(callback);
-              },
-              cb,
-            );
-          },
-          // 3 contacts should exist
-          function (cb: StepCallback) {
-            Contact.find()
-              .exec()
-              .then(contacts => {
-                cb(null, contacts);
-              })
-              .catch(cb);
-          },
-          function (contacts: unknown, cb: StepCallback) {
-            try {
-              should(contacts).length(3);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          },
-          sendDeleteRequest,
-          // only 1 contact should exist now (the one between users B and C)
-          function (cb: StepCallback) {
-            Contact.find()
-              .exec()
-              .then(contacts => {
-                cb(null, contacts);
-              })
-              .catch(cb);
-          },
-          function (contacts: unknown, cb: StepCallback) {
-            try {
-              should(contacts).length(1);
-              cb();
-            } catch (e) {
-              cb(e);
-            }
-          },
-        ],
-        done,
-      );
+      (async () => {
+        await promisify(function (cb: StepCallback) {
+          userC = new User({
+            public: true,
+            firstName: 'Full',
+            lastName: 'Name C',
+            displayName: 'Full Name C',
+            email: 'user_c@example.com',
+            username: 'userc',
+            password: '**********asdfasdf',
+            provider: 'local',
+          });
+          userC
+            .save()
+            .then(() => {
+              cb(null);
+            })
+            .catch(cb);
+        })();
+        await promisify(function (cb: StepCallback) {
+          const contactAB = new Contact({
+            userFrom: userA._id,
+            userTo: userB._id,
+            confirmed: true,
+          });
+          const contactBC = new Contact({
+            userFrom: userB._id,
+            userTo: userC._id,
+            confirmed: true,
+          });
+          const contactCA = new Contact({
+            userFrom: userC._id,
+            userTo: userA._id,
+            confirmed: false,
+          });
+          Promise.all(
+            [contactAB, contactBC, contactCA].map(contact => contact.save()),
+          ).then(() => cb(), cb);
+        })();
+        const step2 = await promisify(function (cb: StepCallback) {
+          Contact.find()
+            .exec()
+            .then(contacts => {
+              cb(null, contacts);
+            })
+            .catch(cb);
+        })();
+        await promisify(function (contacts: unknown, cb: StepCallback) {
+          try {
+            should(contacts).length(3);
+            cb();
+          } catch (e) {
+            cb(e);
+          }
+        })(step2);
+        await promisify(sendDeleteRequest)();
+        const step5 = await promisify(function (cb: StepCallback) {
+          Contact.find()
+            .exec()
+            .then(contacts => {
+              cb(null, contacts);
+            })
+            .catch(cb);
+        })();
+        const step6 = await promisify(function (
+          contacts: unknown,
+          cb: StepCallback,
+        ) {
+          try {
+            should(contacts).length(1);
+            cb();
+          } catch (e) {
+            cb(e);
+          }
+        })(step5);
+        return step6;
+      })().then(() => done(), done);
     });
   });
 });

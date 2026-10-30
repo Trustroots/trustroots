@@ -896,6 +896,50 @@ describe('Job: message unread', function () {
       sinon.restore();
     });
 
+    it('limits delivery to five workers and waits for every delivery before updating counts', async function () {
+      const notifications = Array.from({ length: 12 }, () => ({
+        _id: { userTo: userToId, userFrom: userFromId },
+        messages: [
+          { id: message._id, content: 'Reminder', created: new Date() },
+        ],
+        notificationCount: 0,
+      }));
+      const aggregate = sinon.stub(Message, 'aggregate').resolves([]);
+      aggregate.onFirstCall().resolves(notifications);
+      sinon.stub(User, 'find').returns({
+        exec: async () => [userFrom, userTo],
+      } as unknown as ReturnType<typeof User.find>);
+      sinon.stub(unifiedPush, 'notifyUnread').resolves();
+      let active = 0;
+      let maximum = 0;
+      let completed = 0;
+      sinon
+        .stub(emailService, 'sendMessagesUnread')
+        .callsFake((_, __, ___, callback) => {
+          active++;
+          maximum = Math.max(maximum, active);
+          setImmediate(() => {
+            active--;
+            completed++;
+            callback(
+              completed === 1 ? new Error('Delivery failed') : undefined,
+            );
+          });
+        });
+      const update = sinon.stub(Message, 'updateMany').callsFake(() => {
+        completed.should.equal(12);
+        active.should.equal(0);
+        return Promise.resolve() as unknown as ReturnType<
+          typeof Message.updateMany
+        >;
+      });
+      await new Promise<void>((resolve, reject) => {
+        messageUnreadJobHandler({}, err => (err ? reject(err) : resolve()));
+      });
+      maximum.should.equal(5);
+      update.callCount.should.equal(1);
+    });
+
     it('logs the first queue error and completes after multiple task failures', function (done) {
       const jobWithQueueError = require('./../../../server/jobs/message-unread.server.job.mjs');
       const queueLog = sinon.stub(winston.Logger.prototype, 'log');

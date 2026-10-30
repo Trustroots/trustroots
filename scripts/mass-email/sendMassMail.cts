@@ -19,13 +19,6 @@ type StoreConstructor = new (options: {
   autoload: boolean;
 }) => MailStore;
 const _ = require('lodash') as typeof import('lodash');
-const async = require('async') as {
-  timesSeries(
-    count: number,
-    worker: (index: number, done: Done) => void,
-    done: Done,
-  ): void;
-};
 const shortid = require('shortid') as { generate(): string };
 
 // nedb is a local disk backed mongo alternative for simple local scripts
@@ -66,6 +59,7 @@ const interval = 60 * 1e3; // 1 minute
 // SparkPost limit of 20k per day
 const usersPerApiCall = 10;
 const totalRuns = 5000;
+const finished = new Error('finished');
 
 const userToRecipient = function (user: MailRecord): Recipient {
   return {
@@ -81,7 +75,7 @@ const userToRecipient = function (user: MailRecord): Recipient {
 };
 
 // Grab n records and whip through them
-const sendOneGroup = function (i: number, eachCb: Done) {
+const sendOneGroup = async function (i: number): Promise<void> {
   // Log the time of successful delivery
   const when = new Date();
   const batchId = shortid.generate();
@@ -92,45 +86,51 @@ const sendOneGroup = function (i: number, eachCb: Done) {
     `INFO: Starting group number ${++i} with id ${batchId}`,
   );
 
-  Users.find({ sentAt: { $exists: false } })
-    .limit(usersPerApiCall)
-    .exec((err, users) => {
-      // If we've run out of users, stop here
-      if (users.length === 0) {
-        console.log(new Date(), 'SUCCESS: All emails sent');
-        return eachCb('finished');
+  const users = await new Promise<MailRecord[]>((resolve, reject) =>
+    Users.find({ sentAt: { $exists: false } })
+      .limit(usersPerApiCall)
+      .exec((err, users) => (err ? reject(err) : resolve(users))),
+  );
+  // If we've run out of users, stop here
+  if (users.length === 0) {
+    console.log(new Date(), 'SUCCESS: All emails sent');
+    throw finished;
+  }
+
+  // Build the recipients object
+  const recipients = _.map(users, userToRecipient);
+
+  // Build the transmission object
+  const transmission = _.extend({}, baseTransmission, { recipients });
+
+  // Send the request to sparkpost
+  await new Promise<void>((resolve, reject) =>
+    spClient.transmissions.send(transmission, (err, data) => {
+      // If we got an error, let's throw it, and stop the process
+      if (err) {
+        console.log('SPARKPOST ERROR', err, data, users);
+
+        // Passing an error to `eachCb()` stops the loop
+        reject(err);
+        return;
       }
 
-      // Build the recipients object
-      const recipients = _.map(users, userToRecipient);
-
-      // Build the transmission object
-      const transmission = _.extend({}, baseTransmission, { recipients });
-
-      // Send the request to sparkpost
-      spClient.transmissions.send(transmission, (err, data) => {
-        // If we got an error, let's throw it, and stop the process
-        if (err) {
-          console.log('SPARKPOST ERROR', err, data, users);
-
-          // Passing an error to `eachCb()` stops the loop
-          return eachCb(err);
-        }
-
-        // Record success
-        _.each(users, user => {
-          Users.update(
-            { _id: user._id },
-            { $set: { sentAt: when, sentBatchId: batchId } },
-          );
-        });
-
-        // Start the next iteration after `interval`
-        setTimeout(eachCb, interval);
-      });
-    });
+      resolve();
+    }),
+  );
+  for (const user of users) {
+    Users.update(
+      { _id: user._id },
+      { $set: { sentAt: when, sentBatchId: batchId } },
+    );
+  }
+  await new Promise<void>(resolve => setTimeout(resolve, interval));
 };
 
-async.timesSeries(totalRuns, sendOneGroup, err => {
-  console.log(new Date(), 'FINISH', err);
-});
+async function sendGroups(): Promise<void> {
+  for (let i = 0; i < totalRuns; i++) await sendOneGroup(i);
+}
+sendGroups().then(
+  () => console.log(new Date(), 'FINISH', null),
+  err => console.log(new Date(), 'FINISH', err === finished ? 'finished' : err),
+);

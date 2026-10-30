@@ -1,5 +1,4 @@
 import type {
-  MemberCountAsync,
   DayGroup,
   AggregatedDayGroup,
   ConnectionHelper,
@@ -7,7 +6,6 @@ import type {
   LegacyMongoose,
 } from '../legacy-cli-contracts.d.cts';
 const _ = require('lodash') as typeof import('lodash');
-const async = require('async') as MemberCountAsync;
 const moment = require('moment') as typeof import('moment');
 const mongooseService =
   require('./../../config/lib/mongoose.mjs') as ConnectionHelper;
@@ -56,216 +54,135 @@ const enumerateDaysBetweenDates = function (startDate: Date, endDate: Date) {
   return dates;
 };
 
-async.waterfall(
-  [
-    // Bootstrap db connection
-    function (done) {
-      console.log('Connecting to Mongodb...');
-      mongooseService.connect(function () {
-        console.log('Connected to Mongodb.');
-        done(null);
+async function fillMembers(): Promise<void> {
+  console.log('Connecting to Mongodb...');
+  await new Promise<void>(resolve => mongooseService.connect(() => resolve()));
+  console.log('Connected to Mongodb.');
+  const usersCount = await User.countDocuments(whereQuery);
+  console.log('Found ' + usersCount + ' users currently in the DB.\n');
+  const cursor = await User.aggregate<AggregatedDayGroup>([
+    aggregateMatch,
+    aggregateGrouping,
+    aggregateSort,
+  ]);
+  console.log('Filling missing days from aggregated array.\n');
+  const dates: DayGroup[] = [];
+  let prevDayOfYear: number | false = false;
+  let prevDay: number | false = false;
+  let prevMonth: number | false = false;
+  let prevYear: number | false = false;
+
+  for (const group of cursor) {
+    if (
+      prevDayOfYear !== false &&
+      (prevYear !== group._id.year || prevDayOfYear + 1 !== group._id.dayOfYear)
+    ) {
+      // var prevDayDiff = group._id.dayOfYear - prevDayOfYear;
+      const startDate = new Date(
+        Number(prevYear),
+        Number(prevMonth) - 1,
+        Number(prevDay),
+      );
+      const endDate = new Date(
+        group._id.year,
+        group._id.month - 1,
+        group._id.day,
+      );
+      const prevDayDiffArr = enumerateDaysBetweenDates(startDate, endDate);
+
+      prevDayDiffArr.forEach(function (date) {
+        dates.push({
+          _id: {
+            year: date.getFullYear(),
+            month: date.getMonth() + 1,
+            day: date.getDate(),
+          },
+          count: 0,
+        });
       });
-    },
+    }
 
-    // count all days to be able to show progress
-    /*
-  function(done) {
-    User.aggregate<AggregatedDayGroup>([
-      aggregateMatch,
-      aggregateGrouping,
-      { $group: { _id: null, count: { $sum: 1 } } }
-    ]).exec(function (err, daysCount) {
-      var daysCount = daysCount[0].count;
-      console.log('Found ' + daysCount + ' aggregated days\n');
-      done(err, daysCount);
-    });
-  },
-  */
+    // Set prev counters
+    prevDayOfYear = _.clone(group._id.dayOfYear);
+    prevDay = _.clone(group._id.day);
+    prevMonth = _.clone(group._id.month);
+    prevYear = _.clone(group._id.year);
 
-    function (done) {
-      User.countDocuments(whereQuery).then(
-        function (usersCount) {
-          console.log('Found ' + usersCount + ' users currently in the DB.\n');
-          done(null, usersCount);
-        },
-        function (err) {
-          done(err, 0);
-        },
-      );
-    },
+    dates.push(group);
+  }
+  const daysCount = dates.length;
+  console.log('Processing and adding daily counters to Influx...\n');
+  const PROGRESS_INTERVAL = 0.1; // percent
+  let progress = 0; // progress counter
 
-    function (usersCount, done) {
-      // Aggregate from mongodb
-      User.aggregate<AggregatedDayGroup>([
-        aggregateMatch,
-        aggregateGrouping,
-        aggregateSort,
-      ]).then(
-        function (cursor) {
-          done(null, cursor, usersCount);
-        },
-        function (err) {
-          done(err, [], 0);
-        },
-      );
-    },
-
-    // Add missing dates
-    function (cursor, usersCount, done) {
-      console.log('Filling missing days from aggregated array.\n');
-
-      const dates: DayGroup[] = [];
-      let prevDayOfYear: number | false = false;
-      let prevDay: number | false = false;
-      let prevMonth: number | false = false;
-      let prevYear: number | false = false;
-
-      async.eachOfSeries(
-        cursor,
-        function (group, index, callback) {
-          if (
-            prevDayOfYear !== false &&
-            (prevYear !== group._id.year ||
-              prevDayOfYear + 1 !== group._id.dayOfYear)
-          ) {
-            // var prevDayDiff = group._id.dayOfYear - prevDayOfYear;
-            const startDate = new Date(
-              Number(prevYear),
-              Number(prevMonth) - 1,
-              Number(prevDay),
-            );
-            const endDate = new Date(
-              group._id.year,
-              group._id.month - 1,
-              group._id.day,
-            );
-            const prevDayDiffArr = enumerateDaysBetweenDates(
-              startDate,
-              endDate,
-            );
-
-            prevDayDiffArr.forEach(function (date) {
-              dates.push({
-                _id: {
-                  year: date.getFullYear(),
-                  month: date.getMonth() + 1,
-                  day: date.getDate(),
-                },
-                count: 0,
-              });
-            });
-          }
-
-          // Set prev counters
-          prevDayOfYear = _.clone(group._id.dayOfYear);
-          prevDay = _.clone(group._id.day);
-          prevMonth = _.clone(group._id.month);
-          prevYear = _.clone(group._id.year);
-
-          dates.push(group);
-
-          callback();
-        },
-        function (err) {
-          return done(err, dates, dates.length, usersCount);
-        },
-      );
-    },
-    function findAndProcessUsers(dates, daysCount, usersCount, done) {
-      console.log('Processing and adding daily counters to Influx...\n');
-
-      // preparation for async.doWhilst function
-      //
-      // settings how often the progress will be printed to console
-      // every PROGRESS_INTERVAL %
-      const PROGRESS_INTERVAL = 0.1; // percent
-      let progress = 0; // progress counter
-
-      // getting the next message from mongodb
-      async.eachOfSeries(
-        dates,
-        function (countGroup, index, callback) {
-          // showing a progress
-          if (
-            progress % Math.ceil((daysCount / 100) * PROGRESS_INTERVAL) ===
-            0
-          ) {
-            // update the progress instead of logging to newline
-            const progressPercent = ((progress / daysCount) * 100).toFixed(1);
-            process.stdout.clearLine(0);
-            process.stdout.cursorTo(0);
-            process.stdout.write(
-              progressPercent + '% (' + progress + '/' + daysCount + ' days)',
-            );
-          }
-          cumulativeUserCount = cumulativeUserCount + countGroup.count;
-          ++progress;
-
-          // console.log('\n  -> TO INFLUX: ' + cumulativeUserCount + ' [+' + countGroup.count + '] (' + countGroup._id.year + '-' + countGroup._id.month + '-' + countGroup._id.day + ')')
-
-          // processing and saving the point to database
-          statsService.stat(
-            {
-              namespace: 'test_members',
-              values: {
-                count: parseInt(String(cumulativeUserCount), 10),
-              },
-              tags: {
-                members: 'members',
-              },
-              // JavaScript counts months from 0 to 11. January is 0. December is 11.
-              time: new Date(
-                parseInt(String(countGroup._id.year), 10),
-                parseInt(String(countGroup._id.month), 10) - 1,
-                parseInt(String(countGroup._id.day), 10),
-              ),
-            },
-            function (err) {
-              return callback(err);
-            },
-          );
-        },
-        function (err) {
-          return done(err, progress, daysCount, usersCount);
-        },
-      );
-    },
-
-    // finish writing the progress bar
-    function (progress, daysCount, usersCount, done) {
+  for (const countGroup of dates) {
+    // showing a progress
+    if (progress % Math.ceil((daysCount / 100) * PROGRESS_INTERVAL) === 0) {
+      // update the progress instead of logging to newline
+      const progressPercent = ((progress / daysCount) * 100).toFixed(1);
       process.stdout.clearLine(0);
       process.stdout.cursorTo(0);
       process.stdout.write(
-        Math.floor((progress / daysCount) * 100) +
-          '% (' +
-          progress +
-          '/' +
-          daysCount +
-          ' days)\n' +
-          '- Cumulative user count: ' +
-          cumulativeUserCount +
-          '\n' +
-          '- Counter to check against: ' +
-          usersCount +
-          '\n' +
-          '\nDone!\n',
+        progressPercent + '% (' + progress + '/' + daysCount + ' days)',
       );
-      done(null);
-    },
-
-    // Disconnect DB
-    function (done) {
-      console.log('\nDisconnecting from Mongodb...');
-      mongooseService.disconnect(function (err) {
-        done(err);
-      });
-    },
-  ],
-  function (err) {
-    if (err) {
-      console.error('\nError:');
-      console.error(err);
     }
-    return; // all finished!
-  },
-);
+    cumulativeUserCount = cumulativeUserCount + countGroup.count;
+    ++progress;
+
+    // console.log('\n  -> TO INFLUX: ' + cumulativeUserCount + ' [+' + countGroup.count + '] (' + countGroup._id.year + '-' + countGroup._id.month + '-' + countGroup._id.day + ')')
+
+    // processing and saving the point to database
+    await new Promise<void>((resolve, reject) =>
+      statsService.stat(
+        {
+          namespace: 'test_members',
+          values: {
+            count: parseInt(String(cumulativeUserCount), 10),
+          },
+          tags: {
+            members: 'members',
+          },
+          // JavaScript counts months from 0 to 11. January is 0. December is 11.
+          time: new Date(
+            parseInt(String(countGroup._id.year), 10),
+            parseInt(String(countGroup._id.month), 10) - 1,
+            parseInt(String(countGroup._id.day), 10),
+          ),
+        },
+        function (err) {
+          if (err) reject(err);
+          else resolve();
+        },
+      ),
+    );
+  }
+  process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(
+    Math.floor((progress / daysCount) * 100) +
+      '% (' +
+      progress +
+      '/' +
+      daysCount +
+      ' days)\n- Cumulative user count: ' +
+      cumulativeUserCount +
+      '\n- Counter to check against: ' +
+      usersCount +
+      '\n\nDone!\n',
+  );
+  console.log('\nDisconnecting from Mongodb...');
+  await new Promise<void>((resolve, reject) =>
+    mongooseService.disconnect(err => {
+      if (err) reject(err);
+      else resolve();
+    }),
+  );
+}
+fillMembers().catch(err => {
+  console.error('\nError:');
+  console.error(err);
+  process.exitCode = 1;
+  mongooseService.disconnect(disconnectError => {
+    if (disconnectError) console.error(disconnectError);
+  });
+});

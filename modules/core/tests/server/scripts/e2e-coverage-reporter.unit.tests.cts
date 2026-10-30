@@ -422,6 +422,7 @@ describe('E2E coverage reporter unit tests', () => {
             EXIT_CODE: '0',
             MESSAGE: 'isolated status path test',
             TRUSTROOTS_E2E_STATUS_PATH: statusPath,
+            TRUSTROOTS_E2E_COVERAGE_DIR: `${statusPath}.coverage`,
             TRUSTROOTS_E2E_RESULTS_PATH: missingResultsPath,
           },
           encoding: 'utf8',
@@ -485,6 +486,7 @@ describe('E2E coverage reporter unit tests', () => {
             EXIT_CODE: '0',
             MESSAGE: 'End-to-end Playwright tests passed.',
             TRUSTROOTS_E2E_STATUS_PATH: statusPath,
+            TRUSTROOTS_E2E_COVERAGE_DIR: `${statusPath}.coverage`,
             TRUSTROOTS_E2E_RESULTS_PATH: resultsPath,
           },
           encoding: 'utf8',
@@ -511,6 +513,7 @@ describe('E2E coverage reporter unit tests', () => {
         );
         const resultsPath = path.join(directory, 'results.json');
         const statusPath = path.join(directory, 'status.json');
+        const coverageDirectory = path.join(directory, 'coverage');
         const report = reportWithSpecs([
           {
             file: 'tests/e2e/features/messages/messages.spec.js',
@@ -520,6 +523,18 @@ describe('E2E coverage reporter unit tests', () => {
         ]);
         try {
           fs.writeFileSync(resultsPath, JSON.stringify(report));
+          fs.mkdirSync(coverageDirectory);
+          fs.writeFileSync(
+            path.join(coverageDirectory, 'coverage-summary.json'),
+            JSON.stringify({
+              total: {
+                statements: { pct: 25 },
+                branches: { pct: 50 },
+                functions: { pct: 75 },
+                lines: { pct: 100 },
+              },
+            }),
+          );
           const result = spawnSync(
             process.execPath,
             ['scripts/e2e/summarize-results.js'],
@@ -531,6 +546,7 @@ describe('E2E coverage reporter unit tests', () => {
                 EXIT_CODE: testExitCode,
                 TRUSTROOTS_E2E_REQUIRE_FULL_FEATURE_COVERAGE: 'false',
                 TRUSTROOTS_E2E_STATUS_PATH: statusPath,
+                TRUSTROOTS_E2E_COVERAGE_DIR: coverageDirectory,
                 TRUSTROOTS_E2E_RESULTS_PATH: resultsPath,
               },
               encoding: 'utf8',
@@ -542,6 +558,12 @@ describe('E2E coverage reporter unit tests', () => {
           status.exitCode.should.equal(Number(testExitCode));
           status.metrics.failed.should.equal(testStatus === 'failed' ? 1 : 0);
           status.metrics.missingScenarioCount.should.be.above(0);
+          status.metrics.codeCoverage.should.deepEqual({
+            statements: 25,
+            branches: 50,
+            functions: 75,
+            lines: 100,
+          });
         } finally {
           fs.rmSync(directory, { recursive: true, force: true });
         }

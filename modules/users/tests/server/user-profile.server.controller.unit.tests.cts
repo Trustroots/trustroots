@@ -637,32 +637,48 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('ignores a successful final waterfall callback', () => {
+    it('returns the updated profile after saving without email work', async () => {
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { tagline: 'Updated profile' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      responseString(res, 'tagline').should.equal('Updated profile');
+    });
+
+    it('reports failure to generate an email-change token', async () => {
+      sinon
+        .stub(crypto, 'randomBytes')
+        .callsFake((size, cb) =>
+          cb(new Error('Entropy unavailable'), Buffer.alloc(size)),
+        );
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { email: 'sample-new@example.com' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
+    it('reports failure to deliver the email-change confirmation', async () => {
       const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
+        [emailServicePath]: {
+          sendChangeEmailConfirmation: (
+            _user: unknown,
+            cb: (err: Error) => void,
+          ) => cb(new Error('Email unavailable')),
         },
       });
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.update(
-        {
-          user: userDoc,
-          body: { tagline: 'No response from final callback' },
-          login: (_user: unknown, cb: () => void) => cb(),
-        },
-        res,
+      const { res } = await runHandler(res =>
+        controller.update(
+          { user: userDoc, body: { email: 'sample-new@example.com' } },
+          res,
+        ),
       );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
+      res.statusCode.should.equal(400);
     });
 
     it('changes the email and triggers a confirmation token', async () => {
@@ -786,23 +802,22 @@ describe('Profile controller unit tests', () => {
       );
     });
 
-    it('ignores a successful final removal initialization callback', () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
-        },
-      });
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-      };
-
-      controller.initializeRemoveProfile({ user: { roles: [] } }, res);
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
+    it('sends the removal token only after it is persisted', async () => {
+      const [created] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(created._id);
+      const emailService: typeof import('../../../core/server/services/email.server.service.mjs') = require(
+        emailServicePath,
+      );
+      const send = sinon
+        .stub(emailService, 'sendRemoveProfile')
+        .callsFake((_user, cb) => cb());
+      const { res } = await runHandler(res =>
+        profileController.initializeRemoveProfile({ user: userDoc }, res),
+      );
+      res.statusCode.should.equal(200);
+      send.calledOnce.should.be.true();
+      const saved = await findUser(userDoc._id);
+      should.exist(saved.removeProfileToken);
     });
   });
 
@@ -971,31 +986,49 @@ describe('Profile controller unit tests', () => {
       should.not.exist(gone);
     });
 
-    it('ignores a successful final removal callback', () => {
+    it('reports membership counter failures during profile removal', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.removeProfileToken = 'sample-remove-token';
+      userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
+      userDoc.member = [
+        { tribe: new mongoose.Types.ObjectId(), since: new Date() },
+      ];
+      await userDoc.save();
       const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
+        './../../../tribes/server/controllers/tribes.server.controller.mjs': {
+          updateCount: (
+            _id: unknown,
+            _change: number,
+            _returnUpdated: boolean,
+            cb: (err: Error) => void,
+          ) => cb(new Error('Counter unavailable')),
         },
       });
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.removeProfile(
-        {
-          user: { _id: new mongoose.Types.ObjectId() },
-          params: { token: 'valid-token' },
-        },
-        res,
+      const { res } = await runHandler(res =>
+        controller.removeProfile(
+          { user: userDoc, params: { token: 'sample-remove-token' } },
+          res,
+        ),
       );
+      res.statusCode.should.equal(400);
+    });
 
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
+    it('reports a failed removal-token lookup', async () => {
+      sinon.stub(User, 'findOne').rejects(new Error('Lookup unavailable'));
+      const { res } = await runHandler(res =>
+        profileController.removeProfile(
+          {
+            user: { _id: new mongoose.Types.ObjectId() },
+            params: { token: 'sample-token' },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      responseString(res, 'message').should.equal(
+        'Profile remove token is invalid or has expired.',
+      );
     });
   });
 
@@ -1262,13 +1295,10 @@ describe('Profile controller unit tests', () => {
     });
 
     it('passes unexpected middleware errors to next', async () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done(new Error('unexpected profile middleware failure'));
-          },
-        },
-      });
+      sinon
+        .stub(User, 'findOne')
+        .throws(new Error('unexpected profile middleware failure'));
+      const controller = profileController;
 
       const { nextCalled, nextArg } = await runHandler((res, next) =>
         controller.userByUsername(
@@ -1315,24 +1345,17 @@ describe('Profile controller unit tests', () => {
       nextCalled.should.be.true();
     });
 
-    it('ignores a successful final username middleware callback', () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
-        },
-      });
-      const next = sinon.stub();
-
-      controller.userByUsername(
-        { user: { roles: ['user'] } },
-        {},
-        next,
-        'someusername',
+    it('does not continue middleware after a missing profile response', async () => {
+      const { res, nextCalled } = await runHandler((res, next) =>
+        profileController.userByUsername(
+          { user: { roles: ['user'] } },
+          res,
+          next,
+          'missingmember',
+        ),
       );
-
-      next.called.should.be.false();
+      res.statusCode.should.equal(404);
+      nextCalled.should.be.false();
     });
   });
 
