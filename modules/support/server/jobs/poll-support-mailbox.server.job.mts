@@ -651,5 +651,3 @@ export async function pollSupportMailbox(
     heartbeat.stop();
   }
 }
-
-export default pollSupportMailbox;

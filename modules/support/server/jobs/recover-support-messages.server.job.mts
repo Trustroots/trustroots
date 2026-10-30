@@ -78,5 +78,3 @@ export async function recoverSupportMessages(
     return done(error as Error);
   }
 }
-
-export default recoverSupportMessages;

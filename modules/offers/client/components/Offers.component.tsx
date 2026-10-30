@@ -24,7 +24,7 @@ interface OffersState {
   isMobile: boolean;
 }
 
-export class Offers extends Component<OffersProps, OffersState> {
+class Offers extends Component<OffersProps, OffersState> {
   constructor(props: OffersProps) {
     super(props);
     this.state = {

@@ -157,5 +157,3 @@ export async function sendSupportMessage(
     }
   }
 }
-
-export default sendSupportMessage;
