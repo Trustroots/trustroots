@@ -614,8 +614,8 @@ describe('Avatar processing failure handling', () => {
     const service = proxyquire<AvatarFailureService>(
       require.resolve('./../../server/services/avatar-processing.server.service.mts'),
       {
-        async: {
-          queue: () => ({
+        './../../../core/server/services/task-queue.server.service.mts': {
+          createTaskQueue: () => ({
             length: () => pending.length,
             push: (job: AvatarJob) => pending.push(job),
           }),
@@ -629,6 +629,50 @@ describe('Avatar processing failure handling', () => {
       service.enqueueAvatarProcessing({ callback() {} }).should.be.true();
     }
     service.enqueueAvatarProcessing({ callback() {} }).should.be.false();
+  });
+
+  it('processes at most two uploads at once and settles each callback once', async () => {
+    const taskQueue =
+      require('./../../../core/server/services/task-queue.server.service.mts') as typeof import('./../../../core/server/services/task-queue.server.service.mts');
+    const concurrencies: number[] = [];
+    const service = proxyquire<AvatarFailureService>(
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
+      {
+        './../../../core/server/services/task-queue.server.service.mts': {
+          createTaskQueue: (
+            worker: Parameters<typeof taskQueue.createTaskQueue>[0],
+            concurrency: number,
+          ) => {
+            concurrencies.push(concurrency);
+            return taskQueue.createTaskQueue(worker, concurrency);
+          },
+        },
+        './../../../../config/config.mts': config,
+        gm: require('gm'),
+      },
+    );
+    concurrencies.should.deepEqual([2]);
+
+    const calls = [0, 0, 0];
+    await Promise.all(
+      calls.map(
+        (_call, index) =>
+          new Promise<void>(resolve => {
+            service
+              .enqueueAvatarProcessing({
+                userId: `invalid-${index}`,
+                callback(error?: Error | null) {
+                  calls[index] += 1;
+                  (error instanceof Error).should.be.true();
+                  resolve();
+                },
+              })
+              .should.be.true();
+          }),
+      ),
+    );
+    await new Promise(resolve => setImmediate(resolve));
+    calls.should.deepEqual([1, 1, 1]);
   });
 
   it('forwards a successful queued upload result to its callback', async () => {

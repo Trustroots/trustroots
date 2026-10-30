@@ -1,4 +1,3 @@
-import async from 'async';
 import EventEmitter from 'events';
 import dependency2 from 'fs';
 import gm, { type Command as GmCommand } from 'gm';
@@ -7,6 +6,7 @@ import path from 'path';
 import crypto from 'crypto';
 import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
+import { createTaskQueue } from './../../../core/server/services/task-queue.server.service.mts';
 import type { EventEmitter as EventEmitterType } from 'node:events';
 import type {
   AvatarProcessingJob,
@@ -388,12 +388,13 @@ async function removeAvatarVersion(
     force: true,
   });
 }
-const queue = async.queue<AvatarProcessingJob>((job, done) => {
-  processAvatar(job)
-    .then(result => job.callback(null, result))
-    .catch(error => job.callback(error))
-    .finally(done);
-}, 2);
+const queue = createTaskQueue<AvatarProcessingJob>(
+  job =>
+    processAvatar(job)
+      .then(result => job.callback(null, result))
+      .catch(error => job.callback(error)),
+  2,
+);
 function enqueueAvatarProcessing(job: AvatarProcessingJob): boolean {
   if (queue.length() >= maxQueuedUploads) {
     return false;

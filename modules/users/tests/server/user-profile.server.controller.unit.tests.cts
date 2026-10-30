@@ -637,34 +637,6 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('ignores a successful final waterfall callback', () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
-        },
-      });
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.update(
-        {
-          user: userDoc,
-          body: { tagline: 'No response from final callback' },
-          login: (_user: unknown, cb: () => void) => cb(),
-        },
-        res,
-      );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
-    });
-
     it('changes the email and triggers a confirmation token', async () => {
       const { res } = await runHandler(res =>
         profileController.update(
@@ -784,25 +756,6 @@ describe('Profile controller unit tests', () => {
       responseString(res, 'message').should.equal(
         'Removing your profile failed.',
       );
-    });
-
-    it('ignores a successful final removal initialization callback', () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
-        },
-      });
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-      };
-
-      controller.initializeRemoveProfile({ user: { roles: [] } }, res);
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
     });
   });
 
@@ -969,33 +922,6 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(200);
       const gone = await User.findById(saved._id);
       should.not.exist(gone);
-    });
-
-    it('ignores a successful final removal callback', () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
-        },
-      });
-      const res = {
-        status: sinon.stub().returnsThis(),
-        send: sinon.stub(),
-        json: sinon.stub(),
-      };
-
-      controller.removeProfile(
-        {
-          user: { _id: new mongoose.Types.ObjectId() },
-          params: { token: 'valid-token' },
-        },
-        res,
-      );
-
-      res.status.called.should.be.false();
-      res.send.called.should.be.false();
-      res.json.called.should.be.false();
     });
   });
 
@@ -1263,19 +1189,24 @@ describe('Profile controller unit tests', () => {
 
     it('passes unexpected middleware errors to next', async () => {
       const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done(new Error('unexpected profile middleware failure'));
+        './../../../messages/server/services/message-stat.server.service.mjs': {
+          readFormattedMessageStatsOfUser() {
+            throw new Error('unexpected profile middleware failure');
           },
         },
       });
+      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
+      const [target] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      const targetDoc = await findUser(target._id);
 
       const { nextCalled, nextArg } = await runHandler((res, next) =>
         controller.userByUsername(
-          { user: { roles: ['user'] } },
+          { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
-          'someusername',
+          targetDoc.username,
         ),
       );
 
@@ -1313,26 +1244,6 @@ describe('Profile controller unit tests', () => {
       );
 
       nextCalled.should.be.true();
-    });
-
-    it('ignores a successful final username middleware callback', () => {
-      const controller = stubControllerDependencies(controllerPath, {
-        async: {
-          waterfall(_steps: unknown[], done: (error?: Error | null) => void) {
-            done();
-          },
-        },
-      });
-      const next = sinon.stub();
-
-      controller.userByUsername(
-        { user: { roles: ['user'] } },
-        {},
-        next,
-        'someusername',
-      );
-
-      next.called.should.be.false();
     });
   });
 
