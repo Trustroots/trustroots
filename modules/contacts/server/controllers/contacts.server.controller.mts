@@ -557,4 +557,3 @@ export {
   removeAllByUserId,
 };
 export default service;
-export { service as 'module.exports' };

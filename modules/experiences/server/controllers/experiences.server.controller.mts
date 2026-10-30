@@ -896,5 +896,3 @@ export {
   readOne as readOne,
 };
 export default service;
-
-export { service as 'module.exports' };

@@ -1013,4 +1013,3 @@ export {
   threadByUser,
 };
 export default service;
-export { service as 'module.exports' };

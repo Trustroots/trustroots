@@ -6,4 +6,3 @@ const defaultExport = function (job: unknown, done?: () => void) {
 };
 
 export default defaultExport;
-export { defaultExport as 'module.exports' };

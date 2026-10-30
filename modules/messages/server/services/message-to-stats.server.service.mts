@@ -179,4 +179,3 @@ const saveExport = save;
 const sendExport = send;
 export { processExport as process, saveExport as save, sendExport as send };
 export default service;
-export { service as 'module.exports' };

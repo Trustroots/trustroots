@@ -67,4 +67,3 @@ export const isUsernameFormatValid = defaultExport.isUsernameFormatValid;
 export const isLegacyUsernameLookupValid =
   defaultExport.isLegacyUsernameLookupValid;
 export const usernameFormatMessage = defaultExport.usernameFormatMessage;
-export { defaultExport as 'module.exports' };

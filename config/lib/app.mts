@@ -93,4 +93,3 @@ function start(this: { init: typeof init }, callback?: InitCallback) {
   });
 }
 export default service;
-export { service as 'module.exports' };

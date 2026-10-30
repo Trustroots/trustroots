@@ -86,4 +86,3 @@ export async function linkHistoricalReport(
 }
 const api = { linkHistoricalReport };
 export default api;
-export { api as 'module.exports' };

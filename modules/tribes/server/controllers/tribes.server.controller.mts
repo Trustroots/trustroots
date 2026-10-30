@@ -353,4 +353,3 @@ export {
   updateCount,
 };
 export default service;
-export { service as 'module.exports' };

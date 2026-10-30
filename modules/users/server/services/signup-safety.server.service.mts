@@ -25,4 +25,3 @@ const defaultInterop = {
   matchSignupProfile,
 };
 export default defaultInterop;
-export { defaultInterop as 'module.exports' };

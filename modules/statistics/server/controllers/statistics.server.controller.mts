@@ -1064,4 +1064,3 @@ Object.assign(statisticsService, {
   collectStatistics,
 });
 export default statisticsService;
-export { statisticsService as 'module.exports' };

@@ -313,7 +313,6 @@ const defaultExport = {
 };
 
 export default defaultExport;
-export { defaultExport as 'module.exports' };
 export {
   KdfOverloadedError,
   createKdfScheduler,

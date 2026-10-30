@@ -195,7 +195,6 @@ function collectLastSeen(
   });
 }
 export default defaultInterop;
-export { defaultInterop as 'module.exports' };
 
 function logFailure(message: string, error: unknown): void {
   // The legacy logger accepts arbitrary metadata; its inferred JS signature

@@ -224,4 +224,3 @@ const readReferenceThread = service.readReferenceThread;
 const readReferenceThreadById = service.readReferenceThreadById;
 export { createReferenceThread, readReferenceThread, readReferenceThreadById };
 export default service;
-export { service as 'module.exports' };

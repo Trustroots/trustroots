@@ -150,4 +150,3 @@ const defaultExport = function (
   remind().then(() => finish(), finish);
 };
 export default defaultExport;
-export { defaultExport as 'module.exports' };
