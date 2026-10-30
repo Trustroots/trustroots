@@ -13,6 +13,8 @@ import {
 
 function makeRepo(files: Record<string, string>): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'module-graph-'));
+  // The baseline lives in this tracked directory in the real repository.
+  fs.mkdirSync(path.join(root, 'tooling/baselines'), { recursive: true });
   Object.entries(files).forEach(([name, text]) => {
     fs.mkdirSync(path.dirname(path.join(root, name)), { recursive: true });
     fs.writeFileSync(path.join(root, name), text);
@@ -62,7 +64,7 @@ test('requires a declared workspace dependency for cross-module model lookups', 
     'a -> b: missing @trustroots/b workspace dependency',
   ]);
   fs.writeFileSync(
-    path.join(root, 'module-graph-baseline.json'),
+    path.join(root, 'tooling/baselines/module-graph.json'),
     JSON.stringify({ imports: {}, models: { a: ['b'] } }),
   );
   assert.equal(main([], root), 1);
@@ -119,7 +121,10 @@ test('workspace imports preserve edges across import forms and reject new links'
           'export const value = 1;',
         ]),
     ),
-    'module-graph-baseline.json': JSON.stringify({ imports: {}, models: {} }),
+    'tooling/baselines/module-graph.json': JSON.stringify({
+      imports: {},
+      models: {},
+    }),
   });
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const expected = { imports: { a: 'bcdefghi'.split('') }, models: {} };
@@ -127,7 +132,7 @@ test('workspace imports preserve edges across import forms and reject new links'
   assert.equal(main([], root), 1);
   assert.match(error.mock.calls.at(-1)!.arguments[0], /imports: a -> b/);
   fs.writeFileSync(
-    path.join(root, 'module-graph-baseline.json'),
+    path.join(root, 'tooling/baselines/module-graph.json'),
     JSON.stringify(expected),
   );
   assert.equal(main([], root), 0);
@@ -162,7 +167,10 @@ test('records inline type imports and rejects new cross-module links', t => {
     'modules/b/shared/value.ts': 'export type Value = string;',
     'modules/c/shared/value.ts': 'export const value = 1;',
     'modules/d/shared/value.mts': 'export type Value = number;',
-    'module-graph-baseline.json': JSON.stringify({ imports: {}, models: {} }),
+    'tooling/baselines/module-graph.json': JSON.stringify({
+      imports: {},
+      models: {},
+    }),
   });
   assert.deepEqual(analyze(root), {
     imports: { a: ['b', 'c', 'd'] },
