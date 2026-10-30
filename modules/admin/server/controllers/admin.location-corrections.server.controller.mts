@@ -332,6 +332,7 @@ function sendBody(req: LocationRequest): {
   };
 }
 
+/** @esmNamed */
 export async function list(
   req: LocationRequest,
   res: LocationResponse,
@@ -345,6 +346,7 @@ export async function list(
   }
 }
 
+/** @esmNamed */
 export async function send(
   req: LocationRequest,
   res: LocationResponse,
@@ -463,4 +465,5 @@ const service = {
 };
 
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

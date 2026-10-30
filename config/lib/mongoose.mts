@@ -167,4 +167,5 @@ async function ensureIndexes(modelNames: string[]): Promise<void> {
   );
 }
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

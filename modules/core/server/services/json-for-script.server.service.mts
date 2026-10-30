@@ -6,4 +6,5 @@ function jsonForScript(value: unknown): string {
   );
 }
 export default jsonForScript;
+/** @commonjs */
 export { jsonForScript as 'module.exports' };

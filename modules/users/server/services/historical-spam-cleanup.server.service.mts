@@ -350,5 +350,7 @@ export async function deleteAdminBatch(
 
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export const run = defaultExport.run;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

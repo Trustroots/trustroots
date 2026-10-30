@@ -49,6 +49,7 @@ function parsePage(value: unknown): number | null {
   return Number.isSafeInteger(page) && page > 0 ? page : null;
 }
 
+/** @esmNamed */
 export const list = async (
   req: AdminRequest,
   res: AdminResponse,
@@ -150,4 +151,5 @@ export const list = async (
 
 const defaultInterop = { list };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

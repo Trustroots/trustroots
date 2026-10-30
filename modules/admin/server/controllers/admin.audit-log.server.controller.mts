@@ -47,6 +47,7 @@ const User = mongoose.model<UserRecord>('User');
 
 /**
  * This middleware stores queries to audit log
+ * @esmNamed
  */
 export const record = (
   req: AuditRecordRequest,
@@ -78,7 +79,10 @@ export const record = (
   );
 };
 
-/** Return the latest matching entries, filtered by acting staff. */
+/**
+ * Return the latest matching entries, filtered by acting staff.
+ * @esmNamed
+ */
 export const list = async (
   req: AuditRequest,
   res: AuditResponse,
@@ -116,7 +120,10 @@ export const list = async (
     });
   }
 };
-/** Existing actors from the whole history, independent of the current filters. */
+/**
+ * Existing actors from the whole history, independent of the current filters.
+ * @esmNamed
+ */
 export const actors = async (
   _req: unknown,
   res: AuditResponse,
@@ -141,4 +148,5 @@ const defaultInterop = {
   actors,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

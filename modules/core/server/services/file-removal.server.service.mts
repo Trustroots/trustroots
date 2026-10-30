@@ -18,4 +18,5 @@ export async function removeLocalPath(target: string): Promise<void> {
 
 const service = { removeLocalPath };
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

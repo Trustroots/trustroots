@@ -54,6 +54,7 @@ interface UTMParameters {
  * @link http://stackoverflow.com/a/9735852/1984644
  * @link http://nodejs.org/api/url.html#url_url_format_urlobj
  *
+ * @esmNamed
  */
 export function appendUTMParams(
   trackUrl?: string,
@@ -108,4 +109,5 @@ export function appendUTMParams(
 }
 const defaultExport = { appendUTMParams };
 export default defaultExport;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

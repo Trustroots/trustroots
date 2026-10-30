@@ -26,6 +26,7 @@ function run(
     },
   ).then(result => agendaDone(null, result), agendaDone);
 }
+/** @esmNamed */
 export { run };
 export default run;
 export { run as 'module.exports' };

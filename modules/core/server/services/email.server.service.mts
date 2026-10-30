@@ -824,6 +824,7 @@ function renderEmailAndSend(
 
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export {
   addEmailBaseTemplateParams,
   renderEmail,
@@ -846,4 +847,5 @@ export {
   sendWelcomeSequenceSecond,
   sendWelcomeSequenceThird,
 };
+/** @commonjs */
 export { defaultExport as 'module.exports' };

@@ -94,5 +94,7 @@ async function consume({
 
 const defaultExport = { consume, digest };
 export default defaultExport;
+/** @esmNamed */
 export { consume, digest };
+/** @commonjs */
 export { defaultExport as 'module.exports' };

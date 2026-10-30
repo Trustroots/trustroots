@@ -63,6 +63,7 @@ const AdminNote = mongoose.model<AdminNoteRecord>('AdminNote');
 
 /**
  * Add notes to any user
+ * @esmNamed
  */
 export const addNote = async (
   req: NoteRequest,
@@ -99,6 +100,7 @@ export const addNote = async (
 
 /**
  * Read notes of a user
+ * @esmNamed
  */
 export const getNotes = async (
   req: NoteRequest,
@@ -130,4 +132,5 @@ const defaultInterop = {
   getNotes,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

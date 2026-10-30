@@ -343,6 +343,7 @@ const tribeBySlug = service.tribeBySlug;
 const tribeFields = service.tribeFields;
 const tribePopulateOptions = service.tribePopulateOptions;
 const updateCount = service.updateCount;
+/** @esmNamed */
 export {
   getTribe,
   listMembers,

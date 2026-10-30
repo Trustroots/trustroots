@@ -41,4 +41,5 @@ function normaliseOfferExpiry(
 }
 
 export default normaliseOfferExpiry;
+/** @commonjs */
 export { normaliseOfferExpiry as 'module.exports' };

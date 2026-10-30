@@ -11,7 +11,10 @@ interface PaginationResponse {
   links(links: Record<string, string>): unknown;
 }
 
-/** Normalise pagination once so database queries and Link headers agree. */
+/**
+ * Normalise pagination once so database queries and Link headers agree.
+ * @esmNamed
+ */
 export function middleware(limit: number, maxLimit: number) {
   return (
     req: PaginationRequest,
@@ -54,6 +57,7 @@ export function middleware(limit: number, maxLimit: number) {
  * @param pageCount Number Total number of pages
  * @param options Object Link formatting options
  * @param options.relative Boolean Keep the link relative to the current site
+ * @esmNamed
  */
 export function setLinkHeader(
   req: { query: { page?: unknown } },
@@ -77,4 +81,5 @@ const service = {
   setLinkHeader,
 };
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

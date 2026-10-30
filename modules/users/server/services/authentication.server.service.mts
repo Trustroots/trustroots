@@ -60,10 +60,16 @@ const service: AuthenticationService = {
 
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export const generateEmailToken = defaultExport.generateEmailToken;
+/** @esmNamed */
 export const isUsernameReserved = defaultExport.isUsernameReserved;
+/** @esmNamed */
 export const validateUsername = defaultExport.validateUsername;
+/** @esmNamed */
 export const isUsernameFormatValid = defaultExport.isUsernameFormatValid;
+/** @esmNamed */
 export const isLegacyUsernameLookupValid =
   defaultExport.isLegacyUsernameLookupValid;
+/** @esmNamed */
 export const usernameFormatMessage = defaultExport.usernameFormatMessage;

@@ -877,6 +877,7 @@ const service = {
   removeAllByUserId,
   update,
 };
+/** @esmNamed */
 export {
   create,
   deleteOffer as delete,

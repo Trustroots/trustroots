@@ -148,11 +148,13 @@ const service = {
   visibleUserLookupStages,
 };
 export default service;
+export { userMiniProfileFields };
+/** @esmNamed */
 export {
-  userMiniProfileFields,
   userMiniProjectionMap,
   userMiniProjection,
   miniUserPopulate,
   visibleUserLookupStages,
 };
+/** @commonjs */
 export { service as 'module.exports' };

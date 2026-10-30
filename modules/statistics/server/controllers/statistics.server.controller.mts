@@ -208,12 +208,14 @@ function errorMessage(error: Error): string {
   // validation error does not carry a message; its inferred JS type is wider.
   return errorService.getErrorMessage(error) as string;
 }
+/** @esmNamed */
 export const clearPublicStatisticsCache = function (): void {
   publicStatisticsCache = undefined;
 };
 
 /**
  * Get count of all public users
+ * @esmNamed
  */
 export const getUsersCount = function (callback: Callback<number>): void {
   User.countDocuments({
@@ -226,6 +228,7 @@ export const getUsersCount = function (callback: Callback<number>): void {
 
 /**
  * Get count of all public users
+ * @esmNamed
  */
 export const getExternalSiteCount = function (
   site: string,
@@ -306,6 +309,7 @@ export const getExternalSiteCount = function (
 
 /**
  * Get count of all public users
+ * @esmNamed
  */
 export const getMeetOffersCount = function (callback: Callback<number>): void {
   Offer.countDocuments({
@@ -331,6 +335,7 @@ export const getMeetOffersCount = function (callback: Callback<number>): void {
 /**
  * Get count of hosting offers
  * Callback will be called with Object `{ yes: Int, maybe: Int, no: Int }`
+ * @esmNamed
  */
 export const getHostOffersCount = function (
   callback: Callback<HostingCounts>,
@@ -384,6 +389,7 @@ export const getHostOffersCount = function (
 
 /**
  * Get count of newsletter subscriptions
+ * @esmNamed
  */
 export const getNewsletterSubscriptionsCount = function (
   callback: Callback<number>,
@@ -402,6 +408,7 @@ export const getNewsletterSubscriptionsCount = function (
 
 /**
  * Generate statistics based on the user last seen attribute
+ * @esmNamed
  */
 export const getLastSeenStatistic = function (
   since: moment.DurationInputArg1,
@@ -423,6 +430,7 @@ export const getLastSeenStatistic = function (
  *
  * @param limit {int} Limit returned number of languages
  * @param callback {function}
+ * @esmNamed
  */
 export const getUserLanguagesCount = function (
   limit: number,
@@ -456,6 +464,7 @@ export const getUserLanguagesCount = function (
  *
  * @param {Date} since Beginning of the recent-statistics period
  * @param {Function} callback Callback receiving aggregate statistics
+ * @esmNamed
  */
 export const getExperienceStatistics = function (
   since: Date,
@@ -632,6 +641,7 @@ export const getExperienceStatistics = function (
  *
  * @param {Date} since Beginning of the recent-statistics period
  * @param {Function} callback Callback receiving aggregate statistics
+ * @esmNamed
  */
 export const getMessageInteractionStatistics = function (
   since: Date,
@@ -839,6 +849,7 @@ export const getMessageInteractionStatistics = function (
  * Count registrations, conversation starts, and sent messages in rolling
  * windows. One bounded aggregation per collection shares the same instant
  * and excludes future-dated records.
+ * @esmNamed
  */
 export const getRecentActivityStatistics = function (
   now: Date,
@@ -893,6 +904,7 @@ export const getRecentActivityStatistics = function (
 
 /**
  * Get all statistics
+ * @esmNamed
  */
 export const getPublicStatistics = function (
   req: StatisticsRequest,
@@ -989,6 +1001,7 @@ export const getPublicStatistics = function (
  *   'x-tr-update-needed': 'Custom message to show to user.'
  * }
  * ```
+ * @esmNamed
  */
 export const collectStatistics = function (
   req: CollectionRequest,

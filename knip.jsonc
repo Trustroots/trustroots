@@ -5,11 +5,21 @@
 // playwright.windows-wheel.config.cjs (named in a workflow), which throws
 // without it.
 //
-// Knip doesn't follow member access on a whole `require()` result
-// (`const utils = require('./x.mts'); utils.foo()`), the usual style of the
-// .cts server tests, so many unused exports it lists are used there.
+// Knip can't see two kinds of export use, so they carry a JSDoc tag that
+// excludes them from the report:
+//
+// - @commonjs: CommonJS code reads it. `require()` of an ES module returns
+//   its 'module.exports' export when there is one, and Knip doesn't follow
+//   member access on a whole `require()` result
+//   (`const utils = require('./x.mts'); utils.foo()`), the usual style of
+//   the .cts server tests.
+// - @esmNamed: a named export that mirrors a member of the module's default
+//   object. The runtime-platform spec keeps these for ES module consumers
+//   and the esm-*.server.tests.cts files check them, but nothing imports
+//   them by name yet.
 {
   "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "tags": ["-commonjs", "-esmNamed"],
   "workspaces": {
     ".": {
       "entry": [

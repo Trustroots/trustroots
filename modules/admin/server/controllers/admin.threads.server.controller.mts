@@ -45,6 +45,7 @@ const Thread = mongoose.model<ThreadRecord>('Thread');
 /*
  * This middleware sends response with an array of found users
  */
+/** @esmNamed */
 export const getThreads = async (
   req: ThreadRequest,
   res: HttpResponse,
@@ -172,4 +173,5 @@ const defaultInterop = {
   getThreads,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

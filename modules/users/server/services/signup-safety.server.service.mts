@@ -1,3 +1,4 @@
+/** @esmNamed */
 export const KEYWORDS = ['support', 'system', 'trustroots'];
 interface SignupProfileText {
   firstName?: unknown;
@@ -6,6 +7,7 @@ interface SignupProfileText {
   username?: unknown;
 }
 
+/** @esmNamed */
 export function matchSignupProfile<T extends SignupProfileText>(
   profile: T,
 ): string[] {

@@ -674,14 +674,24 @@ service.resendConfirmation = function (req, res) {
 };
 
 const defaultExport = service;
+/** @esmNamed */
 export const signup = service.signup;
+/** @esmNamed */
 export const signupValidation = service.signupValidation;
+/** @esmNamed */
 export const signin = service.signin;
+/** @esmNamed */
 export const signout = service.signout;
+/** @esmNamed */
 export const removeOAuthProvider = service.removeOAuthProvider;
+/** @esmNamed */
 export const validateEmailToken = service.validateEmailToken;
+/** @esmNamed */
 export const confirmEmail = service.confirmEmail;
+/** @esmNamed */
 export const resendConfirmation = service.resendConfirmation;
+/** @esmNamed */
 export const session = service.session;
 export default defaultExport;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

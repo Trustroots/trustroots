@@ -187,6 +187,7 @@ function storyForList(
   };
 }
 
+/** @esmNamed */
 export const list = async (
   _req: unknown,
   res: SendResponse,
@@ -290,4 +291,5 @@ export const list = async (
 
 const defaultInterop = { list };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

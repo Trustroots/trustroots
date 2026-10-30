@@ -379,5 +379,6 @@ function isDuplicateKeyError(error: unknown): boolean {
 }
 
 const service = { readAccess, readMine, submit };
+/** @esmNamed */
 export { readAccess, readMine, submit };
 export default service;

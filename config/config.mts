@@ -148,4 +148,5 @@ const initGlobalConfig = function (): Config {
  */
 const service: Config = initGlobalConfig();
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

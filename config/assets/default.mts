@@ -31,4 +31,5 @@ const service = {
   },
 } satisfies AssetConfig;
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

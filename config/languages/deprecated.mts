@@ -41,4 +41,5 @@ const service = new Set([
   'iso_639_3-lfn', // Lingua Franca Nova
 ]);
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

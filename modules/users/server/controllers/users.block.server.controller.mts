@@ -148,7 +148,11 @@ service.unblockUser = async function (req, res) {
 };
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export const blockUser = defaultExport.blockUser;
+/** @esmNamed */
 export const getBlockedUsers = defaultExport.getBlockedUsers;
+/** @esmNamed */
 export const unblockUser = defaultExport.unblockUser;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

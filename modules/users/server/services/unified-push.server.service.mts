@@ -168,6 +168,7 @@ service = {
   notifyUnread,
 };
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };
 
 const nativeExportpushConfiguration = service.pushConfiguration;
@@ -183,4 +184,5 @@ const nativeExportunregister = service.unregister;
 export { nativeExportunregister as unregister };
 
 const nativeExportnotifyUnread = service.notifyUnread;
+/** @esmNamed */
 export { nativeExportnotifyUnread as notifyUnread };

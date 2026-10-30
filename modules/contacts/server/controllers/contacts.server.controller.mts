@@ -544,6 +544,7 @@ const get = service.get;
 const list = service.list;
 const remove = service.remove;
 const removeAllByUserId = service.removeAllByUserId;
+/** @esmNamed */
 export {
   add,
   confirm,

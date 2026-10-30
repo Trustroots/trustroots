@@ -94,6 +94,7 @@ function run(_job: unknown, agendaDone: Done): void {
   }
   reactivate().then(() => finish(), finish);
 }
+/** @esmNamed */
 export { run };
 export default run;
 export { run as 'module.exports' };

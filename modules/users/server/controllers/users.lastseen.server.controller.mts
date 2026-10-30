@@ -69,5 +69,7 @@ const defaultExport = function (
 };
 defaultExport.getClientIpAddress = getClientIpAddress;
 export default defaultExport;
+/** @esmNamed */
 export { getClientIpAddress };
+/** @commonjs */
 export { defaultExport as 'module.exports' };

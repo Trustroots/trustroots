@@ -124,7 +124,10 @@ async function saveCachedUserDocuments(
   return savedDocuments;
 }
 
-/** Save an existing unrelated fixture, reusing a real hash for its password. */
+/**
+ * Save an existing unrelated fixture, reusing a real hash for its password.
+ * @commonjs
+ */
 export async function saveUserWithCachedPassword<
   T extends {
     password?: string;
@@ -187,6 +190,7 @@ async function saveUserDocuments(
   return savedDocuments;
 }
 
+/** @commonjs */
 export function saveUsers(
   documents: UserFixtureData[],
   callback: FixtureCallback<UserFixtureDocument[]> = () => {},
@@ -194,7 +198,10 @@ export function saveUsers(
   return saveUserFixtures(documents, callback, false);
 }
 
-/** Generate unrelated user fixtures with repeatable plaintext credentials. */
+/**
+ * Generate unrelated user fixtures with repeatable plaintext credentials.
+ * @commonjs
+ */
 export function generateUsersWithSharedPassword(
   count: number,
   options: GenerateUserOptions = {},
@@ -205,7 +212,10 @@ export function generateUsersWithSharedPassword(
   }));
 }
 
-/** Save unrelated fixtures with cached password hashes for authenticated tests. */
+/**
+ * Save unrelated fixtures with cached password hashes for authenticated tests.
+ * @commonjs
+ */
 export function saveUsersWithCachedPasswords(
   documents: UserFixtureData[],
   callback: FixtureCallback<UserFixtureDocument[]> = () => {},
@@ -258,7 +268,10 @@ export function createTestUser(
   return new User(user);
 }
 
-/** Save experiences to the database, preserving the legacy callback. */
+/**
+ * Save experiences to the database, preserving the legacy callback.
+ * @commonjs
+ */
 export async function saveExperiences(
   documents: ExperienceFixture[],
   callback: FixtureCallback<ExperienceFixtureDocument[]> = () => {},
@@ -277,7 +290,10 @@ export async function saveExperiences(
   }
 }
 
-/** Clear all collections in a database. Usage: afterEach(clearDatabase). */
+/**
+ * Clear all collections in a database. Usage: afterEach(clearDatabase).
+ * @commonjs
+ */
 export async function clearDatabase(): Promise<void> {
   const models = mongoose
     .modelNames()
@@ -297,7 +313,10 @@ export async function signIn(
   await agent.post('/api/auth/signin').send({ username, password }).expect(200);
 }
 
-/** Sign out from the app using a Supertest agent. */
+/**
+ * Sign out from the app using a Supertest agent.
+ * @commonjs
+ */
 export async function signOut(agent: SupertestAgent): Promise<void> {
   await agent
     .post('/api/auth/signout')
@@ -305,4 +324,5 @@ export async function signOut(agent: SupertestAgent): Promise<void> {
     .expect(302);
 }
 
+/** @commonjs */
 export { generateUsers, generateExperiences };

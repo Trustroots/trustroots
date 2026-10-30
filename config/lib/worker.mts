@@ -379,4 +379,5 @@ function secondsFromNowDate(seconds: number) {
   return new Date(new Date().getTime() + seconds * 1000);
 }
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };
