@@ -24,8 +24,12 @@ import {
 } from '@/modules/core/client/components/Map/constants';
 import { CLUSTER_MAX_ZOOM, MIN_ZOOM, SOURCE_OFFERS } from './constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
-import useMapDefaultLocation from '@/modules/core/client/utils/use-map-default-location';
+import useMapDefaultLocation, {
+  type MapDefaultLocation,
+} from '@/modules/core/client/utils/use-map-default-location';
 import MapDefaultAttribution from '@/modules/core/client/components/Map/MapDefaultAttribution';
+import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
+import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
@@ -67,6 +71,7 @@ interface MapLocation {
   lat: number;
   lng: number;
   zoom?: number;
+  clearSelection?: boolean;
 }
 
 interface SearchMapProps {
@@ -84,6 +89,9 @@ interface SearchMapProps {
     notes: NostrEvent[];
     plusCode: string | null;
   }) => void;
+  onDeviceLocationRequest?: () => void;
+  onDeviceLocation?: (location: DeviceLocation) => void;
+  onApproximateLocation?: (location: MapDefaultLocation) => void;
 }
 
 interface MapViewport {
@@ -315,6 +323,9 @@ export default function SearchMap({
   onVisibleOffersChange = ignoreVisibleCallback,
   onVisibleCommunityNoteThreadsChange = ignoreVisibleCallback,
   onCommunityNoteOpen,
+  onDeviceLocationRequest,
+  onDeviceLocation,
+  onApproximateLocation,
 }: SearchMapProps) {
   /**
    * Store map location in browser cache
@@ -384,6 +395,7 @@ export default function SearchMap({
   const [map, setMap] = useState<MapboxMap | undefined>();
   const [hoveredOffer, setHoveredOffer] = useState<MapFeature | false>(false);
   const [selectedOffer, setSelectedOffer] = useState<MapFeature | false>(false);
+  const offerSelectionGeneration = useRef(0);
   const [offers, setOffers] = useState<OfferSearchFeatureCollection>({
     features: [],
     type: 'FeatureCollection',
@@ -854,10 +866,10 @@ export default function SearchMap({
    * Fetch offer data and open it in the search sidebar.
    */
   async function openOfferById(offerId: string | number) {
-    // @TODO: cancellation when opening another offer instead
+    const generation = ++offerSelectionGeneration.current;
     const offer = await getOffer(String(offerId));
 
-    if (offer) {
+    if (offer && generation === offerSelectionGeneration.current) {
       // Delegated to the search shell.
       // The offer endpoint returns the sidebar profile fields at runtime.
       onOfferOpen(offer);
@@ -1093,11 +1105,15 @@ export default function SearchMap({
       typeof location.lng === 'number' &&
       Number.isFinite(location.lng)
     ) {
+      if (location.clearSelection) {
+        offerSelectionGeneration.current += 1;
+        clearPreviouslySelectedState();
+      }
       onViewPortChange({
         ...viewport,
         latitude: location.lat,
         longitude: location.lng,
-        zoom: location?.zoom || DEFAULT_LOCATION.zoom,
+        zoom: location.zoom ?? DEFAULT_LOCATION.zoom,
       });
     }
   }, [location, map]);
@@ -1130,6 +1146,14 @@ export default function SearchMap({
           onOfferClick={openOfferById}
           viewport={viewport}
         />
+        <DeviceLocationButton
+          onApproximateLocation={onApproximateLocation}
+          onLocation={location => onDeviceLocation?.(location)}
+          onRequest={() => {
+            stopDefaultLocation();
+            onDeviceLocationRequest?.();
+          }}
+        />
         {approximateLocation && (
           <div
             style={{
@@ -1161,6 +1185,14 @@ export default function SearchMap({
       onWheelCapture={onInteraction}
       onKeyDownCapture={onInteraction}
     >
+      <DeviceLocationButton
+        onApproximateLocation={onApproximateLocation}
+        onLocation={location => onDeviceLocation?.(location)}
+        onRequest={() => {
+          stopDefaultLocation();
+          onDeviceLocationRequest?.();
+        }}
+      />
       <TypedReactMapGL
         reuseMaps
         dragRotate={false}

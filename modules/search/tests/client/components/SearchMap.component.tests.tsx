@@ -14,8 +14,8 @@ import { OpenLocationCode } from 'open-location-code';
 import type { Event as NostrEvent } from 'nostr-tools';
 import { MAP_STYLE_OSM } from '@/modules/core/client/components/Map/constants';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
-import SearchMap from '@/modules/search/client/components/SearchMap.component';
 import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
+import SearchMap from '@/modules/search/client/components/SearchMap.component';
 import type {
   getOffer,
   queryOffers,
@@ -37,6 +37,43 @@ jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
     mockDefaultLocation(enabled);
     return [enabled ? mockApproximateLocation : null, mockStopDefaultLocation];
   },
+}));
+jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
+  __esModule: true,
+  default: ({
+    onRequest,
+    onLocation,
+    onApproximateLocation,
+  }: {
+    onRequest?: () => void;
+    onLocation: (location: { lat: number; lng: number }) => void;
+    onApproximateLocation?: (location: MapDefaultLocation) => void;
+  }) => (
+    <div>
+      <button
+        onClick={() => {
+          onRequest?.();
+          onLocation({ lat: 0, lng: 0 });
+        }}
+        type="button"
+      >
+        Mock precise location
+      </button>
+      <button
+        onClick={() => {
+          onRequest?.();
+          onApproximateLocation?.({
+            latitude: 12,
+            longitude: 23,
+            zoom: 5,
+          });
+        }}
+        type="button"
+      >
+        Mock approximate location
+      </button>
+    </div>
+  ),
 }));
 
 function readOffer(
@@ -456,6 +493,9 @@ async function flushCommunityNotesViewport(viewport: Record<string, number>) {
 }
 
 beforeEach(() => {
+  mockStopDefaultLocation.mockClear();
+  mockDefaultLocation.mockClear();
+  mockSetPersistentMapLocation.mockClear();
   mockApproximateLocation = null;
   mockHasSavedLocation = true;
   mockGetMapBoxToken.mockReturnValue('test-token');
@@ -533,6 +573,40 @@ describe('Search', () => {
     expect(mockDefaultLocation).toHaveBeenCalledWith(false);
     expect(mockMapProps.latitude).toBe(mockPersistentMapLocation.latitude);
   });
+
+  it.each([true, false])(
+    'stops GeoIP and forwards precise and approximate device locations with WebGL %s',
+    webgl => {
+      mockHasSavedLocation = false;
+      mockIsWebGLSupported.mockReturnValue(webgl);
+      const onDeviceLocationRequest = jest.fn();
+      const onDeviceLocation = jest.fn();
+      const onApproximateLocation = jest.fn();
+      renderSearchMap({
+        onDeviceLocationRequest,
+        onDeviceLocation,
+        onApproximateLocation,
+      });
+      mockStopDefaultLocation.mockClear();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Mock precise location' }),
+      );
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Mock approximate location' }),
+      );
+
+      expect(mockDefaultLocation).toHaveBeenCalledWith(true);
+      expect(mockStopDefaultLocation).toHaveBeenCalled();
+      expect(onDeviceLocationRequest).toHaveBeenCalledTimes(2);
+      expect(onDeviceLocation).toHaveBeenCalledWith({ lat: 0, lng: 0 });
+      expect(onApproximateLocation).toHaveBeenCalledWith({
+        latitude: 12,
+        longitude: 23,
+        zoom: 5,
+      });
+    },
+  );
 
   it('does not reapply GeoIP after a member clears a later explicit destination', () => {
     mockHasSavedLocation = false;
@@ -1209,6 +1283,45 @@ describe('Search', () => {
       },
     );
     await waitFor(() => expect(onOfferOpen).toHaveBeenCalledWith(offer));
+  });
+
+  it('clears the selected pin and ignores its pending details after device navigation', async () => {
+    let resolveOffer!: (offer: Awaited<ReturnType<MockGetOffer>>) => void;
+    mockGetOffer.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveOffer = resolve;
+      }),
+    );
+    const props = {
+      filters: '{}',
+      isUserPublic: true,
+      onCommunityNoteOpen: jest.fn(),
+      onOfferClose: jest.fn(),
+      onOfferOpen: jest.fn(),
+    };
+    const { rerender } = renderSearchMap(props);
+    clickOfferPin('offer-1');
+
+    rerender(
+      <SearchMap
+        {...props}
+        location={{ lat: 0, lng: 0, zoom: 13, clearSelection: true }}
+      />,
+    );
+
+    expect(mockMap.setFeatureState).toHaveBeenCalledWith(
+      { id: 'offer-1', source: 'offers' },
+      { existing: true, selected: false },
+    );
+    await act(async () => resolveOffer(readOffer()));
+    expect(props.onOfferOpen).not.toHaveBeenCalled();
+
+    const nextOffer = readOffer();
+    mockGetOffer.mockResolvedValueOnce(nextOffer);
+    clickOfferPin('offer-2');
+    await waitFor(() =>
+      expect(props.onOfferOpen).toHaveBeenCalledWith(nextOffer),
+    );
   });
 
   it('ignores unclustered offer clicks that do not include an offer id', () => {

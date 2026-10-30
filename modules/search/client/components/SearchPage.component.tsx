@@ -10,6 +10,7 @@ import {
   getCurrentRouteParams,
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
+import type { MapDefaultLocation } from '@/modules/core/client/utils/use-map-default-location';
 import { getOffer } from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import { get as getCircle } from '@/modules/tribes/client/api/tribes.api';
@@ -38,6 +39,7 @@ interface SearchMapLocation {
   lat: number;
   lng: number;
   zoom?: number;
+  clearSelection?: boolean;
 }
 
 interface SearchMapBounds {
@@ -84,6 +86,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
   const [bounds, setBounds] = useState<Partial<SearchMapBounds>>({});
   const [location, setLocation] = useState<Partial<SearchMapLocation>>({});
+  const placeSearchGenerationRef = useRef(0);
+  const locationNavigationGenerationRef = useRef(0);
   const [offer, setOffer] = useState<SearchResultOffer | null>(null);
   const locallyPreviewedOfferIdRef = React.useRef<string | null>(null);
   const [communityNoteThreads, setCommunityNoteThreads] = useState<
@@ -116,6 +120,10 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     initialFilters.seen?.months === 6,
   );
 
+  const requestDeviceLocation = useCallback(() => {
+    placeSearchGenerationRef.current += 1;
+  }, []);
+
   const clearSelection = useCallback(
     ({ clearOfferParam = true }: { clearOfferParam?: boolean } = {}) => {
       locallyPreviewedOfferIdRef.current = null;
@@ -127,6 +135,28 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       }
     },
     [],
+  );
+
+  const handleDeviceLocation = useCallback(
+    ({ lat, lng, zoom = 13 }: { lat: number; lng: number; zoom?: number }) => {
+      locationNavigationGenerationRef.current += 1;
+      clearSelection();
+      setBounds({});
+      setLocation({ lat, lng, zoom, clearSelection: true });
+      setSearchQuery('');
+      setIsPlaceSearchVisible(false);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('location');
+      window.history.replaceState({}, '', url);
+    },
+    [clearSelection],
+  );
+
+  const handleApproximateLocation = useCallback(
+    ({ latitude, longitude, zoom }: MapDefaultLocation) => {
+      handleDeviceLocation({ lat: latitude, lng: longitude, zoom });
+    },
+    [handleDeviceLocation],
   );
 
   const updateFilters = useCallback(
@@ -309,6 +339,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   );
 
   useEffect(() => {
+    const requestGeneration = placeSearchGenerationRef.current;
     let isMounted = true;
 
     async function initialiseFromUrl() {
@@ -327,7 +358,11 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       if (searchQuery) {
         const suggestions = await fetchLocationSuggestions(searchQuery);
 
-        if (isMounted && suggestions.length) {
+        if (
+          isMounted &&
+          requestGeneration === placeSearchGenerationRef.current &&
+          suggestions.length
+        ) {
           const located = locatePlace(suggestions[0]);
 
           if (located) {
@@ -355,6 +390,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       return;
     }
     let isMounted = true;
+    const locationNavigationGeneration =
+      locationNavigationGenerationRef.current;
     clearSelection({ clearOfferParam: false });
 
     async function loadOfferFromUrl() {
@@ -365,12 +402,20 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         try {
           const loadedOffer = await getOffer(routeParams.offer);
 
-          if (isMounted) {
+          if (
+            isMounted &&
+            locationNavigationGeneration ===
+              locationNavigationGenerationRef.current
+          ) {
             // Search results include the profile fields used by the sidebar.
             previewOffer(loadedOffer as unknown as SearchResultOffer, true);
           }
         } catch {
-          if (isMounted) {
+          if (
+            isMounted &&
+            locationNavigationGeneration ===
+              locationNavigationGenerationRef.current
+          ) {
             clearSelection({ clearOfferParam: false });
             trackEvent('offer-not-found', {
               category: 'search.map',
@@ -536,7 +581,10 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
           isUserPublic={isUserPublic}
           location={location}
           locationBounds={bounds}
+          onApproximateLocation={handleApproximateLocation}
           onCommunityNoteOpen={previewCommunityNote}
+          onDeviceLocation={handleDeviceLocation}
+          onDeviceLocationRequest={requestDeviceLocation}
           onOfferClose={closeOffer}
           onOfferOpen={previewOffer}
           onVisibleCommunityNoteThreadsChange={setCommunityNoteThreads}
