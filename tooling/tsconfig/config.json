@@ -2,6 +2,7 @@
   "extends": "./server.json",
   "include": [
     "../../*.cts",
+    "../../tooling/babel/*.cts",
     "../../vite.config.mts",
     "../../vitest.server.config.mts",
     "../../config/**/*.cts",

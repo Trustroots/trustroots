@@ -37,7 +37,7 @@
     "ensure-config-exists": "node ./bin/ensure-config-exists.mts",
     "ensure-uploads-dir-exists": "node ./bin/ensure-uploads-dir-exists.mts",
     "generate-circle-images": "node ./bin/generate-circle-images.mts",
-    "i18n:extract": "babel --config-file ./babel.config.i18n.cjs -o /dev/null 'modules/**/*.{js,ts,tsx}' 'layers/shell/**/*.{js,ts,tsx}'",
+    "i18n:extract": "babel --config-file ./tooling/babel/i18n.config.cjs -o /dev/null 'modules/**/*.{js,ts,tsx}' 'layers/shell/**/*.{js,ts,tsx}'",
     "i18n:fix-weblate": "node ./bin/fix-weblate.mts public/locales/en/*.json",
     "i18n:check-placeholders": "node ./bin/check-i18n-placeholders.mts",
     "i18n": "pnpm run i18n:extract && pnpm run i18n:fix-weblate",
