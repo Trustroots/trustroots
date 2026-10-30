@@ -42,6 +42,36 @@ if (globalThis.HTMLCanvasElement) {
   Reflect.set(canvasElement.prototype, 'toDataURL', toDataURL);
 }
 
+if (typeof window !== 'undefined' && !window.matchMedia) {
+  // jsdom has no matchMedia; evaluate width/height queries against the
+  // innerWidth/innerHeight tests set, and treat other features as unmatched.
+  function evaluate(query: string): boolean {
+    return query.split(/\s+and\s+/).every(feature => {
+      const match = /^\((min|max)-(width|height):\s*(\d+)px\)$/.exec(
+        feature.trim(),
+      );
+      if (!match) return false;
+      const [, bound, dimension, limit] = match;
+      const size =
+        dimension === 'width' ? window.innerWidth : window.innerHeight;
+      return bound === 'min' ? size >= Number(limit) : size <= Number(limit);
+    });
+  }
+
+  Reflect.set(window, 'matchMedia', (media: string) => ({
+    get matches() {
+      return evaluate(media);
+    },
+    media,
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => false,
+  }));
+}
+
 if (typeof window !== 'undefined') {
   const leafletModuleName: string = 'leaflet';
   const leaflet: unknown = require(leafletModuleName);

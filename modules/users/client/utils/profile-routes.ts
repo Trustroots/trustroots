@@ -1,3 +1,5 @@
+import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
+
 const PROFILE_VIEW_TAB_STATE_NAMES = {
   about: 'profile.about',
   accommodation: 'profile.accommodation',
@@ -94,11 +96,6 @@ export function getProfileEditTabPath(tab: ProfileEditTab): string {
   return PROFILE_EDIT_TAB_PATHS[tab] || PROFILE_EDIT_TAB_PATHS.about;
 }
 
-export function isMobileProfileViewport() {
-  // Match the visible-xs profile navigation and hidden-xs desktop content.
-  return window.innerWidth < 768;
-}
-
 export function getMobileProfileRedirect(
   pathname: string,
   username: string,
@@ -106,7 +103,8 @@ export function getMobileProfileRedirect(
   const tab = getProfileViewTab(pathname, username);
   const prefix = `/profile/${encodeURIComponent(username)}`;
 
-  if (isMobileProfileViewport()) {
+  // Match the visible-xs profile navigation and hidden-xs desktop content.
+  if (matchesMediaQuery('(max-width: 767px)')) {
     if (pathname === prefix || pathname === `${prefix}/`) {
       return `${prefix}/overview`;
     }
