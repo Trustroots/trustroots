@@ -48,6 +48,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
       - name: Build production image
+        id: build-production
         uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
@@ -71,7 +72,14 @@ jobs:
           name: production-dependencies
           path: coverage/production/dependencies.json
           if-no-files-found: error
-      - name: Check production startup
+      - name: Check production startup on MongoDB 4.4
+        env:
+          TRUSTROOTS_CI_MONGO_VERSION: '4.4'
+        run: bash scripts/ci/check-production-startup.sh trustroots:pr
+      - name: Check production startup on MongoDB 7.0
+        if: ${{ !cancelled() && steps.build-production.outcome == 'success' }}
+        env:
+          TRUSTROOTS_CI_MONGO_VERSION: '7.0'
         run: bash scripts/ci/check-production-startup.sh trustroots:pr
 
   publish-production-image:
@@ -236,7 +244,16 @@ jobs:
           path: coverage/client
           if-no-files-found: ignore
 
-  server:
+  server-tests:
+    name: Server (MongoDB ${{ matrix.mongodb }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mongodb: '4.4'
+            shell: mongo
+          - mongodb: '7.0'
+            shell: mongosh
     needs: changes
     if: >
       github.event_name != 'workflow_run' &&
@@ -257,12 +274,12 @@ jobs:
       SERVER_TEST_TIMINGS_DIR: coverage/server-timings
     services:
       mongodb:
-        image: mongo:4.4
+        image: mongo:${{ matrix.mongodb }}
         ports:
           - 27017:27017
         options: >-
           --tmpfs /data/db
-          --health-cmd "mongo --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
+          --health-cmd "${{ matrix.shell }} --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 12
@@ -282,8 +299,8 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: coverage/server-timings
-          key: ${{ runner.os }}-server-timings-v1-${{ github.run_id }}-${{ github.run_attempt }}
-          restore-keys: ${{ runner.os }}-server-timings-v1-
+          key: ${{ runner.os }}-server-timings-mongo-${{ matrix.mongodb }}-v1-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ runner.os }}-server-timings-mongo-${{ matrix.mongodb }}-v1-
       # Record access route tests are included in the full server suite below.
       - name: Test server with coverage
         run: |
@@ -294,7 +311,7 @@ jobs:
           pnpm run test:coverage:server:parallel
           exit_code="$?"
           if [ "$exit_code" -eq 0 ]; then
-            pnpm run coverage:check --scope=server
+            pnpm run coverage:check --scope=server --require-full
             exit_code="$?"
           fi
           set -e
@@ -307,7 +324,7 @@ jobs:
             message="Server coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="pnpm run test:coverage:server:parallel && pnpm run coverage:check --scope=server" \
+          COMMAND="pnpm run test:coverage:server:parallel && pnpm run coverage:check --scope=server --require-full" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
@@ -325,9 +342,23 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-server
+          name: ${{ matrix.mongodb == '4.4' && 'coverage-server' || 'coverage-server-mongo-7.0' }}
           path: coverage/server
           if-no-files-found: ignore
+
+  # Stable required check: both database versions must pass.
+  server:
+    needs: [changes, server-tests]
+    if: >
+      always() && github.event_name != 'workflow_run' &&
+      needs.changes.outputs.run-code != 'false' &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_server)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require both MongoDB server suites
+        env:
+          RESULT: ${{ needs.server-tests.result }}
+        run: test "$RESULT" = success
 
   build-e2e-assets:
     needs: changes
@@ -360,6 +391,9 @@ jobs:
           if-no-files-found: error
 
   e2e-groups:
+    name: E2E ${{ matrix.group }} (MongoDB ${{ matrix.mongodb }})
+    env:
+      TRUSTROOTS_CI_MONGO_VERSION: ${{ matrix.mongodb }}
     needs: [changes, build-dev-image, build-e2e-assets]
     if: >
       github.event_name != 'workflow_run' &&
@@ -375,6 +409,7 @@ jobs:
       fail-fast: false
       matrix:
         group: [account-public, community, admin-search]
+        mongodb: ['4.4', '7.0']
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -444,25 +479,30 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report-${{ matrix.group }}
+          name: playwright-report-${{ matrix.group }}-mongo-${{ matrix.mongodb }}
           path: playwright-report
           if-no-files-found: ignore
       - name: Upload e2e coverage status
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-e2e-${{ matrix.group }}
+          name: coverage-e2e-${{ matrix.group }}-mongo-${{ matrix.mongodb }}
           path: coverage/e2e
           if-no-files-found: ignore
       - name: Upload Playwright test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-test-results-${{ matrix.group }}
+          name: playwright-test-results-${{ matrix.group }}-mongo-${{ matrix.mongodb }}
           path: test-results
           if-no-files-found: ignore
 
-  e2e:
+  e2e-results:
+    name: E2E coverage (MongoDB ${{ matrix.mongodb }})
+    strategy:
+      fail-fast: false
+      matrix:
+        mongodb: ['4.4', '7.0']
     needs: [changes, build-e2e-assets, e2e-groups]
     if: >
       github.event_name != 'workflow_run' &&
@@ -476,14 +516,22 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          pattern: coverage-e2e-*
+          pattern: coverage-e2e-*-mongo-${{ matrix.mongodb }}
           path: coverage/e2e/groups
       - name: Download group HTML reports
         continue-on-error: true
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
-          pattern: playwright-report-*
+          pattern: playwright-report-*-mongo-${{ matrix.mongodb }}
           path: playwright-report
+      - name: Normalise group report directories
+        env:
+          MONGO_VERSION: ${{ matrix.mongodb }}
+        run: |
+          for directory in coverage/e2e/groups/*-mongo-"$MONGO_VERSION" playwright-report/*-mongo-"$MONGO_VERSION"; do
+            [ -d "$directory" ] || continue
+            mv "$directory" "${directory%-mongo-$MONGO_VERSION}"
+          done
       - name: Enforce complete combined e2e coverage
         env:
           TRUSTROOTS_E2E_GROUP_JOB_RESULT: ${{ needs.e2e-groups.result }}
@@ -492,16 +540,35 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: coverage-e2e
+          name: ${{ matrix.mongodb == '4.4' && 'coverage-e2e' || 'coverage-e2e-mongo-7.0' }}
           path: coverage/e2e
           if-no-files-found: error
       - name: Upload combined report index
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: playwright-report
+          name: ${{ matrix.mongodb == '4.4' && 'playwright-report' || 'playwright-report-mongo-7.0' }}
           path: playwright-report
           if-no-files-found: error
+
+  # Stable required check: every group and each version's coverage must pass.
+  e2e:
+    needs: [changes, build-e2e-assets, e2e-groups, e2e-results]
+    if: >
+      always() && github.event_name != 'workflow_run' &&
+      needs.changes.outputs.run-code != 'false' &&
+      (github.event_name != 'workflow_dispatch' || inputs.run_e2e)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require both MongoDB end-to-end suites
+        env:
+          BUILD_RESULT: ${{ needs.build-e2e-assets.result }}
+          GROUP_RESULT: ${{ needs.e2e-groups.result }}
+          COVERAGE_RESULT: ${{ needs.e2e-results.result }}
+        run: |
+          test "$BUILD_RESULT" = success
+          test "$GROUP_RESULT" = success
+          test "$COVERAGE_RESULT" = success
 
   coverage-summary:
     if: always() && !cancelled() && github.event_name == 'pull_request'

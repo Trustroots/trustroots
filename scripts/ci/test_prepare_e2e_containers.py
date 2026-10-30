@@ -8,7 +8,7 @@ import unittest
 
 
 class ContainerPreparationTests(unittest.TestCase):
-    def run_preparation(self, image="example.invalid/dev:commit", fail="", fallback=False):
+    def run_preparation(self, image="example.invalid/dev:commit", fail="", fallback=False, version="4.4"):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             docker = root / "docker"
@@ -34,6 +34,7 @@ fi
                 ["bash", str(Path(__file__).with_name("prepare-e2e-containers.sh"))],
                 env={**os.environ, "PATH": f"{root}:{os.environ['PATH']}",
                      "STATE": directory, "TRUSTROOTS_CI_DEV_IMAGE": image,
+                     "TRUSTROOTS_CI_MONGO_VERSION": version,
                      "EXPECT_DEV": image, "FAIL": fail,
                      "FALLBACK": str(fallback).lower()},
                 capture_output=True, text=True, timeout=10,
@@ -65,6 +66,21 @@ fi
         self.assertTrue(finished)
         self.assertIn("pull mongo:4.4", commands)
         self.assertIn("tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4", commands)
+
+    def test_mongo7_registry_fallback_keeps_the_selected_version(self):
+        code, commands, finished = self.run_preparation(fallback=True, version="7.0")
+        self.assertEqual(code, 0)
+        self.assertTrue(finished)
+        self.assertIn("pull mongo:7.0", commands)
+        self.assertIn("tag mongo:7.0 public.ecr.aws/docker/library/mongo:7.0", commands)
+        self.assertNotIn("mongo:4.4", commands)
+
+    def test_failed_mongo7_fallback_does_not_start_mongo(self):
+        code, commands, finished = self.run_preparation(
+            fail="pull mongo:7.0", fallback=True, version="7.0")
+        self.assertEqual(code, 17)
+        self.assertFalse(finished)
+        self.assertNotIn("up -d", commands)
 
     def test_failed_registry_fallback_does_not_start_mongo(self):
         code, commands, finished = self.run_preparation(fail="pull mongo:4.4", fallback=True)

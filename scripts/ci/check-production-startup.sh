@@ -3,6 +3,12 @@ set -euo pipefail
 
 image="${1:?Usage: check-production-startup.sh IMAGE}"
 prefix="trustroots-startup-${GITHUB_RUN_ID:-$$}-${GITHUB_RUN_ATTEMPT:-1}"
+version="${TRUSTROOTS_CI_MONGO_VERSION:-4.4}"
+mongo_image="public.ecr.aws/docker/library/mongo:$version"
+mongo_shell=mongosh
+if [ "$version" = 4.4 ]; then
+  mongo_shell=mongo
+fi
 network="$prefix"
 mongo="$prefix-mongo"
 web="$prefix-web"
@@ -22,17 +28,17 @@ cleanup() {
 trap cleanup EXIT
 
 # Empty, disposable database; no production configuration or external services.
-if ! docker image inspect public.ecr.aws/docker/library/mongo:4.4 >/dev/null 2>&1 \
-  && ! docker pull public.ecr.aws/docker/library/mongo:4.4; then
-  docker pull mongo:4.4
-  docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
+if ! docker image inspect "$mongo_image" >/dev/null 2>&1 \
+  && ! docker pull "$mongo_image"; then
+  docker pull "mongo:$version"
+  docker tag "mongo:$version" "$mongo_image"
 fi
 docker network create --internal "$network" >/dev/null
 docker run -d --name "$mongo" --network "$network" --network-alias mongodb \
-  public.ecr.aws/docker/library/mongo:4.4 --bind_ip_all --wiredTigerCacheSizeGB 0.25 >/dev/null
+  "$mongo_image" --bind_ip_all --wiredTigerCacheSizeGB 0.25 >/dev/null
 ready=false
 for attempt in {1..60}; do
-  if docker exec "$mongo" mongo --quiet --eval 'quit(db.adminCommand({ping: 1}).ok ? 0 : 1)' >/dev/null 2>&1; then
+  if docker exec "$mongo" "$mongo_shell" --quiet --eval 'quit(db.adminCommand({ping: 1}).ok ? 0 : 1)' >/dev/null 2>&1; then
     ready=true
     break
   fi
