@@ -276,7 +276,7 @@ test.describe('authenticated member flows', () => {
       .getByRole('alert')
       .filter({ hasText: 'Snap! Something went wrong.' });
     await expect(warning).toBeVisible();
-    await expect(warning).toHaveClass(/tr-alert/);
+    await expect(warning).toHaveClass(/tw:bg-warning-bg/);
     await expect(warning).toHaveCSS('background-color', 'rgb(255, 243, 205)');
     const comparison = await warning.evaluate(element => {
       const legacy = document.createElement('div');

@@ -1,14 +1,14 @@
-/* Keep Bootstrap's reset and namespace utilities during the migration. */
-@layer theme, utilities;
+/*
+ * Keep Bootstrap's reset and namespace utilities during the migration.
+ * Utilities are unlayered and load after Bootstrap and main.less: layered
+ * utilities would lose to every unlayered element rule, such as Bootstrap's
+ * `button { border-radius: 0 }`. Unlayered, a utility class beats element
+ * selectors by specificity and wins ties with Bootstrap classes by order.
+ */
+@layer theme;
 @import 'tailwindcss/theme.css' layer(theme) prefix(tw);
-@import 'tailwindcss/utilities.css' layer(utilities) prefix(tw) source(none);
+@import 'tailwindcss/utilities.css' prefix(tw) source(none);
+@import '@trustroots/ui/globals.css';
 
 @source '../../../modules';
 @source '../../../layers/shell';
-@source '../../../packages';
-
-@theme inline {
-  --color-brand-primary: var(--tr-brand-primary);
-  --color-brand-secondary: var(--tr-brand-secondary);
-  --color-notification: var(--tr-notification-badge-bg);
-}
