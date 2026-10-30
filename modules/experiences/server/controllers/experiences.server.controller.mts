@@ -356,7 +356,7 @@ async function checkDuplicate(req: ExperienceRequest) {
 }
 
 /**
- * Express response in callback of async.waterfall
+ * Express response for a handled or unexpected error
  * @param {object} resOrErr - if this is a well specified object, it will trigger a response,
  *                                   otherwise 500 error
  * @param {integer} [resOrErr.status] - html status of the response
