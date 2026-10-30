@@ -15,7 +15,7 @@ function asNavigationLocation(location: NavigationLocationMock): Location {
 
 describe('client runtime helpers', () => {
   afterEach(() => {
-    delete window.ga;
+    delete window.user;
     window.history.pushState({}, '', '/');
   });
 
