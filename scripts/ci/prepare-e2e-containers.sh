@@ -12,10 +12,11 @@ prepare_dev() {
 }
 
 prepare_mongodb() {
+  local version="${TRUSTROOTS_CI_MONGO_VERSION:-4.4}"
   # Either public registry can rate-limit shared CI runner addresses.
   if ! docker compose -f docker-compose.yml -f docker-compose.ci.yml pull mongodb; then
-    docker pull mongo:4.4
-    docker tag mongo:4.4 public.ecr.aws/docker/library/mongo:4.4
+    docker pull "mongo:$version"
+    docker tag "mongo:$version" "public.ecr.aws/docker/library/mongo:$version"
   fi
   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d --pull never mongodb
 }
