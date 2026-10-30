@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
 import _ from 'lodash';
-import async from 'async';
 import { parse as parseBasicAuth } from 'basic-auth';
 import speakingurl from 'speakingurl';
 import mongoose from 'mongoose';
@@ -61,22 +60,25 @@ service.receiveBatch = function (req, res) {
     });
   }
 
-  async.each(
-    req.body,
-    (event: SparkpostEvent, callback: EventCallback) => {
-      service.processUnsubscribe(event, error => {
-        if (error) return callback(error);
-        // Metrics are best effort; newsletter consent must be persisted first.
-        service.processAndSendMetrics(event, () => callback());
-      });
-    },
-    (error: Error | null | undefined) => {
-      if (error) {
-        return res.status(503).send({
-          message: 'Could not process SparkPost unsubscribe events.',
-        });
-      }
+  Promise.all(
+    req.body.map(
+      (event: SparkpostEvent) =>
+        new Promise<void>((resolve, reject) => {
+          service.processUnsubscribe(event, error => {
+            if (error) return reject(error);
+            // Metrics are best effort; newsletter consent must be persisted first.
+            service.processAndSendMetrics(event, () => resolve());
+          });
+        }),
+    ),
+  ).then(
+    () => {
       res.status(200).end();
+    },
+    () => {
+      res.status(503).send({
+        message: 'Could not process SparkPost unsubscribe events.',
+      });
     },
   );
 };
