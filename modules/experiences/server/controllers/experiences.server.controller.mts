@@ -2,7 +2,7 @@ import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import _ from 'lodash';
 import util from 'util';
 import config from '../../../../config/config.mts';
-import textService from '../../../core/server/services/text.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mts';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import emailService from '../../../core/server/services/email.server.service.mjs';
 import userProfile from '../../../users/server/controllers/users.profile.server.controller.mjs';
