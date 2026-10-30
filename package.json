@@ -124,7 +124,8 @@
     "nostranslation:typecheck": "tsc --noEmit -p apps/nostranslation/tsconfig.json",
     "test:nostranslation": "jest --config apps/nostranslation/jest.config.cjs --runInBand --no-watchman",
     "test:nostranslation:e2e": "playwright test --config apps/nostranslation/playwright.config.mts",
-    "ensure-radio-circle": "node ./bin/db-maintenance/ensure-radio-circle.mts"
+    "ensure-radio-circle": "node ./bin/db-maintenance/ensure-radio-circle.mts",
+    "knip": "BRAVE_EXECUTABLE_PATH=knip knip"
   },
   "dependencies": {
     "@agendajs/mongo-backend": "4.0.3",
@@ -250,6 +251,7 @@
     "jest": "30.5.2",
     "jest-environment-jsdom": "30.5.2",
     "js-yaml": "5.5.0",
+    "knip": "6.43.0",
     "less": "4.9.1",
     "lint-staged": "17.6.0",
     "nodemon": "3.1.14",

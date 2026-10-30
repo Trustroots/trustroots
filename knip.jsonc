@@ -1,0 +1,111 @@
+// Run with `pnpm knip`. It is a report, not a gate: it stays out of
+// `pnpm check` and CI.
+//
+// The script sets BRAVE_EXECUTABLE_PATH because Knip loads
+// playwright.windows-wheel.config.cjs (named in a workflow), which throws
+// without it.
+//
+// Knip doesn't follow member access on a whole `require()` result
+// (`const utils = require('./x.mts'); utils.foo()`), the usual style of the
+// .cts server tests, so many unused exports it lists are used there.
+{
+  "$schema": "https://unpkg.com/knip@6/schema-jsonc.json",
+  "workspaces": {
+    ".": {
+      "entry": [
+        // server.js and worker.js (PM2, start:prod) only import these. Knip
+        // would map server.mjs back to server.js because they share a
+        // basename, and then never walk the server or worker graph.
+        "server.mjs",
+        "worker.mjs",
+        // Command-line tools run by path from package scripts, shell scripts,
+        // Docker, CI and by hand.
+        "bin/**/*.mts",
+        "scripts/**/*.{js,cts,mts,cjs}",
+        "tooling/guards/*.mts",
+        "config/languages/generate.cts",
+        // build-docs-scripts.mts compiles these into docs/assets/js, which
+        // the GitHub Pages docs load with <script> tags.
+        "docs/src/*.mts",
+        // Copied or mounted over config/env/local.js, which config/config.mts
+        // loads by path.
+        "config/env/local.sample.js",
+        ".devcontainer/local.js",
+        "deploy/files/secrets/*.local.js",
+        // TypeScript uses this sidecar for the types of logger.mjs.
+        "config/lib/logger.d.mts",
+        // Playwright's setup project matches this with a regular expression,
+        // which Knip can't expand.
+        "tests/e2e/setup/auth.setup.mts",
+      ],
+      // Include stylesheets so Knip follows their imports, such as
+      // tailwind.css importing tailwindcss.
+      "project": ["**/*.{js,jsx,ts,tsx,mjs,mts,cjs,cts,css,less}"],
+      "vitest": {
+        // scripts/test-server.cts passes this config to Vitest.
+        "config": ["vitest.server.config.mts"],
+      },
+      "pm2": {
+        // PM2 starts server.js and worker.js from these in production.
+        "config": ["server-pm2.json", "worker-pm2.json"],
+      },
+      "babel": {
+        // i18n:extract passes the second with --config-file.
+        "config": ["babel.config.cts", "babel.config.i18n.cjs"],
+      },
+      "ignoreDependencies": [
+        // eslint.config.cts loads these by name through FlatCompat, which
+        // Knip's ESLint plugin can't read.
+        "@typescript-eslint/eslint-plugin",
+        "@typescript-eslint/parser",
+        "eslint-config-prettier",
+        "eslint-plugin-jest-dom",
+        "eslint-plugin-jsx-a11y",
+        "eslint-plugin-prettier",
+        "eslint-plugin-react",
+        "eslint-plugin-testing-library",
+        // The browserslist field in package.json extends this.
+        "@wordpress/browserslist-config",
+        // Babel's preset-env injects core-js imports (useBuiltIns: usage).
+        "core-js",
+        // vite.config.mts injects process/browser into the client bundle.
+        "process",
+        // scripts/check-affected.mts runs `pnpm exec turbo`.
+        "turbo",
+      ],
+    },
+    // A standalone tool with its own package.json, outside the pnpm
+    // workspace and installed by hand when it is used.
+    "scripts/mass-email": {
+      "entry": ["*.cts"],
+    },
+    "modules/*": {
+      "entry": [
+        // config/assets/default.mts globs these and config/lib loads them by
+        // path at startup.
+        "server/models/**/*.{mjs,mts}",
+        "server/routes/**/*.{mjs,mts}",
+        "server/config/*.{mjs,mts}",
+        "server/policies/*.{mjs,mts}",
+        // The root Jest and Vitest configs run these, but Knip attributes a
+        // plugin's entries to the workspace that holds the config.
+        "tests/client/**/*.tests.{js,jsx,ts,tsx}",
+        "tests/server/**/*.{js,cts,mts}",
+        // Type-level contract checks that only `tsc -p` compiles (see
+        // tsconfig.contracts.json, tsconfig.contract-diagnostics.json and
+        // tsconfig.tests.json).
+        "tests/fixtures/*contract*.mts",
+        "tests/client/**/*contract*.{ts,mts}",
+        // CommonJS adapters that api-payload-native-imports.server.tests.cts
+        // requires by path in a child process.
+        "server/services/*.server.service.cjs",
+      ],
+      "project": ["**/*.{js,jsx,ts,tsx,mjs,mts,cjs,cts}"],
+      // scripts/ci/check-module-packages.mts writes these from
+      // module-graph-baseline.json so Turborepo knows the module graph.
+      // Modules import each other by relative path, not by package name.
+      "ignoreDependencies": ["@trustroots/.*"],
+    },
+    "packages/*": {},
+  },
+}
