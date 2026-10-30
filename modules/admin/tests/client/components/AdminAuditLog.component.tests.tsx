@@ -14,6 +14,10 @@ import type {
   AuditActor,
 } from '@/modules/admin/client/api/audit-log.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/audit-log.api');
 
 const mockedApi = {

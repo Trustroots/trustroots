@@ -1,7 +1,4 @@
-import {
-  broadcastClientEvent,
-  navigate,
-} from '@/modules/core/client/services/client-runtime';
+import { navigate } from '@/modules/core/client/services/client-runtime';
 
 const confirmationTokenPattern = /^.{40}(?:[0-9a-f]{2})+$/i;
 const localReturnToPattern = /^\/(?:$|[^/\\])/;
@@ -20,13 +17,6 @@ interface UsernameValidationInput {
   usernameMaxlength?: number;
   patternMessage?: string;
   usernameMessage?: string;
-}
-
-interface AuthenticatedUser {
-  _id: string;
-  username: string;
-  roles?: string[];
-  [key: string]: unknown;
 }
 
 export function getEmailFromToken(token = ''): string | null {
@@ -78,15 +68,6 @@ export function getUsernameValidationError({
   }
 
   return 'Invalid username.';
-}
-
-export function applyAuthenticatedUser(
-  user: AuthenticatedUser,
-  setUser: (user: AuthenticatedUser) => void,
-): void {
-  setUser(user);
-  window.user = user;
-  broadcastClientEvent('userUpdated');
 }
 
 export function getSafeReturnTo(

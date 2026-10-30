@@ -13,10 +13,7 @@ import { useAuth } from '@/modules/core/client/react-app/auth';
 import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import {
-  applyAuthenticatedUser,
-  getUsernameValidationError,
-} from '@/modules/users/client/utils/auth';
+import { getUsernameValidationError } from '@/modules/users/client/utils/auth';
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import type {
   MembershipUpdate,
@@ -267,7 +264,7 @@ export default function SignupPage() {
 
   function handleMembershipUpdated(data: MembershipUpdate) {
     if (data?.user) {
-      applyAuthenticatedUser(data.user, setUser);
+      setUser(data.user);
     }
   }
 
@@ -305,7 +302,7 @@ export default function SignupPage() {
       }
 
       setStep(2);
-      applyAuthenticatedUser(authenticatedUser, setUser);
+      setUser(authenticatedUser);
     } catch (error: unknown) {
       const message =
         readApiError(error).message ??

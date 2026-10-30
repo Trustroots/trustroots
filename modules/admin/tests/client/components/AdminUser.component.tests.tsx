@@ -15,6 +15,10 @@ import AdminUser, {
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 type AdminUserRecord = Exclude<AdminUser['state']['user'], false>;
 type MemberList = {
   users: AdminUserRecord[];

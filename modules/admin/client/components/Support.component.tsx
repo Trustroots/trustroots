@@ -13,7 +13,7 @@ import {
 } from '../../../support/shared/statuses';
 import * as api from '../api/support.api';
 import { formatAdminDateTime } from '../utils/admin-date';
-import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { useAuth } from '../../../core/client/react-app/auth';
 import type {
   InvestigationItem,
   Page,
@@ -929,9 +929,7 @@ export function SupportMemberPage({ id }: { id: string }) {
   const { data: member, failed } = useResource<SupportMember>(
     `/api/admin/support-members/${encodeURIComponent(id)}`,
   );
-  const canOpenAdminUserPage = (getCurrentUser()?.roles || []).includes(
-    'admin',
-  );
+  const canOpenAdminUserPage = useAuth().hasRole('admin');
   useEffect(() => {
     if (member && id !== member.username) {
       window.history.replaceState(
@@ -991,7 +989,7 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
   const [revision, setRevision] = useState(0);
   const [routeRequestId, setRouteRequestId] = useState(requestId ?? null);
   const selected = routeRequestId ?? location.requestId;
-  const canImport = (getCurrentUser()?.roles || []).includes('admin');
+  const canImport = useAuth().hasRole('admin');
 
   useEffect(() => {
     if (requestId !== undefined) {

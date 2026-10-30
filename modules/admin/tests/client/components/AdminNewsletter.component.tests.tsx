@@ -13,6 +13,10 @@ import * as newsletterApi from '@/modules/admin/client/api/newsletter.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/newsletter.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
 

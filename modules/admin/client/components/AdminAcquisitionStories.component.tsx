@@ -1,4 +1,4 @@
-import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { useAuth } from '../../../core/client/react-app/auth';
 import React, { useMemo, useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -180,9 +180,9 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
 }
 
 export default function AdminAcquisitionStories() {
-  const viewerLanguages = getCurrentUser()?.languages || [];
-  const viewerRoles = getCurrentUser()?.roles || [];
-  const publicProfile = !viewerRoles.includes('admin');
+  const { user, hasRole } = useAuth();
+  const viewerLanguages = user?.languages || [];
+  const publicProfile = !hasRole('admin');
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [unassignedOnly, setUnassignedOnly] = useState(false);

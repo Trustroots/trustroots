@@ -4,6 +4,10 @@ import '@testing-library/jest-dom';
 
 import AdminReferenceVoteItem from '@/modules/admin/client/components/AdminReferenceVoteItem.component';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 describe('<AdminReferenceVoteItem />', () => {
   it('shows badge messages for positive votes with raw user ids', () => {
     const referenceThread: React.ComponentProps<

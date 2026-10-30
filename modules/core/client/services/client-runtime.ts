@@ -147,12 +147,3 @@ export function trackEvent(
 
   return undefined;
 }
-
-type CurrentUser = Pick<
-  NonNullable<Window['user']>,
-  '_id' | 'id' | 'public' | 'roles' | 'username' | 'languages'
->;
-
-export function getCurrentUser(): CurrentUser | null {
-  return window.user || null;
-}

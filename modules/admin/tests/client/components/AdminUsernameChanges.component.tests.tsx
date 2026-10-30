@@ -12,6 +12,10 @@ import '@testing-library/jest-dom';
 import AdminUsernameChanges from '@/modules/admin/client/components/AdminUsernameChanges.component';
 import * as api from '@/modules/admin/client/api/username-changes.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/username-changes.api');
 
 const mockedApi = jest.mocked(api);

@@ -1,14 +1,5 @@
-import { EventEmitter } from 'events';
-
-import {
-  broadcastClientEvent,
-  onClientEvent,
-  getCurrentUser,
-} from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
-import { generateClientUser } from '@/testutils/common/data.common.testutil.mts';
 
-jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/messages/client/api/messages.api');
 
 type UnreadMessageCountService =
@@ -40,8 +31,11 @@ beforeEach(() => {
   });
 });
 
+let stopPolling: (() => void) | undefined;
+
 afterEach(() => {
-  unreadMessageCountService.disable();
+  stopPolling?.();
+  stopPolling = undefined;
   disableVisibilityWatching();
   restoreProperty('hidden', originalHiddenDescriptor);
   jest.restoreAllMocks();
@@ -52,65 +46,59 @@ const api = {
   messages: jest.mocked(messagesAPI),
 };
 
-const emitter = new EventEmitter();
-const mockedOnClientEvent = jest.mocked(onClientEvent);
-const mockedBroadcastClientEvent = jest.mocked(broadcastClientEvent);
-const mockedGetCurrentUser = jest.mocked(getCurrentUser);
-mockedOnClientEvent.mockImplementation((eventName, listener) => {
-  emitter.on(eventName, (...args: unknown[]) => listener(null, ...args));
-  return () => emitter.removeAllListeners(eventName);
-});
-mockedBroadcastClientEvent.mockImplementation((eventName, ...args) =>
-  emitter.emit(eventName, ...args),
-);
-afterEach(() => emitter.removeAllListeners());
-
 describe('Unread Message Count Service', () => {
-  const user = generateClientUser({ public: true });
   let unreadCount: number;
 
   beforeEach(() => {
     unreadCount = 42;
   });
 
-  it('gives value immediately if already logged in', done => {
-    mockedGetCurrentUser.mockReturnValue(user);
+  it('gives value immediately when polling starts', done => {
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     unreadMessageCountService.watch(count => {
       expect(count).toBe(unreadCount);
       done();
     });
-    unreadMessageCountService.enable();
+    stopPolling = unreadMessageCountService.start();
   });
 
-  it('sends value if user logs in later', done => {
-    mockedGetCurrentUser.mockReturnValue(null);
-    unreadMessageCountService.watch(count => {
-      expect(count).toBe(unreadCount);
-      done();
-    });
-    unreadMessageCountService.enable();
-    setTimeout(() => {
-      // Now we log in...
-      api.messages.unreadCount.mockResolvedValue(unreadCount);
-      mockedGetCurrentUser.mockReturnValue(user);
-      mockedBroadcastClientEvent('userUpdated');
-    }, 100);
-  });
+  it('does not poll before polling starts', () => {
+    api.messages.unreadCount.mockResolvedValue(unreadCount);
 
-  it('stops polling when userUpdated fires without a logged-in user', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-    mockedGetCurrentUser.mockReturnValue(null);
-
-    unreadMessageCountService.enable();
-    mockedBroadcastClientEvent('userUpdated');
+    unreadMessageCountService.watch(jest.fn());
 
     expect(api.messages.unreadCount).not.toHaveBeenCalled();
+  });
+
+  it('stops polling when stopped', () => {
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    api.messages.unreadCount.mockResolvedValue(unreadCount);
+    const stop = unreadMessageCountService.start();
+    expect(api.messages.unreadCount).toHaveBeenCalledTimes(1);
+
+    stop();
+
+    expect(clearIntervalSpy).toHaveBeenCalled();
+    defineDocumentProperty('hidden', true);
+    document.dispatchEvent(new Event('visibilitychange'));
+    defineDocumentProperty('hidden', false);
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(api.messages.unreadCount).toHaveBeenCalledTimes(1);
+  });
+
+  it('does nothing when stopped twice', () => {
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    api.messages.unreadCount.mockResolvedValue(unreadCount);
+    const stop = unreadMessageCountService.start();
+    stop();
+    clearIntervalSpy.mockClear();
+
+    stop();
+
     expect(clearIntervalSpy).not.toHaveBeenCalled();
   });
 
   it('does not notify subscribers when unread count is unchanged', async () => {
-    mockedGetCurrentUser.mockReturnValue(user);
     api.messages.unreadCount
       .mockResolvedValueOnce(unreadCount)
       .mockResolvedValueOnce(unreadCount);
@@ -125,75 +113,42 @@ describe('Unread Message Count Service', () => {
     expect(watcher).toHaveBeenCalledWith(unreadCount);
   });
 
-  it('registers visibility and user update hooks only once when enabled repeatedly', () => {
-    mockedGetCurrentUser.mockReturnValue(user);
-
-    unreadMessageCountService.enable();
-    unreadMessageCountService.enable();
-
-    expect(onClientEvent).toHaveBeenCalledTimes(1);
-    expect(emitter.listenerCount('userUpdated')).toBe(1);
-  });
-
-  it('does nothing when disabled before enable', () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-
-    unreadMessageCountService.disable();
-
-    expect(clearIntervalSpy).not.toHaveBeenCalled();
-    expect(emitter.listenerCount('userUpdated')).toBe(0);
-  });
-
   it('sets a background polling interval when document is hidden', () => {
     const setIntervalSpy = jest.spyOn(global, 'setInterval');
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
     disableVisibilityWatching();
     defineDocumentProperty('hidden', true);
     enableVisibilityWatching();
-    mockedGetCurrentUser.mockReturnValue(user);
     api.messages.unreadCount.mockResolvedValue(unreadCount);
 
-    unreadMessageCountService.enable();
+    stopPolling = unreadMessageCountService.start();
 
     expect(api.messages.unreadCount).not.toHaveBeenCalled();
     expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 300000);
     expect(clearIntervalSpy).not.toHaveBeenCalled();
   });
 
-  it('resets polling interval when userUpdated fires while already enabled', async () => {
-    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+  it('polls in the foreground every 30 seconds', () => {
     const setIntervalSpy = jest.spyOn(global, 'setInterval');
-    defineDocumentProperty('hidden', false);
-    mockedGetCurrentUser.mockReturnValue(user);
     api.messages.unreadCount.mockResolvedValue(unreadCount);
 
-    unreadMessageCountService.enable();
-    await Promise.resolve();
+    stopPolling = unreadMessageCountService.start();
 
-    mockedBroadcastClientEvent('userUpdated');
-
-    expect(clearIntervalSpy).toHaveBeenCalled();
     expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 30000);
   });
 
-  it('does nothing when no user is logged in during update', async () => {
-    mockedGetCurrentUser.mockReturnValue(null);
+  it('restarts polling when started again', () => {
+    const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
+    api.messages.unreadCount.mockResolvedValue(unreadCount);
 
-    await unreadMessageCountService.update();
+    unreadMessageCountService.start();
+    stopPolling = unreadMessageCountService.start();
 
-    expect(api.messages.unreadCount).not.toHaveBeenCalled();
-  });
-
-  it('does nothing when logged user is not public during update', async () => {
-    mockedGetCurrentUser.mockReturnValue({ ...user, public: false });
-
-    await unreadMessageCountService.update();
-
-    expect(api.messages.unreadCount).not.toHaveBeenCalled();
+    expect(clearIntervalSpy).toHaveBeenCalledTimes(1);
+    expect(api.messages.unreadCount).toHaveBeenCalledTimes(2);
   });
 
   it('delivers cached unread count to late subscribers', async () => {
-    mockedGetCurrentUser.mockReturnValue(user);
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     await unreadMessageCountService.update();
 

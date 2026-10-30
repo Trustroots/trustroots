@@ -8,6 +8,10 @@ import AdminSearchUsers, {
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/users.api');
 const mockedUsersApi = jest.mocked(usersApi);
 

@@ -5,6 +5,10 @@ import '@testing-library/jest-dom';
 
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 type UserResult = React.ComponentProps<
   typeof AdminUserResultsTable
 >['userResults'][number];

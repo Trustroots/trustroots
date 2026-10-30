@@ -15,6 +15,10 @@ import {
 } from '@/modules/admin/client/api/threads.api';
 import { getUser } from '@/modules/admin/client/api/users.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/threads.api');
 jest.mock('@/modules/admin/client/api/users.api');
 const threads = jest.mocked(getThreads);

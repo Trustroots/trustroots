@@ -6,10 +6,7 @@ import {
 } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import {
-  applyAuthenticatedUser,
-  getEmailFromToken,
-} from '@/modules/users/client/utils/auth';
+import { getEmailFromToken } from '@/modules/users/client/utils/auth';
 
 export default function ConfirmEmailPage() {
   const { user, setUser } = useAuth() as {
@@ -31,7 +28,7 @@ export default function ConfirmEmailPage() {
     try {
       const response = await authApi.confirmEmail(token);
 
-      applyAuthenticatedUser(response.user, setUser);
+      setUser(response.user);
 
       if (response.profileMadePublic) {
         navigate('welcome');
