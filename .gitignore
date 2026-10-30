@@ -64,7 +64,7 @@ eslint_report.json
 public/developers/api
 
 # DB migrations
-migrations/.migrate
+/.migrate
 
 # User uploads
 uploads
