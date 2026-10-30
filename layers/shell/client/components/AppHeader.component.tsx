@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
+import { useLocation } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from 'react-bootstrap';
 
 // Internal dependencies
-import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import NavigationLoggedIn from './NavigationLoggedIn';
 import NavigationLoggedOut from './NavigationLoggedOut';
@@ -14,7 +14,7 @@ type Props = {
 };
 export default function AppHeader({ currentPath: routedPath, user }: Props) {
   const { t } = useTranslation('core');
-  const browserPath = useCurrentPath();
+  const browserPath = useLocation({ select: location => location.pathname });
   const currentPath = routedPath || browserPath;
   const headerRef = useRef<HTMLElement>(null);
 

@@ -6,10 +6,7 @@ import React, {
   useState,
 } from 'react';
 
-import {
-  getCurrentRouteParams,
-  trackEvent,
-} from '@/modules/core/client/services/client-runtime';
+import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
 import { getOffer } from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
@@ -72,7 +69,10 @@ function setOfferQueryParam(offerId?: string) {
 }
 
 export default function SearchPage({ user }: { user?: SearchUser | null }) {
-  const routeParams = getCurrentRouteParams() as SearchRouteParams;
+  // setOfferQueryParam rewrites the URL behind the router's back, so read it directly.
+  const routeParams: SearchRouteParams = Object.fromEntries(
+    new URLSearchParams(window.location.search),
+  );
   const isUserPublic = Boolean(user?.public);
   const initialFilters = useMemo(
     () => getSearchFilters(user?._id),

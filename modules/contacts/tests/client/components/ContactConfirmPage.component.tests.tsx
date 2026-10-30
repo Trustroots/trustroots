@@ -7,12 +7,11 @@ import ContactConfirmPage from '@/modules/contacts/client/components/ContactConf
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
 import type { ContactConfirmation } from '@/modules/contacts/client/types';
 import type { UserProfile } from '@/modules/users/client/types';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/contacts/client/api/contacts.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ contactId: 'contact-1' })),
-}));
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
   return function MockAvatar({
     user,
@@ -24,9 +23,6 @@ jest.mock('@/modules/users/client/components/Avatar.component', () => {
 });
 
 const contactsApiMock = contactsApi as jest.Mocked<typeof contactsApi>;
-const getCurrentRouteParamsMock = getCurrentRouteParams as jest.MockedFunction<
-  typeof getCurrentRouteParams
->;
 
 const user = {
   _id: 'user-1',
@@ -53,7 +49,7 @@ const pendingContact = {
 describe('ContactConfirmPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getCurrentRouteParamsMock.mockReturnValue({ contactId: 'contact-1' });
+    window.history.pushState({}, '', '/contact-confirm/contact-1');
     contactsApiMock.getByContactId.mockResolvedValue(pendingContact);
   });
 
@@ -124,7 +120,7 @@ describe('ContactConfirmPage', () => {
   });
 
   it('shows an error when the contact id is missing from the route', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ contactId: '' });
+    window.history.pushState({}, '', '/contact-confirm/');
 
     render(<ContactConfirmPage user={user} />);
 

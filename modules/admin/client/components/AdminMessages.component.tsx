@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 
 import { getMessages } from '../api/messages.api';
 import { getUser, searchUsers } from '../api/users.api';
@@ -79,15 +80,13 @@ function MessageTimestamp({
 }
 
 export default function AdminMessages() {
-  const [initialParams] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      username1: params.get('username1') || '',
-      username2: params.get('username2') || '',
-      userId1: params.get('userId1') || '',
-      userId2: params.get('userId2') || '',
-    };
-  });
+  const search = useSearch({ strict: false });
+  const [initialParams] = useState(() => ({
+    username1: search.username1 || '',
+    username2: search.username2 || '',
+    userId1: search.userId1 || '',
+    userId2: search.userId2 || '',
+  }));
   const member1Value = initialParams.username1 || initialParams.userId1;
   const member2Value = initialParams.username2 || initialParams.userId2;
   const member1IsUsername = Boolean(initialParams.username1);

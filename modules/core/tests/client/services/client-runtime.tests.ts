@@ -1,6 +1,5 @@
 import {
   broadcastClientEvent,
-  getCurrentRouteParams,
   navigate,
   onClientEvent,
   resolveNavigationTarget,
@@ -28,15 +27,6 @@ describe('client runtime helpers', () => {
 
     expect(listener).toHaveBeenCalledWith(null, { _id: 'user-1' });
     unsubscribe();
-  });
-
-  it('reads route and query parameters from the current location', () => {
-    window.history.pushState({}, '', '/messages/alice?userId=123');
-
-    expect(getCurrentRouteParams()).toEqual({
-      userId: '123',
-      username: 'alice',
-    });
   });
 
   it('resolves named, direct, circle, and message navigation targets', () => {
@@ -108,15 +98,6 @@ describe('client runtime helpers', () => {
     expect(
       resolveNavigationTarget('/support', { one: null, two: undefined }),
     ).toBe('/support');
-  });
-
-  it('returns no route parameters for an unmatched path', () => {
-    expect(
-      getCurrentRouteParams({ pathname: '/not-a-route', search: '' } as Pick<
-        Location,
-        'pathname' | 'search'
-      > as Location),
-    ).toEqual({});
   });
 
   it('broadcasts events without arguments and tracks safely without analytics', () => {

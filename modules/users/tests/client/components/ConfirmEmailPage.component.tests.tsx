@@ -9,13 +9,12 @@ import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import type { AuthenticatedUser } from '@/modules/users/client/api/auth.api';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
-  getCurrentRouteParams: jest.fn(() => ({
-    signup: 'true',
-    token: 'confirm-token',
-  })),
   navigate: jest.fn(),
 }));
 const mockedAuthApi = jest.mocked(authApi);
@@ -50,6 +49,11 @@ function confirmedUser(
 
 describe('ConfirmEmailPage', () => {
   beforeEach(() => {
+    window.history.pushState(
+      {},
+      '',
+      '/confirm-email/confirm-token?signup=true',
+    );
     jest.clearAllMocks();
   });
 
@@ -108,9 +112,7 @@ describe('ConfirmEmailPage', () => {
   });
 
   it('uses the generic confirmation copy for non-signup users', () => {
-    mockedClientRuntime.getCurrentRouteParams.mockReturnValue({
-      token: 'short-token',
-    });
+    window.history.pushState({}, '', '/confirm-email/short-token');
 
     renderPage(null);
 
@@ -118,9 +120,7 @@ describe('ConfirmEmailPage', () => {
   });
 
   it('handles invalid confirmations without a token or signed-in member', async () => {
-    mockedClientRuntime.getCurrentRouteParams.mockReturnValue({
-      signup: 'true',
-    });
+    window.history.pushState({}, '', '/confirm-email/?signup=true');
     mockedAuthApi.confirmEmail.mockRejectedValue(new Error('invalid token'));
 
     renderPage(null);

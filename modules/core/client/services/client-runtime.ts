@@ -1,4 +1,3 @@
-import { matchReactRoute } from '@/modules/core/shared/react-route-ownership.mts';
 import { navigateTo } from './browser-navigation';
 
 const STATE_TARGETS: Record<string, string> = {
@@ -94,18 +93,6 @@ export function navigate(
   navigateTo(path, location);
 
   return undefined;
-}
-
-export function getCurrentRouteParams(location = window.location) {
-  const matched = matchReactRoute(location.pathname);
-  const params = matched?.params ? { ...matched.params } : {};
-  const searchParams = new URLSearchParams(location.search);
-
-  searchParams.forEach((value, key) => {
-    params[key] = value;
-  });
-
-  return params;
 }
 
 export function broadcastClientEvent(

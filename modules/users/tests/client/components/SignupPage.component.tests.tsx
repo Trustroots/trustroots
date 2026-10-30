@@ -14,7 +14,6 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import {
   trackEvent,
-  getCurrentRouteParams,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
@@ -22,6 +21,9 @@ import type JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('lodash/shuffle', () => jest.fn(items => items));
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
@@ -30,11 +32,9 @@ const validateSignup = jest.mocked(authApi.validateSignup);
 const readTribes = jest.mocked(tribesApi.read);
 const getTribe = jest.mocked(tribesApi.get);
 const joinTribe = jest.mocked(tribesApi.join);
-const routeParams = jest.mocked(getCurrentRouteParams);
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
   trackEvent: jest.fn(),
-  getCurrentRouteParams: jest.fn(() => ({})),
   navigate: jest.fn(),
 }));
 jest.mock('@/modules/tribes/client/components/JoinButton', () => {
@@ -82,7 +82,7 @@ describe('SignupPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    routeParams.mockReturnValue({});
+    window.history.pushState({}, '', '/signup');
     readTribes.mockResolvedValue(suggestedTribes);
     // Keep the default missing-circle response persistent so per-test circle
     // results are not preceded by a stale one-time response.
@@ -259,7 +259,7 @@ describe('SignupPage', () => {
   });
 
   it('loads a referred circle from route params', async () => {
-    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    window.history.pushState({}, '', '/signup?tribe=hitchhikers');
     getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
@@ -275,7 +275,7 @@ describe('SignupPage', () => {
   });
 
   it('continues without a missing referred circle', async () => {
-    routeParams.mockReturnValue({ tribe: 'missing-circle' });
+    window.history.pushState({}, '', '/signup?tribe=missing-circle');
     resolveMalformed(getTribe, null);
 
     renderPage();
@@ -316,7 +316,7 @@ describe('SignupPage', () => {
   });
 
   it('joins a referred circle after successful signup', async () => {
-    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    window.history.pushState({}, '', '/signup?tribe=hitchhikers');
     getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
@@ -353,7 +353,7 @@ describe('SignupPage', () => {
   });
 
   it('renders a referred circle when no current user is available', async () => {
-    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    window.history.pushState({}, '', '/signup?tribe=hitchhikers');
     getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
@@ -375,7 +375,7 @@ describe('SignupPage', () => {
   });
 
   it('keeps the signup user when a referred circle join has no user payload', async () => {
-    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    window.history.pushState({}, '', '/signup?tribe=hitchhikers');
     getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',
@@ -743,7 +743,7 @@ describe('SignupPage', () => {
   });
 
   it('shows other suggested circles when signing up via a circle link', async () => {
-    routeParams.mockReturnValue({ tribe: 'hitchhikers' });
+    window.history.pushState({}, '', '/signup?tribe=hitchhikers');
     getTribe.mockResolvedValue({
       _id: 'tribe-ref',
       label: 'Hitchhikers',

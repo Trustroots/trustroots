@@ -1,3 +1,4 @@
+import { useLocation } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Event } from 'nostr-tools';
@@ -28,9 +29,8 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   const mounted = useRef(false);
   const playRequest = useRef(0);
   const localFavouriteActions = useRef(new Map<string, boolean>());
-  const [station, setStation] = useState(() =>
-    stationFromHash(window.location.hash),
-  );
+  const hash = useLocation({ select: location => location.hash });
+  const [station, setStation] = useState(() => stationFromHash(hash));
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState('');
   const [socialError, setSocialError] = useState('');

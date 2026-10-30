@@ -12,6 +12,9 @@ import { setViewer } from '@/testutils/client/auth.testutil';
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
 jest.mock('@/modules/core/client/api/languages.api');

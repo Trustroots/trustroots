@@ -1,10 +1,8 @@
+import { useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
-import {
-  getCurrentRouteParams,
-  trackEvent,
-} from '@/modules/core/client/services/client-runtime';
+import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
@@ -48,7 +46,7 @@ function defaultHostOffer(): HostOffer {
 }
 
 export default function OfferHostPage({ user }: HostPageProps) {
-  const routeParams = getCurrentRouteParams();
+  const routeParams = useSearch({ strict: false });
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
   const [activeTab, setActiveTab] = useState<string>(getTabFromHash);
   const [isLoading, setIsLoading] = useState(true);

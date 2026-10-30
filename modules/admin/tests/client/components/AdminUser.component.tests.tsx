@@ -65,6 +65,9 @@ type ReportCardOverrides = Omit<ReportCardFixture, 'profile'> & {
 
 const mockedUsersApi = jest.mocked(usersApi);
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/admin/client/api/users.api');
 jest.mock('@/modules/users/client/components/ProfilePage.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');

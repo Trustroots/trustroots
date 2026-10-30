@@ -10,6 +10,9 @@ import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 
 type BoardProps = { children?: React.ReactNode };
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/core/client/components/Board', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -19,7 +22,6 @@ jest.mock('@/modules/core/client/components/Board', () => {
   };
 });
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ token: 'reset-token' })),
   navigate: jest.fn(),
 }));
 
@@ -32,6 +34,7 @@ function SignedInUsername() {
 
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
+    window.history.pushState({}, '', '/password/reset/reset-token');
     jest.clearAllMocks();
   });
 
