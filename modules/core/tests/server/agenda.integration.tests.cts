@@ -1,6 +1,7 @@
 import type { Collection, MongoClient as MongoClientInstance } from 'mongodb';
 
 const Agenda: typeof import('agenda').Agenda = require('agenda').Agenda;
+const AgendaJob: typeof import('agenda').Job = require('agenda').Job;
 const MongoBackend: typeof import('@agendajs/mongo-backend').MongoBackend =
   require('@agendajs/mongo-backend').MongoBackend;
 const express: typeof import('express') = require('express');
@@ -34,7 +35,7 @@ interface StoredJob {
   lastModifiedBy?: string;
   nextRunAt?: Date | null;
   lastRunAt?: Date;
-  lastFinishedAt?: Date;
+  lastFinishedAt?: Date | null;
   lockedAt?: Date | null;
   disabled?: boolean;
 }
@@ -166,8 +167,9 @@ describe('Agenda integration tests', function () {
   it('preserves production-shaped recurring job schedules across every()', async function () {
     agenda.define(productionShapedJobName, function () {});
 
-    const lastFinishedAt = new Date(Date.now() - 4 * 60 * 1000);
+    const lastFinishedAt = new Date(Date.now() - 5 * 60 * 1000);
     const lastRunAt = new Date(Date.now() - 4 * 60 * 1000);
+    const lockedAt = new Date(Date.now() - 3 * 60 * 1000);
     const nextRunAt = new Date(Date.now() + 60 * 1000);
 
     // Shape mirrors Trustroots agendaJobs documents for repeating worker jobs
@@ -183,7 +185,7 @@ describe('Agenda integration tests', function () {
       nextRunAt,
       lastRunAt,
       lastFinishedAt,
-      lockedAt: null,
+      lockedAt,
       disabled: false,
     });
 
@@ -204,6 +206,20 @@ describe('Agenda integration tests', function () {
     persistedDate(jobs[0].lastFinishedAt)
       .getTime()
       .should.equal(lastFinishedAt.getTime());
+    const {
+      jobs: [persisted],
+    } = await agenda.queryJobs({ name: productionShapedJobName });
+    await new AgendaJob(agenda, persisted).save();
+    const [savedAgain] = await findJobs(productionShapedJobName);
+    persistedDate(savedAgain.lastRunAt)
+      .getTime()
+      .should.equal(lastRunAt.getTime());
+    persistedDate(savedAgain.lastFinishedAt)
+      .getTime()
+      .should.equal(lastFinishedAt.getTime());
+    persistedDate(savedAgain.lockedAt)
+      .getTime()
+      .should.equal(lockedAt.getTime());
   });
 
   it('preserves a recurring schedule when a new Agenda instance registers it', async function () {
@@ -334,6 +350,7 @@ describe('Agenda integration tests', function () {
         lastModifiedBy: 'stopped-worker',
         lastRunAt: lockedAt,
         nextRunAt: null,
+        lastFinishedAt: null,
       },
       {
         name: `${marker}-finished`,
@@ -344,6 +361,8 @@ describe('Agenda integration tests', function () {
       {
         name: `${marker}-scheduled`,
         nextRunAt: futureRun,
+        lockedAt: null,
+        lastFinishedAt: null,
       },
     ]);
 
@@ -380,7 +399,7 @@ describe('Agenda integration tests', function () {
       persistedDate(finished.nextRunAt)
         .getTime()
         .should.equal(futureRun.getTime());
-      scheduled.should.not.have.property('lockedAt');
+      scheduled.should.have.property('lockedAt', null);
       persistedDate(scheduled.nextRunAt)
         .getTime()
         .should.equal(futureRun.getTime());

@@ -88,7 +88,6 @@ describe('Worker tests', function () {
       scheduledJobs.push({ repeat, name });
       return Promise.resolve();
     });
-
     // Allow for easily maths for nextRunAt calculations
 
     sinon.useFakeTimers();
@@ -290,15 +289,12 @@ describe('Worker tests', function () {
 
   it('unlocks unfinished Agenda jobs through the direct MongoDB connection', function (done) {
     const updateMany = sinon.stub().callsFake(function (
-      filter: {
-        lockedAt: { $exists: boolean };
-        lastFinishedAt: { $exists: boolean };
-      },
+      filter: { lockedAt: { $ne: null }; lastFinishedAt: null },
       update: { $unset: Record<string, string>; $set: { nextRunAt: Date } },
     ) {
       filter.should.deepEqual({
-        lockedAt: { $exists: true },
-        lastFinishedAt: { $exists: false },
+        lockedAt: { $ne: null },
+        lastFinishedAt: null,
       });
       update.$unset.should.deepEqual({
         lockedAt: '',

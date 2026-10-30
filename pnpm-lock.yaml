@@ -23,6 +23,7 @@ overrides:
   body-parser@2: 2.4.0
 
 patchedDependencies:
+  '@agendajs/mongo-backend@4.0.3': 1e584fefc9ae094960748f2e0d04f97b24c0a490c301945b82db548a525c8bd7
   deepmerge@4.3.1: 7feb4247f7328467b3a32e1c17ebeceb64ad3ce365230961d7bbfc4ba46f5c19
 
 importers:
@@ -31,7 +32,7 @@ importers:
     dependencies:
       '@agendajs/mongo-backend':
         specifier: 4.0.3
-        version: 4.0.3(agenda@6.2.6(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
+        version: 4.0.3(patch_hash=1e584fefc9ae094960748f2e0d04f97b24c0a490c301945b82db548a525c8bd7)(agenda@6.2.6(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
       '@tanstack/react-query':
         specifier: 5.104.5
         version: 5.104.5(@types/react@19.3.0)(react@19.3.1)
@@ -6812,7 +6813,7 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@agendajs/mongo-backend@4.0.3(agenda@6.2.6(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)':
+  '@agendajs/mongo-backend@4.0.3(patch_hash=1e584fefc9ae094960748f2e0d04f97b24c0a490c301945b82db548a525c8bd7)(agenda@6.2.6(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)':
     dependencies:
       agenda: 6.2.6(supports-color@5.5.0)
       debug: 4.4.3(supports-color@5.5.0)

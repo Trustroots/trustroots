@@ -255,12 +255,8 @@ function unlockAgendaJobs(callback: Done) {
       return agendaJobs
         .updateMany(
           {
-            lockedAt: {
-              $exists: true,
-            },
-            lastFinishedAt: {
-              $exists: false,
-            },
+            lockedAt: { $ne: null },
+            lastFinishedAt: null,
           },
           {
             $unset: {
