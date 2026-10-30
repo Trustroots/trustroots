@@ -12,10 +12,7 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SignupPage from '@/modules/users/client/components/SignupPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
-import {
-  trackEvent,
-  navigate,
-} from '@/modules/core/client/services/client-runtime';
+import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import type JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
@@ -35,7 +32,6 @@ const joinTribe = jest.mocked(tribesApi.join);
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
   trackEvent: jest.fn(),
-  navigate: jest.fn(),
 }));
 jest.mock('@/modules/tribes/client/components/JoinButton', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -255,7 +251,7 @@ describe('SignupPage', () => {
       user: { _id: 'user-1', username: 'ada', email: 'ada@example.test' },
     });
 
-    expect(navigate).toHaveBeenCalledWith('search.map');
+    expect(window.location.pathname).toBe('/search');
   });
 
   it('loads a referred circle from route params', async () => {
@@ -299,7 +295,7 @@ describe('SignupPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     expect(await screen.findByRole('button', { name: 'Skip' })).toBeVisible();
-    expect(navigate).not.toHaveBeenCalled();
+    expect(window.location.pathname).toBe('/signup');
   });
 
   it('renders circle suggestions when signup leaves the current user unavailable', async () => {

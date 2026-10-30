@@ -5,7 +5,6 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ConfirmEmailPage from '@/modules/users/client/components/ConfirmEmailPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import type { AuthenticatedUser } from '@/modules/users/client/api/auth.api';
 
@@ -15,10 +14,8 @@ jest.mock('@tanstack/react-router', () =>
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
-  navigate: jest.fn(),
 }));
 const mockedAuthApi = jest.mocked(authApi);
-const mockedClientRuntime = jest.mocked(clientRuntime);
 
 function renderPage(user: AuthUser | null) {
   return render(
@@ -80,7 +77,6 @@ describe('ConfirmEmailPage', () => {
   });
 
   it('redirects to welcome when the profile becomes public', async () => {
-    const navigate = mockedClientRuntime.navigate;
     mockedAuthApi.confirmEmail.mockResolvedValue({
       profileMadePublic: true,
       user: confirmedUser({ email: 'ada@example.org', public: true }),
@@ -91,7 +87,7 @@ describe('ConfirmEmailPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Confirm' }));
 
     await screen.findByRole('button', { name: 'Confirm' });
-    expect(navigate).toHaveBeenCalledWith('welcome');
+    expect(window.location.pathname).toBe('/welcome');
   });
 
   it('shows an error state for invalid tokens', async () => {

@@ -3,9 +3,8 @@ import styled from 'styled-components';
 import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useParams, useSearch } from '@tanstack/react-router';
+import { Navigate, useParams, useSearch } from '@tanstack/react-router';
 
-import { navigate } from '@/modules/core/client/services/client-runtime';
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
 import Monkeybox from '@/modules/users/client/components/Monkeybox';
@@ -156,8 +155,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const { username } = useParams({ strict: false });
   const { userId } = useSearch({ strict: false });
   if (user.username === username) {
-    navigate('inbox');
-    return null; // important to return null to indicate "nothing to render"
+    return <Navigate to="/messages" />;
   }
 
   const [nextParams, setNextParams] = useState<PageParams | null>(null);

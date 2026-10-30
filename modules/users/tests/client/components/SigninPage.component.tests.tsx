@@ -28,7 +28,6 @@ jest.mock('@/modules/core/client/components/Board', () => {
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
   trackEvent: jest.fn(),
-  navigate: jest.fn(),
 }));
 
 const signin = jest.mocked(authApi.signin);
@@ -108,7 +107,11 @@ describe('SigninPage', () => {
     });
 
     await waitFor(() => {
-      expect(redirectAfterSignin).toHaveBeenCalledWith(false, undefined);
+      expect(redirectAfterSignin).toHaveBeenCalledWith(
+        expect.any(Function),
+        false,
+        undefined,
+      );
     });
   });
 
@@ -134,6 +137,7 @@ describe('SigninPage', () => {
 
     await waitFor(() => {
       expect(redirectAfterSignin).toHaveBeenCalledWith(
+        expect.any(Function),
         true,
         '/messages?filter=unread',
       );

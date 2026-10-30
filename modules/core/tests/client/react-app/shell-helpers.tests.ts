@@ -1,21 +1,4 @@
-import {
-  defaultNavigate,
-  getClientNavigationTarget,
-  navigation,
-} from '@/layers/shell/client/shell-helpers';
-import { navigateTo } from '@/modules/core/client/services/browser-navigation';
-
-type LocationFixture = Partial<Location> & Pick<Location, 'href'>;
-
-// Several cases intentionally model browsers missing Location APIs.
-function browserLocation(fixture: LocationFixture): Location {
-  return fixture as Location;
-}
-
-// These cases exercise navigation with only the History method under test.
-function browserHistory(pushState: History['pushState']): History {
-  return { pushState } as History;
-}
+import { getClientNavigationTarget } from '@/layers/shell/client/shell-helpers';
 
 type NavigationClick = Pick<
   MouseEvent,
@@ -31,86 +14,6 @@ function navigationClick(fixture: NavigationClick): MouseEvent {
 describe('React shell helpers', () => {
   afterEach(() => {
     window.history.pushState({}, '', '/');
-  });
-
-  it('uses the default navigate helper', () => {
-    const go = jest.spyOn(navigation, 'go').mockImplementation(() => {});
-
-    try {
-      defaultNavigate('/signin');
-      expect(go).toHaveBeenCalledWith('/signin');
-    } finally {
-      go.mockRestore();
-    }
-  });
-
-  it('navigateTo uses location.assign when available', () => {
-    const assign = jest.fn<void, [string]>();
-
-    navigateTo('/faq', browserLocation({ assign, href: '' }));
-
-    expect(assign).toHaveBeenCalledWith('/faq');
-  });
-
-  it('navigateTo falls back to href when assign is unavailable', () => {
-    const location = browserLocation({ href: '' });
-
-    navigateTo('/faq', location);
-
-    expect(location.href).toBe('/faq');
-  });
-
-  it('navigateTo updates same-origin history without loading a document', () => {
-    const pushState = jest.fn<void, Parameters<History['pushState']>>();
-    const dispatchEvent = jest.fn<boolean, [Event]>(() => true);
-
-    navigateTo(
-      '/faq?topic=routes',
-      window.location,
-      browserHistory(pushState),
-      dispatchEvent,
-    );
-
-    expect(pushState).toHaveBeenCalledWith({}, '', '/faq?topic=routes');
-    expect(dispatchEvent).toHaveBeenCalledWith(expect.any(PopStateEvent));
-  });
-
-  it('navigateTo ignores navigation to the current browser URL', () => {
-    const pushState = jest.fn<void, Parameters<History['pushState']>>();
-    const location = browserLocation({
-      assign: jest.fn(),
-      hash: '',
-      href: 'https://www.trustroots.org/',
-      origin: 'https://www.trustroots.org',
-      pathname: '/',
-      search: '',
-    });
-
-    navigateTo('/', location, browserHistory(pushState));
-
-    expect(pushState).not.toHaveBeenCalled();
-    expect(location.assign).not.toHaveBeenCalled();
-  });
-
-  it('navigateTo leaves cross-origin navigation to the browser', () => {
-    const location = browserLocation({
-      assign: jest.fn(),
-      hash: '',
-      href: 'https://www.trustroots.org/',
-      origin: 'https://www.trustroots.org',
-      pathname: '/',
-      search: '',
-    });
-
-    navigateTo(
-      'https://ideas.trustroots.org/',
-      location,
-      browserHistory(jest.fn<void, Parameters<History['pushState']>>()),
-    );
-
-    expect(location.assign).toHaveBeenCalledWith(
-      'https://ideas.trustroots.org/',
-    );
   });
 
   it.each([
@@ -205,24 +108,5 @@ describe('React shell helpers', () => {
         }),
       ),
     ).toBe('/support?report=alice');
-  });
-
-  it('navigation.go forwards to navigateTo', () => {
-    const assign = jest.fn<void, [string]>();
-    const originalGo = navigation.go;
-
-    navigation.go = function go(url) {
-      navigateTo(url, browserLocation({ assign, href: '' }));
-    };
-
-    try {
-      navigation.go('/welcome');
-      expect(assign).toHaveBeenCalledWith('/welcome');
-    } finally {
-      navigation.go = originalGo;
-    }
-
-    // Exercise the real navigation.go implementation (uses window.location).
-    expect(() => originalGo('/support')).not.toThrow();
   });
 });
