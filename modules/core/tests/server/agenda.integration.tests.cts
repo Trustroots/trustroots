@@ -340,8 +340,10 @@ describe('Agenda integration tests', function () {
   it('unlocks only unfinished jobs after a worker restart', async function () {
     const jobs = mongoClient.db().collection<StoredJob>('agendaJobs');
     const marker = 'anonymous-unlock-integration-test';
-    const lockedAt = new Date(Date.now() - 60 * 1000);
+    const lockedAt = new Date(Date.now() - 11 * 60 * 1000);
+    const activeLockedAt = new Date(Date.now() - 60 * 1000);
     const futureRun = new Date(Date.now() + 60 * 60 * 1000);
+    const activeFutureRun = new Date(Date.now() + 2 * 60 * 60 * 1000);
 
     await jobs.insertMany([
       {
@@ -364,6 +366,14 @@ describe('Agenda integration tests', function () {
         lockedAt: null,
         lastFinishedAt: null,
       },
+      {
+        name: `${marker}-active-first-run`,
+        lockedAt: activeLockedAt,
+        lastModifiedBy: 'another-worker',
+        lastRunAt: activeLockedAt,
+        lastFinishedAt: null,
+        nextRunAt: activeFutureRun,
+      },
     ]);
 
     try {
@@ -374,14 +384,16 @@ describe('Agenda integration tests', function () {
         });
       });
 
-      const [unfinished, finished, scheduled] = await Promise.all([
-        jobs.findOne({ name: `${marker}-unfinished` }),
-        jobs.findOne({ name: `${marker}-finished` }),
-        jobs.findOne({ name: `${marker}-scheduled` }),
-      ]);
+      const [unfinished, finished, scheduled, activeFirstRun] =
+        await Promise.all([
+          jobs.findOne({ name: `${marker}-unfinished` }),
+          jobs.findOne({ name: `${marker}-finished` }),
+          jobs.findOne({ name: `${marker}-scheduled` }),
+          jobs.findOne({ name: `${marker}-active-first-run` }),
+        ]);
 
-      if (!unfinished || !finished || !scheduled) {
-        throw new Error('Expected all three persisted scheduling fixtures');
+      if (!unfinished || !finished || !scheduled || !activeFirstRun) {
+        throw new Error('Expected all persisted scheduling fixtures');
       }
       unfinished.should.not.have.property('lockedAt');
       unfinished.should.not.have.property('lastModifiedBy');
@@ -403,6 +415,17 @@ describe('Agenda integration tests', function () {
       persistedDate(scheduled.nextRunAt)
         .getTime()
         .should.equal(futureRun.getTime());
+      persistedDate(activeFirstRun.lockedAt)
+        .getTime()
+        .should.equal(activeLockedAt.getTime());
+      activeFirstRun.should.have.property('lastModifiedBy', 'another-worker');
+      persistedDate(activeFirstRun.lastRunAt)
+        .getTime()
+        .should.equal(activeLockedAt.getTime());
+      activeFirstRun.should.have.property('lastFinishedAt', null);
+      persistedDate(activeFirstRun.nextRunAt)
+        .getTime()
+        .should.equal(activeFutureRun.getTime());
     } finally {
       await jobs.deleteMany({ name: { $regex: `^${marker}-` } });
     }

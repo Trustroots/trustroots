@@ -1,4 +1,5 @@
 import type { Job, Agenda } from 'agenda';
+import { agendaLockLifetime } from './agenda-lock.mts';
 import config from './../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
@@ -255,7 +256,7 @@ function unlockAgendaJobs(callback: Done) {
       return agendaJobs
         .updateMany(
           {
-            lockedAt: { $ne: null },
+            lockedAt: { $lte: new Date(Date.now() - agendaLockLifetime) },
             lastFinishedAt: null,
           },
           {

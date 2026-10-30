@@ -289,13 +289,14 @@ describe('Worker tests', function () {
 
   it('unlocks unfinished Agenda jobs through the direct MongoDB connection', function (done) {
     const updateMany = sinon.stub().callsFake(function (
-      filter: { lockedAt: { $ne: null }; lastFinishedAt: null },
+      filter: { lockedAt: { $lte: Date }; lastFinishedAt: null },
       update: { $unset: Record<string, string>; $set: { nextRunAt: Date } },
     ) {
-      filter.should.deepEqual({
-        lockedAt: { $ne: null },
-        lastFinishedAt: null,
-      });
+      filter.lockedAt.$lte.should.be.instanceof(Date);
+      Math.abs(
+        filter.lockedAt.$lte.getTime() - (Date.now() - 10 * 60 * 1000),
+      ).should.be.below(1000);
+      filter.should.have.property('lastFinishedAt', null);
       update.$unset.should.deepEqual({
         lockedAt: '',
         lastModifiedBy: '',
