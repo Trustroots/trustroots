@@ -198,6 +198,8 @@ jobs:
         run: pnpm run build:vite
       - name: Install Chromium for Vite smoke tests
         run: pnpm exec playwright install --with-deps chromium
+      - name: Test e2e screenshot capture
+        run: node --test scripts/e2e/screenshot-capture.test.mts
       - name: Smoke-test Vite production script loading
         run: pnpm run test:vite:production
       - name: Smoke-test Vite development proxy and module loading

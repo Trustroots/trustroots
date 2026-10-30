@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Page, TestInfo } from '@playwright/test';
+import type { Browser, BrowserContext, Page, TestInfo } from '@playwright/test';
 
 const captureScreenshots = process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true';
 const screenshotsDir =
@@ -51,12 +51,20 @@ function shouldCaptureFullPage(testInfo: TestInfo): boolean {
 export async function captureEndOfTestScreenshot(
   page: Page,
   testInfo: TestInfo,
+  suffix = '',
 ): Promise<void> {
   if (!captureScreenshots || page.isClosed()) {
     return;
   }
 
   try {
+    // API-only tests can leave the default page unused. Do not publish it.
+    if (
+      page.url() === 'about:blank' ||
+      !(await page.locator('body').innerHTML()).trim()
+    ) {
+      return;
+    }
     fs.mkdirSync(screenshotsDir, { recursive: true });
     const failed = testInfo.status !== testInfo.expectedStatus;
     const fileName = [
@@ -65,6 +73,7 @@ export async function captureEndOfTestScreenshot(
       testInfo.retry,
       testInfo.repeatEachIndex,
       failed ? 'FAILED' : null,
+      suffix,
     ]
       .filter(Boolean)
       .join('-');
@@ -85,4 +94,64 @@ export async function captureEndOfTestScreenshot(
   } catch {
     // Screenshot capture is best-effort and must not fail the test run.
   }
+}
+
+// Tests often use isolated contexts and close them in finally blocks. Capture
+// their pages before close, while the tested UI is still available.
+export function trackScreenshotPages(browser: Browser, testInfo: TestInfo) {
+  const captured = new WeakSet<Page>();
+  const tracked = new WeakSet<BrowserContext>();
+  const restorers: (() => void)[] = [];
+  let pageNumber = 0;
+  const capture = async (page: Page) => {
+    if (captured.has(page)) return;
+    captured.add(page);
+    await captureEndOfTestScreenshot(page, testInfo, `page-${++pageNumber}`);
+  };
+  const trackContext = (context: BrowserContext) => {
+    if (tracked.has(context)) return;
+    tracked.add(context);
+    const trackPage = (page: Page) => {
+      const close = page.close;
+      page.close = async options => {
+        await capture(page);
+        return close.call(page, options);
+      };
+      restorers.push(() => {
+        page.close = close;
+      });
+    };
+    context.pages().forEach(trackPage);
+    context.on('page', trackPage);
+    const close = context.close;
+    context.close = async options => {
+      for (const page of context.pages()) await capture(page);
+      return close.call(context, options);
+    };
+    restorers.push(() => {
+      context.off('page', trackPage);
+      context.close = close;
+    });
+  };
+  const newContext = browser.newContext;
+  if (captureScreenshots) {
+    browser.contexts().forEach(trackContext);
+    browser.newContext = async options => {
+      const context = await newContext.call(browser, options);
+      trackContext(context);
+      return context;
+    };
+  }
+  return async () => {
+    try {
+      if (captureScreenshots) {
+        for (const context of browser.contexts()) {
+          for (const page of context.pages()) await capture(page);
+        }
+      }
+    } finally {
+      browser.newContext = newContext;
+      restorers.reverse().forEach(restore => restore());
+    }
+  };
 }
