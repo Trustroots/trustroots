@@ -11,6 +11,7 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "types": ["node"],
+    "jsx": "react",
     "allowJs": true,
     "checkJs": false
   },

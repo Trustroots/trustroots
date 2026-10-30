@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./Button": "./Button.tsx",
-    "./Alert": "./Alert.tsx",
-    "./Badge": "./Badge.tsx",
-    "./Spinner": "./Spinner.tsx"
+    "./globals.css": "./src/globals.css",
+    "./Button": "./src/components/Button.tsx",
+    "./Alert": "./src/components/Alert.tsx",
+    "./Badge": "./src/components/Badge.tsx",
+    "./Spinner": "./src/components/Spinner.tsx"
   },
   "peerDependencies": {
     "react": "19.3.1"
