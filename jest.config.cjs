@@ -15,7 +15,7 @@ module.exports = {
       '<rootDir>/jest/jest.empty-module.cts',
   },
   testMatch: ['<rootDir>/modules/*/tests/client/**/*.tests.[jt]s?(x)'],
-  testEnvironment: 'jsdom',
+  testEnvironment: '<rootDir>/jest/jest.environment.cts',
   collectCoverageFrom: [
     '<rootDir>/modules/*/client/**/*.{js,ts,tsx}',
     '<rootDir>/layers/shell/**/*.{js,ts,tsx}',
