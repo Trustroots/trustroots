@@ -2,7 +2,6 @@ import type { Types } from 'mongoose';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mjs';
 import _ from 'lodash';
 import path from 'path';
-import async from 'async';
 import juice from 'juice';
 import moment from 'moment';
 import { Autolinker as autolinker } from 'autolinker';
@@ -740,73 +739,80 @@ function renderEmail(
     );
   }
 
+  const renderTemplate = (templatePath: string) =>
+    new Promise<string>((resolve, reject) => {
+      render(templatePath, params, function (err, rendered) {
+        if (err) return reject(err);
+        resolve(rendered);
+      });
+    });
+
   // Rendering in parallel leads to an error. maybe because
   // swig is unmaintained now https://github.com/paularmstrong/swig)
-  async.mapValuesSeries<string, string>(
-    templatePaths,
-    function (templatePath, key, done) {
-      render(templatePath, params, function (err, rendered) {
-        // there are promises inside render(), need to execute callback in
-        // nextTick() so callback can safely throw exceptions
-        // see https://github.com/caolan/async/issues/1150
-        async.nextTick(function () {
-          done(err, rendered);
-        });
-      });
-    },
-    function (err, result) {
-      if (err) return callback(err);
+  const renderTemplates = async () => {
+    const result: Record<string, string> = {};
+    for (const [key, templatePath] of Object.entries(templatePaths)) {
+      result[key] = await renderTemplate(templatePath);
+    }
+    return result;
+  };
 
-      // Clean out html entities (like &gt;) from plain text emails
-      result.text = textService.plainText(result.text);
-
-      // Wrap links with `<` and `>` from plain text emails
-      result.text = autolinker.link(result.text, {
-        urls: true,
-        email: false,
-        phone: false,
-        mention: false,
-        hashtag: false,
-        stripPrefix: false,
-        replaceFn(match) {
-          return '<' + match.getAnchorHref() + '>';
-        },
-      });
-      const email: RenderedEmail = {
-        to: {
-          name: params.name,
-          address: params.email,
-        },
-        from: params.from || 'Trustroots <' + config.mailer.from + '>',
-        subject: params.subject,
-        text: result.text,
-      };
-      if (result.html) {
-        // Inline CSS with Juice
-        email.html = juice(result.html);
-      }
-      if (params.replyTo) {
-        email.replyTo = params.replyTo;
-      }
-      // Add SparkPost SMTP API headers
-      // @link https://developers.sparkpost.com/api/smtp/#header-using-the-x-msys-api-custom-header
-      const sparkpostHeader: {
-        options: { transactional: true };
-        campaign_id?: string;
-      } = {
-        options: {
-          transactional: true,
-        },
-      };
-      if (params.sparkpostCampaign) {
-        sparkpostHeader.campaign_id = params.sparkpostCampaign;
-      }
-      email.headers = {
-        'X-MSYS-API': JSON.stringify(sparkpostHeader),
-      };
-      callback(null, email);
-    },
+  // Leave the promise chain so the callback can safely throw exceptions
+  renderTemplates().then(
+    result => process.nextTick(() => buildEmail(result)),
+    err => process.nextTick(() => callback(err)),
   );
+
+  function buildEmail(result: Record<string, string>) {
+    // Clean out html entities (like &gt;) from plain text emails
+    result.text = textService.plainText(result.text);
+
+    // Wrap links with `<` and `>` from plain text emails
+    result.text = autolinker.link(result.text, {
+      urls: true,
+      email: false,
+      phone: false,
+      mention: false,
+      hashtag: false,
+      stripPrefix: false,
+      replaceFn(match) {
+        return '<' + match.getAnchorHref() + '>';
+      },
+    });
+    const email: RenderedEmail = {
+      to: {
+        name: params.name,
+        address: params.email,
+      },
+      from: params.from || 'Trustroots <' + config.mailer.from + '>',
+      subject: params.subject,
+      text: result.text,
+    };
+    if (result.html) {
+      // Inline CSS with Juice
+      email.html = juice(result.html);
+    }
+    if (params.replyTo) {
+      email.replyTo = params.replyTo;
+    }
+    // Add SparkPost SMTP API headers
+    // @link https://developers.sparkpost.com/api/smtp/#header-using-the-x-msys-api-custom-header
+    const sparkpostHeader: {
+      options: { transactional: true };
+      campaign_id?: string;
+    } = {
+      options: {
+        transactional: true,
+      },
+    };
+    if (params.sparkpostCampaign) {
+      sparkpostHeader.campaign_id = params.sparkpostCampaign;
+    }
+    email.headers = {
+      'X-MSYS-API': JSON.stringify(sparkpostHeader),
+    };
+    callback(null, email);
+  }
 }
 function renderEmailAndSend(
   templateName: string,
