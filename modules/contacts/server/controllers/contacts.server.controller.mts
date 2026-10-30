@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import errorService from '../../../core/server/services/error.server.service.mjs';
-import textService from '../../../core/server/services/text.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mts';
 import emailService from '../../../core/server/services/email.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';

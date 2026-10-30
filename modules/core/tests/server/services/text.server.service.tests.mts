@@ -1,15 +1,12 @@
-const textService: typeof import('./../../../server/services/text.server.service.mjs') = require('./../../../server/services/text.server.service.mjs');
+import textService, * as textExports from '../../../server/services/text.server.service.mts';
 
-require('should');
+import 'should';
 
 /**
- * Statistics routes tests
+ * Text sanitisation tests
  */
 describe('Text processor tests', function () {
-  it('provides the same service through ESM and CommonJS', async function () {
-    const esmService =
-      await import('../../../server/services/text.server.service.mjs');
-
+  it('shares its functions and options through default and named ESM exports', function () {
     for (const name of [
       'html',
       'isEmpty',
@@ -17,7 +14,7 @@ describe('Text processor tests', function () {
       'sanitizeOptions',
       'stripContactDetails',
     ] as const) {
-      textService[name].should.equal(esmService[name]);
+      textService[name].should.equal(textExports[name]);
     }
   });
 

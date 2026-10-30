@@ -11,7 +11,7 @@ import getOfferHandlerModule from './../../../offers/server/controllers/offers.s
 import _ from 'lodash';
 import path from 'path';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 import tribesHandler from './../../../tribes/server/controllers/tribes.server.controller.mjs';
 import authenticationService from '../services/authentication.server.service.mjs';
 import emailServiceModule from './../../../core/server/services/email.server.service.mjs';

@@ -148,7 +148,8 @@ describe('Messages controller unit tests', () => {
       const res = deferredResponse();
       const content =
         '<p><strong>Fictional draft</strong> <a href="javascript:alert(1)">Link</a></p><script>alert(1)</script>';
-      const textService = require('../../../core/server/services/text.server.service.mjs');
+      const { default: textService } =
+        await import('../../../core/server/services/text.server.service.mts');
       const messageBefore = await Message.find({}).lean();
       const threadBefore = await Thread.find({}).lean();
       const statsBefore = await mongoose.model('MessageStat').find({}).lean();

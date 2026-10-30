@@ -2,7 +2,7 @@ import _ from 'lodash';
 import mongoose, { type HydratedDocument } from 'mongoose';
 import type { OfferLocation } from '../../shared/offer.js';
 import type { OfferServerRecord } from './offer.server.types.mts';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 const service = {};
 
 /**

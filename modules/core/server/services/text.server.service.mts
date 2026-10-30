@@ -206,12 +206,11 @@ export function stripContactDetails(value: unknown): string {
     replaceFn: () => '',
   });
 }
-const defaultInterop = {
+const service = {
   sanitizeOptions,
   html,
   isEmpty,
   plainText,
   stripContactDetails,
 };
-export default defaultInterop;
-export { defaultInterop as 'module.exports' };
+export default service;

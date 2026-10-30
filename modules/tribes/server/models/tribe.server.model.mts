@@ -1,4 +1,4 @@
-import textService from '../../../core/server/services/text.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mts';
 import config from '../../../../config/config.mts';
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
 import moment from 'moment';
