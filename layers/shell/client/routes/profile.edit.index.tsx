@@ -1,7 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import ProfileEditAbout from '@/modules/users/client/components/ProfileEditAbout.component';
-import { routeOptions, renderWithUser } from '../route-options';
+import { usersRoutes } from '@/modules/users/client/routes';
+import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/profile/edit', renderWithUser(ProfileEditAbout)),
+  routeOptions('/profile/edit', usersRoutes['/profile/edit']),
 );

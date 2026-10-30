@@ -18,7 +18,7 @@ import * as usersApi from '@/modules/users/client/api/users.api';
 import * as messagesApi from '@/modules/messages/client/api/messages.api';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
-import { REACT_ROUTE_POLICIES } from '@/modules/core/shared/react-route-ownership.mts';
+import { REACT_ROUTE_POLICIES } from '@/layers/shell/shared/route-manifest.mts';
 import type { Message } from '@/modules/messages/client/api/messages.api';
 import type { Offer } from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';

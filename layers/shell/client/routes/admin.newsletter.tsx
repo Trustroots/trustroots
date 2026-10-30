@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminNewsletter from '@/modules/admin/client/components/AdminNewsletter.component';
+import { adminRoutes } from '@/modules/admin/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/admin/newsletter', () => <AdminNewsletter />),
+  routeOptions('/admin/newsletter', adminRoutes['/admin/newsletter']),
 );

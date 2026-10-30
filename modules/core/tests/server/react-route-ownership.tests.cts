@@ -4,10 +4,12 @@ const {
   isReactOwnedPath,
   matchReactRoute,
   normalizePath,
-  REACT_OWNED_PATHS,
-  REACT_ROUTE_POLICIES,
   routeRequiresAuth,
 } = require('../../shared/react-route-ownership.mts');
+const {
+  REACT_ROUTE_POLICIES,
+} = require('../../../../layers/shell/shared/route-manifest.mts');
+const mainRouteTable = require('./fixtures/react-route-table.main.json');
 
 const should: typeof import('should') = require('should');
 
@@ -37,27 +39,21 @@ describe('React route ownership', function () {
     }).should.equal('/volunteering');
     getReactRouteAccessRedirect(matched.policy, null).should.equal('/signin');
   });
-  it('lists the first React-owned route group', function () {
-    REACT_OWNED_PATHS.should.containEql('/support');
-    REACT_OWNED_PATHS.should.containEql('/statistics');
-    REACT_OWNED_PATHS.should.containEql('/safety');
-    REACT_OWNED_PATHS.should.containEql('/faq/technology');
-    REACT_OWNED_PATHS.should.containEql('/');
-    REACT_OWNED_PATHS.should.containEql('/messages/:username');
-    REACT_OWNED_PATHS.should.containEql('/signin');
-    REACT_OWNED_PATHS.should.containEql('/remove/:token');
+  it('composes the module manifests into the route table from main', function () {
+    const byPath = Object.fromEntries(
+      REACT_ROUTE_POLICIES.map((policy: { path: string }) => [
+        policy.path,
+        policy,
+      ]),
+    );
+    REACT_ROUTE_POLICIES.length.should.equal(83);
+    should(byPath).deepEqual(mainRouteTable);
   });
 
   it('normalizes paths for server route selection', function () {
     normalizePath('/support/?report=alice').should.equal('/support');
     isReactOwnedPath('/support/?report=alice').should.be.true();
     normalizePath('/messages/alice/').should.equal('/messages/alice');
-  });
-
-  it('keeps route policies aligned with owned paths', function () {
-    REACT_ROUTE_POLICIES.map((route: { path: string }) => route.path)
-      .sort()
-      .should.deepEqual(REACT_OWNED_PATHS.slice().sort());
   });
 
   it('matches exact and parametrised route policies', function () {

@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import ConfirmEmailInvalidPage from '@/modules/users/client/components/ConfirmEmailInvalidPage.component';
+import { usersRoutes } from '@/modules/users/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/confirm-email-invalid', () => <ConfirmEmailInvalidPage />),
+  routeOptions('/confirm-email-invalid', usersRoutes['/confirm-email-invalid']),
 );

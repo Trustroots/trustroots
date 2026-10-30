@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import OfferRedirectPage from '@/modules/offers/client/components/OfferRedirectPage.component';
+import { offersRoutes } from '@/modules/offers/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/offer', () => <OfferRedirectPage />),
+  routeOptions('/offer', offersRoutes['/offer']),
 );

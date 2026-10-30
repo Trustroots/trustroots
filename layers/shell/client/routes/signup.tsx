@@ -1,6 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import SignupPage from '@/modules/users/client/components/SignupPage.component';
+import { usersRoutes } from '@/modules/users/client/routes';
 import { routeOptions } from '../route-options';
 
-export const Route = createRoute(routeOptions('/signup', () => <SignupPage />));
+export const Route = createRoute(
+  routeOptions('/signup', usersRoutes['/signup']),
+);

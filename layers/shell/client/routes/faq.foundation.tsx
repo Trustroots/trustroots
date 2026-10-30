@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import FaqFoundation from '@/modules/pages/client/components/FaqFoundation.component';
+import { pagesRoutes } from '@/modules/pages/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/faq/foundation', () => <FaqFoundation />),
+  routeOptions('/faq/foundation', pagesRoutes['/faq/foundation']),
 );

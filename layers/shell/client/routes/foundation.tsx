@@ -1,7 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import Foundation from '@/modules/pages/client/components/Foundation.component';
-import { routeOptions, renderWithUser } from '../route-options';
+import { pagesRoutes } from '@/modules/pages/client/routes';
+import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/foundation', renderWithUser(Foundation)),
+  routeOptions('/foundation', pagesRoutes['/foundation']),
 );

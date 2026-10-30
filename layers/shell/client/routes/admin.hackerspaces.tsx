@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminHackerspaces from '@/modules/admin/client/components/AdminHackerspaces.component';
+import { adminRoutes } from '@/modules/admin/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/admin/hackerspaces', () => <AdminHackerspaces />),
+  routeOptions('/admin/hackerspaces', adminRoutes['/admin/hackerspaces']),
 );

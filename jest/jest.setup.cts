@@ -4,6 +4,9 @@ const { TextDecoder, TextEncoder } =
 globalThis.TextEncoder = globalThis.TextEncoder || TextEncoder;
 globalThis.TextDecoder = globalThis.TextDecoder || TextDecoder;
 
+// The app registers its route manifest at start-up; do the same for tests.
+require('../layers/shell/shared/route-manifest.mts');
+
 if (globalThis.HTMLCanvasElement) {
   const canvasElement = globalThis.HTMLCanvasElement;
 

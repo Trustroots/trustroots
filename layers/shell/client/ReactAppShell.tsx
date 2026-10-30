@@ -18,7 +18,6 @@ import {
   useSettings,
 } from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
-import type { RoutePolicy } from './route-options';
 import { getClientNavigationTarget } from './shell-helpers';
 
 export default function ReactAppShell() {
@@ -35,23 +34,14 @@ export default function ReactAppShell() {
   const router = useRouter();
   const location = new URL(locationHref, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
-  const route = getReactRoutePolicy(currentPath) as RoutePolicy | null;
+  const route = getReactRoutePolicy(currentPath);
   const navigate = (target: string) => {
     if (navigateOverride) {
       navigateOverride(target);
       return;
     }
 
-    const destination = new URL(target, window.location.origin);
-    const search: Record<string, string> = {};
-    destination.searchParams.forEach((value, key) => {
-      search[key] = value;
-    });
-    router.navigate({
-      hash: destination.hash.slice(1),
-      search,
-      to: destination.pathname,
-    });
+    void router.navigate({ href: target });
   };
 
   useEffect(() => {
