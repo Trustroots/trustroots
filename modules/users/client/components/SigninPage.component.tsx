@@ -2,10 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
-import {
-  trackEvent,
-  getCurrentRouteParams,
-} from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
@@ -18,6 +16,7 @@ const BoardWithPhotoList = Board as unknown as React.ComponentType<{
 }>;
 
 export default function SigninPage() {
+  const { track } = useAnalytics();
   const { user, setUser } = useAuth() as {
     user: { _id: string; username: string } | null;
     setUser: (user: { _id: string; username: string; email?: string }) => void;
@@ -89,18 +88,12 @@ export default function SigninPage() {
 
       setUser(signedInUser);
 
-      trackEvent('login.success', {
-        category: 'authentication',
-        label: 'Login success',
-      });
+      track('signin-success');
     } catch (error: unknown) {
       setIsLoading(false);
       setAuthError(true);
       setErrorMessage(readApiError(error).message || 'Something went wrong.');
-      trackEvent('login.failed', {
-        category: 'authentication',
-        label: 'Login failed',
-      });
+      track('signin-failure');
     }
   }
 

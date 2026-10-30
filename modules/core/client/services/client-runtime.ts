@@ -131,19 +131,11 @@ export function onClientEvent(
   return () => window.removeEventListener(`tr:${eventName}`, eventListener);
 }
 
-export function trackEvent(
-  action: string,
-  options: { category?: string; label?: string; value?: string | number } = {},
-): undefined {
-  if (typeof window.ga === 'function') {
-    window.ga(
-      'send',
-      'event',
-      options.category || 'default',
-      action,
-      options.label,
-    );
-  }
+type CurrentUser = Pick<
+  NonNullable<Window['user']>,
+  '_id' | 'id' | 'public' | 'roles' | 'username' | 'languages'
+>;
 
-  return undefined;
+export function getCurrentUser(): CurrentUser | null {
+  return window.user || null;
 }

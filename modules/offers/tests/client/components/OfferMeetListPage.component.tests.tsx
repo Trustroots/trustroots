@@ -3,15 +3,13 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import OfferMeetListPage from '@/modules/offers/client/components/OfferMeetListPage.component';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const offersApiMock = jest.mocked(offersApi);
 
 jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  trackEvent: jest.fn(),
-}));
 jest.mock('@/modules/offers/client/components/OfferLocation.component', () => ({
   __esModule: true,
   default: ({ location }: { location: number[] }) => (
@@ -27,6 +25,8 @@ const user: React.ComponentProps<typeof OfferMeetListPage>['user'] = {
   _id: 'user-1',
 };
 
+const analytics = fakeAnalytics();
+
 describe('OfferMeetListPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -35,7 +35,7 @@ describe('OfferMeetListPage', () => {
 
   it('shows the empty state when there are no meet offers', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('No meetups yet')).toBeVisible();
     expect(
@@ -54,7 +54,7 @@ describe('OfferMeetListPage', () => {
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Your meetups')).toBeVisible();
     expect(screen.getByText('Coffee meetup.')).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('OfferMeetListPage', () => {
       offersApiMock.getOffers,
       [[legacyOffer]],
     );
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByTestId('offer-location')).toHaveAttribute(
       'data-location',
@@ -97,7 +97,7 @@ describe('OfferMeetListPage', () => {
       },
     ]);
     offersApiMock.deleteOffer.mockResolvedValue({ message: 'Offer removed.' });
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Remove this meet offer' }),
@@ -107,6 +107,9 @@ describe('OfferMeetListPage', () => {
       expect(screen.queryByText('Coffee meetup.')).not.toBeInTheDocument(),
     );
     expect(offersApiMock.deleteOffer).toHaveBeenCalledWith('offer-1');
+    expect(analytics.track).toHaveBeenCalledWith('offer-delete', {
+      type: 'meet',
+    });
   });
 
   it('expands long descriptions when show more is clicked', async () => {
@@ -121,7 +124,7 @@ describe('OfferMeetListPage', () => {
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Show more...')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Show more...'));
@@ -139,7 +142,7 @@ describe('OfferMeetListPage', () => {
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     await screen.findByText('Show more...');
     fireEvent.click(document.querySelector('.panel-more-excerpt')!);
@@ -148,7 +151,7 @@ describe('OfferMeetListPage', () => {
 
   it('shows an empty list when loading meet offers fails', async () => {
     offersApiMock.getOffers.mockRejectedValue(new Error('network'));
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('No meetups yet')).toBeVisible();
   });
@@ -164,7 +167,7 @@ describe('OfferMeetListPage', () => {
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('No description!')).toBeVisible();
     expect(
@@ -184,7 +187,7 @@ describe('OfferMeetListPage', () => {
         validUntil: '2030-01-01T00:00:00.000Z',
       },
     ]);
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     fireEvent.click(
       await screen.findByRole('button', { name: 'Remove this meet offer' }),
@@ -202,7 +205,9 @@ describe('OfferMeetListPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferMeetListPage user={user} />);
+    const { unmount } = render(<OfferMeetListPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
     unmount();
     resolveOffers([
       {
@@ -224,7 +229,9 @@ describe('OfferMeetListPage', () => {
       offersApiMock.getOffers,
       [null],
     );
-    const firstRender = render(<OfferMeetListPage user={user} />);
+    const firstRender = render(<OfferMeetListPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
 
     expect(await screen.findByText('No meetups yet')).toBeVisible();
     firstRender.unmount();
@@ -235,7 +242,9 @@ describe('OfferMeetListPage', () => {
         rejectOffers = reject;
       }),
     );
-    const secondRender = render(<OfferMeetListPage user={user} />);
+    const secondRender = render(<OfferMeetListPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
     secondRender.unmount();
     rejectOffers(new Error('late failure'));
     await new Promise(resolve => setTimeout(resolve, 20));
@@ -261,7 +270,7 @@ describe('OfferMeetListPage', () => {
       },
     ]);
 
-    render(<OfferMeetListPage user={user} />);
+    render(<OfferMeetListPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Newer meetup.')).toBeVisible();
     const descriptions = Array.from(

@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
 
+import { useAnalytics } from '@trustroots/analytics/client';
 import {
-  trackEvent,
   getCurrentRouteParams,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
@@ -107,6 +107,7 @@ function getCurrentUsernameFieldErrors(username: string): UsernameFieldErrors {
 }
 
 export default function SignupPage() {
+  const { track } = useAnalytics();
   const firstNameInput = useDesktopAutofocus<HTMLInputElement>();
   const { t } = useTranslation('users');
   const { user, setUser } = useAuth() as {
@@ -270,10 +271,7 @@ export default function SignupPage() {
 
   function handleOpenRules(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    trackEvent('signup.rules.open', {
-      category: 'signup',
-      label: 'Open rules from signup form',
-    });
+    track('signup-rules-open');
     window.location.assign('/rules');
   }
 

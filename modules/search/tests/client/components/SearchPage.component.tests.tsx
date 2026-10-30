@@ -20,6 +20,7 @@ import type { Event as NostrEvent } from 'nostr-tools';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import type { MapPoint } from '@/modules/search/client/utils/location';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 type SearchMapProps = React.ComponentProps<typeof SearchMap>;
 type SearchMapHarnessProps = Pick<
@@ -38,13 +39,6 @@ type RouteParams = Record<string, string>;
 type LocationSuggestions = Awaited<
   ReturnType<typeof locationApiModule.fetchLocationSuggestions>
 >;
-const mockEventTrack = jest.fn<
-  undefined,
-  [
-    action: string,
-    options?: { category?: string; label?: string; value?: string | number },
-  ]
->();
 const mockGetRouteParams = jest.fn<RouteParams, []>();
 // SearchPage tests include a zoom value on located centres, which the map
 // consumes even though the location API's public result type omits it.
@@ -63,6 +57,7 @@ const locationApi = {
 };
 const tribesApi = jest.mocked(tribesApiModule);
 const offersApi = jest.mocked(offersApiModule);
+const analytics = fakeAnalytics();
 
 const sampleTribe = (id: string, slug: string): TribeSummary => ({
   _id: id,
@@ -72,10 +67,6 @@ const sampleTribe = (id: string, slug: string): TribeSummary => ({
 });
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  trackEvent: (
-    action: string,
-    options?: { category?: string; label?: string; value?: string | number },
-  ) => mockEventTrack(action, options),
   getCurrentRouteParams: () => mockGetRouteParams(),
 }));
 
@@ -288,7 +279,7 @@ function renderSearchPage(
     public: true,
   },
 ) {
-  return render(<SearchPage user={user} />);
+  return render(<SearchPage user={user} />, { wrapper: analytics.wrapper });
 }
 
 function openResultsWithVisibleOfferIds(offerIds: string[]) {
@@ -604,10 +595,7 @@ describe('<SearchPage />', () => {
     expect(
       await screen.findByRole('link', { name: /host person/i }),
     ).toBeInTheDocument();
-    expect(mockEventTrack).toHaveBeenCalledWith('offer.preview', {
-      category: 'search.map',
-      label: 'Preview offer',
-    });
+    expect(analytics.track).toHaveBeenCalledWith('search-offer-preview');
   });
 
   it('tracks missing offers loaded from the route params', async () => {
@@ -619,10 +607,7 @@ describe('<SearchPage />', () => {
     renderSearchPage();
 
     await waitFor(() => {
-      expect(mockEventTrack).toHaveBeenCalledWith('offer-not-found', {
-        category: 'search.map',
-        label: 'Offer not found',
-      });
+      expect(analytics.track).toHaveBeenCalledWith('search-offer-not-found');
     });
   });
 

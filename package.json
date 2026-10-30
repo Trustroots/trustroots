@@ -131,6 +131,7 @@
     "@agendajs/mongo-backend": "4.0.3",
     "@tanstack/react-query": "5.104.5",
     "@tanstack/react-router": "1.170.46",
+    "@trustroots/analytics": "workspace:*",
     "@trustroots/logger": "workspace:*",
     "@trustroots/ui": "workspace:*",
     "agenda": "6.2.6",
