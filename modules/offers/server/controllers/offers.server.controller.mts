@@ -250,6 +250,14 @@ function create(
   }
 
   const body = req.body!;
+  if (
+    body.meetingStatus !== undefined &&
+    (typeof body.meetingStatus !== 'string' ||
+      !['yes', 'maybe', 'no', 'not-set'].includes(body.meetingStatus))
+  ) {
+    return res.status(400).send({ message: 'Invalid meeting availability.' });
+  }
+
   // Validate type
   if (!body.type || !isValidOfferType(body.type)) {
     return res.status(400).send({
@@ -317,6 +325,16 @@ function update(
       // Validate
       function (done: (error?: Error | null) => void) {
         // User can modify only their own offers
+        if (
+          body.meetingStatus !== undefined &&
+          (typeof body.meetingStatus !== 'string' ||
+            !['yes', 'maybe', 'no', 'not-set'].includes(body.meetingStatus))
+        ) {
+          return res
+            .status(400)
+            .send({ message: 'Invalid meeting availability.' });
+        }
+
         // Missing required fields
         if (!body.location) {
           return res.status(400).send({
@@ -492,6 +510,28 @@ function list(req: OfferRequest, res: OfferResponse) {
       },
     },
   ];
+
+  // Reuse the meeting marker/filter for ongoing availability. Keep one marker
+  // per saved location: prefer hosting in combined search, meetings otherwise.
+  // Stored type/status are untouched, so offer reads still show both states.
+  const requestedTypes = Reflect.get(filters, 'types');
+  const meetingsOnly =
+    Array.isArray(requestedTypes) &&
+    requestedTypes.includes('meet') &&
+    !requestedTypes.includes('host');
+  const asMeeting = {
+    $and: [
+      { $eq: ['$type', 'host'] },
+      { $in: ['$meetingStatus', ['yes', 'maybe']] },
+      meetingsOnly ? { $literal: true } : { $eq: ['$status', 'no'] },
+    ],
+  };
+  query.push({
+    $addFields: {
+      type: { $cond: [asMeeting, 'meet', '$type'] },
+      status: { $cond: [asMeeting, 'yes', '$status'] },
+    },
+  });
 
   // Status filter
   // Note that `type:meet` are currently all `status:yes`

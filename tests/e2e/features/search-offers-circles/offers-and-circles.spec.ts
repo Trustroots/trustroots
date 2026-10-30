@@ -89,42 +89,172 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await signInViaApi(page, request, berlin);
   });
 
-  test('hosting tab deep links preserve edits through browser history', async ({
+  test('a non-host can update location and opt into ongoing meeting discovery', async ({
+    page,
+  }) => {
+    const memberId = await fetchUserIdByUsername(page.request, berlin.username);
+    const [original] = await findOffersByUser(memberId, { type: 'host' });
+    expectPresent(original);
+    try {
+      const prepare = await page.request.put(`/api/offers/${original._id}`, {
+        data: {
+          status: 'no',
+          meetingStatus: 'not-set',
+          location: original.location,
+          description: 'I can host',
+          noOfferDescription: 'I am away from home.',
+        },
+      });
+      expect(prepare.ok()).toBeTruthy();
+      await page.goto('/offer/host');
+      await expect(
+        page
+          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByRole('radio', { name: 'Not set', exact: true }),
+      ).toBeChecked();
+      await page
+        .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+        .getByText('Yes', { exact: true })
+        .click();
+      await expect(
+        page.getByText(/for meetings, but not as a host/),
+      ).toBeVisible();
+      await page.evaluate(() => {
+        Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
+          publicKey: 'test-geocoding-token',
+        });
+      });
+      await page.route('https://api.mapbox.com/geocoding/**', route =>
+        route.fulfill({
+          contentType: 'application/json',
+          body: JSON.stringify({
+            features: [
+              {
+                id: 'place.fictional',
+                text: 'Example meeting town',
+                center: [12, 51],
+              },
+            ],
+          }),
+        }),
+      );
+      await page
+        .getByLabel('Search places', { exact: true })
+        .fill('Example meeting town');
+      await page.getByRole('button', { name: 'Example meeting town' }).click();
+      const saved = page.waitForResponse(
+        response =>
+          response.url().endsWith(`/api/offers/${original._id}`) &&
+          response.request().method() === 'PUT',
+      );
+      await page.getByRole('button', { name: 'Save and Exit' }).click();
+      expect((await saved).ok()).toBeTruthy();
+      await page.goto(`/profile/${berlin.username}/accommodation`);
+      await expect(
+        page.getByRole('radio', { name: 'Yes', exact: true }),
+      ).toBeChecked();
+      await expect(
+        page.getByText('Cannot host currently', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByText('Approximate meeting location', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.locator('.offer-location-section .offer-location'),
+      ).toBeVisible();
+      await expect(
+        page.getByText('I am away from home.', { exact: true }),
+      ).toBeVisible();
+      await expect(page.getByText('I can host', { exact: true })).toHaveCount(
+        0,
+      );
+      const own = await page.request.get(`/api/offers/${original._id}`);
+      const ownOffer = await own.json();
+      expect(ownOffer.location[0]).toBeCloseTo(51, 2);
+      expect(ownOffer.location[1]).toBeCloseTo(12, 2);
+      expect(ownOffer.status).toBe('no');
+      const discover = async (types: string[]) => {
+        const result = await page.request.get(
+          `/api/offers${EUROPE_OFFERS_QUERY}`,
+          { params: { filters: JSON.stringify({ types }) } },
+        );
+        expect(result.ok()).toBeTruthy();
+        return (await result.json()).features.find(
+          (feature: { properties: { id: string } }) =>
+            feature.properties.id === original._id.toString(),
+        );
+      };
+      const meeting = await discover(['meet']);
+      expect(meeting.properties).toMatchObject({
+        type: 'meet',
+        status: 'yes',
+        offer: 'meet-yes',
+      });
+      expect(meeting.geometry.coordinates).not.toEqual([
+        ownOffer.location[1],
+        ownOffer.location[0],
+      ]);
+      expect(await discover(['host'])).toBeUndefined();
+      for (const [label, status] of [
+        ['Maybe', 'maybe'],
+        ['No', 'no'],
+        ['Not set', 'not-set'],
+      ] as const) {
+        const savedFromProfile = page.waitForResponse(
+          response =>
+            response.url().endsWith(`/api/offers/${original._id}`) &&
+            response.request().method() === 'PUT',
+        );
+        await page
+          .getByRole('radiogroup', { name: 'Would you like to meet people?' })
+          .getByText(label, { exact: true })
+          .click();
+        expect((await savedFromProfile).ok()).toBeTruthy();
+        await page.reload();
+        await expect(
+          page.getByRole('radio', { name: label, exact: true }),
+        ).toBeChecked();
+        if (status === 'maybe') expect(await discover(['meet'])).toBeDefined();
+        else expect(await discover(['meet'])).toBeUndefined();
+        await expect(
+          page.getByText('Cannot host currently', { exact: true }),
+        ).toBeVisible();
+      }
+      await page.goto('/offer/host');
+      await expect(
+        page.getByRole('radio', { name: 'Not set', exact: true }),
+      ).toBeChecked();
+    } finally {
+      const restored = await page.request.put(`/api/offers/${original._id}`, {
+        data: {
+          ...original,
+          meetingStatus: original.meetingStatus ?? 'not-set',
+        },
+      });
+      expect(restored.ok()).toBeTruthy();
+    }
+  });
+
+  test('hosting section links preserve edits through browser history', async ({
     page,
   }) => {
     await page.goto('/offer/host#location');
-    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    await expect(
-      page.getByLabel('Search places', { exact: true }),
-    ).toBeVisible();
-    await page.getByRole('tab', { name: 'Description' }).click();
-    await expect(page).toHaveURL(/\/offer\/host#description$/);
+    await expect(page.locator('#location')).toBeInViewport();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
     );
     await description.fill('An unsaved spare room description.');
-    await page.getByRole('tab', { name: 'Availability' }).click();
-    await expect(page).toHaveURL(/\/offer\/host#availability$/);
+    await page.evaluate(() => {
+      window.location.hash = 'description';
+    });
+    await expect(page.locator('#description')).toBeInViewport();
     await page.goBack();
+    await expect(page.locator('#location')).toBeInViewport();
     await expect(description).toHaveValue('An unsaved spare room description.');
-    await page.goBack();
-    await expect(page.getByRole('tab', { name: 'Location' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
-    await page.goForward();
-    await expect(description).toHaveValue('An unsaved spare room description.');
-    await page.reload();
-    await expect(
-      page.getByRole('tab', { name: 'Description' }),
-    ).toHaveAttribute('aria-selected', 'true');
   });
 
-  test('mobile hosting map keeps search, tabs and save controls accessible', async ({
+  test('mobile hosting map keeps search and save controls accessible', async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -152,7 +282,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
     await expect(
       page.getByRole('button', { name: 'Save and Exit' }),
     ).toBeInViewport();
-    await expect(page.getByRole('tab', { name: 'Location' })).toBeInViewport();
   });
 
   test('mobile offer editors expose working save controls', async ({
@@ -160,7 +289,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/offer/host');
-    await page.getByRole('tab', { name: 'Description' }).click();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
@@ -302,7 +430,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
     const memberId = await fetchUserIdByUsername(page.request, berlin.username);
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
     await page.goto('/offer/host');
-    await page.getByRole('tab', { name: 'Location' }).click();
     await page.evaluate(() => {
       Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
         publicKey: 'test-geocoding-token',
@@ -356,19 +483,17 @@ test.describe.serial('search offers and circles feature coverage', () => {
     { name: 'desktop', width: 1280, height: 900 },
     { name: 'mobile', width: 390, height: 844 },
   ]) {
-    test(`hosting raster map stays aligned after tab changes and resizing on ${viewport.name}`, async ({
+    test(`hosting raster map stays aligned after resizing on ${viewport.name}`, async ({
       page,
       context,
     }, testInfo) => {
       annotateFeature(testInfo, 'profile.edit-locations', [
-        'Hosting map tiles load after opening the Location tab.',
-        'The location marker stays centred after tab changes and resizing.',
+        'Hosting map tiles load on the offer page.',
+        'The location marker stays centred after resizing.',
       ]);
       await page.setViewportSize(viewport);
       await prepareRasterSearchMap(page, context, { includeMapbox: true });
       await page.goto('/offer/host');
-      const locationTab = page.getByRole('tab', { name: 'Location' });
-      await locationTab.click();
       const map = page.locator('.offer-map .leaflet-container');
       const overlay = page.locator('.offer-location-overlay');
 
@@ -402,12 +527,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
       }
 
       await expectAlignedMap();
-      await page.getByRole('tab', { name: 'Availability' }).click();
       await page.setViewportSize({
         width: viewport.width - 30,
         height: viewport.height - 60,
       });
-      await locationTab.click();
       await expectAlignedMap();
     });
   }
@@ -433,7 +556,6 @@ test.describe.serial('search offers and circles feature coverage', () => {
         Boolean(document.createElement('canvas').getContext('webgl')),
       ),
     ).toBe(true);
-    await page.getByRole('tab', { name: 'Location' }).click();
     const map = page.locator('.offer-map .leaflet-container');
     await expect(map).toBeVisible();
     await expect(page.locator('.offer-map .mapboxgl-canvas')).toHaveCount(0);
@@ -597,7 +719,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await hostPage.goto('/offer/host');
 
       const circleOnly = hostPage.getByLabel(
-        'People that are not in any of my circles should not find me.',
+        'Only my circles can find me on the map.',
       );
       await expect(circleOnly).toBeVisible();
       await circleOnly.check();

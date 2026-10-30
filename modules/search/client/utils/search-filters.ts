@@ -20,12 +20,11 @@ const DEFAULT_FILTERS: SearchFilters = {
 };
 
 function normalizeTypes(types: SearchType[] = []): string[] {
-  const hasHosts = (types || []).some(type => {
-    const value = typeof type === 'object' ? type.id : type;
-    return value === 'host';
-  });
-
-  return hasHosts ? ['host', 'meet'] : ['meet'];
+  const values = (types || []).map(type =>
+    typeof type === 'object' ? type.id : type,
+  );
+  const selected = ['host', 'meet'].filter(type => values.includes(type));
+  return selected.length ? selected : ['meet'];
 }
 
 function getCacheKey(userId?: string | null): string {
