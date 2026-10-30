@@ -6,7 +6,7 @@ Issue #2885 asks for server TypeScript as a separate rollout from the client. Th
 
 ## What Changes
 
-- Add `tsconfig.server.json`, a strict NodeNext project for `modules/*/server/**/*.mts`, and run it from `npm run typecheck`.
+- Add `tooling/tsconfig/server.json`, a strict NodeNext project for `modules/*/server/**/*.mts`, and run it from `npm run typecheck`.
 - Execute `.mts` files directly through Node 24 type stripping (erasable syntax only), so there is no server build step and imports keep their explicit file extensions.
 - Extend discovery globs, watchers, lint, formatting and NYC configuration to `.mts`, and strip types in the native ESM coverage hook before instrumenting so the existing report and gate cover the typed implementation.
 - Add declaration files for untyped configuration and logging modules that typed server code imports.
@@ -14,4 +14,4 @@ Issue #2885 asks for server TypeScript as a separate rollout from the client. Th
 
 ## Impact
 
-Affected specification: developer-tooling. No public HTTP behaviour, database schema or deployment command changes. Typed modules are referenced by their `.mts` path from importers and tests. `tsconfig.contracts.json` keeps `checkJs` until its five payload services are converted.
+Affected specification: developer-tooling. No public HTTP behaviour, database schema or deployment command changes. Typed modules are referenced by their `.mts` path from importers and tests. `tooling/tsconfig/contracts.json` keeps `checkJs` until its five payload services are converted.

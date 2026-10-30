@@ -91,7 +91,7 @@ certificate linking still use the CLI above. The existing CLI and optional
 remote signer remain supported.
 
 The docs browser code lives in `docs/src/*.mts` and is checked with
-`tsconfig.docs.json` as part of `pnpm typecheck`. `pnpm build:docs` generates the
+`tooling/tsconfig/docs.json` as part of `pnpm typecheck`. `pnpm build:docs` generates the
 browser `.mjs` assets using Node 24 type stripping; generated JavaScript is not
 committed. `pnpm test:docs` builds those assets and runs the unit and browser
 publishing tests.

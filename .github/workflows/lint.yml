@@ -29,7 +29,7 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
-          if git diff --quiet FETCH_HEAD HEAD -- docs scripts/android scripts/ci/latest-apk.test.mts scripts/ci/zapstore-publisher.test.mts scripts/ci/android-release-metadata.mts scripts/ci/docs-playwright.config.mts scripts/ci/build-docs-scripts.mts tsconfig.docs.json tests/docs .github/workflows/lint.yml; then
+          if git diff --quiet FETCH_HEAD HEAD -- docs scripts/android scripts/ci/latest-apk.test.mts scripts/ci/zapstore-publisher.test.mts scripts/ci/android-release-metadata.mts scripts/ci/docs-playwright.config.mts scripts/ci/build-docs-scripts.mts tooling/tsconfig/docs.json tooling/tsconfig/base.json tests/docs .github/workflows/lint.yml; then
             echo 'run=false' >> "$GITHUB_OUTPUT"
           else
             echo 'run=true' >> "$GITHUB_OUTPUT"

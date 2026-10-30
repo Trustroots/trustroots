@@ -5,7 +5,7 @@ their features in `modules/*/shared/` and contain only types, so the JavaScript
 server does not need a TypeScript runtime.
 
 `pnpm run typecheck` checks client code, TypeScript test fixtures and the opted-in
-server payload builders in `tsconfig.contracts.json`. The latter uses strict
+server payload builders in `tooling/tsconfig/contracts.json`. The latter uses strict
 `checkJs` with JSDoc imports of the same contracts used by the client. It does
 not enable checking across the legacy server tree.
 
@@ -56,11 +56,11 @@ Broader endpoint and database typing can proceed incrementally without reopening
 the completed client migration or changing the server runtime.
 
 All module client tests and client-specific helpers use TypeScript and are
-included in `tsconfig.tests.json`. Fixtures and mocks should use the actual API
+included in `tooling/tsconfig/tests.json`. Fixtures and mocks should use the actual API
 or component types. Deliberately malformed runtime inputs belong at an explicit
 test boundary, using the helpers in `testutils/client/malformed-fixtures.ts`,
 rather than weakening production types. Shared JavaScript server/common test
-utilities are checked separately in `tsconfig.fixtures.json`. Their data helpers
+utilities are checked separately in `tooling/tsconfig/fixtures.json`. Their data helpers
 use TypeScript with thin CommonJS entry points for legacy server tests. Node 24
 loads the implementations using its built-in type stripping; no runtime compiler
 package or production compilation step is required. Fixture sources must use

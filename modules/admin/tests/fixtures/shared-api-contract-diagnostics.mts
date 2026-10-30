@@ -20,10 +20,14 @@ if (argument === undefined) throw new Error('Expected diagnostic arguments');
 const { root, file, before, after } = JSON.parse(
   argument,
 ) as DiagnosticArguments;
-const configPath = path.join(root, 'tsconfig.contracts.json');
+const configPath = path.join(root, 'tooling/tsconfig/contracts.json');
 const config = ts.readConfigFile(configPath, ts.sys.readFile);
 assert.equal(config.error, undefined);
-const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
+const parsed = ts.parseJsonConfigFileContent(
+  config.config,
+  ts.sys,
+  path.dirname(configPath),
+);
 assert.deepEqual(parsed.errors, []);
 const host = ts.createCompilerHost(parsed.options);
 const original = host.readFile.bind(host);

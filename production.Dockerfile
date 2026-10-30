@@ -50,6 +50,7 @@ COPY modules modules
 COPY packages packages
 COPY public public
 COPY testutils testutils
+COPY tooling/tsconfig tooling/tsconfig
 
 # Build the app
 RUN pnpm run build
