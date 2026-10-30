@@ -69,6 +69,9 @@ const sampleTribe = (id: string, slug: string): TribeSummary => ({
   count: 1,
 });
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   trackEvent: (
     action: string,

@@ -6,12 +6,21 @@
  *     jest.requireActual('@/testutils/client/router-location.testutil'),
  *   );
  *
- * Like the router, the hooks re-render on browser history (popstate) changes.
+ * Like the router, the hooks re-render on browser history (popstate) changes,
+ * and `useNavigate`/`<Navigate>` write the jsdom URL.
  */
-const { useSyncExternalStore } =
+const { useEffect, useSyncExternalStore } =
   jest.requireActual<typeof import('react')>('react');
 
 type Select<T> = { select?: (value: T) => unknown };
+type Search = Record<string, unknown>;
+type NavigateOptions = {
+  hash?: true | string;
+  params?: Record<string, string | undefined>;
+  replace?: boolean;
+  search?: true | Search | ((search: Record<string, string>) => Search);
+  to?: string;
+};
 
 function subscribe(onChange: () => void) {
   window.addEventListener('popstate', onChange);
@@ -24,6 +33,45 @@ function useUrl() {
 
 function read<T>(value: T, { select }: Select<T> = {}) {
   return select ? select(value) : value;
+}
+
+// Mirrors the router: omitted search and hash are dropped, `$param` segments
+// come from `params`, and navigating to the current URL writes nothing.
+function navigate({
+  hash,
+  params = {},
+  replace,
+  search,
+  to = '.',
+}: NavigateOptions) {
+  const current = new URL(window.location.href);
+  const currentSearch = Object.fromEntries(current.searchParams);
+  const nextSearch =
+    search === true
+      ? currentSearch
+      : typeof search === 'function'
+        ? search(currentSearch)
+        : search || {};
+  const next = new URL(
+    to === '.'
+      ? current.pathname
+      : to.replace(/\$(\w+)/g, (_, name) =>
+          encodeURIComponent(params[name] || ''),
+        ),
+    current,
+  );
+  Object.entries(nextSearch).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      next.searchParams.set(key, String(value));
+    }
+  });
+  next.hash = hash === true ? current.hash : hash || '';
+
+  if (next.href !== current.href) {
+    window.history[replace ? 'replaceState' : 'pushState']({}, '', next);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }
+  return Promise.resolve();
 }
 
 module.exports = {
@@ -40,6 +88,13 @@ module.exports = {
       options,
     );
   },
+  Navigate: (options: NavigateOptions) => {
+    useEffect(() => {
+      void navigate(options);
+    }, []);
+    return null;
+  },
+  useNavigate: () => navigate,
   useParams: (options?: Select<Record<string, string>>) => {
     const { matchReactRoute } = jest.requireActual(
       '@/modules/core/shared/react-route-ownership.mts',

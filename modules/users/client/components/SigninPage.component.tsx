@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -25,6 +25,7 @@ export default function SigninPage() {
     returnTo,
     userhandle,
   } = useSearch({ strict: false });
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     password: '',
     username: userhandle || '',
@@ -44,11 +45,12 @@ export default function SigninPage() {
     if (user && !hasRedirected.current) {
       hasRedirected.current = true;
       redirectAfterSignin(
+        navigate,
         signinDestination.current.continueSignin,
         signinDestination.current.returnTo,
       );
     }
-  }, [user]);
+  }, [navigate, user]);
 
   function updateCredential(field: 'username' | 'password', value: string) {
     setCredentials(current => ({

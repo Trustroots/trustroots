@@ -1,5 +1,3 @@
-import { navigate } from '@/modules/core/client/services/client-runtime';
-
 const confirmationTokenPattern = /^.{40}(?:[0-9a-f]{2})+$/i;
 const localReturnToPattern = /^\/(?:$|[^/\\])/;
 
@@ -70,6 +68,10 @@ export function getUsernameValidationError({
   return 'Invalid username.';
 }
 
+// Only paths on this site may be return destinations. Resolving against a
+// fixed base keeps the origin check independent of the page's own origin.
+const returnToBase = 'https://trustroots.invalid';
+
 export function getSafeReturnTo(
   returnTo: string | null | undefined,
 ): string | null {
@@ -77,22 +79,24 @@ export function getSafeReturnTo(
     return null;
   }
 
-  const destination = new URL(returnTo, window.location.origin);
+  const destination = new URL(returnTo, returnToBase);
 
-  if (destination.origin !== window.location.origin) {
+  if (destination.origin !== returnToBase) {
     return null;
   }
 
   return `${destination.pathname}${destination.search}${destination.hash}`;
 }
 
+// The page reloads after sign-in: the signin response leaves out the roles
+// the server adds to the bootstrapped user, which role-guarded routes need.
 export function redirectAfterSignin(
+  navigate: (options: { href: string; reloadDocument: true }) => unknown,
   continueSignin: boolean,
   returnTo?: string | null,
 ): void {
-  navigate(
-    continueSignin ? getSafeReturnTo(returnTo) || 'search.map' : 'search.map',
-    undefined,
-    { reload: true },
-  );
+  void navigate({
+    href: (continueSignin && getSafeReturnTo(returnTo)) || '/search',
+    reloadDocument: true,
+  });
 }
