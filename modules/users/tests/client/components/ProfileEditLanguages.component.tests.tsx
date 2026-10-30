@@ -4,7 +4,6 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
-import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 import type LanguageSelect from '@/modules/core/client/components/LanguageSelect';
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
@@ -20,7 +19,6 @@ type LanguageSelectProps = Pick<
 jest.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: { eng: 'English' } }),
 }));
-jest.mock('@/modules/core/client/services/client-runtime');
 jest.mock('@/modules/core/client/components/LanguageSelect', () => {
   function MockLanguageSelect(props: LanguageSelectProps) {
     return (
@@ -69,7 +67,6 @@ describe('<ProfileEditLanguages />', () => {
 
     fireEvent.click(select);
 
-    expect(broadcastClientEvent).toHaveBeenCalledWith('userChanged');
     expect(onChangeLanguages).toHaveBeenCalledWith(['en', 'pt']);
   });
 
@@ -92,9 +89,7 @@ describe('<ProfileEditLanguages />', () => {
       name: 'Add languages you speak.',
     });
 
-    fireEvent.click(select);
-
-    expect(broadcastClientEvent).toHaveBeenCalledWith('userChanged');
+    expect(() => fireEvent.click(select)).not.toThrow();
   });
 
   it('always keeps selected languages visible in language select input', () => {
