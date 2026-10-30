@@ -3,16 +3,13 @@ package org.trustroots.android.ui
 import android.content.Context
 import android.graphics.Point
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
@@ -122,14 +119,30 @@ class HostMapHighZoomCommunityNotesJourneyTest {
             }
             currentZoom() in 12.9..13.1 && updatedCluster.get()?.let { it !== initialCluster } == true
         }
-        val clusterTouch = AtomicReference<Offset?>(null)
+        val clusterTapped = AtomicReference(false)
         compose.runOnUiThread {
             val map = requireNotNull(mapReference.get())
             val marker = map.overlays.filterIsInstance<Marker>().first { it.title == "3 community notes" }
+            // Project and hit-test in one UI-thread turn so an osmdroid camera update
+            // cannot move the marker between capturing its position and dispatching the tap.
+            // Use the real overlay manager, as the individual-marker checks below do.
             val point = map.projection.toPixels(marker.position, Point())
-            clusterTouch.set(Offset(point.x.toFloat(), point.y.toFloat()))
+            val eventTime = android.os.SystemClock.uptimeMillis()
+            val event = android.view.MotionEvent.obtain(
+                eventTime,
+                eventTime,
+                android.view.MotionEvent.ACTION_UP,
+                point.x.toFloat(),
+                point.y.toFloat(),
+                0,
+            )
+            try {
+                clusterTapped.set(map.overlayManager.onSingleTapConfirmed(event, map))
+            } finally {
+                event.recycle()
+            }
         }
-        compose.onNodeWithTag("hostMapView").performTouchInput { click(requireNotNull(clusterTouch.get())) }
+        assertTrue("The real overlay manager should route the tap to the cluster marker", clusterTapped.get())
         compose.waitUntil(10_000) {
             val markerCount = AtomicReference(0)
             compose.runOnUiThread {
