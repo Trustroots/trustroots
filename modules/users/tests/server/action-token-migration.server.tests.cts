@@ -80,10 +80,8 @@ describe('Legacy account action token migration', function () {
       emailToken: 'soon-consumed',
     });
     const wrapper: Pick<Collection<UserTokenRecord>, 'find' | 'updateOne'> = {
-      find: (
-        filter: Filter<UserTokenRecord> = {},
-        options?: FindOptions<UserTokenRecord>,
-      ) => collection.find(filter, options),
+      find: (filter: Filter<UserTokenRecord> = {}, options?: FindOptions) =>
+        collection.find(filter, options),
       async updateOne(filter, update) {
         await collection.updateOne(
           { _id: insertedId },

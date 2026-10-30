@@ -80,7 +80,7 @@ describe('Session configuration', function () {
     );
 
     expressConfig.initMiddleware(app);
-    expressConfig.initSession(app, {});
+    expressConfig.initSession(app, { getClient: () => ({}) });
     app.get('/visit', (req, res) => res.send('visited'));
     app.get('/change', (req, res) => {
       const sessionRequest = req as import('express').Request & {

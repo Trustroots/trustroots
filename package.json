@@ -163,7 +163,7 @@
     "medium-editor": "5.23.3",
     "migrate": "2.1.0",
     "moment": "2.31.0",
-    "mongodb": "6.20.0",
+    "mongodb": "7.7.0",
     "mongoose": "9.11.4",
     "morgan": "1.12.1",
     "multer": "2.5.0",

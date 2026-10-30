@@ -80,10 +80,7 @@ const uri = process.env.MONGO_URI;
 const mode = process.env.MONGO_MODE;
 
 (async () => {
-  const client = await MongoClient.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  const client = await MongoClient.connect(uri);
   try {
     const db = client.db();
     if (mode === 'drop') {

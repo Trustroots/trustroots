@@ -67,7 +67,7 @@ importers:
         version: 1.8.2(supports-color@5.5.0)
       connect-mongo:
         specifier: 6.0.0
-        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
+        version: 6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
       core-js:
         specifier: 3.51.0
         version: 3.51.0
@@ -141,8 +141,8 @@ importers:
         specifier: 2.31.0
         version: 2.31.0
       mongodb:
-        specifier: 6.20.0
-        version: 6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
+        specifier: 7.7.0
+        version: 7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
       mongoose:
         specifier: 9.11.4
         version: 9.11.4(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
@@ -2585,9 +2585,6 @@ packages:
   '@types/webidl-conversions@7.0.3':
     resolution: {integrity: sha512-CiJJvcRtIgzadHCYXw7dqEnMNRjhGZlYK05Mj9OyktqV8uVT8fD2BFOB7S1uwBE3Kj2Z+4UyPmFw/Ixgw/LAlA==}
 
-  '@types/whatwg-url@11.0.5':
-    resolution: {integrity: sha512-coYR071JRaHa+xoEvvYqvnIHaVqaYrLPbsufM9BF63HkwI5Lgmy2QR8Q5K/lYDYo5AK82wOvSOS0UsLTpTG7uQ==}
-
   '@types/whatwg-url@13.0.0':
     resolution: {integrity: sha512-N8WXpbE6Wgri7KUSvrmQcqrMllKZ9uxkYWMt+mCSGwNc0Hsw9VQTW7ApqI4XNrx6/SaM2QQJCzMPDEXE058s+Q==}
 
@@ -3214,10 +3211,6 @@ packages:
   bson@4.7.2:
     resolution: {integrity: sha512-Ry9wCtIZ5kGqkJoi6aD8KjxFZEx78guTQDnpXWiNthsxzrxAK/i8E6pCHAIZTbaEFWcOCvbecMukfK7XUvyLpQ==}
     engines: {node: '>=6.9.0'}
-
-  bson@6.10.4:
-    resolution: {integrity: sha512-WIsKqkSC0ABoBJuT1LEX+2HEvNmNKKgnTAyd0fL8qzK4SH2i9NXg+t08YtdZp/V9IZ33cxe3iV4yM0qg8lMQng==}
-    engines: {node: '>=16.20.1'}
 
   bson@7.3.3:
     resolution: {integrity: sha512-oz3LwE3qGEhTCSyhzQRLY3Bj1NLOsjFMf6tcmY5J8M+3R7EVcmoBfSHWvjUK3yXCLDUsGpIuB3aQL4nDZ1EV/g==}
@@ -5229,9 +5222,6 @@ packages:
   mongodb-connection-string-url@2.6.0:
     resolution: {integrity: sha512-WvTZlI9ab0QYtTYnuMLgobULWhokRjtC7db9LtcVfJ+Hsnyr5eo6ZtNAt3Ly24XZScGMelOcGtm7lSn0332tPQ==}
 
-  mongodb-connection-string-url@3.0.2:
-    resolution: {integrity: sha512-rMO7CGo/9BFwyZABcKAWL8UJwH/Kc2x0g72uhDWzG48URRax5TCIcJ7Rc3RZqffZzO/Gwff/jyKwCU9TN8gehA==}
-
   mongodb-connection-string-url@7.0.2:
     resolution: {integrity: sha512-ZoS07RoFqpKYQwAk59qmrx8+jJHNHU30UjlU96QktiGn1ltvDr+vCznLX5DiUBLEpMAHatHNWV1nM/74ul66kA==}
     engines: {node: '>=20.19.0'}
@@ -5239,33 +5229,6 @@ packages:
   mongodb@4.17.2:
     resolution: {integrity: sha512-mLV7SEiov2LHleRJPMPrK2PMyhXFZt2UQLC4VD4pnth3jMjYKHhtqfwwkkvS/NXuo/Fp3vbhaNcXrIDaLRb9Tg==}
     engines: {node: '>=12.9.0'}
-
-  mongodb@6.20.0:
-    resolution: {integrity: sha512-Tl6MEIU3K4Rq3TSHd+sZQqRBoGlFsOgNrH5ltAcFBV62Re3Fd+FcaVf8uSEQFOJ51SDowDVttBTONMfoYWrWlQ==}
-    engines: {node: '>=16.20.1'}
-    peerDependencies:
-      '@aws-sdk/credential-providers': ^3.188.0
-      '@mongodb-js/zstd': ^1.1.0 || ^2.0.0
-      gcp-metadata: ^5.2.0
-      kerberos: ^2.0.1
-      mongodb-client-encryption: '>=6.0.0 <7'
-      snappy: ^7.3.2
-      socks: ^2.7.1
-    peerDependenciesMeta:
-      '@aws-sdk/credential-providers':
-        optional: true
-      '@mongodb-js/zstd':
-        optional: true
-      gcp-metadata:
-        optional: true
-      kerberos:
-        optional: true
-      mongodb-client-encryption:
-        optional: true
-      snappy:
-        optional: true
-      socks:
-        optional: true
 
   mongodb@7.7.0:
     resolution: {integrity: sha512-XG1xXEqyouAV8GCb3PuRaujofeXKpAJAPvXYWZgHl6Dz4QHSJ1nRLl0+GpqaLTwKvC0RFE9truOur34RNFY1nw==}
@@ -8500,6 +8463,7 @@ snapshots:
   '@mongodb-js/saslprep@1.6.0':
     dependencies:
       sparse-bitfield: 3.0.3
+    optional: true
 
   '@mongodb-js/saslprep@1.6.1':
     dependencies:
@@ -9094,10 +9058,6 @@ snapshots:
 
   '@types/webidl-conversions@7.0.3': {}
 
-  '@types/whatwg-url@11.0.5':
-    dependencies:
-      '@types/webidl-conversions': 7.0.3
-
   '@types/whatwg-url@13.0.0':
     dependencies:
       '@types/webidl-conversions': 7.0.3
@@ -9417,7 +9377,7 @@ snapshots:
       body-parser: 1.20.9(supports-color@5.5.0)
       commander: 2.20.3
       express: 4.22.3(supports-color@5.5.0)
-      mongodb: 6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
+      mongodb: 7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
       semver: 7.8.5
     transitivePeerDependencies:
       - '@aws-sdk/credential-providers'
@@ -9802,8 +9762,6 @@ snapshots:
     dependencies:
       buffer: 5.7.1
 
-  bson@6.10.4: {}
-
   bson@7.3.3: {}
 
   buffer-equal-constant-time@1.0.1: {}
@@ -10006,12 +9964,12 @@ snapshots:
       tree-kill: 1.2.2
       yargs: 18.0.0
 
-  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0):
+  connect-mongo@6.0.0(express-session@1.19.0(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       express-session: 1.19.0(supports-color@5.5.0)
       kruptein: 3.0.8
-      mongodb: 6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
+      mongodb: 7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
     transitivePeerDependencies:
       - supports-color
 
@@ -12160,11 +12118,6 @@ snapshots:
       '@types/whatwg-url': 8.2.2
       whatwg-url: 11.0.0
 
-  mongodb-connection-string-url@3.0.2:
-    dependencies:
-      '@types/whatwg-url': 11.0.5
-      whatwg-url: 14.2.0
-
   mongodb-connection-string-url@7.0.2:
     dependencies:
       '@types/whatwg-url': 13.0.0
@@ -12178,15 +12131,6 @@ snapshots:
     optionalDependencies:
       '@aws-sdk/credential-providers': 3.1151.0
       '@mongodb-js/saslprep': 1.6.0
-
-  mongodb@6.20.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10):
-    dependencies:
-      '@mongodb-js/saslprep': 1.6.0
-      bson: 6.10.4
-      mongodb-connection-string-url: 3.0.2
-    optionalDependencies:
-      '@aws-sdk/credential-providers': 3.1151.0
-      socks: 2.8.10
 
   mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10):
     dependencies:

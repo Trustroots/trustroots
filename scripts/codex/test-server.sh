@@ -20,10 +20,7 @@ const { MongoClient } = require('mongodb');
 const uri = process.env.MONGO_URI;
 
 (async () => {
-  const client = await MongoClient.connect(uri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  });
+  const client = await MongoClient.connect(uri);
   try {
     await client.db().command({ ping: 1 });
   } finally {

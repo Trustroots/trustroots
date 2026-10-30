@@ -1,5 +1,4 @@
 import type { Connection } from 'mongoose';
-import type { MongoClient } from 'mongodb';
 import { pathToFileURL } from 'node:url';
 import _ from 'lodash';
 import config from './../config.mts';
@@ -231,7 +230,7 @@ function initViewEngine(app: Express) {
  */
 function initSession(app: Express, connection: Connection) {
   const sessionStoreOptions = {
-    client: (connection as Connection & { client: MongoClient }).client,
+    client: connection.getClient(),
     collection: config.sessionCollection,
   };
   // Express MongoDB session storage
