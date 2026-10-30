@@ -1,30 +1,13 @@
-import { Agenda, type DefineOptions, type Job } from 'agenda';
+import { Agenda } from 'agenda';
+import { MongoBackend } from '@agendajs/mongo-backend';
 import config from './../config.mts';
-// The installed Agenda implementation accepts string priorities and typed job
-// payloads; its published define() signature omits these combinations.
-export type RuntimeAgenda = Agenda & {
-  define<Data extends object>(
-    name: string,
-    options: Omit<DefineOptions, 'priority'> & {
-      priority?:
-        | DefineOptions['priority']
-        | 'lowest'
-        | 'low'
-        | 'normal'
-        | 'high'
-        | 'highest';
-    },
-    processor: (
-      job: Job<Data>,
-      done: (error?: Error | null) => void,
-    ) => void | Promise<void>,
-  ): void;
-};
+import { agendaLockLifetime } from './agenda-lock.mts';
 const service = new Agenda({
-  db: {
+  defaultLockLifetime: agendaLockLifetime,
+  backend: new MongoBackend({
     address: config.db.uri,
     collection: 'agendaJobs',
-  },
-}) as RuntimeAgenda;
+  }),
+});
 export default service;
 export { service as 'module.exports' };

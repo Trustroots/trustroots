@@ -59,12 +59,13 @@ export async function recoverSupportMessages(
         return (
           agenda
             .create('send support message', { messageId })
-            // Only pending jobs suppress recovery. Completed jobs remain in
-            // Agenda history, but must not block re-enqueue after a lost send.
+            // Agenda 6 stores unfinished processor state as null; MongoDB's
+            // null match includes legacy documents where the field is absent.
+            // Completed history must not block re-enqueue after a lost send.
             .unique(
               {
                 'data.messageId': messageId,
-                lastFinishedAt: { $exists: false },
+                lastFinishedAt: null,
               },
               { insertOnly: true },
             )

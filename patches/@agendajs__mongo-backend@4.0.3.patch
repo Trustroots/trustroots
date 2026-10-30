@@ -1,0 +1,47 @@
+--- a/dist/MongoJobRepository.js
++++ b/dist/MongoJobRepository.js
+@@ -638,10 +638,22 @@
+                 lastModifiedBy: options?.lastModifiedBy ?? null
+             };
+             log('[job %s] set job props: \n%O', _id, propsWithModifier);
++            // Agenda excludes processor state from Job.save(). Preserve those
++            // omitted fields atomically on updates; initialise them only on insert.
++            const processorDefaults = {};
++            for (const field of ['lockedAt', 'lastRunAt', 'lastFinishedAt', 'failedAt', 'failCount', 'failReason', 'progress']) {
++                if (props[field] === undefined) {
++                    processorDefaults[field] = null;
++                    delete propsWithModifier[field];
++                }
++            }
+             // Grab current time and set default query options for MongoDB
+             const now = new Date();
+-            const protect = {};
++            const protect = { ...processorDefaults };
+             let update = { $set: propsWithModifier };
++            if (Object.keys(processorDefaults).length > 0) {
++                update.$setOnInsert = processorDefaults;
++            }
+             log('current time stored as %s', now.toISOString());
+             // If the job already had an ID, then update the properties of the job
+             if (_id) {
+@@ -688,7 +700,7 @@
+                 query.name = props.name;
+                 const debounce = uniqueOpts?.debounce;
+                 if (uniqueOpts?.insertOnly && !debounce) {
+-                    update = { $setOnInsert: propsWithModifier };
++                    update = { $setOnInsert: { ...processorDefaults, ...propsWithModifier } };
+                 }
+                 // Handle debounce logic
+                 if (debounce) {
+@@ -763,9 +775,10 @@
+             }
+             // Insert new job
+             log('using default behavior, inserting new job via insertOne() with props that were set: \n%O', propsWithModifier);
+-            const result = await this.collection.insertOne(propsWithModifier);
++            const result = await this.collection.insertOne({ ...processorDefaults, ...propsWithModifier });
+             return computeJobObj({
+                 _id: result.insertedId,
++                ...processorDefaults,
+                 ...propsWithModifier
+             });
+         }
