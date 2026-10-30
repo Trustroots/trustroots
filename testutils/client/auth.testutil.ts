@@ -2,6 +2,9 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 let viewer: AuthUser | null = null;
 
+/** The signOut() that the mocked useAuth() returns. */
+export const mockSignOut = jest.fn<Promise<void>, []>();
+
 /** Sets the signed-in member that the mocked useAuth() returns. */
 export function setViewer(user: AuthUser | null): void {
   viewer = user;
@@ -22,6 +25,7 @@ export function mockAuthModule() {
       user: viewer,
       isAuthenticated: Boolean(viewer),
       setUser: jest.fn(),
+      signOut: mockSignOut,
       hasRole: (role: string) => Boolean(viewer?.roles?.includes(role)),
     }),
   };

@@ -20,7 +20,7 @@ import {
 } from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
 import type { RoutePolicy } from './routes';
-import { getClientNavigationTarget, signout } from './shell-helpers';
+import { getClientNavigationTarget } from './shell-helpers';
 
 export default function ReactAppShell() {
   const { title } = useAppConfig();
@@ -121,11 +121,7 @@ export default function ReactAppShell() {
     <>
       <div id="tr-wrap">
         {!route?.headerHidden && (
-          <AppHeader
-            currentPath={location.pathname}
-            onSignout={signout}
-            user={user}
-          />
+          <AppHeader currentPath={location.pathname} user={user} />
         )}
         <article className="content" id="tr-main" role="main" tabIndex={-1}>
           {redirect || route?.path === '/not-found' ? (

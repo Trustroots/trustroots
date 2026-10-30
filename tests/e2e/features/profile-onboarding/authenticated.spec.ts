@@ -10,7 +10,6 @@ import {
   createUser,
   registerViaApi,
   signInViaApi,
-  signOut,
   waitForTribesList,
 } from '../../support/helpers.mts';
 import { stubStatisticsImages } from '../../support/statistics.mts';
@@ -952,7 +951,11 @@ test.describe('authenticated member flows', () => {
       await page.goto('/profile/edit/account');
       await expect(page).toHaveURL(/\/profile\/edit\/account/);
 
-      await signOut(page);
+      await page.getByRole('button', { name: 'Profile menu' }).click();
+      const signoutRequest = page.waitForRequest('**/api/auth/signout');
+      await page.getByRole('button', { name: 'Sign out' }).click();
+      expect((await signoutRequest).method()).toBe('POST');
+      await expect(page).toHaveURL(/\/$/);
 
       await page.goto('/messages');
       await expect(page).toHaveURL(/\/signin/);

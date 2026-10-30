@@ -10,14 +10,9 @@ import NavigationLoggedOut from './NavigationLoggedOut';
 
 type Props = {
   currentPath?: string;
-  onSignout: (event?: React.MouseEvent<HTMLElement>) => void;
   user?: AuthUser | null;
 };
-export default function AppHeader({
-  currentPath: routedPath,
-  onSignout,
-  user,
-}: Props) {
+export default function AppHeader({ currentPath: routedPath, user }: Props) {
   const { t } = useTranslation('core');
   const browserPath = useCurrentPath();
   const currentPath = routedPath || browserPath;
@@ -65,11 +60,7 @@ export default function AppHeader({
         {t('Skip to main content')}
       </a>
       {user?.username ? (
-        <NavigationLoggedIn
-          onSignout={onSignout}
-          user={user}
-          currentPath={currentPath}
-        />
+        <NavigationLoggedIn user={user} currentPath={currentPath} />
       ) : (
         <NavigationLoggedOut currentPath={currentPath} />
       )}
