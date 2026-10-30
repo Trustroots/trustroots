@@ -1,0 +1,470 @@
+[
+  {
+    "dir": "ltr",
+    "name": "alert--rest",
+    "width": [
+      243,
+      243
+    ],
+    "height": [
+      86,
+      86
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "badge--rest",
+    "width": [
+      147,
+      145
+    ],
+    "height": [
+      36,
+      37
+    ],
+    "differing": 407
+  },
+  {
+    "dir": "ltr",
+    "name": "badge-heading--rest",
+    "width": [
+      242,
+      229
+    ],
+    "height": [
+      50,
+      47
+    ],
+    "differing": 2305
+  },
+  {
+    "dir": "ltr",
+    "name": "button-default--active",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-default--focus-visible",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-default--hover",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-default--rest",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-default-disabled--hover",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-default-disabled--rest",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-primary--active",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-primary--focus-visible",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-primary--hover",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-primary--rest",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-primary-disabled--hover",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-primary-disabled--rest",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "button-submit--rest",
+    "width": [
+      132,
+      132
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "ltr",
+    "name": "spinner--rest",
+    "width": [
+      123,
+      123
+    ],
+    "height": [
+      36,
+      36
+    ],
+    "differing": 102
+  },
+  {
+    "dir": "ltr",
+    "name": "spinner-heading--rest",
+    "width": [
+      202,
+      202
+    ],
+    "height": [
+      47,
+      47
+    ],
+    "differing": 347
+  },
+  {
+    "dir": "rtl",
+    "name": "alert--rest",
+    "width": [
+      215,
+      215
+    ],
+    "height": [
+      86,
+      86
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "badge--rest",
+    "width": [
+      136,
+      134
+    ],
+    "height": [
+      36,
+      37
+    ],
+    "differing": 1037
+  },
+  {
+    "dir": "rtl",
+    "name": "badge-heading--rest",
+    "width": [
+      232,
+      219
+    ],
+    "height": [
+      50,
+      47
+    ],
+    "differing": 4052
+  },
+  {
+    "dir": "rtl",
+    "name": "button-default--active",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-default--focus-visible",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-default--hover",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-default--rest",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-default-disabled--hover",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-default-disabled--rest",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-primary--active",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-primary--focus-visible",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-primary--hover",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-primary--rest",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-primary-disabled--hover",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-primary-disabled--rest",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "button-submit--rest",
+    "width": [
+      124,
+      124
+    ],
+    "height": [
+      50,
+      50
+    ],
+    "differing": 0
+  },
+  {
+    "dir": "rtl",
+    "name": "spinner--rest",
+    "width": [
+      116,
+      116
+    ],
+    "height": [
+      36,
+      36
+    ],
+    "differing": 103
+  },
+  {
+    "dir": "rtl",
+    "name": "spinner-heading--rest",
+    "width": [
+      196,
+      196
+    ],
+    "height": [
+      47,
+      47
+    ],
+    "differing": 342
+  }
+]

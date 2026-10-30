@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>packages/ui fixtures</title>
+    <script>
+      // Production loads react-main.css, then react-main.rtl.css for RTL languages.
+      const rtl = new URLSearchParams(location.search).get('dir') === 'rtl';
+      document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+      document.documentElement.lang = rtl ? 'ar' : 'en';
+      document.write('<link rel="stylesheet" href="dist/react-main.css">');
+      if (rtl) {
+        document.write(
+          '<link rel="stylesheet" id="rtl-style" href="dist/react-main.rtl.css">',
+        );
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="dist/react-main.js"></script>
+  </body>
+</html>
