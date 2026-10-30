@@ -2,7 +2,6 @@ import type { Types } from 'mongoose';
 import { emailToken } from '../../../users/server/services/action-token.server.service.mjs';
 import _ from 'lodash';
 import path from 'path';
-import async from 'async';
 import juice from 'juice';
 import moment from 'moment';
 import { Autolinker as autolinker } from 'autolinker';
@@ -740,23 +739,20 @@ function renderEmail(
     );
   }
 
-  // Rendering in parallel leads to an error. maybe because
-  // swig is unmaintained now https://github.com/paularmstrong/swig)
-  async.mapValuesSeries<string, string>(
-    templatePaths,
-    function (templatePath, key, done) {
-      render(templatePath, params, function (err, rendered) {
-        // there are promises inside render(), need to execute callback in
-        // nextTick() so callback can safely throw exceptions
-        // see https://github.com/caolan/async/issues/1150
-        async.nextTick(function () {
-          done(err, rendered);
+  async function renderTemplates(): Promise<Record<string, string>> {
+    const result: Record<string, string> = {};
+    for (const [key, templatePath] of Object.entries(templatePaths)) {
+      result[key] = await new Promise<string>((resolve, reject) => {
+        render(templatePath, params, (err, rendered) => {
+          if (err) reject(err);
+          else resolve(rendered!);
         });
       });
-    },
-    function (err, result) {
-      if (err) return callback(err);
-
+    }
+    return result;
+  }
+  renderTemplates().then(
+    result => {
       // Clean out html entities (like &gt;) from plain text emails
       result.text = textService.plainText(result.text);
 
@@ -804,8 +800,10 @@ function renderEmail(
       email.headers = {
         'X-MSYS-API': JSON.stringify(sparkpostHeader),
       };
-      callback(null, email);
+      // Keep callers outside the promise chain so callback exceptions propagate.
+      process.nextTick(() => callback(null, email));
     },
+    err => process.nextTick(() => callback(err)),
   );
 }
 function renderEmailAndSend(

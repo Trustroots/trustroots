@@ -20,7 +20,6 @@ import log from './../../../../config/lib/logger.mjs';
 import fileRemovalServiceModule from '../../../core/server/services/file-removal.server.service.mjs';
 import messageStatService from './../../../messages/server/services/message-stat.server.service.mjs';
 import config from './../../../../config/config.mts';
-import async from 'async';
 import crypto from 'crypto';
 import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
@@ -54,7 +53,6 @@ const locales: Array<{ code: string }> = JSON.parse(
   ),
 );
 const service = {} as UserProfileController;
-type ErrorDone = (error?: Error | null) => void;
 const emailService = emailServiceModule as {
   sendChangeEmailConfirmation(
     user: UserServerDocument,
@@ -254,228 +252,120 @@ service.update = function (req, res) {
   }
   const requestedNostrNpub =
     typeof req.body.nostrNpub === 'string' ? req.body.nostrNpub : undefined;
-  async.waterfall(
-    [
-      function (done: (error?: Error | null) => void) {
-        // Email didn't change, just continue
-        if (!requestedEmail || requestedEmail === authenticatedUser.email) {
-          return done();
-        }
-
-        // User is changing email, check if it's available
-        User.findOne(
-          {
-            $or: [
-              {
-                emailTemporary: requestedEmail.toLowerCase(),
-              },
-              {
-                email: requestedEmail.toLowerCase(),
-              },
-            ],
-          },
-          'emailTemporary email',
-        ).then(
-          (emailUser: UserServerDocument | null) => {
-            // Not available
-            if (emailUser) {
-              // If the user we found with this email is currently authenticated user,
-              // let user pass to resend confirmation email
-              if (emailUser._id.equals(authenticatedUser._id)) {
-                done();
-              } else {
-                // Otherwise it was someone else's email. Block the way.
-                return res.status(403).send({
-                  message:
-                    'This email is already in use. Please use another one.',
-                });
-              }
-            } else {
-              // Email available, proceed generating the token
-              done();
-            }
-          },
-          () => done(),
+  async function updateProfile(): Promise<void> {
+    if (requestedEmail && requestedEmail !== authenticatedUser.email) {
+      const emailUser = await User.findOne(
+        {
+          $or: [
+            { emailTemporary: requestedEmail.toLowerCase() },
+            { email: requestedEmail.toLowerCase() },
+          ],
+        },
+        'emailTemporary email',
+      ).catch(() => null);
+      if (emailUser && !emailUser._id.equals(authenticatedUser._id)) {
+        res.status(403).send({
+          message: 'This email is already in use. Please use another one.',
+        });
+        return;
+      }
+    }
+    if (requestedNostrNpub) {
+      const existingNostrUser = await User.findOne(
+        { _id: { $ne: authenticatedUser._id }, nostrNpub: requestedNostrNpub },
+        '_id',
+      );
+      if (existingNostrUser) {
+        res.status(403).send({
+          message: 'This nostr npub is already in use. Please use another one.',
+        });
+        return;
+      }
+    }
+    let token: string | false = false;
+    const email =
+      requestedEmail && requestedEmail !== authenticatedUser.email
+        ? requestedEmail
+        : false;
+    if (email) {
+      const buffer = await new Promise<Buffer>((resolve, reject) => {
+        crypto.randomBytes(20, (err, buffer) =>
+          err ? reject(err) : resolve(buffer),
         );
-      },
-      // Check if nostr npub is already claimed by another user
-      function (done: (error?: Error | null) => void) {
-        if (!requestedNostrNpub) {
-          return done();
-        }
-        User.findOne(
-          {
-            _id: {
-              $ne: authenticatedUser._id,
-            },
-            nostrNpub: requestedNostrNpub,
-          },
-          '_id',
-        ).then((existingNostrUser: UserServerDocument | null) => {
-          if (existingNostrUser) {
-            return res.status(403).send({
-              message:
-                'This nostr npub is already in use. Please use another one.',
-            });
-          }
-          done();
-        }, done);
-      },
-      // Check if we should generate new email token
-      function (
-        done: (
-          error: Error | null,
-          token: string | false,
-          email: string | false,
-        ) => void,
-      ) {
-        // Generate only if email changed
-        if (requestedEmail && requestedEmail !== authenticatedUser.email) {
-          crypto.randomBytes(20, function (err: Error | null, buffer: Buffer) {
-            const token = buffer.toString('hex');
-            done(err, token, requestedEmail);
-          });
-        } else {
-          // Email didn't change, just continue
-          done(null, false, false);
-        }
-      },
-      // User wants to change the username
-      function (
-        token: string | false,
-        email: string | false,
-        done: (
-          error: Error | null,
-          token: string | false,
-          email: string | false,
-        ) => void,
-      ) {
-        if (
-          typeof req.body.username === 'string' &&
-          req.body.username &&
-          req.body.username !== authenticatedUser.username
-        ) {
-          const requestedUsername = req.body.username;
-          void (async function () {
-            try {
-              const user = await User.findById(authenticatedUser._id)
-                .select('+usernameHistory')
-                .exec();
-              if (!user) {
-                res.status(404).send({
-                  message: 'User not found.',
-                });
-                return;
-              }
-              authenticatedUser = user;
-              if (requestedUsername === authenticatedUser.username) {
-                return done(null, token, email);
-              }
-              if (!isUsernameUpdateAllowed(authenticatedUser)) {
-                res.status(403).send({
-                  message: 'You cannot change your username at this time.',
-                });
-                return;
-              }
-
-              // Guard the rename save against a concurrent request that
-              // loaded the same old username and cooldown state.
-              authenticatedUser.$where = {
-                username: authenticatedUser.username,
-              };
-              const changedAt = new Date();
-              authenticatedUser.usernameUpdated = changedAt;
-              usernameChange = {
-                oldUsername: authenticatedUser.username,
-                newUsername: requestedUsername,
-                changedAt,
-              };
-              done(null, token, email);
-            } catch (error) {
-              done(error as Error, token, email);
-            }
-          })();
+      });
+      token = buffer.toString('hex');
+    }
+    if (
+      typeof req.body.username === 'string' &&
+      req.body.username &&
+      req.body.username !== authenticatedUser.username
+    ) {
+      const requestedUsername = req.body.username;
+      const user = await User.findById(authenticatedUser._id)
+        .select('+usernameHistory')
+        .exec();
+      if (!user) {
+        res.status(404).send({ message: 'User not found.' });
+        return;
+      }
+      authenticatedUser = user;
+      if (requestedUsername !== authenticatedUser.username) {
+        if (!isUsernameUpdateAllowed(authenticatedUser)) {
+          res
+            .status(403)
+            .send({ message: 'You cannot change your username at this time.' });
           return;
         }
-        done(null, token, email);
-      },
-      // Update user
-      function (
-        token: string | false,
-        email: string | false,
-        done: (
-          error: Error | null,
-          token: string | false,
-          user: UserServerDocument,
-        ) => void,
-      ) {
-        const user = Object.assign(
-          authenticatedUser,
-          selectProfileUpdateFields(req.body),
-        );
-        if (usernameChange) {
-          user.usernameHistory ||= [];
-          user.usernameHistory.push(usernameChange);
-        }
-        user.set('updated', Date.now());
-
-        // This is set only if user edited email
-        if (token && email) {
-          setEmailConfirmationToken(user, token);
-          user.emailTemporary = email;
-        }
-        user
-          .save()
-          .then(function () {
-            req.user = user;
-            done(null, token, user);
-          })
-          .catch(error => {
-            if (
-              usernameChange &&
-              (error instanceof mongoose.Error.DocumentNotFoundError ||
-                error instanceof mongoose.Error.VersionError)
-            ) {
-              return res.status(409).send({
-                message:
-                  'Your username changed in another request. Please try again.',
-              });
-            }
-            done(error, token, user);
-          });
-      },
-      // Send email
-      function (
-        token: string | false,
-        user: UserServerDocument,
-        done: (
-          error: Error | null | undefined,
-          user: UserServerDocument,
-        ) => void,
-      ) {
-        if (token) {
-          emailService.sendChangeEmailConfirmation(
-            user,
-            function (err: Error | null) {
-              done(err, user);
-            },
-          );
-        } else {
-          done(null, user);
-        }
-      },
-      // Return user
-      function (user: UserServerDocument) {
-        const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
-        return res.json(sanitizedUser);
-      },
-    ],
-    function (err) {
-      if (err) {
-        return errorService.sendBadRequest(res, err);
+        authenticatedUser.$where = { username: authenticatedUser.username };
+        const changedAt = new Date();
+        authenticatedUser.usernameUpdated = changedAt;
+        usernameChange = {
+          oldUsername: authenticatedUser.username,
+          newUsername: requestedUsername,
+          changedAt,
+        };
       }
-    },
-  );
+    }
+    const user = Object.assign(
+      authenticatedUser,
+      selectProfileUpdateFields(req.body),
+    );
+    if (usernameChange) {
+      user.usernameHistory ||= [];
+      user.usernameHistory.push(usernameChange);
+    }
+    user.set('updated', Date.now());
+    if (token && email) {
+      setEmailConfirmationToken(user, token);
+      user.emailTemporary = email;
+    }
+    try {
+      await user.save();
+    } catch (error) {
+      if (
+        usernameChange &&
+        (error instanceof mongoose.Error.DocumentNotFoundError ||
+          error instanceof mongoose.Error.VersionError)
+      ) {
+        res.status(409).send({
+          message:
+            'Your username changed in another request. Please try again.',
+        });
+        return;
+      }
+      throw error;
+    }
+    req.user = user;
+    if (token) {
+      await new Promise<void>((resolve, reject) => {
+        emailService.sendChangeEmailConfirmation(user, err =>
+          err ? reject(err) : resolve(),
+        );
+      });
+    }
+    res.json(service.sanitizeProfile(user, authenticatedUser));
+  }
+  updateProfile().catch(err => errorService.sendBadRequest(res, err));
 };
 
 /**
@@ -497,87 +387,55 @@ service.initializeRemoveProfile = function (req, res) {
         'Oops! Something went wrong. Please get in touch with support at trustroots.org/support',
     });
   }
-  async.waterfall(
-    [
-      // Generate random token
-      function (done: (error: Error | null, token: string) => void) {
-        crypto.randomBytes(20, function (err: Error | null, buffer: Buffer) {
-          const token = buffer.toString('hex');
-          done(err, token);
-        });
+  async function requestRemoval(): Promise<void> {
+    const buffer = await new Promise<Buffer>((resolve, reject) => {
+      crypto.randomBytes(20, (err, buffer) =>
+        err ? reject(err) : resolve(buffer),
+      );
+    });
+    const token = buffer.toString('hex');
+    const user = await User.findOneAndUpdate(
+      { _id: authenticatedUser._id },
+      {
+        $set: {
+          removeProfileToken: hashToken(token),
+          removeProfileExpires: Date.now() + 24 * 3600000,
+        },
       },
-      // Set token
-      function (
-        token: string,
-        done: (error: Error | null, user: UserServerDocument | null) => void,
-      ) {
-        // Token expires in 24 hours
-        const tokenExpires = Date.now() + 24 * 3600000;
-        User.findOneAndUpdate(
-          {
-            _id: authenticatedUser._id,
-          },
-          {
-            $set: {
-              removeProfileToken: hashToken(token),
-              removeProfileExpires: tokenExpires,
-            },
-          },
-          {
-            // Return updated user document
-            new: true,
-          },
-        ).then(
-          result => {
-            if (result) {
-              const user = result as UserServerDocument;
-              user.$locals.actionTokens = { removeProfileToken: token };
-              return done(null, user);
-            }
-            done(null, null);
-          },
-          (err: Error) => done(err, null),
-        );
-      },
-      // Send email
-      function (user: UserServerDocument | null) {
-        emailService.sendRemoveProfile(user, function (err?: Error | null) {
-          // Stop on errors
-          if (err) {
-            return res.status(400).send({
-              message:
-                'Failure while sending confirmation email to you. Please try again later.',
-            });
-          }
-
-          // Report successfull reset to stats
-          return statService.stat(
-            {
-              namespace: 'profileRemoval',
-              counts: {
-                count: 1,
-              },
-              tags: {
-                status: 'emailSent',
-              },
-            },
-            function () {
-              // Return success
-              res.send({
-                message: 'We sent you an email with further instructions.',
-              });
-            },
-          );
-        });
-      },
-    ],
-    function (err?: Error | null) {
+      { new: true },
+    );
+    if (user) user.$locals.actionTokens = { removeProfileToken: token };
+    emailService.sendRemoveProfile(user, function (err?: Error | null) {
+      // Stop on errors
       if (err) {
         return res.status(400).send({
-          message: 'Removing your profile failed.',
+          message:
+            'Failure while sending confirmation email to you. Please try again later.',
         });
       }
-    },
+
+      // Report successfull reset to stats
+      return statService.stat(
+        {
+          namespace: 'profileRemoval',
+          counts: {
+            count: 1,
+          },
+          tags: {
+            status: 'emailSent',
+          },
+        },
+        function () {
+          // Return success
+          res.send({
+            message: 'We sent you an email with further instructions.',
+          });
+        },
+      );
+    });
+  }
+  requestRemoval().catch(() =>
+    res.status(400).send({ message: 'Removing your profile failed.' }),
   );
 };
 
@@ -624,236 +482,87 @@ service.removeProfile = function (req, res) {
     return errorService.sendForbidden(res);
   }
   const authenticatedUser = req.user;
-  async.waterfall(
-    [
-      // Validate token
-      function (done: (error: Error | null, user: UserServerRecord) => void) {
-        User.findOne({
-          _id: authenticatedUser._id,
-          removeProfileToken: matchToken(req.params.token),
-          removeProfileExpires: {
-            $gt: Date.now(),
-          },
-        }).then(
-          (user: UserServerRecord | null) => {
-            // Can't find user (=invalid or expired token) or other error
-            if (!user) {
-              // Report failure to stats
-              return statService.stat(
-                {
-                  namespace: 'profileRemoval',
-                  counts: {
-                    count: 1,
-                  },
-                  tags: {
-                    status: 'failed',
-                  },
-                },
-                function () {
-                  // Return failure
-                  return res.status(400).send({
-                    message: 'Profile remove token is invalid or has expired.',
-                  });
-                },
-              );
-            }
-            done(null, user);
-          },
-          () =>
-            statService.stat(
-              {
-                namespace: 'profileRemoval',
-                counts: {
-                  count: 1,
-                },
-                tags: {
-                  status: 'failed',
-                },
-              },
-              function () {
-                return res.status(400).send({
-                  message: 'Profile remove token is invalid or has expired.',
-                });
-              },
-            ),
-        );
+  function report(status: string, message: string, failed = false) {
+    statService.stat(
+      { namespace: 'profileRemoval', counts: { count: 1 }, tags: { status } },
+      () => {
+        if (failed) res.status(400).send({ message });
+        else res.json({ message });
       },
-      // Remove profile
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null | undefined, user: UserServerRecord) => void,
-      ) {
-        User.findOneAndDelete({
-          _id: user._id,
-        }).then(
-          () => done(null, user),
-          (err: Error) => done(err, user),
-        );
-      },
-      // Remove native message alert registrations
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null | undefined, user: UserServerRecord) => void,
-      ) {
-        mongoose
-          .model('UnifiedPushRegistration')
-          .deleteMany({
-            user: user._id,
-          })
-          .then(
-            () => done(null, user),
-            (err: Error) => {
-              log('error', 'Error removing message alert registrations.', {
-                error: err,
-              });
-              done(null, user);
-            },
-          );
-      },
-      // Remove offers
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null | undefined, user: UserServerRecord) => void,
-      ) {
-        getOfferHandler().removeAllByUserId(user._id, function (err) {
-          if (err) {
-            log('error', 'Error when removing all offers by user ID. #rj393', {
-              error: err,
-            });
-          }
-          done(null, user);
+    );
+  }
+  async function remove(): Promise<void> {
+    const user = await User.findOne({
+      _id: authenticatedUser._id,
+      removeProfileToken: matchToken(req.params.token),
+      removeProfileExpires: { $gt: Date.now() },
+    }).catch(() => null);
+    if (!user) {
+      report('failed', 'Profile remove token is invalid or has expired.', true);
+      return;
+    }
+    await User.findOneAndDelete({ _id: user._id });
+    await mongoose
+      .model('UnifiedPushRegistration')
+      .deleteMany({ user: user._id })
+      .catch(err => {
+        log('error', 'Error removing message alert registrations.', {
+          error: err,
         });
-      },
-      // Remove contacts
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null | undefined, user: UserServerRecord) => void,
-      ) {
-        getContactHandler().removeAllByUserId(user._id, function (err) {
-          if (err) {
+      });
+    await new Promise<void>(resolve => {
+      getOfferHandler().removeAllByUserId(user._id, err => {
+        if (err)
+          log('error', 'Error when removing all offers by user ID. #rj393', {
+            error: err,
+          });
+        resolve();
+      });
+    });
+    await new Promise<void>(resolve => {
+      getContactHandler().removeAllByUserId(user._id, err => {
+        if (err)
+          log('error', 'Error when removing all contacts by user ID. #j93hdd', {
+            error: err,
+          });
+        resolve();
+      });
+    });
+    await new Promise<void>((resolve, reject) => {
+      getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
+        err ? reject(err) : resolve(),
+      );
+    });
+    await Promise.all(
+      user.member.map(
+        membership =>
+          new Promise<void>((resolve, reject) => {
+            tribesHandler.updateCount(membership.tribe, -1, false, err =>
+              err ? reject(err) : resolve(),
+            );
+          }),
+      ),
+    );
+    await fileRemovalService.removeLocalPath(
+      path.resolve(config.uploadDir) + '/' + user._id,
+    );
+    await new Promise<void>(resolve => {
+      emailService.sendRemoveProfileConfirmed(
+        { displayName: user.displayName, email: user.email },
+        err => {
+          if (err)
             log(
               'error',
-              'Error when removing all contacts by user ID. #j93hdd',
-              {
-                error: err,
-              },
+              'Sending confirmation email about successfull profile removal failed #289hhs',
+              { error: err },
             );
-          }
-          done(null, user);
-        });
-      },
-      // Mark all messages sent _to_ that user as `notified:true` (so that unread-messages doesn't pick them up anymore). Leave messages _from_ that user as is.
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null | undefined, user: UserServerRecord) => void,
-      ) {
-        getMessageHandler().markAllMessagesToUserNotified(
-          user._id,
-          function (err?: Error | null) {
-            return done(err, user);
-          },
-        );
-      },
-      // Subtract 1 from all the tribes.count of which user is member
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null | undefined, user: UserServerRecord) => void,
-      ) {
-        async.each(
-          user.member,
-          function (
-            membership: UserServerRecord['member'][number],
-            callback: (error?: Error | null) => void,
-          ) {
-            // Update the count of every tribe user is member of
-            tribesHandler.updateCount(membership.tribe, -1, false, callback);
-          },
-          function (err?: Error | null) {
-            done(err, user);
-          },
-        );
-      },
-      // Remove uploaded images
-      function (
-        user: UserServerRecord,
-        done: (error: Error | null, user: UserServerRecord) => void,
-      ) {
-        // All user's uploads are under their own folder
-        fileRemovalService
-          .removeLocalPath(path.resolve(config.uploadDir) + '/' + user._id)
-          .then(
-            () => done(null, user),
-            (error: Error) => done(error, user),
-          );
-      },
-      // Send email
-      function (user: UserServerRecord, done: (error?: Error | null) => void) {
-        emailService.sendRemoveProfileConfirmed(
-          {
-            displayName: user.displayName,
-            email: user.email,
-          },
-          function (err: Error | null) {
-            // Just log errors but don't mind about them as this is not critical step
-            if (err) {
-              // Log the failure to send the email
-              log(
-                'error',
-                'Sending confirmation email about successfull profile removal failed #289hhs',
-                {
-                  error: err,
-                },
-              );
-            }
-            done();
-          },
-        );
-      },
-      // Done
-      function () {
-        // Report successfull removal to stats
-        return statService.stat(
-          {
-            namespace: 'profileRemoval',
-            counts: {
-              count: 1,
-            },
-            tags: {
-              status: 'removed',
-            },
-          },
-          function () {
-            // Return success
-            return res.json({
-              message: 'Your profile has been removed.',
-            });
-          },
-        );
-      },
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        // Report failure to stats
-        return statService.stat(
-          {
-            namespace: 'profileRemoval',
-            counts: {
-              count: 1,
-            },
-            tags: {
-              status: 'failed',
-            },
-          },
-          function () {
-            // Return failure
-            return res.status(400).send({
-              message: 'Removing your profile failed.',
-            });
-          },
-        );
-      }
-    },
-  );
+          resolve();
+        },
+      );
+    });
+    report('removed', 'Your profile has been removed.');
+  }
+  remove().catch(() => report('failed', 'Removing your profile failed.', true));
 };
 
 /**
@@ -988,106 +697,63 @@ service.userByUsername = function (req, res, next, username) {
       message: 'Valid username required.',
     });
   }
-  async.waterfall(
-    [
-      // Find user
-      function (
-        done: (error: Error | null, profile: UserServerDocument) => void,
-      ) {
-        const profileLookup = User.findOne(
-          {
-            username: username.toLowerCase(),
-          },
-          service.userProfileFields + ' roles public blocked',
-        );
-        const populatedProfile =
-          profileLookup && typeof profileLookup.populate === 'function'
-            ? profileLookup.populate({
-                path: 'member.tribe',
-                select: tribesHandler.tribeFields,
-                model: 'Tribe',
-                // Not possible at the moment due bug in Mongoose
-                // http://mongoosejs.com/docs/faq.html#populate_sort_order
-                // https://github.com/Automattic/mongoose/issues/2202
-                // options: { sort: { count: -1 } }
-              })
-            : profileLookup;
-        const profilePending =
-          populatedProfile && typeof populatedProfile.exec === 'function'
-            ? populatedProfile.exec()
-            : populatedProfile;
-        Promise.resolve(profilePending).then(
-          function (profile) {
-            if (!profile) {
-              // No such user
-              return res.status(404).send({
-                message: errorService.getErrorMessageByKey('not-found'),
-              });
-            }
-            const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
-              classifyPermission(authenticatedUser, profile);
-
-            // Not own profile, and not public, or suspended, or shadowbanned user
-            if (
-              !isAdmin &&
-              !isOwnProfile &&
-              (!profile.public || isBannedProfile || isBlocked)
-            ) {
-              return res.status(404).send({
-                message: errorService.getErrorMessageByKey('not-found'),
-              });
-            }
-            done(null, profile);
-          },
-          function () {
-            return res.status(404).send({
-              message: errorService.getErrorMessageByKey('not-found'),
-            });
-          },
-        );
+  async function readProfile(): Promise<void> {
+    const profileLookup = User.findOne(
+      {
+        username: username.toLowerCase(),
       },
-      // Sanitize profile
-      function (
-        profile: UserServerDocument,
-        done: (error: Error | null, profile: UserServerDocument) => void,
-      ) {
-        req.profile = service.sanitizeProfile(profile, authenticatedUser);
-        return done(null, profile);
-      },
-      // Read User's reply statistics and add them to req.profile
-      // We need to add it to req.profile, because profile is mongoose object and
-      // adding properties to it doesn't work
-      function (
-        profile: UserServerDocument,
-        done: (error?: Error | null) => void,
-      ) {
-        // find the statistics
-        messageStatService.readFormattedMessageStatsOfUser(
-          profile._id,
-          Date.now(),
-          function (
-            err: Error | null,
-            stats?: { replyRate?: string; replyTime?: string },
-          ) {
-            // If we receive error, let's just continue.
-            // The stats are non-essential.
-            if (!err) {
-              // add replyRate and replyTime to req.profile
-              _.assign(req.profile, _.pick(stats!, ['replyRate', 'replyTime']));
-            }
-            return done();
-          },
-        );
-      },
-      // Next Route
-      function () {
-        next();
-      },
-    ],
-    function (err?: Error | null) {
-      if (err) return next(err);
-    },
-  );
+      service.userProfileFields + ' roles public blocked',
+    );
+    const populatedProfile =
+      profileLookup && typeof profileLookup.populate === 'function'
+        ? profileLookup.populate({
+            path: 'member.tribe',
+            select: tribesHandler.tribeFields,
+            model: 'Tribe',
+            // Not possible at the moment due bug in Mongoose
+            // http://mongoosejs.com/docs/faq.html#populate_sort_order
+            // https://github.com/Automattic/mongoose/issues/2202
+            // options: { sort: { count: -1 } }
+          })
+        : profileLookup;
+    const profilePending =
+      populatedProfile && typeof populatedProfile.exec === 'function'
+        ? populatedProfile.exec()
+        : populatedProfile;
+    const profile = await Promise.resolve(profilePending).catch(() => null);
+    if (!profile) {
+      res
+        .status(404)
+        .send({ message: errorService.getErrorMessageByKey('not-found') });
+      return;
+    }
+    const { isAdmin, isOwnProfile, isBannedProfile, isBlocked } =
+      classifyPermission(authenticatedUser, profile);
+    if (
+      !isAdmin &&
+      !isOwnProfile &&
+      (!profile.public || isBannedProfile || isBlocked)
+    ) {
+      res
+        .status(404)
+        .send({ message: errorService.getErrorMessageByKey('not-found') });
+      return;
+    }
+    req.profile = service.sanitizeProfile(profile, authenticatedUser);
+    await new Promise<void>(resolve => {
+      messageStatService.readFormattedMessageStatsOfUser(
+        profile._id,
+        Date.now(),
+        (err, stats) => {
+          if (!err)
+            _.assign(req.profile, _.pick(stats!, ['replyRate', 'replyTime']));
+          resolve();
+        },
+      );
+    });
+    next();
+  }
+  readProfile().catch(next);
 };
 
 /**
@@ -1319,127 +985,78 @@ function changeTribeMembership(
   if (!tribeId || !mongoose.Types.ObjectId.isValid(tribeId)) {
     return errorService.sendInvalidId(res);
   }
-  async.waterfall(
-    [
-      // Check the user's current membership before changing it.
-      function (done: ErrorDone) {
-        const isMember = isUserMemberOfTribe(authenticatedUser, tribeId);
-        if (isMember === isJoining) {
-          return res.status(409).send({
-            message: isJoining
-              ? 'You are already a member of this tribe.'
-              : 'You are not a member of this tribe.',
-          });
-        }
-        done(null);
-      },
-      // Update tribe counter
-      function (
-        done: (error: Error | null, tribe: PopulatedTribeDocument) => void,
-      ) {
+  const isMember = isUserMemberOfTribe(authenticatedUser, tribeId);
+  if (isMember === isJoining) {
+    return res.status(409).send({
+      message: isJoining
+        ? 'You are already a member of this tribe.'
+        : 'You are not a member of this tribe.',
+    });
+  }
+  async function change(): Promise<void> {
+    const tribe = await new Promise<TribeCountResult | null | undefined>(
+      resolve => {
         tribesHandler.updateCount(
-          tribeId,
+          tribeId!,
           isJoining ? 1 : -1,
           true,
-          function (err: Error | null, tribe?: TribeCountResult | null) {
-            // Tribe by id `req.body.id` didn't exist
-            if (!hasTribeId(tribe)) {
-              return res.status(400).send({
-                message: errorService.getErrorMessageByKey('bad-request'),
-              });
-            }
-            done(err, tribe);
+          (_err, tribe) => {
+            // updateCount returns no tribe on failure; both a missing tribe and
+            // a failed lookup receive the existing bad-request response below.
+            resolve(tribe);
           },
         );
       },
-      // Update the user's membership array.
-      function (
-        tribe: PopulatedTribeDocument,
-        done: (
-          error: Error | null,
-          tribe: PopulatedTribeDocument,
-          user: UserServerDocument | null,
-        ) => void,
-      ) {
-        const memberUpdate = isJoining
-          ? {
-              $push: {
-                member: {
-                  tribe: tribe._id,
-                  since: Date.now(),
-                },
-              },
-            }
-          : {
-              $pull: {
-                member: {
-                  tribe: tribeId,
-                },
-              },
-            };
-        User.findByIdAndUpdate(authenticatedUser._id, memberUpdate, {
-          safe: true,
-          // @link http://stackoverflow.com/a/4975054/1984644
-          new: true, // get the updated document in return
-        })
-          .exec()
-          .then(
-            function (user) {
-              done(null, tribe, user);
-            },
-            function (err) {
-              done(err, tribe, null);
-            },
-          );
-      },
-      // Return the updated tribe and user, and record the membership change.
-      function (
-        tribe: PopulatedTribeDocument,
-        user: UserServerDocument | null,
-        done: ErrorDone,
-      ) {
-        // Preserver only public fields
-        // Array of keys to preserve in tribe before sending it to the frontend
-        const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
-
-        // Sanitize user profile
-        const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
-        statService.stat(
-          {
-            namespace: 'tagAction',
-            counts: {
-              count: isJoining ? 1 : -1,
-            },
-            tags: {
-              type: 'tribe',
-            },
-            meta: {
-              slug: tribe.slug,
+    );
+    if (!hasTribeId(tribe)) {
+      res
+        .status(400)
+        .send({ message: errorService.getErrorMessageByKey('bad-request') });
+      return;
+    }
+    const memberUpdate = isJoining
+      ? {
+          $push: {
+            member: {
+              tribe: tribe._id,
+              since: Date.now(),
             },
           },
-          function () {
-            // Send response to API
-            res.send({
-              message: isJoining ? 'Joined tribe.' : 'Left tribe.',
-              tribe: pickedTribe,
-              user: sanitizedUser,
-            });
-            done();
+        }
+      : {
+          $pull: {
+            member: {
+              tribe: tribeId,
+            },
           },
-        );
+        };
+    const user = await User.findByIdAndUpdate(
+      authenticatedUser._id,
+      memberUpdate,
+      { safe: true, new: true },
+    ).exec();
+    const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
+    const sanitizedUser = service.sanitizeProfile(user, authenticatedUser);
+    statService.stat(
+      {
+        namespace: 'tagAction',
+        counts: { count: isJoining ? 1 : -1 },
+        tags: { type: 'tribe' },
+        meta: { slug: tribe.slug },
       },
-
-      // Catch errors
-    ],
-    function (err?: Error | null) {
-      if (err) {
-        return res.status(400).send({
-          message: isJoining
-            ? 'Failed to join tribe.'
-            : 'Failed to leave tribe.',
+      () => {
+        res.send({
+          message: isJoining ? 'Joined tribe.' : 'Left tribe.',
+          tribe: pickedTribe,
+          user: sanitizedUser,
         });
-      }
-    },
+      },
+    );
+  }
+  change().catch(() =>
+    res.status(400).send({
+      message: isJoining ? 'Failed to join tribe.' : 'Failed to leave tribe.',
+    }),
   );
 }
 

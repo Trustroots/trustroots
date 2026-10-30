@@ -149,7 +149,10 @@ function summarizeReport(report: Report) {
 }
 
 function readCodeCoverageSummary() {
-  const summaryPath = path.join(root, 'coverage/e2e/coverage-summary.json');
+  const coverageDir = process.env.TRUSTROOTS_E2E_COVERAGE_DIR
+    ? path.resolve(process.env.TRUSTROOTS_E2E_COVERAGE_DIR)
+    : path.join(root, 'coverage/e2e');
+  const summaryPath = path.join(coverageDir, 'coverage-summary.json');
   if (!fs.existsSync(summaryPath)) {
     return null;
   }

@@ -12,7 +12,6 @@ import type {
 
 const _ = require('lodash');
 const should = require('should');
-const async = require('async');
 const request = require('supertest');
 const moment = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -546,104 +545,80 @@ describe('Message CRUD tests', function () {
         // Handle signin error
         if (signinErr) return done(signinErr);
 
-        // Now loop 25 messages in...
-        // "Older" messages will have smaller numbers
-        // @link https://github.com/caolan/async#whilsttest-fn-callback
-        let count = 0;
-        async.whilst(
-          function (
-            testCallback: (error: Error | null, truth?: boolean) => void,
-          ) {
-            testCallback(null, count < 25);
-          },
-          function (callback: (error: Error | null, result?: number) => void) {
-            count++;
-            const newMessage = message;
-            newMessage.content = 'Message content ' + count;
-            agent
+        async function sendMessages(): Promise<void> {
+          for (let count = 1; count <= 25; count++) {
+            await agent
               .post('/api/messages')
-              .send(newMessage)
-              .expect(200)
-              .end(function (messageSaveErr) {
-                // Handle message save error
-                if (messageSaveErr) return done(messageSaveErr);
+              .send({ ...message, content: 'Message content ' + count })
+              .expect(200);
+          }
+        }
+        sendMessages().then(() => {
+          // Get a list of messages
+          agent
+            .get('/api/messages/' + userToId)
+            .expect(200)
+            .end(function (messagesGetErr, messagesGetRes) {
+              // Handle message read error
+              if (messagesGetErr) return done(messagesGetErr);
 
-                // This message was saved okay, continue to the next one...
-                callback(null, count);
-              });
-          },
-          // All messages sent, continue.
-          function (err: Error | null) {
-            if (err) return done(err);
+              // Check for pagination header
+              const url =
+                (config.https ? 'https' : 'http') + '://' + config.domain;
+              messagesGetRes.headers.link.should.equal(
+                '<' +
+                  url +
+                  '/api/messages/' +
+                  userToId +
+                  '?page=2&limit=20>; rel="next"',
+              );
 
-            // Get a list of messages
-            agent
-              .get('/api/messages/' + userToId)
-              .expect(200)
-              .end(function (messagesGetErr, messagesGetRes) {
-                // Handle message read error
-                if (messagesGetErr) return done(messagesGetErr);
-
-                // Check for pagination header
-                const url =
-                  (config.https ? 'https' : 'http') + '://' + config.domain;
-                messagesGetRes.headers.link.should.equal(
-                  '<' +
-                    url +
-                    '/api/messages/' +
-                    userToId +
-                    '?page=2&limit=20>; rel="next"',
+              // Get messages list
+              const thread = messagesGetRes.body;
+              if (!thread[0] || !thread[0].content) {
+                return done(
+                  new Error('Missing messages from the message thread.'),
                 );
+              } else {
+                // Pagination gives 20 messages at once
+                thread.length.should.equal(20);
 
-                // Get messages list
-                const thread = messagesGetRes.body;
-                if (!thread[0] || !thread[0].content) {
-                  return done(
-                    new Error('Missing messages from the message thread.'),
-                  );
-                } else {
-                  // Pagination gives 20 messages at once
-                  thread.length.should.equal(20);
+                // Set assertions for first and last message
+                thread[0].content.should.equal('Message content 25');
+                thread[19].content.should.equal('Message content 6');
 
-                  // Set assertions for first and last message
-                  thread[0].content.should.equal('Message content 25');
-                  thread[19].content.should.equal('Message content 6');
+                // Get the 2nd page
+                agent
+                  .get('/api/messages/' + userToId + '?page=2&limit=20')
+                  .expect(200)
+                  .end(function (messagesGetErr, messagesGetRes) {
+                    // Handle message read error
+                    if (messagesGetErr) return done(messagesGetErr);
 
-                  // Get the 2nd page
-                  agent
-                    .get('/api/messages/' + userToId + '?page=2&limit=20')
-                    .expect(200)
-                    .end(function (messagesGetErr, messagesGetRes) {
-                      // Handle message read error
-                      if (messagesGetErr) return done(messagesGetErr);
+                    // There are no more pages to paginate, link header shouldn't exist
+                    should.not.exist(messagesGetRes.headers.link);
 
-                      // There are no more pages to paginate, link header shouldn't exist
-                      should.not.exist(messagesGetRes.headers.link);
+                    // Get messages list
+                    const thread = messagesGetRes.body;
+                    if (!thread[0] || !thread[0].content) {
+                      return done(
+                        new Error('Missing messages from the message thread.'),
+                      );
+                    } else {
+                      // Pagination gives 20 messages at once but there are only 5 left for the 2nd page
+                      thread.length.should.equal(5);
 
-                      // Get messages list
-                      const thread = messagesGetRes.body;
-                      if (!thread[0] || !thread[0].content) {
-                        return done(
-                          new Error(
-                            'Missing messages from the message thread.',
-                          ),
-                        );
-                      } else {
-                        // Pagination gives 20 messages at once but there are only 5 left for the 2nd page
-                        thread.length.should.equal(5);
+                      // Set assertions for first and last message
+                      thread[0].content.should.equal('Message content 5');
+                      thread[4].content.should.equal('Message content 1');
 
-                        // Set assertions for first and last message
-                        thread[0].content.should.equal('Message content 5');
-                        thread[4].content.should.equal('Message content 1');
-
-                        // Call the assertion callback
-                        return done();
-                      }
-                    });
-                }
-              });
-          },
-        );
+                      // Call the assertion callback
+                      return done();
+                    }
+                  });
+              }
+            });
+        }, done);
       });
   });
   it('should not be able to send a message to myself', function (done) {

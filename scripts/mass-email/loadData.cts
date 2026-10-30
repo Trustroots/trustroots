@@ -20,14 +20,6 @@ type StoreConstructor = new (options: {
 }) => MailStore;
 const _ = require('lodash') as typeof import('lodash');
 const fs = require('node:fs') as typeof import('node:fs');
-const async = require('async') as {
-  eachSeries<T>(
-    items: T[],
-    worker: (item: T, done: Done) => void,
-    done: Done,
-  ): void;
-};
-
 // nedb is a local disk backed mongo alternative for simple local scripts
 const Datastore = require('nedb') as StoreConstructor;
 const users = new Datastore({ filename: 'data/users.db', autoload: true });
@@ -45,22 +37,21 @@ if (_.last(jsons) === '') {
 
 let count = 0;
 
-async.eachSeries(
-  jsons,
-  (json, eachCb) => {
+async function loadData(): Promise<void> {
+  for (const json of jsons) {
     let doc: unknown;
     try {
       doc = JSON.parse(json);
     } catch (e) {
       console.log('wtf???', e);
       // Don't pass an error or it will break the async loop
-      return eachCb();
+      continue;
     }
 
     // If this user is not public, then skip this iteration
     if (!_.get(doc, 'public', false)) {
       // Don't pass an error or it will break the async loop
-      return eachCb();
+      continue;
     }
 
     // Build a user object for the persistence layer. First pick out the fields we want then merge in the user_id
@@ -83,14 +74,15 @@ async.eachSeries(
     count++;
 
     // Insert the user into the nedb store
-    users.insert(user, err => {
-      if (err) {
-        console.error('nedb insert error', err);
-      }
-      eachCb();
-    });
-  },
-  () => {
-    console.log('count', count);
-  },
-);
+    await new Promise<void>(resolve =>
+      users.insert(user, err => {
+        if (err) {
+          console.error('nedb insert error', err);
+        }
+        resolve();
+      }),
+    );
+  }
+  console.log('count', count);
+}
+loadData().catch(console.error);

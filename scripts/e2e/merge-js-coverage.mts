@@ -9,9 +9,12 @@ import type { Page } from '@playwright/test';
 type RawCoverage = Awaited<ReturnType<Page['coverage']['stopJSCoverage']>>;
 
 const root = path.resolve(import.meta.dirname, '../..');
-const rawDir = path.join(root, 'coverage/e2e/js-raw');
-const capturedBundlesDir = path.join(root, 'coverage/e2e/captured-bundles');
-const outputPath = path.join(root, 'coverage/e2e/coverage-summary.json');
+const coverageDir = process.env.TRUSTROOTS_E2E_COVERAGE_DIR
+  ? path.resolve(process.env.TRUSTROOTS_E2E_COVERAGE_DIR)
+  : path.join(root, 'coverage/e2e');
+const rawDir = path.join(coverageDir, 'js-raw');
+const capturedBundlesDir = path.join(coverageDir, 'captured-bundles');
+const outputPath = path.join(coverageDir, 'coverage-summary.json');
 const assetsDir = path.join(root, 'public/assets');
 const modulesDir = path.join(root, 'modules');
 

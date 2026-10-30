@@ -7,7 +7,6 @@ import signupSafety from '../services/signup-safety.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
-import async from 'async';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
@@ -49,8 +48,6 @@ interface AccountError extends Error {
   status?: number;
   userFacing?: boolean;
 }
-
-type WaterfallCallback = (error?: Error | null, ...results: unknown[]) => void;
 
 interface SignupRequiredFields extends Record<string, unknown> {
   firstName: string;
@@ -134,205 +131,169 @@ function isNameSpam(input: string): boolean {
 service.signup = function (req, res) {
   let validatedSignupBody: SignupRequiredFields | undefined;
   let signupUser: UserDocument | undefined;
-  async.waterfall(
-    [
-      // Check if we have the required data before hitting more strict validations at Mongo
-      function (done: WaterfallCallback) {
-        if (!hasSignupRequiredFields(req.body)) {
-          const err: AccountError = new Error(
-            'Please provide required fields.',
-          );
-          err.userFacing = true;
-          return done(err);
-        }
-        validatedSignupBody = req.body;
+  async function createAccount() {
+    if (!hasSignupRequiredFields(req.body)) {
+      const err: AccountError = new Error('Please provide required fields.');
+      err.userFacing = true;
+      throw err;
+    }
+    validatedSignupBody = req.body;
 
-        if (
-          ['locale', 'acquisitionStory'].some(
-            field =>
-              validatedSignupBody?.[field] !== undefined &&
-              typeof validatedSignupBody[field] !== 'string',
-          ) ||
-          (validatedSignupBody?.newsletter !== undefined &&
-            typeof validatedSignupBody.newsletter !== 'boolean')
-        ) {
-          const err: AccountError = new Error(
-            'Please provide valid signup preferences.',
-          );
-          err.userFacing = true;
-          return done(err);
-        }
+    if (
+      ['locale', 'acquisitionStory'].some(
+        field =>
+          validatedSignupBody?.[field] !== undefined &&
+          typeof validatedSignupBody[field] !== 'string',
+      ) ||
+      (validatedSignupBody?.newsletter !== undefined &&
+        typeof validatedSignupBody.newsletter !== 'boolean')
+    ) {
+      const err: AccountError = new Error(
+        'Please provide valid signup preferences.',
+      );
+      err.userFacing = true;
+      throw err;
+    }
 
-        if (req.body.ageConfirmed !== true) {
-          const err: AccountError = new Error(
-            'You must confirm that you are 18 years old or older to sign up.',
-          );
-          err.userFacing = true;
-          return done(err);
-        }
+    if (req.body.ageConfirmed !== true) {
+      const err: AccountError = new Error(
+        'You must confirm that you are 18 years old or older to sign up.',
+      );
+      err.userFacing = true;
+      throw err;
+    }
 
-        done();
-      },
-
-      // Simple anti spam check on name input fields
-      function (done: WaterfallCallback) {
-        const body = validatedSignupBody!;
-        const { firstName, lastName, username } = body;
-        if (isNameSpam(firstName) || (lastName && isNameSpam(lastName))) {
-          return done(new Error('Invalid signup attempt'));
-        }
-
-        if (!authenticationService.validateUsername(username)) {
-          const err: AccountError = new Error(
-            authenticationService.isUsernameFormatValid(username)
-              ? 'Username is not available.'
-              : authenticationService.usernameFormatMessage,
-          );
-          err.userFacing = true;
-          return done(err);
-        }
-
-        done();
-      },
-
-      // Generate random token
-      function (done: WaterfallCallback) {
-        crypto.randomBytes(20, function (err, buffer) {
-          const salt = buffer;
-          done(err, salt);
-        });
-      },
-
-      // Save user
-      function (salt: Buffer, done: WaterfallCallback) {
-        const body = validatedSignupBody!;
-        const user = new User(
-          _.pick(body, [
-            'firstName',
-            'lastName',
-            'username',
-            'password',
-            'email',
-            'newsletter',
-            'locale',
-            'acquisitionStory',
-          ]),
-        );
-
-        // Add missing user fields
-        user.public = false;
-        user.provider = 'local';
-        user.displayName = [user.firstName, user.lastName]
-          .filter((name): name is string => Boolean(name?.trim()))
-          .map(name => name.trim())
-          .join(' ');
-
-        // Just to simplify email confirm process later
-        // This field is normally needed when changing email after the signup process
-        // Since we set user public=false and require initial email confirmation,
-        // we'll have to have the email also at emailTemporary field
-        // (from where it's then again moved to email field)
-        user.emailTemporary = user.email;
-        signupUser = user;
-
-        setEmailConfirmationToken(
-          user,
-          authenticationService.generateEmailToken(user, salt),
-        );
-
-        // Then save the user
-        user.save().then(
-          function () {
-            // Remove sensitive data before login
-            user.password = undefined;
-            user.salt = undefined;
-
-            done(null, user);
-          },
-          function (err: Error) {
-            user.password = undefined;
-            user.salt = undefined;
-            done(err);
-          },
-        );
-      },
-
-      // Send email
-      function (_user: unknown, done: WaterfallCallback) {
-        const createdUser = signupUser!;
-        const matchedKeywords = signupSafety.matchSignupProfile(createdUser);
-        if (matchedKeywords.length) {
-          emailService.sendFlaggedSignupAlert(
-            createdUser,
-            matchedKeywords,
-            function (err?: Error | null) {
-              if (err) {
-                log('error', 'Flagged signup alert delivery failed.', {
-                  error: err,
-                });
-              }
-            },
-          );
-        }
-
-        emailService.sendSignupEmailConfirmation(
-          createdUser,
-          function (err?: Error | null) {
-            done(err, createdUser);
-          },
-        );
-      },
-
-      // Login
-      function (_user: unknown, done: WaterfallCallback) {
-        const createdUser = signupUser!;
-        req.login!(createdUser, function (err) {
-          // Remove sensitive data befor sending user
-          const sanitizedUser = userProfile.sanitizeOwnProfile(createdUser);
-
-          done(err, sanitizedUser);
-        });
-      },
-    ],
-    function (err: Error | null | undefined, ...results: unknown[]) {
-      const statsObject: StatsPayload = {
-        namespace: 'signup',
-        counts: {
-          count: 1,
-        },
-        tags: {},
-      };
-
-      // Signup process failed
-      if (err) {
-        // Log the failure to signup
-        log('error', 'User signup failed. #fywghg', {
-          error: err,
-        });
-
-        // Send signup failure to stats servers
-        statsObject.tags.status = 'failed';
-        const accountError: AccountError = err;
-        statService.stat(statsObject, function () {
-          // Send error to the API
-          res.status(accountError.code === 'KDF_OVERLOADED' ? 503 : 400).send({
-            message: accountError.userFacing
-              ? accountError.message
-              : errorService.getErrorMessage(err),
-          });
-        });
-
-        return;
+    {
+      const body = validatedSignupBody!;
+      const { firstName, lastName, username } = body;
+      if (isNameSpam(firstName) || (lastName && isNameSpam(lastName))) {
+        throw new Error('Invalid signup attempt');
       }
 
-      // Signup process was successful
+      if (!authenticationService.validateUsername(username)) {
+        const err: AccountError = new Error(
+          authenticationService.isUsernameFormatValid(username)
+            ? 'Username is not available.'
+            : authenticationService.usernameFormatMessage,
+        );
+        err.userFacing = true;
+        throw err;
+      }
+    }
+    const salt = await new Promise<Buffer>((resolve, reject) => {
+      crypto.randomBytes(20, (err, buffer) =>
+        err ? reject(err) : resolve(buffer),
+      );
+    });
+    const body = validatedSignupBody!;
+    const user = new User(
+      _.pick(body, [
+        'firstName',
+        'lastName',
+        'username',
+        'password',
+        'email',
+        'newsletter',
+        'locale',
+        'acquisitionStory',
+      ]),
+    );
 
-      // Send signup success to stats servers
-      statsObject.tags.status = 'success';
-      statService.stat(statsObject, function () {
-        res.json(results[0] || {});
+    // Add missing user fields
+    user.public = false;
+    user.provider = 'local';
+    user.displayName = [user.firstName, user.lastName]
+      .filter((name): name is string => Boolean(name?.trim()))
+      .map(name => name.trim())
+      .join(' ');
+
+    // Just to simplify email confirm process later
+    // This field is normally needed when changing email after the signup process
+    // Since we set user public=false and require initial email confirmation,
+    // we'll have to have the email also at emailTemporary field
+    // (from where it's then again moved to email field)
+    user.emailTemporary = user.email;
+    signupUser = user;
+
+    setEmailConfirmationToken(
+      user,
+      authenticationService.generateEmailToken(user, salt),
+    );
+
+    try {
+      await user.save();
+    } finally {
+      user.password = undefined;
+      user.salt = undefined;
+    }
+    const createdUser = signupUser!;
+    const matchedKeywords = signupSafety.matchSignupProfile(createdUser);
+    if (matchedKeywords.length) {
+      emailService.sendFlaggedSignupAlert(
+        createdUser,
+        matchedKeywords,
+        function (err?: Error | null) {
+          if (err) {
+            log('error', 'Flagged signup alert delivery failed.', {
+              error: err,
+            });
+          }
+        },
+      );
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      emailService.sendSignupEmailConfirmation(createdUser, err =>
+        err ? reject(err) : resolve(),
+      );
+    });
+    await new Promise<void>((resolve, reject) => {
+      req.login!(createdUser, err => (err ? reject(err) : resolve()));
+    });
+    return userProfile.sanitizeOwnProfile(createdUser);
+  }
+  function finished(err: Error | null | undefined, result?: unknown) {
+    const statsObject: StatsPayload = {
+      namespace: 'signup',
+      counts: {
+        count: 1,
+      },
+      tags: {},
+    };
+
+    // Signup process failed
+    if (err) {
+      // Log the failure to signup
+      log('error', 'User signup failed. #fywghg', {
+        error: err,
       });
-    },
+
+      // Send signup failure to stats servers
+      statsObject.tags.status = 'failed';
+      const accountError: AccountError = err;
+      statService.stat(statsObject, function () {
+        // Send error to the API
+        res.status(accountError.code === 'KDF_OVERLOADED' ? 503 : 400).send({
+          message: accountError.userFacing
+            ? accountError.message
+            : errorService.getErrorMessage(err),
+        });
+      });
+
+      return;
+    }
+
+    // Signup process was successful
+
+    // Send signup success to stats servers
+    statsObject.tags.status = 'success';
+    statService.stat(statsObject, function () {
+      res.json(result);
+    });
+  }
+  createAccount().then(
+    result => finished(null, result),
+    err => finished(err),
   );
 };
 
@@ -351,94 +312,70 @@ service.signupValidation = function (req, res) {
     });
   }
 
-  async.waterfall(
-    [
-      // Validate username
-      function (done: WaterfallCallback) {
-        // Check if we have the required data before hitting more strict validations
-        if (username === undefined || username === '') {
-          return done(
-            new Error('Please provide required `username` field.'),
-            'username-missing',
-          );
-        }
-
-        if (!authenticationService.isUsernameFormatValid(username)) {
-          return done(
-            new Error(authenticationService.usernameFormatMessage),
-            'username-invalid',
-          );
-        }
-
-        // Is username reserved?
-        // You can modify the list from `config/env/default.js`
-        if (authenticationService.isUsernameReserved(username)) {
-          return done(
-            new Error('Username is not available.'),
-            'username-not-available-reserved',
-          );
-        }
-
-        done();
+  function finished(err?: Error | null, errorCode?: string) {
+    const statsObject: StatsPayload = {
+      namespace: 'signup-validation',
+      counts: {
+        count: 1,
       },
+      tags: {},
+    };
 
-      // Check username availability against database
-      function (done: WaterfallCallback) {
-        User.findOne({
-          username: username!.toLowerCase(),
-        }).then(
-          (user: UserDocument | null) => {
-            if (user) {
-              return done(
-                new Error('Username is not available.'),
-                'username-not-available',
-              );
-            }
-
-            done();
-          },
-          () => done(),
-        );
-      },
-    ],
-    function (err: Error | null | undefined, errorCode: unknown) {
-      const statsObject: StatsPayload = {
-        namespace: 'signup-validation',
-        counts: {
-          count: 1,
-        },
-        tags: {},
-      };
-
-      // Signup validation failed
-      if (err) {
-        // Send signup validation failure to stats servers
-        statsObject.tags.status = 'failed';
-        statsObject.tags.reason =
-          typeof errorCode === 'string' ? errorCode : 'other';
-        statService.stat(statsObject, function () {
-          // Send error to the API
-          // HTTP status "200 OK"
-          res.status(200).send({
-            valid: false,
-            error: errorCode || 'other',
-            message: err.message || errorService.getErrorMessage(err),
-          });
-        });
-
-        return;
-      }
-
-      // Signup validation was successful
-
-      // Send signup validation success to stats servers
-      statsObject.tags.status = 'success';
+    // Signup validation failed
+    if (err) {
+      // Send signup validation failure to stats servers
+      statsObject.tags.status = 'failed';
+      statsObject.tags.reason = errorCode!;
       statService.stat(statsObject, function () {
+        // Send error to the API
+        // HTTP status "200 OK"
         res.status(200).send({
-          valid: true,
+          valid: false,
+          error: errorCode,
+          message: err.message,
         });
       });
-    },
+
+      return;
+    }
+
+    // Signup validation was successful
+
+    // Send signup validation success to stats servers
+    statsObject.tags.status = 'success';
+    statService.stat(statsObject, function () {
+      res.status(200).send({
+        valid: true,
+      });
+    });
+  }
+  if (username === undefined || username === '') {
+    return finished(
+      new Error('Please provide required `username` field.'),
+      'username-missing',
+    );
+  }
+  if (!authenticationService.isUsernameFormatValid(username)) {
+    return finished(
+      new Error(authenticationService.usernameFormatMessage),
+      'username-invalid',
+    );
+  }
+  if (authenticationService.isUsernameReserved(username)) {
+    return finished(
+      new Error('Username is not available.'),
+      'username-not-available-reserved',
+    );
+  }
+  User.findOne({ username: username.toLowerCase() }).then(
+    user =>
+      user
+        ? finished(
+            new Error('Username is not available.'),
+            'username-not-available',
+          )
+        : finished(),
+    () => finished(),
   );
 };
 
@@ -610,48 +547,24 @@ service.validateEmailToken = function (req, res) {
 service.confirmEmail = function (req, res) {
   const now = new Date();
   const tokenQuery = emailConfirmationTokenQuery(req.params!.token, now);
-  async.waterfall(
-    [
-      function (done: WaterfallCallback) {
-        // Check if user exists with this token
-        User.findOne(tokenQuery).then(
-          user => {
-            if (user) {
-              // Will be the returned object when no errors
-              const result: EmailConfirmationResult = {
-                // If users profile was hidden, it means it was first confirmation email after registration.
-                profileMadePublic: !user.public,
-              };
-
-              done(null, result, user);
-            } else {
-              return res.status(400).send({
-                message: 'Email confirm token is invalid or has expired.',
-              });
-            }
-          },
-          () =>
-            res.status(400).send({
-              message: 'Email confirm token is invalid or has expired.',
-            }),
-        );
-      },
-
-      // Update user
-      // We can't do regular `user.save()` here because we've got user document with password and we'd just override it:
-      // Instead we'll do normal Mongoose update with previously fetched user ID
-      function (
-        result: EmailConfirmationResult,
-        user: UserDocument & { emailTemporary: string },
-        done: WaterfallCallback,
-      ) {
-        const authVersion = user.authVersion || 0;
-        const authVersionQuery =
-          authVersion === 0
-            ? {
-                $or: [{ authVersion: { $exists: false } }, { authVersion: 0 }],
-              }
-            : { authVersion };
+  async function confirm() {
+    const user = await User.findOne(tokenQuery).catch(() => null);
+    if (!user) {
+      res
+        .status(400)
+        .send({ message: 'Email confirm token is invalid or has expired.' });
+      return;
+    }
+    const result: EmailConfirmationResult = { profileMadePublic: !user.public };
+    const authVersion = user.authVersion || 0;
+    const authVersionQuery =
+      authVersion === 0
+        ? {
+            $or: [{ authVersion: { $exists: false } }, { authVersion: 0 }],
+          }
+        : { authVersion };
+    const modifiedUser = await new Promise<UserDocument | null>(
+      (resolve, reject) => {
         findOneAndUpdateWithCallback(
           {
             _id: user._id,
@@ -682,7 +595,7 @@ service.confirmEmail = function (req, res) {
               // @todo: this should be done at user.server.model.js
               emailHash: crypto
                 .createHash('md5')
-                .update(user.emailTemporary.trim().toLowerCase())
+                .update(user.emailTemporary!.trim().toLowerCase())
                 .digest('hex'),
             },
           },
@@ -690,43 +603,24 @@ service.confirmEmail = function (req, res) {
             // Return the document after updates if `new = true`
             new: true,
           },
-          function (err: Error | null, modifiedUser: UserDocument | null) {
-            if (!err && !modifiedUser) {
-              return res.status(400).send({
-                message: 'Email confirm token is invalid or has expired.',
-              });
-            }
-            done(err, result, modifiedUser);
-          },
+          (err, modifiedUser) => (err ? reject(err) : resolve(modifiedUser)),
         );
       },
-
-      function (
-        result: EmailConfirmationResult,
-        user: UserDocument,
-        done: WaterfallCallback,
-      ) {
-        req.login!(user, function (err?: Error | null) {
-          done(err, result, user);
-        });
-      },
-
-      function (result: EmailConfirmationResult, user: UserDocument) {
-        // Return authenticated user
-        // Remove sensitive data befor sending user
-        result.user = userProfile.sanitizeOwnProfile(user);
-
-        return res.json(result);
-      },
-    ],
-    function (err: Error | null | undefined) {
-      /* istanbul ignore else */
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-    },
+    );
+    if (!modifiedUser) {
+      res
+        .status(400)
+        .send({ message: 'Email confirm token is invalid or has expired.' });
+      return;
+    }
+    await new Promise<void>((resolve, reject) => {
+      req.login!(modifiedUser, err => (err ? reject(err) : resolve()));
+    });
+    result.user = userProfile.sanitizeOwnProfile(modifiedUser);
+    res.json(result);
+  }
+  confirm().catch(err =>
+    res.status(400).send({ message: errorService.getErrorMessage(err) }),
   );
 };
 
@@ -754,65 +648,28 @@ service.resendConfirmation = function (req, res) {
 
   const isEmailChange = !!req.user.public;
 
-  async.waterfall(
-    [
-      // Generate random token
-      function (done: WaterfallCallback) {
-        crypto.randomBytes(20, function (err, buffer) {
-          if (err) return done(err);
-          done(null, buffer);
-        });
-      },
-
-      // Save token
-      function (salt: Buffer, done: WaterfallCallback) {
-        const user = req.user!;
-        user.set('updated', Date.now());
-        setEmailConfirmationToken(
-          user,
-          authenticationService.generateEmailToken(user, salt),
-        );
-        user
-          .save()
-          .then(function () {
-            done(null, user);
-          })
-          .catch(done);
-      },
-
-      // Send email
-      function (user: UserDocument, done: WaterfallCallback) {
-        if (isEmailChange) {
-          emailService.sendChangeEmailConfirmation(
-            user,
-            function (err?: Error | null) {
-              done(err, user);
-            },
-          );
-        } else {
-          // signup confirmation
-          emailService.sendSignupEmailConfirmation(
-            user,
-            function (err?: Error | null) {
-              done(err, user);
-            },
-          );
-        }
-      },
-
-      // Return confirmation
-      function () {
-        return res.json({ message: 'Sent confirmation email.' });
-      },
-    ],
-    function (err) {
-      /* istanbul ignore else */
-      if (err) {
-        return res.status(400).send({
-          message: errorService.getErrorMessage(err),
-        });
-      }
-    },
+  async function resend(): Promise<void> {
+    const salt = await new Promise<Buffer>((resolve, reject) => {
+      crypto.randomBytes(20, (err, buffer) =>
+        err ? reject(err) : resolve(buffer),
+      );
+    });
+    const user = req.user!;
+    user.set('updated', Date.now());
+    setEmailConfirmationToken(
+      user,
+      authenticationService.generateEmailToken(user, salt),
+    );
+    await user.save();
+    await new Promise<void>((resolve, reject) => {
+      const done = (err?: Error | null) => (err ? reject(err) : resolve());
+      if (isEmailChange) emailService.sendChangeEmailConfirmation(user, done);
+      else emailService.sendSignupEmailConfirmation(user, done);
+    });
+  }
+  resend().then(
+    () => res.json({ message: 'Sent confirmation email.' }),
+    err => res.status(400).send({ message: errorService.getErrorMessage(err) }),
   );
 };
 

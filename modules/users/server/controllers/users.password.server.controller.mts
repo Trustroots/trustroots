@@ -9,7 +9,6 @@ import profileHandler from './users.profile.server.controller.mjs';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import { ACCOUNT_IDENTIFIER_MAX_LENGTH } from '../lib/account-identifier.server.mts';
-import async from 'async';
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
@@ -39,8 +38,6 @@ interface PasswordResponse {
   json(body: unknown): unknown;
   redirect(path: string): unknown;
 }
-
-type WaterfallCallback = (error?: Error | null, ...results: unknown[]) => void;
 
 interface PasswordError extends Error {
   status?: number;
@@ -276,133 +273,76 @@ service.reset = async function (req, res) {
  * Change Password
  */
 service.changePassword = function (req, res) {
-  let validatedNewPassword: string | undefined;
-  async.waterfall(
-    [
-      // Some simple validations before proceeding
-      function (done: WaterfallCallback) {
-        // Return error if no user
-        if (!req.user) {
-          return res.status(403).send({
-            message: errorService.getErrorMessageByKey('forbidden'),
-          });
-        }
-
-        // Check if we have new password coming up
-        if (!req.body.newPassword) {
-          return done(new Error('Please provide a new password.'));
-        }
-
-        // Check if new password matches verification
-        if (req.body.newPassword !== req.body.verifyPassword) {
-          return done(new Error('Passwords do not match.'));
-        }
-        if (!User.isValidPassword(req.body.newPassword)) {
-          return done(
-            new Error('Password should be more than 8 characters long.'),
-          );
-        }
-        validatedNewPassword = req.body.newPassword;
-
-        done(null);
+  if (!req.user) {
+    return res.status(403).send({
+      message: errorService.getErrorMessageByKey('forbidden'),
+    });
+  }
+  const userId = req.user.id;
+  async function change(): Promise<UserServerDocument> {
+    if (!req.body.newPassword)
+      throw new Error('Please provide a new password.');
+    if (req.body.newPassword !== req.body.verifyPassword) {
+      throw new Error('Passwords do not match.');
+    }
+    if (!User.isValidPassword(req.body.newPassword)) {
+      throw new Error('Password should be more than 8 characters long.');
+    }
+    const user = await User.findById(userId);
+    if (!user || !(await user.authenticate(req.body.currentPassword))) {
+      throw new Error('Current password is incorrect.');
+    }
+    const oldPassword = user.password;
+    const oldSalt = user.salt;
+    const authVersion = user.authVersion;
+    const password = await User.hashPassword(req.body.newPassword);
+    const filter: QueryFilter<UserServerRecord> = {
+      _id: user._id,
+      password: oldPassword,
+      salt: oldSalt === undefined ? { $exists: false } : oldSalt,
+    };
+    if (authVersion === undefined || authVersion === 0) {
+      filter.$or = [
+        { authVersion: { $exists: false } },
+        { authVersion: authVersion ?? 0 },
+      ];
+    } else {
+      filter.authVersion = authVersion;
+    }
+    const updatedUser = await User.findOneAndUpdate(
+      filter,
+      {
+        $set: { password, passwordUpdated: new Date() },
+        $unset: { salt: 1 },
+        $inc: { authVersion: 1 },
       },
-
-      // Find currently logged in user
-      function (done: WaterfallCallback) {
-        User.findById(req.user!.id).then(
-          (user: UserServerDocument | null) => done(null, user),
-          done,
-        );
-      },
-
-      // Authenticate with old password to check if it was correct
-      function (user: UserServerDocument, done: WaterfallCallback) {
-        user
-          .authenticate(req.body.currentPassword)
-          .then((valid: boolean) => {
-            if (valid) return done(null, user);
-            return done(new Error('Current password is incorrect.'));
-          })
-          .catch(done);
-      },
-
-      // Save user with new password
-      function (user: UserServerDocument, done: WaterfallCallback) {
-        const oldPassword = user.password;
-        const oldSalt = user.salt;
-        const authVersion = user.authVersion;
-        User.hashPassword(validatedNewPassword!)
-          .then((password: string) => {
-            const filter: QueryFilter<UserServerRecord> = {
-              _id: user._id,
-              password: oldPassword,
-            };
-            if (oldSalt === undefined) {
-              filter.salt = { $exists: false };
-            } else {
-              filter.salt = oldSalt;
-            }
-            if (authVersion === undefined || authVersion === 0) {
-              filter.$or = [
-                { authVersion: { $exists: false } },
-                { authVersion: authVersion ?? 0 },
-              ];
-            } else {
-              filter.authVersion = authVersion;
-            }
-
-            return User.findOneAndUpdate(
-              filter,
-              {
-                $set: { password, passwordUpdated: new Date() },
-                $unset: { salt: 1 },
-                $inc: { authVersion: 1 },
-              },
-              { new: true, runValidators: true },
-            ).then(updatedUser => {
-              if (!updatedUser) {
-                return done(new Error('Current password is incorrect.'));
-              }
-              return done(null, updatedUser);
-            });
-          })
-          .catch(done);
-      },
-
-      // Login again and return new user
-      function (user: UserServerDocument, done: WaterfallCallback) {
-        req.login(user, function (err?: Error | null) {
-          if (err) return done(err);
-          done(null, user);
+      { new: true, runValidators: true },
+    );
+    if (!updatedUser) throw new Error('Current password is incorrect.');
+    await new Promise<void>((resolve, reject) => {
+      req.login(updatedUser, err => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+    return updatedUser;
+  }
+  change().then(
+    user => {
+      emailService.sendResetPasswordConfirm(user, err => {
+        if (err) {
+          log('error', 'Password change confirmation email delivery failed.');
+        }
+        res.send({
+          user: profileHandler.sanitizeOwnProfile(user),
+          message: 'Password changed successfully!',
         });
-      },
-
-      // Send email
-      function (user: UserServerDocument) {
-        emailService.sendResetPasswordConfirm(
-          user,
-          function (err?: Error | null) {
-            if (err) {
-              log(
-                'error',
-                'Password change confirmation email delivery failed.',
-              );
-            }
-            return res.send({
-              user: profileHandler.sanitizeOwnProfile(user),
-              message: 'Password changed successfully!',
-            });
-          },
-        );
-      },
-    ],
-    function (err: Error | null | undefined) {
-      /* istanbul ignore else */
-      if (err) {
-        res.status((err as PasswordError).status || 400).send({
-          message: err.message || errorService.getErrorMessageByKey('default'),
-        });
-      }
+      });
+    },
+    (err: PasswordError) => {
+      res.status(err.status || 400).send({
+        message: err.message || errorService.getErrorMessageByKey('default'),
+      });
     },
   );
 };

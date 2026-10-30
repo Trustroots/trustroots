@@ -1,7 +1,6 @@
 /** Unit tests for the OAuth helpers of the authentication controller. */
 const crypto: typeof import('crypto') = require('crypto');
 const mongoose: typeof import('mongoose') = require('mongoose');
-const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 const sinon: typeof import('sinon') = require('sinon');
 const winston: typeof import('winston') = require('winston');
 const should: typeof import('should') = require('should');
@@ -27,7 +26,6 @@ type LegacyRandomBytes = (
   size: number,
   callback?: (error: Error | null, bytes?: Buffer) => void,
 ) => Buffer | void;
-type SignupStats = { tags: { reason: string } };
 function stubLegacyRandomBytes(): import('sinon').SinonStub<
   Parameters<LegacyRandomBytes>,
   ReturnType<LegacyRandomBytes>
@@ -49,8 +47,6 @@ async function findUser(id: unknown): Promise<AuthenticationUserDocument> {
   if (!user) throw new Error('Expected test user to exist');
   return user;
 }
-const controllerPath =
-  '../../server/controllers/users.authentication.server.controller.mts';
 
 function stubControllerDependencies(
   dependencyStubs: Record<string, Record<string, unknown>>,
@@ -567,26 +563,47 @@ describe('Authentication controller OAuth unit tests', () => {
         new Error('Password service is temporarily busy. Please try again.'),
         { code: 'KDF_OVERLOADED', userFacing: true },
       );
-      const controller = mockModule<typeof authController>(
-        require.resolve(controllerPath),
-        {
-          async: {
-            waterfall(steps: unknown[], done: (error?: unknown) => void) {
-              done(overload);
-            },
-          },
-          '../../../stats/server/services/stats.server.service.mts': {
-            stat: (statsObject: unknown, callback: AuthCallback) => callback(),
-          },
-        },
-      );
+      sinon.stub(User.prototype, 'save').rejects(overload);
+      const controller = loadSignupController();
       const res = deferredResponse();
 
-      controller.signup({ body: {} }, res);
+      controller.signup(
+        {
+          body: {
+            ageConfirmed: true,
+            firstName: 'Sample',
+            username: 'samplemember',
+            password: 'password123',
+            email: 'sample@example.com',
+          },
+        },
+        res,
+      );
       await res.waitForResponse();
 
       res.statusCode.should.equal(503);
       responseField(res, 'message').should.equal(overload.message);
+    });
+
+    it('reports login failures after creating the signup account', async () => {
+      const controller = loadSignupController();
+      const res = deferredResponse();
+      controller.signup(
+        {
+          body: {
+            ageConfirmed: true,
+            firstName: 'Sample',
+            username: 'samplemember',
+            password: 'password123',
+            email: 'sample@example.com',
+          },
+          login: (_user: unknown, cb: AuthCallback) =>
+            cb(new Error('Login unavailable')),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
 
     it('creates a user and logs them in', async () => {
@@ -697,27 +714,29 @@ describe('Authentication controller OAuth unit tests', () => {
         .should.be.true();
     });
 
-    it('returns an empty object when signup completes without a user', async () => {
+    it('reports email confirmation delivery failures during signup', async () => {
+      const error = new Error('Confirmation unavailable');
       const controller = stubControllerDependencies({
-        async: {
-          waterfall(steps: unknown[], done: (error?: unknown) => void) {
-            done(null);
-          },
-        },
-        './../../../stats/server/services/stats.server.service.mts': {
-          stat: (statsObject: unknown, callback: AuthCallback) => callback(),
+        './../../../core/server/services/email.server.service.mjs': {
+          sendSignupEmailConfirmation: (_user: unknown, cb: AuthCallback) =>
+            cb(error),
         },
       });
       const res = deferredResponse();
-
       controller.signup(
-        { body: {}, login: (user: unknown, cb: AuthCallback) => cb() },
+        {
+          body: {
+            ageConfirmed: true,
+            firstName: 'Sample',
+            username: 'samplemember',
+            password: 'password123',
+            email: 'sample@example.com',
+          },
+        },
         res,
       );
       await res.waitForResponse();
-
-      res.statusCode.should.equal(200);
-      should(responseBody(res)).deepEqual({});
+      res.statusCode.should.equal(400);
     });
   });
 
@@ -743,47 +762,16 @@ describe('Authentication controller OAuth unit tests', () => {
       );
     });
 
-    it('uses generic error metadata when validation fails without an error code', async () => {
-      let stats: SignupStats | undefined;
-      const controller = stubControllerDependencies({
-        async: {
-          waterfall(steps: unknown[], done: (error?: unknown) => void) {
-            done({ errors: {} });
-          },
-        },
-        './../../../stats/server/services/stats.server.service.mts': {
-          stat: (statsObject: unknown, callback: AuthCallback) => {
-            if (
-              typeof statsObject !== 'object' ||
-              statsObject === null ||
-              !('tags' in statsObject)
-            ) {
-              throw new Error('Expected signup stats tags');
-            }
-            const tags = statsObject.tags;
-            if (
-              typeof tags !== 'object' ||
-              tags === null ||
-              !('reason' in tags) ||
-              typeof tags.reason !== 'string'
-            ) {
-              throw new Error('Expected signup stats reason');
-            }
-            stats = { tags: { reason: tags.reason } };
-            callback();
-          },
-        },
-      });
+    it('continues username validation when the availability lookup fails', async () => {
+      sinon.stub(User, 'findOne').rejects(new Error('Lookup unavailable'));
       const res = deferredResponse();
-
-      controller.signupValidation({ body: { username: 'anything' } }, res);
+      authController.signupValidation(
+        { body: { username: 'samplemember' } },
+        res,
+      );
       await res.waitForResponse();
-
       res.statusCode.should.equal(200);
-      responseField(res, 'valid').should.be.false();
-      responseField(res, 'error').should.equal('other');
-      should.exist(stats);
-      stats!.tags.reason.should.equal('other');
+      responseField(res, 'valid').should.be.true();
     });
 
     it('accepts an available username', async () => {
@@ -940,6 +928,27 @@ describe('Authentication controller OAuth unit tests', () => {
       const reloaded = await findUser(saved._id);
       userField(reloaded, 'public').should.be.true();
       should.not.exist(reloaded.emailToken);
+    });
+
+    it('reports login failures after confirming the email token', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.emailTemporary = userDoc.email;
+      userDoc.emailToken = 'sample-confirm-token';
+      userDoc.emailTokenIssuedAt = new Date();
+      userDoc.emailTokenExpires = new Date(Date.now() + 3600000);
+      await userDoc.save();
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token: 'sample-confirm-token' },
+          login: (_user: unknown, cb: AuthCallback) =>
+            cb(new Error('Login unavailable')),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
     });
 
     it('rejects an expired confirmation on both validation and consumption', async () => {

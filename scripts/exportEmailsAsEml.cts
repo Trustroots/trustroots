@@ -3,6 +3,7 @@ import type {
   EmailTemplateParams,
   RenderedEmail,
 } from '../modules/core/server/services/email.server.service.mts';
+const { promisify } = require('node:util') as typeof import('node:util');
 type TemplateName =
   | 'messages-unread'
   | 'confirm-contact'
@@ -18,9 +19,6 @@ interface StreamMailer {
   createTransport(options: { streamTransport: true; buffer: true }): {
     sendMail(email: RenderedEmail, callback: Result<{ message: Buffer }>): void;
   };
-}
-interface TemplateAsync {
-  waterfall(tasks: Array<(callback: Done) => void>, callback: Done): void;
 }
 /**
  * Generate eml files out of all Trustroots email templates,
@@ -40,7 +38,6 @@ const fs = require('node:fs') as typeof import('node:fs');
 const removeLocalPath =
   require('../modules/core/server/services/file-removal.server.service.mjs')
     .removeLocalPath as (filename: string) => Promise<void>;
-const async = require('async') as TemplateAsync;
 const nodemailer = require('nodemailer') as StreamMailer;
 const config = require('./../config/config.mts') as { supportEmail: string };
 const emailService =
@@ -106,13 +103,10 @@ function writeEmails() {
   console.log('Generating eml files out of emails.');
   console.log('Storing them to "' + tempFolder + '"');
 
-  // Send emails
-  async.waterfall(
-    [
+  async function generateAll(): Promise<void> {
+    for (const generate of [
       ensureTempDir,
       emptyTempDir,
-
-      // Generate emails:
       generateMessagesUnread,
       generateConfirmContact,
       generateResetPassword,
@@ -122,18 +116,16 @@ function writeEmails() {
       generateSupportRequest,
       generateSignupEmailReminder,
       generateReactivateHosts,
-    ],
-    function (err) {
-      if (err) {
-        console.error(err);
-        return;
-      }
-      console.log();
-      console.log('Done!');
-      console.log('See files from ' + tempFolder);
-      process.exit(0);
-    },
-  );
+    ]) {
+      await promisify(generate)();
+    }
+  }
+  generateAll().then(() => {
+    console.log();
+    console.log('Done!');
+    console.log('See files from ' + tempFolder);
+    process.exit(0);
+  }, console.error);
 }
 
 function generateParams(params: TemplateParams): TemplateParams {

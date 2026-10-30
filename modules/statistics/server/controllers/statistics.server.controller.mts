@@ -1,3 +1,4 @@
+import { promisify } from 'node:util';
 /**
  * Module dependencies.
  */
@@ -5,7 +6,6 @@ import _ from 'lodash';
 import moment from 'moment';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import statService from './../../../stats/server/services/stats.server.service.mts';
-import async from 'async';
 import semver from 'semver';
 import mongoose, { type Types } from 'mongoose';
 import parseStatisticsCount from './parse-statistics-count.mts';
@@ -192,7 +192,6 @@ const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
 let publicStatisticsCache:
   { expiresAt: number; statistics: PublicStatistics } | undefined;
 
-type WaterfallDone = (error?: unknown, ...results: unknown[]) => void;
 function connectionPercentage(
   count: number,
   total: number | undefined,
@@ -462,182 +461,170 @@ export const getExperienceStatistics = function (
   since: Date,
   callback: Callback<ExperienceCounts>,
 ): void {
-  async.parallel<{
-    experiences: ExperienceAggregate[];
-    realLifeConnections: ConnectionAggregate[];
-  }>(
-    {
-      experiences: done => {
-        Experience.aggregate<ExperienceAggregate>([
-          { $match: { removedAt: { $exists: false } } },
-          {
-            $group: {
-              _id: null,
-              total: {
-                $sum: 1,
-              },
-              recommended: {
-                $sum: {
-                  $cond: [
-                    {
-                      $eq: ['$recommend', 'yes'],
-                    },
-                    1,
-                    0,
-                  ],
+  Promise.all([
+    Experience.aggregate<ExperienceAggregate>([
+      { $match: { removedAt: { $exists: false } } },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: 1,
+          },
+          recommended: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$recommend', 'yes'],
                 },
-              },
-              notRecommended: {
-                $sum: {
-                  $cond: [
-                    {
-                      $eq: ['$recommend', 'no'],
-                    },
-                    1,
-                    0,
-                  ],
+                1,
+                0,
+              ],
+            },
+          },
+          notRecommended: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$recommend', 'no'],
                 },
-              },
-              recentTotal: {
-                $sum: {
-                  $cond: [
+                1,
+                0,
+              ],
+            },
+          },
+          recentTotal: {
+            $sum: {
+              $cond: [
+                {
+                  $gte: ['$created', since],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          recentRecommended: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
                     {
                       $gte: ['$created', since],
                     },
-                    1,
-                    0,
-                  ],
-                },
-              },
-              recentRecommended: {
-                $sum: {
-                  $cond: [
                     {
-                      $and: [
-                        {
-                          $gte: ['$created', since],
-                        },
-                        {
-                          $eq: ['$recommend', 'yes'],
-                        },
-                      ],
+                      $eq: ['$recommend', 'yes'],
                     },
-                    1,
-                    0,
                   ],
                 },
-              },
-              recentNotRecommended: {
-                $sum: {
-                  $cond: [
+                1,
+                0,
+              ],
+            },
+          },
+          recentNotRecommended: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
                     {
-                      $and: [
-                        {
-                          $gte: ['$created', since],
-                        },
-                        {
-                          $eq: ['$recommend', 'no'],
-                        },
-                      ],
+                      $gte: ['$created', since],
                     },
-                    1,
-                    0,
-                  ],
-                },
-              },
-            },
-          },
-        ]).then(rows => done(null, rows), done);
-      },
-      realLifeConnections: done => {
-        Experience.aggregate<ConnectionAggregate>([
-          {
-            $match: {
-              recommend: 'yes',
-              'interactions.met': true,
-              removedAt: { $exists: false },
-            },
-          },
-          {
-            $project: {
-              created: 1,
-              memberOne: {
-                $cond: [
-                  {
-                    $lt: ['$userFrom', '$userTo'],
-                  },
-                  '$userFrom',
-                  '$userTo',
-                ],
-              },
-              memberTwo: {
-                $cond: [
-                  {
-                    $lt: ['$userFrom', '$userTo'],
-                  },
-                  '$userTo',
-                  '$userFrom',
-                ],
-              },
-            },
-          },
-          {
-            $group: {
-              _id: {
-                memberOne: '$memberOne',
-                memberTwo: '$memberTwo',
-              },
-              latestCreated: {
-                $max: '$created',
-              },
-            },
-          },
-          {
-            $group: {
-              _id: null,
-              total: {
-                $sum: 1,
-              },
-              recent: {
-                $sum: {
-                  $cond: [
                     {
-                      $gte: ['$latestCreated', since],
+                      $eq: ['$recommend', 'no'],
                     },
-                    1,
-                    0,
                   ],
                 },
-              },
+                1,
+                0,
+              ],
             },
           },
-        ]).then(rows => done(null, rows), done);
-      },
-    },
-    (err, results) => {
-      if (err) {
-        return callback(err);
-      }
-      const experienceCounts = results.experiences[0] || {};
-      const connectionCounts = results.realLifeConnections[0] || {};
-      return callback(null, {
-        total: parseStatisticsCount(experienceCounts.total),
-        recommended: parseStatisticsCount(experienceCounts.recommended),
-        notRecommended: parseStatisticsCount(experienceCounts.notRecommended),
-        recent: {
-          total: parseStatisticsCount(experienceCounts.recentTotal),
-          recommended: parseStatisticsCount(experienceCounts.recentRecommended),
-          notRecommended: parseStatisticsCount(
-            experienceCounts.recentNotRecommended,
-          ),
         },
-        realLifeConnections: {
-          total: parseStatisticsCount(connectionCounts.total),
-          recent: parseStatisticsCount(connectionCounts.recent),
+      },
+    ]),
+    Experience.aggregate<ConnectionAggregate>([
+      {
+        $match: {
+          recommend: 'yes',
+          'interactions.met': true,
+          removedAt: { $exists: false },
         },
-      });
-    },
-  );
+      },
+      {
+        $project: {
+          created: 1,
+          memberOne: {
+            $cond: [
+              {
+                $lt: ['$userFrom', '$userTo'],
+              },
+              '$userFrom',
+              '$userTo',
+            ],
+          },
+          memberTwo: {
+            $cond: [
+              {
+                $lt: ['$userFrom', '$userTo'],
+              },
+              '$userTo',
+              '$userFrom',
+            ],
+          },
+        },
+      },
+      {
+        $group: {
+          _id: {
+            memberOne: '$memberOne',
+            memberTwo: '$memberTwo',
+          },
+          latestCreated: {
+            $max: '$created',
+          },
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: 1,
+          },
+          recent: {
+            $sum: {
+              $cond: [
+                {
+                  $gte: ['$latestCreated', since],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]),
+  ]).then(([experiences, realLifeConnections]) => {
+    const results = { experiences, realLifeConnections };
+    const experienceCounts = results.experiences[0] || {};
+    const connectionCounts = results.realLifeConnections[0] || {};
+    return callback(null, {
+      total: parseStatisticsCount(experienceCounts.total),
+      recommended: parseStatisticsCount(experienceCounts.recommended),
+      notRecommended: parseStatisticsCount(experienceCounts.notRecommended),
+      recent: {
+        total: parseStatisticsCount(experienceCounts.recentTotal),
+        recommended: parseStatisticsCount(experienceCounts.recentRecommended),
+        notRecommended: parseStatisticsCount(
+          experienceCounts.recentNotRecommended,
+        ),
+      },
+      realLifeConnections: {
+        total: parseStatisticsCount(connectionCounts.total),
+        recent: parseStatisticsCount(connectionCounts.recent),
+      },
+    });
+  }, callback);
 };
 
 /**
@@ -650,217 +637,202 @@ export const getMessageInteractionStatistics = function (
   since: Date,
   callback: Callback<InteractionCounts>,
 ): void {
-  async.parallel<{
-    repliedThreads: ThreadAggregate[];
-    feedback: FeedbackAggregate[];
-  }>(
-    {
-      repliedThreads: done => {
-        MessageStat.aggregate<ThreadAggregate>([
-          {
-            $match: {
-              firstReplyCreated: {
-                $exists: true,
-                $ne: null,
-              },
-            },
+  Promise.all([
+    MessageStat.aggregate<ThreadAggregate>([
+      {
+        $match: {
+          firstReplyCreated: {
+            $exists: true,
+            $ne: null,
           },
-          {
-            $group: {
-              _id: null,
-              total: {
-                $sum: 1,
-              },
-              recentTotal: {
-                $sum: {
-                  $cond: [
-                    {
-                      $gte: ['$firstReplyCreated', since],
-                    },
-                    1,
-                    0,
-                  ],
-                },
-              },
-            },
-          },
-        ]).then(rows => done(null, rows), done);
+        },
       },
-      feedback: done => {
-        ReferenceThread.aggregate<FeedbackAggregate>([
-          {
-            $sort: {
-              created: -1,
-              _id: -1,
-            },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: 1,
           },
-          {
-            $group: {
-              _id: {
-                userFrom: '$userFrom',
-                userTo: '$userTo',
-              },
-              reference: {
-                $first: '$reference',
-              },
-              created: {
-                $first: '$created',
-              },
-            },
-          },
-          {
-            $lookup: {
-              from: MessageStat.collection.name,
-              let: {
-                feedbackUserFrom: '$_id.userFrom',
-                feedbackUserTo: '$_id.userTo',
-              },
-              pipeline: [
+          recentTotal: {
+            $sum: {
+              $cond: [
                 {
-                  $match: {
-                    $expr: {
-                      $and: [
+                  $gte: ['$firstReplyCreated', since],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+    ]),
+    ReferenceThread.aggregate<FeedbackAggregate>([
+      {
+        $sort: {
+          created: -1,
+          _id: -1,
+        },
+      },
+      {
+        $group: {
+          _id: {
+            userFrom: '$userFrom',
+            userTo: '$userTo',
+          },
+          reference: {
+            $first: '$reference',
+          },
+          created: {
+            $first: '$created',
+          },
+        },
+      },
+      {
+        $lookup: {
+          from: MessageStat.collection.name,
+          let: {
+            feedbackUserFrom: '$_id.userFrom',
+            feedbackUserTo: '$_id.userTo',
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    {
+                      $ne: ['$firstReplyCreated', null],
+                    },
+                    {
+                      $or: [
                         {
-                          $ne: ['$firstReplyCreated', null],
-                        },
-                        {
-                          $or: [
+                          $and: [
                             {
-                              $and: [
-                                {
-                                  $eq: [
-                                    '$firstMessageUserFrom',
-                                    '$$feedbackUserFrom',
-                                  ],
-                                },
-                                {
-                                  $eq: [
-                                    '$firstMessageUserTo',
-                                    '$$feedbackUserTo',
-                                  ],
-                                },
+                              $eq: [
+                                '$firstMessageUserFrom',
+                                '$$feedbackUserFrom',
                               ],
                             },
                             {
-                              $and: [
-                                {
-                                  $eq: [
-                                    '$firstMessageUserFrom',
-                                    '$$feedbackUserTo',
-                                  ],
-                                },
-                                {
-                                  $eq: [
-                                    '$firstMessageUserTo',
-                                    '$$feedbackUserFrom',
-                                  ],
-                                },
+                              $eq: ['$firstMessageUserTo', '$$feedbackUserTo'],
+                            },
+                          ],
+                        },
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                '$firstMessageUserFrom',
+                                '$$feedbackUserTo',
+                              ],
+                            },
+                            {
+                              $eq: [
+                                '$firstMessageUserTo',
+                                '$$feedbackUserFrom',
                               ],
                             },
                           ],
                         },
                       ],
                     },
-                  },
+                  ],
                 },
-                {
-                  $limit: 1,
-                },
-              ],
-              as: 'repliedThreads',
-            },
-          },
-          {
-            $match: {
-              'repliedThreads.0': {
-                $exists: true,
               },
             },
+            {
+              $limit: 1,
+            },
+          ],
+          as: 'repliedThreads',
+        },
+      },
+      {
+        $match: {
+          'repliedThreads.0': {
+            $exists: true,
           },
-          {
-            $group: {
-              _id: null,
-              positive: {
-                $sum: {
-                  $cond: [
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          positive: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$reference', 'yes'],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          negative: {
+            $sum: {
+              $cond: [
+                {
+                  $eq: ['$reference', 'no'],
+                },
+                1,
+                0,
+              ],
+            },
+          },
+          recentPositive: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    {
+                      $gte: ['$created', since],
+                    },
                     {
                       $eq: ['$reference', 'yes'],
                     },
-                    1,
-                    0,
                   ],
                 },
-              },
-              negative: {
-                $sum: {
-                  $cond: [
+                1,
+                0,
+              ],
+            },
+          },
+          recentNegative: {
+            $sum: {
+              $cond: [
+                {
+                  $and: [
+                    {
+                      $gte: ['$created', since],
+                    },
                     {
                       $eq: ['$reference', 'no'],
                     },
-                    1,
-                    0,
                   ],
                 },
-              },
-              recentPositive: {
-                $sum: {
-                  $cond: [
-                    {
-                      $and: [
-                        {
-                          $gte: ['$created', since],
-                        },
-                        {
-                          $eq: ['$reference', 'yes'],
-                        },
-                      ],
-                    },
-                    1,
-                    0,
-                  ],
-                },
-              },
-              recentNegative: {
-                $sum: {
-                  $cond: [
-                    {
-                      $and: [
-                        {
-                          $gte: ['$created', since],
-                        },
-                        {
-                          $eq: ['$reference', 'no'],
-                        },
-                      ],
-                    },
-                    1,
-                    0,
-                  ],
-                },
-              },
+                1,
+                0,
+              ],
             },
           },
-        ]).then(rows => done(null, rows), done);
-      },
-    },
-    (err, results) => {
-      if (err) {
-        return callback(err);
-      }
-      const threadCounts = results.repliedThreads[0] || {};
-      const feedbackCounts = results.feedback[0] || {};
-      return callback(null, {
-        total: parseStatisticsCount(threadCounts.total),
-        positive: parseStatisticsCount(feedbackCounts.positive),
-        negative: parseStatisticsCount(feedbackCounts.negative),
-        recent: {
-          total: parseStatisticsCount(threadCounts.recentTotal),
-          positive: parseStatisticsCount(feedbackCounts.recentPositive),
-          negative: parseStatisticsCount(feedbackCounts.recentNegative),
         },
-      });
-    },
-  );
+      },
+    ]),
+  ]).then(([repliedThreads, feedback]) => {
+    const results = { repliedThreads, feedback };
+    const threadCounts = results.repliedThreads[0] || {};
+    const feedbackCounts = results.feedback[0] || {};
+    return callback(null, {
+      total: parseStatisticsCount(threadCounts.total),
+      positive: parseStatisticsCount(feedbackCounts.positive),
+      negative: parseStatisticsCount(feedbackCounts.negative),
+      recent: {
+        total: parseStatisticsCount(threadCounts.recentTotal),
+        positive: parseStatisticsCount(feedbackCounts.recentPositive),
+        negative: parseStatisticsCount(feedbackCounts.recentNegative),
+      },
+    });
+  }, callback);
 };
 
 /**
@@ -886,50 +858,37 @@ export const getRecentActivityStatistics = function (
       past7Days: { $sum: 1 },
     },
   });
-  async.parallel<{
-    signups: RecentActivityAggregate[];
-    threads: RecentActivityAggregate[];
-    messages: RecentActivityAggregate[];
-  }>(
-    {
-      signups: done => {
-        User.aggregate<RecentActivityAggregate>([
-          { $match: dateMatch('created') },
-          groupByDate('created'),
-        ]).then(rows => done(null, rows), done);
+  Promise.all([
+    User.aggregate<RecentActivityAggregate>([
+      { $match: dateMatch('created') },
+      groupByDate('created'),
+    ]),
+    MessageStat.aggregate<RecentActivityAggregate>([
+      { $match: dateMatch('firstMessageCreated') },
+      groupByDate('firstMessageCreated'),
+    ]),
+    Message.aggregate<RecentActivityAggregate>([
+      {
+        $match: {
+          ...dateMatch('created'),
+          shadowHidden: { $ne: true },
+          spam: { $ne: true },
+        },
       },
-      threads: done => {
-        MessageStat.aggregate<RecentActivityAggregate>([
-          { $match: dateMatch('firstMessageCreated') },
-          groupByDate('firstMessageCreated'),
-        ]).then(rows => done(null, rows), done);
-      },
-      messages: done => {
-        Message.aggregate<RecentActivityAggregate>([
-          {
-            $match: {
-              ...dateMatch('created'),
-              shadowHidden: { $ne: true },
-              spam: { $ne: true },
-            },
-          },
-          groupByDate('created'),
-        ]).then(rows => done(null, rows), done);
-      },
-    },
-    (err, results) => {
-      if (err) return callback(err);
-      const counts = (rows: RecentActivityAggregate[]): RecentWindowCounts => ({
-        past24Hours: parseStatisticsCount(rows[0]?.past24Hours),
-        past7Days: parseStatisticsCount(rows[0]?.past7Days),
-      });
-      return callback(null, {
-        signups: counts(results.signups),
-        threads: counts(results.threads),
-        messages: counts(results.messages),
-      });
-    },
-  );
+      groupByDate('created'),
+    ]),
+  ]).then(([signups, threads, messages]) => {
+    const results = { signups, threads, messages };
+    const counts = (rows: RecentActivityAggregate[]): RecentWindowCounts => ({
+      past24Hours: parseStatisticsCount(rows[0]?.past24Hours),
+      past7Days: parseStatisticsCount(rows[0]?.past7Days),
+    });
+    return callback(null, {
+      signups: counts(results.signups),
+      threads: counts(results.threads),
+      messages: counts(results.messages),
+    });
+  }, callback);
 };
 
 /**
@@ -954,231 +913,71 @@ export const getPublicStatistics = function (
     messageInteractions: {},
   };
   req.statistics = state;
-  async.waterfall(
-    [
-      // Total users
-      function (done: WaterfallDone) {
-        statisticsService.getUsersCount(function (err, count) {
-          if (err) {
-            return done(err);
-          }
-          state.total = count!;
-          done();
-        });
-      },
-      // External sites - BeWelcome
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount(
-          'bewelcome',
-          function (err, count) {
-            if (err) {
-              return done(err);
-            }
-            state.connections.push({
-              network: 'bewelcome',
-              count: count!,
-              percentage: connectionPercentage(count!, state.total),
-            });
-            done();
-          },
-        );
-      },
-      // External sites - Couchers.org
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount(
-          'couchers',
-          function (err, count) {
-            if (err) {
-              return done(err);
-            }
-            state.connections.push({
-              network: 'couchers',
-              count: count!,
-              percentage: connectionPercentage(count!, state.total),
-            });
-            done();
-          },
-        );
-      },
-      // External sites - Couchsurfing
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount(
-          'couchsurfing',
-          function (err, count) {
-            if (err) {
-              return done(err);
-            }
-            state.connections.push({
-              network: 'couchsurfing',
-              count: count!,
-              percentage: connectionPercentage(count!, state.total),
-            });
-            done();
-          },
-        );
-      },
-      // External sites - Warmshowers
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount(
-          'warmshowers',
-          function (err, count) {
-            if (err) {
-              return done(err);
-            }
-            state.connections.push({
-              network: 'warmshowers',
-              count: count!,
-              percentage: connectionPercentage(count!, state.total),
-            });
-            done();
-          },
-        );
-      },
-      // External sites - Facebook
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount(
-          'facebook',
-          function (err, count) {
-            if (err) {
-              return done(err);
-            }
-            state.connections.push({
-              network: 'facebook',
-              count: count!,
-              percentage: connectionPercentage(count!, state.total),
-            });
-            done();
-          },
-        );
-      },
-      // External sites - GitHub
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount('github', function (err, count) {
-          if (err) {
-            return done(err);
-          }
-          state.connections.push({
-            network: 'github',
-            count: count!,
-            percentage: connectionPercentage(count!, state.total),
-          });
-          done();
-        });
-      },
-      // External sites - Nostr
-      function (done: WaterfallDone) {
-        statisticsService.getExternalSiteCount('nostr', function (err, count) {
-          if (err) {
-            return done(err);
-          }
-          state.connections.push({
-            network: 'nostr',
-            count: count!,
-            percentage: connectionPercentage(count!, state.total),
-          });
-          done();
-        });
-      },
-      // Newsletter subscribers
-      function (done: WaterfallDone) {
-        statisticsService.getNewsletterSubscriptionsCount(
-          function (err, count) {
-            if (err) {
-              return done(err);
-            }
-            state.newsletter = {
-              count: count!,
-              percentage: Math.round((count! / state.total!) * 100),
-            };
-            done();
-          },
-        );
-      },
-      // Experience statistics
-      function (done: WaterfallDone) {
-        statisticsService.getExperienceStatistics(
-          moment().subtract(90, 'days').toDate(),
-          function (err, statistics) {
-            if (err) {
-              return done(err);
-            }
-            state.experiences = statistics!;
-            done();
-          },
-        );
-      },
-      // Replied message threads and their feedback
-      function (done: WaterfallDone) {
-        statisticsService.getMessageInteractionStatistics(
-          moment().subtract(90, 'days').toDate(),
-          function (err, statistics) {
-            if (err) {
-              return done(err);
-            }
-            state.messageInteractions = statistics!;
-            done();
-          },
-        );
-      },
-      // Recent registrations, conversation starts, and sent messages
-      function (done: WaterfallDone) {
-        statisticsService.getRecentActivityStatistics(
-          new Date(),
-          function (err, activity) {
-            if (err) return done(err);
-            state.recentActivity = activity!;
-            done();
-          },
-        );
-      },
-      // Hosting stats
-      function (done: WaterfallDone) {
-        statisticsService.getHostOffersCount(function (err, counter) {
-          if (err) {
-            return done(err);
-          }
-          const totalHosting = counter!.yes + counter!.maybe;
-          state.hosting = {
-            total: totalHosting,
-            percentage: Math.round((totalHosting / state.total!) * 100),
-            yes: counter!.yes,
-            yesPercentage: Math.round((counter!.yes / totalHosting) * 100),
-            maybe: counter!.maybe,
-            maybePercentage: Math.round((counter!.maybe / totalHosting) * 100),
-          };
-          done();
-        });
-      },
-      // Done!
-      function () {
-        // This stage runs only after every preceding task has populated the
-        // accumulator; the assertion changes no runtime shape or values.
-        const statistics = state as PublicStatistics;
-        publicStatisticsCache = {
-          expiresAt: Date.now() + PUBLIC_STATISTICS_CACHE_SECONDS * 1000,
-          statistics,
-        };
-        req.statistics = statistics;
-        return res
-          .header(
-            'Cache-Control',
-            `public, max-age=${PUBLIC_STATISTICS_CACHE_SECONDS}`,
-          )
-          .json(statistics);
-      },
-    ],
-    function (err?: Error | null) {
-      /* istanbul ignore else */
-      if (err) {
-        res
-          .header('Cache-Control', 'no-store')
-          .status(400)
-          .send({
-            message: errorMessage(err),
-          });
-      }
-    },
-  );
+  async function collect(): Promise<void> {
+    state.total = (await promisify(statisticsService.getUsersCount)())!;
+    for (const network of [
+      'bewelcome',
+      'couchers',
+      'couchsurfing',
+      'warmshowers',
+      'facebook',
+      'github',
+      'nostr',
+    ]) {
+      const count = (await promisify(statisticsService.getExternalSiteCount)(
+        network,
+      ))!;
+      state.connections.push({
+        network,
+        count,
+        percentage: connectionPercentage(count, state.total),
+      });
+    }
+    const newsletter = (await promisify(
+      statisticsService.getNewsletterSubscriptionsCount,
+    )())!;
+    state.newsletter = {
+      count: newsletter,
+      percentage: Math.round((newsletter / state.total!) * 100),
+    };
+    state.experiences = (await promisify(
+      statisticsService.getExperienceStatistics,
+    )(moment().subtract(90, 'days').toDate()))!;
+    state.messageInteractions = (await promisify(
+      statisticsService.getMessageInteractionStatistics,
+    )(moment().subtract(90, 'days').toDate()))!;
+    state.recentActivity = (await promisify(
+      statisticsService.getRecentActivityStatistics,
+    )(new Date()))!;
+    const counter = (await promisify(statisticsService.getHostOffersCount)())!;
+    const totalHosting = counter.yes + counter.maybe;
+    state.hosting = {
+      total: totalHosting,
+      percentage: Math.round((totalHosting / state.total!) * 100),
+      yes: counter.yes,
+      yesPercentage: Math.round((counter.yes / totalHosting) * 100),
+      maybe: counter.maybe,
+      maybePercentage: Math.round((counter.maybe / totalHosting) * 100),
+    };
+    const statistics = state as PublicStatistics;
+    publicStatisticsCache = {
+      expiresAt: Date.now() + PUBLIC_STATISTICS_CACHE_SECONDS * 1000,
+      statistics,
+    };
+    req.statistics = statistics;
+    res
+      .header(
+        'Cache-Control',
+        `public, max-age=${PUBLIC_STATISTICS_CACHE_SECONDS}`,
+      )
+      .json(statistics);
+  }
+  collect().catch(err => {
+    res
+      .header('Cache-Control', 'no-store')
+      .status(400)
+      .send({ message: errorMessage(err) });
+  });
 };
 
 /**

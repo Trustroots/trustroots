@@ -2,7 +2,6 @@
 import type {
   HistoricalMessage,
   LegacyMongoose,
-  MessageStatsAsync,
 } from '../legacy-cli-contracts.d.cts';
 
 /**
@@ -36,7 +35,6 @@ const searchMessagesParam = {
   // */
 };
 
-const async = require('async') as MessageStatsAsync;
 const config = require('./../../config/config.mts');
 require('./../../config/lib/mongoose.mjs');
 const mongoose = require('mongoose') as LegacyMongoose;
@@ -63,136 +61,64 @@ mongoose.connect(config.db.uri).catch(function (err) {
   console.error(err);
 });
 
-async.waterfall(
-  [
-    // count all messages to be able to show progress
-    function countAllMessages(done) {
-      Message.countDocuments(searchMessagesParam).then(
-        function (messageNo) {
-          done(null, messageNo);
-        },
-        function (err) {
-          done(err, 0);
-        },
+async function fillStats(): Promise<void> {
+  const messageNo = await Message.countDocuments(searchMessagesParam);
+  console.log('found ' + messageNo + ' messages\n');
+  console.log('streaming, and updating message stats for each message\n');
+  const cursor = Message.find(searchMessagesParam).cursor();
+  const PROGRESS_INTERVAL = 0.1;
+  let progress = 0;
+  while (true) {
+    const message = await cursor.next();
+    if (!message) break;
+    const resp = await new Promise<unknown>((resolve, reject) => {
+      messageStatService.updateMessageStat(message, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      });
+    });
+    // showing a progress
+    if (progress % Math.ceil((messageNo / 100) * PROGRESS_INTERVAL) === 0) {
+      // update the progress instead of logging to newline
+      const progressPercent = ((progress / messageNo) * 100).toFixed(1);
+      process.stdout.clearLine(0);
+      process.stdout.cursorTo(0);
+      process.stdout.write(
+        progressPercent +
+          '% (' +
+          progress +
+          '/' +
+          messageNo +
+          ')' +
+          ' - ' +
+          message.created +
+          ' - ' +
+          resp,
       );
-    },
-
-    function findAndProcessMessages(messageNo, done) {
-      console.log('found ' + messageNo + ' messages\n');
-      console.log('streaming, and updating message stats for each message\n');
-
-      // cursor for streaming from mongoDB
-      const cursor = Message.find(searchMessagesParam)
-        // .sort({ created: 1 })
-        .cursor();
-
-      // preparation for async.doWhilst function
-      //
-      // settings how often the progress will be printed to console
-      // every PROGRESS_INTERVAL %
-      const PROGRESS_INTERVAL = 0.1; // percent
-      let keepGoing = true;
-      let progress = 0; // progress counter
-
-      // this is the test for async.doWhilst
-      function testKeepGoing(
-        testCallback: (error: unknown, truth?: boolean) => void,
-      ) {
-        testCallback(null, keepGoing);
-      }
-
-      // here we process the message and (sometimes) print progress
-      function saveMessageAndRunCounter(
-        message: HistoricalMessage,
-        callback: import('../legacy-cli-contracts.d.cts').Done,
-      ) {
-        // updating the message stat
-        messageStatService.updateMessageStat(message, function (err, resp) {
-          if (err) return callback(err);
-          // showing a progress
-          if (
-            progress % Math.ceil((messageNo / 100) * PROGRESS_INTERVAL) ===
-            0
-          ) {
-            // update the progress instead of logging to newline
-            const progressPercent = ((progress / messageNo) * 100).toFixed(1);
-            process.stdout.clearLine(0);
-            process.stdout.cursorTo(0);
-            process.stdout.write(
-              progressPercent +
-                '% (' +
-                progress +
-                '/' +
-                messageNo +
-                ')' +
-                ' - ' +
-                message.created +
-                ' - ' +
-                resp,
-            );
-          }
-          ++progress;
-
-          return callback();
-        });
-      }
-
-      // the iteratee (function to run in each step) of async.doWhilst
-      function processNext(
-        callback: import('../legacy-cli-contracts.d.cts').Done,
-      ) {
-        // getting the next message from mongodb
-        cursor.next().then(
-          function (msg) {
-            // when we got to the end of stream
-            // msg should be null at the end, but weaker check is safe
-            if (!msg) {
-              keepGoing = false;
-              return callback();
-            }
-
-            // when there is a message to process, process it
-            saveMessageAndRunCounter(msg, callback);
-          },
-          function (err) {
-            console.error(err);
-            callback(err);
-          },
-        );
-      }
-
-      // callback for the end of the script
-      function finish(err?: unknown) {
-        return done(err, progress, messageNo);
-      }
-
-      async.doWhilst(processNext, testKeepGoing, finish);
-    },
-  ],
-  function (err, processedNo, allNo) {
-    mongoose.disconnect();
-    if (err) {
-      console.error(err);
-      console.log('******************* errored **************************');
-      return;
     }
+    ++progress;
+  }
+  const processedNo = progress;
+  const allNo = messageNo;
+  mongoose.disconnect();
+  // finish writing the progress bar
+  process.stdout.clearLine(0);
+  process.stdout.cursorTo(0);
+  process.stdout.write(
+    Math.floor((Number(processedNo) / Number(allNo)) * 100) +
+      '% (' +
+      processedNo +
+      '/' +
+      allNo +
+      ') (ended)\n\n',
+  );
 
-    // finish writing the progress bar
-    process.stdout.clearLine(0);
-    process.stdout.cursorTo(0);
-    process.stdout.write(
-      Math.floor((Number(processedNo) / Number(allNo)) * 100) +
-        '% (' +
-        processedNo +
-        '/' +
-        allNo +
-        ') (ended)\n\n',
-    );
-
-    console.log('************** finished successfully *****************');
-    console.log('******* the message stats are up to date now *********');
-    console.log('********************* bye! ***************************');
-
-    return; // all finished!
-  },
-);
+  console.log('************** finished successfully *****************');
+  console.log('******* the message stats are up to date now *********');
+  console.log('********************* bye! ***************************');
+}
+fillStats().catch(err => {
+  mongoose.disconnect();
+  console.error(err);
+  console.log('******************* errored **************************');
+});

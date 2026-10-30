@@ -1,4 +1,3 @@
-import async from 'async';
 import EventEmitter from 'events';
 import dependency2 from 'fs';
 import gm, { type Command as GmCommand } from 'gm';
@@ -388,17 +387,32 @@ async function removeAvatarVersion(
     force: true,
   });
 }
-const queue = async.queue<AvatarProcessingJob>((job, done) => {
-  processAvatar(job)
-    .then(result => job.callback(null, result))
-    .catch(error => job.callback(error))
-    .finally(done);
-}, 2);
+const pendingUploads: AvatarProcessingJob[] = [];
+let activeUploads = 0;
+function processPendingUploads(): void {
+  while (activeUploads < 2 && pendingUploads.length) {
+    const job = pendingUploads.shift()!;
+    activeUploads++;
+    processAvatar(job)
+      .then(
+        result => job.callback(null, result),
+        error => job.callback(error),
+      )
+      .catch(error => {
+        log('error', 'Avatar processing callback failed.', error);
+      })
+      .finally(() => {
+        activeUploads--;
+        processPendingUploads();
+      });
+  }
+}
 function enqueueAvatarProcessing(job: AvatarProcessingJob): boolean {
-  if (queue.length() >= maxQueuedUploads) {
+  if (pendingUploads.length >= maxQueuedUploads) {
     return false;
   }
-  queue.push(job);
+  pendingUploads.push(job);
+  queueMicrotask(processPendingUploads);
   return true;
 }
 const service: AvatarProcessingService = {

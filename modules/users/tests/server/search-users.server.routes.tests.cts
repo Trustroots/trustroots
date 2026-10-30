@@ -1,20 +1,6 @@
+const { promisify }: typeof import('node:util') = require('node:util');
 const request: typeof import('supertest') = require('supertest');
-interface AsyncTestApi {
-  eachOfSeries<T>(
-    items: T[],
-    iteratee: (
-      item: T,
-      index: number,
-      callback: (error?: Error | null) => void,
-    ) => void,
-    callback: (error?: Error | null) => void,
-  ): void;
-  waterfall(
-    tasks: Array<(...args: never[]) => void>,
-    callback: (error?: Error | null, result?: unknown) => void,
-  ): void;
-}
-const async = require('async') as AsyncTestApi;
+
 const _: typeof import('lodash') = require('lodash');
 const sinon: typeof import('sinon') = require('sinon');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -75,13 +61,8 @@ describe('Search users: GET /users?search=string', function () {
     callback: UserCreationCallback,
   ): void {
     const createdUsers: SearchUserDocument[] = [];
-    async.eachOfSeries(
-      users,
-      function (
-        user: NewSearchUser,
-        index: number,
-        cb: (error?: Error | null) => void,
-      ) {
+    async function create(): Promise<void> {
+      for (const [index, user] of users.entries()) {
         const createdUser = new User({
           username: user.username || 'user' + index,
           firstName: user.firstName || 'firstName' + index,
@@ -106,14 +87,12 @@ describe('Search users: GET /users?search=string', function () {
           roles: user.roles || ['user'],
         });
         createdUsers.push(createdUser);
-        createdUser
-          .save()
-          .then(() => cb())
-          .catch(cb);
-      },
-      function (err: Error | null | undefined) {
-        callback(err, createdUsers);
-      },
+        await createdUser.save();
+      }
+    }
+    create().then(
+      () => callback(null, createdUsers),
+      err => callback(err, createdUsers),
     );
   }
   context('not logged in', function () {
@@ -271,292 +250,295 @@ describe('Search users: GET /users?search=string', function () {
         );
       });
       it('[a username matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'asdf',
-                  },
-                  {
-                    username: 'asdfg',
-                  },
-                  {
-                    username: 'asdia',
-                  },
-                  {
-                    username: 'hasdfg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=asdia')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(1);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  username: 'asdf',
+                },
+                {
+                  username: 'asdfg',
+                },
+                {
+                  username: 'asdia',
+                },
+                {
+                  username: 'hasdfg',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=asdia')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(1);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       it('[some given names matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    firstName: 'qwer',
-                  },
-                  {
-                    firstName: 'qwera',
-                  },
-                  {
-                    firstName: 'qwery',
-                  },
-                  {
-                    firstName: 'qwer',
-                  },
-                  {
-                    firstName: 'qwe',
-                  },
-                  {
-                    firstName: 'sqwero',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=qwer')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(2);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  firstName: 'qwer',
+                },
+                {
+                  firstName: 'qwera',
+                },
+                {
+                  firstName: 'qwery',
+                },
+                {
+                  firstName: 'qwer',
+                },
+                {
+                  firstName: 'qwe',
+                },
+                {
+                  firstName: 'sqwero',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=qwer')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(2);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       it('[some family names matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    lastName: 'zxcvbna',
-                  },
-                  {
-                    lastName: 'zxcvbnrya',
-                  },
-                  {
-                    lastName: 'zxcvb',
-                  },
-                  {
-                    lastName: 'zxcvbny',
-                  },
-                  {
-                    lastName: 'zxcvb',
-                  },
-                  {
-                    lastName: 'zxcvba',
-                  },
-                  {
-                    lastName: 'zxcvz',
-                  },
-                  {
-                    lastName: 'asdia',
-                  },
-                  {
-                    lastName: 'hasdfg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=zxcvb')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(2);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  lastName: 'zxcvbna',
+                },
+                {
+                  lastName: 'zxcvbnrya',
+                },
+                {
+                  lastName: 'zxcvb',
+                },
+                {
+                  lastName: 'zxcvbny',
+                },
+                {
+                  lastName: 'zxcvb',
+                },
+                {
+                  lastName: 'zxcvba',
+                },
+                {
+                  lastName: 'zxcvz',
+                },
+                {
+                  lastName: 'asdia',
+                },
+                {
+                  lastName: 'hasdfg',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=zxcvb')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(2);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       it('[full names matched] return array of users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    firstName: 'jacob',
-                    lastName: 'alia',
-                  },
-                  {
-                    firstName: 'jacob',
-                    lastName: 'alib',
-                  },
-                  {
-                    firstName: 'jAcob',
-                    lastName: 'alic',
-                  },
-                  {
-                    firstName: 'jaCob',
-                    lastName: 'alid',
-                  },
-                  {
-                    firstName: 'jacob',
-                    lastName: 'aliE',
-                  },
-                  {
-                    firstName: 'jacob',
-                    lastName: 'alIA',
-                  },
-                  {
-                    firstName: 'jaco',
-                    lastName: 'alg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=jacob+aLia')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(6);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  firstName: 'jacob',
+                  lastName: 'alia',
+                },
+                {
+                  firstName: 'jacob',
+                  lastName: 'alib',
+                },
+                {
+                  firstName: 'jAcob',
+                  lastName: 'alic',
+                },
+                {
+                  firstName: 'jaCob',
+                  lastName: 'alid',
+                },
+                {
+                  firstName: 'jacob',
+                  lastName: 'aliE',
+                },
+                {
+                  firstName: 'jacob',
+                  lastName: 'alIA',
+                },
+                {
+                  firstName: 'jaco',
+                  lastName: 'alg',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=jacob+aLia')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(6);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       it('[none matched] return empty array', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    lastName: 'zxcvbna',
-                  },
-                  {
-                    username: 'zxcvba',
-                  },
-                  {
-                    firstName: 'xcvz',
-                  },
-                  {
-                    lastName: 'asdia',
-                  },
-                  {
-                    username: 'hasdfg',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=aeiou')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(0);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  lastName: 'zxcvbna',
+                },
+                {
+                  username: 'zxcvba',
+                },
+                {
+                  firstName: 'xcvz',
+                },
+                {
+                  lastName: 'asdia',
+                },
+                {
+                  username: 'hasdfg',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=aeiou')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(0);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       it('the user data should have only fields from searchProfile, and score', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'aaa',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=aaa')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(1);
-              // _id is not specified in userSearchProfileFields, but gets included anyways
-              // that's just how mongo works
-              const expectedFields = userHandler.userSearchProfileFields
-                .split(' ')
-                .concat(['_id']);
-              const actualFields = _.keys(foundUsers[0]);
-              const unexpectedFields = _.difference(
-                actualFields,
-                expectedFields,
-              );
-              should(unexpectedFields).eql(['score']);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  username: 'aaa',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=aaa')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(1);
+            // _id is not specified in userSearchProfileFields, but gets included anyways
+            // that's just how mongo works
+            const expectedFields = userHandler.userSearchProfileFields
+              .split(' ')
+              .concat(['_id']);
+            const actualFields = _.keys(foundUsers[0]);
+            const unexpectedFields = _.difference(actualFields, expectedFields);
+            should(unexpectedFields).eql(['score']);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       context('limit the amount of results and pagination', function () {
         // create some users
@@ -637,120 +619,121 @@ describe('Search users: GET /users?search=string', function () {
               ', when param is ' +
               test.params,
             function (done) {
-              async.waterfall(
-                [
-                  // search
-                  function (cb: SearchCallback) {
-                    agent
-                      .get('/api/users?search=aaaaaa' + test.params)
-                      .expect(200)
-                      .end(function (err, response) {
-                        cb(err, response.body as SearchResponse);
-                      });
-                  },
-                  // check that we found the users
-                  function (foundUsers: SearchResponse, cb: FinishedCallback) {
-                    should(foundUsers).length(test.expected);
-                    cb();
-                  },
-                ],
-                done,
-              );
+              (async () => {
+                const step0 = await promisify(function (cb: SearchCallback) {
+                  agent
+                    .get('/api/users?search=aaaaaa' + test.params)
+                    .expect(200)
+                    .end(function (err, response) {
+                      cb(err, response.body as SearchResponse);
+                    });
+                })();
+                const step1 = await promisify(function (
+                  foundUsers: SearchResponse,
+                  cb: FinishedCallback,
+                ) {
+                  should(foundUsers).length(test.expected);
+                  cb();
+                })(step0!);
+                return step1;
+              })().then(() => done(), done);
             },
           );
         });
       });
       it('search is case insensitive', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'abcdef',
-                  },
-                  {
-                    firstName: 'abCdef',
-                  },
-                  {
-                    lastName: 'ABCdEF',
-                  },
-                  {
-                    username: 'aabc',
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=abcdEf')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(3);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  username: 'abcdef',
+                },
+                {
+                  firstName: 'abCdef',
+                },
+                {
+                  lastName: 'ABCdEF',
+                },
+                {
+                  username: 'aabc',
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=abcdEf')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(3);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
       it('return only public users', function (done) {
-        async.waterfall(
-          [
-            // create some users
-            function (cb: CreateCallback) {
-              createUsers(
-                [
-                  {
-                    username: 'aabcdef',
-                    public: true,
-                  },
-                  {
-                    firstName: 'aAabCd',
-                    public: false,
-                  },
-                  {
-                    lastName: 'aaABCc',
-                    public: false,
-                  },
-                  {
-                    lastName: 'aaABCc',
-                    public: true,
-                  },
-                  // this one is not matched
-                  {
-                    firstName: 'aabCDef',
-                    lastName: 'aAbcdef',
-                    public: true,
-                  },
-                ],
-                cb,
-              );
-            },
-            // search
-            function (users: SearchUserDocument[], cb: SearchCallback) {
-              agent
-                .get('/api/users?search=aabcdef')
-                .expect(200)
-                .end(function (err, response) {
-                  cb(err, response.body as SearchResponse);
-                });
-            },
-            // check that we found the users
-            function (foundUsers: SearchResponse, cb: FinishedCallback) {
-              should(foundUsers).length(2);
-              cb();
-            },
-          ],
-          done,
-        );
+        (async () => {
+          const step0 = await promisify(function (cb: CreateCallback) {
+            createUsers(
+              [
+                {
+                  username: 'aabcdef',
+                  public: true,
+                },
+                {
+                  firstName: 'aAabCd',
+                  public: false,
+                },
+                {
+                  lastName: 'aaABCc',
+                  public: false,
+                },
+                {
+                  lastName: 'aaABCc',
+                  public: true,
+                },
+                // this one is not matched
+                {
+                  firstName: 'aabCDef',
+                  lastName: 'aAbcdef',
+                  public: true,
+                },
+              ],
+              cb,
+            );
+          })();
+          const step1 = await promisify(function (
+            users: SearchUserDocument[],
+            cb: SearchCallback,
+          ) {
+            agent
+              .get('/api/users?search=aabcdef')
+              .expect(200)
+              .end(function (err, response) {
+                cb(err, response.body as SearchResponse);
+              });
+          })(step0!);
+          const step2 = await promisify(function (
+            foundUsers: SearchResponse,
+            cb: FinishedCallback,
+          ) {
+            should(foundUsers).length(2);
+            cb();
+          })(step1!);
+          return step2;
+        })().then(() => done(), done);
       });
     });
     context('invalid request', function () {

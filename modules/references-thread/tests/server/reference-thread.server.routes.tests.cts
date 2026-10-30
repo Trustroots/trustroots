@@ -14,13 +14,7 @@ import type {
   UserRecord,
 } from '../../../../testutils/server/model-contracts.mts';
 const should: typeof import('should') = require('should');
-type WaterfallDone = (error?: Error | null) => void;
-const async: {
-  waterfall(
-    tasks: Array<(done: WaterfallDone) => void>,
-    callback: WaterfallDone,
-  ): void;
-} = require('async');
+
 const request: typeof import('supertest') = require('supertest');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -142,75 +136,26 @@ describe('Reference Thread CRUD tests', function () {
 
     // Create users, messages and prepare references
 
-    async.waterfall(
-      [
-        // Create userNonPublic
-        function (stepDone) {
-          utils.saveUserWithCachedPassword(userNonPublic).then(function (res) {
-            referenceUserNonPublicId = res._id;
-            stepDone();
-          }, stepDone);
-        },
-        // Create userFrom
-        function (stepDone) {
-          utils.saveUserWithCachedPassword(userFrom).then(function (res) {
-            referenceUserFromId = res._id;
-            stepDone();
-          }, stepDone);
-        },
-        // Create userTo
-        function (stepDone) {
-          utils.saveUserWithCachedPassword(userTo).then(function (res) {
-            referenceUserToId = res._id;
-            referenceThread.userTo = referenceUserToId;
-            stepDone();
-          }, stepDone);
-        },
-        // Create message+thread between referenceUserTo and referenceUserFrom
-        function (stepDone) {
-          // Note that from/to are opposite in these by purpose
-          // `referenceUserTo` is the receiver of messages, and thus that user can leave reference, not the other way around.
-          message.userTo = referenceUserFromId;
-          message.userFrom = referenceUserToId;
-          thread.userTo = referenceUserFromId;
-          thread.userFrom = referenceUserToId;
-          new Message(message)
-            .save()
-            .then(function (messageRes) {
-              thread.message = messageRes._id;
-              return new Thread(thread).save();
-            })
-            .then(function (threadRes) {
-              threadId = threadRes._id;
-              stepDone();
-            })
-            .catch(stepDone);
-        },
-        // Create message+thread between userTo and userNonPublic
-        function (stepDone) {
-          // Note that from/to are opposite in these by purpose
-          // `referenceUserTo` is the receiver of messages, and thus that user can leave reference, not the other way around.
-          message.userTo = referenceUserNonPublicId;
-          message.userFrom = referenceUserToId;
-          thread.userTo = referenceUserNonPublicId;
-          thread.userFrom = referenceUserToId;
-          new Message(message)
-            .save()
-            .then(function (messageRes) {
-              thread.message = messageRes._id;
-              return new Thread(thread).save();
-            })
-            .then(function (threadRes) {
-              threadNonpublicId = threadRes._id;
-              stepDone();
-            })
-            .catch(stepDone);
-        },
-      ],
-      function (err) {
-        done(err);
-      },
-    );
+    (async () => {
+      referenceUserNonPublicId = (
+        await utils.saveUserWithCachedPassword(userNonPublic)
+      )._id;
+      referenceUserFromId = (await utils.saveUserWithCachedPassword(userFrom))
+        ._id;
+      referenceUserToId = (await utils.saveUserWithCachedPassword(userTo))._id;
+      referenceThread.userTo = referenceUserToId;
+      // The reference author receives the messages in both conversations.
+      message.userTo = referenceUserFromId;
+      message.userFrom = referenceUserToId;
+      thread.userTo = referenceUserFromId;
+      thread.userFrom = referenceUserToId;
+      thread.message = (await new Message(message).save())._id;
+      threadId = (await new Thread(thread).save())._id;
+      message.userTo = referenceUserNonPublicId;
+      thread.userTo = referenceUserNonPublicId;
+      thread.message = (await new Message(message).save())._id;
+      threadNonpublicId = (await new Thread(thread).save())._id;
+    })().then(() => done(), done);
   });
   afterEach(utils.clearDatabase);
   it('should not be able to read references if not logged in', function (done) {

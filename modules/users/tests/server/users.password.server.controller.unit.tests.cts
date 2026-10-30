@@ -546,6 +546,28 @@ describe('Password controller unit tests', () => {
       res.body.message!.should.equal('Passwords do not match.');
     });
 
+    it('rejects a password change after the user has been deleted', async () => {
+      const controller = loadPasswordController();
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.deleteOne({ _id: saved._id });
+      const res = deferredResponse();
+      controller.changePassword(
+        {
+          user: { id: saved._id.toString() },
+          body: {
+            currentPassword: 'oldpassword123',
+            newPassword: 'newpassword123',
+            verifyPassword: 'newpassword123',
+          },
+          login: () => {},
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body.message!.should.equal('Current password is incorrect.');
+    });
+
     it('rejects an incorrect current password', async () => {
       const controller = loadPasswordController();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));

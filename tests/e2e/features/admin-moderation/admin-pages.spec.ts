@@ -177,10 +177,13 @@ test.describe('admin moderation page flows', () => {
       }
     });
     await gotoAdminPage(page, '/admin', /\/admin$/);
-    const trigger = page.getByRole('button', {
+    const feedbackRow = page.getByRole('row').filter({
+      hasText: SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
+    });
+    const trigger = feedbackRow.getByRole('button', {
       name: /Preview public feedback from/,
     });
-    const preview = page.getByRole('tooltip');
+    const preview = feedbackRow.getByRole('tooltip', { includeHidden: true });
 
     await expect(trigger).toBeVisible();
     await expect(preview).toBeHidden();
@@ -188,10 +191,13 @@ test.describe('admin moderation page flows', () => {
     await expect(preview).toHaveText(SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK);
     await expect(preview).toBeVisible();
     await preview.evaluate(node => {
-      node.textContent = Array.from(
-        { length: 40 },
-        (_, index) => `Anonymous feedback line ${index + 1}`,
-      ).join('\n');
+      node.textContent = [
+        node.textContent,
+        ...Array.from(
+          { length: 40 },
+          (_, index) => `Anonymous feedback line ${index + 1}`,
+        ),
+      ].join('\n');
     });
     await preview.hover();
     await expect(preview).toBeVisible();
@@ -225,10 +231,15 @@ test.describe('admin moderation page flows', () => {
       });
     const touchPage = await touchContext.newPage();
     await touchPage.goto('/admin');
-    const touchTrigger = touchPage.getByRole('button', {
+    const touchFeedbackRow = touchPage.getByRole('row').filter({
+      hasText: SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK,
+    });
+    const touchTrigger = touchFeedbackRow.getByRole('button', {
       name: /Preview public feedback from/,
     });
-    const touchPreview = touchPage.getByRole('tooltip');
+    const touchPreview = touchFeedbackRow.getByRole('tooltip', {
+      includeHidden: true,
+    });
     await touchTrigger.tap();
     await expect(touchPreview).toBeVisible();
     await expect(touchPreview).toHaveText(SEEDED_NEGATIVE_EXPERIENCE_FEEDBACK);
