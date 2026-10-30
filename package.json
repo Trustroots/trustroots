@@ -130,7 +130,6 @@
     "@trustroots/logger": "workspace:*",
     "@trustroots/ui": "workspace:*",
     "agenda": "4.4.0",
-    "async": "3.2.6",
     "autolinker": "4.1.5",
     "axios": "1.20.0",
     "basic-auth": "3.0.0",
