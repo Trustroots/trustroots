@@ -37,6 +37,11 @@
         // Playwright's setup project matches this with a regular expression,
         // which Knip can't expand.
         "tests/e2e/setup/auth.setup.mts",
+        // From 2017 until #2769 the app registered /sw.js with scope / on
+        // every visit, and nginx serves public/ directly. Returning browsers
+        // still have that empty worker and fetch /sw.js to check for updates,
+        // so it must stay although nothing imports it.
+        "public/sw.js",
       ],
       // Include stylesheets so Knip follows their imports, such as
       // tailwind.css importing tailwindcss.
