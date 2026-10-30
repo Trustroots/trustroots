@@ -3,11 +3,37 @@
  * official `@umami/node` client. Use it only for events the browser cannot
  * report; browser events go through `@trustroots/analytics/client`.
  */
-import { Umami } from '@umami/node';
+import { Umami, type UmamiPayload } from '@umami/node';
 import type {
   AnalyticsEventArgs,
   AnalyticsEventName,
 } from '../shared/events.ts';
+
+const DELIVERY_TIMEOUT_MS = 1000;
+
+/** The official client's transport has no timeout or cancellation option. */
+class BoundedUmami extends Umami {
+  async send(payload: UmamiPayload, type: 'event' | 'identify' = 'event') {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DELIVERY_TIMEOUT_MS);
+    try {
+      const response = await fetch(`${this.options.hostUrl}/api/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': `Mozilla/5.0 Umami/${process.version}`,
+        },
+        body: JSON.stringify({ type, payload }),
+        signal: controller.signal,
+      });
+      // No response data is needed; release the connection even if the body stalls.
+      await response.body?.cancel();
+      return response;
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+}
 
 export type ServerAnalyticsOptions = {
   /** `umami.enabled` from the application configuration. */
@@ -25,8 +51,8 @@ export type RequestHeaders = Record<string, string | string[] | undefined>;
 export type ServerAnalytics = {
   /**
    * Record a product event for a request. Resolves once delivery has been
-   * attempted and never rejects; skipped when analytics is disabled or the
-   * request asks not to be tracked.
+   * attempted (with a one-second deadline) and never rejects; skipped when
+   * analytics is disabled or the request asks not to be tracked.
    */
   track<Name extends AnalyticsEventName>(
     headers: RequestHeaders,
@@ -54,7 +80,10 @@ export function createServerAnalytics(
   const client =
     options.enabled === false
       ? undefined
-      : new Umami({ hostUrl: options.hostUrl, websiteId: options.websiteId });
+      : new BoundedUmami({
+          hostUrl: options.hostUrl,
+          websiteId: options.websiteId,
+        });
 
   return {
     async track(headers, name, ...[data]) {
