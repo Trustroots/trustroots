@@ -295,7 +295,27 @@ function parseOptions(args: string[]): Map<string, string> {
   return options;
 }
 
-async function loadModelChecks(
+export function discoverModelPaths(repoRoot: string): string[] {
+  // The source tree contains generated JavaScript siblings for many TypeScript
+  // models. Importing both registers the same Mongoose model twice and raises
+  // OverwriteModelError. Prefer source modules when paired, while retaining
+  // JavaScript-only model modules.
+  const candidates = globSync('modules/*/server/models/**/*.{mjs,mts}', {
+    cwd: repoRoot,
+  })
+    .filter(modelPath => !modelPath.endsWith('.types.mts'))
+    .sort();
+  const selected = new Map<string, string>();
+  for (const modelPath of candidates) {
+    const moduleBase = modelPath.replace(/\.(?:mjs|mts)$/, '');
+    if (modelPath.endsWith('.mts') || !selected.has(moduleBase)) {
+      selected.set(moduleBase, modelPath);
+    }
+  }
+  return [...selected.values()].sort();
+}
+
+export async function loadModelChecks(
   mongoose: typeof import('mongoose').default,
 ): Promise<ModelCheck[]> {
   const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -304,9 +324,7 @@ async function loadModelChecks(
   process.env.TRUSTROOTS_SKIP_LOCAL_CONFIG = 'true';
   console.log = () => undefined;
   try {
-    const modelPaths = globSync('modules/*/server/models/**/*.{mjs,mts}', {
-      cwd: repoRoot,
-    });
+    const modelPaths = discoverModelPaths(repoRoot);
     if (!modelPaths.length) {
       throw new MigrationCheckError('NO_APPLICATION_MODELS');
     }

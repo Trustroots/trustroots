@@ -1,9 +1,17 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import { test } from 'node:test';
+import mongoose from 'mongoose';
+import { fileURLToPath } from 'node:url';
 import {
   advanceFcv,
   assertFcvTransition,
+  discoverModelPaths,
   inspectServer,
+  loadModelChecks,
   MigrationCheckError,
   sanitisedAction,
   uriHasDatabase,
@@ -11,6 +19,8 @@ import {
   type ServerState,
   verifyModels,
 } from './mongodb-upgrade.mts';
+
+const repoRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 function healthyReplicaState(
   overrides: Partial<ServerState> = {},
@@ -418,4 +428,77 @@ test('sanitises application read and index inspection failures', async t => {
         !error.message.includes('private-host'),
     );
   });
+});
+
+test('discovers only source model modules and registers the models once', async () => {
+  const paths = discoverModelPaths(repoRoot);
+  assert.ok(paths.length > 0);
+  assert.ok(paths.every(path => !path.endsWith('.types.mts')));
+  assert.equal(
+    new Set(paths.map(path => path.replace(/\.(?:mjs|mts)$/, ''))).size,
+    paths.length,
+  );
+
+  // The source tree also contains generated .mjs siblings for many models.
+  // Loading both copies used to throw Mongoose OverwriteModelError.
+  const models = await loadModelChecks(mongoose);
+  assert.ok(models.length > 0);
+});
+
+test('prefers TypeScript modules and retains JavaScript-only models', () => {
+  const root = mkdtempSync(join(tmpdir(), 'trustroots-model-discovery-'));
+  const modelDirectory = join(root, 'modules', 'example', 'server', 'models');
+  mkdirSync(modelDirectory, { recursive: true });
+  writeFileSync(join(modelDirectory, 'paired.mjs'), '');
+  writeFileSync(join(modelDirectory, 'paired.mts'), '');
+  writeFileSync(join(modelDirectory, 'javascript-only.mjs'), '');
+  writeFileSync(join(modelDirectory, 'types.types.mts'), '');
+  try {
+    assert.deepEqual(discoverModelPaths(root), [
+      'modules/example/server/models/javascript-only.mjs',
+      'modules/example/server/models/paired.mts',
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('CLI emits safe JSON errors from an unrelated working directory', async t => {
+  const scriptPath = fileURLToPath(
+    new URL('./mongodb-upgrade.mts', import.meta.url),
+  );
+  for (const scenario of [
+    { args: ['inspect'], uri: '', expected: 'URI_REQUIRED', action: 'inspect' },
+    {
+      args: ['verify'],
+      uri: 'mongodb://user:secret@127.0.0.1:27017',
+      expected: 'URI_DATABASE_REQUIRED',
+      action: 'verify',
+    },
+    {
+      args: ['--private=secret'],
+      uri: '',
+      expected: 'INVALID_COMMAND',
+      action: 'unknown',
+    },
+  ]) {
+    await t.test(scenario.expected, () => {
+      const result = spawnSync(
+        process.execPath,
+        [scriptPath, ...scenario.args],
+        {
+          cwd: tmpdir(),
+          encoding: 'utf8',
+          env: { ...process.env, MONGODB_URI: scenario.uri },
+        },
+      );
+      assert.equal(result.status, 1, result.stderr);
+      const report = JSON.parse(result.stdout);
+      assert.equal(report.action, scenario.action);
+      assert.equal(report.status, 'failed');
+      assert.equal(report.checks[0].code, scenario.expected);
+      assert.equal(result.stdout.includes('secret'), false);
+      assert.equal(result.stdout.includes('127.0.0.1'), false);
+    });
+  }
 });

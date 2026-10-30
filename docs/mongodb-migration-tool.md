@@ -29,7 +29,10 @@ health. It issues no database write command and does not import application
 configuration or initialise Agenda.
 
 `verify` runs `inspect`, then loads the application Mongoose model definitions
-with automatic index and collection creation disabled. It performs a bounded
+with automatic index and collection creation disabled. When a model has both a
+TypeScript source module and a generated JavaScript sibling, it loads the source
+module once; JavaScript-only models remain included. Run the command from the
+repository's supported Node.js runtime. It performs a bounded
 `_id`-only read for each registered model and checks that each declared index
 key and semantic option is present. The report contains only aggregate model,
 read and index counts. It does not return matched documents or index names.
