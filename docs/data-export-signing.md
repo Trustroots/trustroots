@@ -96,7 +96,7 @@ To revoke a compromised key, do the same but set `status: "compromised"` and `re
 
 The `contacts` section carries **other members'** usernames, display names, home and current locations, Facebook IDs, and `emailHash` — an MD5 of a lowercased email address, which is reversible in practice for any address on a wordlist.
 
-Signing changes what that is. Unsigned, the file is deniable: a third party who obtains it cannot tell it from a fabrication, so it is worth little to a data broker or a harasser. Signed, it becomes an artifact Trustroots vouches for about people who never consented to it, transferable to anyone. That harm does not exist today; attestation creates it.
+Signing changes what that is. Unsigned, the file is deniable: a third party who obtains it cannot tell it from a fabrication, so it is worth little to a data broker or a harasser. Signed, it becomes an artefact Trustroots vouches for about people who never consented to it, transferable to anyone. That harm does not exist today; attestation creates it.
 
 This change does not widen what the export contains — the field set is untouched. Sectioning is the first mitigation: the `contacts` attestation can be presented separately or withheld, and the verifier reports a withheld section rather than treating it as empty. Three further decisions are open, and they belong to the maintainers rather than to this change, because they are a values call about a community's data:
 

@@ -1,5 +1,7 @@
 import path from 'node:path';
 import type { Request } from '@playwright/test';
+import { getPublicKey, nip19 } from 'nostr-tools';
+import { verifyExport } from '../../../../modules/users/server/services/data-export-verification.server.service.mjs';
 import { annotateFeature, test, expect } from '../../support/fixtures.mts';
 
 import {
@@ -136,6 +138,7 @@ test.describe('authenticated member flows', () => {
       'The combined export is an attachment with the documented filename.',
       'The export has format and version metadata plus profile, circles, contacts, hosting offer, message, and experience sections.',
       'Two exports of unchanged data attest the same content, because the request timestamp is not signed.',
+      'The export carries a signature that verifies against the configured signing key.',
     ]);
 
     if (!authenticatedMember)
@@ -161,6 +164,21 @@ test.describe('authenticated member flows', () => {
       experiences: expect.any(Array),
     });
     expect(new Date(data.exportedAt).toISOString()).toBe(data.exportedAt);
+
+    // playwright.config.cts gives the e2e server a throwaway signing key.
+    const { data: secretKey } = nip19.decode(
+      process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC as `nsec1${string}`,
+    );
+    const pubkey = getPublicKey(secretKey);
+    const report = verifyExport(data, {
+      keyHistory: [{ pubkey, status: 'active' }],
+    });
+
+    expect(report).toMatchObject({
+      problems: [],
+      valid: true,
+      event: { status: 'verified', pubkey },
+    });
 
     // The signed part of the file must not vary between downloads, otherwise
     // the signature attests something other than the member's data.

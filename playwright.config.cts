@@ -7,6 +7,10 @@ const {
   defineConfig,
   devices,
 }: typeof import('@playwright/test') = require('@playwright/test');
+const {
+  generateSecretKey,
+  nip19,
+}: typeof import('nostr-tools') = require('nostr-tools');
 
 const apiPort = process.env.TRUSTROOTS_E2E_API_PORT || 4301;
 const applicationHost = process.env.TRUSTROOTS_E2E_HOST || 'localhost';
@@ -46,10 +50,19 @@ function serializedDependencies(
   return serializeProjects ? serializedDependencies : defaultDependencies;
 }
 
+// A throwaway export-signing key per run, so the e2e export is actually signed
+// and verified. Set on process.env so test workers see the same key.
+process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC ||=
+  nip19.nsecEncode(generateSecretKey());
+
 const webServers = [
   {
     command: 'pnpm run start:e2e:api',
-    env: { TRUSTROOTS_TEST_STATS_OUTAGE: 'true' },
+    env: {
+      TRUSTROOTS_TEST_STATS_OUTAGE: 'true',
+      TRUSTROOTS_EXPORT_SIGNING_NSEC:
+        process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC,
+    },
     url: `http://${applicationUrlHost}:${apiPort}/api/languages?format=array`,
     timeout: 120 * 1000,
     reuseExistingServer:
