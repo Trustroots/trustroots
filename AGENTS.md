@@ -78,7 +78,7 @@ form. Prefer `*.tests.tsx` for new or heavily edited client tests when TypeScrip
 helps (typed fixtures, component props, stricter mocks), and `*.tests.ts` for
 non-JSX unit tests. Do not rename large numbers of existing `.tests.js` files
 only to change the extension. Jest already matches `.tests.[jt]s?(x)`, and
-`tsconfig.tests.json` typechecks only `.ts` / `.tsx` client tests.
+`tooling/tsconfig/tests.json` typechecks only `.ts` / `.tsx` client tests.
 
 Use British spelling for any new text (for example decentralisation, organisation,
 licence, emphasise). Do not change US spellings in code identifiers, CSS

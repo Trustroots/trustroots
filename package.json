@@ -101,7 +101,7 @@
     "test:coverage:server:parallel": "SERVER_TEST_COVERAGE=true pnpm run test:server:parallel",
     "test:server": "NODE_ENV=test node ./scripts/test-server.cts",
     "test": "pnpm run check-environment && pnpm run lint && pnpm run test:client && pnpm run test:server",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json && tsc --noEmit -p tsconfig.contracts.json && tsc --noEmit -p tsconfig.contract-diagnostics.json && tsc --noEmit -p tsconfig.server.json && tsc --noEmit -p tsconfig.fixtures.json && tsc --noEmit -p tsconfig.scripts.json && tsc --noEmit -p tsconfig.test-harness.json && tsc --noEmit -p tsconfig.e2e.json && tsc --noEmit -p tsconfig.server-tests.json && tsc --noEmit -p tsconfig.config.json && tsc --noEmit -p tsconfig.docs.json && pnpm run nostranslation:typecheck",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tooling/tsconfig/tests.json && tsc --noEmit -p tooling/tsconfig/contracts.json && tsc --noEmit -p tooling/tsconfig/contract-diagnostics.json && tsc --noEmit -p tooling/tsconfig/server.json && tsc --noEmit -p tooling/tsconfig/fixtures.json && tsc --noEmit -p tooling/tsconfig/scripts.json && tsc --noEmit -p tooling/tsconfig/test-harness.json && tsc --noEmit -p tooling/tsconfig/e2e.json && tsc --noEmit -p tooling/tsconfig/server-tests.json && tsc --noEmit -p tooling/tsconfig/config.json && tsc --noEmit -p tooling/tsconfig/docs.json && pnpm run nostranslation:typecheck",
     "ensure-indexes": "node ./bin/db-maintenance/ensure-indexes.mts",
     "ensure-circle-discovery-indexes": "node ./bin/db-maintenance/ensure-circle-discovery-indexes.mts",
     "prepare": "husky install",

@@ -1,0 +1,22 @@
+{
+  "extends": "./base.json",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "erasableSyntaxOnly": true,
+    "verbatimModuleSyntax": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["node"]
+  },
+  "include": [
+    "../../config/untyped-modules.d.mts",
+    "../../tests/docs/**/*.mts",
+    "../../tests/e2e/**/*.ts",
+    "../../tests/e2e/**/*.mts",
+    "../../scripts/e2e/**/*.mts",
+    "../../playwright.config.cts"
+  ]
+}

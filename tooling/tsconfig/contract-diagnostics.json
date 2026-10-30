@@ -1,0 +1,10 @@
+{
+  "extends": "./contracts.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": [
+    "../../modules/admin/tests/fixtures/shared-api-contract-diagnostics.mts",
+    "../../modules/users/tests/fixtures/profile-contract-diagnostics.mts"
+  ]
+}

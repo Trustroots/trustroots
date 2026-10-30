@@ -1,9 +1,6 @@
 {
+  "extends": "../../tooling/tsconfig/base.json",
   "compilerOptions": {
-    "strict": true,
-    "noEmit": true,
-    "skipLibCheck": true,
-    "allowImportingTsExtensions": true,
     "erasableSyntaxOnly": true,
     "target": "ES2023",
     "module": "ESNext",

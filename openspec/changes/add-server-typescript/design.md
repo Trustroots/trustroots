@@ -6,7 +6,7 @@ Node 24 strips erasable TypeScript syntax from `.mts` files at load time. Enums,
 
 ## Type checking
 
-`tsconfig.server.json` includes only `.mts` server files with `allowJs` on and `checkJs` off, so JavaScript imports are resolved but not diagnosed. Imported JavaScript that cannot be inferred usefully (the configuration object, the logger) gets a sibling `.d.mts` declaration. Errors only surface at typed call sites; JavaScript callers stay unchecked until their module is converted.
+`tooling/tsconfig/server.json` includes only `.mts` server files with `allowJs` on and `checkJs` off, so JavaScript imports are resolved but not diagnosed. Imported JavaScript that cannot be inferred usefully (the configuration object, the logger) gets a sibling `.d.mts` declaration. Errors only surface at typed call sites; JavaScript callers stay unchecked until their module is converted.
 
 ## Coverage
 
