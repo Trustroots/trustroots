@@ -1968,3 +1968,31 @@ remain unchanged.
 - **WHEN** the mini-user endpoint omits its ID or returns a blank ID
 - **THEN** the lookup fails before publishing a resolved conversation recipient
 - **AND** sparse inbox and host records retain their existing nullable-ID contract
+
+### Requirement: Android profile experience count
+
+The Android profile Experiences tab SHALL show the number of loaded experiences when that number is positive, and SHALL omit the count when it is zero.
+
+#### Scenario: Profile has experiences
+
+- **WHEN** a profile has loaded two experiences
+- **THEN** its Experiences tab displays “Experiences (2)”
+
+#### Scenario: Profile has no experiences
+
+- **WHEN** a profile has no loaded experiences
+- **THEN** its Experiences tab displays “Experiences” without a count
+
+### Requirement: Android inbox last message time
+
+The Android inbox SHALL show the last message time for each thread when its timestamp is available, using the same time formatting as messages in a conversation. It SHALL omit the time if the timestamp is missing or invalid.
+
+#### Scenario: Thread has a timestamp
+
+- **WHEN** a member views an inbox thread with a last message timestamp
+- **THEN** the thread row displays that time
+
+#### Scenario: Thread has no valid timestamp
+
+- **WHEN** a thread has a missing or invalid timestamp
+- **THEN** the inbox displays the thread without a time

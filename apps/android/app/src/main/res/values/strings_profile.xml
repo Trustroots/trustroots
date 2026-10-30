@@ -7,6 +7,10 @@
         <item quantity="one">Contacts (%1$d)</item>
         <item quantity="other">Contacts (%1$d)</item>
     </plurals>
+    <plurals name="profile_section_experiences_count">
+        <item quantity="one">Experiences (%1$d)</item>
+        <item quantity="other">Experiences (%1$d)</item>
+    </plurals>
     <string name="profile_no_experiences">No experiences shared yet.</string>
     <string name="profile_response_prefix">Response: %1$s</string>
     <string name="profile_show_fewer">Show fewer</string>

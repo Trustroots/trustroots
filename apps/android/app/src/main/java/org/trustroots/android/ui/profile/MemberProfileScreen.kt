@@ -431,6 +431,7 @@ private fun MemberProfileContent(
                                             ProfileSectionBar(
                                                 selected = ProfileSection.entries[profilePager.currentPage],
                                                 contactCount = contacts.size,
+                                                experienceCount = references.size,
                                                 onSelect = { section -> scope.launch { profilePager.animateScrollToPage(section.ordinal) } },
                                             )
                                         }

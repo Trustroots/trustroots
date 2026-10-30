@@ -5,6 +5,8 @@ import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.assertCountEquals
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.activity.ComponentActivity
 import java.util.concurrent.atomic.AtomicInteger
@@ -34,9 +36,9 @@ class ProfileRelatedCountPluralJourneyTest {
         compose.setContent {
             TrustrootsTheme {
                 Column {
-                    ProfileSectionBar(ProfileSection.About, 0, {})
-                    ProfileSectionBar(ProfileSection.About, 1, {})
-                    ProfileSectionBar(ProfileSection.About, 2, {})
+                    ProfileSectionBar(ProfileSection.About, 0, 0, {})
+                    ProfileSectionBar(ProfileSection.About, 1, 1, {})
+                    ProfileSectionBar(ProfileSection.About, 2, 2, {})
                     ProfileContactsSection(List(7, ::contact), false, {}, {}, api, session)
                     ProfileContactsSection(List(8, ::contact), false, {}, {}, api, session)
                     ProfileOverviewSection(List(7, ::reference), false, {}, {}, api, session)
@@ -48,6 +50,9 @@ class ProfileRelatedCountPluralJourneyTest {
         compose.onNodeWithText("Contacts").assertExists()
         compose.onNodeWithText("Contacts (1)").assertExists()
         compose.onNodeWithText("Contacts (2)").assertExists()
+        compose.onAllNodesWithText("Experiences").assertCountEquals(3)
+        compose.onNodeWithText("Experiences (1)").assertExists()
+        compose.onNodeWithText("Experiences (2)").assertExists()
         compose.onNodeWithText("1 more contact").assertExists()
         compose.onNodeWithText("2 more contacts").assertExists()
         compose.onNodeWithText("1 more experience").assertExists()

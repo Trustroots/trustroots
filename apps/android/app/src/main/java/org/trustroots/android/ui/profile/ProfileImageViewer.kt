@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,12 +14,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ZoomIn
-import androidx.compose.material.icons.filled.ZoomOut
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -250,32 +246,6 @@ internal fun ProfileImageViewer(
                     .padding(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (bitmap != null) {
-                    val resetDescription = stringResource(R.string.profile_photo_zoom_reset)
-                    Text(
-                        stringResource(R.string.profile_photo_zoom_reset_short),
-                        color = viewerContent,
-                        modifier = Modifier
-                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                            .semantics { contentDescription = resetDescription }
-                            .clickable(enabled = viewportReady) { transform = null }
-                            .wrapContentSize(Alignment.Center),
-                    )
-                    IconButton(
-                        onClick = { zoomTo(currentTransform.scale / 1.5f) },
-                        enabled = viewportReady,
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                    ) {
-                        Icon(Icons.Default.ZoomOut, contentDescription = stringResource(R.string.profile_photo_zoom_out), tint = viewerContent)
-                    }
-                    IconButton(
-                        onClick = { zoomTo(currentTransform.scale * 1.5f) },
-                        enabled = viewportReady,
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                    ) {
-                        Icon(Icons.Default.ZoomIn, contentDescription = stringResource(R.string.profile_photo_zoom_in), tint = viewerContent)
-                    }
-                }
                 IconButton(
                     onClick = onClose,
                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).testTag("closeProfileImage"),

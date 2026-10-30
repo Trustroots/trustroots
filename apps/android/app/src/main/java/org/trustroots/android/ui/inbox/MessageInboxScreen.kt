@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,6 +56,7 @@ import org.trustroots.android.ui.common.PinnedTopAppBar
 import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.localizedLabel
+import org.trustroots.android.ui.common.messageTime
 import org.trustroots.android.ui.common.resolveFailureMessage
 import org.trustroots.android.ui.conversation.MessageConversationEntryScreen
 import org.trustroots.android.ui.profile.MemberProfileScreen
@@ -252,6 +254,13 @@ private fun InboxContent(
                         Column(Modifier.padding(start = 10.dp)) {
                             Text(memberLabels[thread.id].orEmpty(), fontWeight = if (thread.read) FontWeight.Normal else FontWeight.Bold)
                             Text(thread.excerpt, maxLines = 2)
+                            thread.updatedAt?.let { updated ->
+                                Text(
+                                    messageTime(LocalContext.current.resources, updated),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                     thread.otherMember.username?.let { username ->

@@ -63,6 +63,7 @@ data class MessageThread(
     val otherMember: MessageMember,
     val excerpt: String,
     val read: Boolean,
+    val updatedAt: Long? = null,
 )
 
 data class DirectMessage(val id: String, val content: String, val sender: MessageMember, val createdAt: Long? = null)
@@ -836,6 +837,7 @@ internal fun parseThreads(values: JSONArray, currentUsername: String): List<Mess
             otherMember = if (from.username == currentUsername) to else from,
             excerpt = value.optJSONObject("message")?.optionalText("excerpt").orEmpty(),
             read = value.optBoolean("read", true),
+            updatedAt = value.optionalText("updated")?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
         )
     }
 

@@ -136,7 +136,7 @@ internal fun MenuScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
-        SharedNavigationLinks.INFO_AND_SUPPORT.forEach { link ->
+        SharedNavigationLinks.INFO_AND_SUPPORT.filterNot { it.id == "media" }.forEach { link ->
             MenuLink(
               stringResource(supportLinkLabelResource(link.id)),
               infoAndSupportIcon(link.id),
