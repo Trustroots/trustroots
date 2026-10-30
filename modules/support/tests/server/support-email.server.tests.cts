@@ -5,6 +5,8 @@ const mailboxJob: typeof import('../../server/jobs/poll-support-mailbox.server.j
 const recoveryJob: typeof import('../../server/jobs/recover-support-messages.server.job.mts') = require('../../server/jobs/recover-support-messages.server.job.mts');
 const sendJob: typeof import('../../server/jobs/send-support-message.server.job.mts') = require('../../server/jobs/send-support-message.server.job.mts');
 const mongoose: typeof import('mongoose') = require('mongoose');
+const MongoClient: typeof import('mongodb').MongoClient =
+  require('mongodb').MongoClient;
 const agenda: typeof import('../../../../config/lib/agenda.mjs').default = require('../../../../config/lib/agenda.mjs');
 const sinon: typeof import('sinon') = require('sinon');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
@@ -1159,8 +1161,7 @@ describe('Support email service', () => {
       const messageId = String(acknowledgement._id);
       const query = {
         name: 'send support message',
-        'data.messageId': messageId,
-        lastFinishedAt: { $exists: false },
+        data: { messageId },
       };
       try {
         await new Promise<void>((resolve, reject) => {
@@ -1173,8 +1174,20 @@ describe('Support email service', () => {
             error ? reject(error) : resolve(),
           );
         });
-        const pendingJobs = await agenda.jobs(query);
-        assert.equal(pendingJobs.length, 1);
+        const mongoClient = await MongoClient.connect(config.db.uri);
+        try {
+          const acknowledgementJobs = await mongoClient
+            .db()
+            .collection('agendaJobs')
+            .find(query)
+            .toArray();
+          assert.equal(
+            acknowledgementJobs.filter(job => !job.lastFinishedAt).length,
+            1,
+          );
+        } finally {
+          await mongoClient.close();
+        }
         const recovered = await SupportMessage.findById(
           acknowledgement._id,
         ).lean<StoredSupportMessage>();
@@ -1186,7 +1199,7 @@ describe('Support email service', () => {
       } finally {
         await agenda.cancel({
           name: 'send support message',
-          'data.messageId': messageId,
+          data: { messageId },
         });
       }
     });
@@ -1215,25 +1228,45 @@ describe('Support email service', () => {
     const name = 'send support message';
     try {
       await agenda.create(name, { messageId }).save();
-      const [historical] = await agenda.jobs({
+      const { jobs: historicalJobs } = await agenda.queryJobs({
         name,
-        'data.messageId': messageId,
+        data: { messageId },
       });
+      const [historical] = historicalJobs;
       assert.ok(historical);
-      historical.attrs.lastFinishedAt = new Date();
-      historical.attrs.nextRunAt = null;
-      await historical.save();
+      const historicalClient = await MongoClient.connect(config.db.uri);
+      try {
+        await historicalClient
+          .db()
+          .collection('agendaJobs')
+          .updateOne(
+            { name, 'data.messageId': messageId },
+            { $set: { lastFinishedAt: new Date(), nextRunAt: null } },
+          );
+      } finally {
+        await historicalClient.close();
+      }
 
       await new Promise<void>((resolve, reject) => {
         recoveryJob.recoverSupportMessages({ attrs: {} } as never, error =>
           error ? reject(error) : resolve(),
         );
       });
-      const jobs = await agenda.jobs({ name, 'data.messageId': messageId });
+      const recoveryClient = await MongoClient.connect(config.db.uri);
+      let jobs: Array<{ lastFinishedAt?: Date | null }> = [];
+      try {
+        jobs = await recoveryClient
+          .db()
+          .collection<{ lastFinishedAt?: Date | null }>('agendaJobs')
+          .find({ name, 'data.messageId': messageId })
+          .toArray();
+      } finally {
+        await recoveryClient.close();
+      }
       assert.equal(jobs.length, 2);
-      assert.equal(jobs.filter(job => !job.attrs.lastFinishedAt).length, 1);
+      assert.equal(jobs.filter(job => !job.lastFinishedAt).length, 1);
     } finally {
-      await agenda.cancel({ name, 'data.messageId': messageId });
+      await agenda.cancel({ name, data: { messageId } });
     }
   });
 

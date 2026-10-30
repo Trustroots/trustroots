@@ -8,8 +8,9 @@ describe('Worker tests', function () {
   interface AgendaDouble {
     start(): Promise<void>;
     stop(): Promise<void>;
+    drain(timeout: number): Promise<{ timedOut: boolean; running?: number }>;
     on(name: string, fn: (...args: never[]) => void): unknown;
-    define(name: string, options: object, fn: unknown): unknown;
+    define(name: string, fn: unknown, options: object): unknown;
     every(repeat: string, name: string): Promise<void>;
   }
   interface WorkerDouble {
@@ -19,6 +20,7 @@ describe('Worker tests', function () {
     ): Promise<void>;
     unlockAgendaJobs(callback: (error?: Error) => void): void;
     removeExitListeners(): void;
+    gracefulExit(): Promise<void>;
   }
   const agenda: AgendaDouble = require('../../../../config/lib/agenda.mjs');
   const worker: WorkerDouble = require('../../../../config/lib/worker.mjs');
@@ -30,7 +32,7 @@ describe('Worker tests', function () {
       failCount: number;
       nextRunAt?: Date;
     };
-    save(): void | Promise<void>;
+    schedule(time: Date): WorkerJob;
   }
   type JobFailureHandler = (error: Error, job: WorkerJob) => void;
   interface DefinedJob {
@@ -50,6 +52,8 @@ describe('Worker tests', function () {
 
   let failHandler: JobFailureHandler;
   let startStub: import('sinon').SinonStub;
+  let stopStub: import('sinon').SinonStub;
+  let drainStub: import('sinon').SinonStub;
   let everyStub: import('sinon').SinonStub;
   const definedJobs: DefinedJob[] = [];
   const scheduledJobs: ScheduledJob[] = [];
@@ -63,7 +67,8 @@ describe('Worker tests', function () {
     // Stub out all of agendas functionality as we are not testing agenda
 
     startStub = sinon.stub(agenda, 'start').resolves();
-    sinon.stub(agenda, 'stop').resolves();
+    stopStub = sinon.stub(agenda, 'stop').resolves();
+    drainStub = sinon.stub(agenda, 'drain').resolves({ timedOut: false });
 
     // Save handler for agenda.on('fail')
 
@@ -75,7 +80,7 @@ describe('Worker tests', function () {
 
     // Collect calls to agenda.define() and agenda.every()
 
-    sinon.stub(agenda, 'define').callsFake(function (name, options, fn) {
+    sinon.stub(agenda, 'define').callsFake(function (name, fn, options) {
       definedJobs.push({ name, options, fn });
     });
 
@@ -105,12 +110,15 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: 0,
       },
-      save() {},
+      schedule(time) {
+        this.attrs.nextRunAt = time;
+        return this;
+      },
     };
     const err = new Error('some regular error');
-    const mock = sinon.mock(job).expects('save').never();
+    const schedule = sinon.spy(job, 'schedule');
     failHandler(err, job);
-    mock.verify();
+    schedule.notCalled.should.equal(true);
   });
 
   it('will retry on ECONNREFUSED', function () {
@@ -120,16 +128,19 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: workerOptions.maxAttempts - 1,
       },
-      save() {},
+      schedule(time) {
+        this.attrs.nextRunAt = time;
+        return this;
+      },
     };
     const err = new Error('ECONNREFUSED');
-    const mock = sinon.mock(job).expects('save').once();
+    const schedule = sinon.spy(job, 'schedule');
     failHandler(err, job);
+    schedule.calledOnce.should.equal(true);
     job.attrs.nextRunAt!.should.be.instanceof(Date);
     job.attrs
       .nextRunAt!.getTime()
       .should.equal(workerOptions.retryDelaySeconds * 1000);
-    mock.verify();
   });
 
   it('will retry on ECONNRESET', function () {
@@ -139,36 +150,19 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: workerOptions.maxAttempts - 1,
       },
-      save() {},
+      schedule(time) {
+        this.attrs.nextRunAt = time;
+        return this;
+      },
     };
     const err = new Error('ECONNRESET');
-    const mock = sinon.mock(job).expects('save').once();
+    const schedule = sinon.spy(job, 'schedule');
     failHandler(err, job);
+    schedule.calledOnce.should.equal(true);
     job.attrs.nextRunAt!.should.be.instanceof(Date);
     job.attrs
       .nextRunAt!.getTime()
       .should.equal(workerOptions.retryDelaySeconds * 1000);
-    mock.verify();
-  });
-
-  it('logs a failed retry save without rejecting the worker', async function () {
-    const saveError = new Error('save failed');
-    const log = sinon.stub(console, 'error');
-    const job: WorkerJob = {
-      attrs: {
-        _id: 'jobid',
-        name: 'jobname',
-        failCount: 0,
-      },
-      save: sinon.stub().rejects(saveError),
-    };
-
-    failHandler(new Error('ECONNRESET'), job);
-    await Promise.resolve();
-
-    log
-      .calledWith('[Worker] Failed to save job retry', saveError)
-      .should.equal(true);
   });
 
   it('will not retry when max retries is reached', function () {
@@ -178,12 +172,15 @@ describe('Worker tests', function () {
         name: 'jobname',
         failCount: workerOptions.maxAttempts,
       },
-      save() {},
+      schedule(time) {
+        this.attrs.nextRunAt = time;
+        return this;
+      },
     };
     const err = new Error('ECONNRESET');
-    const mock = sinon.mock(job).expects('save').never();
+    const schedule = sinon.spy(job, 'schedule');
     failHandler(err, job);
-    mock.verify();
+    schedule.notCalled.should.equal(true);
   });
 
   it('defines [send email] job', function () {
@@ -237,6 +234,29 @@ describe('Worker tests', function () {
 
   it('starts Agenda before scheduling recurring jobs', function () {
     startStub.calledBefore(everyStub).should.equal(true);
+  });
+
+  it('drains running jobs before stopping on a worker signal', async function () {
+    const exit = sinon.stub(process, 'exit').returns(undefined as never);
+    await worker.gracefulExit();
+
+    drainStub.calledOnceWithExactly(30_000).should.equal(true);
+    stopStub.calledOnce.should.equal(true);
+    exit.calledOnceWithExactly(0).should.equal(true);
+  });
+
+  it('exits unsuccessfully when graceful worker shutdown times out', async function () {
+    drainStub.resolves({ timedOut: true, running: 1 });
+    const error = sinon.stub(console, 'error');
+    const exit = sinon.stub(process, 'exit').returns(undefined as never);
+    await worker.gracefulExit();
+
+    drainStub.calledOnceWithExactly(30_000).should.equal(true);
+    stopStub.calledOnce.should.equal(true);
+    error
+      .calledWith('[Worker] Agenda drain timed out with %d running job(s).', 1)
+      .should.equal(true);
+    exit.calledOnceWithExactly(1).should.equal(true);
   });
 
   it('reports recurring scheduling failures during worker startup', async function () {

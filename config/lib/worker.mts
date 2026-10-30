@@ -1,5 +1,4 @@
-import type { Job } from 'agenda';
-import type { RuntimeAgenda } from './agenda.mts';
+import type { Job, Agenda } from 'agenda';
 import config from './../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
@@ -9,10 +8,37 @@ export interface WorkerOptions {
   retryDelaySeconds: number;
 }
 type Done = (error?: Error | null) => void;
-const service = { start, unlockAgendaJobs, removeExitListeners };
+const gracefulShutdownTimeoutMs = 30_000;
+type JobDefinitionOptions = {
+  priority?: number | 'lowest' | 'low' | 'normal' | 'high' | 'highest';
+  concurrency?: number;
+  lockLifetime?: number;
+};
+const service = {
+  start,
+  unlockAgendaJobs,
+  removeExitListeners,
+  scheduleRetry,
+  gracefulExit,
+};
 const format = dependency1.format;
 const MongoClient = dependency3.MongoClient;
-let agenda: RuntimeAgenda;
+let agenda: Agenda;
+
+function defineJob<Data>(
+  name: string,
+  processor: (job: Job<Data>, done: Done) => unknown,
+  options: JobDefinitionOptions = {},
+) {
+  agenda.define<Data>(
+    name,
+    (job, done) => {
+      processor(job, done as Done);
+    },
+    options,
+  );
+}
+
 async function start(options: WorkerOptions, callback?: Done) {
   // Initialise Agenda inside `start()` so importing worker helpers does not
   // open a database connection.
@@ -44,96 +70,58 @@ async function start(options: WorkerOptions, callback?: Done) {
 
   // Define jobs
 
-  agenda.define(
-    'send email',
-    {
-      priority: 'high',
-      concurrency: 10,
-    },
-    dependency4,
-  );
+  defineJob('send email', dependency4, {
+    priority: 'high',
+    concurrency: 10,
+  });
 
   // Future push: re-register a delivery job here (previously
   // `send push message` via modules/core/server/jobs/send-push-message).
 
-  agenda.define(
-    'check unread messages',
-    {
-      lockLifetime: 10000,
-    },
-    dependency5,
-  );
-  agenda.define(
-    'daily statistics',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency6,
-  );
-  agenda.define(
-    'send signup reminders',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency7,
-  );
-  agenda.define(
-    'reactivate hosts',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency8,
-  );
-  agenda.define(
-    'welcome sequence first',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency9,
-  );
-  agenda.define(
-    'welcome sequence second',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency10,
-  );
-  agenda.define(
-    'welcome sequence third',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency11,
-  );
-  agenda.define(
-    'publish expired experiences',
-    {
-      lockLifetime: 10000,
-      concurrency: 1,
-    },
-    dependency12,
-  );
-  agenda.define(
-    'send support message',
-    { priority: 'high', concurrency: 2, lockLifetime: 60000 },
-    supportMessageJob,
-  );
-  agenda.define(
-    'poll support mailbox',
-    { concurrency: 1, lockLifetime: 120000 },
-    pollSupportMailboxJob,
-  );
-  agenda.define(
-    'recover support messages',
-    { concurrency: 1, lockLifetime: 120000 },
-    recoverSupportMessagesJob,
-  );
+  defineJob('check unread messages', dependency5, {
+    lockLifetime: 10000,
+  });
+  defineJob('daily statistics', dependency6, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('send signup reminders', dependency7, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('reactivate hosts', dependency8, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('welcome sequence first', dependency9, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('welcome sequence second', dependency10, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('welcome sequence third', dependency11, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('publish expired experiences', dependency12, {
+    lockLifetime: 10000,
+    concurrency: 1,
+  });
+  defineJob('send support message', supportMessageJob, {
+    priority: 'high',
+    concurrency: 2,
+    lockLifetime: 60000,
+  });
+  defineJob('poll support mailbox', pollSupportMailboxJob, {
+    concurrency: 1,
+    lockLifetime: 120000,
+  });
+  defineJob('recover support messages', recoverSupportMessagesJob, {
+    concurrency: 1,
+    lockLifetime: 120000,
+  });
   const startPromise = agenda
     .start()
     .then(function () {
@@ -207,18 +195,15 @@ async function start(options: WorkerOptions, callback?: Done) {
   // Error reporting and retry logic
   agenda.on('fail', function (err: Error, job: Job) {
     let extraMessage = '';
-    if (job.attrs.failCount! >= options.maxAttempts) {
+    const nextRunAt = scheduleRetry(err, job, options);
+    if (shouldRetry(err) && job.attrs.failCount! >= options.maxAttempts) {
       extraMessage = format('too many failures, giving up');
-    } else if (shouldRetry(err)) {
-      job.attrs.nextRunAt = secondsFromNowDate(options.retryDelaySeconds);
+    } else if (nextRunAt) {
       extraMessage = format(
         'will retry in %s seconds at %s',
         options.retryDelaySeconds,
-        job.attrs.nextRunAt.toISOString(),
+        nextRunAt.toISOString(),
       );
-      Promise.resolve(job.save()).catch(function (saveError) {
-        console.error('[Worker] Failed to save job retry', saveError);
-      });
     }
     const statsObject = {
       namespace: 'agendaJob',
@@ -344,12 +329,23 @@ function addExitListeners() {
  * Gracefully exit Agenda
  */
 function gracefulExit() {
-  console.log('[Worker] Stopping Agenda...');
-  agenda
-    .stop()
-    .then(function () {
+  console.log('[Worker] Draining Agenda jobs...');
+  return agenda
+    .drain(gracefulShutdownTimeoutMs)
+    .then(function (result) {
+      if (result.timedOut) {
+        console.error(
+          '[Worker] Agenda drain timed out with %d running job(s).',
+          result.running,
+        );
+      }
+      return agenda.stop().then(function () {
+        return result.timedOut ? 1 : 0;
+      });
+    })
+    .then(function (exitCode) {
       console.log('[Worker] Agenda stopped.');
-      process.exit(0);
+      process.exit(exitCode);
     })
     .catch(function (err) {
       console.error('[Worker] Could not stop Agenda cleanly.', err);
@@ -363,6 +359,25 @@ function shouldRetry(err: Error) {
   }
   return false;
 }
+
+/**
+ * Schedule network failures on the current job. Agenda persists this schedule
+ * together with processor-owned failure state after the fail event completes.
+ */
+function scheduleRetry(
+  err: Error,
+  job: Job,
+  options: WorkerOptions,
+): Date | undefined {
+  if (job.attrs.failCount! >= options.maxAttempts || !shouldRetry(err)) {
+    return undefined;
+  }
+
+  const nextRunAt = secondsFromNowDate(options.retryDelaySeconds);
+  job.schedule(nextRunAt);
+  return nextRunAt;
+}
+
 function secondsFromNowDate(seconds: number) {
   return new Date(new Date().getTime() + seconds * 1000);
 }
