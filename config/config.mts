@@ -15,7 +15,7 @@ import type {
   DatabaseConfig,
   DeepPartial,
 } from './types.mts';
-export type { Config } from './types.mts';
+
 type Environment = 'development' | 'production' | 'test';
 type EnvironmentConfig = ConfigOverrides & { db: DatabaseConfig };
 const environmentConfigByName: Record<Environment, EnvironmentConfig> = {

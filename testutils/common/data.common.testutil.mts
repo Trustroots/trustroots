@@ -9,7 +9,7 @@ import type { PublicProviderIdentities } from '../../modules/users/shared/profil
 
 const { defaultsDeep, range, sample, sampleSize } = lodash;
 
-export type FixtureId = string | { toString(): string; toHexString(): string };
+type FixtureId = string | { toString(): string; toHexString(): string };
 
 /** The common identity fields shared by generated server and client users. */
 export interface UserFixture {
@@ -115,10 +115,10 @@ export interface TribeFixture {
 }
 
 /** Possible recommendation values generated for experience fixtures. */
-export type ExperienceRecommendation = 'yes' | 'no' | 'unknown';
+type ExperienceRecommendation = 'yes' | 'no' | 'unknown';
 
 /** Generated experience relationship flags. */
-export interface ExperienceInteractionsFixture {
+interface ExperienceInteractionsFixture {
   met: boolean;
   guest: boolean;
   host: boolean;
@@ -135,7 +135,7 @@ export interface ExperienceFixture {
 }
 
 /** Fields that may override the generated experience defaults. */
-export type GenerateExperienceOptions = Partial<
+type GenerateExperienceOptions = Partial<
   Pick<ExperienceFixture, 'public' | 'interactions' | 'recommend'>
 > & { [property: string]: unknown };
 
@@ -177,8 +177,6 @@ function generateServerUser(overrides: GenerateUserOptions): ServerUserFixture {
     ...overrides,
   };
 }
-
-export { generateValidUsername };
 
 export function generateId(): string {
   return randomBytes(12).toString('hex');
@@ -260,29 +258,6 @@ export function generateUsers(
         });
     }
   });
-}
-
-function generateTribe(index: number): TribeFixture {
-  return {
-    _id: generateId(),
-    label: `${faker.lorem.word()}_${index}`,
-    labelHistory: faker.lorem.words(),
-    slugHistory: faker.lorem.words(),
-    synonyms: faker.lorem.words(),
-    color: faker.color.rgb({ format: 'hex', prefix: '' }),
-    count: Math.floor(Math.random() * 50000),
-    created: Date.now(),
-    modified: Date.now(),
-    public: true,
-    image: false,
-    attribution: faker.person.fullName(),
-    attribution_url: faker.internet.url(),
-    description: faker.lorem.sentences(),
-  };
-}
-
-export function generateTribes(count: number): TribeFixture[] {
-  return range(count).map(index => generateTribe(index));
 }
 
 export function generateExperiences(

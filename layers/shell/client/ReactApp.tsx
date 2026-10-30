@@ -3,8 +3,6 @@ import React, { useMemo } from 'react';
 
 import { createAppRouter } from './routes';
 
-export { defaultNavigate, signout } from './shell-helpers';
-
 export default function ReactApp({
   navigate,
 }: {

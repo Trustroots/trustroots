@@ -14,11 +14,11 @@ import config from './../../../../config/config.mts';
 import logModule from './../../../../config/lib/logger.mjs';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 import categories from '../../../support/shared/categories.ts';
-export type MailCallback<Result = import('agenda').Job> = (
+type MailCallback<Result = import('agenda').Job> = (
   error?: Error | null,
   result?: Result,
 ) => void;
-export interface MailUser {
+interface MailUser {
   _id?: Types.ObjectId | string;
   displayName?: string;
   firstName?: string;

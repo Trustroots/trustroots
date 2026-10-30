@@ -15,8 +15,9 @@ const User =
     import('../../../../testutils/server/model-contracts.mts').UserRecord
   >('User');
 
-const { deferredResponse } =
-  require('../../../../testutils/server/response.server.testutil.mts') as typeof import('../../../../testutils/server/response.server.testutil.mts');
+const {
+  deferredResponse,
+}: typeof import('../../../../testutils/server/response.server.testutil.mts') = require('../../../../testutils/server/response.server.testutil.mts');
 
 describe('Authentication controller mongoose error handling', () => {
   afterEach(() => {

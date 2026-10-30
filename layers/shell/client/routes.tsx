@@ -13,7 +13,6 @@ import React from 'react';
 import {
   matchReactRoute,
   REACT_ROUTE_POLICIES,
-  normalizePath,
   toTanStackPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
 import Admin from '@/modules/admin/client/components/Admin.component';
@@ -364,7 +363,7 @@ function createClientRouteComponent(clientRoute: ClientRoute) {
   return ClientRouteComponent;
 }
 
-export const rootRoute = createRootRoute({
+const rootRoute = createRootRoute({
   component: ReactAppShell,
   notFoundComponent: NotFoundPage,
 });
@@ -399,7 +398,7 @@ const clientRoutes = routes
     }),
   );
 
-export const routeTree = rootRoute.addChildren([
+const routeTree = rootRoute.addChildren([
   ...clientRoutes,
   profileRoute.addChildren(profileTabRoutes),
 ]);
@@ -453,5 +452,3 @@ export function findRoute(path: string) {
     render: renderByPath[matched.policy.path],
   };
 }
-
-export { normalizePath };

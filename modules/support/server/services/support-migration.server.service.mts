@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 import type { SupportRequestRecord } from '../models/support.server.model.mts';
 
 /** Infer historical categories from stored request fields, never current usernames. */
-export const legacySupportCategoryExpression = {
+const legacySupportCategoryExpression = {
   $cond: [
     {
       $gt: [

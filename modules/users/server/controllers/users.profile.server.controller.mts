@@ -28,6 +28,7 @@ import * as nip19 from 'nostr-tools/nip19';
 import validator from 'validator';
 import type {
   ProfilePayload,
+  SanitizedProfileRecord,
   SanitizedProfileRequest,
   UserProfileController,
 } from './users.profile.server.contracts.mts';
@@ -823,7 +824,7 @@ function sanitizeProfile(
 
   // Destruct Mongoose object to regular object so that we can manipulate it
   const profile =
-    profileDocument.toObject() as unknown as import('./users.profile.server.contracts.mts').SanitizedProfileRecord;
+    profileDocument.toObject() as unknown as SanitizedProfileRecord;
   const authenticatedRoles = authenticatedUser?.roles || [];
   const hideExternalContactDetails =
     !isOwnProfile &&

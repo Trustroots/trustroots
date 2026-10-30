@@ -7,10 +7,7 @@ import {
   type Page,
   type TestInfo,
 } from '@playwright/test';
-import {
-  annotateFeature,
-  featureAnnotation,
-} from '../../../scripts/e2e/feature-coverage-summary.mts';
+import { annotateFeature } from '../../../scripts/e2e/feature-coverage-summary.mts';
 import {
   trackScreenshotPages,
   sanitizeFileName,
@@ -110,10 +107,4 @@ export function expectPresent<T>(
   }
 }
 
-export {
-  expect,
-  annotateFeature,
-  featureAnnotation,
-  useElementScreenshot,
-  useViewportScreenshot,
-};
+export { expect, annotateFeature, useElementScreenshot, useViewportScreenshot };

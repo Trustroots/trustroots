@@ -12,7 +12,7 @@ import type { Signer } from './signers.ts';
 import { loadDrafts, rebaseDrafts, saveDrafts } from './drafts.ts';
 import type { Drafts } from './drafts.ts';
 
-export const API = __NOSTRANSLATION_API_URL__.replace(/\/$/, '');
+const API = __NOSTRANSLATION_API_URL__.replace(/\/$/, '');
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(API + path, options);

@@ -1,11 +1,11 @@
-export type ClientRouteReference = {
+type ClientRouteReference = {
   state: string;
   url: string;
   source: string;
   [property: string]: unknown;
 };
 
-export type ApiRouteReference = {
+type ApiRouteReference = {
   method: string;
   path: string;
   source: string;

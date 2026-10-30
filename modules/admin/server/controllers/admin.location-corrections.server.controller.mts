@@ -9,7 +9,7 @@ import { isProfileDeletionPending } from '../services/profile-deletion.server.se
 
 type LocationMatch = 'exact' | 'nearby';
 
-export interface LocationRecipient {
+interface LocationRecipient {
   _id: Types.ObjectId | string;
   username: string;
   displayName?: string;
@@ -29,7 +29,7 @@ interface OfferRecord {
   updated?: Date;
 }
 
-export interface LocationOffer {
+interface LocationOffer {
   _id: Types.ObjectId;
   type?: 'host' | 'meet';
   location: number[];
@@ -37,7 +37,7 @@ export interface LocationOffer {
   updated?: Date;
 }
 
-export interface LocationCandidate {
+interface LocationCandidate {
   userId: string;
   username: string;
   displayName?: string;

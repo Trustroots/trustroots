@@ -4,7 +4,7 @@ import config from './../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
-export interface WorkerOptions {
+interface WorkerOptions {
   maxAttempts: number;
   retryDelaySeconds: number;
 }

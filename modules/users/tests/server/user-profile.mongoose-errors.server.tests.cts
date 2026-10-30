@@ -1,6 +1,7 @@
 /**
  * Profile controller behaviour when the underlying Mongoose calls reject.
  */
+import type { DeferredResponse } from '../../../../testutils/server/response.server.testutil.mts';
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
@@ -14,10 +15,10 @@ const User =
     import('../../../../testutils/server/model-contracts.mts').UserRecord
   >('User');
 
-type MockResponse =
-  import('../../../../testutils/server/response.server.testutil.mts').DeferredResponse;
-const { deferredResponse } =
-  require('../../../../testutils/server/response.server.testutil.mts') as typeof import('../../../../testutils/server/response.server.testutil.mts');
+type MockResponse = DeferredResponse;
+const {
+  deferredResponse,
+}: typeof import('../../../../testutils/server/response.server.testutil.mts') = require('../../../../testutils/server/response.server.testutil.mts');
 
 function runHandler(
   invoke: (res: MockResponse, next: (error?: unknown) => void) => unknown,

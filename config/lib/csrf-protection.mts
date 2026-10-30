@@ -1,4 +1,4 @@
-export interface OriginConfiguration {
+interface OriginConfiguration {
   https?: unknown;
   domain: string;
   csrfAllowedOrigins?: string[];

@@ -1,4 +1,4 @@
-export type AdminIdentityLabel =
+type AdminIdentityLabel =
   'Username identifier' | 'Email identifier' | 'Temporary email identifier';
 
 export type AdminIdentity = {

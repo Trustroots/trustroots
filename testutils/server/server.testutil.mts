@@ -76,7 +76,7 @@ type CapturedMailerTransport = {
   logger: false;
 };
 
-export type CapturedEmail = MailMessage;
+type CapturedEmail = MailMessage;
 
 /**
  * Helper for testing sending emails

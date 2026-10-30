@@ -1,5 +1,5 @@
 import log from './../../../../config/lib/logger.mjs';
-export interface UTMParameters {
+interface UTMParameters {
   source?: unknown;
   medium?: unknown;
   campaign?: unknown;

@@ -11,7 +11,7 @@ import {
 } from '../common/data.common.testutil.mts';
 
 /** Error-first callback retained for legacy server tests. */
-export type FixtureCallback<T> = (error: unknown | null, value?: T) => void;
+type FixtureCallback<T> = (error: unknown | null, value?: T) => void;
 
 interface UserFixtureMethods {
   authenticate(password: string): Promise<boolean>;

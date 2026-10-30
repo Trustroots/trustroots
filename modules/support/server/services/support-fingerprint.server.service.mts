@@ -23,7 +23,7 @@ export function normaliseStoredSupportCategory(
     : null;
 }
 
-export function normaliseSupportFingerprintInput({
+function normaliseSupportFingerprintInput({
   category,
   email,
   message,

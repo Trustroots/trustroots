@@ -82,11 +82,6 @@ export const SEEDED_EXPERIENCE = {
   summary: 'One member shared their experience and they recommended them.',
 };
 
-export const SEEDED_PRIVATE_EXPERIENCE = {
-  profileUsername: SEEDED_RELATIONSHIP_MEMBERS.bob.username,
-  feedbackPublic: 'E2E seeded private experience for coverage.',
-};
-
 export const SEEDED_PROFILE_DESCRIPTION =
   'Seeded member profile for end-to-end tests';
 
@@ -94,11 +89,6 @@ export const SEEDED_OFFER = {
   description: 'E2E seeded host offer',
   hostingStatus: 'Can host',
   maxGuestsLabel: 'At most 2 guests.',
-};
-
-export const SEEDED_MEET_OFFER = {
-  description: 'E2E seeded active meet offer',
-  expiredDescription: 'E2E seeded expired meet offer',
 };
 
 export const EUROPE_OFFERS_QUERY =

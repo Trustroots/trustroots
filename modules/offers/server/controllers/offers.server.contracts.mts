@@ -1,14 +1,12 @@
 import type { NextFunction } from 'express';
 import type { Types } from 'mongoose';
 import type {
-  CreateOfferRequest,
   OfferMutationResponse,
   OfferMember,
   OfferPayload,
   OfferSearchFeatureCollection,
   OfferStatus,
   OfferType,
-  UpdateOfferRequest,
 } from '../../shared/offer.js';
 import type { OfferServerRecord } from '../models/offer.server.types.mts';
 
@@ -90,12 +88,9 @@ export interface OfferReadDocument {
   toObject(): OfferSanitiseRecord;
 }
 
-export type ValidOfferEndpointDocument = OfferEndpointDocument &
-  OfferReadDocument;
-
 /** Middleware-attached values are checked at the handler boundary. This shape
  * intentionally describes only request data, not a persisted model record. */
-export interface OfferRequestDocument {
+interface OfferRequestDocument {
   _id?: unknown;
   type?: unknown;
   status?: unknown;
@@ -113,9 +108,9 @@ export interface OfferRequestDocument {
   toObject?: () => unknown;
 }
 
-export type OfferQuery = Record<string, unknown>;
-export type OfferErrorResponse = { message: string };
-export type OfferResponseBody =
+type OfferQuery = Record<string, unknown>;
+type OfferErrorResponse = { message: string };
+type OfferResponseBody =
   | OfferErrorResponse
   | OfferMutationResponse
   | OfferSanitisedPayload
@@ -138,8 +133,3 @@ export interface OfferRequest<Body = Record<string, unknown>> {
 }
 
 export type OfferNext = NextFunction;
-export type CreateRequest = OfferRequest<CreateOfferRequest>;
-export type UpdateRequest = OfferRequest<
-  UpdateOfferRequest & { type?: string }
->;
-export type OfferCallback = (error: Error | null) => void;

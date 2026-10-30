@@ -64,7 +64,7 @@ export interface UserRecord {
   nostrNpub?: string;
 }
 
-export interface UserMethods {
+interface UserMethods {
   authenticate(password: string): Promise<boolean>;
   hashPassword(password: string): Promise<string>;
 }
@@ -88,7 +88,6 @@ export type UserDocument =
 export type ContactDocument = HydratedDocument<ContactRecord>;
 export type ExperienceDocument = HydratedDocument<ExperienceRecord>;
 export type MessageDocument = HydratedDocument<MessageRecord>;
-export type ThreadDocument = HydratedDocument<ThreadRecord>;
 export type MessageStatDocument = HydratedDocument<MessageStatRecord>;
 export type OfferDocument = HydratedDocument<OfferRecord>;
 export type TribeDocument = HydratedDocument<TribeRecord>;
@@ -242,8 +241,3 @@ export interface ReferenceThreadRecord {
   reference: 'yes' | 'no';
   created?: Date;
 }
-
-/** Optional populated fields used by reference-thread controller tests. */
-export type PopulatedReferenceThread = ReferenceThreadRecord & {
-  _id: Types.ObjectId;
-};

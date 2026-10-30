@@ -3,6 +3,9 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const service: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
+const {
+  SupportEmailError,
+}: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
 const agenda: typeof import('../../../../config/lib/agenda.mjs').default = require('../../../../config/lib/agenda.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 
@@ -23,7 +26,7 @@ const originalSender = config.supportInbox.fromAddress;
 
 function expectCode(code: string) {
   return (error: unknown) =>
-    error instanceof service.SupportEmailError && error.code === code;
+    error instanceof SupportEmailError && error.code === code;
 }
 
 async function request() {
