@@ -90,15 +90,12 @@ jest.mock('@/modules/users/client/components/BlockMember.component', () => {
   }
   return MockBlockMember;
 });
-jest.mock(
-  '@/modules/references-thread/client/components/ReferenceThread',
-  () => {
-    function MockReferenceThread({ userToId }: { userToId: string }) {
-      return <div>References for {userToId}</div>;
-    }
-    return MockReferenceThread;
-  },
-);
+jest.mock('@/modules/contacts/client/components/YourConnection', () => {
+  function MockReferenceThread({ member }: { member: { _id: string } }) {
+    return <div>Connection for {member._id}</div>;
+  }
+  return MockReferenceThread;
+});
 jest.mock('@/modules/core/client/components/TrEditor', () => {
   function MockTrEditor({
     id,
@@ -735,7 +732,7 @@ describe('<Thread>', () => {
     );
   });
 
-  it('shows sidebar actions and references on wider screens', async () => {
+  it('shows sidebar actions and the shared connection view on wider screens', async () => {
     mockIsExtraSmall = false;
     api.messages.fetchMessages.mockResolvedValueOnce({
       messages: [
@@ -752,7 +749,7 @@ describe('<Thread>', () => {
 
     expect(await screen.findByTestId('monkeybox')).toBeInTheDocument();
     expect(
-      screen.getByText(`References for ${otherUser._id}`),
+      screen.getByText(`Connection for ${otherUser._id}`),
     ).toBeInTheDocument();
     expect(
       screen.getByRole('button', { name: `Report ${otherUser.username}` }),
@@ -760,6 +757,17 @@ describe('<Thread>', () => {
     expect(
       screen.getByRole('button', { name: `Block ${otherUser.username}` }),
     ).toBeInTheDocument();
+  });
+
+  it('offers the shared connection disclosure on small screens without hiding the composer', async () => {
+    render(<Thread user={me} profileMinimumLength={0} />);
+    const summary = await screen.findByText('Your connection');
+    expect(summary.tagName).toBe('SUMMARY');
+    expect(summary).toBeVisible();
+    fireEvent.click(summary);
+    expect(screen.getByText(`Connection for ${otherUser._id}`)).toBeVisible();
+    expect(screen.getByRole('textbox')).toBeVisible();
+    expect(screen.queryByTestId('monkeybox')).not.toBeInTheDocument();
   });
 
   describe('only messages from other user', () => {

@@ -477,6 +477,12 @@ importers:
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/references-thread':
+        specifier: workspace:*
+        version: link:../references-thread
       '@trustroots/users':
         specifier: workspace:*
         version: link:../users
@@ -510,12 +516,12 @@ importers:
 
   modules/messages:
     dependencies:
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
       '@trustroots/core':
         specifier: workspace:*
         version: link:../core
-      '@trustroots/references-thread':
-        specifier: workspace:*
-        version: link:../references-thread
       '@trustroots/stats':
         specifier: workspace:*
         version: link:../stats
