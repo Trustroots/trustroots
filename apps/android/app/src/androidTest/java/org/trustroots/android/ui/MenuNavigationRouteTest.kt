@@ -38,6 +38,10 @@ class MenuNavigationRouteTest {
             org.trustroots.android.R.string.screen_info_and_support,
             supportLinkLabelResource("unknown"),
         )
+        assertEquals(
+            org.trustroots.android.R.string.screen_menu_link_media,
+            supportLinkLabelResource("media"),
+        )
 
         val privateSite = browserRouteFor(
             MenuBrowserVisit(MenuBrowserDestination.Nostroots, 4L),
