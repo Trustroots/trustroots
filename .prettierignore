@@ -27,7 +27,6 @@ bin/admin/*
 !bin/admin/*.mts
 !bin/admin/*.cts
 deploy
-migrations/archived
 public
 scripts/**
 !scripts/**/
