@@ -12,7 +12,7 @@ import {
   featureAnnotation,
 } from '../../../scripts/e2e/feature-coverage-summary.mts';
 import {
-  captureEndOfTestScreenshot,
+  trackScreenshotPages,
   sanitizeFileName,
   useElementScreenshot,
   useViewportScreenshot,
@@ -50,7 +50,18 @@ const coverageDir = path.join(
 );
 const collectCoverage = process.env.TRUSTROOTS_E2E_SKIP_JS_COVERAGE !== 'true';
 
-export const test = base.extend({
+export const test = base.extend<{ screenshotCapture: void }>({
+  screenshotCapture: [
+    async ({ browser }, use, testInfo) => {
+      const finish = trackScreenshotPages(browser, testInfo);
+      try {
+        await use();
+      } finally {
+        await finish();
+      }
+    },
+    { auto: process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true' },
+  ],
   context: async (
     { context }: { context: BrowserContext },
     use: (context: BrowserContext) => Promise<void>,
@@ -65,14 +76,12 @@ export const test = base.extend({
   ) => {
     if (!collectCoverage || browserName !== 'chromium') {
       await use(page);
-      await captureEndOfTestScreenshot(page, testInfo);
       return;
     }
 
     const coveragePage = page as ChromiumPage;
     await coveragePage.coverage.startJSCoverage({ resetOnNavigation: false });
     await use(page);
-    await captureEndOfTestScreenshot(page, testInfo);
     const coverage = await coveragePage.coverage.stopJSCoverage();
     if (coverage.length === 0) {
       return;
