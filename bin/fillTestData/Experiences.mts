@@ -3,9 +3,9 @@ import mongooseService from './../../config/lib/mongoose.mjs';
 import yargs from 'yargs';
 import { faker } from '@faker-js/faker';
 import mongoose, { type Document, type Types } from 'mongoose';
-import queue from 'async/queue.js';
 import config from './../../config/config.mts';
 import moment from 'moment';
+import { forEachWithConcurrency } from './../../modules/core/server/services/task-queue.server.service.mts';
 
 interface SeedUser extends Document {
   _id: Types.ObjectId;
@@ -321,39 +321,36 @@ function seedExperiences(averageExpNumber: number, replyRate: number) {
           experienceSharingMatrix,
         );
         console.log(`Saving ${nExperiencesToBeAdded} experiences ... `);
-        const experienceSaveTaskQueue = queue<ExperienceTask>(
-          async (task, callback) => {
-            const experience = createExperience(task.userTo, task.userFrom);
-            await experience.save();
-            callback();
-          },
-          100,
-        );
-        experienceSaveTaskQueue.error((err, task) => {
-          console.log(
-            `Error ${err} when saving experience of user ${task.userFrom} with ${task.userTo}`,
-          );
-        });
-        const intervalObject = setInterval(() => {
-          console.log(
-            `Experiences still to be persisted: ${experienceSaveTaskQueue.length()}`,
-          );
-        }, 1000);
-        experienceSaveTaskQueue.drain(function () {
-          clearInterval(intervalObject);
-          console.log('All experiences have been saved');
-          mongooseService.disconnect();
-        });
+        const tasks: ExperienceTask[] = [];
         experienceSharingMatrix.forEach((row, i) => {
           row.forEach((elem, j) => {
             if (elem) {
-              experienceSaveTaskQueue.push({
+              tasks.push({
                 userTo: users[i]._id,
                 userFrom: users[j]._id,
               });
             }
           });
         });
+        let startedTasks = 0;
+        const intervalObject = setInterval(() => {
+          console.log(
+            `Experiences still to be persisted: ${tasks.length - startedTasks}`,
+          );
+        }, 1000);
+        await forEachWithConcurrency(tasks, 100, async task => {
+          startedTasks++;
+          try {
+            await createExperience(task.userTo, task.userFrom).save();
+          } catch (err) {
+            console.log(
+              `Error ${err} when saving experience of user ${task.userFrom} with ${task.userTo}`,
+            );
+          }
+        });
+        clearInterval(intervalObject);
+        console.log('All experiences have been saved');
+        mongooseService.disconnect();
       }
       function createExperience(
         userTo: Types.ObjectId,

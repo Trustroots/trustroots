@@ -1,7 +1,4 @@
-import type {
-  LegacyMongoose,
-  QueueFactory,
-} from '../legacy-cli-contracts.d.cts';
+import type { LegacyMongoose } from '../legacy-cli-contracts.d.cts';
 import type { Types } from 'mongoose';
 interface DuplicateContacts {
   ids: Types.ObjectId[];
@@ -15,11 +12,12 @@ interface DuplicateContacts {
  * NODE_ENV=development node scripts/db-maintenance/remove-duplicate-contacts.cts
  */
 
-const async = require('async') as QueueFactory;
 const config = require('./../../config/config.mts');
 require('./../../config/lib/mongoose.mjs');
 require('./../../config/lib/express.mjs');
 const mongoose = require('mongoose') as LegacyMongoose;
+const { forEachWithConcurrency } =
+  require('./../../modules/core/server/services/task-queue.server.service.mts') as typeof import('../../modules/core/server/services/task-queue.server.service.mts').default;
 require('./../../modules/contacts/server/models/contacts.server.model.mjs');
 const Contact = mongoose.model<{ users: Types.ObjectId[] }>('Contact');
 
@@ -44,29 +42,25 @@ mongoose.connect(config.db.uri).catch(function (err) {
 
 console.log('Gathering data...');
 
-// Create a queue worker for removing records
-// @link https://github.com/caolan/async#queueworker-concurrency
-const q = async.queue<Types.ObjectId>(function (contactId, callback) {
-  console.log('Removing ' + contactId);
-  Contact.findByIdAndDelete(contactId).then(
-    function () {
+function removeContacts(contactIds: Types.ObjectId[]) {
+  // Remove at most 2 records simultaneously
+  return forEachWithConcurrency(contactIds, 2, async function (contactId) {
+    console.log('Removing ' + contactId);
+    try {
+      await Contact.findByIdAndDelete(contactId);
       removedCounter++;
-      callback();
-    },
-    function () {
+    } catch {
       console.error('Failed to remove contact record ' + contactId);
-      callback();
-    },
-  );
-}, 2); // How many jobs to process simultaneously?
+    }
+  });
+}
 
-// Assign a final callback to removal queue
-q.drain(function () {
+function reportRemoval() {
   console.log('');
   console.log('Removing duplicate records done.');
 
   // All done
-  Contact.countDocuments().then(function (contactsCount) {
+  return Contact.countDocuments().then(function (contactsCount) {
     console.log(
       '- Found ' + totalRecordsWithIssues + ' problematic contact records.',
     );
@@ -80,7 +74,7 @@ q.drain(function () {
     );
     process.exit(0);
   });
-});
+}
 
 // Check for initial count
 Contact.countDocuments()
@@ -127,6 +121,7 @@ Contact.countDocuments()
           );
 
           // Skip first contact record and push others for removing
+          const duplicateIds: Types.ObjectId[] = [];
           for (let i = 0; i < issueContacts.length; i++) {
             // Note that this skips the first id as we don't want
             // to remove all the contacts, just those extra duplicate ones. E.g.:
@@ -135,9 +130,10 @@ Contact.countDocuments()
             // [B, A] - remove
             // [A, C] - leave
             for (let j = 1; j < issueContacts[i].ids.length; j++) {
-              q.push(issueContacts[i].ids[j]);
+              duplicateIds.push(issueContacts[i].ids[j]);
             }
           }
+          return removeContacts(duplicateIds).then(reportRemoval);
         }
       });
     }
