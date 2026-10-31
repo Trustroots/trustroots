@@ -5,7 +5,7 @@ import { Agenda } from 'agenda';
 import { MongoBackend } from '@agendajs/mongo-backend';
 import { createExpressMiddleware } from 'agendash';
 import config from './../config/config.mts';
-import shutdownDashboard from './../config/lib/dashboard.mts';
+import { shutdownDashboard } from './../config/lib/dashboard.mts';
 
 const { values } = parseArgs({
   options: {

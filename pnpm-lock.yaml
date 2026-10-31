@@ -48,9 +48,6 @@ importers:
       agenda:
         specifier: 6.2.6
         version: 6.2.6(supports-color@5.5.0)
-      async:
-        specifier: 3.2.6
-        version: 3.2.6
       autolinker:
         specifier: 4.1.5
         version: 4.1.5
