@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditPage.component';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 import type { TabsProps } from 'react-bootstrap';
@@ -31,7 +32,6 @@ jest.mock('react-bootstrap', () => {
 
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  trackEvent: jest.fn(),
   getCurrentRouteParams: jest.fn(() => ({})),
 }));
 jest.mock(
@@ -61,6 +61,8 @@ jest.mock(
   }),
 );
 
+const analytics = fakeAnalytics();
+
 describe('OfferMeetEditPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,7 +71,7 @@ describe('OfferMeetEditPage', () => {
 
   it('keeps an empty expiry editable and prevents saving until it is valid', async () => {
     offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
     const expiry = await screen.findByLabelText(
       'How long should this be visible?',
     );
@@ -99,7 +101,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('renders a new meet offer form', async () => {
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
     expect(screen.getByText('Meets explanation')).toBeInTheDocument();
@@ -109,7 +111,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('keeps the active tab when selection is cleared', async () => {
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
@@ -122,7 +124,7 @@ describe('OfferMeetEditPage', () => {
 
   it('creates a new meet offer after filling details', async () => {
     offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Coffee in the park.' },
@@ -150,6 +152,10 @@ describe('OfferMeetEditPage', () => {
         }),
       );
     });
+    expect(analytics.track).toHaveBeenCalledWith('offer-save', {
+      type: 'meet',
+      action: 'create',
+    });
   });
 
   it('loads and updates an existing meet offer', async () => {
@@ -164,7 +170,7 @@ describe('OfferMeetEditPage', () => {
     });
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
 
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Updated meet description.' },
@@ -179,6 +185,10 @@ describe('OfferMeetEditPage', () => {
         }),
       );
     });
+    expect(analytics.track).toHaveBeenCalledWith('offer-save', {
+      type: 'meet',
+      action: 'update',
+    });
   });
 
   it('fills missing description and location on a legacy offer', async () => {
@@ -191,7 +201,7 @@ describe('OfferMeetEditPage', () => {
       validUntil: new Date(Date.now() + 86400000).toISOString(),
     });
 
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByPlaceholderText('Write here...')).toHaveValue('');
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
@@ -213,7 +223,7 @@ describe('OfferMeetEditPage', () => {
       [legacyOffer],
     );
 
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     fireEvent.click(await screen.findByRole('tab', { name: 'Location' }));
     expect(await screen.findByTestId('location-editor')).toHaveAttribute(
@@ -238,7 +248,7 @@ describe('OfferMeetEditPage', () => {
     );
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
 
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
     await screen.findByPlaceholderText('Write here...');
     fireEvent.submit(document.querySelector('form')!);
 
@@ -254,14 +264,14 @@ describe('OfferMeetEditPage', () => {
     getCurrentRouteParamsMock.mockReturnValue({ offerId: 'missing-offer' });
     offersApiMock.getOffer.mockRejectedValue(new Error('not found'));
 
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Wait a moment…')).toBeInTheDocument();
   });
 
   it('stays on the form when saving a new meet offer fails', async () => {
     offersApiMock.createOffer.mockRejectedValue(new Error('save failed'));
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Coffee in the park.' },
@@ -288,7 +298,9 @@ describe('OfferMeetEditPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferMeetEditPage />);
+    const { unmount } = render(<OfferMeetEditPage />, {
+      wrapper: analytics.wrapper,
+    });
     unmount();
     resolveOffer({
       _id: 'offer-1',
@@ -313,7 +325,7 @@ describe('OfferMeetEditPage', () => {
       location: [51.5, -0.12],
     });
 
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(
       (
@@ -334,14 +346,16 @@ describe('OfferMeetEditPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferMeetEditPage />);
+    const { unmount } = render(<OfferMeetEditPage />, {
+      wrapper: analytics.wrapper,
+    });
     unmount();
     rejectOffer(new Error('late failure'));
     await new Promise(resolve => setTimeout(resolve, 20));
   });
 
   it('does not submit an empty meet offer', async () => {
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
     fireEvent.submit(document.querySelector('form')!);
@@ -350,7 +364,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('edits the expiry date and navigates between sections', async () => {
-    render(<OfferMeetEditPage />);
+    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
       target: { value: 'Coffee in the park.' },

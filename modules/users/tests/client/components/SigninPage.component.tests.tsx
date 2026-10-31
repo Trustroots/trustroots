@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SigninPage from '@/modules/users/client/components/SigninPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 
@@ -24,7 +25,6 @@ jest.mock('@/modules/core/client/components/Board', () => {
 });
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
-  trackEvent: jest.fn(),
   getCurrentRouteParams: jest.fn(() => ({})),
   navigate: jest.fn(),
 }));
@@ -32,10 +32,12 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 const signin = jest.mocked(authApi.signin);
 const getSession = jest.mocked(authApi.getSession);
 const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
+const analytics = fakeAnalytics();
 
 function renderPage() {
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -109,6 +111,7 @@ describe('SigninPage', () => {
     await waitFor(() => {
       expect(redirectAfterSignin).toHaveBeenCalledWith(false, undefined);
     });
+    expect(analytics.track).toHaveBeenCalledWith('signin-success');
   });
 
   it('preserves the protected destination after successful sign-in', async () => {
@@ -155,6 +158,7 @@ describe('SigninPage', () => {
 
     expect(await screen.findByText('Invalid credentials.')).toBeInTheDocument();
     expect(getSession).not.toHaveBeenCalled();
+    expect(analytics.track).toHaveBeenCalledWith('signin-failure');
   });
 
   it('uses the fallback sign-in error and continue label', async () => {
@@ -200,7 +204,7 @@ describe('SigninPage', () => {
       expect(
         screen.queryByText('Recover your password'),
       ).not.toBeInTheDocument();
-      expect(clientRuntime.trackEvent).not.toHaveBeenCalled();
+      expect(analytics.track).not.toHaveBeenCalled();
       expect(clientRuntime.broadcastClientEvent).not.toHaveBeenCalled();
       expect(screen.getByRole('button', { name: 'Login' })).toBeEnabled();
 

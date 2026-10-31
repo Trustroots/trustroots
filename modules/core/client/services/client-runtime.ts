@@ -130,20 +130,3 @@ export function onClientEvent(
 
   return () => window.removeEventListener(`tr:${eventName}`, eventListener);
 }
-
-export function trackEvent(
-  action: string,
-  options: { category?: string; label?: string; value?: string | number } = {},
-): undefined {
-  if (typeof window.ga === 'function') {
-    window.ga(
-      'send',
-      'event',
-      options.category || 'default',
-      action,
-      options.label,
-    );
-  }
-
-  return undefined;
-}

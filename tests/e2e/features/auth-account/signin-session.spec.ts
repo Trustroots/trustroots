@@ -80,6 +80,40 @@ test('login retains a session while the statistics backend is unavailable', asyn
   expect((await response.json()).userId).toBeTruthy();
 });
 
+test('a failed sign-in sends an anonymous product event to Umami', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'auth.signin', [
+    'A failed sign-in records an Umami product event without personal data.',
+  ]);
+  // Stand in for the Umami tracker so the test records events without
+  // reaching the analytics service.
+  await page.route('https://1p.trustroots.org/script.js', route =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: [
+        'window.umamiEvents = [];',
+        'window.umami = { track: (name, data) => {',
+        '  window.umamiEvents.push([name, data ?? null]);',
+        '  return Promise.resolve();',
+        '} };',
+      ].join('\n'),
+    }),
+  );
+  await page.goto('/signin');
+  await page.getByLabel('Email or username').fill(user.username);
+  await page.getByLabel('Password', { exact: true }).fill('wrong-password');
+  await page.getByRole('button', { name: 'Login', exact: true }).click();
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as unknown as { umamiEvents: unknown[] }).umamiEvents,
+      ),
+    )
+    .toEqual([['signin-failure', null]]);
+});
+
 test('login works while the analytics script stalls and fails', async ({
   page,
 }, testInfo) => {

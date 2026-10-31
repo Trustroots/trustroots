@@ -12,8 +12,8 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import SignupPage from '@/modules/users/client/components/SignupPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import {
-  trackEvent,
   getCurrentRouteParams,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
@@ -33,7 +33,6 @@ const joinTribe = jest.mocked(tribesApi.join);
 const routeParams = jest.mocked(getCurrentRouteParams);
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
-  trackEvent: jest.fn(),
   getCurrentRouteParams: jest.fn(() => ({})),
   navigate: jest.fn(),
 }));
@@ -71,6 +70,8 @@ jest.mock('@/modules/tribes/client/components/JoinButton', () => {
   return MockJoinButton;
 });
 
+const analytics = fakeAnalytics();
+
 describe('SignupPage', () => {
   const suggestedTribes: TribeSummary[] = [
     { _id: 'tribe-1', label: 'Cyclists', count: 0, slug: 'cyclists' },
@@ -99,6 +100,7 @@ describe('SignupPage', () => {
   function renderPage({ user = null }: { user?: AuthUser | null } = {}) {
     return render(
       <AppProviders
+        analyticsTracker={analytics.tracker}
         bootstrapData={{
           env: 'test',
           isNativeMobileApp: false,
@@ -686,10 +688,7 @@ describe('SignupPage', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'rules' }));
 
-    expect(trackEvent).toHaveBeenCalledWith('signup.rules.open', {
-      category: 'signup',
-      label: 'Open rules from signup form',
-    });
+    expect(analytics.track).toHaveBeenCalledWith('signup-rules-open');
   });
 
   it('submits optional signup fields', async () => {
