@@ -44,7 +44,7 @@ test('production NODE_ENV and copied credentials do not enable staging mail', ()
   assert.equal(config.supportInbox.imap.password, '');
 });
 
-test('live delivery requires both explicit production tier and production host', () => {
+test('live delivery requires a production runtime and production host', () => {
   for (const domain of [
     'trustroots.org',
     'www.trustroots.org',
@@ -62,10 +62,7 @@ test('live delivery requires both explicit production tier and production host',
     assert.equal(config.mailer.options, original);
     assert.equal(config.supportInbox.imap.enabled, true);
   }
-  assert.equal(
-    applyMailSafety(fixture('www.trustroots.org'), { NODE_ENV: 'production' }),
-    'capture',
-  );
+
   for (const env of [
     { NODE_ENV: 'production' },
     { NODE_ENV: 'production', TRUSTROOTS_DEPLOYMENT_TIER: 'production' },
@@ -74,8 +71,53 @@ test('live delivery requires both explicit production tier and production host',
     assert.throws(
       () =>
         applyMailSafety(fixture(), { ...env, TRUSTROOTS_MAIL_MODE: 'live' }),
-      /explicit production/,
+      /production runtime/,
     );
+  }
+});
+
+test('legacy production preserves SMTP and explicit staging still captures mail', () => {
+  for (const domain of ['trustroots.org', 'www.trustroots.org']) {
+    for (const mode of [undefined, 'live']) {
+      const config = fixture(domain);
+      const original = config.mailer.options;
+      assert.equal(
+        applyMailSafety(config, {
+          NODE_ENV: 'production',
+          TRUSTROOTS_MAIL_MODE: mode,
+        }),
+        'live',
+      );
+      assert.equal(config.mailer.options, original);
+      assert.equal(config.supportInbox.imap.enabled, true);
+    }
+    for (const tier of ['staging', 'development', '', 'mistyped']) {
+      const config = fixture(domain);
+      const env = { NODE_ENV: 'production', TRUSTROOTS_DEPLOYMENT_TIER: tier };
+      assert.equal(applyMailSafety(config, env), 'capture');
+      assert.deepEqual(config.mailer.options, { jsonTransport: true });
+      assert.throws(
+        () =>
+          applyMailSafety(fixture(domain), {
+            ...env,
+            TRUSTROOTS_MAIL_MODE: 'live',
+          }),
+        /production runtime/,
+      );
+    }
+    assert.equal(
+      applyMailSafety(fixture(domain), {
+        NODE_ENV: 'production',
+        TRUSTROOTS_MAIL_MODE: 'capture',
+      }),
+      'capture',
+    );
+    for (const runtime of ['development', 'test', undefined]) {
+      assert.equal(
+        applyMailSafety(fixture(domain), { NODE_ENV: runtime }),
+        'capture',
+      );
+    }
   }
 });
 

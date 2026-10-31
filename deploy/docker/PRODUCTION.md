@@ -219,3 +219,18 @@ Operators can disable script loading during an outage by adding
 webapp. Failed external requests may still appear in browser network diagnostics;
 they are not application failures. Existing trackers already loaded in an open
 browser tab are removed only when the page reloads.
+
+### Outgoing email mode
+
+Existing deployments with `NODE_ENV=production` and `domain` set to
+`trustroots.org` or `www.trustroots.org` retain live SMTP delivery when
+`TRUSTROOTS_DEPLOYMENT_TIER` is unset. An explicit non-production tier disables
+live mail even if the production domain was copied into the configuration.
+Set `TRUSTROOTS_DEPLOYMENT_TIER=staging` on staging deployments.
+`TRUSTROOTS_MAIL_MODE=capture` always selects the non-sending JSON transport.
+
+For production, explicitly setting `TRUSTROOTS_DEPLOYMENT_TIER=production` and
+`TRUSTROOTS_MAIL_MODE=live` makes the deployment intent clear. Apply these settings
+to both webapp and worker. Captured email jobs may already be marked completed;
+after restoring delivery, request a fresh confirmation email rather than
+replaying all completed jobs.
