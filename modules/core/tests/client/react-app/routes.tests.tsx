@@ -5,7 +5,6 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 
 import {
   createAppRouter,
-  findRoute,
   parseLegacySearch,
   routes,
   stringifyLegacySearch,
@@ -27,6 +26,12 @@ type MembershipRouteProps = UserRouteProps & {
 type StatisticsRouteProps = { isAuthenticated: boolean };
 type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
 type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
+
+function findRoute(path: string) {
+  const matched = matchReactRoute(path);
+  const route = routes.find(({ path }) => path === matched?.policy.path);
+  return route && { ...route, params: matched!.params };
+}
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
 jest.mock('@/modules/admin/client/components/Admin.component', () => () => (

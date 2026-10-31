@@ -9,7 +9,6 @@ import React, { useEffect } from 'react';
 import AppHeader from '@/layers/shell/client/components/AppHeader.component';
 import NotFoundPage from '@/modules/core/client/components/NotFoundPage.component';
 import {
-  getReactRouteAccessRedirect,
   getReactRoutePolicy,
   isReactOwnedPath,
 } from '@/modules/core/shared/react-route-ownership.mts';
@@ -37,13 +36,6 @@ export default function ReactAppShell() {
   const location = new URL(locationHref, window.location.origin);
   const currentPath = `${location.pathname}${location.search}`;
   const route = getReactRoutePolicy(currentPath) as RoutePolicy | null;
-  const accessRedirect = getReactRouteAccessRedirect(
-    route,
-    user,
-    `${currentPath}${location.hash}`,
-  );
-  const redirect =
-    route?.redirectTo || accessRedirect || (!route && '/not-found');
   const navigate = (target: string) => {
     if (navigateOverride) {
       navigateOverride(target);
@@ -95,12 +87,6 @@ export default function ReactAppShell() {
   }, [locationHash, locationHref, route]);
 
   useEffect(() => {
-    if (redirect) {
-      navigate(redirect);
-    }
-  }, [redirect]);
-
-  useEffect(() => {
     const handleDocumentClick = (event: MouseEvent) => {
       const target = getClientNavigationTarget(event);
 
@@ -124,11 +110,7 @@ export default function ReactAppShell() {
           <AppHeader currentPath={location.pathname} user={user} />
         )}
         <article className="content" id="tr-main" role="main" tabIndex={-1}>
-          {redirect || route?.path === '/not-found' ? (
-            <NotFoundPage />
-          ) : (
-            <Outlet />
-          )}
+          {route?.path === '/not-found' ? <NotFoundPage /> : <Outlet />}
         </article>
       </div>
       {!route?.footerHidden && (

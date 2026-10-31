@@ -1,8 +1,9 @@
 import AdminSpamCleanup from '@/modules/admin/client/components/AdminSpamCleanup';
 import {
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
+  redirect,
   useParams,
   useNavigate,
   useRouterState,
@@ -11,9 +12,11 @@ import {
 import React from 'react';
 
 import {
-  matchReactRoute,
+  getReactRouteAccessRedirect,
+  getReactRoutePolicy,
   REACT_ROUTE_POLICIES,
   toTanStackPath,
+  type ReactRoutePolicy,
 } from '@/modules/core/shared/react-route-ownership.mts';
 import Admin from '@/modules/admin/client/components/Admin.component';
 import SupportInbox, {
@@ -91,6 +94,11 @@ import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ReactAppShell from './ReactAppShell';
 
 type RouteUser = AuthUser;
+type AppRouterContext = {
+  user: AuthUser | null;
+  navigateOverride?: (target: string) => void;
+};
+type GuardOptions = { context: AppRouterContext; location: { href: string } };
 type RouteContext = {
   user: RouteUser | null;
   currentPath: string;
@@ -361,7 +369,19 @@ function createClientRouteComponent(clientRoute: ClientRoute) {
   return ClientRouteComponent;
 }
 
-const rootRoute = createRootRoute({
+function guardFromPolicy(policy: ReactRoutePolicy | null) {
+  return ({ context, location }: GuardOptions) => {
+    const target = policy
+      ? policy.redirectTo ||
+        getReactRouteAccessRedirect(policy, context.user, location.href)
+      : '/not-found';
+    if (target) throw redirect({ href: target, replace: true });
+  };
+}
+
+const rootRoute = createRootRouteWithContext<AppRouterContext>()({
+  beforeLoad: options =>
+    guardFromPolicy(getReactRoutePolicy(options.location.pathname))(options),
   component: ReactAppShell,
   notFoundComponent: NotFoundPage,
 });
@@ -369,6 +389,7 @@ const rootRoute = createRootRoute({
 const profilePath = '/profile/:username';
 const profileRouteConfig = routes.find(route => route.path === profilePath)!;
 const profileRoute = createRoute({
+  beforeLoad: guardFromPolicy(profileRouteConfig),
   component: createClientRouteComponent(profileRouteConfig),
   getParentRoute: () => rootRoute,
   path: toTanStackPath(profilePath),
@@ -378,6 +399,7 @@ const profileTabRoutes = routes
   .filter(route => route.path.startsWith(`${profilePath}/`))
   .map(route =>
     createRoute({
+      beforeLoad: guardFromPolicy(route),
       getParentRoute: () => profileRoute,
       path: toTanStackPath(route.path.slice(profilePath.length + 1)),
     }),
@@ -390,6 +412,7 @@ const clientRoutes = routes
   )
   .map(clientRoute =>
     createRoute({
+      beforeLoad: guardFromPolicy(clientRoute),
       component: createClientRouteComponent(clientRoute),
       getParentRoute: () => rootRoute,
       path: toTanStackPath(clientRoute.path),
@@ -426,27 +449,11 @@ export function stringifyLegacySearch(
 
 export function createAppRouter() {
   return createRouter({
-    context: {
-      navigateOverride: undefined,
-    },
+    context: { user: null },
     defaultPreload: 'intent',
     parseSearch: parseLegacySearch,
     routeTree,
     scrollRestoration: () => false,
     stringifySearch: stringifyLegacySearch,
   });
-}
-
-export function findRoute(path: string) {
-  const matched = matchReactRoute(path);
-
-  if (!matched?.policy) {
-    return undefined;
-  }
-
-  return {
-    ...matched.policy,
-    params: matched.params,
-    render: renderByPath[matched.policy.path],
-  };
 }

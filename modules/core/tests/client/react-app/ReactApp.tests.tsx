@@ -232,6 +232,16 @@ jest.mock(
     ),
 );
 jest.mock('@/modules/users/client/components/Monkeybox', () => () => null);
+// Redirect targets, mocked so they make no requests.
+jest.mock('@/modules/pages/client/components/HomeRoute', () => () => null);
+jest.mock(
+  '@/modules/pages/client/components/Volunteering.component',
+  () => () => null,
+);
+jest.mock(
+  '@/modules/users/client/components/SigninPage.component',
+  () => () => null,
+);
 jest.mock(
   '@/modules/references-thread/client/components/ReferenceThread',
   () => () => null,
@@ -303,12 +313,17 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => {
 function UpdateUser() {
   const { user, setUser } = useAuth();
   return (
-    <button
-      type="button"
-      onClick={() => setUser({ ...user, username: 'member-after' })}
-    >
-      Save user changes
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={() => setUser({ ...user, username: 'member-after' })}
+      >
+        Save user changes
+      </button>
+      <button type="button" onClick={() => setUser(null)}>
+        Sign out user
+      </button>
+    </>
   );
 }
 
@@ -488,53 +503,112 @@ describe('<ReactApp />', () => {
     }
   });
 
-  it('defensively redirects guests away from protected routes', async () => {
-    const navigate = jest.fn();
+  const currentUrl = () =>
+    `${window.location.pathname}${window.location.search}`;
 
-    renderApp('/admin', {}, { navigate });
+  it('redirects guests to sign in before a protected route renders', async () => {
+    renderApp('/admin');
 
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
-        '/signin?continue=true&returnTo=%2Fadmin',
-      ),
+      expect(currentUrl()).toBe('/signin?continue=true&returnTo=%2Fadmin'),
     );
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
   });
 
   it('preserves the removal fragment when guests need to sign in', async () => {
-    const navigate = jest.fn();
-    renderApp('/profile/edit/account#remove', {}, { navigate });
+    renderApp('/profile/edit/account#remove');
     await waitFor(() =>
-      expect(navigate).toHaveBeenCalledWith(
+      expect(currentUrl()).toBe(
         '/signin?continue=true&returnTo=%2Fprofile%2Fedit%2Faccount%23remove',
       ),
     );
   });
 
-  it('defensively redirects non-admin users away from admin routes', async () => {
-    const navigate = jest.fn();
+  it('redirects members without the role away from admin routes', async () => {
+    renderApp('/admin', { user: { roles: ['user'], username: 'member' } });
 
-    renderApp(
-      '/admin',
-      {
-        user: {
-          roles: ['user'],
-          username: 'member',
-        },
-      },
-      { navigate },
-    );
-
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/volunteering'));
+    await waitFor(() => expect(currentUrl()).toBe('/volunteering'));
     expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
   });
 
+  it.each([
+    ['/admin/foo', '%2Fadmin%2Ffoo'],
+    ['/profile/alice/nope', '%2Fprofile%2Falice%2Fnope'],
+  ])(
+    'redirects guests to sign in from the unmatched sub-path %s',
+    async (path, returnTo) => {
+      renderApp(path);
+
+      await waitFor(() =>
+        expect(currentUrl()).toBe(`/signin?continue=true&returnTo=${returnTo}`),
+      );
+    },
+  );
+
+  it('redirects members without the role away from unmatched admin sub-paths', async () => {
+    renderApp('/admin/foo', { user: { roles: ['user'], username: 'member' } });
+
+    await waitFor(() => expect(currentUrl()).toBe('/volunteering'));
+  });
+
+  it('shows not-found in place for an unmatched sub-path the member may open', async () => {
+    renderApp('/admin/foo', { user: { roles: ['admin'], username: 'admin' } });
+
+    expect(
+      await screen.findByText(/this page cannot be found/i),
+    ).toBeInTheDocument();
+    expect(currentUrl()).toBe('/admin/foo');
+    expect(screen.queryByText('Admin route')).not.toBeInTheDocument();
+  });
+
+  it('re-runs the guards only when the member changes after mount', async () => {
+    const createRouter = reactRouter.createRouter;
+    const invalidate = jest.fn();
+    const routerSpy = jest
+      .spyOn(reactRouter, 'createRouter')
+      .mockImplementation(options => {
+        const router = createRouter(options);
+        const routerInvalidate = router.invalidate;
+        router.invalidate = (...args) => {
+          invalidate();
+          return routerInvalidate(...args);
+        };
+        return router;
+      });
+
+    try {
+      renderApp('/support', { user: { username: 'member-before' } });
+      await screen.findByText('Support route member-before');
+      expect(invalidate).not.toHaveBeenCalled();
+
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Save user changes' }),
+      );
+      await screen.findByText('Support route member-after');
+      expect(invalidate).toHaveBeenCalledTimes(1);
+    } finally {
+      routerSpy.mockRestore();
+    }
+  });
+
   it('redirects legacy routes to their replacement', async () => {
-    const navigate = jest.fn();
+    renderApp('/about');
 
-    renderApp('/about', {}, { navigate });
+    await waitFor(() => expect(currentUrl()).toBe('/'));
+  });
 
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/'));
+  it('re-runs the guards when the member signs out', async () => {
+    renderApp('/admin/audit-log', {
+      user: { roles: ['admin'], username: 'admin' },
+    });
+    await screen.findByText('Admin audit route');
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out user' }));
+
+    await waitFor(() =>
+      expect(currentUrl()).toBe(
+        '/signin?continue=true&returnTo=%2Fadmin%2Faudit-log',
+      ),
+    );
   });
 
   it('routes ordinary React-owned links through client navigation', async () => {
@@ -598,17 +672,27 @@ describe('<ReactApp />', () => {
   });
 
   it('redirects unmatched paths to the not-found route', async () => {
-    const navigate = jest.fn();
+    renderApp('/missing-react-route');
 
-    renderApp('/missing-react-route', {}, { navigate });
-
-    expect(
-      await screen.findByText(/this page cannot be found/i),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Header guest')).toBeInTheDocument();
+    await waitFor(() => expect(currentUrl()).toBe('/not-found'));
+    expect(screen.getByText(/this page cannot be found/i)).toBeInTheDocument();
+    expect(screen.queryByText('Header guest')).not.toBeInTheDocument();
     expect(screen.getByText('Footer')).toBeInTheDocument();
-    await waitFor(() => expect(navigate).toHaveBeenCalledWith('/not-found'));
   });
+
+  it('redirects to the not-found route when history moves to an unmatched path', async () => {
+    renderApp('/rules');
+    await screen.findByText('Rules route');
+
+    act(() => {
+      window.history.pushState({}, '', '/missing-react-route');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    await waitFor(() => expect(currentUrl()).toBe('/not-found'));
+    expect(document.title).toBe('Not found - Trustroots');
+  });
+
   it('sends to the new recipient after direct conversation navigation', async () => {
     const user: AuthUser & { _id: string; username: string } = {
       _id: 'sender',
