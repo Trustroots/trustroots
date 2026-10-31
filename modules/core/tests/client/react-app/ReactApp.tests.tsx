@@ -184,21 +184,8 @@ jest.mock('@/modules/support/client/components/SupportPage.component', () => {
 jest.mock('@/layers/shell/client/components/AppHeader.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
-  function MockAppHeader({
-    user,
-    onSignout,
-  }: {
-    user?: AuthUser | null;
-    onSignout?: () => void;
-  }) {
-    return (
-      <header>
-        Header {user?.username || 'guest'}
-        <button type="button" onClick={onSignout}>
-          Sign out
-        </button>
-      </header>
-    );
+  function MockAppHeader({ user }: { user?: AuthUser | null }) {
+    return <header>Header {user?.username || 'guest'}</header>;
   }
 
   return MockAppHeader;

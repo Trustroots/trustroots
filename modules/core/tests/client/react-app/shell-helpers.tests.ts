@@ -2,7 +2,6 @@ import {
   defaultNavigate,
   getClientNavigationTarget,
   navigation,
-  signout,
 } from '@/layers/shell/client/shell-helpers';
 import { navigateTo } from '@/modules/core/client/services/browser-navigation';
 
@@ -225,62 +224,5 @@ describe('React shell helpers', () => {
 
     // Exercise the real navigation.go implementation (uses window.location).
     expect(() => originalGo('/support')).not.toThrow();
-  });
-
-  it('signs out without browser postMessage support', () => {
-    const originalPostMessage = window.postMessage;
-    const submit = jest
-      .spyOn(HTMLFormElement.prototype, 'submit')
-      .mockImplementation(() => {});
-
-    // Preserve coverage when the browser does not expose postMessage.
-    Reflect.set(window, 'postMessage', undefined);
-
-    try {
-      expect(() => signout()).not.toThrow();
-    } finally {
-      window.postMessage = originalPostMessage;
-      submit.mockRestore();
-    }
-  });
-
-  it('prevents default when sign out receives an event', () => {
-    const preventDefault = jest.fn();
-    const submit = jest
-      .spyOn(HTMLFormElement.prototype, 'submit')
-      .mockImplementation(() => {});
-
-    try {
-      signout({ preventDefault });
-      expect(submit).toHaveBeenCalled();
-    } finally {
-      submit.mockRestore();
-    }
-
-    expect(preventDefault).toHaveBeenCalled();
-  });
-
-  it('posts native mobile sign out messages', () => {
-    const postMessage: typeof window.postMessage = jest.fn();
-    const originalPostMessage = window.postMessage;
-    const originalIsNativeMobileApp = window.isNativeMobileApp;
-    const submit = jest
-      .spyOn(HTMLFormElement.prototype, 'submit')
-      .mockImplementation(() => {});
-
-    window.postMessage = postMessage;
-    window.isNativeMobileApp = true;
-
-    try {
-      signout({ preventDefault: jest.fn() });
-
-      expect(postMessage).toHaveBeenCalledWith(
-        JSON.stringify({ action: 'unAuthenticated' }),
-      );
-    } finally {
-      window.postMessage = originalPostMessage;
-      window.isNativeMobileApp = originalIsNativeMobileApp;
-      submit.mockRestore();
-    }
   });
 });

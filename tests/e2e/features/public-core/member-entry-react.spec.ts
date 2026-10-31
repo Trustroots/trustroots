@@ -45,8 +45,9 @@ test('welcome and navigation preserve member workflows and sign-out', async ({
   await page.goto('/navigation');
   await page
     .locator('#tr-main')
-    .getByRole('link', { name: 'Sign out' })
+    .getByRole('button', { name: 'Sign out' })
     .click();
+  await expect(page).toHaveURL(/\/$/);
   await page.goto('/navigation');
   await expect(page).toHaveURL(/\/signin(?:\?|$)/);
 });

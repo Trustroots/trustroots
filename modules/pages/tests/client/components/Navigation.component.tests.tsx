@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 
 import Navigation from '@/modules/pages/client/components/Navigation.component';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
+import { mockSignOut } from '@/testutils/client/auth.testutil';
 
 type AvatarProps = React.ComponentProps<typeof Avatar>;
 type NavigationProps = React.ComponentProps<typeof Navigation>;
@@ -13,6 +14,10 @@ jest.mock('react-i18next', () => ({
     t: (key: string) => key,
   }),
 }));
+
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -32,12 +37,7 @@ describe('<Navigation />', () => {
   };
 
   it('renders profile and navigation links for a signed-in user', () => {
-    render(
-      <Navigation
-        user={user}
-        onSignout={jest.fn<void, Parameters<NavigationProps['onSignout']>>()}
-      />,
-    );
+    render(<Navigation user={user} />);
 
     expect(screen.getByText('Sample Member')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Edit profile' })).toHaveAttribute(
@@ -68,12 +68,7 @@ describe('<Navigation />', () => {
   });
 
   it('renders the Info and support links from the shared registry in order', () => {
-    const { container } = render(
-      <Navigation
-        user={user}
-        onSignout={jest.fn<void, Parameters<NavigationProps['onSignout']>>()}
-      />,
-    );
+    const { container } = render(<Navigation user={user} />);
 
     expect(screen.getByText('Info & support')).toBeInTheDocument();
 
@@ -118,12 +113,14 @@ describe('<Navigation />', () => {
     });
   });
 
-  it('invokes onSignout when sign out link is clicked', () => {
-    const onSignout = jest.fn<void, Parameters<NavigationProps['onSignout']>>();
-    render(<Navigation user={user} onSignout={onSignout} />);
+  it('signs out through useAuth', () => {
+    render(<Navigation user={user} />);
 
-    fireEvent.click(screen.getByRole('link', { name: 'Sign out' }));
+    const signOut = screen.getByRole('button', { name: 'Sign out' });
+    expect(signOut).toHaveAttribute('type', 'button');
 
-    expect(onSignout).toHaveBeenCalledTimes(1);
+    fireEvent.click(signOut);
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 });

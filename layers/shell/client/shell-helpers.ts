@@ -3,30 +3,6 @@ import {
   navigateTo,
 } from '@/modules/core/client/services/browser-navigation';
 
-export function signout(event?: { preventDefault: () => void }) {
-  if (event) {
-    event.preventDefault();
-  }
-
-  if (window.postMessage) {
-    window.postMessage(
-      'unAuthenticated',
-      `${window.location.protocol}//${window.location.host}`,
-    );
-  }
-
-  if (window.isNativeMobileApp && window.postMessage) {
-    window.postMessage(JSON.stringify({ action: 'unAuthenticated' }));
-  }
-
-  const form = document.createElement('form');
-  form.method = 'post';
-  form.action = '/api/auth/signout';
-  form.target = '_top';
-  document.body.appendChild(form);
-  form.submit();
-}
-
 export function getClientNavigationTarget(
   event: MouseEvent,
   location: Location = window.location,

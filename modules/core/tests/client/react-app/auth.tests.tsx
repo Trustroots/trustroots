@@ -1,6 +1,6 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import {
   AuthProvider,
@@ -9,8 +9,14 @@ import {
   type AuthUser,
 } from '@/modules/core/client/react-app/auth';
 
+const mockNavigate = jest.fn();
+jest.mock('@tanstack/react-router', () => ({
+  ...jest.requireActual('@tanstack/react-router'),
+  useRouter: () => ({ navigate: mockNavigate }),
+}));
+
 function AuthConsumer() {
-  const { hasRole, isAuthenticated, setUser, user } = useAuth();
+  const { hasRole, isAuthenticated, setUser, signOut, user } = useAuth();
 
   return (
     <div>
@@ -27,6 +33,9 @@ function AuthConsumer() {
         }
       >
         Set admin
+      </button>
+      <button type="button" onClick={() => void signOut()}>
+        Sign out
       </button>
     </div>
   );
@@ -62,6 +71,68 @@ describe('React AuthProvider', () => {
 
     expect(screen.getByText('Username: alice')).toBeInTheDocument();
     expect(screen.getByText('Admin: yes')).toBeInTheDocument();
+  });
+
+  describe('signOut', () => {
+    const fetchMock = jest.fn();
+    const alertMock = jest.fn();
+
+    beforeEach(() => {
+      mockNavigate.mockReset().mockResolvedValue(undefined);
+      fetchMock.mockReset();
+      alertMock.mockReset();
+      global.fetch = fetchMock;
+      window.alert = alertMock;
+    });
+
+    function renderSignedIn() {
+      render(
+        <AuthProvider initialUser={{ roles: ['user'], username: 'bob' }}>
+          <AuthConsumer />
+        </AuthProvider>,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Sign out' }));
+    }
+
+    it('posts to the signout endpoint, clears the member and reloads home', async () => {
+      // The server answers 302 /, which fetch exposes as an opaque redirect.
+      fetchMock.mockResolvedValue({ ok: false, type: 'opaqueredirect' });
+
+      renderSignedIn();
+
+      await waitFor(() => expect(mockNavigate).toHaveBeenCalled());
+      expect(fetchMock).toHaveBeenCalledWith('/api/auth/signout', {
+        method: 'POST',
+        credentials: 'same-origin',
+        redirect: 'manual',
+      });
+      expect(screen.getByText('Authenticated: no')).toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: '/',
+        reloadDocument: true,
+      });
+      expect(alertMock).not.toHaveBeenCalled();
+    });
+
+    it('keeps the member signed in and alerts when the request fails', async () => {
+      fetchMock.mockRejectedValue(new TypeError('Failed to fetch'));
+
+      renderSignedIn();
+
+      await waitFor(() => expect(alertMock).toHaveBeenCalled());
+      expect(screen.getByText('Authenticated: yes')).toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+
+    it('keeps the member signed in when the server refuses', async () => {
+      fetchMock.mockResolvedValue({ ok: false, status: 403, type: 'basic' });
+
+      renderSignedIn();
+
+      await waitFor(() => expect(alertMock).toHaveBeenCalled());
+      expect(screen.getByText('Authenticated: yes')).toBeInTheDocument();
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
   });
 
   it('checks roles through the pure userHasRole helper', () => {

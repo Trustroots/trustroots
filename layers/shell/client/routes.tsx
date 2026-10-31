@@ -89,7 +89,6 @@ import TribeDetailPage from '@/modules/tribes/client/components/TribeDetailPage.
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ReactAppShell from './ReactAppShell';
-import { signout } from './shell-helpers';
 
 type RouteUser = AuthUser;
 type RouteContext = {
@@ -146,7 +145,6 @@ function renderOfferPage(Component: React.ElementType) {
 function NavigationRoute({ user }: RouteContext) {
   return (
     <Navigation
-      onSignout={signout}
       user={user as React.ComponentProps<typeof Navigation>['user']}
     />
   );

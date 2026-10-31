@@ -8,6 +8,11 @@ import {
   listMemberships,
   type MembershipUpdate,
 } from '@/modules/tribes/client/api/tribes.api';
+import { mockSignOut } from '@/testutils/client/auth.testutil';
+
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 jest.mock('@/modules/tribes/client/api/tribes.api', () => ({
   listMemberships: jest.fn(),
@@ -43,7 +48,6 @@ describe('<NavigationLoggedIn />', () => {
       render(
         <NavigationLoggedIn
           currentPath="/admin/support"
-          onSignout={jest.fn()}
           user={{ _id: 'fictional-support', username: 'support', roles }}
         />,
       );
@@ -60,13 +64,7 @@ describe('<NavigationLoggedIn />', () => {
   };
 
   it('renders primary links and menu items for signed-in users', () => {
-    render(
-      <NavigationLoggedIn
-        currentPath="/search"
-        onSignout={jest.fn()}
-        user={user}
-      />,
-    );
+    render(<NavigationLoggedIn currentPath="/search" user={user} />);
 
     expect(screen.getByRole('link', { name: 'Circles' })).toHaveAttribute(
       'href',
@@ -119,7 +117,6 @@ describe('<NavigationLoggedIn />', () => {
     render(
       <NavigationLoggedIn
         currentPath="/admin"
-        onSignout={jest.fn()}
         user={{ ...user, roles: ['user', 'admin'] }}
       />,
     );
@@ -142,7 +139,6 @@ describe('<NavigationLoggedIn />', () => {
     render(
       <NavigationLoggedIn
         currentPath={currentPath}
-        onSignout={jest.fn()}
         user={{
           _id: 'fictional-member',
           username: 'fictional-member',
@@ -159,7 +155,6 @@ describe('<NavigationLoggedIn />', () => {
     render(
       <NavigationLoggedIn
         currentPath="/messages"
-        onSignout={jest.fn()}
         user={{ ...user, roles: ['admin'] }}
       />,
     );
@@ -172,11 +167,7 @@ describe('<NavigationLoggedIn />', () => {
     'omits the administrator shortcut for non-admin roles %j',
     (roles: string[] | undefined) => {
       render(
-        <NavigationLoggedIn
-          currentPath="/circles"
-          onSignout={jest.fn()}
-          user={{ ...user, roles }}
-        />,
+        <NavigationLoggedIn currentPath="/circles" user={{ ...user, roles }} />,
       );
       expect(
         screen.queryByRole('link', { name: 'Admin' }),
@@ -188,7 +179,6 @@ describe('<NavigationLoggedIn />', () => {
     const { rerender } = render(
       <NavigationLoggedIn
         currentPath="/admin/acquisition-stories"
-        onSignout={jest.fn()}
         user={{ ...user, roles: ['user', 'welcome-team'] }}
       />,
     );
@@ -199,7 +189,6 @@ describe('<NavigationLoggedIn />', () => {
     rerender(
       <NavigationLoggedIn
         currentPath="/admin"
-        onSignout={jest.fn()}
         user={{ ...user, roles: ['user', 'admin'] }}
       />,
     );
@@ -209,31 +198,20 @@ describe('<NavigationLoggedIn />', () => {
     );
   });
 
-  it('forwards signout click to callback', () => {
-    const onSignout = jest.fn();
-
-    render(
-      <NavigationLoggedIn
-        currentPath="/search"
-        onSignout={onSignout}
-        user={user}
-      />,
-    );
+  it('signs out through useAuth', () => {
+    render(<NavigationLoggedIn currentPath="/search" user={user} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
-    fireEvent.click(screen.getByRole('link', { name: 'Sign out' }));
+    const signOut = screen.getByRole('button', { name: 'Sign out' });
+    expect(signOut).toHaveAttribute('type', 'button');
 
-    expect(onSignout).toHaveBeenCalledTimes(1);
+    fireEvent.click(signOut);
+
+    expect(mockSignOut).toHaveBeenCalledTimes(1);
   });
 
   it('marks active menu item for current path', () => {
-    render(
-      <NavigationLoggedIn
-        currentPath="/messages"
-        onSignout={jest.fn()}
-        user={user}
-      />,
-    );
+    render(<NavigationLoggedIn currentPath="/messages" user={user} />);
 
     const messagesLink = screen.getByRole('link', { name: 'Messages' });
     expect(messagesLink.closest('li')).toHaveClass('active');
@@ -250,11 +228,7 @@ describe('<NavigationLoggedIn />', () => {
     }));
     mockListMemberships.mockResolvedValue([...member, {}]);
     render(
-      <NavigationLoggedIn
-        currentPath="/circles"
-        onSignout={jest.fn()}
-        user={{ ...user, member }}
-      />,
+      <NavigationLoggedIn currentPath="/circles" user={{ ...user, member }} />,
     );
     await screen.findByRole('link', { name: 'Circle 11' });
     const item = requireElement(
@@ -275,11 +249,7 @@ describe('<NavigationLoggedIn />', () => {
 
   it.each([undefined, []])('omits an empty circles menu for %j', member => {
     render(
-      <NavigationLoggedIn
-        currentPath="/search"
-        onSignout={jest.fn()}
-        user={{ ...user, member }}
-      />,
+      <NavigationLoggedIn currentPath="/search" user={{ ...user, member }} />,
     );
     const item = requireElement(
       screen.getByRole('link', { name: 'Circles' }).closest('li'),
@@ -302,11 +272,7 @@ describe('<NavigationLoggedIn />', () => {
     }));
     mockListMemberships.mockResolvedValue(member);
     render(
-      <NavigationLoggedIn
-        currentPath="/circles"
-        onSignout={jest.fn()}
-        user={{ ...user, member }}
-      />,
+      <NavigationLoggedIn currentPath="/circles" user={{ ...user, member }} />,
     );
     await screen.findByRole('link', { name: 'Hackers' });
     const item = requireElement(
@@ -326,13 +292,7 @@ describe('<NavigationLoggedIn />', () => {
   it('keeps primary links available when memberships fail to load', async () => {
     mockListMemberships.mockRejectedValue(new Error('Unavailable'));
     await act(async () => {
-      render(
-        <NavigationLoggedIn
-          currentPath="/search"
-          onSignout={jest.fn()}
-          user={user}
-        />,
-      );
+      render(<NavigationLoggedIn currentPath="/search" user={user} />);
     });
     expect(screen.getByRole('link', { name: 'Circles' })).toHaveAttribute(
       'href',
@@ -351,16 +311,11 @@ describe('<NavigationLoggedIn />', () => {
       }),
     );
     const { rerender } = render(
-      <NavigationLoggedIn
-        currentPath="/search"
-        onSignout={jest.fn()}
-        user={user}
-      />,
+      <NavigationLoggedIn currentPath="/search" user={user} />,
     );
     rerender(
       <NavigationLoggedIn
         currentPath="/search"
-        onSignout={jest.fn()}
         user={{ ...user, _id: 'user-2' }}
       />,
     );

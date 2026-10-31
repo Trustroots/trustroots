@@ -1,6 +1,7 @@
 import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
+import { useAuth } from '@/modules/core/client/react-app/auth';
 import {
   infoAndSupportHeading,
   infoAndSupportLinks,
@@ -9,12 +10,12 @@ import { useTranslation } from 'react-i18next';
 
 interface NavigationProps {
   user: PageUser;
-  onSignout: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }
 
-export default function Navigation({ user, onSignout }: NavigationProps) {
+export default function Navigation({ user }: NavigationProps) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
+  const { signOut } = useAuth();
 
   return (
     <>
@@ -66,14 +67,13 @@ export default function Navigation({ user, onSignout }: NavigationProps) {
           {t('Account')}
         </a>
 
-        <a
-          onClick={event => onSignout(event)}
-          href="/api/auth/signout"
-          target="_top"
-          className="list-group-item"
+        <button
+          type="button"
+          onClick={() => void signOut()}
+          className="list-group-item w-100 text-start border-top-0 rounded-bottom tw:hover:text-(--tr-link-hover-color)! tw:hover:underline! tw:focus:text-(--tr-link-hover-color)! tw:focus:underline! tw:focus-visible:outline-offset-1"
         >
           <i className="icon-sign-out icon-fw icon-lg"></i> {t('Sign out')}
-        </a>
+        </button>
       </div>
 
       <div className="container">

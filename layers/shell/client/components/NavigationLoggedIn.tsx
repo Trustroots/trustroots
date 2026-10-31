@@ -1,10 +1,10 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import React, { useEffect, useState, type MouseEvent } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navbar, NavDropdown, Nav, Dropdown } from 'react-bootstrap';
 
 // Internal dependencies
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
 import UnreadCount from '@/modules/messages/client/components/UnreadCount.component';
 import Icon from '@/modules/core/client/components/Icon';
@@ -17,15 +17,11 @@ import {
 
 type Props = {
   currentPath: string;
-  onSignout: (event?: MouseEvent<HTMLElement>) => void;
   user: AuthUser;
 };
-export default function NavigationLoggedIn({
-  currentPath,
-  onSignout,
-  user,
-}: Props) {
+export default function NavigationLoggedIn({ currentPath, user }: Props) {
   const { t } = useTranslation('core');
+  const { signOut } = useAuth();
   const [memberships, setMemberships] = useState<TribeSummary[]>([]);
   useEffect(() => {
     let active = true;
@@ -241,9 +237,10 @@ export default function NavigationLoggedIn({
             {t('Account')}
           </Dropdown.Item>
           <Dropdown.Item
-            onClick={event => onSignout(event)}
-            href="/api/auth/signout"
-            target="_top"
+            as="button"
+            type="button"
+            onClick={() => void signOut()}
+            className="tw:hover:underline! tw:focus:bg-brand-primary! tw:focus:text-white! tw:focus:underline! tw:focus:outline-none! tw:active:bg-brand-primary! tw:active:text-white! tw:active:no-underline!"
           >
             {t('Sign out')}
           </Dropdown.Item>

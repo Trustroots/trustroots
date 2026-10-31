@@ -46,7 +46,7 @@ describe('<AppHeader />', () => {
       window.history.pushState({}, '', '/search/members');
       render(
         <>
-          <AppHeader onSignout={jest.fn()} />
+          <AppHeader />
           {hasMain && (
             <main id="tr-main" tabIndex={-1}>
               Member search
@@ -71,7 +71,7 @@ describe('<AppHeader />', () => {
   it('renders logged-out navigation with the current path', () => {
     window.history.pushState({}, '', '/signup');
 
-    render(<AppHeader onSignout={jest.fn()} />);
+    render(<AppHeader />);
 
     expect(screen.getByText('Skip to main content')).toHaveAttribute(
       'href',
@@ -87,7 +87,6 @@ describe('<AppHeader />', () => {
 
     render(
       <AppHeader
-        onSignout={jest.fn()}
         user={{
           _id: 'user-1',
           displayName: 'Alice Example',
@@ -116,18 +115,11 @@ describe('<AppHeader />', () => {
       displayName: 'Alice Example',
       username: 'alice',
     };
-    const onSignout = jest.fn();
     const { rerender } = render(
-      <AppHeader
-        currentPath="/profile/alice"
-        onSignout={onSignout}
-        user={user}
-      />,
+      <AppHeader currentPath="/profile/alice" user={user} />,
     );
 
-    rerender(
-      <AppHeader currentPath="/messages" onSignout={onSignout} user={user} />,
-    );
+    rerender(<AppHeader currentPath="/messages" user={user} />);
 
     expect(screen.getByTestId('logged-in-navigation')).toHaveTextContent(
       '/messages alice',
@@ -154,7 +146,7 @@ describe('<AppHeader />', () => {
     };
 
     try {
-      const { unmount } = render(<AppHeader onSignout={jest.fn()} />);
+      const { unmount } = render(<AppHeader />);
       expect(
         document.documentElement.style.getPropertyValue('--tr-header-height'),
       ).toBe('54px');
