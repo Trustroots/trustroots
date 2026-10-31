@@ -14,6 +14,45 @@ const options = {
   hostname: 'www.example.org',
 };
 
+const DELIVERY_TIMEOUT_MS = 1000;
+
+/**
+ * Fake only the timeout APIs the analytics code uses, so timers created by
+ * unrelated code in the same process (e.g. database drivers) are not counted,
+ * and record the analytics deadline timer so tests can assert on it alone.
+ */
+function useDeadlineClock() {
+  const clock = sinon.useFakeTimers({
+    toFake: ['setTimeout', 'clearTimeout'],
+  });
+  const setSpy = sinon.spy(global, 'setTimeout');
+  const clearSpy = sinon.spy(global, 'clearTimeout');
+  return {
+    clock,
+    /** The deadline timer the analytics code created, if any. */
+    deadlineTimer(): unknown {
+      const index = setSpy.args.findIndex(
+        ([, delay]) => delay === DELIVERY_TIMEOUT_MS,
+      );
+      return index === -1 ? undefined : setSpy.returnValues[index];
+    },
+    assertDeadlineCleared() {
+      const timer = this.deadlineTimer();
+      assert.notEqual(timer, undefined, 'deadline timer was never created');
+      assert.equal(
+        clearSpy.args.some(([cleared]) => cleared === timer),
+        true,
+        'deadline timer was not cleared',
+      );
+    },
+    restore() {
+      setSpy.restore();
+      clearSpy.restore();
+      clock.restore();
+    },
+  };
+}
+
 describe('@trustroots/analytics/server', function () {
   const originalFetch = global.fetch;
   let sent: SentRequest[];
@@ -64,15 +103,15 @@ describe('@trustroots/analytics/server', function () {
   });
 
   it('clears the deadline after an empty response', async function () {
-    const clock = sinon.useFakeTimers();
+    const deadline = useDeadlineClock();
     global.fetch = (async () =>
       new Response(null, { status: 204 })) as typeof global.fetch;
     try {
       const analytics = createServerAnalytics(options);
       await analytics.track({}, 'signin-success');
-      assert.equal(clock.countTimers(), 0);
+      deadline.assertDeadlineCleared();
     } finally {
-      clock.restore();
+      deadline.restore();
     }
   });
 
@@ -98,7 +137,8 @@ describe('@trustroots/analytics/server', function () {
   });
 
   it('aborts stalled delivery and resolves without rejecting', async function () {
-    const clock = sinon.useFakeTimers();
+    const deadline = useDeadlineClock();
+    const { clock } = deadline;
     let signal: AbortSignal | undefined;
     global.fetch = ((_url, init) => {
       signal = init?.signal ?? undefined;
@@ -119,9 +159,9 @@ describe('@trustroots/analytics/server', function () {
       await assert.doesNotReject(delivery);
       assert.equal(signal?.aborted, true);
       assert.equal(resolved, true);
-      assert.equal(clock.countTimers(), 0);
+      deadline.assertDeadlineCleared();
     } finally {
-      clock.restore();
+      deadline.restore();
     }
   });
 });
