@@ -5,7 +5,12 @@ import { start } from '@/modules/messages/client/services/unread-message-count.c
 
 /** Polls the unread message count while a public member is signed in. */
 export default function useUnreadMessageCountPolling(): void {
-  const isPublicMember = Boolean(useAuth().user?.public);
+  const { user } = useAuth();
+  const isPublicMember = Boolean(user?.public);
+  const memberId = user?._id;
 
-  useEffect(() => (isPublicMember ? start() : undefined), [isPublicMember]);
+  useEffect(
+    () => (isPublicMember ? start() : undefined),
+    [isPublicMember, memberId],
+  );
 }
