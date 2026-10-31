@@ -1,4 +1,4 @@
-export interface OriginConfiguration {
+interface OriginConfiguration {
   https?: unknown;
   domain: string;
   csrfAllowedOrigins?: string[];
@@ -93,4 +93,5 @@ const service = function csrfProtection(config: OriginConfiguration) {
   };
 };
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

@@ -885,6 +885,7 @@ const readReplyRecipient = service.readReplyRecipient;
 const readMany = service.readMany;
 const readMine = service.readMine;
 const readOne = service.readOne;
+/** @esmNamed */
 export {
   create as create,
   experienceById as experienceById,
@@ -896,5 +897,3 @@ export {
   readOne as readOne,
 };
 export default service;
-
-export { service as 'module.exports' };

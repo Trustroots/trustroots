@@ -569,6 +569,7 @@ function rowsToJsonLines(rows: NewsletterRow[], includeReason = false): string {
     })
     .join('\n');
 }
+/** @esmNamed */
 export const list = async (
   _req: NewsletterRequest,
   res: NewsletterResponse,
@@ -581,6 +582,7 @@ export const list = async (
   const csv = rowsToCSV(users);
   res.set('Content-Type', 'text/csv').send(csv);
 };
+/** @esmNamed */
 export const listCircleMembers = async (
   req: NewsletterRequest,
   res: NewsletterResponse,
@@ -616,6 +618,7 @@ export const listCircleMembers = async (
   );
   res.set('Content-Type', 'text/csv').send(csv);
 };
+/** @esmNamed */
 export const audience = async (
   req: NewsletterRequest,
   res: NewsletterResponse,
@@ -661,6 +664,7 @@ function toCodedError(error: unknown): CodedError {
   };
 }
 
+/** @esmNamed */
 export const uploadSubscribersCsv = (
   req: NewsletterRequest,
   res: NewsletterResponse,
@@ -696,6 +700,7 @@ export const uploadSubscribersCsv = (
     });
   });
 };
+/** @esmNamed */
 export const splitSubscribers = async (
   req: NewsletterRequest,
   res: NewsletterResponse,
@@ -789,4 +794,5 @@ const defaultInterop = {
   splitSubscribers,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

@@ -65,4 +65,5 @@ export function createMemoryPolicy(): MemoryPolicy {
 }
 const defaultInterop = createMemoryPolicy;
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

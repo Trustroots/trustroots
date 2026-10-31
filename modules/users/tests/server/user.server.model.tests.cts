@@ -5,6 +5,7 @@ import type {
   UserModel,
   UserModelDocument,
   UserRecord,
+  UserUpdateOne,
 } from '../../../../testutils/server/model-contracts.mts';
 const should: typeof import('should') = require('should');
 const crypto: typeof import('node:crypto') = require('node:crypto');
@@ -702,12 +703,8 @@ describe('User Model Unit Tests:', function () {
         User,
         'updateOne',
       ) as unknown as import('sinon').SinonStub<
-        Parameters<
-          import('../../../../testutils/server/model-contracts.mts').UserUpdateOne
-        >,
-        ReturnType<
-          import('../../../../testutils/server/model-contracts.mts').UserUpdateOne
-        >
+        Parameters<UserUpdateOne>,
+        ReturnType<UserUpdateOne>
       >;
       update.callsFake((filter, changes) => {
         if (!filter || !changes || '$set' in changes === false) {

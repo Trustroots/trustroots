@@ -313,7 +313,7 @@ const defaultExport = {
 };
 
 export default defaultExport;
-export { defaultExport as 'module.exports' };
+/** @esmNamed */
 export {
   KdfOverloadedError,
   createKdfScheduler,

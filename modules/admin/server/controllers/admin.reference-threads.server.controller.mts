@@ -35,6 +35,7 @@ const ReferenceThread =
 const User = mongoose.model<UserRecord>('User');
 const REFERENCE_THREADS_LIMIT = 500;
 const TOP_NEGATIVE_RECIPIENTS_LIMIT = 10;
+/** @esmNamed */
 export const list = async (
   _req: unknown,
   res: HttpResponse,
@@ -125,4 +126,5 @@ const defaultInterop = {
   list,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

@@ -4,7 +4,7 @@ import config from './../config.mts';
 import dependency1 from 'util';
 import statService from './../../modules/stats/server/services/stats.server.service.mts';
 import dependency3 from 'mongodb';
-export interface WorkerOptions {
+interface WorkerOptions {
   maxAttempts: number;
   retryDelaySeconds: number;
 }
@@ -379,4 +379,5 @@ function secondsFromNowDate(seconds: number) {
   return new Date(new Date().getTime() + seconds * 1000);
 }
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

@@ -19,8 +19,9 @@ const Contact =
     import('../../../../testutils/server/model-contracts.mts').ContactRecord
   >('Contact');
 
-const { deferredResponse } =
-  require('../../../../testutils/server/response.server.testutil.mts') as typeof import('../../../../testutils/server/response.server.testutil.mts');
+const {
+  deferredResponse,
+}: typeof import('../../../../testutils/server/response.server.testutil.mts') = require('../../../../testutils/server/response.server.testutil.mts');
 
 describe('Contacts controller mongoose error handling', () => {
   afterEach(() => {

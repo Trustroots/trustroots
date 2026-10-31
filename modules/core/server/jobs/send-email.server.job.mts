@@ -40,4 +40,5 @@ const defaultExport = function (
   });
 };
 export default defaultExport;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

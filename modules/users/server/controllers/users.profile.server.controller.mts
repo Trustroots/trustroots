@@ -28,6 +28,7 @@ import * as nip19 from 'nostr-tools/nip19';
 import validator from 'validator';
 import type {
   ProfilePayload,
+  SanitizedProfileRecord,
   SanitizedProfileRequest,
   UserProfileController,
 } from './users.profile.server.contracts.mts';
@@ -823,7 +824,7 @@ function sanitizeProfile(
 
   // Destruct Mongoose object to regular object so that we can manipulate it
   const profile =
-    profileDocument.toObject() as unknown as import('./users.profile.server.contracts.mts').SanitizedProfileRecord;
+    profileDocument.toObject() as unknown as SanitizedProfileRecord;
   const authenticatedRoles = authenticatedUser?.roles || [];
   const hideExternalContactDetails =
     !isOwnProfile &&
@@ -1271,26 +1272,48 @@ service.search = function (req, res, next) {
 };
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export const addPushRegistration = defaultExport.addPushRegistration;
+/** @esmNamed */
 export const getMiniUser = defaultExport.getMiniUser;
+/** @esmNamed */
 export const getUser = defaultExport.getUser;
+/** @esmNamed */
 export const getUserMemberships = defaultExport.getUserMemberships;
+/** @esmNamed */
 export const initializeRemoveProfile = defaultExport.initializeRemoveProfile;
+/** @esmNamed */
 export const joinTribe = defaultExport.joinTribe;
+/** @esmNamed */
 export const leaveTribe = defaultExport.leaveTribe;
+/** @esmNamed */
 export const removeProfile = defaultExport.removeProfile;
+/** @esmNamed */
 export const removePushRegistration = defaultExport.removePushRegistration;
+/** @esmNamed */
 export const sanitizeOwnProfile = defaultExport.sanitizeOwnProfile;
 const __exportedSanitizeProfile = defaultExport.sanitizeProfile;
+/** @esmNamed */
 export { __exportedSanitizeProfile as sanitizeProfile };
+/** @esmNamed */
 export const search = defaultExport.search;
+/** @esmNamed */
 export const update = defaultExport.update;
+/** @esmNamed */
 export const userByUsername = defaultExport.userByUsername;
+/** @esmNamed */
 export const userListingProfileFields = defaultExport.userListingProfileFields;
+/** @esmNamed */
 export const userMiniByID = defaultExport.userMiniByID;
+/** @esmNamed */
 export const userMiniProfileFields = defaultExport.userMiniProfileFields;
+/** @esmNamed */
 export const userProfileFields = defaultExport.userProfileFields;
+/** @esmNamed */
 export const userSearchProfileFields = defaultExport.userSearchProfileFields;
+/** @esmNamed */
 export const getProfileRemovalStatus = defaultExport.getProfileRemovalStatus;
+/** @esmNamed */
 export const cancelProfileRemoval = defaultExport.cancelProfileRemoval;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

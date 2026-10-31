@@ -3,13 +3,13 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export type TargetedRequestLimit = {
+type TargetedRequestLimit = {
   windowMs: number;
   ipLimit: number;
   identityLimit: number;
 };
 
-export type E2EAppConfig = {
+type E2EAppConfig = {
   sessionSecret: string;
   db: { uri: string };
   targetedRequestLimits: Record<string, TargetedRequestLimit>;

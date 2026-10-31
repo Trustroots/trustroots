@@ -5,6 +5,7 @@ import service, {
   updateMessageStat,
 } from './message-stat.server.service.mts';
 
+/** @esmNamed */
 export {
   formatStats,
   readFormattedMessageStatsOfUser,
@@ -12,4 +13,5 @@ export {
   updateMessageStat,
 };
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

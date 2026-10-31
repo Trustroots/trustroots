@@ -24,15 +24,15 @@ export interface ProfileRequest {
   ) => void;
 }
 
-export type AuthenticatedProfileRequest = ProfileRequest & {
+type AuthenticatedProfileRequest = ProfileRequest & {
   user: UserServerDocument;
 };
 
-export type MiniProfileRequest = Omit<ProfileRequest, 'profile'> & {
+type MiniProfileRequest = Omit<ProfileRequest, 'profile'> & {
   profile?: UserServerDocument | null;
 };
 
-export interface ProfileErrorResponse {
+interface ProfileErrorResponse {
   message: string | true;
   detail?: string;
 }
@@ -68,7 +68,7 @@ export interface SanitizedProfileRecord {
   usernameHistory?: import('../models/user.server.types.mts').UsernameHistoryRecord[];
 }
 
-export interface ProfileMembershipResponse {
+interface ProfileMembershipResponse {
   message: string;
   tribe: Partial<
     import('../../shared/profile.js').ProfileTribe<
@@ -109,7 +109,7 @@ export interface ProfileResponse {
   json(body: ProfileResponseBody): unknown;
   redirect(url: string): unknown;
 }
-export type ProfileNext = NextFunction;
+type ProfileNext = NextFunction;
 
 export interface UserProfileController {
   userProfileFields: string;

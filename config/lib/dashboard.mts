@@ -10,5 +10,3 @@ export async function shutdownDashboard(agenda: Agenda, backend: MongoBackend) {
     await backend.disconnect();
   }
 }
-
-export default shutdownDashboard;

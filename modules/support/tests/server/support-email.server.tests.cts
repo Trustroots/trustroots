@@ -1,6 +1,9 @@
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const emailService: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
+const {
+  SupportEmailError,
+}: typeof import('../../server/services/support-email.server.service.mts') = require('../../server/services/support-email.server.service.mts');
 const mailboxJob: typeof import('../../server/jobs/poll-support-mailbox.server.job.mts') = require('../../server/jobs/poll-support-mailbox.server.job.mts');
 const recoveryJob: typeof import('../../server/jobs/recover-support-messages.server.job.mts') = require('../../server/jobs/recover-support-messages.server.job.mts');
 const sendJob: typeof import('../../server/jobs/send-support-message.server.job.mts') = require('../../server/jobs/send-support-message.server.job.mts');
@@ -62,7 +65,7 @@ describe('Support email service', () => {
         'key',
       ),
       (error: unknown) =>
-        error instanceof emailService.SupportEmailError &&
+        error instanceof SupportEmailError &&
         error.code === 'disabled' &&
         error.status === 503,
     );
@@ -78,7 +81,7 @@ describe('Support email service', () => {
         'reply-key',
       ),
       (error: unknown) =>
-        error instanceof emailService.SupportEmailError &&
+        error instanceof SupportEmailError &&
         error.code === 'invalid' &&
         error.status === 400,
     );
@@ -94,7 +97,7 @@ describe('Support email service', () => {
         'x'.repeat(201),
       ),
       (error: unknown) =>
-        error instanceof emailService.SupportEmailError && error.status === 400,
+        error instanceof SupportEmailError && error.status === 400,
     );
   });
 
@@ -310,7 +313,7 @@ describe('Support email service', () => {
         'request-reply-1',
       ),
       (error: unknown) =>
-        error instanceof emailService.SupportEmailError && error.status === 409,
+        error instanceof SupportEmailError && error.status === 409,
     );
   });
 
@@ -803,8 +806,7 @@ describe('Support email service', () => {
         false,
       ),
       (error: unknown) =>
-        error instanceof emailService.SupportEmailError &&
-        error.code === 'uncertain',
+        error instanceof SupportEmailError && error.code === 'uncertain',
     );
     const retried = await emailService.retryReply(
       String(request._id),

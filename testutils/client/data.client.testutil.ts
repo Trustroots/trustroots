@@ -36,21 +36,6 @@ export function generateThreads(
   return range(count).map(() => generateThread(users));
 }
 
-export function generateMessages(
-  count: number,
-  {
-    userFrom,
-    userTo,
-  }: { userFrom: FixtureMessageUser; userTo: FixtureMessageUser },
-): FixtureMessage[] {
-  return range(count).map(index =>
-    generateMessage(
-      index % 2 === 0 ? userFrom : userTo,
-      index % 2 === 0 ? userTo : userFrom,
-    ),
-  );
-}
-
 export function generateMessage(
   userFrom: FixtureMessageUser,
   userTo: FixtureMessageUser = generateClientUser(),

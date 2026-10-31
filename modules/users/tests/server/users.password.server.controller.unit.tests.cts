@@ -1,6 +1,8 @@
 /**
  * Unit tests for password controller validation and reset branches.
  */
+import type { UserStatics } from '../../../../testutils/server/model-contracts.mts';
+
 const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
@@ -18,7 +20,7 @@ interface PasswordUserRecord extends UserRecord {
 type PasswordUserDocument =
   import('mongoose').HydratedDocument<PasswordUserRecord>;
 type PasswordUserModel = import('mongoose').Model<PasswordUserRecord> &
-  import('../../../../testutils/server/model-contracts.mts').UserStatics;
+  UserStatics;
 const User = mongoose.model<PasswordUserRecord, PasswordUserModel>('User');
 interface PasswordBody {
   username?: string;

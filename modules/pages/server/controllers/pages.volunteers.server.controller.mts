@@ -29,6 +29,7 @@ function filterAndCleanVolunteers(
 
 /**
  * This middleware sends response with an array of users with volunteer role
+ * @esmNamed
  */
 export const list = (
   _req: Pick<Request, never>,
@@ -65,4 +66,5 @@ const defaultInterop = {
   list,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

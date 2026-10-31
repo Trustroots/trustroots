@@ -259,4 +259,3 @@ export {
   updateMessageStatExport as updateMessageStat,
 };
 export default service;
-export { service as 'module.exports' };

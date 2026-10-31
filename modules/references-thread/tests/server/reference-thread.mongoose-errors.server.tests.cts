@@ -2,6 +2,7 @@
  * Reference thread controller behaviour when the underlying Mongoose calls
  * reject.
  */
+import type { DeferredResponse } from '../../../../testutils/server/response.server.testutil.mts';
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
 
@@ -18,8 +19,9 @@ const Message =
     import('../../../../testutils/server/model-contracts.mts').MessageRecord
   >('Message');
 
-const { deferredResponse } =
-  require('../../../../testutils/server/response.server.testutil.mts') as typeof import('../../../../testutils/server/response.server.testutil.mts');
+const {
+  deferredResponse,
+}: typeof import('../../../../testutils/server/response.server.testutil.mts') = require('../../../../testutils/server/response.server.testutil.mts');
 
 describe('Reference thread controller mongoose error handling', () => {
   let author: import('../../../../testutils/server/model-contracts.mts').UserDocument;
@@ -36,9 +38,7 @@ describe('Reference thread controller mongoose error handling', () => {
     return utils.clearDatabase();
   });
 
-  function create(
-    res: import('../../../../testutils/server/response.server.testutil.mts').DeferredResponse,
-  ) {
+  function create(res: DeferredResponse) {
     referenceController.createReferenceThread(
       {
         user: author,

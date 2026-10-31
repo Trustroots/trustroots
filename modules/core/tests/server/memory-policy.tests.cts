@@ -1,3 +1,5 @@
+import type { PolicyUser } from '../../server/services/policy-types.server.mts';
+
 const createMemoryPolicy: typeof import('../../server/services/memory-policy.server.service.mts').default = require('./../../server/services/memory-policy.server.service.mts');
 const should: typeof import('should') = require('should');
 void should;
@@ -97,7 +99,7 @@ describe('In-memory route permissions', function () {
     const adminPolicy: typeof import('../../../admin/server/policies/admin.server.policy.mts').default = require('./../../../admin/server/policies/admin.server.policy.mts');
     adminPolicy.invokeRolesPolicies();
     const request: import('../../server/services/policy-types.server.mts').PolicyRequest & {
-      user: import('../../server/services/policy-types.server.mts').PolicyUser;
+      user: PolicyUser;
     } = {
       user: { roles: ['admin'], _id: { valueOf: () => 'fixture-user' } },
       route: { path: '/api/admin/dashboard' },

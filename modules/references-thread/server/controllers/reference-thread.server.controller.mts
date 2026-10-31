@@ -222,6 +222,6 @@ service.readReferenceThreadById = async function (req, res, next, userToId) {
 const createReferenceThread = service.createReferenceThread;
 const readReferenceThread = service.readReferenceThread;
 const readReferenceThreadById = service.readReferenceThreadById;
+/** @esmNamed */
 export { createReferenceThread, readReferenceThread, readReferenceThreadById };
 export default service;
-export { service as 'module.exports' };

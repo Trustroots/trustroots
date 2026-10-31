@@ -23,7 +23,7 @@ export interface Catalogue {
   entries: Entry[];
 }
 
-export interface Change {
+interface Change {
   id: string;
   sourceHash: string;
   original: string | null;

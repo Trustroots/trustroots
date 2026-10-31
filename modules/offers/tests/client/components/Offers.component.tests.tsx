@@ -2,7 +2,7 @@ import React from 'react';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-import { Offers } from '@/modules/offers/client/components/Offers.component';
+import Offers from '@/modules/offers/client/components/Offers.component';
 import { getOffers } from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 

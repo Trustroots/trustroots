@@ -70,6 +70,8 @@ service.invalidateSuspendedSessions = function (req, res, next) {
 };
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export const invalidateSuspendedSessions =
   defaultExport.invalidateSuspendedSessions;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

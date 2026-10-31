@@ -1,6 +1,5 @@
 import type { NextFunction } from 'express';
 import type { UserServerDocument } from '../models/user.server.types.mts';
-import type { AvatarProcessingJob } from '../services/avatar-processing.server.types.mts';
 
 export interface AvatarRequest {
   query: { size?: string; source?: string };
@@ -40,5 +39,3 @@ export interface UsersAvatarController {
     userId: string,
   ): Promise<unknown>;
 }
-
-export type AvatarProcessingTask = AvatarProcessingJob;

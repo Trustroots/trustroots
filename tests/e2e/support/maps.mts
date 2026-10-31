@@ -48,7 +48,7 @@ export function fixturePath(...segments: string[]): string {
   return path.join(fixturesDir, ...segments);
 }
 
-export function readFixture(...segments: string[]): unknown {
+function readFixture(...segments: string[]): unknown {
   const contents = fs.readFileSync(fixturePath(...segments), 'utf8');
   return JSON.parse(contents) as unknown;
 }

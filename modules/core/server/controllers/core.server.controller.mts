@@ -158,5 +158,7 @@ function getLanguages(
 }
 const defaultExport = service;
 export default defaultExport;
+/** @esmNamed */
 export { getLanguages, receiveCSPViolationReport, renderIndex, renderNotFound };
+/** @commonjs */
 export { defaultExport as 'module.exports' };

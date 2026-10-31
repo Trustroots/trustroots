@@ -4,7 +4,7 @@ const jsonForScript = require('./../../../server/services/json-for-script.server
 
 describe('Bootstrap JSON formatting', () => {
   it('exposes the same function through the ESM entry point', async () => {
-    const { jsonForScript: esmJsonForScript } =
+    const { default: esmJsonForScript } =
       await import('../../../server/services/json-for-script.server.service.mts');
     esmJsonForScript.should.equal(jsonForScript);
   });

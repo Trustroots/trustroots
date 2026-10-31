@@ -368,6 +368,7 @@ function getPotentialMatchReasons(
   return reasons;
 }
 
+/** @esmNamed */
 export async function findPotentialMatches(user: PotentialMatchUser) {
   const signals = getPotentialMatchSignals(user);
   const querySignals: QueryFilter<UserRecord>[] = signals.identifiers.flatMap(
@@ -500,6 +501,7 @@ async function sendMemberList(
 /*
  * This middleware sends a page of found users.
  */
+/** @esmNamed */
 export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
   const query = _.get(req, ['body', 'search']);
   const search = typeof query === 'string' ? _.trim(query) : query;
@@ -532,6 +534,7 @@ export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
 /*
  * This middleware sends a page of users with the selected role.
  */
+/** @esmNamed */
 export const listUsersByRole = (req: AdminListRequest, res: AdminResponse) => {
   const role = _.get(req, ['body', 'role']);
 
@@ -550,6 +553,7 @@ export const listUsersByRole = (req: AdminListRequest, res: AdminResponse) => {
 /*
  * This middleware sends members whose current stored IP address exactly matches.
  */
+/** @esmNamed */
 export const listUsersByLastIpAddress = (
   req: AdminListRequest,
   res: AdminResponse,
@@ -576,6 +580,7 @@ const handleAdminApiError = (res: AdminResponse, err: unknown): unknown => {
 
 /**
  * This middleware sends response with an array of found users
+ * @esmNamed
  */
 export const getUser = async (
   req: AdminRequest,
@@ -734,7 +739,10 @@ export const getUser = async (
   }
 };
 
-/** Admins inspect blockers of all staff; Welcome team members inspect their own. */
+/**
+ * Admins inspect blockers of all staff; Welcome team members inspect their own.
+ * @esmNamed
+ */
 export const listStaffBlockers = async (
   req: AdminRequest,
   res: AdminResponse,
@@ -769,6 +777,7 @@ export const listStaffBlockers = async (
 /**
  * This middleware changes user roles by ID
  * Used for suspending, shadowbanning, and restoring users
+ * @esmNamed
  */
 export const changeRole = async (
   req: AdminRequest,
@@ -902,6 +911,7 @@ export const changeRole = async (
   }
 };
 
+/** @esmNamed */
 export const usernameToUserId = async (
   req: AdminRequest,
   res: Partial<AdminResponse>,
@@ -944,4 +954,5 @@ const service = {
 
 export default service;
 
+/** @commonjs */
 export { service as 'module.exports' };

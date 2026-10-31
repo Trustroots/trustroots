@@ -54,4 +54,5 @@ const service = {
   },
 } satisfies ConfigOverrides;
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

@@ -20,4 +20,5 @@ export default function validateApiInput(
   }
   return next();
 }
+/** @commonjs */
 export { validateApiInput as 'module.exports' };

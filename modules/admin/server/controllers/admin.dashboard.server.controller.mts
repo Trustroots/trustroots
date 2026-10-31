@@ -144,6 +144,7 @@ async function getNegativeExperiences(): Promise<NegativeExperienceRecord[]> {
   return negativeExperiences || [];
 }
 
+/** @esmNamed */
 export const getDashboard = async (
   _req: unknown,
   res: DashboardResponse,
@@ -166,4 +167,5 @@ export const getDashboard = async (
 
 const defaultInterop = { getDashboard };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

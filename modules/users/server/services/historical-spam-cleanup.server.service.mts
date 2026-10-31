@@ -24,8 +24,6 @@ interface RunOptions {
 }
 
 interface CleanupService {
-  CAMPAIGN_WINDOWS: Array<{ start: Date; end: Date }>;
-  candidateQuery: typeof candidateQuery;
   run: (options?: RunOptions) => Promise<BatchResult>;
 }
 
@@ -251,8 +249,6 @@ async function processBatch(
     protected: userIds.length - eligibleIds.length,
   };
 }
-service.CAMPAIGN_WINDOWS = CAMPAIGN_WINDOWS;
-service.candidateQuery = candidateQuery;
 service.run = async function ({
   deleteAccounts = false,
   onBatch,
@@ -354,7 +350,7 @@ export async function deleteAdminBatch(
 
 const defaultExport = service;
 export default defaultExport;
-export { CAMPAIGN_WINDOWS };
-export { candidateQuery };
+/** @esmNamed */
 export const run = defaultExport.run;
+/** @commonjs */
 export { defaultExport as 'module.exports' };

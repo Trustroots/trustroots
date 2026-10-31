@@ -2,18 +2,18 @@ import type { RequestLimitRecord } from '../models/request-limit.server.model.mt
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import config from '../../../../config/config.mts';
-export interface RequestLimitDimension {
+interface RequestLimitDimension {
   name: string;
   value: unknown;
   limit: number;
 }
-export interface ConsumeOptions {
+interface ConsumeOptions {
   operation: string;
   dimensions: RequestLimitDimension[];
   windowMs: number;
   now?: number;
 }
-export interface ConsumeResult {
+interface ConsumeResult {
   allowed: boolean;
   retryAfterSeconds: number;
 }
@@ -92,7 +92,9 @@ async function consume({
   };
 }
 
-const defaultExport = { consume, digest, makeKey };
+const defaultExport = { consume, digest };
 export default defaultExport;
-export { consume, digest, makeKey };
+/** @esmNamed */
+export { consume, digest };
+/** @commonjs */
 export { defaultExport as 'module.exports' };

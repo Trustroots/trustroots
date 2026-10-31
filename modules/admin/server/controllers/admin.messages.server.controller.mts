@@ -105,6 +105,7 @@ function warningError(error: unknown): WarningError {
   return error as WarningError;
 }
 
+/** @esmNamed */
 export const getScammerRecipients = async (
   req: AdminRequest,
   res: AdminResponse,
@@ -131,6 +132,7 @@ export const getScammerRecipients = async (
   }
 };
 
+/** @esmNamed */
 export const sendScammerWarning = async (
   req: AdminRequest,
   res: AdminResponse,
@@ -261,7 +263,10 @@ export const sendScammerWarning = async (
   }
 };
 
-/** This middleware sends a response with an array of found users. */
+/**
+ * This middleware sends a response with an array of found users.
+ * @esmNamed
+ */
 export const getMessages = async (
   req: AdminRequest,
   res: AdminResponse,
@@ -309,4 +314,5 @@ const defaultInterop = {
   getMessages,
 };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

@@ -516,5 +516,6 @@ function editUpdate(
 }
 
 const service = { findExperiences, issueLink, listRequests, decide };
+/** @esmNamed */
 export { findExperiences, issueLink, listRequests, decide };
 export default service;

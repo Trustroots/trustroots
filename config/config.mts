@@ -15,7 +15,7 @@ import type {
   DatabaseConfig,
   DeepPartial,
 } from './types.mts';
-export type { Config } from './types.mts';
+
 type Environment = 'development' | 'production' | 'test';
 type EnvironmentConfig = ConfigOverrides & { db: DatabaseConfig };
 const environmentConfigByName: Record<Environment, EnvironmentConfig> = {
@@ -148,4 +148,5 @@ const initGlobalConfig = function (): Config {
  */
 const service: Config = initGlobalConfig();
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };

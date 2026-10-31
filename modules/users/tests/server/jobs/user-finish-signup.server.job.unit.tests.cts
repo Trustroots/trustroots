@@ -5,6 +5,7 @@ import type {
   UserModel,
   UserModelDocument,
   UserRecord,
+  UserUpdateOne,
 } from '../../../../../testutils/server/model-contracts.mts';
 const sinon: typeof import('sinon') = require('sinon');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -104,12 +105,8 @@ describe('Job: user finish signup unit tests', () => {
           User,
           'updateOne',
         ) as unknown as import('sinon').SinonStub<
-          Parameters<
-            import('../../../../../testutils/server/model-contracts.mts').UserUpdateOne
-          >,
-          ReturnType<
-            import('../../../../../testutils/server/model-contracts.mts').UserUpdateOne
-          >
+          Parameters<UserUpdateOne>,
+          ReturnType<UserUpdateOne>
         >;
         updateStub.callsFake((query, update) => {
           return originalUpdate(

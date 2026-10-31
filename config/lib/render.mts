@@ -14,4 +14,3 @@ templates.addFilter('jsonForScript', jsonForScript);
  */
 const service = nunjucks.render;
 export default service;
-export { service as 'module.exports' };

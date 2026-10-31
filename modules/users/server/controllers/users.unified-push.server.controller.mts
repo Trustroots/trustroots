@@ -63,13 +63,17 @@ const service: UnifiedPushController = {
   remove,
 };
 export default service;
+/** @commonjs */
 export { service as 'module.exports' };
 
 const nativeExportconfiguration = service.configuration;
+/** @esmNamed */
 export { nativeExportconfiguration as configuration };
 
 const nativeExportadd = service.add;
+/** @esmNamed */
 export { nativeExportadd as add };
 
 const nativeExportremove = service.remove;
+/** @esmNamed */
 export { nativeExportremove as remove };

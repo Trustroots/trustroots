@@ -9,7 +9,7 @@ import moment from 'moment';
  * @param now Current time used for range checks and fallback
  * @returns The normalised expiry, or undefined for host offers
  */
-export function normaliseOfferExpiry(
+function normaliseOfferExpiry(
   type: unknown,
   validUntil: unknown,
   maxValidFromNow: moment.DurationInputArg1 | undefined,
@@ -41,4 +41,5 @@ export function normaliseOfferExpiry(
 }
 
 export default normaliseOfferExpiry;
+/** @commonjs */
 export { normaliseOfferExpiry as 'module.exports' };

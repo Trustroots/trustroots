@@ -48,7 +48,7 @@ function shouldCaptureFullPage(testInfo: TestInfo): boolean {
   );
 }
 
-export async function captureEndOfTestScreenshot(
+async function captureEndOfTestScreenshot(
   page: Page,
   testInfo: TestInfo,
   suffix = '',

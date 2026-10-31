@@ -103,4 +103,5 @@ export async function apply(
 
 const api = { preview, apply };
 export default api;
+/** @commonjs */
 export { api as 'module.exports' };

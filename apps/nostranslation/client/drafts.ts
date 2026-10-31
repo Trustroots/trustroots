@@ -1,6 +1,6 @@
 import type { Entry } from '../shared.ts';
 
-export interface Draft {
+interface Draft {
   value: string;
   approved: boolean;
   sourceHash: string;

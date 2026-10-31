@@ -243,6 +243,7 @@ function memberPayload(member: UserRecord): UserRecord & {
   return { ...safe, pendingDeletion: Boolean(removeProfileToken) };
 }
 
+/** @esmNamed */
 export const list = handler(async (req, res) => {
   const page = pageNumber(req.query);
   const { category, status = 'unresolved', q } = req.query;
@@ -397,6 +398,7 @@ export const list = handler(async (req, res) => {
   });
 });
 
+/** @esmNamed */
 export const detail = handler(async (req, res) => {
   const report = await requestById(req);
   await audit(req);
@@ -410,6 +412,7 @@ export const detail = handler(async (req, res) => {
   });
 });
 
+/** @esmNamed */
 export const setStatus = handler(async (req, res) => {
   const value = req.body?.status;
   if (!isSupportStatus(value) && value !== 'resolved') {
@@ -448,6 +451,7 @@ function revisionCriteria(
     : { statusRevision: revision };
 }
 
+/** @esmNamed */
 export const conversation = handler(async (req, res) => {
   const report = await requestById(req);
   const page = pageNumber(req.query);
@@ -488,6 +492,7 @@ export const conversation = handler(async (req, res) => {
   });
 });
 
+/** @esmNamed */
 export const reply = handler(async (req, res) => {
   const report = await requestById(req);
   await audit(req);
@@ -503,6 +508,7 @@ export const reply = handler(async (req, res) => {
   return res.status(201).send(safe);
 });
 
+/** @esmNamed */
 export const retry = handler(async (req, res) => {
   const report = await requestById(req);
   const messageId = objectId(req.params.messageId);
@@ -520,6 +526,7 @@ export const retry = handler(async (req, res) => {
   return res.send(safe);
 });
 
+/** @esmNamed */
 export const investigation = handler(async (req, res) => {
   const page = pageNumber(req.query);
   const report = await requestById(req);
@@ -626,6 +633,7 @@ async function findMembers(search: string) {
     .slice(0, PAGE_SIZE);
 }
 
+/** @esmNamed */
 export const searchMembers = handler(async (req, res) => {
   const { search } = req.query;
   if (
@@ -640,6 +648,7 @@ export const searchMembers = handler(async (req, res) => {
   return res.send(members.map(memberPayload));
 });
 
+/** @esmNamed */
 export const member = handler(async (req, res) => {
   const identifier = req.params.memberId;
   const result =
@@ -668,4 +677,5 @@ const api = {
   member,
 };
 export default api;
+/** @commonjs */
 export { api as 'module.exports' };

@@ -13,6 +13,7 @@ interface Greeter {
 type GreeterResponse = { greeters: Greeter[] } | { message: string };
 const User = mongoose.model<UserServerRecord>('User');
 
+/** @esmNamed */
 export const list = (
   _req: Pick<Request, never>,
   res: Response<GreeterResponse>,
@@ -43,4 +44,5 @@ export const list = (
 
 const defaultInterop = { list };
 export default defaultInterop;
+/** @commonjs */
 export { defaultInterop as 'module.exports' };

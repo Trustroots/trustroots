@@ -1000,6 +1000,7 @@ const send = service.send;
 const sync = service.sync;
 const thread = service.thread;
 const threadByUser = service.threadByUser;
+/** @esmNamed */
 export {
   preview,
   inbox,
@@ -1013,4 +1014,3 @@ export {
   threadByUser,
 };
 export default service;
-export { service as 'module.exports' };
