@@ -104,6 +104,10 @@ test.describe('public pages and unauthenticated flows', () => {
           .evaluate(link => Boolean((link as HTMLLinkElement).sheet)),
       )
       .toBe(true);
+    await page.goto('/circles');
+    await expect(
+      page.getByRole('heading', { name: 'استكشاف الدوائر' }),
+    ).toBeVisible();
   });
 
   test('sign in and sign up pages link to each other', async ({
