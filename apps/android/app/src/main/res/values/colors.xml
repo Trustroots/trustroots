@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <color name="ic_launcher_background">#FFFFFF</color>
+
     <color name="trustroots_green">#12B591</color>
     <color name="trustroots_dark_green">#087F68</color>
     <color name="trustroots_pale_green">#ECF9F5</color>
