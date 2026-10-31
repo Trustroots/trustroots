@@ -136,7 +136,10 @@ const initGlobalConfig = function (): Config {
       {},
   );
 
-  applyMailSafety(config, process.env);
+  const mailMode = applyMailSafety(config, process.env);
+  console.info(
+    `[Mail] mode=${mailMode}${mailMode === 'capture' ? '; outgoing delivery disabled' : ''}`,
+  );
   return Object.assign(config, {
     files: getGlobalConfigFiles(defaultAssets),
     utils: { getGlobbedPaths },
