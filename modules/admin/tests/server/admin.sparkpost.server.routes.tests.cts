@@ -113,13 +113,17 @@ describe('SparkPost admin diagnostics', () => {
       from: new Date(from),
       to: new Date(to),
     });
+    assert.deepEqual(
+      diagnostics.windowDates(from, '2026-11-01T00:00:00.000Z', now),
+      { from: new Date(from), to: now },
+    );
     for (const [a, b] of [
       [null, to],
       ['bad', to],
       ['2026-02-30T00:00:00.000Z', to],
       [to, from],
       [from, from],
-      [from, '2026-11-01T00:00:00.000Z'],
+      ['2026-11-01T00:00:00.000Z', '2026-11-02T00:00:00.000Z'],
       ['2026-01-01T00:00:00.000Z', to],
     ]) {
       assert.throws(() => diagnostics.windowDates(a, b, now));

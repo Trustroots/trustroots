@@ -6,6 +6,19 @@ import {
   getSparkpostPreview,
 } from '../api/sparkpost.api';
 
+function formatDateTime(value: string) {
+  return value.slice(0, 16).replace('T', ' ');
+}
+
+function parseDateTime(value: string): number | null {
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(value)) return null;
+  const time = Date.parse(value.replace(' ', 'T') + ':00.000Z');
+  return Number.isFinite(time) &&
+    formatDateTime(new Date(time).toISOString()) === value
+    ? time
+    : null;
+}
+
 function useResult<T>(load: () => Promise<T>) {
   const [data, setData] = useState<T | null>(null);
   const [error, setError] = useState(false);
@@ -95,30 +108,59 @@ function Preview({ window }: { window: { from: string; to: string } }) {
   if (error)
     return (
       <p role="alert">
-        Could not load the preview. Check the UTC window (at most 31 days,
-        ending no later than now) and try again.
+        Could not load the preview. The server could not read the diagnostic
+        data. Please try again.
       </p>
     );
   if (!data) return <p role="status">Loading preview…</p>;
   return (
     <section aria-label="Outage preview results">
+      <h4>What we found</h4>
       <p>
-        <strong>Delivery unverified.</strong> Completed jobs may include
-        delivered emails. This preview does not match individual jobs against
-        SparkPost records.
+        {formatDateTime(data.from)} to {formatDateTime(data.to)} UTC. The start
+        is included; the end is excluded.
       </p>
-      <p>
-        Window: {data.from} (inclusive) to {data.to} (exclusive).
-      </p>
-      <p>
-        <strong>{data.awaitingConfirmation}</strong> accounts created in this
-        window still await confirmation, excluding suspended and shadowbanned
-        accounts. This is a candidate count, not a count of missing emails.
-      </p>
-      <p>
-        {data.jobsInspected} completed email jobs inspected. These jobs may
-        concern accounts created before the window.
-      </p>
+      <div className="alert alert-info">
+        <strong>Delivery unverified.</strong> This report cannot tell us how
+        many emails were missed. It compares account status and stored job
+        records, without checking individual deliveries with SparkPost.
+      </div>
+      <div className="table-responsive">
+        <table className="table">
+          <caption>Two separate counts for the selected period</caption>
+          <thead>
+            <tr>
+              <th>What was counted</th>
+              <th>Count</th>
+              <th>What it means</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">New accounts awaiting confirmation</th>
+              <td>
+                <strong>{data.awaitingConfirmation}</strong>
+              </td>
+              <td>
+                Created during this period and still unconfirmed. Some members
+                may have received an email but not confirmed it. Suspended and
+                shadowbanned accounts are excluded.
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Email-job records marked complete</th>
+              <td>
+                <strong>{data.jobsInspected}</strong>
+              </td>
+              <td>
+                Saved records of email tasks completed during this period,
+                including notifications to existing members. A task could be
+                marked complete even while sending was disabled.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       {data.capped && (
         <p className="alert alert-warning">
           Partial preview: only the first 1,000 completed jobs are included.
@@ -126,11 +168,16 @@ function Preview({ window }: { window: { from: string; to: string } }) {
         </p>
       )}
       <p>
-        Older jobs may have been removed. Reminder counts may have advanced
-        without delivery. Confirmation recovery will require fresh links.
+        To recover confirmations, we will need to identify affected accounts and
+        generate fresh links. This page does not resend anything.
       </p>
       {!data.campaigns.length ? (
-        <p>No completed email jobs found in this window.</p>
+        <p className="alert alert-warning">
+          No stored email-job records were found for this period. This does not
+          mean zero emails were sent or missed: records may have been removed or
+          may not match the search. The unconfirmed-account count above comes
+          from user profiles and is independent of these records.
+        </p>
       ) : (
         <table className="table table-striped">
           <caption>Completed jobs by campaign (delivery unverified)</caption>
@@ -157,8 +204,10 @@ function Preview({ window }: { window: { from: string; to: string } }) {
 export default function AdminSparkpost() {
   const [days, setDays] = useState('30');
   const [date, setDate] = useState('');
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
+  const [from, setFrom] = useState('2026-10-28 07:30');
+  const [to, setTo] = useState('2026-10-31 12:00');
+  const [inputError, setInputError] = useState('');
+  const [adjusted, setAdjusted] = useState(false);
   const [window, setWindow] = useState<{ from: string; to: string } | null>(
     null,
   );
@@ -267,16 +316,45 @@ export default function AdminSparkpost() {
         <hr />
         <h3>Preview a sending interruption</h3>
         <p>
-          Choose the confirmed capture window. These inputs are UTC, regardless
-          of your browser time zone. Nothing is sent or changed.
+          The suggested window covers the reported October 2026 interruption.
+          Adjust it to the confirmed capture window. These inputs are UTC,
+          regardless of your browser time zone. Nothing is sent or changed.
+        </p>
+        <p id="sparkpost-date-format">
+          Use yyyy-mm-dd hh:mm (24-hour UTC). Future dates are changed to now.
+          Maximum period: 31 days.
         </p>
         <form
           onSubmit={event => {
             event.preventDefault();
-            setWindow({
-              from: new Date(from + 'Z').toISOString(),
-              to: new Date(to + 'Z').toISOString(),
-            });
+            setInputError('');
+            setAdjusted(false);
+            setWindow(null);
+            const start = parseDateTime(from);
+            const end = parseDateTime(to);
+            if (start === null || end === null) {
+              setInputError(
+                'Enter valid dates as yyyy-mm-dd hh:mm, using the 24-hour clock (UTC).',
+              );
+              return;
+            }
+            const now = Date.now();
+            const clampedStart = Math.min(start, now);
+            const clampedEnd = Math.min(end, now);
+            const fromIso = new Date(clampedStart).toISOString();
+            const toIso = new Date(clampedEnd).toISOString();
+            setFrom(formatDateTime(fromIso));
+            setTo(formatDateTime(toIso));
+            setAdjusted(start > now || end > now);
+            if (clampedStart >= clampedEnd) {
+              setInputError('The start must be earlier than the end.');
+              return;
+            }
+            if (clampedEnd - clampedStart > 31 * 86400000) {
+              setInputError('Choose a period of 31 days or less.');
+              return;
+            }
+            setWindow({ from: fromIso, to: toIso });
           }}
         >
           <div className="form-group">
@@ -284,7 +362,9 @@ export default function AdminSparkpost() {
             <input
               className="form-control"
               id="sparkpost-from"
-              type="datetime-local"
+              type="text"
+              placeholder="yyyy-mm-dd hh:mm"
+              aria-describedby="sparkpost-date-format"
               required
               value={from}
               onChange={event => setFrom(event.target.value)}
@@ -295,7 +375,9 @@ export default function AdminSparkpost() {
             <input
               className="form-control"
               id="sparkpost-to"
-              type="datetime-local"
+              type="text"
+              placeholder="yyyy-mm-dd hh:mm"
+              aria-describedby="sparkpost-date-format"
               required
               value={to}
               onChange={event => setTo(event.target.value)}
@@ -305,6 +387,12 @@ export default function AdminSparkpost() {
             Preview completed jobs
           </button>
         </form>
+        {adjusted && (
+          <p role="status">
+            Future dates were changed to the current time (UTC).
+          </p>
+        )}
+        {inputError && <p role="alert">{inputError}</p>}
         {window && <Preview key={JSON.stringify(window)} window={window} />}
       </main>
     </>

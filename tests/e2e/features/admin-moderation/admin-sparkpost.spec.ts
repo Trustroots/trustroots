@@ -87,8 +87,8 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
       .click();
     await expect(page.getByText('example.test', { exact: true })).toBeVisible();
     await expect(page.getByText(/Partial results/)).toBeVisible();
-    await page.getByLabel('From (UTC, inclusive)').fill('2025-01-02T00:00');
-    await page.getByLabel('To (UTC, exclusive)').fill('2025-01-03T00:00');
+    await page.getByLabel('From (UTC, inclusive)').fill('2025-01-02 00:00');
+    await page.getByLabel('To (UTC, exclusive)').fill('2025-01-03 00:00');
     await page.getByRole('button', { name: 'Preview completed jobs' }).click();
     await expect(
       page.getByText('Delivery unverified.', { exact: true }),
