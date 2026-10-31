@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  requestMapDefaultLocation,
+  useRequestMapDefaultLocation,
   type MapDefaultLocation,
 } from './use-map-default-location';
 
@@ -42,6 +42,7 @@ export default function useDeviceLocation(
   onLocation: (location: DeviceLocation) => void,
   onApproximateLocation?: (location: MapDefaultLocation) => void,
 ) {
+  const requestMapDefaultLocation = useRequestMapDefaultLocation();
   const [status, setStatus] = useState<DeviceLocationStatus>('idle');
   const [error, setError] = useState<DeviceLocationError | null>(null);
   const [isApproximate, setIsApproximate] = useState(false);

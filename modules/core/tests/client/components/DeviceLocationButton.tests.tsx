@@ -17,8 +17,7 @@ jest.mock('react-i18next', () => ({
 const mockRequestMapDefaultLocation = jest.fn();
 jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
   __esModule: true,
-  requestMapDefaultLocation: (...args: unknown[]) =>
-    mockRequestMapDefaultLocation(...args),
+  useRequestMapDefaultLocation: () => mockRequestMapDefaultLocation,
 }));
 
 type SuccessCallback = PositionCallback;
