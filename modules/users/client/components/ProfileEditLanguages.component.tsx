@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 
-import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
 import LanguageSelect from '@/modules/core/client/components/LanguageSelect';
 
 import {
@@ -75,7 +74,6 @@ export default function ProfileEditLanguages({
 
   // Keep the parent profile form in sync with language changes.
   const onChange = (languages: string[]) => {
-    broadcastClientEvent('userChanged');
     onChangeLevels?.(
       Object.fromEntries(
         Object.entries(languageLevels).filter(([code]) =>
@@ -106,10 +104,7 @@ export default function ProfileEditLanguages({
             <LevelSelectors
               languages={profileLanguages}
               levels={languageLevels}
-              onChange={levels => {
-                broadcastClientEvent('userChanged');
-                onChangeLevels(levels);
-              }}
+              onChange={onChangeLevels}
             />
           )}
         </QueryClientProvider>
