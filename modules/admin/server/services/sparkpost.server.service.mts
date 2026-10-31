@@ -52,18 +52,17 @@ export function windowDates(from: unknown, to: unknown, now = new Date()) {
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) &&
     Number.isFinite(Date.parse(value)) &&
     new Date(value).toISOString() === value;
-  if (
-    !valid(from) ||
-    !valid(to) ||
-    Date.parse(from) >= Date.parse(to) ||
-    Date.parse(to) > now.getTime() ||
-    Date.parse(to) - Date.parse(from) > 31 * DAY
-  ) {
+  if (!valid(from) || !valid(to)) {
+    throw new DiagnosticInputError('Enter valid UTC dates.');
+  }
+  const start = Math.min(Date.parse(from), now.getTime());
+  const end = Math.min(Date.parse(to), now.getTime());
+  if (start >= end || end - start > 31 * DAY) {
     throw new DiagnosticInputError(
-      'Choose a valid UTC window of at most 31 days, ending no later than now.',
+      'Choose a UTC window with the start before the end and a duration of at most 31 days.',
     );
   }
-  return { from: new Date(from), to: new Date(to) };
+  return { from: new Date(start), to: new Date(end) };
 }
 
 async function providerRequest(path: string, params: Record<string, string>) {

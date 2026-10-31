@@ -249,7 +249,10 @@ metrics cover the configured account. Event detail is limited to the last
 10 days and 500 events, with explicit partial-result notices. Only recipient
 domains are displayed, not addresses or email content.
 
-The interruption preview accepts an inclusive/exclusive UTC window of at most
+The interruption preview uses `yyyy-mm-dd hh:mm` (24-hour UTC). It defaults
+to the reported October 2026 incident window, with both bounds editable. Future
+bounds are clamped to now and the adjusted values are shown. The resulting
+inclusive/exclusive window must have its start before its end and span at most
 31 days. It inspects up to 1,000 successfully completed `send email` jobs and
 counts accounts created in that window that still await confirmation, excluding
 suspended and shadowbanned accounts. These are unverified candidates: completion

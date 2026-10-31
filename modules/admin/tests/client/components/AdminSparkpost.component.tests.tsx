@@ -48,10 +48,10 @@ const overview: SparkpostOverview = {
 };
 function submitPreview() {
   fireEvent.change(screen.getByLabelText('From (UTC, inclusive)'), {
-    target: { value: '2026-10-28T07:30' },
+    target: { value: '2026-10-28 07:30' },
   });
   fireEvent.change(screen.getByLabelText('To (UTC, exclusive)'), {
-    target: { value: '2026-10-31T11:00' },
+    target: { value: '2026-10-31 11:00' },
   });
   fireEvent.click(
     screen.getByRole('button', { name: 'Preview completed jobs' }),
@@ -62,6 +62,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   jest.resetAllMocks();
+  jest.restoreAllMocks();
 });
 
 it('shows loading, daily metrics and a read-only preview with UTC inputs', async () => {
@@ -75,6 +76,12 @@ it('shows loading, daily metrics and a read-only preview with UTC inputs', async
   });
   render(<AdminSparkpost />);
   expect(screen.getByText('Loading email diagnostics…')).toBeInTheDocument();
+  expect(screen.getByLabelText('From (UTC, inclusive)')).toHaveValue(
+    '2026-10-28 07:30',
+  );
+  expect(screen.getByLabelText('To (UTC, exclusive)')).toHaveValue(
+    '2026-10-31 12:00',
+  );
   await screen.findByText('12');
   expect(screen.getAllByText('—')).toHaveLength(5);
   expect(screen.getByText(/No emails are sent/)).toBeInTheDocument();
@@ -144,7 +151,9 @@ it('shows empty event and preview results', async () => {
   );
   await screen.findByText('No events returned for this day.');
   submitPreview();
-  await screen.findByText('No completed email jobs found in this window.');
+  await screen.findByText(
+    /No stored email-job records were found for this period/,
+  );
 });
 
 it('shows errors for overview, events and preview without raw provider errors', async () => {
@@ -205,3 +214,90 @@ it.each(['resolve', 'reject'] as const)(
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   },
 );
+
+it.each([
+  ['10/28/2026 07:30', '2026-10-31 11:00', /Enter valid dates/],
+  ['2026-02-30 07:30', '2026-10-31 11:00', /Enter valid dates/],
+  ['2026-99-28 07:30', '2026-10-31 11:00', /Enter valid dates/],
+  ['2026-10-28 07:30', 'bad', /Enter valid dates/],
+  ['2026-10-31 11:00', '2026-10-28 07:30', /start must be earlier/],
+  ['2026-08-01 00:00', '2026-10-31 11:00', /31 days or less/],
+])(
+  'validates the range %s to %s before requesting data',
+  async (from, to, error) => {
+    render(<AdminSparkpost />);
+    await screen.findByText('12');
+    fireEvent.change(screen.getByLabelText('From (UTC, inclusive)'), {
+      target: { value: from },
+    });
+    fireEvent.change(screen.getByLabelText('To (UTC, exclusive)'), {
+      target: { value: to },
+    });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Preview completed jobs' }),
+    );
+    expect(screen.getByRole('alert')).toHaveTextContent(error);
+    expect(mocked.getSparkpostPreview).not.toHaveBeenCalled();
+  },
+);
+
+it('clamps a future end to now and updates the displayed UTC value', async () => {
+  jest
+    .spyOn(Date, 'now')
+    .mockReturnValue(Date.parse('2026-10-31T12:34:56.789Z'));
+  mocked.getSparkpostPreview.mockResolvedValue({
+    from: '2026-10-28T07:30:00.000Z',
+    to: '2026-10-31T12:34:56.789Z',
+    awaitingConfirmation: 147,
+    jobsInspected: 0,
+    capped: false,
+    campaigns: [],
+  });
+  render(<AdminSparkpost />);
+  await screen.findByText('12');
+  fireEvent.change(screen.getByLabelText('To (UTC, exclusive)'), {
+    target: { value: '2026-11-01 00:00' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Preview completed jobs' }),
+  );
+  expect(screen.getByLabelText('To (UTC, exclusive)')).toHaveValue(
+    '2026-10-31 12:34',
+  );
+  expect(mocked.getSparkpostPreview).toHaveBeenCalledWith(
+    '2026-10-28T07:30:00.000Z',
+    '2026-10-31T12:34:56.789Z',
+  );
+  await screen.findByText('147');
+  expect(screen.getByText(/Future dates were changed/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/This does not mean zero emails/),
+  ).toBeInTheDocument();
+  expect(
+    screen.getByText(/2026-10-28 07:30 to 2026-10-31 12:34 UTC/),
+  ).toBeInTheDocument();
+});
+
+it('clamps a future start too and explains when the resulting range is empty', async () => {
+  jest
+    .spyOn(Date, 'now')
+    .mockReturnValue(Date.parse('2026-10-31T12:34:56.789Z'));
+  render(<AdminSparkpost />);
+  await screen.findByText('12');
+  fireEvent.change(screen.getByLabelText('From (UTC, inclusive)'), {
+    target: { value: '2026-11-01 00:00' },
+  });
+  fireEvent.change(screen.getByLabelText('To (UTC, exclusive)'), {
+    target: { value: '2026-11-02 00:00' },
+  });
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Preview completed jobs' }),
+  );
+  expect(screen.getByLabelText('From (UTC, inclusive)')).toHaveValue(
+    '2026-10-31 12:34',
+  );
+  expect(screen.getByRole('alert')).toHaveTextContent(
+    'The start must be earlier than the end.',
+  );
+  expect(mocked.getSparkpostPreview).not.toHaveBeenCalled();
+});
