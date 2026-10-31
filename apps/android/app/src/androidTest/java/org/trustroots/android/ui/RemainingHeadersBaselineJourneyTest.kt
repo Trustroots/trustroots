@@ -1,5 +1,6 @@
 package org.trustroots.android.ui
 
+import android.content.res.Configuration
 import org.trustroots.android.ui.account.AccountSettingsScreen
 
 import androidx.activity.ComponentActivity
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -154,8 +157,16 @@ class RemainingHeadersBaselineJourneyTest {
 
     @Test fun profileDestinationCollapsesAndExpandsWithRtlDarkAppearanceAndRealInsets() {
         var profileOpened = false
+        val darkConfiguration = Configuration(compose.activity.resources.configuration).apply {
+            uiMode = (uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or Configuration.UI_MODE_NIGHT_YES
+        }
+        val darkContext = compose.activity.createConfigurationContext(darkConfiguration)
         compose.setContent {
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+            CompositionLocalProvider(
+                LocalLayoutDirection provides LayoutDirection.Rtl,
+                LocalContext provides darkContext,
+                LocalConfiguration provides darkContext.resources.configuration,
+            ) {
                 MaterialTheme(colorScheme = darkColorScheme()) {
                     MenuScreen(
                         session = session,
