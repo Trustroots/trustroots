@@ -2,6 +2,7 @@ import React from 'react';
 import { act, render } from '@testing-library/react';
 import L from 'leaflet';
 import CircleLocationMap from '@/modules/tribes/client/components/CircleLocationMap';
+import { AuthProvider } from '@/modules/core/client/react-app/auth';
 
 jest.mock('@/modules/core/client/utils/map', () => ({
   getRasterMapTiles: () => ({
@@ -32,7 +33,9 @@ it('preserves a panned view when restoring a popup, but pans on an explicit reop
     errorText: 'Unavailable',
     countLabel: 'rides',
   };
-  const { rerender, unmount } = render(<CircleLocationMap {...props} />);
+  const { rerender, unmount } = render(<CircleLocationMap {...props} />, {
+    wrapper: AuthProvider,
+  });
   try {
     const map = mapSpy.mock.results[0].value as L.Map;
     Object.defineProperties(map.getContainer(), {
