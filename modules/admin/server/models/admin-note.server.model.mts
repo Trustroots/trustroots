@@ -1,5 +1,5 @@
 import mongoose, { type HydratedDocument, type Types } from 'mongoose';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 
 interface AdminNoteRecord {
   admin?: Types.ObjectId;

@@ -3,7 +3,7 @@
  */
 import _ from 'lodash';
 import errorService from './../../../core/server/services/error.server.service.mjs';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 import sanitizeHtml from 'sanitize-html';
 import mongoose, { type Types } from 'mongoose';
 
