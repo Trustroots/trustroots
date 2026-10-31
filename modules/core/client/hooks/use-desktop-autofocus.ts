@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { matchesMediaQuery } from './use-media-query';
 
 export default function useDesktopAutofocus<T extends HTMLElement>(
   enabled = true,
@@ -9,9 +10,9 @@ export default function useDesktopAutofocus<T extends HTMLElement>(
     if (
       enabled &&
       document.activeElement === document.body &&
-      window.matchMedia?.(
+      matchesMediaQuery(
         '(min-width: 768px) and (hover: hover) and (pointer: fine)',
-      ).matches
+      )
     ) {
       ref.current?.focus({ preventScroll: true });
     }

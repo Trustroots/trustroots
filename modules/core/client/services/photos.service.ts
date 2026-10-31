@@ -1,3 +1,5 @@
+import { matchesMediaQuery } from '../hooks/use-media-query';
+
 export type Photo = {
   name: string;
   url?: string;
@@ -173,16 +175,10 @@ const photos: Record<string, Photo> = {
 
 export function selectPhoto(name: string): Photo & { imageUrl: string } {
   const photo = photos[name];
-  const file =
-    window.innerWidth <= 480 && photo.file_mobile
-      ? photo.file_mobile
-      : photo.file;
-  const imageUrl = `/img/board/${file}`;
+  const mobileFile =
+    matchesMediaQuery('(max-width: 480px)') && photo.file_mobile;
 
-  return {
-    imageUrl,
-    ...photo,
-  };
+  return { imageUrl: `/img/board/${mobileFile || photo.file}`, ...photo };
 }
 
 export default photos;

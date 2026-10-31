@@ -10,6 +10,7 @@ import {
   getCurrentRouteParams,
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
+import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
 import { getOffer } from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import { get as getCircle } from '@/modules/tribes/client/api/tribes.api';
@@ -103,7 +104,8 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
     'filters',
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(
-    Boolean(routeParams.offer) || (isUserPublic && window.innerWidth >= 768),
+    Boolean(routeParams.offer) ||
+      (isUserPublic && matchesMediaQuery('(min-width: 768px)')),
   );
   const [isPlaceSearchVisible, setIsPlaceSearchVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState(

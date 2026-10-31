@@ -30,8 +30,15 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
   const actualReact = jest.requireActual<typeof import('react')>('react');
-  function MockBoard({ children }: PropsWithChildren) {
-    return actualReact.createElement('div', null, children);
+  function MockBoard({
+    children,
+    style,
+  }: PropsWithChildren<{ style?: React.CSSProperties }>) {
+    return actualReact.createElement(
+      'div',
+      { 'data-testid': 'board', style },
+      children,
+    );
   }
   return MockBoard;
 });
@@ -91,33 +98,47 @@ describe('<Home />', () => {
     );
   });
 
-  it('uses compact board height on small screens', async () => {
-    const originalInnerWidth = window.innerWidth;
-    const originalInnerHeight = window.innerHeight;
-    mockReadCircles.mockResolvedValueOnce([]);
-    mockGetRouteParams.mockReturnValue({});
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: 480,
-    });
-    Object.defineProperty(window, 'innerHeight', {
-      configurable: true,
-      value: 640,
-    });
+  it.each([
+    [480, 699, '400px'],
+    [480, 700, '658px'],
+    [481, 640, '598px'],
+  ])(
+    'sizes the board for a %ipx x %ipx viewport',
+    async (width, height, boardHeight) => {
+      const originalInnerWidth = window.innerWidth;
+      const originalInnerHeight = window.innerHeight;
+      mockReadCircles.mockResolvedValueOnce([]);
+      mockGetRouteParams.mockReturnValue({});
+      Object.defineProperty(window, 'innerWidth', {
+        configurable: true,
+        value: width,
+      });
+      Object.defineProperty(window, 'innerHeight', {
+        configurable: true,
+        value: height,
+      });
 
-    render(<Home user={null} />);
+      try {
+        render(<Home user={null} />);
 
-    expect(await screen.findByText('How does it work?')).toBeInTheDocument();
-
-    Object.defineProperty(window, 'innerWidth', {
-      configurable: true,
-      value: originalInnerWidth,
-    });
-    Object.defineProperty(window, 'innerHeight', {
-      configurable: true,
-      value: originalInnerHeight,
-    });
-  });
+        expect(
+          await screen.findByText('How does it work?'),
+        ).toBeInTheDocument();
+        expect(screen.getAllByTestId('board')[0]).toHaveStyle({
+          height: boardHeight,
+        });
+      } finally {
+        Object.defineProperty(window, 'innerWidth', {
+          configurable: true,
+          value: originalInnerWidth,
+        });
+        Object.defineProperty(window, 'innerHeight', {
+          configurable: true,
+          value: originalInnerHeight,
+        });
+      }
+    },
+  );
 
   it('renders fetched circles', async () => {
     mockReadCircles.mockResolvedValueOnce([

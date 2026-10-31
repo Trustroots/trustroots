@@ -7,6 +7,7 @@ import type { PageTranslator, PageUser } from '../types';
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
+import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
 import SiteFooter, {
@@ -123,10 +124,11 @@ export default function Home({
   // TODO get header height instead of magic number 56
   const headerHeight = 56;
 
-  const boardHeight =
-    window.innerWidth <= 480 && window.innerHeight < 700
-      ? 400
-      : window.innerHeight - headerHeight + 14;
+  const boardHeight = useMediaQuery(
+    '(max-width: 480px) and (max-height: 699px)',
+  )
+    ? 400
+    : window.innerHeight - headerHeight + 14;
 
   const boards = getBoardPictures(circleRoute);
 

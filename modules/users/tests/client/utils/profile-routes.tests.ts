@@ -4,7 +4,6 @@ import {
   getProfileEditTabPath,
   getProfileViewTab,
   getProfileViewTabStateName,
-  isMobileProfileViewport,
   type ProfileEditTab,
 } from '@/modules/users/client/utils/profile-routes';
 
@@ -189,7 +188,7 @@ describe('profile-routes', () => {
     });
   });
 
-  describe('isMobileProfileViewport', () => {
+  describe('mobile profile viewport breakpoint', () => {
     const originalInnerWidth = window.innerWidth;
 
     afterEach(() => {
@@ -207,7 +206,9 @@ describe('profile-routes', () => {
           value: width,
         });
 
-        expect(isMobileProfileViewport()).toBe(true);
+        expect(getMobileProfileRedirect('/profile/alice', 'alice')).toBe(
+          '/profile/alice/overview',
+        );
       },
     );
 
@@ -217,7 +218,7 @@ describe('profile-routes', () => {
         value: 768,
       });
 
-      expect(isMobileProfileViewport()).toBe(false);
+      expect(getMobileProfileRedirect('/profile/alice', 'alice')).toBe(null);
     });
   });
 });
