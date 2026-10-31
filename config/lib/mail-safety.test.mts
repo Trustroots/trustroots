@@ -20,7 +20,10 @@ function fixture(domain = 'main.test.trustroots.org'): Config {
     },
     mailer: {
       from: 'support@trustroots.org',
-      options: { auth: { user: 'fictional-smtp', pass: 'fictional-secret' } },
+      options: {
+        host: 'smtp.example.test',
+        auth: { user: 'fictional-smtp', pass: 'fictional-secret' },
+      },
     },
   } as Config;
 }
@@ -345,4 +348,105 @@ test('a preconfigured test support address is permitted and real MIME Bcc cannot
   } finally {
     transport.close();
   }
+});
+
+const liveEnvironment = {
+  NODE_ENV: 'production',
+  TRUSTROOTS_DEPLOYMENT_TIER: 'production',
+  TRUSTROOTS_MAIL_MODE: 'live',
+};
+
+test('live mode rejects non-SMTP transports before any transport is created', () => {
+  for (const override of [
+    { jsonTransport: true },
+    { streamTransport: true },
+    { sendmail: true },
+    { SES: {} },
+    {
+      send() {
+        throw new Error('Must not send');
+      },
+    },
+  ]) {
+    const config = fixture('www.trustroots.org');
+    Object.assign(config.mailer.options, override);
+    assert.throws(
+      () =>
+        applyMailSafety(config, liveEnvironment, () => {
+          throw new Error('Must not create a transport');
+        }),
+      /Live mail requires an SMTP transport/,
+    );
+  }
+});
+
+test('live mode requires an explicit SMTP destination and preserves valid options', () => {
+  for (const options of [
+    {},
+    { host: ' ' },
+    { service: false },
+    { service: ' ' },
+    { auth: { user: 'fictional-user', pass: 'fictional-secret' } },
+  ] satisfies Config['mailer']['options'][]) {
+    const config = fixture('www.trustroots.org');
+    config.mailer.options = options;
+    assert.throws(
+      () => applyMailSafety(config, liveEnvironment),
+      /explicit SMTP/,
+    );
+  }
+  for (const options of [
+    {
+      host: 'smtp.example.test',
+      port: 587,
+      secure: false,
+      jsonTransport: false,
+    },
+    { host: 'localhost', port: 25 },
+    { service: 'SparkPost' },
+    { url: 'smtps://fictional-user:fictional-secret@smtp.example.test:465' },
+    { url: 'smtp://smtp.example.test:587' },
+  ]) {
+    const config = fixture('www.trustroots.org');
+    config.mailer.options = options;
+    assert.equal(applyMailSafety(config, liveEnvironment), 'live');
+    assert.equal(config.mailer.options, options);
+  }
+});
+
+test('invalid SMTP connection URLs fail without disclosing credentials', () => {
+  for (const url of [
+    '',
+    'not a URL',
+    'https://fictional-user:fictional-secret@example.test',
+    'smtp://',
+    'smtp:example.test',
+  ]) {
+    const config = fixture('www.trustroots.org');
+    config.mailer.options.url = url;
+    assert.throws(
+      () => applyMailSafety(config, liveEnvironment),
+      error => {
+        assert.equal(
+          (error as Error).message,
+          'Live mail requires a valid smtp:// or smtps:// connection URL.',
+        );
+        return true;
+      },
+    );
+  }
+});
+
+test('explicit maintenance capture overrides even an invalid production SMTP transport', () => {
+  const config = fixture('www.trustroots.org');
+  config.mailer.options = { streamTransport: true };
+  assert.equal(
+    applyMailSafety(config, {
+      ...liveEnvironment,
+      TRUSTROOTS_MAIL_MODE: 'capture',
+    }),
+    'capture',
+  );
+  assert.deepEqual(config.mailer.options, { jsonTransport: true });
+  assert.equal(config.supportInbox.imap.enabled, false);
 });
