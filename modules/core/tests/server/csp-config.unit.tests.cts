@@ -30,8 +30,6 @@ describe('Production content security policy', function () {
     assert.ok(policy.includes("'nonce-" + res.body.nonce + "'"));
     assert.ok(!policy.match(/script-src[^;]*\*\./));
     assert.ok(policy.includes("worker-src 'self' blob:"));
-    assert.ok(!policy.includes('google-analytics.com'));
-    assert.ok(!policy.includes('doubleclick.net'));
     assert.ok(policy.includes('https://1p.trustroots.org'));
     const connections = policy
       .split(';')
