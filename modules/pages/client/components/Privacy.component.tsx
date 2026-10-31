@@ -1,6 +1,7 @@
 import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
+import PrivacyRevisionHistory from './PrivacyRevisionHistory';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Privacy() {
@@ -35,9 +36,9 @@ export default function Privacy() {
               itemProp="datePublished"
               {...{ dateTime: '2014-12-23' }}
             >
-              <time itemProp="dateModified" dateTime="2026-10-21">
+              <time itemProp="dateModified" dateTime="2026-10-31">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2026, 9, 21),
+                  date: new Date(2026, 9, 31),
                 })}
               </time>
             </p>
@@ -49,6 +50,11 @@ export default function Privacy() {
                     'We aim to keep this privacy policy as clear, concise, and easy to understand as possible. We are committed to being transparent and open. This article explains generally how we receive information about you, and what we do with that information once we have it.',
                   )}
                 </em>
+              </p>
+              <p>
+                {t(
+                  'We work to protect our community and members’ information as online risks evolve, including automated abuse and misuse of AI.',
+                )}
               </p>
               <p>{t('You must be 18 years old or older to use Trustroots.')}</p>
               <h3>{t('Your data is yours')}</h3>
@@ -167,6 +173,8 @@ export default function Privacy() {
                 <a href="/statistics">statistics page</a> for more information.
               </Trans>
             </div>
+            <hr />
+            <PrivacyRevisionHistory />
             <hr />
             <p className="lead">
               <Trans t={rawT} ns="pages">
