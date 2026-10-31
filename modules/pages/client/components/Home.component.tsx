@@ -309,8 +309,8 @@ export default function Home({
       {circles.length > 0 && (
         <section className="home-how">
           <div className="container">
-            <div className="row">
-              <div className="col-xs-10 col-xs-push-1 col-sm-3 col-sm-push-6">
+            <div className="row home-circles-row">
+              <div className="col-xs-12 col-sm-3 home-circles-intro">
                 <div className="text-center tribe-intro">
                   <h2 className="font-brand-light">{t('Circles')}</h2>
                   <p className="font-brand-light">
@@ -336,11 +336,11 @@ export default function Home({
                   </a>
                 ))}
               </div>
-              {circles.slice(0, 3).map((circle, index, items) => (
+              {circles.slice(0, 3).map((circle, index) => (
                 <div
                   key={circle._id}
-                  className={classnames('col-sm-3', 'hidden-xs', {
-                    'col-sm-pull-3': index < items.length - 1,
+                  className={classnames('col-sm-3 hidden-xs home-circle-card', {
+                    'home-circle-last': index === 2,
                   })}
                 >
                   <div
