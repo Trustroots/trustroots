@@ -14,10 +14,9 @@ import {
   getReactRouteAccessRedirect,
   getReactRoutePolicy,
   matchReactRoute,
-  REACT_OWNED_PATHS,
-  REACT_ROUTE_POLICIES,
   normalizePath,
 } from '@/modules/core/shared/react-route-ownership.mts';
+import { REACT_ROUTE_POLICIES } from '@/layers/shell/shared/route-manifest.mts';
 
 type UserRouteProps = { user?: AuthUser | null };
 type MembershipRouteProps = UserRouteProps & {
@@ -425,7 +424,7 @@ describe('React route ownership', () => {
   });
   it('keeps the React route table aligned with the shared ownership list', () => {
     expect(routes.map(route => route.path).sort()).toEqual(
-      [...REACT_OWNED_PATHS].sort(),
+      REACT_ROUTE_POLICIES.map(route => route.path).sort(),
     );
   });
 
@@ -498,9 +497,6 @@ describe('React route ownership', () => {
   });
 
   it('keeps the shared route policy aligned with owned paths', () => {
-    expect(REACT_ROUTE_POLICIES.map(route => route.path).sort()).toEqual(
-      [...REACT_OWNED_PATHS].sort(),
-    );
     expect(getReactRoutePolicy('/admin/')).toMatchObject({
       footerVariant: 'admin',
       path: '/admin',

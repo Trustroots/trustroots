@@ -1,10 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
-import ContactConfirmPage from '@/modules/contacts/client/components/ContactConfirmPage.component';
-import { routeOptions, renderWithUser } from '../route-options';
+import { contactsRoutes } from '@/modules/contacts/client/routes';
+import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
   routeOptions(
     '/contact-confirm/:contactId',
-    renderWithUser(ContactConfirmPage),
+    contactsRoutes['/contact-confirm/:contactId'],
   ),
 );

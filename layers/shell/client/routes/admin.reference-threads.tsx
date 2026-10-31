@@ -1,8 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminReferenceThreads from '@/modules/admin/client/components/AdminReferenceThreads.component';
+import { adminRoutes } from '@/modules/admin/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/admin/reference-threads', () => <AdminReferenceThreads />),
+  routeOptions(
+    '/admin/reference-threads',
+    adminRoutes['/admin/reference-threads'],
+  ),
 );

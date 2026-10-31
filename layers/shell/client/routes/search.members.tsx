@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import SearchUsers from '@/modules/search/client/components/SearchUsers.component';
+import { searchRoutes } from '@/modules/search/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/search/members', () => <SearchUsers />),
+  routeOptions('/search/members', searchRoutes['/search/members']),
 );

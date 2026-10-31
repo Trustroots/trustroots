@@ -1,7 +1,5 @@
 import { createRoute } from '@tanstack/react-router';
-import HomeRoute from '@/modules/pages/client/components/HomeRoute';
-import { routeOptions, renderWithUser } from '../route-options';
+import { pagesRoutes } from '@/modules/pages/client/routes';
+import { routeOptions } from '../route-options';
 
-export const Route = createRoute(
-  routeOptions('/about', renderWithUser(HomeRoute)),
-);
+export const Route = createRoute(routeOptions('/about', pagesRoutes['/about']));

@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import { SupportMemberSearchPage } from '@/modules/admin/client/components/Support.component';
+import { adminRoutes } from '@/modules/admin/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/admin/support/members', () => <SupportMemberSearchPage />),
+  routeOptions('/admin/support/members', adminRoutes['/admin/support/members']),
 );

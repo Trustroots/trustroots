@@ -1,7 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import SearchPage from '@/modules/search/client/components/SearchPage.component';
-import { routeOptions, renderWithUser } from '../route-options';
+import { searchRoutes } from '@/modules/search/client/routes';
+import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/search', renderWithUser(SearchPage)),
+  routeOptions('/search', searchRoutes['/search']),
 );

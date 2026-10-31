@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import ConfirmEmailPage from '@/modules/users/client/components/ConfirmEmailPage.component';
+import { usersRoutes } from '@/modules/users/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/confirm-email/:token', () => <ConfirmEmailPage />),
+  routeOptions('/confirm-email/:token', usersRoutes['/confirm-email/:token']),
 );

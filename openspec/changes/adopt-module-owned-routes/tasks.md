@@ -38,15 +38,15 @@ Each PR branches from `main` after its dependencies merge and is squash-merged, 
 
 Left out on purpose: a shared QueryClient, router loaders, a search-schema helper, default pending and error components, a route test helper and the `Register` declaration.
 
-## 3. PR 3 · refactor(routes): move route policies and definitions into their modules
+## 3. PR 3 · refactor(routes): move route policies and definitions into their modules (delivered)
 
-Depends on PR 2. Mostly moves.
+Depends on PR 2. Mostly moves. It ships as two PRs: the first gives every `createRoute()` its own file under `layers/shell/client/routes/`, named the way TanStack's flat file-based routing would, composed by `layers/shell/client/routeTree.tsx`; the second does 3.1–3.5.
 
-- [ ] 3.1 Move the `REACT_ROUTE_POLICIES` entries from `modules/core/shared/react-route-ownership.mts` into `modules/<m>/shared/routes.mts`, unchanged in content. `ADMIN_ROUTE_DEFAULTS` moves with admin and `ACCOUNT_ACCESS_FOOTER` with users. Core keeps the types, the matcher and `/not-found`, and gains `setReactRoutePolicies()`
-- [ ] 3.2 `layers/shell/shared/route-manifest.mts` composes the manifests and registers them; `config/lib/express.mts`, the client route tree, `scripts/ci/check-internal-links.mts` and the Jest and server test setups import it
-- [ ] 3.3 Split `renderByPath` into `modules/<m>/client/routes.tsx` render maps, moving each wrapper to its owner. The shell keeps `createClientRouteComponent` and `guardFromPolicy` and only composes the maps; no adapter module
-- [ ] 3.4 Delete what the move makes dead: the shell's duplicate `RoutePolicy` type, `REACT_OWNED_PATHS` and the default export object of `react-route-ownership.mts`
-- [ ] 3.5 Verify: a server test that the composed manifest equals the table on `main` (83 paths, identical policies), the moved route tests, `pnpm lint:modules` with the baseline unchanged, and the standard proof
+- [x] 3.1 Move the `REACT_ROUTE_POLICIES` entries from `modules/core/shared/react-route-ownership.mts` into `modules/<m>/shared/routes.mts`, unchanged in content and written one route per line where it fits. Admin routes apply `ADMIN_ROUTE_DEFAULTS` once instead of spreading it 22 times; `ACCOUNT_ACCESS_FOOTER` moves with users. Core keeps the types, the matcher and `NOT_FOUND_ROUTE_POLICY`, and gains `setReactRoutePolicies()`
+- [x] 3.2 `layers/shell/shared/route-manifest.mts` composes the manifests and registers them; `config/lib/express.mts`, the client route tree, `scripts/ci/check-internal-links.mts` and the Jest and server test setups import it. Modules with a new `shared` folder export `./shared/*`
+- [x] 3.3 Split `renderByPath` into `modules/<m>/client/routes.tsx` render maps, moving each wrapper to its owner; `RouteContext` and `renderWithUser` move to `modules/core/client/react-app/route-render.ts` and `signout` to `modules/core/client/services/browser-navigation.ts`. Each shell route file takes its renderer from its module's map; the shell keeps `createClientRouteComponent` in `route-options.tsx` and `guardFromPolicy` in `routes/__root.tsx`; no adapter module
+- [x] 3.4 Delete what the move makes dead or duplicated: the shell's `RoutePolicy` type, `REACT_OWNED_PATHS`, the default export object of `react-route-ownership.mts`, the copied membership handler in the two tribes wrappers, and the hand-built location in the shell's `navigate` (`router.navigate({ href })` parses it)
+- [x] 3.5 Verify: a server test that the composed manifest equals the table on `main` (`modules/core/tests/server/fixtures/react-route-table.main.json`, 83 paths), the route tests, `pnpm lint:modules` with the baseline unchanged, and the standard proof
 
 ## 4. PR 4 · build: emit an ESM client entry with hashed chunks
 

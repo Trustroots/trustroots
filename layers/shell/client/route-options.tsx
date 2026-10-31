@@ -8,52 +8,16 @@ import {
 import React from 'react';
 
 import {
-  REACT_ROUTE_POLICIES,
   toTanStackPath,
+  type ReactRoutePolicy,
 } from '@/modules/core/shared/react-route-ownership.mts';
-import OfferShell from '@/modules/offers/client/components/OfferShell.component';
-import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
+import { REACT_ROUTE_POLICIES } from '@/layers/shell/shared/route-manifest.mts';
+import { useAuth } from '@/modules/core/client/react-app/auth';
+import type { RouteRender } from '@/modules/core/client/react-app/route-render';
 import { guardFromPolicy, Route as rootRoute } from './routes/__root';
 
-type RouteUser = AuthUser;
-export type RouteContext = {
-  user: RouteUser | null;
-  currentPath: string;
-  params: Record<string, string>;
-  navigate?: (path: string) => void;
-};
-type ClientRoute = {
-  path: string;
-  render: (context: RouteContext) => React.ReactNode;
-};
-export type RoutePolicy = {
-  path: string;
-  title: string;
-  footerHidden?: boolean;
-  footerVariant?: string;
-  headerHidden?: boolean;
-  redirectTo?: string;
-  requiresAuth?: boolean;
-  requiresRole?: string;
-  [key: string]: unknown;
-};
-export type ShellRoute = RoutePolicy & ClientRoute;
-
-export function renderWithUser(Component: React.ElementType) {
-  return function renderRoute({ user }: RouteContext) {
-    return React.createElement(Component, { user });
-  };
-}
-
-export function renderOfferPage(Component: React.ElementType) {
-  return function renderRoute({ user }: RouteContext) {
-    return (
-      <OfferShell user={user}>
-        <Component user={user} />
-      </OfferShell>
-    );
-  };
-}
+type ClientRoute = { path: string; render: RouteRender };
+export type ShellRoute = ReactRoutePolicy & ClientRoute;
 
 function createClientRouteComponent(clientRoute: ClientRoute) {
   function ClientRouteComponent() {
@@ -88,15 +52,13 @@ function createClientRouteComponent(clientRoute: ClientRoute) {
   return ClientRouteComponent;
 }
 
-function shellRoute(path: string, render: ShellRoute['render']): ShellRoute {
-  const policy = (REACT_ROUTE_POLICIES as RoutePolicy[]).find(
-    route => route.path === path,
-  )!;
+function shellRoute(path: string, render: RouteRender): ShellRoute {
+  const policy = REACT_ROUTE_POLICIES.find(route => route.path === path)!;
   return { ...policy, render };
 }
 
 // Options for a route under the root, guarded by the policy for its path.
-export function routeOptions(path: string, render: ShellRoute['render']) {
+export function routeOptions(path: string, render: RouteRender) {
   const route = shellRoute(path, render);
   return {
     beforeLoad: guardFromPolicy(route),

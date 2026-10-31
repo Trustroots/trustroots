@@ -1,8 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
+import { adminRoutes } from '@/modules/admin/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/admin/acquisition-stories', () => <AdminAcquisitionStories />),
+  routeOptions(
+    '/admin/acquisition-stories',
+    adminRoutes['/admin/acquisition-stories'],
+  ),
 );

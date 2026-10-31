@@ -1,6 +1,5 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import Rules from '@/modules/pages/client/components/Rules.component';
+import { pagesRoutes } from '@/modules/pages/client/routes';
 import { routeOptions } from '../route-options';
 
-export const Route = createRoute(routeOptions('/rules', () => <Rules />));
+export const Route = createRoute(routeOptions('/rules', pagesRoutes['/rules']));

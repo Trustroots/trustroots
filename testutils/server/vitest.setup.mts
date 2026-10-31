@@ -8,6 +8,7 @@ import {
   it,
 } from 'vitest';
 import type { Connection } from 'mongoose';
+import '../../layers/shell/shared/route-manifest.mts';
 
 const require = createRequire(import.meta.url);
 

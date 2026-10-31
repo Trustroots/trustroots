@@ -1,8 +1,10 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import ResetPasswordSuccessPage from '@/modules/users/client/components/ResetPasswordSuccessPage.component';
+import { usersRoutes } from '@/modules/users/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/password/reset/success', () => <ResetPasswordSuccessPage />),
+  routeOptions(
+    '/password/reset/success',
+    usersRoutes['/password/reset/success'],
+  ),
 );

@@ -1,7 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import OfferMeetListPage from '@/modules/offers/client/components/OfferMeetListPage.component';
-import { routeOptions, renderOfferPage } from '../route-options';
+import { offersRoutes } from '@/modules/offers/client/routes';
+import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/offer/meet', renderOfferPage(OfferMeetListPage)),
+  routeOptions('/offer/meet', offersRoutes['/offer/meet']),
 );

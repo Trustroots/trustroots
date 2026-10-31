@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import '../../layers/shell/shared/route-manifest.mts';
 import { getReactRoutePolicy } from '../../modules/core/shared/react-route-ownership.mts';
 
 const root = process.argv[2]
@@ -173,6 +174,26 @@ for (const file of clientFiles(path.join(root, 'layers/shell/client/routes'))) {
     ts.forEachChild(node, findRoute);
   };
   findRoute(routeFile.source);
+}
+// A module's render map narrows a route's ids to the renderer for its path.
+for (const module of fs.readdirSync(path.join(root, 'modules'))) {
+  const file = path.join(root, 'modules', module, 'client/routes.tsx');
+  if (!fs.existsSync(file)) continue;
+  const routesFile = readSource(file);
+  const findRenderer = (node: ts.Node): void => {
+    if (
+      ts.isPropertyAssignment(node) &&
+      ts.isStringLiteral(node.name) &&
+      node.name.text.startsWith('/')
+    ) {
+      routeIds.set(
+        node.name.text,
+        collectIds(importedFiles(routesFile, node.initializer)),
+      );
+    }
+    ts.forEachChild(node, findRenderer);
+  };
+  findRenderer(routesFile.source);
 }
 
 const errors: string[] = [];

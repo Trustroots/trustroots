@@ -1,10 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
+import { adminRoutes } from '@/modules/admin/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/admin/circles', ({ navigate }) => (
-    <AdminCircles onNavigate={navigate} />
-  )),
+  routeOptions('/admin/circles', adminRoutes['/admin/circles']),
 );

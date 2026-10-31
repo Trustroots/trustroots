@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
+import { usersRoutes } from '@/modules/users/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/password/forgot', () => <ForgotPasswordPage />),
+  routeOptions('/password/forgot', usersRoutes['/password/forgot']),
 );

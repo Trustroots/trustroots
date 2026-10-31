@@ -1,0 +1,463 @@
+{
+  "/": {
+    "path": "/",
+    "title": "Home",
+    "footerHidden": true
+  },
+  "/about": {
+    "path": "/about",
+    "title": "About",
+    "footerHidden": true,
+    "redirectTo": "/"
+  },
+  "/admin": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin",
+    "title": "Admin"
+  },
+  "/admin/acquisition-stories": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "welcome-team", "support-team"],
+    "path": "/admin/acquisition-stories",
+    "title": "Admin - Acquisition stories"
+  },
+  "/admin/audit-log": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/audit-log",
+    "title": "Admin - Audit log"
+  },
+  "/admin/circles": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/circles",
+    "title": "Admin - Circles"
+  },
+  "/admin/circles/:circle": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/circles/:circle",
+    "title": "Admin - Circle"
+  },
+  "/admin/experience-changes": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "support-team"],
+    "path": "/admin/experience-changes",
+    "title": "Admin - Experience changes"
+  },
+  "/admin/hackerspaces": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/hackerspaces",
+    "title": "Admin - Hackerspaces"
+  },
+  "/admin/location-corrections": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "welcome-team"],
+    "path": "/admin/location-corrections",
+    "title": "Welcome team - Location corrections"
+  },
+  "/admin/messages": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/messages",
+    "title": "Admin - Messages"
+  },
+  "/admin/newsletter": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/newsletter",
+    "title": "Admin - Newsletter"
+  },
+  "/admin/reference-threads": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/reference-threads",
+    "title": "Admin - Reference threads"
+  },
+  "/admin/search-users": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/search-users",
+    "title": "Admin - Search users"
+  },
+  "/admin/spam-cleanup": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin"],
+    "path": "/admin/spam-cleanup",
+    "title": "Admin - Spam account cleanup"
+  },
+  "/admin/staff-blockers": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "welcome-team", "support-team"],
+    "path": "/admin/staff-blockers",
+    "title": "Admin - Staff blockers"
+  },
+  "/admin/support": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "support-team"],
+    "path": "/admin/support",
+    "title": "Support"
+  },
+  "/admin/support/member/:username": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "support-team"],
+    "path": "/admin/support/member/:username",
+    "title": "Support - Member"
+  },
+  "/admin/support/members": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "support-team"],
+    "path": "/admin/support/members",
+    "title": "Support - Member search"
+  },
+  "/admin/support/requests/:requestId": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin", "support-team"],
+    "path": "/admin/support/requests/:requestId",
+    "title": "Support request"
+  },
+  "/admin/threads": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/threads",
+    "title": "Admin - Threads"
+  },
+  "/admin/user": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/user",
+    "title": "Admin - User"
+  },
+  "/admin/user/:username": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": "admin",
+    "path": "/admin/user/:username",
+    "title": "Admin - User"
+  },
+  "/admin/username-changes": {
+    "footerVariant": "admin",
+    "requiresAuth": true,
+    "requiresRole": ["admin"],
+    "path": "/admin/username-changes",
+    "title": "Admin - Username changes"
+  },
+  "/circles": {
+    "path": "/circles",
+    "title": "Circles"
+  },
+  "/circles/:circle": {
+    "path": "/circles/:circle",
+    "title": "Circle",
+    "footerVariant": "circle",
+    "requiresAuthParams": {
+      "circle": ["naturists"]
+    }
+  },
+  "/confirm-email-invalid": {
+    "path": "/confirm-email-invalid",
+    "title": "Confirm email invalid"
+  },
+  "/confirm-email/:token": {
+    "path": "/confirm-email/:token",
+    "title": "Confirm email"
+  },
+  "/contact": {
+    "path": "/contact",
+    "title": "Contact us"
+  },
+  "/contact-add/:userId": {
+    "path": "/contact-add/:userId",
+    "title": "Add contact",
+    "requiresAuth": true
+  },
+  "/contact-confirm/:contactId": {
+    "path": "/contact-confirm/:contactId",
+    "title": "Confirm contact",
+    "requiresAuth": true
+  },
+  "/contribute": {
+    "path": "/contribute",
+    "title": "Contribute"
+  },
+  "/credits": {
+    "path": "/credits",
+    "title": "Credits"
+  },
+  "/experiences/:id/change": {
+    "path": "/experiences/:id/change",
+    "title": "Change an Experience",
+    "requiresAuth": true
+  },
+  "/faq": {
+    "path": "/faq",
+    "title": "FAQ - Site & community"
+  },
+  "/faq/bugs-and-features": {
+    "path": "/faq/bugs-and-features",
+    "title": "FAQ - Bugs & Features"
+  },
+  "/faq/circles": {
+    "path": "/faq/circles",
+    "title": "FAQ - Circles"
+  },
+  "/faq/foundation": {
+    "path": "/faq/foundation",
+    "title": "FAQ - Foundation"
+  },
+  "/faq/technology": {
+    "path": "/faq/technology",
+    "title": "FAQ - Technology"
+  },
+  "/foundation": {
+    "path": "/foundation",
+    "title": "Foundation"
+  },
+  "/guide": {
+    "path": "/guide",
+    "title": "Guide"
+  },
+  "/media": {
+    "path": "/media",
+    "title": "Media"
+  },
+  "/messages": {
+    "path": "/messages",
+    "title": "Messages",
+    "requiresAuth": true
+  },
+  "/messages/:username": {
+    "path": "/messages/:username",
+    "title": "Messages",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/navigation": {
+    "path": "/navigation",
+    "title": "Navigation",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/not-found": {
+    "path": "/not-found",
+    "title": "Not found",
+    "footerVariant": "account",
+    "headerHidden": true
+  },
+  "/offer": {
+    "path": "/offer",
+    "title": "Host travellers",
+    "requiresAuth": true
+  },
+  "/offer/host": {
+    "path": "/offer/host",
+    "title": "Host travellers",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/offer/meet": {
+    "path": "/offer/meet",
+    "title": "Meet",
+    "requiresAuth": true
+  },
+  "/offer/meet/:offerId": {
+    "path": "/offer/meet/:offerId",
+    "title": "Edit meeting offer",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/offer/meet/add": {
+    "path": "/offer/meet/add",
+    "title": "Add meeting offer",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/password/forgot": {
+    "path": "/password/forgot",
+    "title": "Reset password",
+    "footerVariant": "account"
+  },
+  "/password/reset/:token": {
+    "path": "/password/reset/:token",
+    "title": "Reset password",
+    "footerVariant": "account"
+  },
+  "/password/reset/invalid": {
+    "path": "/password/reset/invalid",
+    "title": "Reset password",
+    "footerVariant": "account"
+  },
+  "/password/reset/success": {
+    "path": "/password/reset/success",
+    "title": "Reset password",
+    "footerVariant": "account"
+  },
+  "/privacy": {
+    "path": "/privacy",
+    "title": "Privacy policy"
+  },
+  "/profile-signup": {
+    "path": "/profile-signup",
+    "title": "Trustroots profile"
+  },
+  "/profile/:username": {
+    "path": "/profile/:username",
+    "title": "Profile",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/about": {
+    "path": "/profile/:username/about",
+    "title": "Profile",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/accommodation": {
+    "path": "/profile/:username/accommodation",
+    "title": "Profile accommodation",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/contacts": {
+    "path": "/profile/:username/contacts",
+    "title": "Profile contacts",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/experiences": {
+    "path": "/profile/:username/experiences",
+    "title": "Experiences",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/experiences/new": {
+    "path": "/profile/:username/experiences/new",
+    "title": "Share your experience",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/overview": {
+    "path": "/profile/:username/overview",
+    "title": "Profile overview",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/:username/tribes": {
+    "path": "/profile/:username/tribes",
+    "title": "Profile tribes",
+    "requiresAuth": true,
+    "noScrollingTop": true
+  },
+  "/profile/edit": {
+    "path": "/profile/edit",
+    "title": "Edit profile",
+    "requiresAuth": true
+  },
+  "/profile/edit/account": {
+    "path": "/profile/edit/account",
+    "title": "Account",
+    "requiresAuth": true
+  },
+  "/profile/edit/locations": {
+    "path": "/profile/edit/locations",
+    "title": "Edit your locations",
+    "requiresAuth": true
+  },
+  "/profile/edit/networks": {
+    "path": "/profile/edit/networks",
+    "title": "Edit Profile networks",
+    "requiresAuth": true
+  },
+  "/profile/edit/photo": {
+    "path": "/profile/edit/photo",
+    "title": "Edit profile photo",
+    "requiresAuth": true
+  },
+  "/remove/:token": {
+    "path": "/remove/:token",
+    "title": "Remove profile",
+    "requiresAuth": true,
+    "headerHidden": true,
+    "footerHidden": true
+  },
+  "/rules": {
+    "path": "/rules",
+    "title": "Rules"
+  },
+  "/safety": {
+    "path": "/safety",
+    "title": "Safety"
+  },
+  "/search": {
+    "path": "/search",
+    "title": "Search",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/search/members": {
+    "path": "/search/members",
+    "title": "Search members",
+    "requiresAuth": true,
+    "footerHidden": true
+  },
+  "/signin": {
+    "path": "/signin",
+    "title": "Sign in",
+    "headerHidden": true,
+    "footerVariant": "account"
+  },
+  "/signup": {
+    "path": "/signup",
+    "title": "Sign up",
+    "headerHidden": true,
+    "footerVariant": "account"
+  },
+  "/statistics": {
+    "path": "/statistics",
+    "title": "Statistics"
+  },
+  "/support": {
+    "path": "/support",
+    "title": "Support"
+  },
+  "/team": {
+    "path": "/team",
+    "title": "Team"
+  },
+  "/team/greeters": {
+    "path": "/team/greeters",
+    "title": "Trustroots greeters"
+  },
+  "/volunteering": {
+    "path": "/volunteering",
+    "title": "Volunteering"
+  },
+  "/welcome": {
+    "path": "/welcome",
+    "title": "Welcome",
+    "requiresAuth": true,
+    "footerHidden": true
+  }
+}

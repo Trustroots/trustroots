@@ -1,8 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import Volunteering from '@/modules/pages/client/components/Volunteering.component';
+import { pagesRoutes } from '@/modules/pages/client/routes';
 import { routeOptions } from '../route-options';
 
 export const Route = createRoute(
-  routeOptions('/volunteering', () => <Volunteering />),
+  routeOptions('/volunteering', pagesRoutes['/volunteering']),
 );

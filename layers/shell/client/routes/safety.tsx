@@ -1,6 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import Safety from '@/modules/pages/client/components/Safety.component';
+import { pagesRoutes } from '@/modules/pages/client/routes';
 import { routeOptions } from '../route-options';
 
-export const Route = createRoute(routeOptions('/safety', () => <Safety />));
+export const Route = createRoute(
+  routeOptions('/safety', pagesRoutes['/safety']),
+);

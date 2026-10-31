@@ -1,6 +1,7 @@
 import { createRoute } from '@tanstack/react-router';
-import React from 'react';
-import Welcome from '@/modules/users/client/components/Welcome.component';
+import { usersRoutes } from '@/modules/users/client/routes';
 import { routeOptions } from '../route-options';
 
-export const Route = createRoute(routeOptions('/welcome', () => <Welcome />));
+export const Route = createRoute(
+  routeOptions('/welcome', usersRoutes['/welcome']),
+);

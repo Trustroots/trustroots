@@ -24,6 +24,7 @@ import path from 'path';
 import paginate from './../../modules/core/server/services/pagination.server.service.mjs';
 import { randomUUID } from 'node:crypto';
 import qs from 'qs';
+import '../../layers/shell/shared/route-manifest.mts';
 import jsonForScript from './../../modules/core/server/services/json-for-script.server.service.mts';
 interface ExpressSetup {
   initLocalVariables(app: Express): void;
