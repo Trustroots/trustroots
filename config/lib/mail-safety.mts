@@ -27,8 +27,11 @@ export function applyMailSafety(
     nodemailer.createTransport(options),
 ): 'live' | 'capture' | 'allowlist' {
   const domain = config.domain.toLowerCase().replace(/\.$/, '');
+  // Existing production deployments predate the optional deployment tier.
+  // An explicit non-production tier must still override a copied site domain.
   const production =
-    env.TRUSTROOTS_DEPLOYMENT_TIER === 'production' &&
+    (env.TRUSTROOTS_DEPLOYMENT_TIER === undefined ||
+      env.TRUSTROOTS_DEPLOYMENT_TIER === 'production') &&
     env.NODE_ENV === 'production' &&
     ['trustroots.org', 'www.trustroots.org'].includes(domain);
   const mode = env.TRUSTROOTS_MAIL_MODE || (production ? 'live' : 'capture');
@@ -40,7 +43,7 @@ export function applyMailSafety(
   if (mode === 'live') {
     if (!production)
       throw new Error(
-        'Live mail requires the explicit production tier and production site domain.',
+        'Live mail requires a production runtime and site domain without a non-production deployment tier.',
       );
     return 'live';
   }

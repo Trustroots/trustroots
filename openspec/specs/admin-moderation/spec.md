@@ -1007,7 +1007,7 @@ Support correspondence SHALL use stable threading identifiers, a durable idempot
 
 - **WHEN** a non-production site starts with production NODE_ENV or copied SMTP settings
 - **THEN** all outgoing mail is captured and production mailbox intake remains disabled
-- **AND** live delivery requires the explicit production tier and production site domain, while controlled staging delivery requires a separate test mailbox and an SMTP recipient allowlist.
+- **AND** live delivery requires the production runtime and production site domain; existing deployments may omit the deployment tier, but an explicit non-production tier prevents live delivery. Controlled staging delivery requires a separate test mailbox and an SMTP recipient allowlist.
 
 #### Scenario: Delivery or intake is interrupted
 
