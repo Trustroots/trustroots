@@ -152,6 +152,10 @@ export const invokeRolesPolicies = () => {
         },
         { resources: '/api/admin/reference-threads', permissions: ['get'] },
         {
+          resources: '/api/admin/sparkpost/:action',
+          permissions: ['get'],
+        },
+        {
           resources: '/api/admin/newsletter-subscribers',
           permissions: ['get'],
         },

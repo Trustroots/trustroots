@@ -38,7 +38,7 @@ describe('<AdminHeader />', () => {
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
-      ['Outreach', ['Acquisition stories', 'Newsletter']],
+      ['Outreach', ['Acquisition stories', 'Newsletter', 'SparkPost']],
       ['Audit', ['Audit log', 'Username changes', 'Spam account cleanup']],
     ] as const) {
       const group = within(screen.getByRole('list', { name }));
