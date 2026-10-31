@@ -235,9 +235,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin': () => <Admin />,
     '/admin/support': () => <SupportInbox />,
     '/admin/support/members': () => <SupportMemberSearchPage />,
-    '/admin/support/requests/:requestId': ({ params }) => (
-      <SupportInbox requestId={params.requestId} />
-    ),
+    '/admin/support/requests/:requestId': () => <SupportInbox />,
     '/admin/support/member/:username': ({ params }) => (
       <SupportMemberPage id={params.username} />
     ),

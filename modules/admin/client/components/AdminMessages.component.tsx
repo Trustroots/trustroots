@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import { getMessages } from '../api/messages.api';
 import { getUser, searchUsers } from '../api/users.api';
@@ -81,6 +81,7 @@ function MessageTimestamp({
 
 export default function AdminMessages() {
   const search = useSearch({ strict: false });
+  const navigate = useNavigate();
   const [initialParams] = useState(() => ({
     username1: search.username1 || '',
     username2: search.username2 || '',
@@ -137,15 +138,15 @@ export default function AdminMessages() {
         setQueried(true);
 
         if (member1.username && member2.username) {
-          const canonicalUrl = `/admin/messages?username1=${encodeURIComponent(
-            member1.username,
-          )}&username2=${encodeURIComponent(member2.username)}`;
-          if (
-            `${window.location.pathname}${window.location.search}` !==
-            canonicalUrl
-          ) {
-            window.history.replaceState({}, '', canonicalUrl);
-          }
+          // The router leaves an already canonical URL alone.
+          void navigate({
+            replace: true,
+            search: {
+              username1: member1.username,
+              username2: member2.username,
+            },
+            to: '/admin/messages',
+          });
         }
       } catch {
         if (!isActive()) return;
