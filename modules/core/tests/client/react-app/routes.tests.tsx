@@ -6,9 +6,9 @@ import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import {
   createAppRouter,
   parseLegacySearch,
-  routes,
   stringifyLegacySearch,
-} from '@/layers/shell/client/routes';
+} from '@/layers/shell/client/router';
+import { routes } from '@/layers/shell/client/routeTree';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
   getReactRouteAccessRedirect,
