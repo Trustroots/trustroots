@@ -1,27 +1,20 @@
 import {
-  applyAuthenticatedUser,
   getEmailFromToken,
   getSafeReturnTo,
   getUsernameValidationError,
   redirectAfterSignin,
 } from '@/modules/users/client/utils/auth';
-import {
-  broadcastClientEvent,
-  navigate,
-} from '@/modules/core/client/services/client-runtime';
+import { navigate } from '@/modules/core/client/services/client-runtime';
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  broadcastClientEvent: jest.fn(),
   navigate: jest.fn(),
 }));
 
-const mockedBroadcastClientEvent = jest.mocked(broadcastClientEvent);
 const mockedNavigate = jest.mocked(navigate);
 
 describe('auth utils', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    delete window.user;
   });
 
   it('extracts email from long confirm tokens', () => {
@@ -131,17 +124,6 @@ describe('auth utils', () => {
         value: 'a'.repeat(35),
       }),
     ).toBe('Too long, maximum length is 34 characters.');
-  });
-
-  it('updates React and window user state after authentication', () => {
-    const user = { _id: 'user-1', username: 'ada' };
-    const setUser = jest.fn<void, [authenticatedUser: typeof user]>();
-
-    applyAuthenticatedUser(user, setUser);
-
-    expect(setUser).toHaveBeenCalledWith(user);
-    expect(window.user).toBe(user);
-    expect(mockedBroadcastClientEvent).toHaveBeenCalledWith('userUpdated');
   });
 
   it('redirects to the requested local destination after continuing signin', () => {

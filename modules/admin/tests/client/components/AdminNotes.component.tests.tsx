@@ -5,6 +5,10 @@ import '@testing-library/jest-dom';
 import AdminNotes from '@/modules/admin/client/components/AdminNotes';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/admin-notes.api');
 const mockedNotesApi = jest.mocked(notesApi);
 jest.mock('@/modules/core/client/components/TrEditor', () => {

@@ -1,7 +1,6 @@
 import {
   broadcastClientEvent,
   getCurrentRouteParams,
-  getCurrentUser,
   navigate,
   onClientEvent,
   resolveNavigationTarget,
@@ -18,15 +17,14 @@ function asNavigationLocation(location: NavigationLocationMock): Location {
 describe('client runtime helpers', () => {
   afterEach(() => {
     delete window.ga;
-    delete window.user;
     window.history.pushState({}, '', '/');
   });
 
   it('broadcasts and receives browser events with arguments', () => {
     const listener = jest.fn<void, [error: null, ...args: unknown[]]>();
-    const unsubscribe = onClientEvent('userUpdated', listener);
+    const unsubscribe = onClientEvent('photoCreditsUpdated', listener);
 
-    broadcastClientEvent('userUpdated', { _id: 'user-1' });
+    broadcastClientEvent('photoCreditsUpdated', { _id: 'user-1' });
 
     expect(listener).toHaveBeenCalledWith(null, { _id: 'user-1' });
     unsubscribe();
@@ -162,12 +160,5 @@ describe('client runtime helpers', () => {
       'join',
       'label',
     );
-  });
-
-  it('returns the current browser user or null', () => {
-    expect(getCurrentUser()).toBeNull();
-
-    window.user = { _id: 'user-1' };
-    expect(getCurrentUser()).toEqual({ _id: 'user-1' });
   });
 });

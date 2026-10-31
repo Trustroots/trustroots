@@ -17,7 +17,7 @@ import {
   getCurrentRouteParams,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
-import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import type JoinButton from '@/modules/tribes/client/components/JoinButton';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
@@ -90,6 +90,12 @@ describe('SignupPage', () => {
     validateSignup.mockResolvedValue({ valid: true });
   });
 
+  let signedInUser: AuthUser | null = null;
+  function CaptureSignedInUser() {
+    signedInUser = useAuth().user;
+    return null;
+  }
+
   function renderPage({ user = null }: { user?: AuthUser | null } = {}) {
     return render(
       <AppProviders
@@ -102,6 +108,7 @@ describe('SignupPage', () => {
         }}
       >
         <SignupPage />
+        <CaptureSignedInUser />
       </AppProviders>,
     );
   }
@@ -389,7 +396,7 @@ describe('SignupPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     expect(await screen.findByRole('button', { name: 'Skip' })).toBeVisible();
-    expect(window.user).toEqual(expect.objectContaining({ username: 'ada' }));
+    expect(signedInUser).toEqual(expect.objectContaining({ username: 'ada' }));
   });
 
   it('shows the welcome step after skipping circles', async () => {
@@ -807,7 +814,7 @@ describe('SignupPage', () => {
     );
 
     await waitFor(() => {
-      expect(window.user).toEqual(
+      expect(signedInUser).toEqual(
         expect.objectContaining({
           _id: 'user-1',
           email: 'ada@example.test',

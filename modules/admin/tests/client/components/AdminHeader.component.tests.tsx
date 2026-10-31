@@ -2,22 +2,24 @@ import React from 'react';
 import { render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminHeader from '@/modules/admin/client/components/AdminHeader.component';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import { setViewer } from '@/testutils/client/auth.testutil';
 
-type AdminUserFixture = NonNullable<Window['user']>;
+type AdminUserFixture = AuthUser;
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentUser: () => global.window.user,
-}));
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 afterEach(() => {
   window.history.pushState({}, '', '/');
 });
 
 beforeEach(() => {
-  window.user = { roles: ['admin'] };
+  setViewer({ roles: ['admin'] });
 });
 afterEach(() => {
-  delete window.user;
+  setViewer(null);
 });
 
 describe('<AdminHeader />', () => {
@@ -47,7 +49,7 @@ describe('<AdminHeader />', () => {
   });
 
   it('shows support navigation without administrator tools', () => {
-    window.user = { roles: ['support-team'] };
+    setViewer({ roles: ['support-team'] });
     render(<AdminHeader />);
     expect(
       screen.getByRole('link', { name: 'Support inbox' }),
@@ -74,7 +76,7 @@ describe('<AdminHeader />', () => {
   });
 
   it('marks only the member search route active within support navigation', () => {
-    window.user = { roles: ['support-team'] };
+    setViewer({ roles: ['support-team'] });
     window.history.pushState({}, '', '/admin/support/members');
     render(<AdminHeader />);
 
@@ -99,7 +101,7 @@ describe('<AdminHeader />', () => {
   ] as Array<AdminUserFixture | null>)(
     'shows only acquisition navigation for non-admin %j',
     user => {
-      window.user = user;
+      setViewer(user);
       render(<AdminHeader />);
       expect(screen.getAllByRole('link')).toHaveLength(
         user?.roles?.includes('welcome-team') ? 3 : 1,
@@ -123,7 +125,7 @@ describe('<AdminHeader />', () => {
   );
 
   it('shows the blocked-member support page to Greeters', () => {
-    window.user = { roles: ['welcome-team'] };
+    setViewer({ roles: ['welcome-team'] });
     render(<AdminHeader />);
 
     expect(

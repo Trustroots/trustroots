@@ -12,6 +12,10 @@ import AdminUser from '@/modules/admin/client/components/AdminUser.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import * as notesApi from '@/modules/admin/client/api/admin-notes.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/users.api');
 jest.mock('@/modules/admin/client/api/admin-notes.api');
 const mockedUsersApi = jest.mocked(usersApi);

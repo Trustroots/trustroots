@@ -8,7 +8,6 @@ import {
 } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import { applyAuthenticatedUser } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';
 
 export default function ResetPasswordPage() {
@@ -38,7 +37,7 @@ export default function ResetPasswordPage() {
     try {
       const user = await authApi.resetPassword(token, passwordDetails);
 
-      applyAuthenticatedUser(user, setUser);
+      setUser(user);
       navigate('reset-success');
     } catch (requestError: unknown) {
       setError(

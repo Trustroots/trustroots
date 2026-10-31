@@ -1,7 +1,7 @@
 // External dependencies
 import React from 'react';
 import { getAdminUserHref } from '../utils/member-url';
-import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { useAuth } from '../../../core/client/react-app/auth';
 
 interface UserSummary {
   _id?: string;
@@ -16,6 +16,7 @@ export default function UserLink({
   user?: UserSummary | null;
   publicProfile?: boolean;
 }) {
+  const { hasRole } = useAuth();
   if (!user || !user._id) {
     return <em>Unknown</em>;
   }
@@ -32,8 +33,7 @@ export default function UserLink({
       <span>{label}</span>
     );
   }
-  const roles = getCurrentUser()?.roles || [];
-  if (roles.includes('support-team') && !roles.includes('admin')) {
+  if (hasRole('support-team') && !hasRole('admin')) {
     return username ? (
       <a href={`/admin/support/member/${encodeURIComponent(username)}`}>
         {label}

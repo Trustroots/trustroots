@@ -12,6 +12,10 @@ import '@testing-library/jest-dom';
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import { getCircles, saveCircle } from '@/modules/admin/client/api/circles.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/circles.api');
 
 const getCirclesMock = jest.mocked(getCircles);

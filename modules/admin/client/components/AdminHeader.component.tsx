@@ -1,13 +1,13 @@
 // External dependencies
 import classnames from 'classnames';
 import React, { useEffect } from 'react';
-import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { useAuth } from '../../../core/client/react-app/auth';
 
 export default function AdminHeader() {
-  const roles = getCurrentUser()?.roles || [];
-  const isAdmin = roles.includes('admin');
-  const isSupport = roles.includes('support-team');
-  const isWelcomeTeam = roles.includes('welcome-team');
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
+  const isSupport = hasRole('support-team');
+  const isWelcomeTeam = hasRole('welcome-team');
   const currentPath = window.location.pathname.replace('/admin/', '');
 
   useEffect(() => {

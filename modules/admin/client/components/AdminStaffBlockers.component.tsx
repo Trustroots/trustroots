@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader.component';
 import { getAdminUserHref } from '../utils/member-url';
 import { getStaffBlockers } from '../api/staff-blockers.api';
-import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { useAuth } from '../../../core/client/react-app/auth';
 import type { StaffBlocker } from '../../shared/staff-blockers';
 
 export default function AdminStaffBlockers() {
   const [staff, setStaff] = useState<StaffBlocker[] | null>(null);
   const [hasError, setHasError] = useState(false);
-  const isAdmin = (getCurrentUser()?.roles || []).includes('admin');
+  const isAdmin = useAuth().hasRole('admin');
 
   useEffect(() => {
     getStaffBlockers()

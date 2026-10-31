@@ -7,6 +7,10 @@ import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import type { AdminDashboard } from '@/modules/admin/client/api/admin-dashboard.api';
 
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+
 jest.mock('@/modules/admin/client/api/admin-dashboard.api');
 jest.mock('@/modules/admin/client/api/users.api');
 const mockedDashboardApi = jest.mocked(dashboardApi);

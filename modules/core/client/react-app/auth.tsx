@@ -15,6 +15,7 @@ export type AuthUser = {
   email?: string;
   public?: boolean;
   roles?: string[];
+  languages?: string[];
   blocked?: string[];
   description?: string;
   [key: string]: unknown;

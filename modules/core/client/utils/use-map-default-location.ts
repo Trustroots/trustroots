@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import httpClient from '../api/http-client';
-import { getCurrentUser } from '../services/client-runtime';
+import { useAuth } from '../react-app/auth';
 
 export interface MapDefaultLocation {
   latitude: number;
@@ -8,10 +8,9 @@ export interface MapDefaultLocation {
   zoom: number;
 }
 
-type CurrentUser = NonNullable<ReturnType<typeof getCurrentUser>>;
-const pending = new WeakMap<CurrentUser, Promise<MapDefaultLocation | null>>();
+const pending = new Map<string, Promise<MapDefaultLocation | null>>();
 
-function requestLocation(account: CurrentUser) {
+function requestLocation(account: string) {
   let request = pending.get(account);
   if (!request) {
     request = httpClient
@@ -43,7 +42,7 @@ function requestLocation(account: CurrentUser) {
 
 /** A late approximate location must never undo the member's camera choice. */
 export default function useMapDefaultLocation(enabled: boolean) {
-  const account = getCurrentUser();
+  const account = useAuth().user?._id ?? null;
   const scope = useRef({ account, stopped: false });
   if (scope.current.account !== account)
     scope.current = { account, stopped: false };
@@ -57,7 +56,7 @@ export default function useMapDefaultLocation(enabled: boolean) {
     let active = true;
     if (enabled && account && !current.stopped) {
       void requestLocation(account).then(location => {
-        if (active && !current.stopped && getCurrentUser() === account) {
+        if (active && !current.stopped) {
           setResult({ scope: current, location });
         }
       });

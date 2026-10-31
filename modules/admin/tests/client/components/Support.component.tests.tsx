@@ -14,6 +14,11 @@ import SupportInbox, {
 } from '../../../client/components/Support.component';
 import * as api from '../../../client/api/support.api';
 import type { SupportRequest } from '../../../client/api/support.api';
+import { setViewer } from '@/testutils/client/auth.testutil';
+
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 jest.mock('../../../client/api/support.api', () => ({
   load: jest.fn(),
@@ -148,7 +153,7 @@ beforeEach(() => {
   window.history.replaceState({}, '', '/admin/support');
 });
 afterEach(() => {
-  delete window.user;
+  setViewer(null);
 });
 
 test('triages a report and reads its whole conversation and unpublished experiences', async () => {
@@ -580,7 +585,7 @@ test('renders empty inbox and request detail errors without stale content', asyn
 });
 
 test('shows safe restricted account information and member notes', async () => {
-  window.user = { roles: ['admin'] };
+  setViewer({ roles: ['admin'] });
   load.mockResolvedValue(member);
   render(<SupportMemberPage id="target-1" />);
   await screen.findByRole('heading', {
@@ -955,7 +960,7 @@ test('recovers a failed conversation load and pages through chronological messag
 });
 
 test('debounces a literal search into the URL and restricts status import to administrators', async () => {
-  window.user = { roles: ['admin'] };
+  setViewer({ roles: ['admin'] });
   load.mockImplementation(async () => ({
     items: [],
     hasMore: false,

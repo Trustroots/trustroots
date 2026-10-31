@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import http, { getErrorMessage } from '../../../core/client/api/http-client';
-import { getCurrentUser } from '../../../core/client/services/client-runtime';
+import { useAuth } from '../../../core/client/react-app/auth';
 import type {
   SupportStatusImportApplyResponse,
   SupportStatusImportManifest,
@@ -56,6 +56,7 @@ export default function SupportStatusImport({
 }: {
   onApplied?: () => void;
 }) {
+  const isAdmin = useAuth().hasRole('admin');
   const [file, setFile] = useState<File | null>(null);
   const [matchingWindowMinutes, setMatchingWindowMinutes] = useState(1);
   const previewGeneration = useRef(0);
@@ -73,7 +74,7 @@ export default function SupportStatusImport({
     Record<number, string>
   >({});
 
-  if (!getCurrentUser()?.roles?.includes('admin')) return null;
+  if (!isAdmin) return null;
 
   async function reviewFile(file: File) {
     const generation = ++previewGeneration.current;

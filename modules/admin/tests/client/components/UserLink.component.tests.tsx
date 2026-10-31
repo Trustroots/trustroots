@@ -3,12 +3,17 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import UserLink from '@/modules/admin/client/components/UserLink.component';
+import { setViewer } from '@/testutils/client/auth.testutil';
+
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 beforeEach(() => {
-  window.user = { roles: ['admin'] };
+  setViewer({ roles: ['admin'] });
 });
 afterEach(() => {
-  delete window.user;
+  setViewer(null);
 });
 
 describe('<UserLink />', () => {
@@ -18,7 +23,7 @@ describe('<UserLink />', () => {
     { roles: [] },
     { roles: undefined },
   ])('uses the permitted account view for %j', ({ roles }) => {
-    window.user = { roles };
+    setViewer({ roles });
     render(<UserLink user={{ _id: 'member-id', username: 'river' }} />);
     expect(screen.getByRole('link')).toHaveAttribute(
       'href',
@@ -49,7 +54,7 @@ describe('<UserLink />', () => {
   });
 
   it('keeps the legacy id fallback for support links without a username', () => {
-    window.user = { roles: ['support-team'] };
+    setViewer({ roles: ['support-team'] });
     render(<UserLink user={{ _id: 'legacy-member-id' }} />);
 
     expect(

@@ -6,10 +6,12 @@ import '@/config/client/i18n';
 import AdminAcquisitionStories from '@/modules/admin/client/components/AdminAcquisitionStories.component';
 import * as acquisitionStoriesApi from '@/modules/admin/client/api/acquisition-stories.api';
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
+import type { AuthUser } from '@/modules/core/client/react-app/auth';
+import { setViewer } from '@/testutils/client/auth.testutil';
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentUser: () => global.window.user,
-}));
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 jest.mock('@/modules/admin/client/api/acquisition-stories.api');
 jest.mock('@/modules/core/client/api/languages.api');
@@ -23,7 +25,7 @@ jest.mock('@/modules/core/client/components/LoadingIndicator', () => {
   };
 });
 
-type ViewerFixture = NonNullable<Window['user']>;
+type ViewerFixture = AuthUser;
 type AcquisitionStoryFixture = {
   _id: string;
   username: string;
@@ -67,7 +69,7 @@ function storyFixture(fixture: AcquisitionStoryFixture) {
 }
 
 beforeEach(() => {
-  window.user = { roles: ['admin'] };
+  setViewer({ roles: ['admin'] });
   mockedUseLanguagesQuery.mockReturnValue(
     languageQueryFixture({
       eng: 'English',
@@ -79,7 +81,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  delete window.user;
+  setViewer(null);
   jest.clearAllMocks();
 });
 
@@ -87,7 +89,7 @@ describe('<AdminAcquisitionStories />', () => {
   it.each(['admin', 'welcome-team', 'support-team'])(
     'shows restriction badges independently of visibility for %s',
     async role => {
-      window.user = { roles: [role] };
+      setViewer({ roles: [role] });
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         {
           _id: 'restricted-id',
@@ -137,7 +139,7 @@ describe('<AdminAcquisitionStories />', () => {
   it.each(['admin', 'welcome-team', 'support-team'] as const)(
     'filters unassigned members and preserves sorting for %s',
     async role => {
-      window.user = { roles: [role] };
+      setViewer({ roles: [role] });
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         storyFixture({ _id: 'river-id', username: 'river', welcomer: null }),
         storyFixture({
@@ -290,7 +292,7 @@ describe('<AdminAcquisitionStories />', () => {
   ] as Array<ViewerFixture | null>)(
     'uses public member links for a non-administrator %j',
     async user => {
-      window.user = user;
+      setViewer(user);
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         {
           _id: 'member-id',
@@ -422,7 +424,7 @@ describe('<AdminAcquisitionStories />', () => {
   });
 
   it('puts shared languages first and emphasises shared non-English languages', async () => {
-    window.user = { roles: ['admin'], languages: ['fre', 'eng'] };
+    setViewer({ roles: ['admin'], languages: ['fre', 'eng'] });
     mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '333333333333333333333333',
@@ -456,7 +458,7 @@ describe('<AdminAcquisitionStories />', () => {
   ] as Array<[string, ViewerFixture | null]>)(
     'renders the language column without emphasis when %s',
     async (_label, viewer) => {
-      window.user = viewer;
+      setViewer(viewer);
       mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
         {
           _id: '333333333333333333333333',
@@ -491,7 +493,7 @@ describe('<AdminAcquisitionStories />', () => {
   );
 
   it('renders the welcomer with contact date and public links for non-admins', async () => {
-    window.user = {};
+    setViewer({});
     mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
       {
         _id: '333333333333333333333333',

@@ -5,16 +5,12 @@ import '@testing-library/jest-dom';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ResetPasswordPage from '@/modules/users/client/components/ResetPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import { applyAuthenticatedUser } from '@/modules/users/client/utils/auth';
+import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 
 type BoardProps = { children?: React.ReactNode };
 
 jest.mock('@/modules/users/client/api/auth.api');
-jest.mock('@/modules/users/client/utils/auth', () => ({
-  ...jest.requireActual('@/modules/users/client/utils/auth'),
-  applyAuthenticatedUser: jest.fn(),
-}));
 jest.mock('@/modules/core/client/components/Board', () => {
   const React = jest.requireActual<typeof import('react')>('react');
   return {
@@ -29,7 +25,10 @@ jest.mock('@/modules/core/client/services/client-runtime', () => ({
 
 const resetPassword = jest.mocked(authApi.resetPassword);
 const navigate = jest.mocked(clientRuntime.navigate);
-const applyUser = jest.mocked(applyAuthenticatedUser);
+
+function SignedInUsername() {
+  return <output aria-label="Signed in as">{useAuth().user?.username}</output>;
+}
 
 describe('ResetPasswordPage', () => {
   beforeEach(() => {
@@ -48,6 +47,7 @@ describe('ResetPasswordPage', () => {
         }}
       >
         <ResetPasswordPage />
+        <SignedInUsername />
       </AppProviders>,
     );
   }
@@ -122,7 +122,9 @@ describe('ResetPasswordPage', () => {
       });
     });
 
-    expect(applyUser).toHaveBeenCalled();
+    expect(screen.getByLabelText('Signed in as')).toHaveTextContent(
+      'member-one',
+    );
     expect(navigate).toHaveBeenCalledWith('reset-success');
   });
 
@@ -170,7 +172,7 @@ describe('ResetPasswordPage', () => {
         screen.getByRole('button', { name: 'Update Password' }),
       ).toBeEnabled();
       expect(resetPassword).toHaveBeenCalledTimes(1);
-      expect(applyUser).not.toHaveBeenCalled();
+      expect(screen.getByLabelText('Signed in as')).toBeEmptyDOMElement();
       expect(navigate).not.toHaveBeenCalled();
     },
   );

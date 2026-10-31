@@ -11,15 +11,16 @@ import '@testing-library/jest-dom';
 
 import SupportStatusImport from '@/modules/admin/client/components/SupportStatusImport';
 import http from '@/modules/core/client/api/http-client';
+import { setViewer } from '@/testutils/client/auth.testutil';
 
 jest.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
   default: { post: jest.fn() },
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
 }));
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentUser: () => global.window.user,
-}));
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 const post = jest.mocked(http.post);
 
@@ -46,16 +47,16 @@ function fileFrom(text: string) {
 
 describe('<SupportStatusImport />', () => {
   beforeEach(() => {
-    window.user = { roles: ['user', 'admin'] };
+    setViewer({ roles: ['user', 'admin'] });
     post.mockReset();
   });
 
   afterEach(() => {
-    delete window.user;
+    setViewer(null);
   });
 
   it('keeps the upload and apply control administrator-only', () => {
-    window.user = { roles: ['user', 'support-team'] };
+    setViewer({ roles: ['user', 'support-team'] });
     const { container } = render(<SupportStatusImport />);
     expect(container).toBeEmptyDOMElement();
   });

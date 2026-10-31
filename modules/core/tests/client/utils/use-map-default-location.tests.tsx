@@ -7,8 +7,8 @@ jest.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
   default: { get: (...args: unknown[]) => mockGet(...args) },
 }));
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentUser: () => mockUser,
+jest.mock('@/modules/core/client/react-app/auth', () => ({
+  useAuth: () => ({ user: mockUser }),
 }));
 
 const location = { latitude: 34, longitude: -17, zoom: 6 };
@@ -105,6 +105,17 @@ describe('Approximate initial map location', () => {
     await finish();
   });
 
+  it('keeps a stopped lookup stopped when the same account is edited', async () => {
+    const finish = delayedLookup();
+    const { result, rerender } = renderHook(() => useMapDefaultLocation(true));
+    act(() => result.current[1]());
+    mockUser = { _id: 'fictional-member' };
+    rerender();
+    await finish();
+    expect(result.current[0]).toBeNull();
+    expect(mockGet).toHaveBeenCalledTimes(1);
+  });
+
   it('isolates account changes, including resolved results', async () => {
     mockGet.mockResolvedValue({ data: { location } });
     const { result, rerender } = renderHook(() => useMapDefaultLocation(true));
@@ -114,6 +125,7 @@ describe('Approximate initial map location', () => {
     rerender();
     expect(result.current[0]).toBeNull();
     mockUser = null;
+    rerender();
     await finish();
     expect(result.current[0]).toBeNull();
   });
