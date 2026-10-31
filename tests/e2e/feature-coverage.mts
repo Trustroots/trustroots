@@ -3396,12 +3396,15 @@ const features = [
       ],
       apiRoutes: [
         apiRoute('GET', '/api/admin/sparkpost/:action', source.adminServer),
+        apiRoute('POST', '/api/admin/sparkpost/recovery', source.adminServer),
       ],
     },
     requiredScenarios: [
       'Admin compares daily activity and provider metrics.',
       'Admin inspects bounded provider event details.',
       'Admin previews completed email jobs without mutations.',
+      'Admin reviews selected recovery recipients before queueing.',
+      'Admin lists unconfirmed accounts behind the preview count.',
       'Non-admin access is rejected.',
     ],
     relatedSpecs: [],

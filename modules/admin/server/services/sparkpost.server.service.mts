@@ -30,6 +30,9 @@ const eventSchema = z.object({
         type: z.string(),
         campaign_id: z.string().default(''),
         recipient_domain: z.string().default(''),
+        message_id: z.string().default(''),
+        subject: z.string().default(''),
+        rcpt_to: z.string().default(''),
       }),
     )
     .max(100),
@@ -164,6 +167,7 @@ export async function overview(
 export async function events(
   day: unknown,
   now = new Date(),
+  cursor: unknown = '',
 ): Promise<SparkpostEvents> {
   if (
     typeof day !== 'string' ||
@@ -179,40 +183,75 @@ export async function events(
   }
   const to = new Date(Math.min(Date.parse(day) + DAY, now.getTime()));
   const result: SparkpostEvents = { date: day, capped: false, events: [] };
-  let cursor = '';
-  for (let page = 0; page < 5; page++) {
-    const payload = eventSchema.parse(
-      await providerRequest('events/message', {
-        from: new Date(day).toISOString(),
-        to: to.toISOString(),
-        per_page: '100',
-        events:
-          'injection,delivery,bounce,out_of_band,spam_complaint,policy_rejection',
-        ...(cursor ? { cursor } : {}),
-      }),
+  if (typeof cursor !== 'string' || cursor.length > 2048)
+    throw new DiagnosticInputError('Invalid event page.');
+  const payload = eventSchema.parse(
+    await providerRequest('events/message', {
+      from: new Date(day).toISOString(),
+      to: to.toISOString(),
+      per_page: '100',
+      ...(cursor ? { cursor } : {}),
+    }),
+  );
+  const recipients = [
+    ...new Set(
+      payload.results.map(event => event.rcpt_to.toLowerCase()).filter(Boolean),
+    ),
+  ];
+  const accounts = await mongoose
+    .model<{
+      username: string;
+      email: string;
+      emailTemporary?: string;
+      created: Date;
+      public: boolean;
+    }>('User')
+    .find({
+      $or: [
+        { email: { $in: recipients } },
+        { emailTemporary: { $in: recipients } },
+      ],
+    })
+    .select('username email emailTemporary created public')
+    .lean()
+    .exec();
+  result.events = payload.results.map(event => {
+    const matches = accounts.filter(user =>
+      [user.email, user.emailTemporary].some(
+        address =>
+          typeof address === 'string' &&
+          address.toLowerCase() === event.rcpt_to.toLowerCase(),
+      ),
     );
-    result.events.push(
-      ...payload.results.map(event => ({
-        timestamp: event.timestamp,
-        type: event.type,
-        campaign: event.campaign_id,
-        recipientDomain: event.recipient_domain,
-      })),
-    );
-    const next = payload.links.next;
-    if (!next) return result;
-    // Extract only the cursor; never follow a provider-supplied host with credentials.
-    const nextCursor = new URL(
-      next,
+    const user = matches.length === 1 ? matches[0] : undefined;
+    return {
+      timestamp: event.timestamp,
+      type: event.type,
+      campaign: event.campaign_id,
+      recipientDomain: event.recipient_domain,
+      messageId: event.message_id,
+      subject: event.subject,
+      recipient: event.rcpt_to,
+      ...(user
+        ? {
+            account: {
+              username: String(user.username),
+              created: new Date(user.created).toISOString(),
+              public: user.public === true,
+            },
+          }
+        : {}),
+    };
+  });
+  if (payload.links.next) {
+    const next = new URL(
+      payload.links.next,
       'https://api.eu.sparkpost.com',
     ).searchParams.get('cursor');
-    if (!nextCursor || nextCursor === cursor || !payload.results.length) {
-      result.capped = true;
-      return result;
-    }
-    cursor = nextCursor;
+    if (next && next !== cursor && payload.results.length)
+      result.nextCursor = next;
+    else result.capped = true;
   }
-  result.capped = true;
   return result;
 }
 

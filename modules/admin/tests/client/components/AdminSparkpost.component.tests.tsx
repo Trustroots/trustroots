@@ -13,6 +13,20 @@ import type { SparkpostOverview } from '@/modules/admin/shared/sparkpost';
 
 jest.mock('@/modules/admin/client/api/sparkpost.api');
 jest.mock(
+  '@/modules/admin/client/components/SignupRecovery.component',
+  () =>
+    function Accounts() {
+      return <p>Unconfirmed account list</p>;
+    },
+);
+jest.mock(
+  '@/modules/admin/client/components/SparkpostDaily.component',
+  () =>
+    function Daily() {
+      return <p>Daily inspector</p>;
+    },
+);
+jest.mock(
   '@/modules/admin/client/components/AdminHeader.component',
   () =>
     function MockAdminHeader() {
@@ -84,10 +98,16 @@ it('shows loading, daily metrics and a read-only preview with UTC inputs', async
   );
   await screen.findByText('12');
   expect(screen.getAllByText('—')).toHaveLength(5);
-  expect(screen.getByText(/No emails are sent/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/Recovery emails are queued only after/),
+  ).toBeInTheDocument();
   submitPreview();
   expect(screen.getByText('Loading preview…')).toBeInTheDocument();
   await screen.findByText('Delivery unverified.');
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Review unconfirmed accounts' }),
+  );
+  expect(screen.getByText('Unconfirmed account list')).toBeInTheDocument();
   expect(screen.getByText(/only the first 1,000/)).toBeInTheDocument();
   expect(screen.getByText('confirm-email')).toBeInTheDocument();
   expect(mocked.getSparkpostPreview).toHaveBeenCalledWith(
@@ -100,35 +120,6 @@ it('shows loading, daily metrics and a read-only preview with UTC inputs', async
   await waitFor(() =>
     expect(mocked.getSparkpostOverview).toHaveBeenLastCalledWith('7'),
   );
-});
-
-it('shows event details, redaction placeholders and capped results', async () => {
-  mocked.getSparkpostEvents.mockResolvedValue({
-    date,
-    capped: true,
-    events: [
-      {
-        timestamp: '2026-10-30T12:00:00Z',
-        type: 'delivery',
-        campaign: 'confirm-email',
-        recipientDomain: 'example.test',
-      },
-      {
-        timestamp: '2026-10-30T12:00:01Z',
-        type: 'bounce',
-        campaign: '',
-        recipientDomain: '',
-      },
-    ],
-  });
-  render(<AdminSparkpost />);
-  fireEvent.click(
-    await screen.findByRole('button', { name: `Inspect events for ${date}` }),
-  );
-  expect(screen.getByText('Loading events…')).toBeInTheDocument();
-  await screen.findByText('example.test');
-  expect(screen.getByText(/Partial results/)).toBeInTheDocument();
-  expect(screen.getAllByText('Unknown')).toHaveLength(2);
 });
 
 it('shows empty event and preview results', async () => {
@@ -149,7 +140,7 @@ it('shows empty event and preview results', async () => {
   fireEvent.click(
     await screen.findByRole('button', { name: `Inspect events for ${date}` }),
   );
-  await screen.findByText('No events returned for this day.');
+  await screen.findByText('Daily inspector');
   submitPreview();
   await screen.findByText(
     /No stored email-job records were found for this period/,
@@ -168,7 +159,7 @@ it('shows errors for overview, events and preview without raw provider errors', 
   fireEvent.click(
     await screen.findByRole('button', { name: `Inspect events for ${date}` }),
   );
-  await screen.findByText(/Could not load events/);
+  await screen.findByText('Daily inspector');
   submitPreview();
   await screen.findByText(/Could not load the preview/);
   expect(screen.queryByText('secret')).not.toBeInTheDocument();
