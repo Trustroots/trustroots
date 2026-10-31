@@ -234,3 +234,43 @@ For production, explicitly setting `TRUSTROOTS_DEPLOYMENT_TIER=production` and
 to both webapp and worker. Captured email jobs may already be marked completed;
 after restoring delivery, request a fresh confirmation email rather than
 replaying all completed jobs.
+
+#### Validate and observe the production mail transport
+
+The deployment-owned Compose file must pass these settings to **both** webapp
+and worker (merge them into each service's existing environment block):
+
+```yaml
+services:
+  webapp:
+    environment:
+      TRUSTROOTS_DEPLOYMENT_TIER: production
+      TRUSTROOTS_MAIL_MODE: live
+  worker:
+    environment:
+      NODE_ENV: production
+      TRUSTROOTS_DEPLOYMENT_TIER: production
+      TRUSTROOTS_MAIL_MODE: live
+```
+
+The repository's `prod` Compose profile is for local image testing and does not
+set live mail defaults. Recreate the production app containers after changing
+host Compose settings; editing the file alone does not update running processes.
+
+Live mode requires an explicit SMTP `host`, provider `service`, or `smtp://` /
+`smtps://` connection `url` in `mailer.options`. JSON, stream, sendmail, SES and
+custom transports are rejected before startup can process jobs. If development
+configuration was copied, remove its `jsonTransport: true` setting or explicitly
+set it to `false`. Configuration errors never include the connection URL.
+
+Both processes report `[Mail] mode=live`, `mode=allowlist`, or
+`mode=capture; outgoing delivery disabled` at configuration startup. Check both
+with `docker compose logs webapp worker`. These lines describe local transport
+selection; they do not verify SMTP credentials, provider acceptance, or inbox
+receipt. After deployment request a fresh confirmation and verify receipt.
+
+For intentional maintenance capture, explicitly set
+`TRUSTROOTS_MAIL_MODE=capture` on both services and recreate them. This remains
+permitted even on production and reports disabled delivery. Captured jobs may
+complete and are not replayed automatically. Restore `live`, recreate the
+services and check their startup mode when maintenance ends.
