@@ -89,7 +89,7 @@ jobs:
         env:
           NODE_ENV: production
           TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true'
-        run: pnpm exec vite build --config vite.config.mjs
+        run: pnpm exec vite build --config vite.config.mts
       - name: Seed the test database
         run: node scripts/e2e/seed.js
       - name: Run Windows wheel scenarios
