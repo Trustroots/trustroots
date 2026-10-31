@@ -3381,6 +3381,32 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'admin.sparkpost',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Read-only SparkPost delivery diagnostics and interruption previews.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-sparkpost', '/admin/sparkpost', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/sparkpost/:action', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admin compares daily activity and provider metrics.',
+      'Admin inspects bounded provider event details.',
+      'Admin previews completed email jobs without mutations.',
+      'Non-admin access is rejected.',
+    ],
+    relatedSpecs: [],
+  },
+  {
     id: 'admin.newsletter-page',
     area: AREA.adminModeration,
     status: STATUS.active,

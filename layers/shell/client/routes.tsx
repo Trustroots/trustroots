@@ -1,3 +1,4 @@
+import AdminSparkpost from '@/modules/admin/client/components/AdminSparkpost.component';
 import AdminSpamCleanup from '@/modules/admin/client/components/AdminSpamCleanup';
 import {
   createRootRoute,
@@ -255,6 +256,7 @@ const renderByPath: Record<string, (context: RouteContext) => React.ReactNode> =
     '/admin/location-corrections': () => <AdminLocationCorrections />,
     '/admin/experience-changes': () => <AdminExperienceChanges />,
     '/admin/newsletter': () => <AdminNewsletter />,
+    '/admin/sparkpost': () => <AdminSparkpost />,
     '/admin/reference-threads': () => <AdminReferenceThreads />,
     '/admin/search-users': () => <AdminSearchUsers />,
     '/admin/threads': () => <AdminThreads />,

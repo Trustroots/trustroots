@@ -234,3 +234,25 @@ For production, explicitly setting `TRUSTROOTS_DEPLOYMENT_TIER=production` and
 to both webapp and worker. Captured email jobs may already be marked completed;
 after restoring delivery, request a fresh confirmation email rather than
 replaying all completed jobs.
+
+### SparkPost admin diagnostics
+
+`/admin/sparkpost` is a read-only administrator page adapted from ROmongous's
+email metrics overview. Set `SPARKPOST_API_KEY` in the webapp environment with
+read-only Metrics and Message Events API access. It is never returned to the
+browser. `SPARKPOST_API_BASE` defaults to `https://api.eu.sparkpost.com`; the
+US endpoint `https://api.sparkpost.com` is also supported. SMTP settings are
+independent and are not used as an API key fallback.
+
+Daily UTC application counts use the current database, not a dump. Provider
+metrics cover the configured account. Event detail is limited to the last
+10 days and 500 events, with explicit partial-result notices. Only recipient
+domains are displayed, not addresses or email content.
+
+The interruption preview accepts an inclusive/exclusive UTC window of at most
+31 days. It inspects up to 1,000 successfully completed `send email` jobs and
+counts accounts created in that window that still await confirmation, excluding
+suspended and shadowbanned accounts. These are unverified candidates: completion
+can mean either delivery submission or capture, provider records are not matched
+to jobs, and deleted jobs cannot be recovered by this view. It does not send,
+replay, update tokens or reset reminder counters.
