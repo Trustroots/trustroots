@@ -56,7 +56,7 @@
       },
       "babel": {
         // i18n:extract passes the second with --config-file.
-        "config": ["babel.config.cts", "babel.config.i18n.cjs"],
+        "config": ["babel.config.cts", "tooling/babel/i18n.config.cjs"],
       },
       "ignoreDependencies": [
         // eslint.config.cts loads these by name through FlatCompat, which
@@ -97,8 +97,8 @@
         "tests/client/**/*.tests.{js,jsx,ts,tsx}",
         "tests/server/**/*.{js,cts,mts}",
         // Type-level contract checks that only `tsc -p` compiles (see
-        // tsconfig.contracts.json, tsconfig.contract-diagnostics.json and
-        // tsconfig.tests.json).
+        // tooling/tsconfig/contracts.json,
+        // tooling/tsconfig/contract-diagnostics.json and tooling/tsconfig/tests.json).
         "tests/fixtures/*contract*.mts",
         "tests/client/**/*contract*.{ts,mts}",
         // CommonJS adapters that api-payload-native-imports.server.tests.cts
@@ -107,7 +107,7 @@
       ],
       "project": ["**/*.{js,jsx,ts,tsx,mjs,mts,cjs,cts}"],
       // scripts/ci/check-module-packages.mts writes these from
-      // module-graph-baseline.json so Turborepo knows the module graph.
+      // tooling/baselines/module-graph.json so Turborepo knows the module graph.
       // Modules import each other by relative path, not by package name.
       "ignoreDependencies": ["@trustroots/.*"],
     },
