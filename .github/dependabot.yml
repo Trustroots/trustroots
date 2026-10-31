@@ -28,3 +28,25 @@ updates:
         update-types:
           - minor
           - patch
+
+  # Base images are pinned to exact tags; this keeps those pins on current patches.
+  - package-ecosystem: docker
+    directories:
+      - /
+      - /apps/nostranslation
+      - /deploy/docker
+      - /.devcontainer
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Node majors move together with .nvmrc and the workflows, so they stay manual.
+    ignore:
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
+    groups:
+      docker-minor-and-patch:
+        update-types:
+          - minor
+          - patch
