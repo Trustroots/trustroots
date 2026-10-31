@@ -9,9 +9,11 @@ import Home, {
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/tribes/client/api/tribes.api');
 
-const mockGetRouteParams = jest.fn<Record<string, string>, []>();
 const mockReadCircles = jest.mocked(circlesAPI.read);
 // The null response intentionally exercises the unresolved-route-circle case.
 const mockGetCircle = jest.mocked(circlesAPI.get) as jest.MockedFunction<
@@ -23,10 +25,6 @@ const circle = (id: string, slug: string, label: string): TribeSummary => ({
   label,
   count: 3,
 });
-
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: () => mockGetRouteParams(),
-}));
 
 jest.mock('@/modules/core/client/components/Board.js', () => {
   const actualReact = jest.requireActual<typeof import('react')>('react');
@@ -76,7 +74,7 @@ describe('getSignupUrl', () => {
 describe('<Home />', () => {
   it('renders the intro and join button for logged-out visitors', async () => {
     mockReadCircles.mockResolvedValueOnce([]);
-    mockGetRouteParams.mockReturnValue({});
+    window.history.pushState({}, '', '/');
 
     render(<Home user={null} />);
 
@@ -108,7 +106,7 @@ describe('<Home />', () => {
       const originalInnerWidth = window.innerWidth;
       const originalInnerHeight = window.innerHeight;
       mockReadCircles.mockResolvedValueOnce([]);
-      mockGetRouteParams.mockReturnValue({});
+      window.history.pushState({}, '', '/');
       Object.defineProperty(window, 'innerWidth', {
         configurable: true,
         value: width,
@@ -144,7 +142,7 @@ describe('<Home />', () => {
     mockReadCircles.mockResolvedValueOnce([
       circle('circle-1', 'hitchhikers', 'Hitchhikers'),
     ]);
-    mockGetRouteParams.mockReturnValue({});
+    window.history.pushState({}, '', '/');
 
     render(
       <Home
@@ -167,7 +165,7 @@ describe('<Home />', () => {
     mockGetCircle.mockResolvedValueOnce(
       circle('circle-2', 'hitchhikers', 'Hitchhikers'),
     );
-    mockGetRouteParams.mockReturnValue({ circle: 'hitchhikers' });
+    window.history.pushState({}, '', '/?circle=hitchhikers');
 
     render(<Home user={null} photoCredits={{}} />);
 
@@ -184,7 +182,7 @@ describe('<Home />', () => {
     mockReadCircles.mockResolvedValueOnce([
       circle('circle-1', 'cyclists', 'Cyclists'),
     ]);
-    mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
+    window.history.pushState({}, '', '/?tribe=cyclists');
 
     render(<Home user={null} photoCredits={{}} />);
 
@@ -199,7 +197,7 @@ describe('<Home />', () => {
       circle('circle-1', 'mountainbiking', 'Mountain Bikers'),
     ]);
     mockGetCircle.mockResolvedValueOnce(null);
-    mockGetRouteParams.mockReturnValue({ circle: 'hitchhikers' });
+    window.history.pushState({}, '', '/?circle=hitchhikers');
 
     render(<Home user={null} photoCredits={{}} />);
 
@@ -210,7 +208,7 @@ describe('<Home />', () => {
 
   it('does not show the top join link for logged-in users', async () => {
     mockReadCircles.mockResolvedValueOnce([]);
-    mockGetRouteParams.mockReturnValue({});
+    window.history.pushState({}, '', '/');
 
     render(
       <Home

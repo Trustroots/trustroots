@@ -9,6 +9,9 @@ import type { UserProfile } from '@/modules/users/client/types';
 type MockSearchResponse = { data: UserProfile[] | null };
 const mockSearchUsers = jest.fn<Promise<MockSearchResponse>, [query: string]>();
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/search-users.api.js', () => ({
   searchUsers: (query: string) => mockSearchUsers(query),
 }));

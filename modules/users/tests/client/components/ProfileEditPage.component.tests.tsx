@@ -6,6 +6,10 @@ import '@/config/client/i18n';
 import ProfileEditPage from '@/modules/users/client/components/ProfileEditPage.component';
 import type { UserProfile } from '@/modules/users/client/types';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
+
 const user: Pick<UserProfile, '_id' | 'username' | 'displayName'> = {
   _id: 'user-1',
   username: 'member-one',

@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import ActivateProfileNotice from '@/modules/users/client/components/ActivateProfileNotice.component';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import type { ContactConfirmation } from '../types';
 import { readApiError } from '@/modules/users/client/utils/api-error';
@@ -21,7 +21,7 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
   const { t } = useTranslation('contacts') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { contactId } = getCurrentRouteParams();
+  const { contactId } = useParams({ strict: false });
   const [contact, setContact] = useState<ContactConfirmation | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');

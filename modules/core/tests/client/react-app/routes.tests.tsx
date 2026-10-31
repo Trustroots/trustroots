@@ -29,6 +29,9 @@ type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
 type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/admin/client/components/Admin.component', () => () => (
   <main>Admin</main>
 ));

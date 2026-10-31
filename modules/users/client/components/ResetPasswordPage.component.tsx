@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
+import { useParams } from '@tanstack/react-router';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
-import {
-  getCurrentRouteParams,
-  navigate,
-} from '@/modules/core/client/services/client-runtime';
+import { navigate } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { readApiError } from '../utils/api-error';
 
 export default function ResetPasswordPage() {
   const passwordInput = useDesktopAutofocus<HTMLInputElement>();
-  const { token } = getCurrentRouteParams();
+  const { token } = useParams({ strict: false });
   const { setUser } = useAuth() as {
     setUser: (user: { _id: string; username: string; email?: string }) => void;
   };

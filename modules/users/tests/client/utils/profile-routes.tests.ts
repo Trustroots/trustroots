@@ -45,6 +45,11 @@ describe('profile-routes', () => {
         'about',
       );
     });
+
+    it('defaults to about for paths outside the member profile', () => {
+      expect(getProfileViewTab('/profile/bob/contacts', 'alice')).toBe('about');
+      expect(getProfileViewTab('/search', 'alice')).toBe('about');
+    });
   });
 
   describe('getProfileViewTabStateName', () => {

@@ -44,17 +44,12 @@ export default function HomeRoute({ user }: { user?: PageUser | null }) {
       stopRemoving();
     };
   }, []);
-  const routeParams: Record<string, string> = {};
-  new URLSearchParams(window.location.search).forEach((value, key) => {
-    routeParams[key] = value;
-  });
   return (
     <Home
       user={user}
       build={build}
       isNativeMobileApp={isNativeMobileApp}
       photoCredits={photoCredits}
-      routeParams={routeParams}
     />
   );
 }

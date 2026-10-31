@@ -37,15 +37,22 @@ const api = {
   },
 };
 const updateUnreadCount = jest.mocked(updateUnreadMessageCount);
-const getRouteParams = jest.mocked(clientRuntime.getCurrentRouteParams);
+const showThread = ({ username, userId }: typeof routeParams) =>
+  window.history.pushState(
+    {},
+    '',
+    `/messages/${username}${userId ? `?userId=${userId}` : ''}`,
+  );
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(),
   navigate: jest.fn(),
 }));
 let mockIsExtraSmall = true;
@@ -164,7 +171,7 @@ let routeParams: { username: string; userId?: string } = {
   username: otherUser.username,
 };
 
-getRouteParams.mockReturnValue(routeParams);
+showThread(routeParams);
 
 describe('<Thread>', () => {
   let originalVisualViewport: PropertyDescriptor | undefined;
@@ -175,7 +182,7 @@ describe('<Thread>', () => {
     routeParams = {
       username: otherUser.username,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
   });
 
   afterEach(() => {
@@ -376,7 +383,7 @@ describe('<Thread>', () => {
     routeParams = {
       username: 'test-member',
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
 
     render(<Thread user={me} profileMinimumLength={0} />);
@@ -415,7 +422,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -470,7 +477,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -506,7 +513,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
