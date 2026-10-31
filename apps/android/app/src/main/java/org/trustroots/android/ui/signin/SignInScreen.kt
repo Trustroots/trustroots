@@ -2,6 +2,7 @@ package org.trustroots.android.ui.signin
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,6 +30,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,6 +45,7 @@ import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.ui.common.UsageAnalyticsSettings
 import org.trustroots.android.ui.common.rememberBuildDate
+import org.trustroots.android.ui.icons.TrustrootsLogo
 
 @Composable
 internal fun SignInScreen(
@@ -77,8 +81,13 @@ internal fun SignInScreen(
             verticalArrangement = Arrangement.Top,
         ) {
             Image(
-                painter = painterResource(R.drawable.trustroots_logo),
+                imageVector = TrustrootsLogo,
                 contentDescription = stringResource(R.string.screen_brand_name),
+                colorFilter = if (isSystemInDarkTheme()) {
+                    ColorFilter.tint(Color.White)
+                } else {
+                    null
+                },
                 modifier = Modifier.size(156.dp),
             )
             Text(stringResource(R.string.screen_travellers_community), style = MaterialTheme.typography.titleMedium)

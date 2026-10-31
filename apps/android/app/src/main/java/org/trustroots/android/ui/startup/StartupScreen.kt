@@ -2,6 +2,7 @@ package org.trustroots.android.ui.startup
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,11 +14,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.ui.common.rememberBuildDate
+import org.trustroots.android.ui.icons.TrustrootsLogo
 
 @Composable
 internal fun StartupScreen(firstName: String?) {
@@ -31,7 +35,12 @@ internal fun StartupScreen(firstName: String?) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Image(
-                painter = painterResource(R.drawable.trustroots_logo),
+                imageVector = TrustrootsLogo,
+                colorFilter = if (isSystemInDarkTheme()) {
+                    ColorFilter.tint(Color.White)
+                } else {
+                    null
+                },
                 contentDescription = brandName,
                 modifier = Modifier.size(180.dp),
             )

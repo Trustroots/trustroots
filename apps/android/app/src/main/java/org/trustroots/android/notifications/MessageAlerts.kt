@@ -330,7 +330,7 @@ object MessageAlerts {
             context, senderId.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         notifications.notify(senderId.hashCode(), Notification.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.trustroots_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.message_alerts_notification_title))
             .setContentText(context.getString(R.string.message_alerts_notification_text))
             .setContentIntent(pending)
