@@ -19,6 +19,8 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
     'Admin compares daily activity and provider metrics.',
     'Admin inspects bounded provider event details.',
     'Admin previews completed email jobs without mutations.',
+    'Admin reviews selected recovery recipients before queueing.',
+    'Admin lists unconfirmed accounts behind the preview count.',
   ]);
   useElementScreenshot(testInfo, 'main.container');
   await signInViaApi(page, request, SEEDED_ADMIN);
@@ -58,6 +60,49 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
       },
     }),
   );
+  await page.route('**/api/admin/sparkpost/recovery?*', route =>
+    route.fulfill({
+      json: {
+        page: 1,
+        more: false,
+        candidates: [
+          {
+            key: 'signup:sample',
+            kind: 'signup',
+            username: 'sample-member',
+            recipient: 'member@example.test',
+            description: 'Fresh sign-up confirmation',
+          },
+        ],
+      },
+    }),
+  );
+  await page.route('**/api/admin/sparkpost/recovery', async route => {
+    expect(route.request().postDataJSON().keys).toEqual(['signup:sample']);
+    await route.fulfill({
+      json: {
+        results: [{ key: 'signup:sample', status: 'Queued for delivery' }],
+      },
+    });
+  });
+  await page.route('**/api/admin/sparkpost/accounts?*', route =>
+    route.fulfill({
+      json: {
+        page: 1,
+        more: false,
+        candidates: [
+          {
+            key: 'signup:sample',
+            kind: 'signup',
+            username: 'sample-member',
+            recipient: 'member@example.test',
+            description: 'Fresh sign-up confirmation',
+            created: '2025-01-02T12:00:00Z',
+          },
+        ],
+      },
+    }),
+  );
   const job = {
     name: 'send email',
     lastFinishedAt: new Date('2025-01-02T12:00:00Z'),
@@ -86,7 +131,19 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
       .getByRole('button', { name: `Inspect events for ${date}` })
       .click();
     await expect(page.getByText('example.test', { exact: true })).toBeVisible();
-    await expect(page.getByText(/Partial results/)).toBeVisible();
+    await expect(
+      page.getByText(/Provider pagination was incomplete/),
+    ).toBeVisible();
+    await page.getByLabel('Select all eligible events on this page').check();
+    await page
+      .getByRole('button', { name: 'Review 1 selected emails' })
+      .click();
+    await expect(
+      page.getByRole('region', { name: 'Review recovery emails' }),
+    ).toContainText('member@example.test');
+    await page.getByRole('button', { name: 'Queue selected emails' }).click();
+    await expect(page.getByText(/Queued for delivery/)).toBeVisible();
+
     await page.getByLabel('From (UTC, inclusive)').fill('2025-01-02 00:00');
     await page.getByLabel('To (UTC, exclusive)').fill('2025-01-03 00:00');
     await page.getByRole('button', { name: 'Preview completed jobs' }).click();
@@ -96,6 +153,18 @@ test('admin inspects SparkPost metrics and previews completed email jobs without
     await expect(
       page.getByRole('cell', { name: 'fictional-recovery-campaign' }),
     ).toBeVisible();
+    await page
+      .getByRole('button', { name: 'Review unconfirmed accounts' })
+      .click();
+    await page.getByLabel('Select all eligible accounts on this page').check();
+    await page.getByRole('button', { name: 'Review 1 confirmations' }).click();
+    await page
+      .getByRole('button', { name: 'Queue confirmation emails' })
+      .click();
+    await expect(
+      page.getByRole('region', { name: 'Unconfirmed accounts' }),
+    ).toContainText('Queued for delivery');
+
     await expect(page.getByText('Private fixture body')).toHaveCount(0);
     const saved = await withE2eDb(db =>
       db.collection('agendaJobs').findOne({ _id: inserted.insertedId }),

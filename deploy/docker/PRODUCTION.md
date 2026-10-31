@@ -237,7 +237,7 @@ replaying all completed jobs.
 
 ### SparkPost admin diagnostics
 
-`/admin/sparkpost` is a read-only administrator page adapted from ROmongous's
+`/admin/sparkpost` is an administrator diagnostics page adapted from ROmongous's
 email metrics overview. Set `SPARKPOST_API_KEY` in the webapp environment with
 read-only Metrics and Message Events API access. It is never returned to the
 browser. `SPARKPOST_API_BASE` defaults to `https://api.eu.sparkpost.com`; the
@@ -246,8 +246,9 @@ independent and are not used as an API key fallback.
 
 Daily UTC application counts use the current database, not a dump. Provider
 metrics cover the configured account. Event detail is limited to the last
-10 days and 500 events, with explicit partial-result notices. Only recipient
-domains are displayed, not addresses or email content.
+10 days, with 100 events per page and an option to load every available page.
+Administrators can inspect subjects, recipient addresses and account matches;
+email bodies are not returned.
 
 The interruption preview uses `yyyy-mm-dd hh:mm` (24-hour UTC). It defaults
 to the reported October 2026 incident window, with both bounds editable. Future
@@ -259,3 +260,26 @@ suspended and shadowbanned accounts. These are unverified candidates: completion
 can mean either delivery submission or capture, provider records are not matched
 to jobs, and deleted jobs cannot be recovered by this view. It does not send,
 replay, update tokens or reset reminder counters.
+
+### Selected email recovery
+
+The daily inspector now pages through all available provider event types. Subject,
+recipient and event history identify provider email activity; matching a current
+email address to an account does not identify a particular private message.
+Delivery/injection concern sending; opens/clicks may concern older messages.
+Provider retention remains 10 days.
+
+Use the daily application-event list or **Review unconfirmed accounts** in an
+interruption preview to select recovery candidates. Select-all covers only the
+displayed page. Review recipients before queueing fresh confirmation links or
+current unread-message reminders. Sending requires live production mail and
+rechecks confirmation, read, reply, role and blocking state. Reminders are limited
+to unreplied unread conversations aged between 10 minutes and 30 days, with no
+more than 50 unread messages. Queued is not proof of delivery.
+
+`emailRecovery` retains actor, candidate key and outcome using MongoDB's unique
+`_id` to prevent repeated/concurrent submissions. A queued or uncertain claim
+cannot be retried from this UI. Investigate the queue/provider outcome before any
+manual correction. Normal account resend remains available to members. Email
+bodies are generated from current application state, never replayed from provider
+records. Previewing or opening a list does not send mail.
