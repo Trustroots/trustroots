@@ -1,0 +1,4 @@
+{
+  "comment": "Pinned history of the Trustroots member-data-export signing keys. Public keys only; an nsec must never appear here or anywhere else in this repository. A fork operator who audits this file once inherits the trust anchor, which is the point: a key fetched from trustroots.org is exactly as trustworthy as trustroots.org. Entry fields: pubkey (hex), status (active|retired|compromised), validFrom, validUntil, revokedAt (ISO 8601), note. See docs/data-export-signing.md.",
+  "keys": []
+}
