@@ -130,12 +130,3 @@ export function onClientEvent(
 
   return () => window.removeEventListener(`tr:${eventName}`, eventListener);
 }
-
-type CurrentUser = Pick<
-  NonNullable<Window['user']>,
-  '_id' | 'id' | 'public' | 'roles' | 'username' | 'languages'
->;
-
-export function getCurrentUser(): CurrentUser | null {
-  return window.user || null;
-}
