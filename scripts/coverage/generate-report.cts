@@ -185,7 +185,7 @@ interface TeamLinksConfig {
 const root = path.resolve(__dirname, '../..');
 const outputDir = path.join(root, 'coverage-report');
 const outputPath = path.join(outputDir, 'index.html');
-const baselinePath = path.join(root, 'coverage-baseline.json');
+const baselinePath = path.join(root, 'tooling/baselines/coverage.json');
 const analyticsConfigPath = path.join(root, 'docs/_data/analytics.json');
 const teamLinksConfigPath = path.join(root, 'docs/_data/team_links.json');
 const metrics: CoverageMetric[] = [

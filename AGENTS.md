@@ -12,7 +12,7 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 - `pnpm check:affected`: For changes confined to module workspace packages, Turborepo runs lint and client tests for affected modules and their dependents, then the repository-wide typecheck. Changes outside those packages (including `layers/shell`) or unavailable Git comparison fall back to full `pnpm check`. Compares committed, staged, unstaged and non-ignored untracked changes against the merge base with `origin/main` (override with `TURBO_SCM_BASE`). Each module is a workspace package, so `pnpm --filter @trustroots/<module> run lint` (also `test:client`, `test:server`) works on one module. After changing links between modules, run `pnpm modules:update-baseline` and `pnpm modules:update-packages`. CI still runs the full suite. Run `pnpm test:affected` for the affected-check runner's regression tests.
 - `pnpm test:server`: the Vitest/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
 - `pnpm test:e2e`: the Playwright end-to-end suite.
-- `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `coverage-baseline.json`.
+- `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `tooling/baselines/coverage.json`.
 - `pnpm build`: the production client build.
 - `pnpm reformat-files <files>`: run Prettier on the given files.
 
@@ -85,7 +85,7 @@ licence, emphasise). Do not change US spellings in code identifiers, CSS
 properties, URLs, or third-party names.
 
 Links between `modules/*` (imports and `mongoose.model('X')` lookups of another
-module's models) are recorded in `module-graph-baseline.json`, and CI fails when
+module's models) are recorded in `tooling/baselines/module-graph.json`, and CI fails when
 they differ from it. Do not add a link from one module to another without a
 reason you can state in the PR. If one is intended, run
 `pnpm run modules:update-baseline` and explain it in the PR; after removing one,

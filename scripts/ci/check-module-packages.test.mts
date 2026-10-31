@@ -20,7 +20,7 @@ const BASELINE = JSON.stringify({
 });
 
 const FIXTURE = {
-  'module-graph-baseline.json': BASELINE,
+  'tooling/baselines/module-graph.json': BASELINE,
   'modules/a/client/one.js': '',
   'modules/a/server/two.mjs': '',
   'modules/a/tests/client/one.tests.js': '',

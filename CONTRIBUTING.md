@@ -10,7 +10,7 @@ Run `pnpm run lint:boundaries` to check that shared package production code impo
 
 Run `pnpm run test:client` for the Jest client suite and `pnpm run test:server` for the Vitest/Supertest server suite. Jest runs with Watchman disabled so test discovery is consistent on developer machines and CI.
 
-Run `pnpm run test:coverage` to generate client and server coverage reports. Generated reports live under `coverage/` and are ignored by git. `pnpm run coverage:check` compares the generated summaries against `coverage-baseline.json`; use `pnpm run coverage:update-baseline` after intentionally improving the baseline. `pnpm run coverage:report` writes the browser report shell plus `client.json`, `server.json`, and `e2e.json` under `coverage-report/`.
+Run `pnpm run test:coverage` to generate client and server coverage reports. Generated reports live under `coverage/` and are ignored by git. `pnpm run coverage:check` compares the generated summaries against `tooling/baselines/coverage.json`; use `pnpm run coverage:update-baseline` after intentionally improving the baseline. `pnpm run coverage:report` writes the browser report shell plus `client.json`, `server.json`, and `e2e.json` under `coverage-report/`.
 
 Codex-local coverage reporting is client-first: use `just coverage-report` to run client coverage, refresh only `coverage-report/client.json`, and open the report through a local browser URL. Server and end-to-end lanes appear as neutral skipped lanes unless they are explicitly refreshed, so stale blocked statuses do not make the local report look broken. Run `pnpm run test:e2e` when you intentionally want to record a fresh Playwright smoke-test result.
 

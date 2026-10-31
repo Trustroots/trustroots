@@ -12,7 +12,7 @@ interface CoverageSummaryFile {
 type CoverageBaseline = Partial<Record<Suite, CoverageValues>>;
 
 const root = path.resolve(__dirname, '../..');
-const baselinePath = path.join(root, 'coverage-baseline.json');
+const baselinePath = path.join(root, 'tooling/baselines/coverage.json');
 const suites: Record<Suite, string> = {
   client: path.join(root, 'coverage/client/coverage-summary.json'),
   server: path.join(root, 'coverage/server/coverage-summary.json'),

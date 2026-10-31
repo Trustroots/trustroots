@@ -247,9 +247,10 @@ describe('Coverage PR summary unit tests', () => {
           path.join(directory, 'docs/_data'),
           { recursive: true },
         );
-        fs.copyFileSync(
-          path.resolve(__dirname, '../../../../../coverage-baseline.json'),
-          path.join(directory, 'coverage-baseline.json'),
+        fs.cpSync(
+          path.resolve(__dirname, '../../../../../tooling/baselines'),
+          path.join(directory, 'tooling/baselines'),
+          { recursive: true },
         );
         for (const suite of ['client', 'server']) {
           const dir = path.join(directory, 'coverage', suite);

@@ -2,7 +2,7 @@
 /**
  * Keeps `modules/<name>/package.json` in step with the code: every module is a
  * private, source-only workspace package whose `workspace:*` dependencies are
- * the links recorded in `module-graph-baseline.json`.
+ * the links recorded in `tooling/baselines/module-graph.json`.
  *
  *   node scripts/ci/check-module-packages.mts            check the manifests
  *   node scripts/ci/check-module-packages.mts --update   rewrite them
@@ -38,7 +38,10 @@ function hasDir(root: string, ...parts: string[]): boolean {
 
 function linkedModules(name: string, root: string): string[] {
   const baseline: { imports?: Graph; models?: Graph } = JSON.parse(
-    fs.readFileSync(path.join(root, 'module-graph-baseline.json'), 'utf8'),
+    fs.readFileSync(
+      path.join(root, 'tooling/baselines/module-graph.json'),
+      'utf8',
+    ),
   );
   return [
     ...new Set([

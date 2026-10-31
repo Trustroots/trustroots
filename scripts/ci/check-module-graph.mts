@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Records which `modules/*` depend on which and fails when the graph differs
- * from `module-graph-baseline.json`, so links between modules can only be
+ * from `tooling/baselines/module-graph.json`, so links between modules can only be
  * removed, never added unnoticed.
  *
  *   node scripts/ci/check-module-graph.mts            check against the baseline
@@ -26,7 +26,7 @@ type SourceLinks = {
 };
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..');
-const BASELINE_FILE = 'module-graph-baseline.json';
+const BASELINE_FILE = 'tooling/baselines/module-graph.json';
 const SOURCE_DIRS = ['client', 'server', 'shared'];
 const SOURCE_FILE = /\.(js|mjs|cjs|ts|mts|cts|tsx)$/;
 
