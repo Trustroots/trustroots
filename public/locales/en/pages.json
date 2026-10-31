@@ -415,7 +415,6 @@
   "A brief summary of substantive changes to this policy. Dates refer to revisions recorded on GitHub, which may differ from when changes appeared on the site. Select a date to view the changes.": "A brief summary of substantive changes to this policy. Dates refer to revisions recorded on GitHub, which may differ from when changes appeared on the site. Select a date to view the changes.",
   "Added Piwik analytics hosted by IndieHosters, an opt-out form, and GitHub to the social network examples.": "Added Piwik analytics hosted by IndieHosters, an opt-out form, and GitHub to the social network examples.",
   "Added a direct account settings link for downloading data.": "Added a direct account settings link for downloading data.",
-  "Added a statement about protecting members and their information as online risks evolve, including automated abuse and misuse of AI, and added this revision history.": "Added a statement about protecting members and their information as online risks evolve, including automated abuse and misuse of AI, and added this revision history.",
   "Added disclosure of hourly backups to AWS.": "Added disclosure of hourly backups to AWS.",
   "Added the requirement that members must be at least 18 years old.": "Added the requirement that members must be at least 18 years old.",
   "April 2015 to May 2020": "April 2015 to May 2020",
@@ -445,5 +444,6 @@
   "Updated performance monitoring from New Relic to Union Station.": "Updated performance monitoring from New Relic to Union Station.",
   "Updated the account settings link for downloading data.": "Updated the account settings link for downloading data.",
   "We work to protect our community and members’ information as online risks evolve, including automated abuse and misuse of AI.": "We work to protect our community and members’ information as online risks evolve, including automated abuse and misuse of AI.",
-  "What changed": "What changed"
+  "What changed": "What changed",
+  "Added this revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section.": "Added this revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section."
 }

@@ -139,17 +139,6 @@ export default function Privacy() {
               </p>
               <ul>
                 <li>
-                  <Trans t={rawT} ns="pages">
-                    Communication with our support team by email or contact form
-                    is managed through Zendesk and stored on Zendesk servers.
-                    See the{' '}
-                    <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">
-                      Zendesk privacy policy
-                    </a>
-                    .
-                  </Trans>
-                </li>
-                <li>
                   {t(
                     'Gravatar may be used for profile images. Facebook is no longer used for profile images.',
                   )}
@@ -165,12 +154,6 @@ export default function Privacy() {
               <Trans t={rawT} ns="pages">
                 Our server (and thus your data) is securely hosted at Hetzner in
                 Germany.
-              </Trans>
-              <h3>{t('Research')}</h3>
-              <Trans t={rawT} ns="pages">
-                Scientific trust metric research might be done with Trustroots
-                data, but in such case the data is always anonymized. See our{' '}
-                <a href="/statistics">statistics page</a> for more information.
               </Trans>
             </div>
             <hr />

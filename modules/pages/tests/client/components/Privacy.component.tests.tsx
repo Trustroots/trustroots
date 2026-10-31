@@ -101,11 +101,16 @@ describe('<Privacy />', () => {
       expect(link).toHaveAttribute('href', '/profile/edit/account');
     }
     expect(
-      screen.getByRole('link', { name: 'Zendesk privacy policy' }),
-    ).toHaveAttribute(
-      'href',
-      'https://www.zendesk.com/company/customers-partners/privacy-policy/',
-    );
+      screen.queryByRole('link', { name: 'Zendesk privacy policy' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /managed through Zendesk and stored on Zendesk servers/,
+      ),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Research' }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'SparkPost' })).toHaveAttribute(
       'href',
       'https://www.sparkpost.com/',
