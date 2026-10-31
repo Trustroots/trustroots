@@ -1,2 +1,2 @@
 // Keep the package script's Babel discovery filename.
-module.exports = require('./babel.config.i18n.cts');
+module.exports = require('./i18n.config.cts');

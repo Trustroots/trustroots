@@ -1,6 +1,6 @@
-import type { BabelConfiguration } from './config/build-tool-types.mjs';
+import type { BabelConfiguration } from '../../config/build-tool-types.mjs';
 
-const config = require('./babel.config.cts') as BabelConfiguration;
+const config = require('../../babel.config.cts') as BabelConfiguration;
 
 config.plugins.push([
   // extraction of the i18next translation strings
