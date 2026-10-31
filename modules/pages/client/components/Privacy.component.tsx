@@ -56,6 +56,16 @@ export default function Privacy() {
                   'We work to protect our community and members’ information as online risks evolve, including automated abuse and misuse of AI.',
                 )}
               </p>
+              <p>
+                <Trans t={rawT} ns="pages">
+                  We record changes to this policy in the{' '}
+                  <a href="#privacy-revision-history">revision history below</a>
+                  . When changes materially affect how we use or share your
+                  personal information, or how you exercise your rights, we will
+                  bring them to your attention through an appropriate notice,
+                  such as email or a prominent notice on Trustroots.
+                </Trans>
+              </p>
               <p>{t('You must be 18 years old or older to use Trustroots.')}</p>
               <h3>{t('Your data is yours')}</h3>
               <Trans t={rawT} ns="pages">
@@ -137,24 +147,63 @@ export default function Privacy() {
                   'Some Trustroots features rely on external services. We would like to reduce our reliance on these services in the future.',
                 )}
               </p>
-              <ul>
-                <li>
-                  {t(
-                    'Gravatar may be used for profile images. Facebook is no longer used for profile images.',
-                  )}
-                </li>
-                <li>
-                  <Trans t={rawT} ns="pages">
-                    We route our emails through{' '}
-                    <a href="https://www.sparkpost.com/">SparkPost</a> servers.
-                  </Trans>
-                </li>
-              </ul>
-              <h3>{t('Our server')}</h3>
-              <Trans t={rawT} ns="pages">
-                Our server (and thus your data) is securely hosted at Hetzner in
-                Germany.
-              </Trans>
+              <div className="table-responsive">
+                <table className="table">
+                  <caption>{t('Services and providers')}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('Service / provider')}</th>
+                      <th scope="col">{t('Used for')}</th>
+                      <th scope="col">{t('When involved')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">{t('Hetzner, Germany')}</th>
+                      <td>{t('Hosting Trustroots and its data')}</td>
+                      <td>{t('Core infrastructure')}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">
+                        <a href="https://www.sparkpost.com/">SparkPost</a>
+                      </th>
+                      <td>{t('Delivering emails')}</td>
+                      <td>{t('When Trustroots sends email')}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">{t('Gravatar')}</th>
+                      <td>{t('Profile images')}</td>
+                      <td>{t('Where used for a member’s image')}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">
+                        {t('Umami — self-hosted by Trustroots')}
+                      </th>
+                      <td>{t('Aggregate website analytics')}</td>
+                      <td>
+                        {t('Website usage; no external analytics provider')}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">{t('External Nostr relays')}</th>
+                      <td>
+                        {t(
+                          'Storing and redistributing published Nostr content',
+                        )}
+                      </td>
+                      <td>
+                        {t('When members use the optional Nostr integration')}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>
+                {t(
+                  'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
+                )}
+              </p>
+              <p>{t('Facebook is no longer used for profile images.')}</p>
             </div>
             <hr />
             <PrivacyRevisionHistory />

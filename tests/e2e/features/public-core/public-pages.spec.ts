@@ -395,6 +395,43 @@ test.describe('public pages and unauthenticated flows', () => {
           'href',
           'https://github.com/Trustroots/trustroots/commit/ab9d6109d22c8b68a53e9a121752090fb87eddb7',
         );
+
+        const services = page.getByRole('table', {
+          name: 'Services and providers',
+        });
+        await expect(services).toBeVisible();
+        await expect(services.getByRole('row')).toHaveCount(6);
+        await expect(
+          services.getByText('Hetzner, Germany', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          services.getByRole('link', { name: 'SparkPost', exact: true }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('Gravatar', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('Umami — self-hosted by Trustroots', {
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('External Nostr relays', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByText(
+            'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
+            { exact: true },
+          ),
+        ).toBeVisible();
+        await expect(
+          page.getByText(
+            /When changes materially affect how we use or share your personal information/,
+          ),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('link', { name: 'revision history below' }),
+        ).toHaveAttribute('href', '#privacy-revision-history');
       }
 
       if (pagePath === '/foundation') {

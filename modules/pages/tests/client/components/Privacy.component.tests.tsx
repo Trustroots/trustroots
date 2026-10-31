@@ -16,6 +16,38 @@ jest.mock('@/modules/core/client/components/Board.js', () => {
 });
 
 describe('<Privacy />', () => {
+  it('summarises current services and explains how material policy changes will be announced', () => {
+    render(<Privacy />);
+    const services = screen.getByRole('table', {
+      name: 'Services and providers',
+    });
+    expect(within(services).getAllByRole('row')).toHaveLength(6);
+    for (const provider of [
+      'Hetzner, Germany',
+      'SparkPost',
+      'Gravatar',
+      'Umami — self-hosted by Trustroots',
+      'External Nostr relays',
+    ]) {
+      expect(
+        within(services).getByRole('rowheader', { name: provider }),
+      ).toBeInTheDocument();
+    }
+    expect(
+      screen.getByText(
+        'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'revision history below' }),
+    ).toHaveAttribute('href', '#privacy-revision-history');
+    expect(
+      screen.getByText(
+        /When changes materially affect how we use or share your personal information/,
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('shows dated policy summaries with GitHub links across the original and current pages', () => {
     render(<Privacy />);
     const history = screen.getByRole('region', { name: 'Revision history' });

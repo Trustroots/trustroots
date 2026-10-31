@@ -12,7 +12,7 @@ export default function PrivacyRevisionHistory() {
       date: '2026-10-31',
       href: 'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-01',
       summary: t(
-        'Added this revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section.',
+        'Added a service overview, policy change notices, revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section.',
       ),
     },
     {
