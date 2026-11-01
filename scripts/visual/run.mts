@@ -222,6 +222,9 @@ async function main() {
         NODE_ENV: 'test',
         DB_1_PORT_27017_TCP_ADDR: dbHost,
         TRUSTROOTS_SKIP_LOCAL_CONFIG: 'true',
+        // build:e2e extracts the CSS; without this the server links no
+        // stylesheet and every page renders unstyled.
+        TRUSTROOTS_E2E_USE_EXTRACTED_CSS: 'true',
       };
       for (let i = 0; i < 60; i++) {
         try {
