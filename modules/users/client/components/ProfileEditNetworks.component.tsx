@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { nip19 } from 'nostr-tools';
 
@@ -158,15 +159,15 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                   <p className="help-block nostr-nip07-suggestion">
                     {t('Your browser Nostr extension suggests')}{' '}
                     <code>{suggestedNpub}</code>{' '}
-                    <button
+                    <Button
+                      size="xs"
                       type="button"
-                      className="btn btn-default btn-xs"
                       onClick={() => updateDraft({ nostrNpub: suggestedNpub })}
                     >
                       {draftUser.nostrNpub
                         ? t('Replace with this npub')
                         : t('Use this npub')}
-                    </button>
+                    </Button>
                   </p>
                 )}
               </div>
@@ -242,14 +243,18 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       />
                       {fieldValue && field.field !== 'extSitesCS' && (
                         <span className="input-group-btn">
-                          <a
-                            href={field.testUrl(fieldValue)}
-                            target="_blank"
-                            className="btn btn-primary"
-                            rel="noopener noreferrer"
+                          <Button
+                            colour="primary"
+                            render={
+                              <a
+                                href={field.testUrl(fieldValue)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              />
+                            }
                           >
                             <small>{t('Test')}</small>
-                          </a>
+                          </Button>
                         </span>
                       )}
                     </div>
@@ -273,13 +278,15 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
             </div>
 
             <p>
-              <button
+              <Button
+                colour="primary"
+                size="lg"
+                className="profile-editor-save"
                 type="submit"
-                className="btn btn-lg btn-primary profile-editor-save"
                 disabled={!hasChanges}
               >
                 {t('Save')}
-              </button>
+              </Button>
             </p>
 
             {legacyAccounts.length > 0 && (
@@ -297,13 +304,14 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       <span className="legacy-social-provider text-capitalize">
                         {provider} <small>{t('Legacy')}</small>
                       </span>{' '}
-                      <button
+                      <Button
+                        colour="danger"
+                        size="sm"
                         type="button"
-                        className="btn btn-sm btn-danger"
                         onClick={() => handleRemoveSocialAccount(provider)}
                       >
                         {t('Delete')}
-                      </button>
+                      </Button>
                     </li>
                   ))}
                 </ul>

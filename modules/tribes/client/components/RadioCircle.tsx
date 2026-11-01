@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import type { Event } from 'nostr-tools';
 import type { UserProfile } from '@/modules/users/client/types';
@@ -297,13 +298,13 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
             <h3>{station?.title || t('Pick a station')}</h3>
           </div>
           {station && (
-            <button
-              className="btn btn-primary"
+            <Button
+              colour="primary"
               type="button"
               onClick={() => void play(station)}
             >
               {playing ? t('Pause') : t('Play')}
-            </button>
+            </Button>
           )}
         </div>
         {/* eslint-disable-next-line jsx-a11y/media-has-caption -- Third-party live radio streams do not supply caption tracks. */}
@@ -379,14 +380,13 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           </p>
           {!signer ? (
             <>
-              <button
+              <Button
                 type="button"
-                className="btn btn-default"
                 disabled={connecting}
                 onClick={() => void connect()}
               >
                 {connecting ? t('Connecting…') : t('Connect Nostr identity')}
-              </button>
+              </Button>
               <p>
                 {t(
                   'Connect the Nostr key linked to your Trustroots profile to chat and automatically share what you are listening to.',
@@ -432,13 +432,13 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
               onChange={event => setMessage(event.target.value)}
               disabled={!signer || sending}
             />
-            <button
+            <Button
+              colour="primary"
               type="submit"
-              className="btn btn-primary"
               disabled={!signer || !message.trim() || sending}
             >
               {t('Send')}
-            </button>
+            </Button>
           </form>
         </section>
       )}

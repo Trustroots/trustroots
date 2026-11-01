@@ -31,8 +31,9 @@ describe('default presentation', () => {
   it('can filter and change language from the modal', async () => {
     render(<LanguageSwitch buttonStyle="primary" />);
 
-    expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
-      'btn-primary',
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute(
+      'data-colour',
+      'primary',
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'English' }));
@@ -69,8 +70,9 @@ describe('default presentation', () => {
 
     render(<LanguageSwitch buttonStyle="inverse" />);
 
-    expect(screen.getByRole('button', { name: 'English' })).toHaveClass(
-      'btn-inverse',
+    expect(screen.getByRole('button', { name: 'English' })).toHaveAttribute(
+      'data-variant',
+      'inverse',
     );
   });
 });

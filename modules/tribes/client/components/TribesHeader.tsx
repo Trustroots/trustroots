@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import Board from '@/modules/core/client/components/Board';
 
@@ -26,9 +27,9 @@ export default function TribesHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
             {!isLoggedIn && (
               <div>
                 <hr className="hr-white hr-xs" />
-                <a href="/signup" className="btn btn-action btn-default">
+                <Button size="action" render={<a href="/signup" />}>
                   {t('Sign up with Trustroots') as string}
-                </a>
+                </Button>
               </div>
             )}
           </div>

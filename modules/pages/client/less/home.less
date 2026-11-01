@@ -47,7 +47,7 @@
 // App Store / Play Store buttons
 .home-apps {
   margin-top: 25px;
-  .btn {
+  [data-slot='button'] {
     @media (max-width: @screen-sm-max) {
       .button-size(@padding-base-vertical; @padding-base-horizontal; @font-size-base; @line-height-base; @btn-border-radius-base);
     }
@@ -261,15 +261,15 @@
   margin: 80px 0;
 }
 
-// This requires `a` and `:not(.btn)` due they are defined for `.board a {}` at core-module's `layout/board.less`
-a.home-footer-more:not(.btn) {
+// This requires `a` and `:not([data-slot='button'])` due they are defined for `.board a {}` at core-module's `layout/board.less`
+a.home-footer-more:not([data-slot='button']) {
   text-decoration: none;
 }
 
 .home-footer-pages {
   font-size: 20px;
   line-height: 40px;
-  a:not(.btn) {
+  a:not([data-slot='button']) {
     text-decoration: none;
     &:hover {
       border-bottom: 1px solid #fff;

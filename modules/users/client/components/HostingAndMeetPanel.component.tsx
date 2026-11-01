@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 
 // Internal dependencies
@@ -17,14 +18,16 @@ export default function HostingAndMeetPanel() {
       <div className="panel-body">
         <div className="form-horizontal">
           <p>
-            <a
+            <Button
+              variant="inverse"
+              colour="primary"
+              className="d-inline-flex align-items-center gap-2"
+              render={<a href="/offer/host" />}
               role="button"
-              href="/offer/host"
-              className="btn btn-inverse-primary d-inline-flex align-items-center gap-2"
             >
               <Icon icon="sofa" size={undefined} className={undefined} />
               {t('Modify your hosting location')}
-            </a>
+            </Button>
           </p>
         </div>
       </div>

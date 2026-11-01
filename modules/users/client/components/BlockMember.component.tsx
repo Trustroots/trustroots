@@ -4,14 +4,18 @@ import React from 'react';
 import '@/config/client/i18n';
 import * as api from '../api/block.api';
 import Icon from '@/modules/core/client/components/Icon';
+import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 
 export default function BlockMember({
   username,
   isBlocked = false,
+  look = { size: 'sm' },
   className,
 }: {
   username: string;
   isBlocked?: boolean;
+  /** The button look; a small default button unless given. */
+  look?: ButtonStyleProps;
   className?: string;
 }) {
   const { t } = useTranslation('users') as {
@@ -72,25 +76,27 @@ export default function BlockMember({
 
   if (isBlocked) {
     return (
-      <button
+      <Button
+        {...look}
         className={className}
         aria-label={t('Unblock member "{{username}}"', { username })}
         onClick={() => handleUnBlockMember(username)}
       >
         <Icon icon="invalid" />
         {t('Unblock member')}
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
+    <Button
+      {...look}
       className={className}
       aria-label={t('Block member "{{username}}"', { username })}
       onClick={() => handleBlockMember(username)}
     >
       <Icon icon="invalid" />
       {t('Block member')}
-    </button>
+    </Button>
   );
 }

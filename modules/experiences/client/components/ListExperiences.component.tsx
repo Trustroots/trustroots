@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -83,12 +84,12 @@ export default function ListExperiences({
         {!onReceiverProfile && (
           <p>
             <br />
-            <a
-              className="btn btn-primary"
-              href={getProfileExperiencesPath(profile.username)}
+            <Button
+              colour="primary"
+              render={<a href={getProfileExperiencesPath(profile.username)} />}
             >
               {t('Share your experience') as string}
-            </a>
+            </Button>
           </p>
         )}
       </NoContentWithChildren>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -88,13 +89,13 @@ export default function ForgotPasswordPage() {
                 />
               </div>
               <div className="text-center form-group">
-                <button
+                <Button
+                  size="lg"
                   type="submit"
-                  className="btn btn-lg btn-default"
                   disabled={isLoading || !credentials.username}
                 >
                   {isLoading ? 'Wait...' : 'Restore'}
-                </button>
+                </Button>
               </div>
               {error && (
                 <div className="text-center alert alert-danger" role="alert">

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import http, { getErrorMessage } from '../../../core/client/api/http-client';
 import AdminHeader from './AdminHeader.component';
 import { formatAdminDateTime } from '../utils/admin-date';
+import { Button } from '@trustroots/ui/Button';
 interface Batch {
   previewId: string;
   expiresAt: string;
@@ -149,14 +150,14 @@ export default function AdminSpamCleanup() {
           in internal batches with eligibility rechecked. Keep this page open
           until scanning or deletion completes.
         </p>
-        <button
+        <Button
           type="button"
-          className="btn btn-default"
+
           disabled={working}
           onClick={() => void preview()}
         >
           Preview all accounts
-        </button>
+        </Button>
         {working && (
           <p role="status">
             Working…{' '}
@@ -239,9 +240,9 @@ export default function AdminSpamCleanup() {
               Expires after 15 minutes of inactivity. Page {batch.page} of{' '}
               {Math.max(1, batch.pages)}.
             </p>
-            <button
+            <Button
               type="button"
-              className="btn btn-default"
+
               disabled={working}
               onClick={() => {
                 setSelection('all');
@@ -250,10 +251,10 @@ export default function AdminSpamCleanup() {
               }}
             >
               Select all accounts in this stage
-            </button>{' '}
-            <button
+            </Button>{' '}
+            <Button
               type="button"
-              className="btn btn-default"
+
               disabled={working}
               onClick={() => {
                 setSelection('selected');
@@ -262,7 +263,7 @@ export default function AdminSpamCleanup() {
               }}
             >
               Clear selection
-            </button>
+            </Button>
             <table className="table table-striped" aria-label="Account review">
               <thead>
                 <tr>
@@ -358,14 +359,14 @@ export default function AdminSpamCleanup() {
                 I reviewed this selection and understand deletion is permanent.
               </label>
             </p>
-            <button
+            <Button
               type="button"
-              className="btn btn-danger"
+              colour="danger"
               disabled={working || !confirmed || selected === 0}
               onClick={() => void apply(batch.previewId)}
             >
               Delete {selected} selected accounts
-            </button>
+            </Button>
           </section>
         )}
       </main>

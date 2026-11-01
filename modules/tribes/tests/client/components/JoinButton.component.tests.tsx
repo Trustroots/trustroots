@@ -95,7 +95,7 @@ describe('<JoinButton />', () => {
 
     expect(
       await screen.findByRole('button', { name: 'Leave circle' }),
-    ).toHaveClass('btn-active');
+    ).toHaveClass('tribe-join-active');
     expect(join).toHaveBeenCalledWith('tribe-1');
     expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
   });
@@ -103,7 +103,7 @@ describe('<JoinButton />', () => {
   it('supports a large iconless presentation', () => {
     render(
       <JoinButton
-        className="btn btn-lg btn-default"
+        look={{ size: 'lg' }}
         icon={false}
         tribe={tribe}
         user={{ ...user, memberIds: ['tribe-1'] }}
@@ -112,15 +112,15 @@ describe('<JoinButton />', () => {
     );
 
     const button = screen.getByRole('button', { name: 'Leave circle' });
-    expect(button).toHaveClass('btn-lg');
+    expect(button).toHaveAttribute('data-size', 'lg');
     expect(button.querySelector('i')).not.toBeInTheDocument();
   });
 
   it('supports distinct active styling and membership copy', () => {
     render(
       <JoinButton
-        activeClassName="btn btn-lg btn-primary btn-action"
-        className="btn btn-lg btn-default"
+        activeLook={{ size: 'action', colour: 'primary' }}
+        look={{ size: 'lg' }}
         icon={false}
         memberLabel="You're a member"
         tribe={tribe}
@@ -131,8 +131,9 @@ describe('<JoinButton />', () => {
 
     const button = screen.getByRole('button', { name: 'Leave circle' });
     expect(button).toHaveTextContent("You're a member");
-    expect(button).toHaveClass('btn-active', 'btn-primary', 'btn-action');
-    expect(button).not.toHaveClass('btn-default');
+    expect(button).toHaveClass('tribe-join-active');
+    expect(button).toHaveAttribute('data-colour', 'primary');
+    expect(button).toHaveAttribute('data-size', 'action');
   });
 
   it('does not start a second join while the first request is pending', async () => {
@@ -214,7 +215,7 @@ describe('<JoinButton />', () => {
 
     expect(
       await screen.findByRole('button', { name: 'Join (Hitchhikers)' }),
-    ).not.toHaveClass('btn-active');
+    ).not.toHaveClass('tribe-join-active');
     expect(leave).toHaveBeenCalledWith('tribe-1');
     expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
   });

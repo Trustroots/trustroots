@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 import Avatar from './Avatar.component';
@@ -138,15 +139,15 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                   aria-describedby="profile-photo-upload-help"
                   onChange={handleFileSelected}
                 />
-                <button
+                <Button
+                  className="profile-photo-picker"
                   type="button"
-                  className="btn btn-default profile-photo-picker"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploading}
                   aria-describedby="profile-photo-upload-help"
                 >
                   {t('Upload photo')}
-                </button>
+                </Button>
                 <p id="profile-photo-upload-help" className="help-block">
                   {t('JPG, PNG or GIF. Maximum file size: {{size}}.', {
                     size: formatBytes(maxUploadSize),

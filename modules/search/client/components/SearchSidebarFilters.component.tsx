@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import SearchFilterLanguage from './SearchFilterLanguage.component';
 import SearchCirclesToggle from './SearchCirclesToggle.component';
@@ -54,14 +55,14 @@ export default function SearchSidebarFilters({
             <h4>Circles</h4>
           </div>
           <div className="col-xs-6 text-right">
-            <button
-              className="btn btn-default search-sidebar-filters-clear"
+            <Button
+              className="search-sidebar-filters-clear"
               disabled={!filters.tribes.length}
               onClick={() => onFiltersChange({ tribes: [] })}
               type="button"
             >
               Clear circles
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -96,13 +97,15 @@ export default function SearchSidebarFilters({
         preSelectedLanguages={filters.languages}
       />
 
-      <button
-        className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+      <Button
+        colour="primary"
+        size="action"
+        className="visible-xs-block search-sidebar-close"
         onClick={onCloseSidebar}
         type="button"
       >
         Back to map
-      </button>
+      </Button>
     </section>
   );
 }

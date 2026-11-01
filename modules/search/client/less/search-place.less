@@ -7,7 +7,7 @@
   display: flex;
   align-items: stretch;
 
-  .btn {
+  [data-slot='button'] {
     height: @input-height-large;
   }
 }
@@ -16,7 +16,7 @@
 .search-sidebar-section {
   .search-place {
     input[type='text'],
-    .btn {
+    [data-slot='button'] {
       &,
       &:disabled,
       &:hover,
@@ -29,7 +29,7 @@
     // because that would mess with HTML/CSS, we basically hide
     // button content here and make it as un-noticeable as possible.
     .input-group-btn {
-      .btn:disabled {
+      [data-slot='button']:disabled {
         opacity: 1;
         color: transparent;
         cursor: default;
@@ -56,13 +56,13 @@
   .search-place {
     // Location field's input and button are even highr than `input-lg`
     .input-location {
-      .btn,
+      [data-slot='button'],
       .form-control {
         min-height: (@input-height-large + 10px);
       }
     }
 
-    .btn {
+    [data-slot='button'] {
       // Search buttons are narrow:
       max-width: 40px;
       padding-left: 7px;
@@ -88,7 +88,7 @@
 .search-form-group {
   width: auto;
   margin-right: 0;
-  .btn,
+  [data-slot='button'],
   input[type='text'],
   input[type='search'] {
     border-radius: 0;
@@ -107,7 +107,7 @@
   input[type='search'] {
     border-right: 0;
   }
-  .btn {
+  [data-slot='button'] {
     border-left: 0;
   }
 }

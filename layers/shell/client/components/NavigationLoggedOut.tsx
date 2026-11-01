@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 
 // Internal dependencies
@@ -24,20 +25,21 @@ export default function NavigationLoggedOut({
         <span className="header-welcome-text hidden-xs" dir="auto">
           {t('New to Trustroots?')}
         </span>
-        <a href="/signup" className="btn btn-lg btn-default">
+        <Button size="lg" render={<a href="/signup" />}>
           {t('Join')}
-        </a>
-        <a href="/signin" className="btn btn-lg btn-inverse">
+        </Button>
+        <Button variant="inverse" size="lg" render={<a href="/signin" />}>
           {t('Login')}
-        </a>
+        </Button>
         {currentPath !== '/' && (
-          <a
+          <Button
+            variant="link"
             aria-label={t('Read more about Trustroots')}
-            className="btn btn-link header-more-text hidden-xs"
-            href="/"
+            className="header-more-text hidden-xs"
+            render={<a href="/" />}
           >
             {t('Read more')}
-          </a>
+          </Button>
         )}
         <div className="flex-side language-switch">
           <LanguageSwitch buttonStyle="inverse" />

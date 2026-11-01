@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { nostrService } from '../services/nostr.client.service';
 import { timeAgo } from '../utils/time-ago';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
@@ -131,12 +132,9 @@ export default function CommunityNotesSidebar({
       </div>
 
       <div className="community-notes-sidebar-actions">
-        <button
-          className="btn btn-sm btn-primary"
-          onClick={() => setShowModal(true)}
-        >
+        <Button colour="primary" size="sm" onClick={() => setShowModal(true)}>
           Reply
-        </button>
+        </Button>
         <span className="text-muted community-notes-sidebar-via">
           via Nostroots
         </span>

@@ -1,6 +1,6 @@
 import React, { type ButtonHTMLAttributes } from 'react';
 import { useTranslation } from 'react-i18next';
-import classnames from 'classnames';
+import { Button } from '@trustroots/ui/Button';
 import Tooltip from './Tooltip';
 
 type StepButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -23,61 +23,49 @@ type StepNavigationProps = {
 const BackButton = ({ small, ...props }: StepButtonProps) => {
   const { t } = useTranslation('core');
   return (
-    <button
+    <Button
       type="button"
-      className={classnames({
-        btn: true,
-        'btn-lg': small,
-        'btn-primary': small,
-        'btn-action': !small,
-        'btn-link': !small,
-      })}
+      {...(small
+        ? { colour: 'primary' as const, size: 'lg' as const }
+        : { variant: 'link' as const, size: 'action' as const })}
       aria-label={t('Previous section')}
       {...props}
     >
       <span className="icon-left" aria-hidden="true"></span>
       {t('Back')}
-    </button>
+    </Button>
   );
 };
 
 const NextButton = ({ small, ...props }: StepButtonProps) => {
   const { t } = useTranslation('core');
   return (
-    <button
+    <Button
       type="button"
-      className={classnames({
-        btn: true,
-        'btn-lg': small,
-        'btn-action': !small,
-        'btn-primary': true,
-      })}
+      colour="primary"
+      size={small ? 'lg' : 'action'}
       aria-label={t('Next section')}
       {...props}
     >
       {t('Next')}
       {small && <span className="icon-right" aria-hidden="true"></span>}
-    </button>
+    </Button>
   );
 };
 
 const SubmitButton = ({ small, label, ...props }: SubmitButtonProps) => {
   const { t } = useTranslation('core');
   return (
-    <button
+    <Button
       type="submit"
-      className={classnames({
-        btn: true,
-        'btn-lg': small,
-        'btn-action': !small,
-        'btn-primary': true,
-      })}
+      colour="primary"
+      size={small ? 'lg' : 'action'}
       aria-label={label || t('Finish editing and save')}
       {...props}
     >
       {label || t('Finish')}
       {small && <span className="icon-ok" aria-hidden="true"></span>}
-    </button>
+    </Button>
   );
 };
 export default function StepNavigation({

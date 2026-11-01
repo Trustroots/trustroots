@@ -1,7 +1,7 @@
 // External dependencies
 import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
-import classnames from 'classnames';
+import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
@@ -12,6 +12,12 @@ import {
 } from '@/modules/core/client/utils/locales';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import i18n from '@/config/client/i18n';
+
+const buttonLooks: Record<string, ButtonStyleProps> = {
+  primary: { colour: 'primary' },
+  default: {},
+  inverse: { variant: 'inverse' },
+};
 
 const SelectedLanguage = styled.strong`
   padding: 7px 13px;
@@ -79,20 +85,17 @@ export default function LanguageSwitch({
 
   return (
     <>
-      <button
+      <Button
         title={currentLanguage?.label}
-        className={classnames('btn', 'text-nowrap', {
-          'btn-primary': buttonStyle === 'primary',
-          'btn-default': buttonStyle === 'default',
-          'btn-inverse': buttonStyle === 'inverse',
-        })}
+        {...(buttonLooks[buttonStyle] ?? { variant: 'plain' })}
+        className="text-nowrap"
         onClick={event => {
           event.preventDefault();
           setIsModalVisible(true);
         }}
       >
         {currentLanguage?.label ?? 'English'}
-      </button>
+      </Button>
       <Modal show={isModalVisible} onHide={onModalHide}>
         <Modal.Header closeButton>
           <Modal.Title>{t('Select a language')}</Modal.Title>
@@ -116,8 +119,8 @@ export default function LanguageSwitch({
                   <SelectedLanguage lang={code}>{label}</SelectedLanguage>
                 )}
                 {code !== currentLanguageCode && (
-                  <button
-                    className="btn btn-link"
+                  <Button
+                    variant="link"
                     dir={i18n.dir(code)}
                     lang={code}
                     onClick={() => {
@@ -126,16 +129,16 @@ export default function LanguageSwitch({
                     }}
                   >
                     {label}
-                  </button>
+                  </Button>
                 )}
               </li>
             ))}
           </LanguageList>
         </Modal.Body>
         <Modal.Footer>
-          <button className="btn btn-default pull-left" onClick={onModalHide}>
+          <Button className="pull-left" onClick={onModalHide}>
             {t('Cancel')}
-          </button>
+          </Button>
           <small>
             <a
               href="https://team.trustroots.org/"

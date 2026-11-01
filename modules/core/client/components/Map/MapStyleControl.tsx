@@ -13,6 +13,8 @@ import {
 } from './constants';
 import { getMapBoxToken } from '../../utils/map';
 import MapIcon from './MapIcon';
+import { Button } from '@trustroots/ui/Button';
+import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 import MapStyleButton from './MapStyleButton';
 import './map-style-control.less';
 
@@ -69,10 +71,10 @@ class MapStyleControl extends React.Component<
         onClick={event => event.stopPropagation()}
       >
         {!isOpen && (
-          <button
+          <Button
+            variant="plain"
             aria-expanded={isOpen}
             aria-haspopup="true"
-            className="btn"
             onClick={this.open}
             onMouseEnter={() => !this.props.map?.isMoving() && this.open()}
             aria-label={t('Change map style')}
@@ -85,11 +87,11 @@ class MapStyleControl extends React.Component<
             {typeof mapStyle === 'string'
               ? mapboxStyleNames[mapStyle]
               : mapStyle.name}
-          </button>
+          </Button>
         )}
         {isOpen && (
-          <div
-            className="btn-group-vertical"
+          <ButtonGroup
+            orientation="vertical"
             onMouseLeave={this.close}
             role="group"
           >
@@ -124,7 +126,7 @@ class MapStyleControl extends React.Component<
                 styleName={MAP_STYLE_OSM.name}
               />
             )}
-          </div>
+          </ButtonGroup>
         )}
       </div>
     );

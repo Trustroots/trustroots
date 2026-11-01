@@ -1,5 +1,6 @@
 // External dependencies
 import { Tab, Tabs } from 'react-bootstrap';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 
@@ -354,13 +355,13 @@ function ExperienceForm({
     return (
       <div className="alert alert-danger" role="alert">
         <p>{t('We could not load the experience form. Please try again.')}</p>
-        <button
+        <Button
+          colour="primary"
           type="button"
-          className="btn btn-primary"
           onClick={() => setLoadAttempt(attempt => attempt + 1)}
         >
           {t('Try again')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -389,14 +390,14 @@ function ExperienceForm({
                 'Your experience was saved, but your private report could not be sent. Please try sending the report again.',
               )}
             </p>
-            <button
+            <Button
+              colour="primary"
               type="button"
-              className="btn btn-primary"
               disabled={isReporting}
               onClick={handleRetryReport}
             >
               {t('Retry private report')}
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -411,23 +412,18 @@ function ExperienceForm({
             'You have an unfinished experience saved on this device. Restore it or start again.',
           )}
         </p>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={restoreDraft}
-        >
+        <Button colour="primary" type="button" onClick={restoreDraft}>
           {t('Restore draft')}
-        </button>{' '}
-        <button
+        </Button>{' '}
+        <Button
           type="button"
-          className="btn btn-default"
           onClick={() => {
             setStorageAvailable(removeDraft(key));
             setPendingDraft(null);
           }}
         >
           {t('Discard draft')}
-        </button>
+        </Button>
       </div>
     );
   }

@@ -825,7 +825,9 @@ test.describe.serial('search offers and circles feature coverage', () => {
       );
       await scrollingOverviewJoinButton.click();
       expect((await joinResponse).ok()).toBeTruthy();
-      await expect(scrollingOverviewJoinButton).toHaveClass(/btn-active/);
+      await expect(scrollingOverviewJoinButton).toHaveClass(
+        /tribe-join-active/,
+      );
       await expect(scrollingOverviewJoinButton).toHaveAttribute(
         'aria-label',
         /Leave circle/i,

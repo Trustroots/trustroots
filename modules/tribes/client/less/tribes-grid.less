@@ -71,13 +71,13 @@
     right: 0;
     padding: 5px 10px 10px 5px;
     text-align: right;
-    .btn {
+    [data-slot='button'] {
       &:hover {
         background: #fff;
       }
     }
   }
-  .tribe-join.btn.btn-active {
+  .tribe-join[data-slot='button'].tribe-join-active {
     opacity: 0.8;
     color: @gray;
     &:hover {

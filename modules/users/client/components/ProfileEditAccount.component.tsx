@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
@@ -247,17 +248,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               </div>
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <button type="submit" className="btn btn-primary">
+                  <Button colour="primary" type="submit">
                     {t('Change email')}
-                  </button>
+                  </Button>
                   {draftUser.emailTemporary && (
-                    <button
-                      type="button"
-                      className="btn btn-default"
-                      onClick={handleResendConfirmation}
-                    >
+                    <Button type="button" onClick={handleResendConfirmation}>
                       {t('Resend confirmation')}
-                    </button>
+                    </Button>
                   )}
                 </div>
               </div>
@@ -308,13 +305,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               </div>
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <button
+                  <Button
+                    colour="primary"
                     type="submit"
-                    className="btn btn-primary"
                     disabled={draftUser.usernameUpdateAllowed === false}
                   >
                     {t('Change username')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -386,9 +383,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                 onChange={event => setVerifyPassword(event.target.value)}
               />
             </div>
-            <button type="submit" className="btn btn-primary">
+            <Button colour="primary" type="submit">
               {t('Change password')}
-            </button>
+            </Button>
             {passwordMessage && <p className="help-block">{passwordMessage}</p>}
           </form>
         </div>
@@ -407,9 +404,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               'It does not include your password, your profile photo file, or messages and experiences written by other members.',
             )}
           </p>
-          <a className="btn btn-default" href="/api/users/export">
+          <Button render={<a href="/api/users/export" />}>
             {t('Download your data')}
-          </a>
+          </Button>
         </div>
       </div>
 
@@ -450,14 +447,13 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                   'Account deletion is pending. You can cancel it here to invalidate the confirmation link in your email.',
                 )}
               </p>
-              <button
+              <Button
                 type="button"
-                className="btn btn-default"
                 disabled={isCancellingRemoval}
                 onClick={handleCancelRemoval}
               >
                 {t('Cancel account deletion')}
-              </button>
+              </Button>
             </div>
           )}
           <div className="checkbox profile-remove-confirmation">
@@ -472,9 +468,9 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               {t('Yes, I want to remove my profile')}
             </label>
           </div>
-          <button
+          <Button
+            colour="danger"
             type="button"
-            className="btn btn-danger"
             disabled={
               isCheckingRemoval ||
               !removeProfileConfirm ||
@@ -485,7 +481,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
             onClick={removeProfileConfirm ? handleRemoveProfile : undefined}
           >
             {t('Remove profile')}
-          </button>
+          </Button>
           {removalMessage && <p className="help-block">{removalMessage}</p>}
         </div>
       </div>

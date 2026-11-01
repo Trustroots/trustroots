@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
@@ -66,7 +67,7 @@ function SignupTribePanel({
           <div className="tribe-meta">{formatMemberCount(tribe.count)}</div>
         </div>
         <JoinButton
-          className="btn btn-primary tribe-join"
+          look={{ colour: 'primary' }}
           tribe={tribe}
           user={user || undefined}
           onUpdated={onMembershipUpdated}
@@ -507,9 +508,10 @@ export default function SignupPage() {
                         }
                       />
                       <span className="input-group-btn">
-                        <button
+                        <Button
+                          size="lg"
+                          className="password-toggle"
                           type="button"
-                          className="btn btn-lg btn-default btn-password-toggle"
                           aria-label="Toggle password visibility"
                           onClick={() => setShowPassword(current => !current)}
                         >
@@ -518,7 +520,7 @@ export default function SignupPage() {
                               showPassword ? 'icon-eye-off' : 'icon-eye'
                             }`}
                           />
-                        </button>
+                        </Button>
                       </span>
                     </div>
                     {credentials.password &&
@@ -582,13 +584,11 @@ export default function SignupPage() {
                     </p>
                   </div>
                   <div className="col-4 d-block d-sm-none">
-                    <a
-                      className="btn btn-default"
-                      href="/rules"
-                      onClick={handleOpenRules}
+                    <Button
+                      render={<a href="/rules" onClick={handleOpenRules} />}
                     >
                       Read rules
-                    </a>
+                    </Button>
                   </div>
                 </div>
                 <div className="form-group">
@@ -614,9 +614,10 @@ export default function SignupPage() {
                 </div>
                 <div className="text-center signup-next">
                   <br />
-                  <button
+                  <Button
+                    colour="primary"
+                    size="lg"
                     type="submit"
-                    className="btn btn-lg btn-primary"
                     disabled={!isStepOneValid || isLoading}
                   >
                     {usernamePending
@@ -624,7 +625,7 @@ export default function SignupPage() {
                       : isStepOneValid
                         ? 'Next'
                         : 'Please fill in the form'}
-                  </button>
+                  </Button>
                   <br />
                   <br />
                 </div>
@@ -671,9 +672,9 @@ export default function SignupPage() {
                   </ul>
                 )}
                 <div className="text-center">
-                  <button
+                  <Button
+                    className="center-block"
                     type="button"
-                    className="btn btn-default center-block"
                     disabled={
                       suggestedTribesLimit >= suggestedTribes.length ||
                       suggestedTribes.length === 0
@@ -683,28 +684,29 @@ export default function SignupPage() {
                     }
                   >
                     Show more circles
-                  </button>
+                  </Button>
                   <br />
                 </div>
                 <div className="text-center form-group">
                   <br />
                   <br />
-                  <button
+                  <Button
+                    colour="primary"
+                    size="lg"
                     type="button"
-                    className="btn btn-lg btn-primary"
                     disabled={isLoading}
                     onClick={() => setStep(3)}
                   >
                     Next
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    size="lg"
                     type="button"
-                    className="btn btn-lg btn-default"
                     disabled={isLoading}
                     onClick={() => setStep(3)}
                   >
                     Skip
-                  </button>
+                  </Button>
                   <br />
                   <br />
                 </div>
@@ -727,13 +729,14 @@ export default function SignupPage() {
                   there, please mark it as &quot;Not Junk&quot;.
                 </p>
                 <p>
-                  <a
-                    href="/profile/edit"
-                    className="btn btn-lg btn-primary"
+                  <Button
+                    colour="primary"
+                    size="lg"
+                    render={<a href="/profile/edit" />}
                     id="signup-edit"
                   >
                     Fill your profile
-                  </a>
+                  </Button>
                 </p>
               </div>
             </div>
@@ -749,9 +752,9 @@ export default function SignupPage() {
               <br />
               <br />
               <p className="visible-xs-block">
-                <a href="/" className="btn btn-link">
+                <Button variant="link" render={<a href="/" />}>
                   About Trustroots
-                </a>
+                </Button>
               </p>
             </div>
           </div>

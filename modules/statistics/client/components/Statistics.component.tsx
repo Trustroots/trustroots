@@ -12,6 +12,7 @@ import BoardImplementation from '@/modules/core/client/components/Board';
 import Stat from './Stat';
 import StatisticsImage from './StatisticsImage';
 import Tooltip from '@/modules/core/client/components/Tooltip';
+import { Button } from '@trustroots/ui/Button';
 
 interface ExperienceSuggestion {
   displayName: string;
@@ -604,12 +605,12 @@ export default function Statistics({
                       </p>
                       {isAuthenticated && (
                         <p>
-                          <a
-                            className="btn btn-sm btn-default"
-                            href="/profile/edit/account"
+                          <Button
+                            size="sm"
+                            render={<a href="/profile/edit/account" />}
                           >
                             {t('Subscribe to newsletter')}
-                          </a>
+                          </Button>
                         </p>
                       )}
                     </>

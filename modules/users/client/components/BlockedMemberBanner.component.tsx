@@ -6,13 +6,14 @@ import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 
+import type { ButtonStyleProps } from '@trustroots/ui/Button';
 import BlockMember from './BlockMember.component';
 import ReportMemberImplementation from '@/modules/support/client/components/ReportMember.component.js';
 
 const ReportMember =
   ReportMemberImplementation as unknown as React.ComponentType<{
     username: string;
-    className?: string;
+    look?: ButtonStyleProps;
   }>;
 
 export default function BlockedMemberBanner({
@@ -29,8 +30,8 @@ export default function BlockedMemberBanner({
       <p>
         {t('You have blocked this member.')}{' '}
         {t('They cannot see or message you.')}
-        <ReportMember username={username} className="btn btn-link" />
-        <BlockMember isBlocked username={username} className="btn btn-link" />
+        <ReportMember username={username} look={{ variant: 'link' }} />
+        <BlockMember isBlocked username={username} look={{ variant: 'link' }} />
       </p>
     </div>
   );

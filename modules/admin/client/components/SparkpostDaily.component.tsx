@@ -9,6 +9,7 @@ import type {
   RecoveryDay,
   RecoveryResult,
 } from '../../shared/sparkpost';
+import { Button } from '@trustroots/ui/Button';
 
 export default function SparkpostDaily({ date }: { date: string }) {
   const [events, setEvents] = useState<SparkpostEvents['events']>([]);
@@ -176,9 +177,7 @@ export default function SparkpostDaily({ date }: { date: string }) {
       {loading ? (
         <p role="status">Loading provider events…</p>
       ) : next ? (
-        <button className="btn btn-default" onClick={() => setCursor(next)}>
-          Load more events
-        </button>
+        <Button onClick={() => setCursor(next)}>Load more events</Button>
       ) : (
         !providerError &&
         !partial && (
@@ -266,27 +265,25 @@ export default function SparkpostDaily({ date }: { date: string }) {
           {!day.candidates.length && (
             <p>No eligible application events on this page.</p>
           )}
-          <button
-            className="btn btn-default"
+          <Button
             disabled={page === 1 || sending}
             onClick={() => setPage(page - 1)}
           >
             Previous candidates
-          </button>{' '}
-          <button
-            className="btn btn-default"
+          </Button>{' '}
+          <Button
             disabled={!day.more || sending}
             onClick={() => setPage(page + 1)}
           >
             Next candidates
-          </button>{' '}
-          <button
-            className="btn btn-primary"
+          </Button>{' '}
+          <Button
+            colour="primary"
             disabled={!selected.length || sending}
             onClick={() => setReview(true)}
           >
             Review {selected.length} selected emails
-          </button>
+          </Button>
         </>
       )}
       {review && (
@@ -305,9 +302,9 @@ export default function SparkpostDaily({ date }: { date: string }) {
             Confirmation links will be renewed. Current eligibility is checked
             again. Queued emails will be sent by the worker.
           </p>
-          <button disabled={sending} className="btn btn-primary" onClick={send}>
+          <Button disabled={sending} colour="primary" onClick={send}>
             Queue selected emails
-          </button>{' '}
+          </Button>{' '}
           <button disabled={sending} onClick={() => setReview(false)}>
             Cancel
           </button>

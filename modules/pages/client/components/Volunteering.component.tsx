@@ -1,4 +1,5 @@
 import type { PageTranslator } from '../types';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
@@ -45,12 +46,12 @@ export default function Volunteering() {
             </p>
             <ul className="list-inline">
               <li>
-                <a
-                  href="/support?category=volunteering"
-                  className="btn btn-primary"
+                <Button
+                  colour="primary"
+                  render={<a href="/support?category=volunteering" />}
                 >
                   {t('I’d like to help run Trustroots')}
-                </a>
+                </Button>
               </li>
               <li>
                 <a href="https://team.trustroots.org/">{t('Team Guide')}</a>

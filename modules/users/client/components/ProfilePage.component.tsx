@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 
@@ -57,7 +58,6 @@ const TooltipWithContent = Tooltip as unknown as React.ComponentType<{
   children: React.ReactNode;
 }>;
 const ReportMemberButton = ReportMember as unknown as React.ComponentType<{
-  className: string;
   username: string;
 }>;
 
@@ -161,28 +161,36 @@ function ProfileDesktopActions({
       {!isSelf && (
         <>
           <li>
-            <a href={`/messages/${profile.username}`} className="btn btn-link">
+            <Button
+              variant="link"
+              render={<a href={`/messages/${profile.username}`} />}
+            >
               <i className="fa icon-message-alt" />
               {t('Send a message') as string}
-            </a>
+            </Button>
           </li>
           {referencesEnabled && (
             <li>
-              <a
-                className="btn btn-link"
-                href={getProfileExperiencesPath(profile.username)}
+              <Button
+                variant="link"
+                render={
+                  <a href={getProfileExperiencesPath(profile.username)} />
+                }
               >
                 <i className="icon-plus-squared-alt" />
                 {t('Share your experience') as string}
-              </a>
+              </Button>
             </li>
           )}
           <li>
             {contactResolved && !contact._id && (
-              <a className="btn btn-link" href={`/contact-add/${profile._id}`}>
+              <Button
+                variant="link"
+                render={<a href={`/contact-add/${profile._id}`} />}
+              >
                 <i className="icon-plus-squared-alt" />
                 {t('Add contact') as string}
-              </a>
+              </Button>
             )}
             {contactResolved && contact._id && (
               <TooltipWithContent
@@ -197,16 +205,12 @@ function ProfileDesktopActions({
                 }
                 placement="bottom"
               >
-                <button
-                  type="button"
-                  className="btn btn-link"
-                  onClick={onRemoveClick}
-                >
+                <Button variant="link" type="button" onClick={onRemoveClick}>
                   <i className="icon-minus-squared-alt" />
                   {contact.confirmed
                     ? (t('Remove contact') as string)
                     : (t('Delete contact request') as string)}
-                </button>
+                </Button>
               </TooltipWithContent>
             )}
           </li>
@@ -214,10 +218,13 @@ function ProfileDesktopActions({
       )}
       {isAdmin && (
         <li>
-          <a className="btn btn-link" href={getAdminUserHref(profile)}>
+          <Button
+            variant="link"
+            render={<a href={getAdminUserHref(profile)} />}
+          >
             <i className="icon-cog" aria-hidden="true" />
             Admin
-          </a>
+          </Button>
         </li>
       )}
     </ul>
@@ -404,14 +411,10 @@ export default function ProfilePage({
             <ProfileOverview profile={profile} isSelf={isSelf} />
             {!isSelf && (
               <div className="profile-flags">
-                <ReportMemberButton
-                  className="btn btn-sm btn-default"
-                  username={profile.username}
-                />
+                <ReportMemberButton username={profile.username} />
                 <br />
                 <br />
                 <BlockMember
-                  className="btn btn-sm btn-default"
                   isBlocked={authUser.blocked?.includes(profile._id) === true}
                   username={profile.username}
                 />
@@ -481,10 +484,7 @@ export default function ProfilePage({
     return (
       <section className="container container-spacer">
         <h2>{profile.displayName}</h2>
-        <ReportMemberButton
-          className="btn btn-sm btn-default"
-          username={profile.username}
-        />
+        <ReportMemberButton username={profile.username} />
         {isCreatingExperience ? (
           <CreateExperience userFrom={authUser} userTo={profile} />
         ) : ownExperience ? (
@@ -577,21 +577,23 @@ export default function ProfilePage({
                       {t('sent you a contact request') as string}
                     </li>
                     <li>
-                      <a
-                        className="btn btn-sm btn-primary"
-                        href={`/contact-confirm/${contact._id}`}
+                      <Button
+                        colour="primary"
+                        size="sm"
+                        render={<a href={`/contact-confirm/${contact._id}`} />}
                       >
                         {t('Confirm Request') as string}
-                      </a>
+                      </Button>
                     </li>
                     <li>
-                      <button
+                      <Button
+                        colour="danger"
+                        size="sm"
                         type="button"
-                        className="btn btn-sm btn-danger"
                         onClick={() => setShowRemoveModal(true)}
                       >
                         {t('Decline Request') as string}
-                      </button>
+                      </Button>
                     </li>
                   </ul>
                   <hr />
@@ -608,14 +610,10 @@ export default function ProfilePage({
                     <ProfileOverview profile={profile} isSelf={isSelf} />
                     {!isSelf && (
                       <div className="profile-flags">
-                        <ReportMemberButton
-                          className="btn btn-sm btn-default"
-                          username={profile.username}
-                        />
+                        <ReportMemberButton username={profile.username} />
                         <br />
                         <br />
                         <BlockMember
-                          className="btn btn-sm btn-default"
                           isBlocked={(authUser.blocked || []).includes(
                             profile._id,
                           )}
@@ -632,12 +630,13 @@ export default function ProfilePage({
                           @{profile.username}
                         </h4>
                         {isSelf && (
-                          <a
-                            href="/profile/edit"
-                            className="btn btn-primary pull-right"
+                          <Button
+                            colour="primary"
+                            className="pull-right"
+                            render={<a href="/profile/edit" />}
                           >
                             {t('Edit your profile') as string}
-                          </a>
+                          </Button>
                         )}
                         {profile.tagline && (
                           <div className="profile-tagline">

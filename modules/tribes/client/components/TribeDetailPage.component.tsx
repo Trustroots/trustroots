@@ -1,4 +1,5 @@
 import RichText from '@/modules/core/client/components/RichText';
+import { Button } from '@trustroots/ui/Button';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import styled, { css } from 'styled-components';
@@ -136,9 +137,9 @@ export default function TribeDetailPage({
                 ) as string
               }
             </p>
-            <a href="/circles" className="btn btn-primary">
+            <Button colour="primary" render={<a href="/circles" />}>
               {t('See other circles') as string}
-            </a>
+            </Button>
           </div>
         </div>
       </section>
@@ -167,12 +168,14 @@ export default function TribeDetailPage({
           <div className="container">
             <div className="row no-gutters">
               <div className="col-xs-12">
-                <a
-                  href="/circles"
-                  className="btn btn-lg btn-link tribe-header-back"
+                <Button
+                  variant="link"
+                  size="lg"
+                  className="tribe-header-back"
+                  render={<a href="/circles" />}
                 >
                   <i className="icon-left"></i> {t('More circles') as string}
-                </a>
+                </Button>
               </div>
             </div>
             <div className="row">
@@ -220,69 +223,85 @@ export default function TribeDetailPage({
                 {user ? (
                   <div className="tribe-actions-group">
                     {user.roles?.includes('admin') && (
-                      <a
-                        className="btn btn-default"
-                        href={`/admin/circles/${encodeURIComponent(tribe.slug)}`}
+                      <Button
+                        render={
+                          <a
+                            href={`/admin/circles/${encodeURIComponent(tribe.slug)}`}
+                          />
+                        }
                       >
                         {t('Edit circle') as string}
-                      </a>
+                      </Button>
                     )}
                     <JoinButton
                       tribe={tribe}
                       user={user}
-                      className="btn btn-default"
-                      activeClassName="btn btn-default circle-membership-active"
+                      look={{}}
+                      activeClassName="circle-membership-active"
                       icon={false}
                       memberLabel={t("You're a member") as string}
                       onUpdated={handleMembershipUpdated}
                     />
-                    <a
-                      className="btn btn-primary"
-                      href={`/search?tribe=${tribe.slug}`}
+                    <Button
+                      colour="primary"
+                      render={<a href={`/search?tribe=${tribe.slug}`} />}
                     >
                       {t('Find members') as string}
-                    </a>
+                    </Button>
                     {wikiUrl && !isHackersCircle && (
-                      <a
-                        className="btn btn-default"
-                        href={wikiUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      <Button
+                        render={
+                          <a
+                            href={wikiUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          />
+                        }
                       >
                         {t('Circle Wiki') as string}
-                      </a>
+                      </Button>
                     )}
                   </div>
                 ) : (
-                  <a
-                    className="btn btn-lg btn-primary btn-action tribe-join"
-                    href={`/signup?tribe=${tribe.slug}`}
+                  <Button
+                    colour="primary"
+                    size="action"
+                    className="tribe-join"
+                    render={<a href={`/signup?tribe=${tribe.slug}`} />}
                   >
                     {
                       t('Join {{label}} on Trustroots', {
                         label: tribe.label,
                       }) as string
                     }
-                  </a>
+                  </Button>
                 )}
                 {!user && (
-                  <a
-                    className="btn btn-lg btn-link tribe-readmore"
-                    href={`/?circle=${tribe.slug}`}
+                  <Button
+                    variant="link"
+                    size="lg"
+                    className="tribe-readmore"
+                    render={<a href={`/?circle=${tribe.slug}`} />}
                   >
                     <i className="icon-right"></i>{' '}
                     {t('How does it work?') as string}
-                  </a>
+                  </Button>
                 )}
                 {wikiUrl && !user && !isHackersCircle && (
-                  <a
-                    className="btn btn-lg btn-link tribe-readmore"
-                    href={wikiUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Button
+                    variant="link"
+                    size="lg"
+                    className="tribe-readmore"
+                    render={
+                      <a
+                        href={wikiUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    }
                   >
                     {t('Circle Wiki') as string}
-                  </a>
+                  </Button>
                 )}
                 {user && (
                   <p className="lead tribe-intro">
@@ -393,13 +412,9 @@ export default function TribeDetailPage({
               </li>
             </ul>
             <div className="hackers-circle-resource-footer">
-              <a
-                {...resourceLinkProps}
-                className="btn btn-default"
-                href={wikiUrl}
-              >
+              <Button render={<a {...resourceLinkProps} href={wikiUrl} />}>
                 {t('Circle Wiki') as string}
-              </a>
+              </Button>
               <small className="text-muted">
                 {t('Adapted from the') as string}{' '}
                 <a

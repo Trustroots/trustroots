@@ -15,6 +15,33 @@
   --spacing-control-x: var(--tr-padding-base-horizontal);
   --spacing-control-y: var(--tr-padding-base-vertical);
   --leading-base: var(--tr-line-height-base);
+  --font-base: var(--tr-font-family-base);
+
+  /* Button colours. */
+  --color-link: var(--tr-link-color);
+  --color-link-hover: var(--tr-link-hover-color);
+  --color-text-muted: var(--tr-text-muted);
+  --color-button-default: var(--tr-button-default-bg);
+  --color-button-default-hover: var(--tr-button-default-hover-bg);
+  --color-button-default-active: var(--tr-button-default-active-bg);
+  --color-button-primary-hover: var(--tr-button-primary-hover-bg);
+  --color-button-primary-active: var(--tr-button-primary-active-bg);
+  --color-button-inverse-focus: var(--tr-button-inverse-focus-border);
+  --color-button-inverse-primary-focus: var(
+    --tr-button-inverse-primary-focus-border
+  );
+  --color-offer-yes: var(--tr-offer-hosting-yes);
+  --color-offer-yes-hover: var(--tr-offer-hosting-yes-hover);
+  --color-offer-yes-active: var(--tr-offer-hosting-yes-active);
+  --color-offer-maybe: var(--tr-offer-hosting-maybe);
+  --color-offer-maybe-hover: var(--tr-offer-hosting-maybe-hover);
+  --color-offer-maybe-active: var(--tr-offer-hosting-maybe-active);
+  --color-offer-no: var(--tr-offer-hosting-no);
+  --color-offer-no-hover: var(--tr-offer-hosting-no-hover);
+  --color-offer-no-active: var(--tr-offer-hosting-no-active);
+  --color-offer-meet: var(--tr-offer-meet);
+  --color-offer-meet-hover: var(--tr-offer-meet-hover);
+  --color-offer-meet-active: var(--tr-offer-meet-active);
 }
 
 @theme {
@@ -22,6 +49,22 @@
   --color-warning-text: #664d03;
   --color-warning-bg: #fff3cd;
   --color-warning-border: #ffe69c;
+
+  /* Bootstrap 5.3 danger and info button colours, used by admin pages. */
+  --color-danger: #dc3545;
+  --color-danger-hover: #bb2d3b;
+  --color-danger-hover-border: #b02a37;
+  --color-danger-active-border: #a52834;
+  --color-info: #0dcaf0;
+  --color-info-hover: #31d2f2;
+  --color-info-hover-border: #25cff2;
+  --color-info-active: #3dd5f3;
+  /* Bootstrap's .text-muted, which muted link buttons used. */
+  --color-button-muted: rgba(33, 37, 41, 0.75);
+  /* Bootstrap's default text colour for a button without a colour. */
+  --color-plain: #212529;
+  /* Bootstrap's disabled link button colour. */
+  --color-link-disabled: #6c757d;
 
   /* Matches Bootstrap's .spinner-border timing. */
   --animate-spinner: spinner-rotate 0.75s linear infinite;

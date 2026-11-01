@@ -34,11 +34,12 @@ describe('<BlockMember />', () => {
   });
 
   it('renders the block action for unblocked members', () => {
-    render(<BlockMember username="alice" className="btn-test" />);
+    render(<BlockMember username="alice" className="block-test" />);
 
-    expect(
-      screen.getByRole('button', { name: 'Block member "alice"' }),
-    ).toHaveClass('btn-test');
+    const button = screen.getByRole('button', { name: 'Block member "alice"' });
+    expect(button).toHaveClass('block-test');
+    expect(button).toHaveAttribute('data-size', 'sm');
+    expect(button).toHaveAttribute('data-colour', 'default');
   });
 
   it('does not call the block API when confirmation is cancelled', () => {

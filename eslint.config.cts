@@ -127,6 +127,19 @@ const legacyConfig = {
       rules: {
         // Custom editors manage focus themselves; native autoFocus stays banned.
         'jsx-a11y/no-autofocus': [2, { ignoreNonDOM: true }],
+        // `<Button render={<a href="…" />}>Text</Button>` gives the anchor
+        // its content through Base UI's render prop, which this rule can't
+        // see. Anchors outside a render prop still need content.
+        'jsx-a11y/anchor-has-content': 0,
+        'no-restricted-syntax': [
+          2,
+          {
+            selector:
+              "JSXElement[openingElement.name.name='a'][children.length=0]:not(JSXAttribute JSXElement):not(:has(JSXAttribute[name.name=/^(aria-label|aria-labelledby|title|dangerouslySetInnerHTML|children)$/]))",
+            message:
+              'Anchors must have content (jsx-a11y/anchor-has-content). Use <Button render={<a />}>Text</Button> for link buttons.',
+          },
+        ],
         'react/no-danger': 2,
         'no-restricted-properties': [
           2,

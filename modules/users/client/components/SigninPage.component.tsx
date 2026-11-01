@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -168,9 +169,10 @@ export default function SigninPage() {
                         }
                       />
                       <span className="input-group-btn">
-                        <button
+                        <Button
+                          size="lg"
+                          className="password-toggle"
                           type="button"
-                          className="btn btn-lg btn-default btn-password-toggle"
                           aria-label="Toggle password visibility"
                           onClick={() => setShowPassword(current => !current)}
                         >
@@ -179,29 +181,24 @@ export default function SigninPage() {
                               showPassword ? 'icon-eye-off' : 'icon-eye'
                             }`}
                           />
-                        </button>
+                        </Button>
                       </span>
                     </div>
                   </div>
                   <div className="form-group">
-                    <button
-                      type="submit"
-                      className="btn btn-default btn-lg"
-                      disabled={isLoading}
-                    >
+                    <Button size="lg" type="submit" disabled={isLoading}>
                       {isLoading
                         ? 'Wait...'
                         : continueSignin
                           ? 'Sign in to continue'
                           : 'Login'}
-                    </button>
-                    <span className="btn space-h" />
-                    <a
-                      href={forgotHref}
-                      className={`btn-link${
-                        authError ? ' btn-lg btn-link' : ''
-                      }`}
-                    >
+                    </Button>
+                    <Button
+                      variant="plain"
+                      render={<span />}
+                      className="space-h"
+                    />
+                    <a href={forgotHref}>
                       Forgot?
                       {authError && (
                         <span className="hidden-xs">
@@ -215,9 +212,14 @@ export default function SigninPage() {
               </form>
               <div className="text-white hidden-xs">
                 <br />
-                <a href="/signup" className="btn btn-inverse btn-lg btn-signup">
+                <Button
+                  variant="inverse"
+                  size="lg"
+                  className="signup-button"
+                  render={<a href="/signup" />}
+                >
                   Become a member
-                </a>
+                </Button>
                 <span>&nbsp;&nbsp;or&nbsp;&nbsp;</span>
                 <a href="/" className="link">
                   Back home

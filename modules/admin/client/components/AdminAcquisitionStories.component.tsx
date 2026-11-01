@@ -12,6 +12,7 @@ import {
   formatAdminDateTime,
   getAdminDateTimeAttribute,
 } from '../utils/admin-date';
+import { Button } from '@trustroots/ui/Button';
 
 type StorySortColumn =
   | 'acquisitionStory'
@@ -141,14 +142,15 @@ function SortableHeader({
         placement="bottom"
         tooltip={tooltip}
       >
-        <button
-          className="btn btn-link admin-acquisition-stories-sort"
+        <Button
+          variant="link"
+          className="admin-acquisition-stories-sort"
           onClick={() => onSort(column)}
           type="button"
         >
           {label}
           {isActive && (sort.direction === 'ascending' ? ' ▲' : ' ▼')}
-        </button>
+        </Button>
       </AccessibleTooltip>
     </th>
   );

@@ -79,12 +79,12 @@ describe('<BlockedMemberBanner />', function () {
     expect(block).toHaveAttribute('data-username', 'alice');
     expect(mockReportMemberCalls[0]).toMatchObject({
       username: 'alice',
-      className: 'btn btn-link',
+      look: { variant: 'link' },
     });
     expect(mockBlockMemberCalls[0]).toMatchObject({
       username: 'alice',
       isBlocked: true,
-      className: 'btn btn-link',
+      look: { variant: 'link' },
     });
   });
 });

@@ -180,14 +180,16 @@
   .header-more-text {
     font-size: 14px;
 
-    &.btn-link {
-      --bs-btn-color: @navbar-default-link-color;
-      --bs-btn-hover-color: @navbar-default-link-hover-color;
+    &[data-variant='link'] {
       color: @navbar-default-link-color;
+      &:hover,
+      &:active {
+        color: @navbar-default-link-hover-color;
+      }
     }
   }
   .header-welcome-text,
-  .btn {
+  [data-slot='button'] {
     margin: 0 10px;
   }
 

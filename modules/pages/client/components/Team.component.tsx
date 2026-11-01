@@ -1,5 +1,7 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
+import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 import type { PageTranslator, PageUser } from '../types';
 import React, { useState, useEffect } from 'react';
 
@@ -104,12 +106,13 @@ export default function Team({ user }: { user?: PageUser | null }) {
               </em>
             </p>
             <p>
-              <a
-                className="btn btn-lg btn-primary"
-                href="/support?category=volunteering"
+              <Button
+                colour="primary"
+                size="lg"
+                render={<a href="/support?category=volunteering" />}
               >
                 {t('Get active!')}
-              </a>
+              </Button>
               <br />
               <br />
             </p>
@@ -151,12 +154,13 @@ export default function Team({ user }: { user?: PageUser | null }) {
                 <p>
                   <br />
                   <br />
-                  <a
-                    href="/signup"
-                    className="btn btn-lg btn-action btn-inverse"
+                  <Button
+                    variant="inverse"
+                    size="action"
+                    render={<a href="/signup" />}
                   >
                     {t('Join Trustroots')}
-                  </a>
+                  </Button>
                 </p>
               )}
             </div>
@@ -168,40 +172,29 @@ export default function Team({ user }: { user?: PageUser | null }) {
         <div className="row">
           <div className="col-xs-12 text-center">
             <p className="text-muted">{t('Follow Trustroots')}</p>
-            <div className="btn-group">
-              <a
-                href="https://ideas.trustroots.org/"
-                className="btn btn-link btn-lg"
+            <ButtonGroup>
+              <Button
+                variant="link"
+                size="lg"
+                render={<a href="https://ideas.trustroots.org/" />}
               >
                 {t('Blog')}
-              </a>
+              </Button>
               {/*
-              <a
-                href="https://www.facebook.com/trustroots.org"
-                className="btn btn-link btn-lg"
-              >
+              <Button variant="link" size="lg" render={<a href="https://www.facebook.com/trustroots.org" />}>
                 {t('Facebook page')}
-              </a>
-              <a
-                href="https://www.facebook.com/groups/trustroots/"
-                className="btn btn-link btn-lg"
-              >
+              </Button>
+              <Button variant="link" size="lg" render={<a href="https://www.facebook.com/groups/trustroots/" />}>
                 {t('Facebook group')}
-              </a>
-              <a
-                href="https://www.instagram.com/trustroots/"
-                className="btn btn-link btn-lg"
-              >
+              </Button>
+              <Button variant="link" size="lg" render={<a href="https://www.instagram.com/trustroots/" />}>
                 Instagram
-              </a>
-              <a
-                href="https://twitter.com/trustroots"
-                className="btn btn-link btn-lg"
-              >
+              </Button>
+              <Button variant="link" size="lg" render={<a href="https://twitter.com/trustroots" />}>
                 Twitter
-              </a>
+              </Button>
               */}
-            </div>
+            </ButtonGroup>
             <br />
             <br />
           </div>

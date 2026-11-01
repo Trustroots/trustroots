@@ -8,6 +8,7 @@ import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
 import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy.ts';
+import { Button } from '@trustroots/ui/Button';
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };
@@ -318,13 +319,14 @@ export default function SupportForm({ user }: SupportFormProps) {
 
           <div className="form-group">
             <div className="offset-sm-3 col-sm-9">
-              <button
+              <Button
                 type="submit"
-                className="btn btn-lg btn-primary"
+                colour="primary"
+                size="lg"
                 disabled={isSending || supportMessage?.trim()?.length === 0}
               >
                 {isSending ? t('Wait…') : t('Send')}
-              </button>
+              </Button>
             </div>
           </div>
         </form>

@@ -106,9 +106,11 @@ export default function Navigation({ user }: NavigationProps) {
       <div className="container font-brand-regular">
         {!isNativeMobileApp && (
           <p className="home-apps">
-            <a
-              href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
-              className="btn btn-default btn-app center-block"
+            <Button
+              className="app-store-badge center-block"
+              render={
+                <a href="https://play.google.com/store/apps/details?id=org.trustroots.trapp" />
+              }
             >
               <svg viewBox="0 0 2700 800" xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -147,64 +149,64 @@ export default function Navigation({ user }: NavigationProps) {
                   </linearGradient>
                 </defs>
               </svg>
-            </a>
+            </Button>
             <br />
           </p>
         )}
         <ul className="list-inline text-center">
           <li>
             <p>
-              <a
-                href="https://www.facebook.com/trustroots.org"
-                className="btn btn-default center-block"
+              <Button
                 aria-label={t('Trustroots page at Facebook')}
+                className="center-block"
+                render={<a href="https://www.facebook.com/trustroots.org" />}
               >
                 {t('Facebook page')}
-              </a>
+              </Button>
             </p>
           </li>
           <li>
             <p>
-              <a
-                href="https://www.facebook.com/trustroots.org"
-                className="btn btn-default center-block"
+              <Button
                 aria-label={t('Trustroots group at Facebook')}
+                className="center-block"
+                render={<a href="https://www.facebook.com/trustroots.org" />}
               >
                 {t('Facebook group')}
-              </a>
+              </Button>
             </p>
           </li>
           <li>
             <p>
-              <a
-                href="https://twitter.com/trustroots"
-                className="btn btn-default center-block"
+              <Button
                 aria-label={t('Trustroots at Twitter')}
+                className="center-block"
+                render={<a href="https://twitter.com/trustroots" />}
               >
                 Twitter
-              </a>
+              </Button>
             </p>
           </li>
           <li>
             <p>
-              <a
-                href="https://www.instagram.com/trustroots/"
-                className="btn btn-default center-block"
+              <Button
                 aria-label={t('Trustroots at Instagram')}
+                className="center-block"
+                render={<a href="https://www.instagram.com/trustroots/" />}
               >
                 Instagram
-              </a>
+              </Button>
             </p>
           </li>
           <li>
             <p>
-              <a
-                href="https://github.com/Trustroots/trustroots"
-                className="btn btn-default center-block"
+              <Button
                 aria-label={t('Trustroots at GitHub')}
+                className="center-block"
+                render={<a href="https://github.com/Trustroots/trustroots" />}
               >
                 GitHub
-              </a>
+              </Button>
             </p>
           </li>
         </ul>

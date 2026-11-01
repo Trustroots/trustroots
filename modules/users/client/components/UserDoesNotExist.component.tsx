@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 
 export default function UserDoesNotExist() {
@@ -15,9 +16,9 @@ export default function UserDoesNotExist() {
       </em>
       <br />
       <br />
-      <a href="/search/members" className="btn btn-primary">
+      <Button colour="primary" render={<a href="/search/members" />}>
         {t('Find people')}
-      </a>
+      </Button>
       <br />
       <br />
       <a href="/search">{t('Map search')}</a>

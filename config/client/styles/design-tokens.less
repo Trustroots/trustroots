@@ -2,6 +2,9 @@
 // until the shared UI package replaces this compatibility bridge.
 :root {
   --tr-brand-primary: @brand-primary;
+  // The channels alone, for translucent brand colours computed in sRGB.
+  --tr-brand-primary-rgb: red(@brand-primary), green(@brand-primary),
+    blue(@brand-primary);
   --tr-brand-secondary: @brand-secondary;
   --tr-body-bg: @body-bg;
   --tr-panel-bg: @panel-bg;
@@ -26,4 +29,28 @@
   --tr-border-radius-base: @border-radius-base;
   --tr-border-radius-small: @border-radius-small;
   --tr-border-radius-large: @border-radius-large;
+
+  // Button states, darkened the way the Bootstrap 3 button mixins did.
+  --tr-button-primary-hover-bg: darken(@brand-primary, 6%);
+  --tr-button-primary-active-bg: darken(@brand-primary, 9%);
+  --tr-button-default-bg: @btn-default-bg;
+  --tr-button-default-hover-bg: darken(@btn-default-bg, 5%);
+  --tr-button-default-active-bg: darken(@btn-default-bg, 8%);
+  --tr-button-inverse-focus-border: darken(@btn-inverse-border, 5%);
+  --tr-button-inverse-primary-focus-border: darken(
+    @btn-inverse-primary-border,
+    5%
+  );
+  --tr-offer-hosting-yes: @offer-hosting-yes;
+  --tr-offer-hosting-yes-hover: darken(@offer-hosting-yes, 5%);
+  --tr-offer-hosting-yes-active: darken(@offer-hosting-yes, 8%);
+  --tr-offer-hosting-maybe: @offer-hosting-maybe;
+  --tr-offer-hosting-maybe-hover: darken(@offer-hosting-maybe, 5%);
+  --tr-offer-hosting-maybe-active: darken(@offer-hosting-maybe, 8%);
+  --tr-offer-hosting-no: @offer-hosting-no;
+  --tr-offer-hosting-no-hover: darken(@offer-hosting-no, 5%);
+  --tr-offer-hosting-no-active: darken(@offer-hosting-no, 8%);
+  --tr-offer-meet: @offer-meet;
+  --tr-offer-meet-hover: darken(@offer-meet, 5%);
+  --tr-offer-meet-active: darken(@offer-meet, 8%);
 }

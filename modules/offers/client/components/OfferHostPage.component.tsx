@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { Button } from '@trustroots/ui/Button';
+import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 
 import {
   getCurrentRouteParams,
@@ -188,8 +190,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
         <div className="offer-host-header">
           <h1>Hosting offer</h1>
-          <button
-            className="btn btn-lg btn-inverse-primary"
+          <Button
+            variant="inverse"
+            colour="primary"
+            size="lg"
             disabled={isSaving || isDescriptionTooShort || !hasLocation}
             title={
               isDescriptionTooShort
@@ -201,7 +205,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
             type="submit"
           >
             Save and Exit
-          </button>
+          </Button>
         </div>
 
         <Tabs
@@ -237,14 +241,20 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       <legend>
                         <h4 id="offerStatus">Can you host?</h4>
                       </legend>
-                      <div
+                      <ButtonGroup
                         aria-labelledby="offerStatus"
-                        className="btn-group"
                         role="radiogroup"
                       >
                         {HOST_STATUSES.map(status => (
-                          <label
-                            className={`btn btn-lg btn-offer-hosting btn-offer-hosting-${status}${
+                          <Button
+                            variant="offer"
+                            colour={status}
+                            size="lg"
+                            // The label gets the radio and its text below as
+                            // children through the render prop.
+                            // eslint-disable-next-line jsx-a11y/label-has-associated-control
+                            render={<label />}
+                            className={`offer-hosting-button${
                               offer.status === status ? ' active' : ''
                             }`}
                             key={status}
@@ -262,9 +272,9 @@ export default function OfferHostPage({ user }: HostPageProps) {
                             <span>
                               {status.charAt(0).toUpperCase() + status.slice(1)}
                             </span>
-                          </label>
+                          </Button>
                         ))}
-                      </div>
+                      </ButtonGroup>
                     </fieldset>
 
                     {offer.status !== 'no' && (
@@ -279,9 +289,12 @@ export default function OfferHostPage({ user }: HostPageProps) {
                           </legend>
                           <div className="input-group input-group-stepper">
                             <span className="input-group-btn">
-                              <button
+                              <Button
                                 aria-hidden="true"
-                                className="btn btn-lg btn-inverse-primary btn-round"
+                                variant="inverse"
+                                colour="primary"
+                                size="lg"
+                                round
                                 disabled={offer.maxGuests <= 1}
                                 onClick={() =>
                                   setOffer(current => ({
@@ -292,7 +305,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                                 type="button"
                               >
                                 <i className="icon-minus"></i>
-                              </button>
+                              </Button>
                             </span>
                             <input
                               aria-labelledby="maxGuests"
@@ -312,9 +325,12 @@ export default function OfferHostPage({ user }: HostPageProps) {
                               value={offer.maxGuests}
                             />
                             <span className="input-group-btn">
-                              <button
+                              <Button
                                 aria-hidden="true"
-                                className="btn btn-lg btn-inverse-primary btn-round"
+                                variant="inverse"
+                                colour="primary"
+                                size="lg"
+                                round
                                 disabled={offer.maxGuests >= 99}
                                 onClick={() =>
                                   setOffer(current => ({
@@ -325,7 +341,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                                 type="button"
                               >
                                 <i className="icon-plus"></i>
-                              </button>
+                              </Button>
                             </span>
                           </div>
                         </fieldset>
@@ -449,14 +465,15 @@ export default function OfferHostPage({ user }: HostPageProps) {
                     </span>
                     <br />
                     <br />
-                    <button
+                    <Button
                       aria-label="Close information dialog about hosting location map"
-                      className="btn btn-lg btn-info"
+                      colour="info"
+                      size="lg"
                       onClick={() => setFirstTimeAround(false)}
                       type="button"
                     >
                       Got it!
-                    </button>
+                    </Button>
                   </p>
                 </div>
               )}

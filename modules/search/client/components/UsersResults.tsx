@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import styled from 'styled-components';
+import { Button } from '@trustroots/ui/Button';
 
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import NoContent from '@/modules/core/client/components/NoContent';
@@ -32,10 +33,10 @@ export default function UsersResults({
         <NoContent icon="users" message={String(t('No members found.'))} />
         {query.trim() && (
           <p className="text-center">
-            <a className="btn btn-default" href={mapHref}>
+            <Button render={<a href={mapHref} />}>
               <i className="icon-map" aria-hidden="true" />{' '}
               {String(t('Search this place on the map'))}
-            </a>
+            </Button>
           </p>
         )}
       </>
@@ -49,10 +50,10 @@ export default function UsersResults({
       </h4>
       {query.trim() && (
         <p>
-          <a className="btn btn-default" href={mapHref}>
+          <Button render={<a href={mapHref} />}>
             <i className="icon-map" aria-hidden="true" />{' '}
             {String(t('Search this place on the map'))}
-          </a>
+          </Button>
         </p>
       )}
       <Results>

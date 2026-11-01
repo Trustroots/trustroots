@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 
 export default function TribesJoinTrustroots() {
@@ -15,9 +16,9 @@ export default function TribesJoinTrustroots() {
         </p>
         <br />
         <br />
-        <a href="/signup" className="btn btn-action btn-primary">
+        <Button colour="primary" size="action" render={<a href="/signup" />}>
           {t('Sign up with Trustroots') as string}
-        </a>
+        </Button>
         <br />
         <br />
       </div>

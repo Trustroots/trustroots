@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
+import { Button } from '@trustroots/ui/Button';
 import MemberAvatar from '@/modules/users/client/components/MemberAvatar';
 import type { ContactListEntry } from '../types';
 
@@ -85,13 +86,14 @@ export default function ContactPresentational({
             <small className="text-warning">
               <em>{t('Contact request sent and pending.') as string}</em>
             </small>
-            <button
+            <Button
               type="button"
-              className="btn btn-xs btn-primary"
+              colour="primary"
+              size="xs"
               onClick={onClickRemove}
             >
               {t('Revoke Request') as string}
-            </button>
+            </Button>
           </div>
         )}
         {/* Authenticated user received this request */}
@@ -101,19 +103,21 @@ export default function ContactPresentational({
               <em>{t('You received a contact request.') as string}</em>
             </small>
             <div className="contact-actions">
-              <a
-                className="btn btn-xs btn-primary"
-                href={`/contact-confirm/${contact._id}`}
+              <Button
+                colour="primary"
+                size="xs"
+                render={<a href={`/contact-confirm/${contact._id}`} />}
               >
                 {t('Confirm Request') as string}
-              </a>
-              <button
+              </Button>
+              <Button
                 type="button"
-                className="btn btn-xs btn-warn"
+                variant="plain"
+                size="xs"
                 onClick={onClickRemove}
               >
                 {t('Decline Request') as string}
-              </button>
+              </Button>
             </div>
           </div>
         )}

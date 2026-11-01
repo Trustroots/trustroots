@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
+import { Button } from '@trustroots/ui/Button';
 import type { ContactRecord } from '../types';
 
 export default function RemoveContact({
@@ -71,25 +72,17 @@ export default function RemoveContact({
         </Modal.Body>
 
         <Modal.Footer>
-          <button
-            className="btn btn-link"
-            onClick={onCancel}
-            disabled={inProgress}
-          >
+          <Button variant="link" onClick={onCancel} disabled={inProgress}>
             {t('Cancel') as string}
-          </button>
-          <button
-            className="btn btn-primary"
-            onClick={onRemove}
-            disabled={inProgress}
-          >
+          </Button>
+          <Button colour="primary" onClick={onRemove} disabled={inProgress}>
             {!inProgress && <span>{labelConfirm}</span>}
             {inProgress && (
               <span role="alertdialog" aria-busy="true" aria-live="assertive">
                 {t('Wait a moment…') as string}
               </span>
             )}
-          </button>
+          </Button>
         </Modal.Footer>
       </div>
     </Modal>

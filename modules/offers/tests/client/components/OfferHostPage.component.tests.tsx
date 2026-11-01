@@ -227,7 +227,9 @@ describe('OfferHostPage', () => {
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     expect(
-      document.querySelector('.btn-offer-hosting-maybe.active'),
+      document.querySelector(
+        '.offer-hosting-button[data-colour="maybe"].active',
+      ),
     ).toBeInTheDocument();
   });
 
@@ -367,7 +369,7 @@ describe('OfferHostPage', () => {
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     expect(
-      document.querySelector('.btn-offer-hosting-no.active'),
+      document.querySelector('.offer-hosting-button[data-colour="no"].active'),
     ).toBeInTheDocument();
   });
 

@@ -48,7 +48,7 @@ function TribeCard({
           <h3 className="tribe-label">{tribe.label}</h3>
           <div className="tribe-meta">{countLabel}</div>
           <JoinButton
-            className="btn btn-xs btn-primary"
+            look={{ size: 'xs', colour: 'primary' }}
             onUpdated={onMembershipUpdated}
             tribe={tribe}
             user={user}

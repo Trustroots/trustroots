@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
@@ -127,9 +128,9 @@ export default function ResetPasswordPage() {
                 />
               </div>
               <div className="text-center form-group">
-                <button
+                <Button
+                  size="lg"
                   type="submit"
-                  className="btn btn-lg btn-default"
                   disabled={
                     isLoading ||
                     passwordDetails.newPassword.length < 8 ||
@@ -137,7 +138,7 @@ export default function ResetPasswordPage() {
                   }
                 >
                   Update Password
-                </button>
+                </Button>
               </div>
               {error && (
                 <div className="text-center alert alert-danger" role="alert">

@@ -5,6 +5,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { Button } from '@trustroots/ui/Button';
+import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 
 import {
   getCurrentRouteParams,
@@ -393,14 +395,9 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
   return (
     <section className={`search${isSidebarOpen ? ' is-sidebar-open' : ''}`}>
       <div className="visible-xs-block panel panel-default search-map-meta">
-        <div
-          aria-label="Search settings"
-          className="btn-group btn-group-justified"
-          role="group"
-        >
-          <div className="btn-group btn-group-lg" role="group">
-            <button
-              className="btn btn-default"
+        <ButtonGroup aria-label="Search settings" justified role="group">
+          <ButtonGroup size="lg" role="group">
+            <Button
               onClick={() => {
                 setIsPlaceSearchVisible(true);
                 closeSidebar();
@@ -412,24 +409,18 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
             >
               <i className="icon-search"></i>
               Search places
-            </button>
-          </div>
-          <div className="btn-group btn-group-lg" role="group">
-            <button
-              className="btn btn-default"
-              onClick={() => openSidebar('filters')}
-              type="button"
-            >
+            </Button>
+          </ButtonGroup>
+          <ButtonGroup size="lg" role="group">
+            <Button onClick={() => openSidebar('filters')} type="button">
               <i className="icon-sliders"></i>
               Filters
-            </button>
-          </div>
-          <div className="btn-group btn-group-lg" role="group">
-            <a className="btn btn-default" href="/search/members">
-              Members
-            </a>
-          </div>
-        </div>
+            </Button>
+          </ButtonGroup>
+          <ButtonGroup size="lg" role="group">
+            <Button render={<a href="/search/members" />}>Members</Button>
+          </ButtonGroup>
+        </ButtonGroup>
       </div>
 
       {isPlaceSearchVisible && (
@@ -439,23 +430,25 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
           />
-          <button
-            className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+          <Button
+            colour="primary"
+            size="action"
+            className="visible-xs-block search-sidebar-close"
             onClick={() => setIsPlaceSearchVisible(false)}
             type="button"
           >
             Back to map
-          </button>
+          </Button>
         </div>
       )}
 
       {isUserPublic && (
         <div className="search-sidebar-toggle hidden-xs">
-          <button
+          <Button
             aria-label={
               isSidebarOpen ? 'Hide search filters' : 'Open search filters'
             }
-            className="btn btn-link"
+            variant="link"
             onClick={() => toggleSidebar()}
             title={isSidebarOpen ? 'Collapse side panel' : 'Open side panel'}
             type="button"
@@ -465,7 +458,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
                 isSidebarOpen ? 'icon-left' : 'icon-right'
               }`}
             ></i>
-          </button>
+          </Button>
         </div>
       )}
 

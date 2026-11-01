@@ -81,8 +81,9 @@ async function expectUtilityAndBootstrap(page: Page) {
   const result = await page.evaluate(() => {
     const utility = document.createElement('span');
     utility.className = 'tw:bg-notification';
+    // A Bootstrap `.btn` under an owned-Button utility: the utility wins.
     const button = document.createElement('button');
-    button.className = 'btn btn-primary';
+    button.className = 'btn tw:bg-brand-primary';
     document.body.append(utility, button);
     const styles = {
       utility: getComputedStyle(utility).backgroundColor,
@@ -129,8 +130,8 @@ test('prefixed utilities coexist with Bootstrap in LTR and RTL', async ({
 });
 
 async function expectButtonUtilitiesWin(page: Page) {
-  // Bootstrap's reboot sets `button { border-radius: 0 }` and the global Less
-  // sets `button { cursor: pointer }`; the owned button's utilities must win.
+  // Bootstrap's reboot sets `button { border-radius: 0 }`; the owned button's
+  // radius utility must win, and its disabled utilities must apply.
   const markup = renderToStaticMarkup(
     createElement(Button, { disabled: true }, 'Cascade probe'),
   );
@@ -141,15 +142,15 @@ async function expectButtonUtilitiesWin(page: Page) {
     const style = getComputedStyle(host.querySelector('button')!);
     const result = {
       borderRadius: style.borderRadius,
-      cursor: style.cursor,
+      pointerEvents: style.pointerEvents,
       opacity: style.opacity,
     };
     host.remove();
     return result;
   }, markup);
   expect(styles).toEqual({
-    borderRadius: '2px',
-    cursor: 'not-allowed',
+    borderRadius: '6px',
+    pointerEvents: 'none',
     opacity: '0.65',
   });
 }
@@ -186,9 +187,9 @@ test('owned buttons show a contrasting keyboard focus ring on white', async ({
   await expectDesignTokens(page);
   // Render the real component so the test follows its Tailwind classes.
   const buttons = (['primary', 'default'] as const)
-    .map(variant =>
+    .map(colour =>
       renderToStaticMarkup(
-        createElement(Button, { variant }, `Focus ${variant}`),
+        createElement(Button, { colour }, `Focus ${colour}`),
       ),
     )
     .join('');
@@ -201,10 +202,10 @@ test('owned buttons show a contrasting keyboard focus ring on white', async ({
     document.body.prepend(host);
     host.focus();
   }, buttons);
-  for (const variant of ['primary', 'default']) {
+  for (const colour of ['primary', 'default']) {
     await page.keyboard.press('Tab');
     const button = page.getByRole('button', {
-      name: `Focus ${variant}`,
+      name: `Focus ${colour}`,
       exact: true,
     });
     await expect(button).toBeFocused();

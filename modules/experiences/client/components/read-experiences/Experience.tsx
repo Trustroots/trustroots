@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 
 import React from 'react';
 import styled from 'styled-components';
@@ -151,12 +152,14 @@ export default function Experience({
             </PendingNotice>
             {userFrom?.username && (
               <p>
-                <a
-                  className="btn btn-primary"
-                  href={getProfileExperiencesPath(userFrom.username)}
+                <Button
+                  colour="primary"
+                  render={
+                    <a href={getProfileExperiencesPath(userFrom.username)} />
+                  }
                 >
                   {t('Write about your experience with them') as string}
-                </a>
+                </Button>
               </p>
             )}
           </>
@@ -194,12 +197,11 @@ export default function Experience({
       </div>
       {!response && isPublicExperience && onReceiverProfile && (
         <div className="panel-footer text-right">
-          <a
-            href={getProfileExperiencesPath(userFrom.username)}
-            className="btn btn-default"
+          <Button
+            render={<a href={getProfileExperiencesPath(userFrom.username)} />}
           >
             {t('Write about your experience') as string}
-          </a>
+          </Button>
         </div>
       )}
     </div>

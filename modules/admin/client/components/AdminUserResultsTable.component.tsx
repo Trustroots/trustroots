@@ -6,6 +6,7 @@ import UserState from './UserState.component';
 import ZendeskInboxSearch from './ZendeskInboxSearch.component';
 import { isSuspendedUser } from './userSearch.helpers';
 import { formatAdminDateTime } from '../utils/admin-date';
+import { Button } from '@trustroots/ui/Button';
 
 interface UserSort {
   column: string;
@@ -61,14 +62,15 @@ function SortableHeader({
 
   return (
     <th aria-sort={direction}>
-      <button
-        className="btn btn-link admin-user-results-sort"
+      <Button
+        variant="link"
+        className="admin-user-results-sort"
         onClick={() => onSortChange({ column, direction: nextDirection })}
         type="button"
       >
         {label}
         {isActive && (sort.direction === 'ascending' ? ' ▲' : ' ▼')}
-      </button>
+      </Button>
     </th>
   );
 }
@@ -218,16 +220,16 @@ export default function AdminUserResultsTable({
             {pagination.total} user(s). Page {pagination.page} of{' '}
             {Math.max(pagination.totalPages, 1)}.
           </span>{' '}
-          <button
-            className="btn btn-default btn-sm"
+          <Button
+            size="sm"
             disabled={pagination.page <= 1}
             onClick={() => onPageChange?.(pagination.page - 1)}
             type="button"
           >
             Previous
-          </button>{' '}
-          <button
-            className="btn btn-default btn-sm"
+          </Button>{' '}
+          <Button
+            size="sm"
             disabled={
               pagination.totalPages === 0 ||
               pagination.page >= pagination.totalPages
@@ -236,7 +238,7 @@ export default function AdminUserResultsTable({
             type="button"
           >
             Next
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 /**
  * Action-gate modal shown when a user tries to perform an action that requires
@@ -74,31 +75,44 @@ export default function NostrootsActionModal({
         </p>
 
         <div className="nostroots-modal-actions">
-          <a
-            ref={ctaRef}
-            href="https://apps.apple.com/us/app/nostroots/id6755037304"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary btn-block nostroots-modal-btn"
+          <Button
+            colour="primary"
+            block
+            className="nostroots-modal-btn"
+            render={
+              <a
+                ref={ctaRef}
+                href="https://apps.apple.com/us/app/nostroots/id6755037304"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
           >
             Download for iOS
-          </a>
-          <a
-            href="https://play.google.com/store/apps/details?id=org.trustroots.nostroots"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-primary btn-block nostroots-modal-btn"
+          </Button>
+          <Button
+            colour="primary"
+            block
+            className="nostroots-modal-btn"
+            render={
+              <a
+                href="https://play.google.com/store/apps/details?id=org.trustroots.nostroots"
+                target="_blank"
+                rel="noopener noreferrer"
+              />
+            }
           >
             Download for Android
-          </a>
-          <a
-            href={webAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn btn-default btn-block nostroots-modal-btn"
+          </Button>
+          <Button
+            block
+            className="nostroots-modal-btn"
+            render={
+              <a href={webAppUrl} target="_blank" rel="noopener noreferrer" />
+            }
           >
             Open web app
-          </a>
+          </Button>
         </div>
 
         <button

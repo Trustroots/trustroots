@@ -23,7 +23,7 @@
     left: 0;
     max-width: @search-sidebar-max-width;
   }
-  .btn {
+  [data-slot='button'] {
     pointer-events: visible; // Enable these again since they were disabled at parent element
     text-decoration: none;
     width: 100%;
@@ -66,7 +66,7 @@
     left: 0;
     bottom: 0;
     @media (max-width: @screen-xs-max) {
-      .btn {
+      [data-slot='button'] {
         color: @btn-primary-color;
         background: @btn-primary-bg;
       }

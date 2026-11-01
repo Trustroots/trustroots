@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { Modal } from 'react-bootstrap';
 import type { TribeSummary } from '../api/tribes.api';
@@ -34,12 +35,10 @@ export default function LeaveTribeModal({
         </Modal.Body>
 
         <Modal.Footer>
-          <button className="btn btn-primary" onClick={onConfirm}>
+          <Button colour="primary" onClick={onConfirm}>
             {t('Leave circle') as string}
-          </button>
-          <button className="btn btn-default" onClick={onCancel}>
-            {t('Cancel') as string}
-          </button>
+          </Button>
+          <Button onClick={onCancel}>{t('Cancel') as string}</Button>
         </Modal.Footer>
       </div>
     </Modal>

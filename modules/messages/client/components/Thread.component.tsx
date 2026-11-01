@@ -458,14 +458,10 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
             {messages.length > 0 && (
               <ReferenceThread userToId={otherUser._id} />
             )}
-            <ReportMember
-              className="btn btn-sm btn-default"
-              username={otherUser.username as string}
-            />
+            <ReportMember username={otherUser.username as string} />
             <br />
             <br />
             <BlockMember
-              className="btn btn-sm btn-default"
               username={otherUser.username as string}
               isBlocked={isBlocked}
             />

@@ -6,6 +6,7 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./Button": "./src/components/Button.tsx",
+    "./ButtonGroup": "./src/components/ButtonGroup.tsx",
     "./Alert": "./src/components/Alert.tsx",
     "./Badge": "./src/components/Badge.tsx",
     "./Spinner": "./src/components/Spinner.tsx"

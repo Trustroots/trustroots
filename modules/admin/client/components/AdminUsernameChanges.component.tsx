@@ -8,6 +8,7 @@ import {
 import { formatAdminDateTime } from '../utils/admin-date';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
+import { Button } from '@trustroots/ui/Button';
 
 function ChangeTimestamp({ value }: { value?: string }) {
   if (!value || Number.isNaN(new Date(value).getTime())) return <>—</>;
@@ -143,23 +144,21 @@ export default function AdminUsernameChanges() {
         )}
         {!loading && !failed && (page > 1 || hasNextPage) && (
           <nav aria-label="Username changes pages">
-            <button
-              className="btn btn-default"
+            <Button
               disabled={page === 1}
               onClick={() => setPage(currentPage => currentPage - 1)}
               type="button"
             >
               Previous
-            </button>{' '}
+            </Button>{' '}
             <span>Page {page}</span>{' '}
-            <button
-              className="btn btn-default"
+            <Button
               disabled={!hasNextPage}
               onClick={() => setPage(currentPage => currentPage + 1)}
               type="button"
             >
               Next
-            </button>
+            </Button>
           </nav>
         )}
       </div>

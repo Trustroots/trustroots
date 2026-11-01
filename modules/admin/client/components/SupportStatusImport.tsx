@@ -6,6 +6,7 @@ import type {
   SupportStatusImportManifest,
   SupportStatusImportPreviewResponse,
 } from '../../../support/shared/status-import';
+import { Button } from '@trustroots/ui/Button';
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const SKIP_REASON_LABELS: Record<string, string> = {
@@ -203,14 +204,13 @@ export default function SupportStatusImport({
         Chosen submission-time window: {matchingWindowMinutes} minute
         {matchingWindowMinutes === 1 ? '' : 's'}.
       </p>
-      <button
-        className="btn btn-default"
+      <Button
         type="button"
         disabled={!file || working}
         onClick={file ? () => reviewFile(file) : undefined}
       >
         {working && !preview ? 'Preparing preview…' : 'Preview status changes'}
-      </button>
+      </Button>
       {error && <p role="alert">{error}</p>}
       {Object.keys(matchingSkips).length > 0 && (
         <div className="table-responsive">
@@ -303,8 +303,7 @@ export default function SupportStatusImport({
               <p role="status">
                 {Object.keys(selectedMatches).length} selected
               </p>
-              <button
-                className="btn btn-default"
+              <Button
                 type="button"
                 disabled={working}
                 onClick={() => {
@@ -337,15 +336,14 @@ export default function SupportStatusImport({
                 }}
               >
                 Select all unambiguous matches
-              </button>{' '}
-              <button
-                className="btn btn-default"
+              </Button>{' '}
+              <Button
                 type="button"
                 disabled={working || Object.keys(selectedMatches).length === 0}
                 onClick={() => setSelectedMatches({})}
               >
                 Clear selection
-              </button>
+              </Button>
               {preview.matchReviews.map(review => (
                 <div key={review.zendeskTicketId}>
                   <h4>
@@ -457,8 +455,8 @@ export default function SupportStatusImport({
               ))}
             </section>
           )}
-          <button
-            className="btn btn-primary"
+          <Button
+            colour="primary"
             type="button"
             disabled={
               working ||
@@ -468,7 +466,7 @@ export default function SupportStatusImport({
             onClick={() => applyPreview(preview.previewId)}
           >
             {working ? 'Applying…' : 'Apply status changes'}
-          </button>
+          </Button>
         </div>
       )}
       {result && (

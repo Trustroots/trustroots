@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import {
   getCurrentRouteParams,
@@ -88,13 +89,14 @@ export default function ConfirmEmailPage() {
                       ? 'Confirm your email and make your profile visible to others.'
                       : 'Confirm your email.'}
                   </p>
-                  <button
+                  <Button
+                    colour="primary"
+                    size="lg"
                     type="submit"
-                    className="btn btn-lg btn-primary"
                     disabled={isLoading || error}
                   >
                     Confirm
-                  </button>
+                  </Button>
                 </div>
               )}
               {error && (

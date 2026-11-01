@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 
 // Internal dependencies
@@ -59,9 +60,9 @@ export default function AboutMe({
                 )}
                 <br />
                 <br />
-                <a href="/profile/edit" className="btn btn-primary">
+                <Button colour="primary" render={<a href="/profile/edit" />}>
                   {t('Fill your profile')}
-                </a>
+                </Button>
               </p>
             </footer>
           )}

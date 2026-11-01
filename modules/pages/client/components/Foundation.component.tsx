@@ -1,5 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import type { PageTranslator, PageUser } from '../types';
 import React from 'react';
 
@@ -129,12 +130,13 @@ export default function Foundation({ user }: { user?: PageUser | null }) {
                 <p>
                   <br />
                   <br />
-                  <a
-                    href="/signup"
-                    className="btn btn-lg btn-action btn-inverse"
+                  <Button
+                    variant="inverse"
+                    size="action"
+                    render={<a href="/signup" />}
                   >
                     {t('Join Trustroots')}
-                  </a>
+                  </Button>
                 </p>
               )}
             </div>

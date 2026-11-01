@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getRecoveryAccounts, sendRecovery } from '../api/sparkpost.api';
 import type { RecoveryDay, RecoveryResult } from '../../shared/sparkpost';
+import { Button } from '@trustroots/ui/Button';
 export default function SignupRecovery({
   from,
   to,
@@ -152,13 +153,13 @@ export default function SignupRecovery({
       >
         Next accounts
       </button>{' '}
-      <button
-        className="btn btn-primary"
+      <Button
+        colour="primary"
         disabled={!selected.length || sending}
         onClick={() => setReview(true)}
       >
         Review {selected.length} confirmations
-      </button>
+      </Button>
       {review && (
         <section aria-label="Review confirmations">
           <h4>Send fresh confirmation links to:</h4>
@@ -171,9 +172,9 @@ export default function SignupRecovery({
                 </li>
               ))}
           </ul>
-          <button className="btn btn-primary" disabled={sending} onClick={send}>
+          <Button colour="primary" disabled={sending} onClick={send}>
             Queue confirmation emails
-          </button>{' '}
+          </Button>{' '}
           <button disabled={sending} onClick={() => setReview(false)}>
             Cancel
           </button>

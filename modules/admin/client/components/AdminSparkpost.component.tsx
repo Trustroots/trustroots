@@ -6,6 +6,7 @@ import {
   getSparkpostOverview,
   getSparkpostPreview,
 } from '../api/sparkpost.api';
+import { Button } from '@trustroots/ui/Button';
 
 function formatDateTime(value: string) {
   return value.slice(0, 16).replace('T', ' ');
@@ -85,12 +86,9 @@ function Preview({ window }: { window: { from: string; to: string } }) {
               <td>
                 <strong>{data.awaitingConfirmation}</strong>
                 <br />
-                <button
-                  className="btn btn-sm btn-default"
-                  onClick={() => setShowAccounts(true)}
-                >
+                <Button size="sm" onClick={() => setShowAccounts(true)}>
                   Review unconfirmed accounts
-                </button>
+                </Button>
               </td>
               <td>
                 Created during this period and still unconfirmed. Some members
@@ -245,14 +243,14 @@ export default function AdminSparkpost() {
                       <td>
                         {data.provider === 'ready' &&
                         Date.parse(row.date) >= Date.now() - 10 * 86400000 ? (
-                          <button
+                          <Button
                             type="button"
-                            className="btn btn-sm btn-default"
+                            size="sm"
                             onClick={() => setDate(row.date)}
                             aria-label={`Inspect events for ${row.date}`}
                           >
                             Inspect
-                          </button>
+                          </Button>
                         ) : (
                           'Unavailable'
                         )}
@@ -335,9 +333,9 @@ export default function AdminSparkpost() {
               onChange={event => setTo(event.target.value)}
             />
           </div>
-          <button className="btn btn-primary" type="submit">
+          <Button colour="primary" type="submit">
             Preview completed jobs
-          </button>
+          </Button>
         </form>
         {adjusted && (
           <p role="status">

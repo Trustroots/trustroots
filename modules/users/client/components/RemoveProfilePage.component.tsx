@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import Board from '@/modules/core/client/components/Board';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -68,14 +69,14 @@ export default function RemoveProfilePage() {
                 This will permanently delete your Trustroots profile and cannot
                 be undone.
               </p>
-              <button
-                className="btn btn-danger"
+              <Button
+                colour="danger"
                 type="button"
                 disabled={state === 'loading'}
                 onClick={() => setState('loading')}
               >
                 Permanently delete my account
-              </button>
+              </Button>
               <br />
               <br />
               <a href="/profile/edit/account#remove">
@@ -113,12 +114,12 @@ export default function RemoveProfilePage() {
                 hours.
                 <br />
                 <br />
-                <a
-                  className="btn btn-primary"
-                  href="/profile/edit/account#remove"
+                <Button
+                  colour="primary"
+                  render={<a href="/profile/edit/account#remove" />}
                 >
                   Get a new confirmation email
-                </a>
+                </Button>
               </p>
             </div>
           )}

@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
+import { Button } from '@trustroots/ui/Button';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -283,9 +284,9 @@ export default function SearchSidebarResults({
                     aria-hidden="true"
                     className={`label ${
                       offer.status === 'yes'
-                        ? 'btn-offer-hosting-yes'
+                        ? 'label-success'
                         : offer.status === 'maybe'
-                          ? 'btn-offer-hosting-maybe'
+                          ? 'label-warning'
                           : ''
                     }`}
                   >
@@ -295,7 +296,7 @@ export default function SearchSidebarResults({
               )}
               {offer.type === 'meet' && (
                 <div aria-label="Meet offer" className="search-result-label">
-                  <span className="label btn-offer-meet"> Meet </span>
+                  <span className="label label-offer-meet"> Meet </span>
                 </div>
               )}
               <OfferDescription
@@ -323,8 +324,8 @@ export default function SearchSidebarResults({
       )}
 
       {(offer || communityNote) && (
-        <button
-          className="btn btn-default search-results-back"
+        <Button
+          className="search-results-back"
           onClick={() => {
             onBackToOffers();
             window.requestAnimationFrame(() => {
@@ -344,16 +345,18 @@ export default function SearchSidebarResults({
           type="button"
         >
           Back to results
-        </button>
+        </Button>
       )}
 
-      <button
-        className="btn btn-action btn-primary visible-xs-block search-sidebar-close"
+      <Button
+        colour="primary"
+        size="action"
+        className="visible-xs-block search-sidebar-close"
         onClick={onCloseSidebar}
         type="button"
       >
         Back to map
-      </button>
+      </Button>
     </section>
   );
 }

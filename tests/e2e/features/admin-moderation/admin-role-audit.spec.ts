@@ -44,7 +44,9 @@ async function assertMemberProfileCleanup(
     expect(heading).not.toBeNull();
     expect(actions).not.toBeNull();
     expect(actions!.y).toBeGreaterThanOrEqual(heading!.y + heading!.height);
-    const buttons = await page.locator('.admin-user-actions .btn').all();
+    const buttons = await page
+      .locator('.admin-user-actions [data-slot="button"]')
+      .all();
     for (const button of buttons) {
       const box = await button.boundingBox();
       expect(box).not.toBeNull();

@@ -5,6 +5,7 @@ import type { Offer } from '../api/offers.api';
 
 // Internal dependencies
 import '@/config/client/i18n';
+import { Button } from '@trustroots/ui/Button';
 import OfferStatusButton from './OfferStatusButton';
 import OfferLocation from './OfferLocation.component';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
@@ -52,13 +53,17 @@ export class OffersPresentational extends Component<
       <>
         {/* Edit button */}
         {isOwnOffer && (
-          <a
+          <Button
             aria-label={t('Modify hosting offer')}
-            className="btn btn-inverse-primary btn-round btn-raised pull-right"
-            href="/offer/host"
+            variant="inverse"
+            colour="primary"
+            round
+            raised
+            className="pull-right"
+            render={<a href="/offer/host" />}
           >
             <span className="icon-edit"></span>
-          </a>
+          </Button>
         )}
         <ReadMorePanel
           content={offer.description ?? ''}
@@ -80,13 +85,17 @@ export class OffersPresentational extends Component<
       <>
         {/* Edit button */}
         {isOwnOffer && (
-          <a
+          <Button
             aria-label={t('Modify hosting offer')}
-            className="btn btn-inverse-primary btn-round btn-raised pull-right"
-            href="/offer/host"
+            variant="inverse"
+            colour="primary"
+            round
+            raised
+            className="pull-right"
+            render={<a href="/offer/host" />}
           >
             <span className="icon-edit"></span>
-          </a>
+          </Button>
         )}
 
         {/* User has written explanation */}
@@ -126,16 +135,21 @@ export class OffersPresentational extends Component<
           <div className="text-center">
             <br />
             <hr className="hr-gray hr-tight hr-xs" />
-            <a
-              href={'/offer/host?status=yes'}
-              className="btn btn-inverse-primary"
+            <Button
+              variant="inverse"
+              colour="primary"
+              render={<a href={'/offer/host?status=yes'} />}
             >
               {t('Start hosting travellers')}
-            </a>
+            </Button>
             &nbsp;
-            <a href={'/offer/meet'} className="btn btn-inverse-primary">
+            <Button
+              variant="inverse"
+              colour="primary"
+              render={<a href={'/offer/meet'} />}
+            >
               {t('Meet people')}
-            </a>
+            </Button>
           </div>
         )}
       </>

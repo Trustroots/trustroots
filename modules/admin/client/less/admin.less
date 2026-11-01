@@ -109,7 +109,7 @@
     margin-top: 0;
   }
 
-  .btn {
+  [data-slot='button'] {
     margin-bottom: 12px;
   }
 }
@@ -512,7 +512,7 @@ td:hover .admin-hidden-until-hover {
   border: 1px solid @gray-lighter;
   border-radius: 8px;
 
-  .btn {
+  [data-slot='button'] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -549,7 +549,7 @@ td:hover .admin-hidden-until-hover {
     }
   }
 
-  .btn-danger {
+  [data-colour='danger'] {
     color: darken(@brand-danger, 15%);
     background: fade(@brand-danger, 5%);
     border-color: fade(@brand-danger, 30%);
@@ -686,7 +686,7 @@ td:hover .admin-hidden-until-hover {
     border-bottom: none;
   }
 
-  .btn {
+  [data-slot='button'] {
     margin-right: 5px;
   }
 }
@@ -741,11 +741,11 @@ td:hover .admin-hidden-until-hover {
     color: @text-color;
   }
 
-  .btn-default {
+  [data-colour='default'] {
     border-color: @gray-lighter;
   }
 
-  .btn:focus-visible,
+  [data-slot='button']:focus-visible,
   a:focus-visible,
   .support-inbox__queue-item:focus-visible {
     outline: 2px solid @brand-primary;
@@ -839,7 +839,7 @@ td:hover .admin-hidden-until-hover {
   gap: 8px;
 }
 
-.support-inbox__pager .btn {
+.support-inbox__pager [data-slot='button'] {
   padding: 6px 12px;
   font-size: 14px;
 }
@@ -858,7 +858,7 @@ td:hover .admin-hidden-until-hover {
     margin: 0;
   }
 
-  .btn {
+  [data-slot='button'] {
     justify-self: start;
   }
 
@@ -1153,7 +1153,7 @@ td:hover .admin-hidden-until-hover {
   padding-top: 20px;
   border-top: 1px solid @gray-lighter;
 
-  .btn {
+  [data-slot='button'] {
     justify-self: start;
   }
 }
@@ -1188,7 +1188,7 @@ td:hover .admin-hidden-until-hover {
   margin-bottom: 16px;
 }
 
-.support-inbox__views .btn[aria-pressed='true'] {
+.support-inbox__views [data-slot='button'][aria-pressed='true'] {
   background: #eef8f5;
   border-color: @brand-primary;
   color: #24634c;
@@ -1356,7 +1356,7 @@ td:hover .admin-hidden-until-hover {
     gap: 12px 20px;
     padding: 12px;
 
-    .btn {
+    [data-slot='button'] {
       min-height: 34px;
       padding: 6px 10px;
       font-size: 13px;

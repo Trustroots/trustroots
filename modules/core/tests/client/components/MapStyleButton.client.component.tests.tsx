@@ -36,7 +36,9 @@ describe('<MapStyleButton />', () => {
 
     const button = screen.getByRole('button', { name: 'Streets' });
 
-    expect(button).toHaveClass('btn', 'btn-default', 'is-active');
+    expect(button).toHaveAttribute('data-slot', 'button');
+    expect(button).toHaveAttribute('data-colour', 'default');
+    expect(button).toHaveClass('is-active');
     expect(mockMapIcon).toHaveBeenCalledWith(
       expect.objectContaining({
         mapboxStyle: 'mapbox://styles/mapbox/outdoors-v11',

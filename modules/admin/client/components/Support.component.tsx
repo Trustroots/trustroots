@@ -22,6 +22,7 @@ import type {
   SupportQueueResponse,
   SupportRequest,
 } from '../api/support.api';
+import { Button } from '@trustroots/ui/Button';
 
 const DEFAULT_STATUS = 'unresolved';
 const SEARCH_LIMIT = 200;
@@ -297,8 +298,7 @@ function Conversation({
           <h3>Conversation</h3>
           <p>Replies are shared with the support team.</p>
         </div>
-        <button
-          className="btn btn-default"
+        <Button
           type="button"
           disabled={loading}
           onClick={() => {
@@ -307,7 +307,7 @@ function Conversation({
           }}
         >
           Refresh conversation
-        </button>
+        </Button>
         <p className="support-inbox__attachment-note">
           Attachments remain in Zoho. Files cannot be uploaded here.
         </p>
@@ -316,12 +316,7 @@ function Conversation({
       {failed && (
         <div role="alert">
           <p>Unable to load the conversation. Please try again.</p>
-          <button
-            className="btn btn-default"
-            onClick={() => setRevision(v => v + 1)}
-          >
-            Retry
-          </button>
+          <Button onClick={() => setRevision(v => v + 1)}>Retry</Button>
         </div>
       )}
       {!loading && !failed && items.length === 0 && <p>No messages yet.</p>}
@@ -390,15 +385,15 @@ function Conversation({
                     {item.kind === 'reply' &&
                       (item.deliveryState === 'failed' ||
                         item.deliveryState === 'uncertain') && (
-                        <button
-                          className="btn btn-link"
+                        <Button
+                          variant="link"
                           disabled={retrying === item._id}
                           onClick={() => void retry(item)}
                         >
                           {retrying === item._id
                             ? 'Retrying…'
                             : 'Retry delivery'}
-                        </button>
+                        </Button>
                       )}
                     {retryFailed === item._id && (
                       <span role="alert">Retry could not be queued.</span>
@@ -412,20 +407,18 @@ function Conversation({
       </ol>
       {hasMore && (
         <div className="support-inbox__conversation-pager">
-          <button
-            className="btn btn-default"
+          <Button
             disabled={page === 1 || loading}
             onClick={() => setPage(value => value - 1)}
           >
             Previous messages
-          </button>
-          <button
-            className="btn btn-default"
+          </Button>
+          <Button
             disabled={loading}
             onClick={() => setPage(value => value + 1)}
           >
             Next messages
-          </button>
+          </Button>
         </div>
       )}
       <form className="support-inbox__composer" onSubmit={submitReply}>
@@ -448,13 +441,13 @@ function Conversation({
             again.
           </p>
         )}
-        <button
-          className="btn btn-primary"
+        <Button
+          colour="primary"
           type="submit"
           disabled={sending || !draft.trim()}
         >
           {sending ? 'Sending…' : 'Send reply'}
-        </button>
+        </Button>
       </form>
     </section>
   );
@@ -504,20 +497,12 @@ function Pager({
 }) {
   return (
     <div className="support-inbox__pager" aria-label="Pagination">
-      <button
-        className="btn btn-default"
-        disabled={page === 1}
-        onClick={() => onPage(page - 1)}
-      >
+      <Button disabled={page === 1} onClick={() => onPage(page - 1)}>
         Previous
-      </button>
-      <button
-        className="btn btn-default"
-        disabled={!hasMore}
-        onClick={() => onPage(page + 1)}
-      >
+      </Button>
+      <Button disabled={!hasMore} onClick={() => onPage(page + 1)}>
         Next
-      </button>
+      </Button>
     </div>
   );
 }
@@ -623,9 +608,9 @@ function CaseMemberStatus({
       ) : failed ? (
         <p>
           Account status unavailable.{' '}
-          <button className="btn btn-link" onClick={reload}>
+          <Button variant="link" onClick={reload}>
             Retry
-          </button>
+          </Button>
         </p>
       ) : (
         <p role="status">Loading account status…</p>
@@ -753,13 +738,9 @@ function RequestDetails({
             </option>
           ))}
         </select>
-        <button
-          className="btn btn-primary"
-          disabled={saving}
-          onClick={toggleStatus}
-        >
+        <Button colour="primary" disabled={saving} onClick={toggleStatus}>
           {status === 'solved' ? 'Reopen request' : 'Mark solved'}
-        </button>
+        </Button>
       </div>
       {saveFailed && (
         <p role="alert">Unable to update this request. Please try again.</p>
@@ -822,20 +803,18 @@ function RequestDetails({
             role="group"
             aria-label="Investigation views"
           >
-            <button
-              className="btn btn-default"
+            <Button
               aria-pressed={kind === 'messages'}
               onClick={() => setKind('messages')}
             >
               View conversation
-            </button>
-            <button
-              className="btn btn-default"
+            </Button>
+            <Button
               aria-pressed={kind === 'experiences'}
               onClick={() => setKind('experiences')}
             >
               View experiences
-            </button>
+            </Button>
           </div>
           {kind && <Investigation key={kind} id={id} kind={kind} />}
         </>
@@ -891,9 +870,9 @@ function MemberSearch() {
           required
           onChange={event => setSearch(event.target.value)}
         />
-        <button className="btn btn-default" type="submit" disabled={pending}>
+        <Button type="submit" disabled={pending}>
           Search members
-        </button>
+        </Button>
       </form>
       {pending && <p role="status">Searching…</p>}
       {failed && <ResourceState failed />}

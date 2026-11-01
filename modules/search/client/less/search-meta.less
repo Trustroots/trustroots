@@ -14,17 +14,16 @@
   border: 0;
   box-shadow: @map-toolbar-shadow;
 
-  .btn-group-justified,
-  .btn-group,
-  .btn {
+  [data-slot='button-group'],
+  [data-slot='button'] {
     height: 100%;
   }
 
-  .btn-group {
+  [data-slot='button-group'] {
     min-width: 0;
   }
 
-  .btn {
+  [data-slot='button'] {
     width: 100%;
     padding: 6px 8px;
     font-size: @font-size-base;
@@ -35,11 +34,11 @@
     margin: 0;
   }
 
-  .btn-group:not(:last-child) {
+  [data-slot='button-group']:not(:last-child) {
     border-bottom: 1px solid @gray-lighter;
   }
 
-  .btn:focus {
+  [data-slot='button']:focus {
     outline: none;
     background: @btn-default-bg;
   }

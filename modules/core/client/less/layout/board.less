@@ -18,10 +18,10 @@
   label {
     color: #fff;
   }
-  a:not(.btn),
-  a.btn-link {
+  a:not([data-slot='button']),
+  a[data-variant='link'] {
     text-decoration: underline;
-    &.btn {
+    &[data-slot='button'] {
       text-decoration: none;
       text-shadow: none;
     }

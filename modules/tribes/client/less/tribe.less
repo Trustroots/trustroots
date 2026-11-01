@@ -48,7 +48,7 @@
   .tribe-intro {
     margin-top: 40px;
   }
-  .tribe-join.btn.btn-active {
+  .tribe-join[data-slot='button'].tribe-join-active {
     color: #fff;
   }
   .tribe-join {
@@ -60,7 +60,7 @@
     align-items: center;
     gap: 10px;
     margin-top: 18px;
-    .btn {
+    [data-slot='button'] {
       margin: 0;
       padding: 10px 16px;
       font-size: 16px;
@@ -255,7 +255,7 @@
   bottom: 30px;
   right: 0;
   padding: 30px;
-  a:not(.btn) {
+  a:not([data-slot='button']) {
     text-decoration: none;
   }
   // On bigger screens:
