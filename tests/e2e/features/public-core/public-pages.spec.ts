@@ -378,10 +378,10 @@ test.describe('public pages and unauthenticated flows', () => {
         });
         await expect(revisionHistory).toBeVisible();
         await expect(
-          revisionHistory.getByRole('link', { name: '2026-10-31' }),
+          revisionHistory.getByRole('link', { name: '2026-11-01' }),
         ).toHaveAttribute(
           'href',
-          'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-01',
+          'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-02',
         );
         await expect(
           revisionHistory.getByRole('link', { name: '2026-10-21' }),

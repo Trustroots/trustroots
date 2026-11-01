@@ -450,7 +450,6 @@
   "Used for": "Used for",
   "When involved": "When involved",
   "Facebook is no longer used for profile images.": "Facebook is no longer used for profile images.",
-  "Added a service overview, policy change notices, revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section.": "Added a service overview, policy change notices, revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section.",
   "Hetzner, Germany": "Hetzner, Germany",
   "Hosting Trustroots and its data": "Hosting Trustroots and its data",
   "Core infrastructure": "Core infrastructure",
@@ -466,7 +465,7 @@
   "Storing and redistributing published Nostr content": "Storing and redistributing published Nostr content",
   "When members use the optional Nostr integration": "When members use the optional Nostr integration",
   "We record changes to this policy in the <2>revision history below</2>. When changes materially affect how we use or share your personal information, or how you exercise your rights, we will bring them to your attention through an appropriate notice, such as email or a prominent notice on Trustroots.": "We record changes to this policy in the <2>revision history below</2>. When changes materially affect how we use or share your personal information, or how you exercise your rights, we will bring them to your attention through an appropriate notice, such as email or a prominent notice on Trustroots.",
-  "Confirmed Sparkpost EU email delivery and very limited Gravatar use for profile images.": "Confirmed Sparkpost EU email delivery and very limited Gravatar use for profile images.",
   "Sparkpost EU": "Sparkpost EU",
-  "Optional; very limited use": "Optional; very limited use"
+  "Optional; very limited use": "Optional; very limited use",
+  "Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.": "Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures."
 }
