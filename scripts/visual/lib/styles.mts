@@ -43,10 +43,15 @@ export async function snapshotStyles(
         return null;
       }
       const values: Record<string, string> = {};
+      // Base and head run on different ports, so computed url()s would
+      // always differ by origin.
+      const origin = location.origin;
       for (let i = 0; i < style.length; i++) {
         const property = style[i];
         if (property.startsWith('--')) continue;
-        values[property] = style.getPropertyValue(property);
+        values[property] = style
+          .getPropertyValue(property)
+          .replaceAll(origin, '');
       }
       return values;
     };

@@ -314,6 +314,10 @@ export async function shootApp(run: AppRun) {
         comparison.result = 'error';
         comparison.error = String(error);
         run.save(comparison, {});
+        // Without a browser every remaining target would fail the same way.
+        if (!run.browser.isConnected()) {
+          throw new Error(`Browser closed during ${key}`, { cause: error });
+        }
       }
     }
   };

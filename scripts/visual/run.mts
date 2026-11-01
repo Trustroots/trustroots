@@ -129,10 +129,16 @@ function cleanup() {
     mongoContainer = null;
   }
 }
-process.on('SIGINT', () => {
-  cleanup();
-  process.exit(130);
-});
+for (const [signal, code] of [
+  ['SIGINT', 130],
+  ['SIGTERM', 143],
+  ['SIGHUP', 129],
+] as const) {
+  process.on(signal, () => {
+    cleanup();
+    process.exit(code);
+  });
+}
 
 async function main() {
   mkdirSync(out, { recursive: true });

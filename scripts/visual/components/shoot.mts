@@ -166,6 +166,9 @@ export async function shootComponents(run: ComponentRun) {
             comparison.result = 'error';
             comparison.error = String(error);
             run.save(comparison, {});
+            if (!run.browser.isConnected()) {
+              throw new Error(`Browser closed during ${key}`, { cause: error });
+            }
           }
         }
       }
