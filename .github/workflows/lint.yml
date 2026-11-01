@@ -95,7 +95,7 @@ jobs:
         continue-on-error: true
       - name: Set up reviewdog
         if: github.event.pull_request.head.repo.full_name == github.repository
-        uses: reviewdog/action-setup@ece8286927ac882f28d3dee979d6d93babd197b2 # v1
+        uses: reviewdog/action-setup@8cf10b088fc4cafd9dd66a4328bbd4942f78b21b # v1
         continue-on-error: true
         with:
           reviewdog_version: v0.21.2
