@@ -55,11 +55,14 @@ export async function enterState(
   target: Locator,
   state: InteractionState,
 ): Promise<() => Promise<void>> {
+  // Forced: a disabled button has `pointer-events: none`, so Playwright's
+  // actionability check would wait for it forever. The pointer still moves
+  // over it, which is what a user would do.
   if (state === 'hover') {
-    await target.hover();
+    await target.hover({ force: true });
   }
   if (state === 'active') {
-    await target.hover();
+    await target.hover({ force: true });
     await page.mouse.down();
     return () => page.mouse.up();
   }
