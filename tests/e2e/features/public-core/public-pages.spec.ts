@@ -378,10 +378,10 @@ test.describe('public pages and unauthenticated flows', () => {
         });
         await expect(revisionHistory).toBeVisible();
         await expect(
-          revisionHistory.getByRole('link', { name: '2026-10-31' }),
+          revisionHistory.getByRole('link', { name: '2026-11-01' }),
         ).toHaveAttribute(
           'href',
-          'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-01',
+          'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-02',
         );
         await expect(
           revisionHistory.getByRole('link', { name: '2026-10-21' }),
@@ -405,7 +405,10 @@ test.describe('public pages and unauthenticated flows', () => {
           services.getByText('Hetzner, Germany', { exact: true }),
         ).toBeVisible();
         await expect(
-          services.getByRole('link', { name: 'SparkPost', exact: true }),
+          services.getByRole('rowheader', {
+            name: 'Sparkpost EU',
+            exact: true,
+          }),
         ).toBeVisible();
         await expect(
           services.getByText('Gravatar', { exact: true }),
@@ -419,10 +422,7 @@ test.describe('public pages and unauthenticated flows', () => {
           services.getByText('External Nostr relays', { exact: true }),
         ).toBeVisible();
         await expect(
-          page.getByText(
-            'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
-            { exact: true },
-          ),
+          services.getByText('Optional; very limited use', { exact: true }),
         ).toBeVisible();
         await expect(
           page.getByText(

@@ -9,10 +9,10 @@ export default function PrivacyRevisionHistory() {
   // Keep substantive policy changes here; omit formatting and framework migrations.
   const revisions = [
     {
-      date: '2026-10-31',
-      href: 'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-01',
+      date: '2026-11-01',
+      href: 'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-02',
       summary: t(
-        'Added a service overview, policy change notices, revision history and a statement about evolving online risks; removed the Zendesk disclosure and research section.',
+        'Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.',
       ),
     },
     {
