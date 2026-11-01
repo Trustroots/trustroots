@@ -9,7 +9,6 @@ import mongoose, {
   type UpdateQuery,
   type PipelineStage,
 } from 'mongoose';
-import net from 'net';
 import { prepareStaffBlockers } from '../services/staff-blockers-payload.server.service.mts';
 
 import errorService from '../../../core/server/services/error.server.service.mjs';
@@ -33,7 +32,7 @@ interface UserRecord {
   email?: string;
   emailTemporary?: string;
   firstName?: string;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   lastName?: string;
   member?: Array<{ tribe: Types.ObjectId }>;
   newsletter?: boolean;
@@ -115,7 +114,7 @@ interface AdminListRequest extends AdminRequest {
     page?: unknown;
     search?: unknown;
     role?: unknown;
-    ipAddress?: unknown;
+    ipHash?: unknown;
     sort?: { column?: unknown; direction?: unknown };
   };
 }
@@ -147,7 +146,7 @@ const ADMIN_MEMBER_SORT_FIELDS = {
   created: 'created',
   displayName: 'displayName',
   email: 'email',
-  lastIpAddress: 'lastIpAddress',
+  lastIpHash: 'lastIpHash',
   username: 'username',
 } as const;
 type AdminMemberSortColumn = keyof typeof ADMIN_MEMBER_SORT_FIELDS;
@@ -188,7 +187,7 @@ const USER_LIST_FIELDS = [
   'displayName',
   'email',
   'emailTemporary',
-  'lastIpAddress',
+  'lastIpHash',
   'public',
   'removeProfileExpires',
   'removeProfileToken',
@@ -255,6 +254,8 @@ function obfuscateTokens(user: UserDocument | null | undefined) {
 
   // Mongo object to regular object
   const _user = user.toObject();
+  // Historical MongoDB fields may remain until the maintenance script runs.
+  _.unset(_user, 'lastIpAddress');
 
   [
     // 'emailToken', // Needed to generate email reset links visible at dashboard
@@ -551,22 +552,22 @@ export const listUsersByRole = (req: AdminListRequest, res: AdminResponse) => {
 };
 
 /*
- * This middleware sends members whose current stored IP address exactly matches.
+ * This middleware sends members whose current stored IP identifier exactly matches.
  */
 /** @esmNamed */
-export const listUsersByLastIpAddress = (
+export const listUsersByLastIpHash = (
   req: AdminListRequest,
   res: AdminResponse,
 ) => {
-  const ipAddress = _.get(req, ['body', 'ipAddress']);
+  const ipHash = _.get(req, ['body', 'ipHash']);
 
-  if (typeof ipAddress !== 'string' || !net.isIP(ipAddress)) {
+  if (typeof ipHash !== 'string' || !/^[a-f0-9]{64}$/.test(ipHash)) {
     return res.status(400).send({
-      message: 'Invalid IP address.',
+      message: 'Invalid IP identifier.',
     });
   }
 
-  return sendMemberList(req, res, { lastIpAddress: ipAddress });
+  return sendMemberList(req, res, { lastIpHash: ipHash });
 };
 
 const handleAdminApiError = (res: AdminResponse, err: unknown): unknown => {
@@ -944,7 +945,7 @@ export const usernameToUserId = async (
 const service = {
   searchUsers,
   listUsersByRole,
-  listUsersByLastIpAddress,
+  listUsersByLastIpHash,
   getUser,
   listStaffBlockers,
   findPotentialMatches,

@@ -21,14 +21,16 @@ const users: UserResult[] = [
     _id: '111111111111111111111111',
     created: '2026-01-01T00:00:00.000Z',
     email: 'member-z@example.test',
-    lastIpAddress: '203.0.113.10',
+    lastIpHash:
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     username: 'member-alpha',
   },
   {
     _id: '222222222222222222222222',
     created: '2025-01-01T00:00:00.000Z',
     email: 'member-a@example.test',
-    lastIpAddress: '203.0.113.20',
+    lastIpHash:
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
     username: 'member-zeta',
   },
   // Regression record deliberately has an invalid date and omits optional fields.
@@ -76,23 +78,28 @@ describe('<AdminUserResultsTable />', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Username ▲' }));
     fireEvent.click(screen.getByRole('button', { name: 'Email' }));
     fireEvent.click(screen.getByRole('button', { name: 'Signed up' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Last IP' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Shared IP' }));
 
     expect(onSortChange.mock.calls).toEqual([
       [{ column: 'displayName', direction: 'ascending' }],
       [{ column: 'username', direction: 'descending' }],
       [{ column: 'email', direction: 'ascending' }],
       [{ column: 'created', direction: 'ascending' }],
-      [{ column: 'lastIpAddress', direction: 'ascending' }],
+      [{ column: 'lastIpHash', direction: 'ascending' }],
     ]);
-    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
+    expect(
+      screen.getAllByRole('link', {
+        name: 'Find accounts using the same IP',
+      })[0],
+    ).toHaveAttribute(
       'href',
-      '/admin/user?ip=203.0.113.10',
+      '/admin/user?ipHash=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     );
-    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
-      'target',
-      '_self',
-    );
+    expect(
+      screen.getAllByRole('link', {
+        name: 'Find accounts using the same IP',
+      })[0],
+    ).toHaveAttribute('target', '_self');
     expect(screen.getByText('2026-01-01 00:00')).toHaveAttribute(
       'dateTime',
       '2026-01-01T00:00:00.000Z',

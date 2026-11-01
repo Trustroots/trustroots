@@ -2,7 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 
 import {
   searchUsers,
-  listUsersByLastIpAddress,
+  listUsersByLastIpHash,
   listUsersByRole,
   getUser,
   getUserByUsername,
@@ -68,18 +68,32 @@ describe('admin users api', () => {
     axiosMock.post.mockResolvedValueOnce(response(data));
 
     await expect(
-      listUsersByLastIpAddress('203.0.113.10', options),
+      listUsersByLastIpHash(
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        options,
+      ),
     ).resolves.toBe(data);
     expect(axiosMock.post).toHaveBeenCalledWith(
-      '/api/admin/users/by-last-ip-address',
-      { ipAddress: '203.0.113.10', page: 3 },
+      '/api/admin/users/by-last-ip-hash',
+      {
+        ipHash:
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        page: 3,
+      },
     );
 
     axiosMock.post.mockResolvedValueOnce(response(data));
-    await expect(listUsersByLastIpAddress('203.0.113.20')).resolves.toBe(data);
+    await expect(
+      listUsersByLastIpHash(
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      ),
+    ).resolves.toBe(data);
     expect(axiosMock.post).toHaveBeenLastCalledWith(
-      '/api/admin/users/by-last-ip-address',
-      { ipAddress: '203.0.113.20' },
+      '/api/admin/users/by-last-ip-hash',
+      {
+        ipHash:
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+      },
     );
   });
 

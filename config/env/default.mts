@@ -52,6 +52,8 @@ const service = {
   // overwrites the header and the application cannot be reached directly.
   sessionProxy: false,
   sessionSecret: 'MEAN',
+  // Empty disables persisted IP identifiers. Use a dedicated random deployment key.
+  ipHashSecret: process.env.TRUSTROOTS_IP_HASH_SECRET || '',
   sessionCollection: 'sessions',
   domain: 'localhost:3000',
   // Additional trusted browser origins for reverse-proxy or multi-origin

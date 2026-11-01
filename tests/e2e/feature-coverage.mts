@@ -3208,7 +3208,7 @@ const features = [
         apiRoute('POST', '/api/admin/users', source.adminServer),
         apiRoute(
           'POST',
-          '/api/admin/users/by-last-ip-address',
+          '/api/admin/users/by-last-ip-hash',
           source.adminServer,
         ),
       ],

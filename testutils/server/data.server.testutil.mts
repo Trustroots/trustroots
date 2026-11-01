@@ -41,7 +41,7 @@ interface UserFixtureExtraFields {
   extSitesCS?: string;
   extSitesWS?: string;
   extSitesServas?: string;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   providerData?: Record<string, unknown> | Array<Record<string, unknown>>;
   removeProfileToken?: string;
   removeProfileExpires?: Date | number;

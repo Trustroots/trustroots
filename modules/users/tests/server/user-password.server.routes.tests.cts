@@ -565,7 +565,7 @@ describe('User password CRUD tests', function () {
               'removeProfileToken',
               'providerData',
               'pushRegistration',
-              'lastIpAddress',
+              'lastIpHash',
             ]) {
               should.not.exist(res.body.user[field]);
             }

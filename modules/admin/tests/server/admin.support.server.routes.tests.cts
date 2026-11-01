@@ -164,7 +164,7 @@ describe('Support team access and investigation', () => {
       'emailToken',
       'resetPasswordToken',
       'removeProfileToken',
-      'lastIpAddress',
+      'lastIpHash',
     ].forEach(field => Object.hasOwn(member, field).should.equal(false));
     (
       await agent

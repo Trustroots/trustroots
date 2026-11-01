@@ -501,35 +501,42 @@ describe('Admin users controller unit tests', () => {
     });
   });
 
-  describe('listUsersByLastIpAddress', () => {
+  describe('listUsersByLastIpHash', () => {
     it('rejects missing and invalid IP addresses', () => {
       const missingResponse = mockResponse();
-      adminUsers.listUsersByLastIpAddress({ body: {} }, missingResponse);
+      adminUsers.listUsersByLastIpHash({ body: {} }, missingResponse);
       missingResponse.statusCode.should.equal(400);
       responseField(missingResponse, 'message').should.equal(
-        'Invalid IP address.',
+        'Invalid IP identifier.',
       );
 
       const invalidResponse = mockResponse();
-      adminUsers.listUsersByLastIpAddress(
-        { body: { ipAddress: 'not-an-ip-address' } },
+      adminUsers.listUsersByLastIpHash(
+        { body: { ipHash: 'not-an-ip-address' } },
         invalidResponse,
       );
       invalidResponse.statusCode.should.equal(400);
       responseField(invalidResponse, 'message').should.equal(
-        'Invalid IP address.',
+        'Invalid IP identifier.',
       );
     });
 
     it('returns exact IP-address matches', async () => {
       const users = await utils.saveUsers(utils.generateUsers(2));
-      users[0].lastIpAddress = '2001:db8::10';
-      users[1].lastIpAddress = '2001:db8::11';
+      users[0].lastIpHash =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+      users[1].lastIpHash =
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
       await Promise.all(users.map(user => user.save()));
 
       const res = mockResponse();
-      adminUsers.listUsersByLastIpAddress(
-        { body: { ipAddress: '2001:db8::10' } },
+      adminUsers.listUsersByLastIpHash(
+        {
+          body: {
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          },
+        },
         res,
       );
       await res.waitForResponse();
@@ -542,8 +549,13 @@ describe('Admin users controller unit tests', () => {
       stubMemberListQuery({ users: null });
 
       const res = mockResponse();
-      adminUsers.listUsersByLastIpAddress(
-        { body: { ipAddress: '203.0.113.10' } },
+      adminUsers.listUsersByLastIpHash(
+        {
+          body: {
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          },
+        },
         res,
       );
       await res.waitForResponse();
@@ -557,8 +569,13 @@ describe('Admin users controller unit tests', () => {
       });
 
       const res = mockResponse();
-      adminUsers.listUsersByLastIpAddress(
-        { body: { ipAddress: '203.0.113.10' } },
+      adminUsers.listUsersByLastIpHash(
+        {
+          body: {
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          },
+        },
         res,
       );
       await res.waitForResponse();
