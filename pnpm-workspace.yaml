@@ -3,7 +3,7 @@ packages:
   - 'packages/*'
 
 catalog:
-  qs: '6.16.1'
+  qs: '6.17.1'
 
 overrides:
   'browserslist': '4.28.7'
