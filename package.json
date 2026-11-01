@@ -10,10 +10,10 @@
   },
   "engines": {
     "node": ">=24.22.1 <25.0.0",
-    "pnpm": ">=11.18.0 <12.0.0",
+    "pnpm": ">=12.16.1 <13.0.0",
     "mongodb": ">=3.6 <=4.4"
   },
-  "packageManager": "pnpm@11.18.0",
+  "packageManager": "pnpm@12.16.1",
   "browserslist": [
     "extends @wordpress/browserslist-config"
   ],
@@ -128,12 +128,12 @@
     "knip": "BRAVE_EXECUTABLE_PATH=knip knip"
   },
   "dependencies": {
-    "@agendajs/mongo-backend": "4.0.3",
+    "@agendajs/mongo-backend": "4.0.4",
     "@tanstack/react-query": "5.104.5",
     "@tanstack/react-router": "1.170.46",
     "@trustroots/logger": "workspace:*",
     "@trustroots/ui": "workspace:*",
-    "agenda": "6.2.6",
+    "agenda": "6.2.7",
     "autolinker": "4.1.5",
     "axios": "1.20.0",
     "basic-auth": "3.0.0",
@@ -232,7 +232,7 @@
     "@vitejs/plugin-react": "6.1.2",
     "@vitest/coverage-v8": "5.0.5",
     "@wordpress/browserslist-config": "7.0.0",
-    "agendash": "8.2.4",
+    "agendash": "8.2.5",
     "autoprefixer": "10.6.1",
     "babel-jest": "30.5.2",
     "babel-plugin-i18next-extract": "1.1.0",

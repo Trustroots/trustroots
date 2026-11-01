@@ -38,7 +38,7 @@ RUN apt-get -qq update && apt-get -q install -y \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Keep the package manager consistent with `packageManager` in package.json.
-RUN npm -g i --force pnpm@11.18.0
+RUN npm -g i --force pnpm@12.16.1
 
 WORKDIR /home/app/trustroots
 
