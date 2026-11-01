@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Component fixtures</title>
+    <script>
+      // ?css= is the directory holding a branch's production react-main.css.
+      // Production loads react-main.rtl.css after it for RTL languages.
+      const params = new URLSearchParams(location.search);
+      const rtl = params.get('dir') === 'rtl';
+      const css = params.get('css');
+      document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+      document.documentElement.lang = rtl ? 'ar' : 'en';
+      document.write(`<link rel="stylesheet" href="${css}/react-main.css">`);
+      if (rtl) {
+        document.write(
+          `<link rel="stylesheet" id="rtl-style" href="${css}/react-main.rtl.css">`,
+        );
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script src="dist/fixtures.js"></script>
+  </body>
+</html>

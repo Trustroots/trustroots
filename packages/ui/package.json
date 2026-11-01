@@ -10,7 +10,18 @@
     "./Badge": "./src/components/Badge.tsx",
     "./Spinner": "./src/components/Spinner.tsx"
   },
+  "imports": {
+    "#components/*": "./src/components/*.tsx",
+    "#lib/*": "./src/lib/*.ts",
+    "#hooks/*": "./src/hooks/*.ts"
+  },
   "peerDependencies": {
     "react": "19.3.1"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.7.0"
   }
 }

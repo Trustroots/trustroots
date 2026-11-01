@@ -17,3 +17,29 @@ stay owned by the Less variables.
 These are initial primitives, not complete replacements for Bootstrap. Add
 variants only when a real consumer needs them, keeping keyboard access and
 existing appearance in mind.
+
+## Class names and variants
+
+Components build their class names with `cn()` from `src/lib/utils.ts`
+(imported as `#lib/utils`): `clsx` joins conditional classes, and
+`tailwind-merge`, configured for the `tw:` prefix and this package's theme
+tokens, lets a later utility replace a conflicting earlier one. When
+`globals.css` gains a token that utilities use (a spacing, radius or line
+height name), add it to the `extendTailwindMerge` call too. Components with
+variants describe them with `class-variance-authority` (`cva`).
+
+## shadcn
+
+`components.json` configures the shadcn CLI for the Base UI flavour
+(`base-vega`), the `tw` prefix, RTL-aware classes and this package's
+`#components` and `#lib` imports. To start a component from shadcn, preview
+it from this directory:
+
+```sh
+pnpm dlx shadcn@latest add button --dry-run --view
+```
+
+Then write it into `src/components/` by hand, adapted to the Trustroots look
+and tokens. The CLI writes lowercase file names, which would overwrite the
+existing PascalCase files on a case-insensitive file system, and imports
+`cn` from `"cn"` instead of `#lib/utils`.
