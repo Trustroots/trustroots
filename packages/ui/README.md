@@ -28,6 +28,18 @@ tokens, lets a later utility replace a conflicting earlier one. When
 height name), add it to the `extendTailwindMerge` call too. Components with
 variants describe them with `class-variance-authority` (`cva`).
 
+## Badge
+
+Every badge in the app is a `Badge`. Callers pick `variant` (`solid` or
+`outline`) and `tone` (`neutral`, `primary`, `danger`, `inverse`), both
+required, and optionally `size` (`md`, the default, scales with the text like
+Bootstrap's `.badge`; `sm` for profile counts and tags; `xs` for the header's
+unread counter) and `shape` (`rounded` or `pill`). `indicator` adds the
+notification dot. The badge renders `data-slot="badge"` and its resolved
+`data-variant`, `data-tone`, `data-size` and `data-shape`, which tests should
+use instead of class names. Only offer a value that the app uses; drop it
+when its last use goes.
+
 ## shadcn
 
 `components.json` configures the shadcn CLI for the Base UI flavour
