@@ -5,13 +5,15 @@ import '@testing-library/jest-dom';
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
 import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
 const offersApiMock = jest.mocked(offersApi);
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('react-bootstrap', () => {
   const ReactBootstrap =
     jest.requireActual<typeof import('react-bootstrap')>('react-bootstrap');
@@ -30,11 +32,6 @@ jest.mock('react-bootstrap', () => {
 });
 
 jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({})),
-}));
-
-const getCurrentRouteParamsMock = jest.mocked(getCurrentRouteParams);
 jest.mock(
   '@/modules/offers/client/components/OfferLocationEditor.component',
   () => ({
@@ -75,7 +72,6 @@ describe('OfferHostPage', () => {
     jest.clearAllMocks();
     window.history.replaceState({}, '', '/offer/host');
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
-    getCurrentRouteParamsMock.mockReturnValue({});
   });
 
   it.each(['availability', 'description', 'location'])(
@@ -120,7 +116,7 @@ describe('OfferHostPage', () => {
     ).toBeVisible();
 
     window.history.replaceState({}, '', '/offer/host#location');
-    fireEvent(window, new HashChangeEvent('hashchange'));
+    fireEvent.popState(window);
     expect(screen.getByRole('tab', { name: 'Location' })).toHaveAttribute(
       'aria-selected',
       'true',
@@ -232,7 +228,7 @@ describe('OfferHostPage', () => {
   });
 
   it('applies host status from route params when creating an offer', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ status: 'maybe' });
+    window.history.pushState({}, '', '/offer/host?status=maybe');
     offersApiMock.getOffers.mockResolvedValue([]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
@@ -376,7 +372,7 @@ describe('OfferHostPage', () => {
   });
 
   it('overrides a loaded offer status from route params', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ status: 'no' });
+    window.history.pushState({}, '', '/offer/host?status=no');
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 

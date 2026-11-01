@@ -1,14 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
 
 import { useAnalytics } from '@trustroots/analytics/client';
-import {
-  getCurrentRouteParams,
-  navigate,
-} from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
@@ -114,7 +111,8 @@ export default function SignupPage() {
     user: UserProfile | null;
     setUser: (user: UserProfile | AuthenticatedUser) => void;
   };
-  const { tribe: tribeSlug } = getCurrentRouteParams();
+  const { tribe: tribeSlug } = useSearch({ strict: false });
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     acquisitionStory: '',
     ageConfirmed: false,
@@ -141,7 +139,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (user && step === 1) {
-      navigate('search.map');
+      void navigate({ to: '/search' });
     }
   }, [step, user]);
 

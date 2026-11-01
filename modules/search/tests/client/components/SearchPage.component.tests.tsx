@@ -35,11 +35,9 @@ type SearchMapHarnessProps = Pick<
   onVisibleOffersChange: NonNullable<SearchMapProps['onVisibleOffersChange']>;
   onOfferClose: () => void;
 };
-type RouteParams = Record<string, string>;
 type LocationSuggestions = Awaited<
   ReturnType<typeof locationApiModule.fetchLocationSuggestions>
 >;
-const mockGetRouteParams = jest.fn<RouteParams, []>();
 // SearchPage tests include a zoom value on located centres, which the map
 // consumes even though the location API's public result type omits it.
 type SearchPageLocation =
@@ -66,10 +64,9 @@ const sampleTribe = (id: string, slug: string): TribeSummary => ({
   count: 1,
 });
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: () => mockGetRouteParams(),
-}));
-
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/search/client/api/location.api');
 jest.mock('@/modules/tribes/client/api/tribes.api');
 jest.mock('@/modules/offers/client/api/offers.api');
@@ -299,7 +296,7 @@ describe('<SearchPage />', () => {
       onOfferClose: () => {},
     };
     window.localStorage.clear();
-    mockGetRouteParams.mockReturnValue({});
+    window.history.pushState({}, '', '/search');
     locationApi.fetchLocationSuggestions.mockResolvedValue([]);
     locationApi.locatePlace.mockReturnValue(null);
     tribesApi.get.mockResolvedValue(sampleTribe('circle-1', 'sample-circle'));
@@ -547,7 +544,7 @@ describe('<SearchPage />', () => {
   });
 
   it('initialises tribe filters from the route params', async () => {
-    mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
+    window.history.pushState({}, '', '/search?tribe=cyclists');
     tribesApi.get.mockResolvedValue(sampleTribe('tribe-cyclists', 'cyclists'));
 
     renderSearchPage();
@@ -559,7 +556,7 @@ describe('<SearchPage />', () => {
   });
 
   it('initialises the map location from a location query param', async () => {
-    mockGetRouteParams.mockReturnValue({ location: 'Helsinki_Finland' });
+    window.history.pushState({}, '', '/search?location=Helsinki_Finland');
     const feature = { id: 'place-1', trTitle: 'Helsinki, Finland' };
     locationApi.fetchLocationSuggestions.mockResolvedValue([feature]);
     locationApi.locatePlace.mockReturnValue({
@@ -583,7 +580,7 @@ describe('<SearchPage />', () => {
 
   it('loads an offer from the route params and tracks preview analytics', async () => {
     const offerId = '665100000000000000000001';
-    mockGetRouteParams.mockReturnValue({ offer: offerId });
+    window.history.pushState({}, '', `/search?offer=${offerId}`);
     offersApi.getOffer.mockResolvedValue(mockOffer);
 
     renderSearchPage();
@@ -599,9 +596,7 @@ describe('<SearchPage />', () => {
   });
 
   it('tracks missing offers loaded from the route params', async () => {
-    mockGetRouteParams.mockReturnValue({
-      offer: '665100000000000000000099',
-    });
+    window.history.pushState({}, '', '/search?offer=665100000000000000000099');
     offersApi.getOffer.mockRejectedValue(new Error('not found'));
 
     renderSearchPage();
@@ -647,7 +642,7 @@ describe('<SearchPage />', () => {
   });
 
   it('initialises bounds from a location query', async () => {
-    mockGetRouteParams.mockReturnValue({ location: 'Helsinki_Finland' });
+    window.history.pushState({}, '', '/search?location=Helsinki_Finland');
     locationApi.fetchLocationSuggestions.mockResolvedValue([
       { id: 'place-2', trTitle: 'Helsinki, Finland' },
     ]);
@@ -716,13 +711,6 @@ describe('<SearchPage />', () => {
 
   it('does not reload a pin preview when its offer ID is written to the URL', async () => {
     window.history.replaceState({}, '', '/search');
-    mockGetRouteParams.mockImplementation(() => {
-      const params: RouteParams = {};
-      new URLSearchParams(window.location.search).forEach((value, key) => {
-        params[key] = value;
-      });
-      return params;
-    });
     offersApi.getOffer.mockClear();
 
     renderSearchPage();
@@ -755,7 +743,7 @@ describe('<SearchPage />', () => {
 
   it('ignores URL data that resolves after the page unmounts', async () => {
     let resolveTribe!: (tribe: TribeSummary) => void;
-    mockGetRouteParams.mockReturnValue({ tribe: 'cyclists' });
+    window.history.pushState({}, '', '/search?tribe=cyclists');
     tribesApi.get.mockReturnValue(
       new Promise(resolve => {
         resolveTribe = resolve;
@@ -771,7 +759,7 @@ describe('<SearchPage />', () => {
 
   it('ignores location suggestions that resolve after the page unmounts', async () => {
     let resolveSuggestions!: (suggestions: LocationSuggestions) => void;
-    mockGetRouteParams.mockReturnValue({ location: 'Helsinki_Finland' });
+    window.history.pushState({}, '', '/search?location=Helsinki_Finland');
     locationApi.fetchLocationSuggestions.mockReturnValue(
       new Promise(resolve => {
         resolveSuggestions = resolve;
@@ -786,7 +774,7 @@ describe('<SearchPage />', () => {
   });
 
   it('does not use an unlocatable location suggestion', async () => {
-    mockGetRouteParams.mockReturnValue({ location: 'Helsinki_Finland' });
+    window.history.pushState({}, '', '/search?location=Helsinki_Finland');
     locationApi.fetchLocationSuggestions.mockResolvedValue([
       { id: 'place-1', trTitle: 'Helsinki, Finland' },
     ]);
@@ -803,7 +791,7 @@ describe('<SearchPage />', () => {
   it('ignores offer results and failures that arrive after unmount', async () => {
     let resolveOffer!: (offer: OfferReadPayload) => void;
     const offerId = '665100000000000000000001';
-    mockGetRouteParams.mockReturnValue({ offer: offerId });
+    window.history.pushState({}, '', `/search?offer=${offerId}`);
     offersApi.getOffer.mockReturnValue(
       new Promise(resolve => {
         resolveOffer = resolve;
@@ -828,7 +816,7 @@ describe('<SearchPage />', () => {
   });
 
   it('ignores malformed offer identifiers in the route', () => {
-    mockGetRouteParams.mockReturnValue({ offer: 'invalid' });
+    window.history.pushState({}, '', '/search?offer=invalid');
     renderSearchPage();
     expect(offersApi.getOffer).not.toHaveBeenCalled();
     expect(screen.getByRole('link', { name: 'Members' })).toHaveAttribute(

@@ -11,6 +11,9 @@ import {
 } from '@/testutils/client/data.client.testutil';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock('@/modules/core/client/services/client-runtime');
 const api = { fetchThreads: jest.mocked(messagesApi.fetchThreads) };

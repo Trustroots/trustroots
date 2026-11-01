@@ -9,6 +9,9 @@ import type { ReferenceThreadsResponse } from '@/modules/admin/client/api/admin-
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 
 jest.mock('@/modules/admin/client/api/admin-reference-threads.api');
 const mockedReferenceThreadsApi = jest.mocked(referenceThreadsApi);

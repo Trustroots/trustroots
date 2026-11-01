@@ -8,11 +8,12 @@ import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
 import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 
 const offersApiMock = jest.mocked(offersApi);
-const getCurrentRouteParamsMock = jest.mocked(getCurrentRouteParams);
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('react-bootstrap', () => {
   const ReactBootstrap =
     jest.requireActual<typeof import('react-bootstrap')>('react-bootstrap');
@@ -31,9 +32,6 @@ jest.mock('react-bootstrap', () => {
 });
 
 jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({})),
-}));
 jest.mock(
   '@/modules/offers/client/components/MeetsExplanation.component',
   () => ({
@@ -66,7 +64,7 @@ const analytics = fakeAnalytics();
 describe('OfferMeetEditPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    getCurrentRouteParamsMock.mockReturnValue({});
+    window.history.pushState({}, '', '/offer/meet/add');
   });
 
   it('keeps an empty expiry editable and prevents saving until it is valid', async () => {
@@ -159,7 +157,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('loads and updates an existing meet offer', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'offer-1' });
+    window.history.pushState({}, '', '/offer/meet/offer-1');
     offersApiMock.getOffer.mockResolvedValue({
       _id: 'offer-1',
       type: 'meet',
@@ -192,7 +190,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('fills missing description and location on a legacy offer', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'legacy-offer' });
+    window.history.pushState({}, '', '/offer/meet/legacy-offer');
     offersApiMock.getOffer.mockResolvedValue({
       _id: 'legacy-offer',
       type: 'meet',
@@ -209,7 +207,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('uses the default location when a legacy offer has no location', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'legacy-offer' });
+    window.history.pushState({}, '', '/offer/meet/legacy-offer');
     const legacyOffer = {
       _id: 'legacy-offer',
       type: 'meet',
@@ -233,7 +231,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('falls back to the route id when a loaded legacy offer lacks its id', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'route-offer' });
+    window.history.pushState({}, '', '/offer/meet/route-offer');
     const legacyOffer = {
       type: 'meet',
       user: { _id: 'user-1', username: 'fictional-user' },
@@ -261,7 +259,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('keeps loading when an existing meet offer cannot be loaded', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'missing-offer' });
+    window.history.pushState({}, '', '/offer/meet/missing-offer');
     offersApiMock.getOffer.mockRejectedValue(new Error('not found'));
 
     render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
@@ -289,7 +287,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('ignores loaded meet offers after unmounting', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'offer-1' });
+    window.history.pushState({}, '', '/offer/meet/offer-1');
 
     let resolveOffer!: (offer: OfferReadPayload) => void;
     offersApiMock.getOffer.mockReturnValue(
@@ -314,9 +312,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('uses a default expiry date for loaded meet offers without one', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({
-      offerId: 'offer-without-expiry',
-    });
+    window.history.pushState({}, '', '/offer/meet/offer-without-expiry');
     offersApiMock.getOffer.mockResolvedValue({
       _id: 'offer-without-expiry',
       type: 'meet',
@@ -337,7 +333,7 @@ describe('OfferMeetEditPage', () => {
   });
 
   it('ignores failed meet offer loads after unmounting', async () => {
-    getCurrentRouteParamsMock.mockReturnValue({ offerId: 'offer-1' });
+    window.history.pushState({}, '', '/offer/meet/offer-1');
 
     let rejectOffer!: (error: Error) => void;
     offersApiMock.getOffer.mockReturnValue(

@@ -1,5 +1,6 @@
 // External dependencies
 import classnames from 'classnames';
+import { useLocation } from '@tanstack/react-router';
 import React, { useEffect } from 'react';
 import { useAuth } from '../../../core/client/react-app/auth';
 
@@ -8,7 +9,9 @@ export default function AdminHeader() {
   const isAdmin = hasRole('admin');
   const isSupport = hasRole('support-team');
   const isWelcomeTeam = hasRole('welcome-team');
-  const currentPath = window.location.pathname.replace('/admin/', '');
+  const currentPath = useLocation({
+    select: location => location.pathname,
+  }).replace('/admin/', '');
 
   useEffect(() => {
     const input = document.querySelector<HTMLInputElement>(

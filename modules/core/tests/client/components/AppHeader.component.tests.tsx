@@ -11,6 +11,9 @@ import type NavigationLoggedOut from '@/layers/shell/client/components/Navigatio
 type LoggedInProps = React.ComponentProps<typeof NavigationLoggedIn>;
 type LoggedOutProps = React.ComponentProps<typeof NavigationLoggedOut>;
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/layers/shell/client/components/NavigationLoggedIn', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
@@ -82,7 +85,7 @@ describe('<AppHeader />', () => {
     );
   });
 
-  it('renders logged-in navigation and reacts to browser route changes', () => {
+  it('renders logged-in navigation with the router path', () => {
     window.history.pushState({}, '', '/profile/alice');
 
     render(
@@ -97,15 +100,6 @@ describe('<AppHeader />', () => {
 
     expect(screen.getByTestId('logged-in-navigation')).toHaveTextContent(
       '/profile/alice alice',
-    );
-
-    window.history.pushState({}, '', '/messages');
-    act(() => {
-      window.dispatchEvent(new PopStateEvent('popstate'));
-    });
-
-    expect(screen.getByTestId('logged-in-navigation')).toHaveTextContent(
-      '/messages alice',
     );
   });
 

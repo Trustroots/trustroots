@@ -1,6 +1,7 @@
 import type { PageTranslator } from '../types';
 import React from 'react';
 import Board from './PageBoard';
+import PrivacyRevisionHistory from './PrivacyRevisionHistory';
 import { Trans, useTranslation } from 'react-i18next';
 
 export default function Privacy() {
@@ -35,9 +36,9 @@ export default function Privacy() {
               itemProp="datePublished"
               {...{ dateTime: '2014-12-23' }}
             >
-              <time itemProp="dateModified" dateTime="2026-10-21">
+              <time itemProp="dateModified" dateTime="2026-11-01">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2026, 9, 21),
+                  date: new Date(2026, 10, 1),
                 })}
               </time>
             </p>
@@ -49,6 +50,21 @@ export default function Privacy() {
                     'We aim to keep this privacy policy as clear, concise, and easy to understand as possible. We are committed to being transparent and open. This article explains generally how we receive information about you, and what we do with that information once we have it.',
                   )}
                 </em>
+              </p>
+              <p>
+                {t(
+                  'We work to protect our community and members’ information as online risks evolve, including automated abuse and misuse of AI.',
+                )}
+              </p>
+              <p>
+                <Trans t={rawT} ns="pages">
+                  We record changes to this policy in the{' '}
+                  <a href="#privacy-revision-history">revision history below</a>
+                  . When changes materially affect how we use or share your
+                  personal information, or how you exercise your rights, we will
+                  bring them to your attention through an appropriate notice,
+                  such as email or a prominent notice on Trustroots.
+                </Trans>
               </p>
               <p>{t('You must be 18 years old or older to use Trustroots.')}</p>
               <h3>{t('Your data is yours')}</h3>
@@ -131,42 +147,59 @@ export default function Privacy() {
                   'Some Trustroots features rely on external services. We would like to reduce our reliance on these services in the future.',
                 )}
               </p>
-              <ul>
-                <li>
-                  <Trans t={rawT} ns="pages">
-                    Communication with our support team by email or contact form
-                    is managed through Zendesk and stored on Zendesk servers.
-                    See the{' '}
-                    <a href="https://www.zendesk.com/company/customers-partners/privacy-policy/">
-                      Zendesk privacy policy
-                    </a>
-                    .
-                  </Trans>
-                </li>
-                <li>
-                  {t(
-                    'Gravatar may be used for profile images. Facebook is no longer used for profile images.',
-                  )}
-                </li>
-                <li>
-                  <Trans t={rawT} ns="pages">
-                    We route our emails through{' '}
-                    <a href="https://www.sparkpost.com/">SparkPost</a> servers.
-                  </Trans>
-                </li>
-              </ul>
-              <h3>{t('Our server')}</h3>
-              <Trans t={rawT} ns="pages">
-                Our server (and thus your data) is securely hosted at Hetzner in
-                Germany.
-              </Trans>
-              <h3>{t('Research')}</h3>
-              <Trans t={rawT} ns="pages">
-                Scientific trust metric research might be done with Trustroots
-                data, but in such case the data is always anonymized. See our{' '}
-                <a href="/statistics">statistics page</a> for more information.
-              </Trans>
+              <div className="table-responsive">
+                <table className="table">
+                  <caption>{t('Services and providers')}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">{t('Service / provider')}</th>
+                      <th scope="col">{t('Used for')}</th>
+                      <th scope="col">{t('When involved')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">{t('Hetzner, Germany')}</th>
+                      <td>{t('Hosting Trustroots and its data')}</td>
+                      <td>{t('Core infrastructure')}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">{t('Sparkpost EU')}</th>
+                      <td>{t('Delivering emails')}</td>
+                      <td>{t('When Trustroots sends email')}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">{t('Gravatar')}</th>
+                      <td>{t('Profile images')}</td>
+                      <td>{t('Optional; very limited use')}</td>
+                    </tr>
+                    <tr>
+                      <th scope="row">
+                        {t('Umami — self-hosted by Trustroots')}
+                      </th>
+                      <td>{t('Aggregate website analytics')}</td>
+                      <td>
+                        {t('Website usage; no external analytics provider')}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">{t('External Nostr relays')}</th>
+                      <td>
+                        {t(
+                          'Storing and redistributing published Nostr content',
+                        )}
+                      </td>
+                      <td>
+                        {t('When members use the optional Nostr integration')}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p>{t('Facebook is no longer used for profile images.')}</p>
             </div>
+            <hr />
+            <PrivacyRevisionHistory />
             <hr />
             <p className="lead">
               <Trans t={rawT} ns="pages">

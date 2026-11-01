@@ -55,7 +55,13 @@ describe('SparkPost admin diagnostics', () => {
   });
 
   it('rejects guests and non-admin roles before calling the provider', async () => {
-    for (const action of ['overview', 'events', 'preview'])
+    for (const action of [
+      'overview',
+      'events',
+      'preview',
+      'accounts',
+      'recovery',
+    ])
       await request(app)
         .get('/api/admin/sparkpost/' + action)
         .expect(403);
@@ -65,7 +71,13 @@ describe('SparkPost admin diagnostics', () => {
       await utils.saveUsers([user]);
       const agent = request.agent(app);
       await agent.post('/api/auth/signin').send(user).expect(200);
-      for (const action of ['overview', 'events', 'preview'])
+      for (const action of [
+        'overview',
+        'events',
+        'preview',
+        'accounts',
+        'recovery',
+      ])
         await agent.get('/api/admin/sparkpost/' + action).expect(403);
       await utils.clearDatabase();
     }
@@ -86,6 +98,14 @@ describe('SparkPost admin diagnostics', () => {
     await agent.get('/api/admin/sparkpost/overview?days=200').expect(400);
     await agent.get('/api/admin/sparkpost/events?date=invalid').expect(400);
     await agent.get('/api/admin/sparkpost/preview').expect(400);
+    await agent.get('/api/admin/sparkpost/accounts').expect(400);
+    await agent
+      .get('/api/admin/sparkpost/recovery?date=2026-10-30')
+      .expect(200);
+    await agent
+      .post('/api/admin/sparkpost/recovery')
+      .send({ date: '2026-10-30', keys: [] })
+      .expect(400);
     await agent.get('/api/admin/sparkpost/unknown').expect(404);
     const preview = await agent
       .get('/api/admin/sparkpost/preview')
@@ -175,52 +195,40 @@ describe('SparkPost admin diagnostics', () => {
     assert.equal((await diagnostics.overview(7, now)).provider, 'unavailable');
   });
 
-  it('redacts provider events and extracts pagination cursors without following foreign hosts', async () => {
-    get.onFirstCall().resolves({
+  it('paginates every event type and matches current recipient accounts', async () => {
+    await mongoose.connection.collection('users').insertOne({
+      email: 'fictional@example.test',
+      username: 'matched-member',
+      created: new Date(from),
+      public: false,
+    });
+    get.resolves({
       data: {
         results: [event],
         links: { next: 'https://untrusted.example.test/path?cursor=second' },
       },
     });
-    get
-      .onSecondCall()
-      .resolves({ data: { results: [{ timestamp: '123', type: 'bounce' }] } });
     const result = await diagnostics.events('2026-10-30', now);
-    assert.equal(result.capped, false);
-    assert.equal(result.events.length, 2);
-    assert.deepEqual(result.events[0], {
-      timestamp: event.timestamp,
-      type: 'delivery',
-      campaign: 'confirm-email',
-      recipientDomain: 'example.test',
-    });
-    assert.equal(result.events[1].campaign, '');
-    assert.equal(result.events[1].recipientDomain, '');
-    assert.match(get.secondCall.args[0], /^https:\/\/api.eu.sparkpost.com\//);
-    assert.equal(get.secondCall.args[1].params.cursor, 'second');
-    assert.ok(!JSON.stringify(result).includes('fictional@'));
-  });
-
-  it('limits event pagination and reports incomplete cursors', async () => {
-    get.callsFake(
-      async (_url: string, options: { params: { cursor?: string } }) => ({
-        data: {
-          results: [event],
-          links: {
-            next: '?cursor=' + (Number(options.params.cursor || 0) + 1),
-          },
-        },
-      }),
-    );
-    assert.equal((await diagnostics.events('2026-10-30', now)).capped, true);
-    assert.equal(get.callCount, 5);
-    for (const results of [[], [event]]) {
-      get.reset();
-      get.resolves({ data: { results, links: { next: '?cursor=one' } } });
-      assert.equal((await diagnostics.events('2026-10-30', now)).capped, true);
-    }
+    assert.equal(result.nextCursor, 'second');
+    assert.equal(result.events[0].recipient, 'fictional@example.test');
+    assert.equal(result.events[0].subject, 'Private text');
+    assert.equal(result.events[0].account?.username, 'matched-member');
+    assert.equal(get.firstCall.args[1].params.events, undefined);
+    get.resolves({ data: { results: [{ timestamp: '123', type: 'open' }] } });
+    const next = await diagnostics.events('2026-10-30', now, 'second');
+    assert.equal(next.events[0].type, 'open');
+    assert.equal(get.lastCall.args[1].params.cursor, 'second');
+    assert.equal(next.nextCursor, undefined);
     get.resolves({ data: { results: [event], links: { next: '/no-cursor' } } });
     assert.equal((await diagnostics.events('2026-10-30', now)).capped, true);
+    get.resolves({
+      data: { results: [event], links: { next: '?cursor=same' } },
+    });
+    assert.equal(
+      (await diagnostics.events('2026-10-30', now, 'same')).capped,
+      true,
+    );
+    await assert.rejects(diagnostics.events('2026-10-30', now, []));
   });
 
   it('rejects invalid, future and expired event days and missing API credentials', async () => {

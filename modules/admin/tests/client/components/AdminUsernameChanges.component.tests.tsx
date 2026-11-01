@@ -15,6 +15,9 @@ import * as api from '@/modules/admin/client/api/username-changes.api';
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 
 jest.mock('@/modules/admin/client/api/username-changes.api');
 

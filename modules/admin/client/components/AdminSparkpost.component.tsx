@@ -1,8 +1,9 @@
+import SignupRecovery from './SignupRecovery.component';
+import SparkpostDaily from './SparkpostDaily.component';
 import React, { useCallback, useEffect, useState } from 'react';
 import AdminHeader from './AdminHeader.component';
 import {
   getSparkpostOverview,
-  getSparkpostEvents,
   getSparkpostPreview,
 } from '../api/sparkpost.api';
 
@@ -41,65 +42,8 @@ function useResult<T>(load: () => Promise<T>) {
   return { data, error };
 }
 
-function Events({ date }: { date: string }) {
-  const load = useCallback(() => getSparkpostEvents(date), [date]);
-  const { data, error } = useResult(load);
-  return (
-    <section aria-label="Provider events">
-      <h3>Provider events: {date} (UTC)</h3>
-      <p>
-        Up to 500 events from the last 10 days. Missing events do not prove
-        non-delivery. Only recipient domains are shown.
-      </p>
-      {error ? (
-        <p role="alert">
-          Could not load events. Check the date, provider access and retention
-          period.
-        </p>
-      ) : !data ? (
-        <p role="status">Loading events…</p>
-      ) : (
-        <>
-          {data.capped && (
-            <p className="alert alert-warning">
-              Partial results: the event sample is capped or pagination could
-              not be completed.
-            </p>
-          )}
-          {!data.events.length ? (
-            <p>No events returned for this day.</p>
-          ) : (
-            <div className="table-responsive">
-              <table className="table table-striped">
-                <caption>Sample of provider events</caption>
-                <thead>
-                  <tr>
-                    <th>Time (UTC)</th>
-                    <th>Event</th>
-                    <th>Campaign</th>
-                    <th>Recipient domain</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.events.map((event, index) => (
-                    <tr key={index}>
-                      <td>{event.timestamp}</td>
-                      <td>{event.type}</td>
-                      <td>{event.campaign || 'Unknown'}</td>
-                      <td>{event.recipientDomain || 'Unknown'}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
 function Preview({ window }: { window: { from: string; to: string } }) {
+  const [showAccounts, setShowAccounts] = useState(false);
   const load = useCallback(
     () => getSparkpostPreview(window.from, window.to),
     [window],
@@ -140,6 +84,13 @@ function Preview({ window }: { window: { from: string; to: string } }) {
               <th scope="row">New accounts awaiting confirmation</th>
               <td>
                 <strong>{data.awaitingConfirmation}</strong>
+                <br />
+                <button
+                  className="btn btn-sm btn-default"
+                  onClick={() => setShowAccounts(true)}
+                >
+                  Review unconfirmed accounts
+                </button>
               </td>
               <td>
                 Created during this period and still unconfirmed. Some members
@@ -161,6 +112,7 @@ function Preview({ window }: { window: { from: string; to: string } }) {
           </tbody>
         </table>
       </div>
+      {showAccounts && <SignupRecovery from={data.from} to={data.to} />}
       {data.capped && (
         <p className="alert alert-warning">
           Partial preview: only the first 1,000 completed jobs are included.
@@ -219,8 +171,8 @@ export default function AdminSparkpost() {
       <main className="container">
         <h2>SparkPost email diagnostics</h2>
         <p>
-          Read-only diagnostics. No emails are sent or jobs replayed from this
-          page.
+          Inspect email delivery and review recovery candidates. Recovery emails
+          are queued only after you review recipients and confirm.
         </p>
         <label htmlFor="sparkpost-period">Reporting period</label>{' '}
         <select
@@ -312,7 +264,7 @@ export default function AdminSparkpost() {
             </div>
           </>
         )}
-        {date && <Events key={date} date={date} />}
+        {date && <SparkpostDaily key={date} date={date} />}
         <hr />
         <h3>Preview a sending interruption</h3>
         <p>

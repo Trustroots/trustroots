@@ -1,3 +1,4 @@
+import { useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAnalytics } from '@trustroots/analytics/client';
@@ -20,8 +21,7 @@ export default function Inbox({ user }: InboxProps) {
   }
   const { t } = useTranslation('messages');
   const { track } = useAnalytics();
-  const unreadOnly =
-    new URLSearchParams(window.location.search).get('filter') === 'unread';
+  const unreadOnly = useSearch({ strict: false }).filter === 'unread';
 
   const [nextParams, setNextParams] = useState<PageParams | null>(null);
   const [isFetching, setIsFetching] = useState(false);

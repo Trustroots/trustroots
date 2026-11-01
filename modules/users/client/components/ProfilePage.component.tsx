@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useLocation, useParams } from '@tanstack/react-router';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 
@@ -22,11 +23,9 @@ import {
   getProfileViewTab,
   getProfileViewTabStateName,
 } from '../utils/profile-routes';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
-import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
 import RemoveContactContainer from '@/modules/contacts/client/components/RemoveContactContainer';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
@@ -239,9 +238,10 @@ export default function ProfilePage({
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
-  const browserPath = useCurrentPath();
+  const browserPath = useLocation({ select: location => location.pathname });
   const currentPath = routedPath || browserPath;
-  const username = profileUsername || getCurrentRouteParams().username;
+  const routeParams = useParams({ strict: false });
+  const username = profileUsername || routeParams.username;
   const { profileMinimumLength = 140, referencesEnabled = false } =
     useSettings();
 

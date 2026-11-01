@@ -20,6 +20,9 @@ jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('../../../client/api/support.api', () => ({
   load: jest.fn(),
   setStatus: jest.fn(),
@@ -890,7 +893,7 @@ test('loads a direct request URL with legacy status and normalises an invalid pa
     if (path === '/api/admin/support/report-1') return report;
     return { items: [report], hasMore: false };
   });
-  render(<SupportInbox requestId="report-1" />);
+  render(<SupportInbox />);
   await screen.findByText(report.message);
   expect(load).toHaveBeenCalledWith('/api/admin/support?status=solved&page=1');
   expect(document.getElementById('support-status')).toHaveValue('solved');
@@ -915,7 +918,13 @@ test('keeps a malformed request path from crashing the inbox', async () => {
     return { items: [report], hasMore: false };
   });
   render(<SupportInbox />);
-  expect(await screen.findByText(report.message)).toBeVisible();
+  // The path matches no route, so the inbox opens without a selected request.
+  await waitFor(() =>
+    expect(load).toHaveBeenCalledWith(
+      '/api/admin/support?status=unresolved&page=1',
+    ),
+  );
+  expect(screen.queryByText(report.message)).not.toBeInTheDocument();
 });
 
 test('recovers a failed conversation load and pages through chronological messages', async () => {

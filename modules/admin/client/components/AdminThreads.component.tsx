@@ -1,5 +1,6 @@
 import classnames from 'classnames';
 import React, { useEffect, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { getThreads, type AdminThread } from '../api/threads.api';
 import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
@@ -14,9 +15,10 @@ function MessageTime({ value }: { value?: string | null }) {
 }
 
 export default function AdminThreads() {
-  const [params] = useState(() => new URLSearchParams(window.location.search));
+  const params = useSearch({ strict: false });
+  const navigate = useNavigate();
   const [voteFilter, setVoteFilter] = useState(() => {
-    const value = params.get('vote') || '';
+    const value = params.vote || '';
     return [
       'received-positive',
       'received-negative',
@@ -26,12 +28,12 @@ export default function AdminThreads() {
       ? value
       : '';
   });
-  const [username, setUsername] = useState(params.get('username') || '');
+  const [username, setUsername] = useState(params.username || '');
   const [threads, setThreads] = useState<AdminThread[]>([]);
   const [loading, setLoading] = useState(false);
   const [failed, setFailed] = useState(false);
-  const requestedUsername = params.get('username');
-  const legacyId = params.get('userId');
+  const requestedUsername = params.username;
+  const legacyId = params.userId;
 
   useEffect(() => {
     if (!requestedUsername && !legacyId) return;
@@ -47,10 +49,16 @@ export default function AdminThreads() {
           name = member.profile?.username;
           if (!name) throw new Error('Member not found.');
           if (!active) return;
-          const url = new URL(window.location.href);
-          url.searchParams.delete('userId');
-          url.searchParams.set('username', name);
-          window.history.replaceState(window.history.state, '', url);
+          void navigate({
+            hash: true,
+            replace: true,
+            search: (search: Record<string, string>) => ({
+              ...search,
+              userId: undefined,
+              username: name,
+            }),
+            to: '/admin/threads',
+          });
         }
         const result = await getThreads({ username: name });
         if (active) {
@@ -105,10 +113,15 @@ export default function AdminThreads() {
               onChange={event => {
                 const value = event.target.value;
                 setVoteFilter(value);
-                const url = new URL(window.location.href);
-                if (value) url.searchParams.set('vote', value);
-                else url.searchParams.delete('vote');
-                window.history.replaceState(window.history.state, '', url);
+                void navigate({
+                  hash: true,
+                  replace: true,
+                  search: (search: Record<string, string>) => ({
+                    ...search,
+                    vote: value || undefined,
+                  }),
+                  to: '/admin/threads',
+                });
               }}
             >
               <option value="">All threads</option>

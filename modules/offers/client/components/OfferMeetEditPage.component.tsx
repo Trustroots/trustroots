@@ -1,8 +1,8 @@
+import { useParams } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
 import { useAnalytics } from '@trustroots/analytics/client';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import { createOffer, getOffer, updateOffer } from '../api/offers.api';
@@ -29,7 +29,7 @@ function defaultValidUntil() {
 
 export default function OfferMeetEditPage() {
   const { track } = useAnalytics();
-  const { offerId } = getCurrentRouteParams();
+  const { offerId } = useParams({ strict: false });
   const isNewOffer = !offerId;
   const [offer, setOffer] = useState<MeetOffer | null>(null);
   const [activeTab, setActiveTab] = useState(0);

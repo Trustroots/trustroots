@@ -8,6 +8,9 @@ import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/config/client/i18n', () => ({
   __esModule: true,

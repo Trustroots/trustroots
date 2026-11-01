@@ -2,14 +2,18 @@ import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import { useNavigate } from '@tanstack/react-router';
 import AdminSearchUsers, {
-  AdminSearchUsersContent,
+  SearchUsersContent,
 } from '@/modules/admin/client/components/AdminSearchUsers.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
 );
 
 jest.mock('@/modules/admin/client/api/users.api');
@@ -69,7 +73,15 @@ const makeMemberList = (
   ...overrides,
 });
 
-function mockImmediateSetState(component: AdminSearchUsersContent) {
+// Class instances outside a render get the route props their wrapper passes.
+function routeProps() {
+  return {
+    navigate: useNavigate(),
+    search: Object.fromEntries(new URL(window.location.href).searchParams),
+  };
+}
+
+function mockImmediateSetState(component: SearchUsersContent) {
   jest.spyOn(component, 'setState').mockImplementation((update, callback) => {
     const nextState =
       typeof update === 'function'
@@ -88,7 +100,7 @@ describe('<AdminSearchUsers />', () => {
     mockedUsersApi.listUsersByRole.mockResolvedValueOnce(
       makeMemberList(userResults),
     );
-    const component = new AdminSearchUsersContent({});
+    const component = new SearchUsersContent(routeProps());
     mockImmediateSetState(component);
 
     await component.doListUsersByRole();
@@ -112,7 +124,7 @@ describe('<AdminSearchUsers />', () => {
 
   it('normalises a direct search before querying', async () => {
     mockedUsersApi.searchUsers.mockResolvedValueOnce(makeMemberList([]));
-    const component = new AdminSearchUsersContent({});
+    const component = new SearchUsersContent(routeProps());
     component.state = { ...component.state, search: '  alice  ' };
     mockImmediateSetState(component);
 
@@ -127,7 +139,7 @@ describe('<AdminSearchUsers />', () => {
 
   it('removes an empty normalised search from the URL', async () => {
     window.history.pushState({}, '', '/admin/search-users?search=old');
-    const component = new AdminSearchUsersContent({});
+    const component = new SearchUsersContent(routeProps());
     component.state = { ...component.state, search: '   ' };
     mockImmediateSetState(component);
 

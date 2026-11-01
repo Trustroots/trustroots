@@ -19,7 +19,7 @@ import {
   useSettings,
 } from '@/modules/core/client/react-app/app-context';
 import ReactFooter from './ReactFooter';
-import type { RoutePolicy } from './routes';
+import type { RoutePolicy } from './route-options';
 import { getClientNavigationTarget } from './shell-helpers';
 
 export default function ReactAppShell() {
