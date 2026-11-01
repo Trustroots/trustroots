@@ -1,6 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
+import { useSearch } from '@tanstack/react-router';
 
 // Internal dependencies
 import { searchUsers } from '@/modules/users/client/api/search-users.api.js';
@@ -33,11 +34,9 @@ export default function SearchUsers() {
     }
   }
 
-  useEffect(() => {
-    const urlSearchQuery = new URL(window.location.href).searchParams.get(
-      'search',
-    );
+  const { search: urlSearchQuery } = useSearch({ strict: false });
 
+  useEffect(() => {
     if (urlSearchQuery) {
       setHasSearched(true);
       setSearchQuery(urlSearchQuery);

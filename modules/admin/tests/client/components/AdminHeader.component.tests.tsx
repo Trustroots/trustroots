@@ -10,6 +10,9 @@ type AdminUserFixture = AuthUser;
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 
 afterEach(() => {
   window.history.pushState({}, '', '/');
@@ -38,7 +41,7 @@ describe('<AdminHeader />', () => {
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
-      ['Outreach', ['Acquisition stories', 'Newsletter']],
+      ['Outreach', ['Acquisition stories', 'Newsletter', 'SparkPost']],
       ['Audit', ['Audit log', 'Username changes', 'Spam account cleanup']],
     ] as const) {
       const group = within(screen.getByRole('list', { name }));

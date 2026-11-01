@@ -1,12 +1,12 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
+import { useSearch } from '@tanstack/react-router';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
@@ -93,16 +93,10 @@ interface HomeProps {
   build?: Build | null;
   isNativeMobileApp?: boolean;
   photoCredits?: Record<string, PhotoCredit>;
-  routeParams?: Record<string, string>;
   user?: PageUser | null;
 }
 
-export default function Home({
-  user,
-  photoCredits,
-  build,
-  routeParams = getCurrentRouteParams(),
-}: HomeProps) {
+export default function Home({ user, photoCredits, build }: HomeProps) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
   const TypedTrans = Trans as unknown as React.ComponentType<{
@@ -112,7 +106,9 @@ export default function Home({
     values: { memberCount: string };
   }>;
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
-  const { circle: circleRouteParam, tribe: tribeRouteParam } = routeParams;
+  const { circle: circleRouteParam, tribe: tribeRouteParam } = useSearch({
+    strict: false,
+  });
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale
@@ -309,8 +305,8 @@ export default function Home({
       {circles.length > 0 && (
         <section className="home-how">
           <div className="container">
-            <div className="row">
-              <div className="col-xs-10 col-xs-push-1 col-sm-3 col-sm-push-6">
+            <div className="row home-circles-row">
+              <div className="col-xs-12 col-sm-3 home-circles-intro">
                 <div className="text-center tribe-intro">
                   <h2 className="font-brand-light">{t('Circles')}</h2>
                   <p className="font-brand-light">
@@ -336,11 +332,11 @@ export default function Home({
                   </a>
                 ))}
               </div>
-              {circles.slice(0, 3).map((circle, index, items) => (
+              {circles.slice(0, 3).map((circle, index) => (
                 <div
                   key={circle._id}
-                  className={classnames('col-sm-3', 'hidden-xs', {
-                    'col-sm-pull-3': index < items.length - 1,
+                  className={classnames('col-sm-3 hidden-xs home-circle-card', {
+                    'home-circle-last': index === 2,
                   })}
                 >
                   <div

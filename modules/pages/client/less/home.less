@@ -199,6 +199,17 @@
   }
 }
 
+// Keep the introduction between the second and third circles without moving
+// columns over one another when the API returns fewer than three circles.
+@media (min-width: @screen-sm-min) {
+  .home-circles-intro {
+    order: 1;
+  }
+  .home-circle-last {
+    order: 2;
+  }
+}
+
 .home-wohoo {
   width: 207px;
   height: 162px;

@@ -7,6 +7,9 @@ import * as authApi from '@/modules/users/client/api/auth.api';
 
 type BoardProps = { children?: React.ReactNode };
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/core/client/components/Board', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -19,14 +22,12 @@ jest.mock('@/modules/core/client/components/LoadingIndicator', () => ({
   __esModule: true,
   default: () => <div data-testid="loading-indicator" />,
 }));
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ token: 'remove-token' })),
-}));
 
 const removeProfile = jest.mocked(authApi.removeProfile);
 
 describe('RemoveProfilePage', () => {
   beforeEach(() => {
+    window.history.pushState({}, '', '/remove/remove-token');
     jest.clearAllMocks();
   });
 

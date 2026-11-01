@@ -9,6 +9,9 @@ import type {
   ExperienceChangeRequestSummary,
 } from '@/modules/experiences/shared/experience-change';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/experiences/client/api/experience-changes.api');
 
 const apiMock = jest.mocked(api);

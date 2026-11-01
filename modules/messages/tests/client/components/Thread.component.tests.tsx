@@ -1,3 +1,4 @@
+import { useParams } from '@tanstack/react-router';
 import React from 'react';
 import {
   fireEvent,
@@ -21,7 +22,6 @@ import {
   generateClientUser,
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
-import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import type { UserProfile } from '@/modules/users/client/types';
 import type {
   Message,
@@ -37,17 +37,21 @@ const api = {
   },
 };
 const updateUnreadCount = jest.mocked(updateUnreadMessageCount);
-const getRouteParams = jest.mocked(clientRuntime.getCurrentRouteParams);
+const showThread = ({ username, userId }: typeof routeParams) =>
+  window.history.pushState(
+    {},
+    '',
+    `/messages/${username}${userId ? `?userId=${userId}` : ''}`,
+  );
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(),
-  navigate: jest.fn(),
-}));
 let mockIsExtraSmall = true;
 jest.mock('@/modules/core/client/hooks/use-media-query', () => ({
   ...jest.requireActual<object>('@/modules/core/client/hooks/use-media-query'),
@@ -164,7 +168,7 @@ let routeParams: { username: string; userId?: string } = {
   username: otherUser.username,
 };
 
-getRouteParams.mockReturnValue(routeParams);
+showThread(routeParams);
 
 describe('<Thread>', () => {
   let originalVisualViewport: PropertyDescriptor | undefined;
@@ -175,7 +179,7 @@ describe('<Thread>', () => {
     routeParams = {
       username: otherUser.username,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
   });
 
   afterEach(() => {
@@ -376,14 +380,17 @@ describe('<Thread>', () => {
     routeParams = {
       username: 'test-member',
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
 
-    render(<Thread user={me} profileMinimumLength={0} />);
+    // Like the router, leaving the thread route unmounts the thread.
+    function ThreadRoute() {
+      const { username } = useParams({ strict: false });
+      return username ? <Thread user={me} profileMinimumLength={0} /> : null;
+    }
+    render(<ThreadRoute />);
 
-    await waitFor(() =>
-      expect(clientRuntime.navigate).toHaveBeenCalledWith('inbox'),
-    );
+    await waitFor(() => expect(window.location.pathname).toBe('/messages'));
     expect(
       screen.queryByText(/You haven't been talking yet/),
     ).not.toBeInTheDocument();
@@ -415,7 +422,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -470,7 +477,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {
@@ -506,7 +513,7 @@ describe('<Thread>', () => {
       username: otherUser.username,
       userId: otherUser._id,
     };
-    getRouteParams.mockReturnValue(routeParams);
+    showThread(routeParams);
 
     api.users.fetch.mockRejectedValueOnce({
       response: {

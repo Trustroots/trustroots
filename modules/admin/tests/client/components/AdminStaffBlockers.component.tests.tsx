@@ -6,6 +6,9 @@ import { getStaffBlockers } from '@/modules/admin/client/api/staff-blockers.api'
 import type { StaffBlocker } from '@/modules/admin/shared/staff-blockers';
 import { setViewer } from '@/testutils/client/auth.testutil';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/admin/client/api/staff-blockers.api');
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),

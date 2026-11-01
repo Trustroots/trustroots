@@ -5,6 +5,10 @@ import '@testing-library/jest-dom';
 import '@/config/client/i18n';
 import BottomNavigationSmall from '@/modules/users/client/components/BottomNavigationSmall.component';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
+
 describe('<BottomNavigationSmall />', () => {
   beforeEach(() => {
     window.history.pushState({}, 'Profile', '/profile/alice/accommodation');

@@ -104,6 +104,10 @@ test.describe('public pages and unauthenticated flows', () => {
           .evaluate(link => Boolean((link as HTMLLinkElement).sheet)),
       )
       .toBe(true);
+    await page.goto('/circles');
+    await expect(
+      page.getByRole('heading', { name: 'استكشاف الدوائر' }),
+    ).toBeVisible();
   });
 
   test('sign in and sign up pages link to each other', async ({
@@ -359,6 +363,75 @@ test.describe('public pages and unauthenticated flows', () => {
             { exact: true },
           ),
         ).toBeVisible();
+      }
+
+      if (pagePath === '/privacy') {
+        await expect(
+          page.getByText(
+            'We work to protect our community and members’ information as online risks evolve, including automated abuse and misuse of AI.',
+            { exact: true },
+          ),
+        ).toBeVisible();
+
+        const revisionHistory = page.getByRole('region', {
+          name: 'Revision history',
+        });
+        await expect(revisionHistory).toBeVisible();
+        await expect(
+          revisionHistory.getByRole('link', { name: '2026-11-01' }),
+        ).toHaveAttribute(
+          'href',
+          'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-02',
+        );
+        await expect(
+          revisionHistory.getByRole('link', { name: '2026-10-21' }),
+        ).toHaveAttribute(
+          'href',
+          'https://github.com/Trustroots/trustroots/commit/db3d3090ddf5564243afb0e1462fe3d1affad371',
+        );
+        await expect(
+          revisionHistory.getByRole('link', { name: '2014-11-20' }),
+        ).toHaveAttribute(
+          'href',
+          'https://github.com/Trustroots/trustroots/commit/ab9d6109d22c8b68a53e9a121752090fb87eddb7',
+        );
+
+        const services = page.getByRole('table', {
+          name: 'Services and providers',
+        });
+        await expect(services).toBeVisible();
+        await expect(services.getByRole('row')).toHaveCount(6);
+        await expect(
+          services.getByText('Hetzner, Germany', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          services.getByRole('rowheader', {
+            name: 'Sparkpost EU',
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('Gravatar', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('Umami — self-hosted by Trustroots', {
+            exact: true,
+          }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('External Nostr relays', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          services.getByText('Optional; very limited use', { exact: true }),
+        ).toBeVisible();
+        await expect(
+          page.getByText(
+            /When changes materially affect how we use or share your personal information/,
+          ),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('link', { name: 'revision history below' }),
+        ).toHaveAttribute('href', '#privacy-revision-history');
       }
 
       if (pagePath === '/foundation') {

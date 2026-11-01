@@ -1,18 +1,8 @@
 import {
   broadcastClientEvent,
-  getCurrentRouteParams,
-  navigate,
   onClientEvent,
-  resolveNavigationTarget,
   trackEvent,
 } from '@/modules/core/client/services/client-runtime';
-
-type NavigationLocationMock = Pick<Partial<Location>, 'assign' | 'href'>;
-
-function asNavigationLocation(location: NavigationLocationMock): Location {
-  // These tests intentionally provide only the browser fields navigation uses.
-  return location as Location;
-}
 
 describe('client runtime helpers', () => {
   afterEach(() => {
@@ -28,95 +18,6 @@ describe('client runtime helpers', () => {
 
     expect(listener).toHaveBeenCalledWith(null, { _id: 'user-1' });
     unsubscribe();
-  });
-
-  it('reads route and query parameters from the current location', () => {
-    window.history.pushState({}, '', '/messages/alice?userId=123');
-
-    expect(getCurrentRouteParams()).toEqual({
-      userId: '123',
-      username: 'alice',
-    });
-  });
-
-  it('resolves named, direct, circle, and message navigation targets', () => {
-    expect(resolveNavigationTarget('inbox')).toBe('/messages');
-    expect(resolveNavigationTarget('/support', { report: 'alice' })).toBe(
-      '/support?report=alice',
-    );
-    expect(
-      resolveNavigationTarget('circles.circle', { circle: 'cyclists' }),
-    ).toBe('/circles/cyclists');
-    expect(
-      resolveNavigationTarget('messageThread', {
-        username: 'alice',
-        userId: '123',
-      }),
-    ).toBe('/messages/alice?username=alice&userId=123');
-    expect(resolveNavigationTarget('unknown-state')).toBeNull();
-  });
-
-  it('navigates through the browser location', () => {
-    const location = { assign: jest.fn<void, [url: string]>() };
-
-    navigate(
-      'signup',
-      { tribe: 'nomads' },
-      undefined,
-      asNavigationLocation(location),
-    );
-
-    expect(location.assign).toHaveBeenCalledWith('/signup?tribe=nomads');
-  });
-
-  it('uses href when the location has no assign method', () => {
-    const location: NavigationLocationMock = {};
-
-    navigate(
-      '/support',
-      { report: 'alice' },
-      undefined,
-      asNavigationLocation(location),
-    );
-
-    expect(location.href).toBe('/support?report=alice');
-  });
-
-  it('can force a full-page navigation', () => {
-    const location = { assign: jest.fn<void, [url: string]>() };
-
-    navigate(
-      '/messages',
-      undefined,
-      { reload: true },
-      asNavigationLocation(location),
-    );
-
-    expect(location.assign).toHaveBeenCalledWith('/messages');
-  });
-
-  it('does nothing for an unknown navigation target', () => {
-    const location = { assign: jest.fn<void, [url: string]>() };
-
-    expect(
-      navigate('unknown-state', {}, undefined, asNavigationLocation(location)),
-    ).toBeUndefined();
-    expect(location.assign).not.toHaveBeenCalled();
-  });
-
-  it('ignores null and undefined query values', () => {
-    expect(
-      resolveNavigationTarget('/support', { one: null, two: undefined }),
-    ).toBe('/support');
-  });
-
-  it('returns no route parameters for an unmatched path', () => {
-    expect(
-      getCurrentRouteParams({ pathname: '/not-a-route', search: '' } as Pick<
-        Location,
-        'pathname' | 'search'
-      > as Location),
-    ).toEqual({});
   });
 
   it('broadcasts events without arguments and tracks safely without analytics', () => {

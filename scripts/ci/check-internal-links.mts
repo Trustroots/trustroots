@@ -161,24 +161,19 @@ function clientFiles(directory: string): string[] {
   });
 }
 
-const routesFile = readSource(
-  path.join(root, 'layers/shell/client/routes.tsx'),
-);
 const routeIds = new Map<string, Set<string>>();
-function findRoutes(node: ts.Node): void {
-  if (
-    ts.isPropertyAssignment(node) &&
-    ts.isStringLiteral(node.name) &&
-    node.name.text.startsWith('/')
-  ) {
-    routeIds.set(
-      node.name.text,
-      collectIds(importedFiles(routesFile, node.initializer)),
-    );
-  }
-  ts.forEachChild(node, findRoutes);
+for (const file of clientFiles(path.join(root, 'layers/shell/client/routes'))) {
+  const routeFile = readSource(file);
+  const findRoute = (node: ts.Node): void => {
+    const [route, ...rest] = ts.isCallExpression(node) ? node.arguments : [];
+    if (route && ts.isStringLiteral(route) && route.text.startsWith('/')) {
+      const files = rest.flatMap(arg => [...importedFiles(routeFile, arg)]);
+      routeIds.set(route.text, collectIds(files));
+    }
+    ts.forEachChild(node, findRoute);
+  };
+  findRoute(routeFile.source);
 }
-findRoutes(routesFile.source);
 
 const errors: string[] = [];
 const shellFile = path.join(root, 'layers/shell/client/ReactAppShell.tsx');

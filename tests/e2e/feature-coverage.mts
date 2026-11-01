@@ -82,7 +82,7 @@ const ROLE_DEFINITIONS = {
 };
 
 const source = {
-  adminClient: 'layers/shell/client/routes.tsx',
+  adminClient: 'layers/shell/client/routeTree.tsx',
   adminServer: 'modules/admin/server/routes/admin.server.routes.mjs',
   contactsClient: 'modules/contacts/client/config/contacts.client.routes.js',
   contactsServer: 'modules/contacts/server/routes/contacts.server.routes.js',
@@ -3377,6 +3377,35 @@ const features = [
     requiredScenarios: [
       'Admin reference threads page loads.',
       'Reference thread API returns deterministic rows.',
+    ],
+    relatedSpecs: [],
+  },
+  {
+    id: 'admin.sparkpost',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Read-only SparkPost delivery diagnostics and interruption previews.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-sparkpost', '/admin/sparkpost', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/sparkpost/:action', source.adminServer),
+        apiRoute('POST', '/api/admin/sparkpost/recovery', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Admin compares daily activity and provider metrics.',
+      'Admin inspects bounded provider event details.',
+      'Admin previews completed email jobs without mutations.',
+      'Admin reviews selected recovery recipients before queueing.',
+      'Admin lists unconfirmed accounts behind the preview count.',
+      'Non-admin access is rejected.',
     ],
     relatedSpecs: [],
   },

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import { getMessages } from '../api/messages.api';
 import { getUser, searchUsers } from '../api/users.api';
@@ -79,15 +80,14 @@ function MessageTimestamp({
 }
 
 export default function AdminMessages() {
-  const [initialParams] = useState(() => {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      username1: params.get('username1') || '',
-      username2: params.get('username2') || '',
-      userId1: params.get('userId1') || '',
-      userId2: params.get('userId2') || '',
-    };
-  });
+  const search = useSearch({ strict: false });
+  const navigate = useNavigate();
+  const [initialParams] = useState(() => ({
+    username1: search.username1 || '',
+    username2: search.username2 || '',
+    userId1: search.userId1 || '',
+    userId2: search.userId2 || '',
+  }));
   const member1Value = initialParams.username1 || initialParams.userId1;
   const member2Value = initialParams.username2 || initialParams.userId2;
   const member1IsUsername = Boolean(initialParams.username1);
@@ -138,15 +138,15 @@ export default function AdminMessages() {
         setQueried(true);
 
         if (member1.username && member2.username) {
-          const canonicalUrl = `/admin/messages?username1=${encodeURIComponent(
-            member1.username,
-          )}&username2=${encodeURIComponent(member2.username)}`;
-          if (
-            `${window.location.pathname}${window.location.search}` !==
-            canonicalUrl
-          ) {
-            window.history.replaceState({}, '', canonicalUrl);
-          }
+          // The router leaves an already canonical URL alone.
+          void navigate({
+            replace: true,
+            search: {
+              username1: member1.username,
+              username2: member2.username,
+            },
+            to: '/admin/messages',
+          });
         }
       } catch {
         if (!isActive()) return;

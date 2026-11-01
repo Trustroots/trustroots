@@ -1,3 +1,7 @@
+import {
+  diagnostics,
+  recover,
+} from '../controllers/admin.sparkpost.server.controller.mts';
 import * as spamCleanup from '../controllers/admin.spam-cleanup.server.controller.mts';
 import adminCircles from '../controllers/admin.circles.server.controller.mjs';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
@@ -36,6 +40,14 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/sparkpost/recovery')
+    .all(adminPolicy.isAllowed)
+    .post(recover);
+  app
+    .route('/api/admin/sparkpost/:action')
+    .all(adminPolicy.isAllowed)
+    .get(diagnostics);
   app
     .route('/api/admin/spam-cleanup/preview')
     .all(adminPolicy.isAllowed)

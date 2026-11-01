@@ -21,6 +21,23 @@
   > li {
     flex: 1;
     text-align: center;
+
+    > a {
+      display: block;
+      padding: 10px 4px;
+      color: @navbar-default-link-color;
+
+      &:hover,
+      &:focus {
+        color: @navbar-default-link-hover-color;
+        background: @navbar-default-link-hover-bg;
+      }
+    }
+
+    &.active > a {
+      color: @navbar-default-link-active-color;
+      background: @navbar-default-link-active-bg;
+    }
   }
 }
 

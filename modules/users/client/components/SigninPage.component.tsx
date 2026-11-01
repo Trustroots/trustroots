@@ -1,11 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
-import {
-  trackEvent,
-  getCurrentRouteParams,
-} from '@/modules/core/client/services/client-runtime';
+import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
@@ -26,7 +24,8 @@ export default function SigninPage() {
     continue: continueSignin,
     returnTo,
     userhandle,
-  } = getCurrentRouteParams();
+  } = useSearch({ strict: false });
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     password: '',
     username: userhandle || '',
@@ -46,11 +45,12 @@ export default function SigninPage() {
     if (user && !hasRedirected.current) {
       hasRedirected.current = true;
       redirectAfterSignin(
+        navigate,
         signinDestination.current.continueSignin,
         signinDestination.current.returnTo,
       );
     }
-  }, [user]);
+  }, [navigate, user]);
 
   function updateCredential(field: 'username' | 'password', value: string) {
     setCredentials(current => ({

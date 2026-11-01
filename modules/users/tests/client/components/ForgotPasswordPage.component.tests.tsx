@@ -4,10 +4,12 @@ import '@testing-library/jest-dom';
 
 import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 
 type BoardProps = { children?: React.ReactNode };
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/core/client/components/Board', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -16,12 +18,8 @@ jest.mock('@/modules/core/client/components/Board', () => {
     default: ({ children }: BoardProps) => <section>{children}</section>,
   };
 });
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ userhandle: 'member-one' })),
-}));
 
 const forgotPassword = jest.mocked(authApi.forgotPassword);
-const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
 describe('ForgotPasswordPage', () => {
   it('focuses the primary field on desktop', () => {
@@ -37,7 +35,7 @@ describe('ForgotPasswordPage', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    routeParams.mockReturnValue({ userhandle: 'member-one' });
+    window.history.pushState({}, '', '/password/forgot?userhandle=member-one');
   });
 
   it('prefills the username from route params and submits a reset request', async () => {
@@ -125,7 +123,7 @@ describe('ForgotPasswordPage', () => {
   });
 
   it('starts with an empty username when no route handle is present', () => {
-    routeParams.mockReturnValue({});
+    window.history.pushState({}, '', '/password/forgot');
 
     render(<ForgotPasswordPage />);
 

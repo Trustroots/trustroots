@@ -25,6 +25,9 @@ import {
 } from '@/modules/tribes/client/services/radio.client.service';
 import type { UserProfile } from '@/modules/users/client/types';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
   const original = jest.requireActual(
     '@/modules/tribes/client/services/radio.client.service',
@@ -159,13 +162,13 @@ it('plays, pauses, persists local favourites, follows station hashes and cleans 
     screen.queryByRole('region', { name: 'Favourites' }),
   ).not.toBeInTheDocument();
   act(() => {
-    window.location.hash = '#paradise';
-    window.dispatchEvent(new Event('hashchange'));
+    window.history.pushState(null, '', '#paradise');
+    window.dispatchEvent(new PopStateEvent('popstate'));
   });
   expect(screen.getByRole('heading', { name: 'Paradise' })).toBeVisible();
   act(() => {
-    window.location.hash = '#unknown';
-    window.dispatchEvent(new Event('hashchange'));
+    window.history.pushState(null, '', '#unknown');
+    window.dispatchEvent(new PopStateEvent('popstate'));
   });
   expect(screen.getByRole('heading', { name: 'Paradise' })).toBeVisible();
   unmount();
@@ -320,15 +323,11 @@ it('retains local favourite actions when old history arrives or sharing fails', 
   ).toHaveAttribute('aria-pressed', 'false');
 });
 
-it('preserves the circle URL and router state when the document has a root base URL', async () => {
+it('preserves the circle URL when the document has a root base URL', async () => {
   const base = document.createElement('base');
   base.href = '/';
   document.head.append(base);
-  window.history.replaceState(
-    { fictionalRouterState: 'preserve' },
-    '',
-    '/circles/radio?example=1',
-  );
+  window.history.replaceState(null, '', '/circles/radio?example=1');
   try {
     render(<RadioCircle />);
     fireEvent.click(
@@ -337,7 +336,6 @@ it('preserves the circle URL and router state when the document has a root base 
     await screen.findByRole('button', { name: 'Pause' });
     expect(window.location.pathname).toBe('/circles/radio');
     expect(window.location.search).toBe('?example=1');
-    expect(window.history.state).toEqual({ fictionalRouterState: 'preserve' });
   } finally {
     base.remove();
   }

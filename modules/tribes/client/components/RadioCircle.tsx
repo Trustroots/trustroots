@@ -1,3 +1,4 @@
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Event } from 'nostr-tools';
@@ -28,9 +29,9 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   const mounted = useRef(false);
   const playRequest = useRef(0);
   const localFavouriteActions = useRef(new Map<string, boolean>());
-  const [station, setStation] = useState(() =>
-    stationFromHash(window.location.hash),
-  );
+  const hash = useLocation({ select: location => location.hash });
+  const navigate = useNavigate();
+  const [station, setStation] = useState(() => stationFromHash(hash));
   const [playing, setPlaying] = useState(false);
   const [error, setError] = useState('');
   const [socialError, setSocialError] = useState('');
@@ -97,19 +98,15 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   }, [user]);
 
   useEffect(() => {
-    const changeStation = () => {
-      const next = stationFromHash(window.location.hash);
-      if (next && next.id !== station?.id) {
-        playRequest.current++;
-        audio.current!.pause();
-        setPlaying(false);
-        setStation(next);
-        setError('');
-      }
-    };
-    window.addEventListener('hashchange', changeStation);
-    return () => window.removeEventListener('hashchange', changeStation);
-  }, [station]);
+    const next = stationFromHash(hash);
+    if (next && next.id !== station?.id) {
+      playRequest.current++;
+      audio.current!.pause();
+      setPlaying(false);
+      setStation(next);
+      setError('');
+    }
+  }, [hash]);
 
   useEffect(() => {
     if (!signer) return;
@@ -165,11 +162,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
     player.pause();
     setPlaying(false);
     setStation(next);
-    window.history.replaceState(
-      window.history.state,
-      '',
-      `${window.location.pathname}${window.location.search}#${next.id}`,
-    );
+    void navigate({ hash: next.id, replace: true, search: true, to: '.' });
     if (player.getAttribute('src') !== next.url) player.src = next.url;
     try {
       await player.play();

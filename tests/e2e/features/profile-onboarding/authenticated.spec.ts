@@ -262,6 +262,42 @@ test.describe('authenticated member flows', () => {
     await expect(page.getByText(/describe yourself/i)).toBeVisible();
   });
 
+  test('mobile profile edit navigation keeps white links and marks the active tab', async ({
+    page,
+    context,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-about', [
+      'About edit form is reachable.',
+    ]);
+    await page.setViewportSize({ width: 375, height: 812 });
+    for (const language of ['en', 'ar']) {
+      await context.addCookies([
+        { name: 'i18n', value: language, url: baseURL! },
+      ]);
+      await page.goto('/profile/edit');
+      const toolbar = page.locator('.profile-edit-navbar-mobile');
+      const links = toolbar.locator('a');
+      await expect(toolbar).toBeVisible();
+      await expect(links).toHaveCount(5);
+      for (const link of await links.all()) {
+        await expect(link).toHaveCSS('color', 'rgb(255, 255, 255)');
+      }
+      const active = toolbar.locator('a[aria-current="page"]');
+      await expect(active).toHaveAttribute('href', '/profile/edit');
+      await expect(active).toHaveCSS('background-color', 'rgb(15, 151, 121)');
+      const photo = toolbar.locator('a[href="/profile/edit/photo"]');
+      await photo.focus();
+      await expect(photo).toHaveCSS('color', 'rgb(255, 255, 255)');
+      await expect(photo).toHaveCSS('background-color', 'rgb(17, 167, 134)');
+      await photo.click();
+      await expect(toolbar.locator('a[aria-current="page"]')).toHaveAttribute(
+        'href',
+        '/profile/edit/photo',
+      );
+    }
+  });
+
   test('language loading failure shows an accessible warning', async ({
     page,
   }, testInfo) => {
@@ -276,7 +312,7 @@ test.describe('authenticated member flows', () => {
       .getByRole('alert')
       .filter({ hasText: 'Snap! Something went wrong.' });
     await expect(warning).toBeVisible();
-    await expect(warning).toHaveClass(/tr-alert/);
+    await expect(warning).toHaveClass(/tw:bg-warning-bg/);
     await expect(warning).toHaveCSS('background-color', 'rgb(255, 243, 205)');
     const comparison = await warning.evaluate(element => {
       const legacy = document.createElement('div');

@@ -7,9 +7,9 @@ import {
   createAppRouter,
   findRoute,
   parseLegacySearch,
-  routes,
   stringifyLegacySearch,
-} from '@/layers/shell/client/routes';
+} from '@/layers/shell/client/router';
+import { routes } from '@/layers/shell/client/routeTree';
 import { AppProviders } from '@/layers/shell/client/AppProviders';
 import {
   getReactRouteAccessRedirect,
@@ -48,6 +48,9 @@ jest.mock('@/modules/core/client/api/http-client', () => {
 });
 
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/admin/client/components/Admin.component', () => () => (
   <main>Admin</main>
 ));
