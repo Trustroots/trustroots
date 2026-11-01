@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useLocation } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 
 import ProfileEditPage from './ProfileEditPage.component';
@@ -42,11 +43,12 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const [newPassword, setNewPassword] = useState('');
   const [verifyPassword, setVerifyPassword] = useState('');
   const removalRef = useRef<HTMLDivElement>(null);
+  const hash = useLocation({ select: location => location.hash });
 
   useEffect(() => {
     // Wait until the app shell has finished resetting the page scroll position.
     const frame = window.requestAnimationFrame(() => {
-      if (window.location.hash === '#remove') {
+      if (hash === 'remove') {
         removalRef.current!.focus({ preventScroll: true });
         removalRef.current!.scrollIntoView({ block: 'start' });
       }

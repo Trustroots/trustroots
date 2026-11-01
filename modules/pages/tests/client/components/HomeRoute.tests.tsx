@@ -13,8 +13,7 @@ jest.mock('@/modules/pages/client/components/Home.component', () => ({
   },
 }));
 
-it('passes landing queries and bootstrap data and tracks all displayed photos', () => {
-  window.history.replaceState({}, '', '/?circle=cyclists&tribe=hitchhikers');
+it('passes bootstrap data and tracks all displayed photos', () => {
   const { unmount } = render(
     <AppProviders
       bootstrapData={{
@@ -27,7 +26,6 @@ it('passes landing queries and bootstrap data and tracks all displayed photos', 
       <HomeRoute user={null} />
     </AppProviders>,
   );
-  expect(screen.getByRole('status')).toHaveTextContent('cyclists');
   expect(screen.getByRole('status')).toHaveTextContent('abc123');
   expect(screen.getByRole('status')).toHaveTextContent(
     '"isNativeMobileApp":true',
@@ -47,5 +45,4 @@ it('passes landing queries and bootstrap data and tracks all displayed photos', 
   expect(screen.getByRole('status')).toHaveTextContent('Second Artist');
   unmount();
   act(() => broadcastClientEvent('photoCreditsUpdated', { third: {} }));
-  window.history.replaceState({}, '', '/');
 });

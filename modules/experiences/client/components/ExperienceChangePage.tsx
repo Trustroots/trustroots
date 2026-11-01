@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 
 import * as api from '../api/experience-changes.api';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -39,8 +40,7 @@ interface ExperienceChangePageProps {
 export default function ExperienceChangePage({
   id,
 }: ExperienceChangePageProps): React.JSX.Element {
-  const secret =
-    new URLSearchParams(window.location.search).get('secret') || '';
+  const secret = useSearch({ strict: false }).secret || '';
   const [experience, setExperience] = useState<ExperienceChangeAccess | null>(
     null,
   );

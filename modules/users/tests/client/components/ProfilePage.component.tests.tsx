@@ -13,15 +13,15 @@ import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserProfile, UserSummary } from '@/modules/users/client/types';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
 jest.mock('@/modules/experiences/client/api/experiences.api');
 const fetchProfile = jest.mocked(usersApi.fetch);
 const getContact = jest.mocked(contactsApi.getByUserId);
 const listContacts = jest.mocked(contactsApi.list);
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ username: 'bob' })),
-}));
 jest.mock(
   '@/modules/users/client/components/TopNavigationSmall.component',
   () => ({

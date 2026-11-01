@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
@@ -6,7 +7,6 @@ import shuffle from 'lodash/shuffle';
 
 import {
   trackEvent,
-  getCurrentRouteParams,
   navigate,
 } from '@/modules/core/client/services/client-runtime';
 import { useAuth } from '@/modules/core/client/react-app/auth';
@@ -113,7 +113,7 @@ export default function SignupPage() {
     user: UserProfile | null;
     setUser: (user: UserProfile | AuthenticatedUser) => void;
   };
-  const { tribe: tribeSlug } = getCurrentRouteParams();
+  const { tribe: tribeSlug } = useSearch({ strict: false });
   const [credentials, setCredentials] = useState({
     acquisitionStory: '',
     ageConfirmed: false,

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 
 import {
   getUsernameChanges,
@@ -29,10 +30,9 @@ function PreviousUsername({ change }: { change: AdminUsernameChange }) {
 
 export default function AdminUsernameChanges() {
   const [page, setPage] = useState(1);
-  const [range, setRange] = useState<AdminUsernameChangeRange>(() =>
-    new URLSearchParams(window.location.search).get('range') === 'all'
-      ? 'all'
-      : '90d',
+  const initialRange = useSearch({ strict: false }).range;
+  const [range, setRange] = useState<AdminUsernameChangeRange>(
+    initialRange === 'all' ? 'all' : '90d',
   );
   const [changes, setChanges] = useState<AdminUsernameChange[]>([]);
   const [hasNextPage, setHasNextPage] = useState(false);

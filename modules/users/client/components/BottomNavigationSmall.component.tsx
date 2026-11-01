@@ -2,12 +2,12 @@
  * Bottom navigation for small screens
  */
 
+import { useLocation } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 
-import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import {
   getProfileViewTab,
   type ProfileViewTab,
@@ -31,7 +31,7 @@ export default function BottomNavigationSmall({
   isSelf,
   contactCount,
 }: BottomNavigationSmallProps) {
-  const currentPath = useCurrentPath();
+  const currentPath = useLocation({ select: location => location.pathname });
   const pathTab = getProfileViewTab(currentPath, username);
   const [active, setActive] = useState<ProfileViewTab>(pathTab);
   const { t } = useTranslation('users') as {

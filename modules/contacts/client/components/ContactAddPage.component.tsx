@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useParams } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 
@@ -6,7 +7,6 @@ import ActivateProfileNotice from '@/modules/users/client/components/ActivatePro
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import { fetchMini } from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import TrEditor from '@/modules/core/client/components/TrEditor';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import type { UserProfile } from '@/modules/users/client/types';
@@ -20,7 +20,7 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
   const { t } = useTranslation('contacts') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
-  const { userId } = getCurrentRouteParams();
+  const { userId } = useParams({ strict: false });
   const [message, setMessage] = useState(
     defaultContactMessage(user.displayName),
   );

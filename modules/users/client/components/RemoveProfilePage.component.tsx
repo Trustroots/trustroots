@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from '@tanstack/react-router';
 
 import Board from '@/modules/core/client/components/Board';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as authApi from '@/modules/users/client/api/auth.api';
 
 export default function RemoveProfilePage() {
-  const { token } = getCurrentRouteParams();
+  const { token } = useParams({ strict: false });
   const [state, setState] = useState('review');
 
   useEffect(() => {

@@ -10,6 +10,9 @@ import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 
 type BoardProps = { children?: React.ReactNode };
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/auth.api');
 jest.mock('@/modules/users/client/utils/auth', () => ({
   ...jest.requireActual('@/modules/users/client/utils/auth'),
@@ -25,13 +28,11 @@ jest.mock('@/modules/core/client/components/Board', () => {
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   broadcastClientEvent: jest.fn(),
   trackEvent: jest.fn(),
-  getCurrentRouteParams: jest.fn(() => ({})),
   navigate: jest.fn(),
 }));
 
 const signin = jest.mocked(authApi.signin);
 const getSession = jest.mocked(authApi.getSession);
-const routeParams = jest.mocked(clientRuntime.getCurrentRouteParams);
 
 function renderPage() {
   return render(
@@ -54,7 +55,7 @@ describe('SigninPage', () => {
     jest.clearAllMocks();
     getSession.mockReset();
     getSession.mockResolvedValue({ userId: 'user-1' });
-    routeParams.mockReturnValue({});
+    window.history.pushState({}, '', '/signin');
   });
 
   it('renders the sign-in form', () => {
@@ -112,10 +113,11 @@ describe('SigninPage', () => {
   });
 
   it('preserves the protected destination after successful sign-in', async () => {
-    routeParams.mockReturnValue({
-      continue: 'true',
-      returnTo: '/messages?filter=unread',
-    });
+    window.history.pushState(
+      {},
+      '',
+      '/signin?continue=true&returnTo=%2Fmessages%3Ffilter%3Dunread',
+    );
     signin.mockResolvedValue({ _id: 'user-1', username: 'member-one' });
 
     renderPage();
@@ -158,7 +160,7 @@ describe('SigninPage', () => {
   });
 
   it('uses the fallback sign-in error and continue label', async () => {
-    routeParams.mockReturnValue({ continue: '1' });
+    window.history.pushState({}, '', '/signin?continue=1');
     signin.mockRejectedValue(new Error('offline'));
 
     renderPage();
