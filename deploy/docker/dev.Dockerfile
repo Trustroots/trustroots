@@ -3,7 +3,7 @@
 # Node 24, native build deps, pnpm install to seed the `node_modules` named volume.
 # App code is bind-mounted at runtime. Playwright browsers are baked for E2E.
 
-FROM node:24.22.1-bookworm-slim AS server
+FROM node:24.22.2-bookworm-slim AS server
 
 RUN apt-get -qq update && apt-get -q install -y \
   build-essential \
