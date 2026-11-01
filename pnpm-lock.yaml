@@ -181,7 +181,6 @@ overrides:
   body-parser@2: 2.4.0
 
 patchedDependencies:
-  '@agendajs/mongo-backend@4.0.3': 5c5dd394162a1773aea75dfc9a21f5e1136338046535010abbfba9110c05d478
   deepmerge@4.3.1: 90a5d4be727501e98fe6f9d2a3c40397807539d207efeb3652390ceb365466ec
 
 importers:
@@ -189,8 +188,8 @@ importers:
   .:
     dependencies:
       '@agendajs/mongo-backend':
-        specifier: 4.0.3
-        version: 4.0.3(patch_hash=5c5dd394162a1773aea75dfc9a21f5e1136338046535010abbfba9110c05d478)(agenda@6.2.6(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
+        specifier: 4.0.4
+        version: 4.0.4(agenda@6.2.7(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)
       '@tanstack/react-query':
         specifier: 5.104.5
         version: 5.104.5(@types/react@19.3.0)(react@19.3.1)
@@ -204,8 +203,8 @@ importers:
         specifier: workspace:*
         version: link:packages/ui
       agenda:
-        specifier: 6.2.6
-        version: 6.2.6(supports-color@5.5.0)
+        specifier: 6.2.7
+        version: 6.2.7(supports-color@5.5.0)
       autolinker:
         specifier: 4.1.5
         version: 4.1.5
@@ -496,8 +495,8 @@ importers:
         specifier: 7.0.0
         version: 7.0.0
       agendash:
-        specifier: 8.2.4
-        version: 8.2.4(agenda@6.2.6(supports-color@5.5.0))(express@5.3.0(supports-color@5.5.0))
+        specifier: 8.2.5
+        version: 8.2.5(agenda@6.2.7(supports-color@5.5.0))(express@5.3.0(supports-color@5.5.0))
       autoprefixer:
         specifier: 10.6.1
         version: 10.6.1(postcss@8.5.31)
@@ -875,11 +874,11 @@ packages:
   '@adobe/css-tools@4.5.0':
     resolution: {integrity: sha512-6OzddxPio9UiWTCemp4N8cYLV2ZN1ncRnV1cVGtve7dhPOtRkleRyx32GQCYSwDYgaHU3USMm84tNsvKzRCa1Q==}
 
-  '@agendajs/mongo-backend@4.0.3':
-    resolution: {integrity: sha512-8bR62tl8a27cIheBgz4v2aUkPCA9PykHEghOdMbNKcmhmU4d/OYb+WjSvAAVl5uUt4Uf+Jh7hn95WMUwmThmpQ==}
+  '@agendajs/mongo-backend@4.0.4':
+    resolution: {integrity: sha512-umXWR4ewhmbhtmcQ3QqVlXAbqEKnvLvgKoS1D1Fq02F6cI+WGu4ud7q4342T2lPBEGMT3+nVQIzviT11TK4qKw==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
-      agenda: 6.2.6
+      agenda: 6.2.7
       mongodb: ^6.0.0 || ^7.0.0
 
   '@asamuzakjp/css-color@3.2.0':
@@ -3323,19 +3322,19 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  agenda@6.2.6:
-    resolution: {integrity: sha512-FlLauHnm0Zxn+y2n8pwFLZd7LiYNTDNnChMwPLo1OuAi9QPFe3a29godrpVluEEdhZFuFu0H+4ichW08BULUBA==}
+  agenda@6.2.7:
+    resolution: {integrity: sha512-aB/h9Yr4+3AP57ANSDVrswk/1aHmt2KtSh2lliQRPwWMovJd4uwAvVvl5QrksN5rc75/FluuEOyZtNl7VnhmCQ==}
     engines: {node: '>=18.0.0'}
 
-  agendash@8.2.4:
-    resolution: {integrity: sha512-zn1nBRNGgL9Gjs7Zb0h92NWEjyUv9N5ROQMoM1NRdAsQy2MZhDdP8EdtTpt6KajPwhIsHHLnTrdRXaA7G7+lFQ==}
+  agendash@8.2.5:
+    resolution: {integrity: sha512-F7PyK3qJBPrkZoYwzGFgqht2KYd1BHjrvQHYGSi2Mq9hZDLj9C0HIah3dHwWRbVbDRihCY2Eyjqqy5YPXqlNqg==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       '@fastify/static': ^6.0.0 || ^7.0.0 || ^8.0.0
       '@hapi/hapi': ^21.0.0
       '@hapi/inert': ^7.0.0
       '@koa/router': ^15.0.0
-      agenda: 6.2.6
+      agenda: 6.2.7
       express: ^4.18.0 || ^5.0.0
       fastify: ^4.0.0 || ^5.0.0
       koa: ^2.14.0 || ^3.0.0
@@ -7270,9 +7269,9 @@ snapshots:
 
   '@adobe/css-tools@4.5.0': {}
 
-  '@agendajs/mongo-backend@4.0.3(patch_hash=5c5dd394162a1773aea75dfc9a21f5e1136338046535010abbfba9110c05d478)(agenda@6.2.6(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)':
+  '@agendajs/mongo-backend@4.0.4(agenda@6.2.7(supports-color@5.5.0))(mongodb@7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10))(supports-color@5.5.0)':
     dependencies:
-      agenda: 6.2.6(supports-color@5.5.0)
+      agenda: 6.2.7(supports-color@5.5.0)
       debug: 4.4.3(supports-color@5.5.0)
       mongodb: 7.7.0(@aws-sdk/credential-providers@3.1151.0)(socks@2.8.10)
     transitivePeerDependencies:
@@ -9900,7 +9899,7 @@ snapshots:
 
   acorn@8.19.0: {}
 
-  agenda@6.2.6(supports-color@5.5.0):
+  agenda@6.2.7(supports-color@5.5.0):
     dependencies:
       cron-parser: 5.10.2
       date.js: 0.3.3(supports-color@5.5.0)
@@ -9910,9 +9909,9 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  agendash@8.2.4(agenda@6.2.6(supports-color@5.5.0))(express@5.3.0(supports-color@5.5.0)):
+  agendash@8.2.5(agenda@6.2.7(supports-color@5.5.0))(express@5.3.0(supports-color@5.5.0)):
     dependencies:
-      agenda: 6.2.6(supports-color@5.5.0)
+      agenda: 6.2.7(supports-color@5.5.0)
     optionalDependencies:
       express: 5.3.0(supports-color@5.5.0)
 
