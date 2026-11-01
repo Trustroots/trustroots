@@ -9,27 +9,29 @@ import { fileURLToPath } from 'node:url';
 function check(t: TestContext, source: string): SpawnSyncReturns<string> {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'internal-links-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  const routes = path.join(root, 'layers/shell/client');
   const shell = path.join(root, 'layers/shell/client');
+  const routes = path.join(shell, 'routes');
   fs.mkdirSync(routes, { recursive: true });
-  fs.mkdirSync(shell, { recursive: true });
   fs.writeFileSync(
-    path.join(routes, 'routes.tsx'),
+    path.join(routes, 'profile.edit.account.tsx'),
     `
-    import Account from './Account';
-    import Faq from '@/modules/pages/client/Faq';
-    const routes = {
-      '/profile/edit/account': () => <Account />,
-      '/faq': () => <Faq />,
-    };
+    import Account from '../Account';
+    export const Route = createRoute(routeOptions('/profile/edit/account', () => <Account />));
   `,
   );
   fs.writeFileSync(
-    path.join(routes, 'Account.tsx'),
+    path.join(routes, 'faq.index.tsx'),
+    `
+    import Faq from '@/modules/pages/client/Faq';
+    export const Route = createRoute(routeOptions('/faq', () => <Faq />));
+  `,
+  );
+  fs.writeFileSync(
+    path.join(shell, 'Account.tsx'),
     `import Child from './Child'; export default () => <div id="remove"><Child /></div>;`,
   );
   fs.writeFileSync(
-    path.join(routes, 'Child.tsx'),
+    path.join(shell, 'Child.tsx'),
     `export default () => <div id="nested" />;`,
   );
   fs.writeFileSync(
