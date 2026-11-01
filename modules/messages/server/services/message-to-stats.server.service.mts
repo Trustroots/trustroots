@@ -6,7 +6,7 @@ import log from './../../../../config/lib/logger.mjs';
 import statService, {
   type StatObject,
 } from './../../../stats/server/services/stats.server.service.mts';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
 type Callback = (error?: unknown | null) => void;

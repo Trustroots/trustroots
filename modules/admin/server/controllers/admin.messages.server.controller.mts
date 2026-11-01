@@ -9,7 +9,7 @@ import type {
 } from './../../../core/server/services/error.server.service.mts';
 import MessagesController from './../../../messages/server/controllers/messages.server.controller.mjs';
 import { findPairRecords } from '../services/admin-pair-records.server.service.mts';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 
 interface UserRecord {
   _id: Types.ObjectId | string;
