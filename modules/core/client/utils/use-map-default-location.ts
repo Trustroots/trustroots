@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import httpClient from '../api/http-client';
 import { useAuth } from '../react-app/auth';
 
@@ -38,6 +38,21 @@ function requestLocation(account: string) {
     pending.set(account, request);
   }
   return request;
+}
+
+/** Fetches an authenticated approximate location, sharing in-flight requests. */
+export function useRequestMapDefaultLocation() {
+  const account = useAuth().user?._id ?? null;
+  const currentAccount = useRef(account);
+  currentAccount.current = account;
+
+  return useCallback(async (): Promise<MapDefaultLocation | null> => {
+    const account = currentAccount.current;
+    if (!account) return null;
+
+    const location = await requestLocation(account);
+    return currentAccount.current === account ? location : null;
+  }, []);
 }
 
 /** A late approximate location must never undo the member's camera choice. */

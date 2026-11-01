@@ -1,5 +1,7 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import useMapDefaultLocation from '@/modules/core/client/utils/use-map-default-location';
+import useMapDefaultLocation, {
+  useRequestMapDefaultLocation,
+} from '@/modules/core/client/utils/use-map-default-location';
 
 const mockGet = jest.fn();
 let mockUser: { _id: string } | null;
@@ -39,6 +41,39 @@ describe('Approximate initial map location', () => {
     mockUser = null;
     rerender({ enabled: true });
     expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it('does not request an approximate location for anonymous users', async () => {
+    mockUser = null;
+
+    const { result } = renderHook(() => useRequestMapDefaultLocation());
+    await expect(result.current()).resolves.toBeNull();
+    expect(mockGet).not.toHaveBeenCalled();
+  });
+
+  it('returns an authenticated location from the shared in-flight request', async () => {
+    const finish = delayedLookup();
+    const { result } = renderHook(() => useRequestMapDefaultLocation());
+    const first = result.current();
+    const second = result.current();
+    expect(mockGet).toHaveBeenCalledTimes(1);
+
+    await finish();
+    await expect(first).resolves.toEqual(location);
+    await expect(second).resolves.toEqual(location);
+  });
+
+  it('discards an approximate result if the authenticated account changes', async () => {
+    const finish = delayedLookup();
+    const { result, rerender } = renderHook(() =>
+      useRequestMapDefaultLocation(),
+    );
+    const request = result.current();
+    mockUser = { _id: 'another-fictional-member' };
+    rerender();
+
+    await finish();
+    await expect(request).resolves.toBeNull();
   });
 
   it('shares only in-flight requests and does not persist results', async () => {

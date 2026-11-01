@@ -1,7 +1,27 @@
 import L from 'leaflet';
 import React, { useEffect, useRef, type ReactNode } from 'react';
 import { getRasterMapTiles } from '@/modules/core/client/utils/map';
+import DeviceLocationButton from '@/modules/core/client/components/DeviceLocationButton';
 import './circle-location-map.less';
+
+const VIEW_KEY = 'circle-map-view';
+
+function readView(): [number, number, number] | null {
+  try {
+    const view = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null');
+    return Array.isArray(view) &&
+      view.length === 3 &&
+      view.every(Number.isFinite) &&
+      Math.abs(view[0]) <= 85 &&
+      Math.abs(view[1]) <= 180 &&
+      view[2] >= 3 &&
+      view[2] <= 24
+      ? (view as [number, number, number])
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface CircleLocation {
   id: string;
@@ -86,6 +106,7 @@ export default function CircleLocationMap(props: Props) {
   const markersRef = useRef<L.LayerGroup | null>(null);
   const openLocation = useRef<string | null>(null);
   const initialViewSet = useRef(false);
+  const fittingResults = useRef(false);
   useEffect(() => {
     const element = container.current!;
     const minimumZoom = () =>
@@ -107,10 +128,28 @@ export default function CircleLocationMap(props: Props) {
         [85, 180],
       ],
       maxBoundsViscosity: 1,
-    }).setView([20, 0], minimumZoom());
+    });
+    const savedView = readView();
+    map.setView(
+      savedView ? [savedView[0], savedView[1]] : [20, 0],
+      savedView ? savedView[2] : minimumZoom(),
+    );
+    initialViewSet.current = Boolean(savedView);
     // Preserve any view chosen while the initial relay results are loading.
     map.on('movestart', () => {
       initialViewSet.current = true;
+    });
+    map.on('moveend', () => {
+      if (fittingResults.current) return;
+      const { lat, lng } = map.getCenter();
+      try {
+        sessionStorage.setItem(
+          VIEW_KEY,
+          JSON.stringify([lat, lng, map.getZoom()]),
+        );
+      } catch {
+        // Maps remain usable when session storage is unavailable.
+      }
     });
     map.on('resize', () => map.setMinZoom(minimumZoom()));
     const tiles = getRasterMapTiles();
@@ -162,6 +201,7 @@ export default function CircleLocationMap(props: Props) {
       !initialViewSet.current
     ) {
       initialViewSet.current = true;
+      fittingResults.current = true;
       mapRef.current!.fitBounds(
         L.latLngBounds(
           props.locations.map(
@@ -171,6 +211,7 @@ export default function CircleLocationMap(props: Props) {
         ),
         { padding: [24, 24], maxZoom: 8, animate: false },
       );
+      fittingResults.current = false;
     }
   }, [props.locations, props.state]);
   return (
@@ -184,12 +225,29 @@ export default function CircleLocationMap(props: Props) {
         <h3>{props.title}</h3>
         <p>{props.description}</p>
       </div>
-      <div
-        className="circle-location-map"
-        ref={container}
-        role="application"
-        aria-label={props.mapLabel}
-      />
+      <div className="circle-location-map-frame">
+        <div
+          className="circle-location-map"
+          ref={container}
+          role="application"
+          aria-label={props.mapLabel}
+        />
+        <DeviceLocationButton
+          onRequest={() => {
+            initialViewSet.current = true;
+          }}
+          onLocation={({ lat, lng }) => {
+            initialViewSet.current = true;
+            mapRef.current?.setView([lat, lng], 13, { animate: false });
+          }}
+          onApproximateLocation={({ latitude, longitude, zoom }) => {
+            initialViewSet.current = true;
+            mapRef.current?.setView([latitude, longitude], zoom, {
+              animate: false,
+            });
+          }}
+        />
+      </div>
       <div className="circle-location-map-footer">
         <span className="circle-location-map-status" aria-live="polite">
           {props.state === 'loading'

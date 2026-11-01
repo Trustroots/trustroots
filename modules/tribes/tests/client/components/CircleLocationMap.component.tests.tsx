@@ -1,6 +1,12 @@
 import '@testing-library/jest-dom';
 import React from 'react';
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import L from 'leaflet';
 import type { Event } from 'nostr-tools';
 import CircleLocationMap, {
@@ -17,6 +23,8 @@ jest.mock('leaflet', () => {
     fitBounds: jest.fn(),
     on: jest.fn(),
     setMinZoom: jest.fn(),
+    getCenter: jest.fn(() => ({ lat: 12, lng: 34 })),
+    getZoom: jest.fn(() => 6),
   };
   const group = { addTo: jest.fn().mockReturnThis(), clearLayers: jest.fn() };
   return {
@@ -42,6 +50,56 @@ jest.mock('@/modules/core/client/utils/map', () => ({
     options: {},
   }),
 }));
+jest.mock('@/modules/core/client/components/DeviceLocationButton', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  type mockButtonProps = {
+    onRequest?: () => void;
+    onLocation: (location: { lat: number; lng: number }) => void;
+    onApproximateLocation: (location: {
+      latitude: number;
+      longitude: number;
+      zoom: number;
+    }) => void;
+  };
+  return {
+    __esModule: true,
+    default: ({
+      onRequest,
+      onLocation,
+      onApproximateLocation,
+    }: mockButtonProps) =>
+      React.createElement(
+        React.Fragment,
+        null,
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => {
+              onRequest?.();
+              onLocation({ lat: 0, lng: 0 });
+            },
+          },
+          'Mock device location',
+        ),
+        React.createElement(
+          'button',
+          {
+            type: 'button',
+            onClick: () => {
+              onRequest?.();
+              onApproximateLocation({
+                latitude: 34,
+                longitude: -17,
+                zoom: 6,
+              });
+            },
+          },
+          'Mock approximate location',
+        ),
+      ),
+  };
+});
 
 const location: CircleLocation = {
   id: 'example',
@@ -66,6 +124,59 @@ const props = {
 describe('shared circle map', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    sessionStorage.clear();
+  });
+
+  it('restores the chosen view when opening another circle map', () => {
+    const { unmount } = render(<CircleLocationMap {...props} />);
+    const map = jest.mocked(L.map).mock.results[0].value;
+    const moveEnd = map.on.mock.calls.find(
+      ([name]: [string]) => name === 'moveend',
+    )[1];
+    act(() => moveEnd());
+    unmount();
+    jest.clearAllMocks();
+    render(<CircleLocationMap {...props} />);
+    const nextMap = jest.mocked(L.map).mock.results[0].value;
+    expect(nextMap.setView).toHaveBeenCalledWith([12, 34], 6);
+    expect(nextMap.fitBounds).not.toHaveBeenCalled();
+  });
+
+  it('does not save the automatic initial fit as a chosen view', () => {
+    jest.mocked(L.map)(document.createElement('div'));
+    const map = jest.mocked(L.map).mock.results[0].value;
+    map.fitBounds.mockImplementationOnce(() => {
+      const moveEnd = map.on.mock.calls.find(
+        ([name]: [string]) => name === 'moveend',
+      )[1];
+      moveEnd();
+    });
+    render(<CircleLocationMap {...props} />);
+    expect(sessionStorage.getItem('circle-map-view')).toBeNull();
+  });
+
+  it('continues to work if session storage is unavailable', () => {
+    const getItem = jest
+      .spyOn(Storage.prototype, 'getItem')
+      .mockImplementation(() => {
+        throw new Error('unavailable');
+      });
+    const setItem = jest
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation(() => {
+        throw new Error('unavailable');
+      });
+    try {
+      render(<CircleLocationMap {...props} />);
+      const map = jest.mocked(L.map).mock.results[0].value;
+      const moveEnd = map.on.mock.calls.find(
+        ([name]: [string]) => name === 'moveend',
+      )[1];
+      expect(() => act(() => moveEnd())).not.toThrow();
+    } finally {
+      getItem.mockRestore();
+      setItem.mockRestore();
+    }
   });
 
   it('fits the initial results without animation, then preserves the view on live updates', () => {
@@ -107,6 +218,26 @@ describe('shared circle map', () => {
     act(() => moveStart());
     rerender(<CircleLocationMap {...props} />);
     expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+  it('centres precisely on device location and keeps late relay results from resetting the view', () => {
+    const { rerender } = render(
+      <CircleLocationMap {...props} locations={[]} state="loading" />,
+    );
+    const map = jest.mocked(L.map).mock.results[0].value;
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mock device location' }),
+    );
+    expect(map.setView).toHaveBeenCalledWith([0, 0], 13, { animate: false });
+    rerender(<CircleLocationMap {...props} />);
+    expect(map.fitBounds).not.toHaveBeenCalled();
+  });
+  it('uses the approximate fallback location and zoom after a device failure', () => {
+    render(<CircleLocationMap {...props} locations={[]} state="loading" />);
+    const map = jest.mocked(L.map).mock.results[0].value;
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Mock approximate location' }),
+    );
+    expect(map.setView).toHaveBeenCalledWith([34, -17], 6, { animate: false });
   });
   it('keeps the selected popup open when locations are refreshed', () => {
     const { rerender } = render(<CircleLocationMap {...props} />);
