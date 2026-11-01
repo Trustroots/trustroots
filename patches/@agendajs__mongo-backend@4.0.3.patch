@@ -1,6 +1,8 @@
+diff --git a/dist/MongoJobRepository.js b/dist/MongoJobRepository.js
+index 6cea0c2d9ea9bc6b9e85274e4e13d4c52ef65e3c..368da18ee3137d36a52625fb24bd14278da80d00 100644
 --- a/dist/MongoJobRepository.js
 +++ b/dist/MongoJobRepository.js
-@@ -638,10 +638,22 @@
+@@ -638,10 +638,22 @@ export class MongoJobRepository {
                  lastModifiedBy: options?.lastModifiedBy ?? null
              };
              log('[job %s] set job props: \n%O', _id, propsWithModifier);
@@ -24,7 +26,7 @@
              log('current time stored as %s', now.toISOString());
              // If the job already had an ID, then update the properties of the job
              if (_id) {
-@@ -688,7 +700,7 @@
+@@ -688,7 +700,7 @@ export class MongoJobRepository {
                  query.name = props.name;
                  const debounce = uniqueOpts?.debounce;
                  if (uniqueOpts?.insertOnly && !debounce) {
@@ -33,7 +35,7 @@
                  }
                  // Handle debounce logic
                  if (debounce) {
-@@ -763,9 +775,10 @@
+@@ -763,9 +775,10 @@ export class MongoJobRepository {
              }
              // Insert new job
              log('using default behavior, inserting new job via insertOne() with props that were set: \n%O', propsWithModifier);
