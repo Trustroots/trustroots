@@ -1,3 +1,6 @@
+const {
+  hashIpAddress,
+}: typeof import('../../../core/server/services/ip-hash.server.service.mts') = require('../../../core/server/services/ip-hash.server.service.mts');
 /**
  * Unit tests for the admin audit log controller.
  */
@@ -15,7 +18,7 @@ const should: typeof import('should') = require('should');
 
 type AuditLogRecord = {
   body: Record<string, unknown>;
-  ip: string;
+  ipHash: string;
   route: string;
   user: import('mongoose').Types.ObjectId | { username: string };
   params?: Record<string, unknown>;
@@ -71,8 +74,8 @@ function auditLogItems(value: unknown): AuditLogItem[] {
         'body' in item &&
         typeof item.body === 'object' &&
         item.body !== null &&
-        'ip' in item &&
-        typeof item.ip === 'string' &&
+        'ipHash' in item &&
+        typeof item.ipHash === 'string' &&
         'route' in item &&
         typeof item.route === 'string' &&
         'user' in item &&
@@ -88,7 +91,12 @@ function auditLogItems(value: unknown): AuditLogItem[] {
 }
 
 function stubFind(execute: () => Promise<AuditLogRecord[] | null>): void {
-  const query: TestQuery<AuditLogRecord[] | null> = {
+  const query: TestQuery<AuditLogRecord[] | null> & {
+    select(): TestQuery<AuditLogRecord[] | null>;
+  } = {
+    select() {
+      return this;
+    },
     sort() {
       return this;
     },
@@ -117,9 +125,13 @@ describe('Admin audit log controller unit tests', () => {
       let nextCalled = false;
 
       const req = {
-        body: { action: 'search' },
+        body: {
+          action: 'search',
+          ipAddress: '203.0.113.30',
+          ipHash: 'untrusted',
+        },
         params: {},
-        query: { q: 'foo' },
+        query: { q: 'foo', ip: '203.0.113.30' },
         route: { path: '/api/admin/users' },
         user,
         get(header: string): string | null {
@@ -145,8 +157,10 @@ describe('Admin audit log controller unit tests', () => {
 
       const items = await AuditLog.find({ user: user._id }).exec();
       items.length.should.equal(1);
-      should(items[0].body.action).equal('search');
-      items[0].ip.should.equal('203.0.113.10');
+      should(items[0].body).deepEqual({ action: 'search' });
+      should(items[0].query).deepEqual({ q: 'foo' });
+      should(items[0].toObject()).not.have.property('ip');
+      items[0].ipHash.should.equal(hashIpAddress('127.0.0.1'));
     });
 
     it('prefers the Passenger client address over X-Forwarded-For', async () => {
@@ -183,7 +197,7 @@ describe('Admin audit log controller unit tests', () => {
 
       nextCalled.should.equal(true);
       const items = await AuditLog.find({ user: user._id }).exec();
-      items[0].ip.should.equal('10.0.0.1');
+      items[0].ipHash.should.equal(hashIpAddress('10.0.0.1'));
     });
 
     it('still calls next when saving the audit log fails', async () => {
@@ -215,6 +229,23 @@ describe('Admin audit log controller unit tests', () => {
   });
 
   describe('list', () => {
+    it('excludes historical raw addresses before migration', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      await AuditLog.collection.insertOne({
+        user: user._id,
+        route: '/api/admin/users/by-last-ip-address',
+        ip: '203.0.113.10',
+        body: { ipAddress: '203.0.113.20', action: 'search' },
+        query: { ip: '203.0.113.20', ipAddress: '203.0.113.20' },
+      });
+      const res = mockResponse();
+      await adminAuditLog.list({}, res);
+      const result = JSON.stringify(res.body);
+      result.should.containEql('search');
+      result.should.not.containEql('203.0.113.');
+      result.should.not.containEql('ipAddress');
+    });
+
     it('returns stored audit log entries', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
 
@@ -222,7 +253,7 @@ describe('Admin audit log controller unit tests', () => {
         user: user._id,
         route: '/api/admin/users',
         body: { action: 'search' },
-        ip: '127.0.0.1',
+        ipHash: hashIpAddress('127.0.0.1'),
       }).save();
 
       const res = mockResponse();

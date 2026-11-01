@@ -4,7 +4,7 @@ export interface AdminAuditLogEntry {
   _id: string;
   route?: string;
   user?: Record<string, unknown>;
-  ip?: string;
+  ipHash?: string;
   date?: string;
   body?: Record<string, unknown>;
   params?: Record<string, unknown>;

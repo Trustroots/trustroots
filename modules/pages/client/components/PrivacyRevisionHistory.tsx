@@ -11,9 +11,14 @@ export default function PrivacyRevisionHistory() {
     {
       date: '2026-11-01',
       href: 'https://github.com/Trustroots/trustroots/commits/main/modules/pages/client/components/Privacy.component.tsx?since=2026-10-31&until=2026-11-02',
-      summary: t(
-        'Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.',
-      ),
+      summary: [
+        t(
+          'Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.',
+        ),
+        t(
+          'Changed account IP storage to keyed hashes while preserving administrator matching and temporary map location lookup.',
+        ),
+      ].join(' '),
     },
     {
       date: '2026-10-21',

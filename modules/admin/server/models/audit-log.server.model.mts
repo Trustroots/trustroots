@@ -3,7 +3,7 @@ import mongoose, { type Types } from 'mongoose';
 interface AuditLogRecord {
   body?: Record<string, unknown>;
   date?: Date;
-  ip?: string;
+  ipHash?: string;
   params?: Record<string, unknown>;
   query?: Record<string, unknown>;
   route?: string;
@@ -25,7 +25,7 @@ const AuditLogSchema = new Schema<AuditLogRecord>({
     type: Date,
     default: Date.now,
   },
-  ip: {
+  ipHash: {
     type: String,
   },
   params: {

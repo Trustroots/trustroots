@@ -25,7 +25,7 @@ export interface UserRecord {
     changedAt: Date;
   }>;
   seen?: Date;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   created?: Date;
   password?: string;
   salt?: string;

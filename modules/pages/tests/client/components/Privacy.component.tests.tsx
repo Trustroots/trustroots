@@ -52,6 +52,15 @@ describe('<Privacy />', () => {
   it('shows dated policy summaries with GitHub links across the original and current pages', () => {
     render(<Privacy />);
     const history = screen.getByRole('region', { name: 'Revision history' });
+    const latestRevision = within(history).getByRole('row', {
+      name: /2026-11-01/,
+    });
+    expect(latestRevision).toHaveTextContent(
+      'Added the service overview, policy change notices, revision history and evolving-risk statement; confirmed Sparkpost EU and optional, very limited Gravatar use; removed outdated Zendesk and research disclosures.',
+    );
+    expect(latestRevision).toHaveTextContent(
+      'Changed account IP storage to keyed hashes while preserving administrator matching and temporary map location lookup.',
+    );
     expect(
       within(history).getByRole('table', {
         name: 'Privacy policy revisions, newest first',
@@ -149,9 +158,7 @@ describe('<Privacy />', () => {
     ).not.toBeInTheDocument();
     expect(screen.queryByText(/Google Firebase/)).not.toBeInTheDocument();
     expect(
-      screen.getByText(
-        /The most recent IP address used during authenticated activity/,
-      ),
+      screen.getByText(/A keyed hash of the most recent IP address/),
     ).toBeInTheDocument();
   });
 });

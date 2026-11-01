@@ -5,11 +5,14 @@ import errorService from './../../../core/server/services/error.server.service.m
 import type { ValidationFailure } from './../../../core/server/services/error.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import mongoose, { type Types } from 'mongoose';
+import _ from 'lodash';
+import { getClientIpAddress } from '../../../core/server/services/client-ip.server.service.mts';
+import { hashIpAddress } from '../../../core/server/services/ip-hash.server.service.mts';
 
 interface AuditLogRecord {
   body?: unknown;
   date?: Date;
-  ip?: string;
+  ipHash?: string;
   params?: unknown;
   query?: unknown;
   route?: string;
@@ -54,15 +57,12 @@ export const record = (
   _res: unknown,
   next: (error?: Error | null) => void,
 ): void => {
-  // Client address when using Phusion Passenger
-  // https://www.phusionpassenger.com/library/indepth/nodejs/secure_http_headers.html#passenger-client-address
-  const passengerClientAddress = req.get('!~Passenger-Client-Address');
-  const xForwardedFor = req.get('X-Forwarded-For');
+  const omittedAddressFields = ['ip', 'ipAddress', 'ipHash'];
   const auditLogItem = new AuditLog({
-    body: req.body,
-    ip: passengerClientAddress || xForwardedFor || req.ip,
+    body: _.omit(req.body as Record<string, unknown>, omittedAddressFields),
+    ipHash: hashIpAddress(getClientIpAddress(req)),
     params: req.params,
-    query: req.query,
+    query: _.omit(req.query as Record<string, unknown>, omittedAddressFields),
     route: req.route.path,
     user: req.user._id,
   });
@@ -105,6 +105,7 @@ export const list = async (
       criteria.user = { $in: actors.map(actor => actor._id) };
     }
     const items = await AuditLog.find(criteria)
+      .select('-ip -body.ipAddress -query.ip -query.ipAddress')
       .sort({ date: -1, _id: -1 })
       .limit(100)
       .populate({
