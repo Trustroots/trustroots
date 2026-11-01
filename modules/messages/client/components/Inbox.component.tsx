@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAnalytics } from '@trustroots/analytics/client';
 
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
 import type { MessageThreadSummary, PageParams } from '../api/messages.api';
@@ -19,6 +19,7 @@ export default function Inbox({ user }: InboxProps) {
     );
   }
   const { t } = useTranslation('messages');
+  const { track } = useAnalytics();
   const unreadOnly =
     new URLSearchParams(window.location.search).get('filter') === 'unread';
 
@@ -51,10 +52,7 @@ export default function Inbox({ user }: InboxProps) {
     setIsFetching(true);
     try {
       if (next) {
-        trackEvent('inbox-pagination', {
-          category: 'messages.inbox',
-          label: 'Inbox page ' + nextParams?.page,
-        });
+        track('inbox-load-more', { page: Number(nextParams?.page) });
       }
 
       const params = next ? (nextParams as PageParams) : {};

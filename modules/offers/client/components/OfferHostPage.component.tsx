@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
-import {
-  getCurrentRouteParams,
-  trackEvent,
-} from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
+import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
@@ -48,6 +46,7 @@ function defaultHostOffer(): HostOffer {
 }
 
 export default function OfferHostPage({ user }: HostPageProps) {
+  const { track } = useAnalytics();
   const routeParams = getCurrentRouteParams();
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
   const [activeTab, setActiveTab] = useState<string>(getTabFromHash);
@@ -171,10 +170,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
         await createOffer(payload);
       }
 
-      trackEvent('offer-modified', {
-        category: 'offer.edit',
-        label: 'Modified offer',
-        value: offer.status,
+      track('offer-save', {
+        type: 'host',
+        action: offer._id ? 'update' : 'create',
+        status: offer.status,
       });
 
       window.location.assign(`/profile/${user.username}`);

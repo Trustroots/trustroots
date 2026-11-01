@@ -1,0 +1,5 @@
+- [x] Add `@trustroots/analytics` with client and server entry points, a typed event catalogue and 100% client and server test coverage.
+- [x] Mount `AnalyticsProvider` in the app shell, move every `trackEvent()` call to `useAnalytics().track()` and delete `trackEvent()`.
+- [x] Apply runtime tier checks to shared package `client`, `server` and `shared` folders, with regression tests.
+- [x] Wire the package into linting, type checking, coverage and the Docker images.
+- [ ] Update living specifications and archive the change after merge.
