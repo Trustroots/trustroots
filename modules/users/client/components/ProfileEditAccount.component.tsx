@@ -18,6 +18,7 @@ import {
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '../config/username.client.constants';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
+import { Alert } from '@trustroots/ui/Alert';
 
 interface ProfileEditAccountProps {
   user: UserProfile;
@@ -444,7 +445,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
             </a>
           </p>
           {removalPending && (
-            <div className="alert alert-info" role="status">
+            <Alert tone="info" role="status">
               <p>
                 {t(
                   'Account deletion is pending. You can cancel it here to invalidate the confirmation link in your email.',
@@ -458,7 +459,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
               >
                 {t('Cancel account deletion')}
               </button>
-            </div>
+            </Alert>
           )}
           <div className="checkbox profile-remove-confirmation">
             <label>

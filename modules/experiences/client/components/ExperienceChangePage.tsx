@@ -12,6 +12,7 @@ import type {
   ExperienceInteractions,
   ExperienceRecommendation,
 } from '../../shared/experience';
+import { Alert } from '@trustroots/ui/Alert';
 
 const emptyInteractions = (): ExperienceInteractions => ({
   met: false,
@@ -119,7 +120,11 @@ export default function ExperienceChangePage({
           .
         </p>
       )}
-      {accessError && <p className="alert alert-warning">{accessError}</p>}
+      {accessError && (
+        <Alert tone="warning" role="note">
+          {accessError}
+        </Alert>
+      )}
       {experience &&
         !['pending', 'processing'].includes(request?.status || '') && (
           <>
@@ -220,9 +225,9 @@ export default function ExperienceChangePage({
           </>
         )}
       {submitError && (
-        <p className="alert alert-danger" role="alert">
+        <Alert tone="danger" role="alert">
           {submitError}
-        </p>
+        </Alert>
       )}
     </div>
   );

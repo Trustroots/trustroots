@@ -9,6 +9,7 @@ import {
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { readApiError } from '../utils/api-error';
+import { Alert } from '@trustroots/ui/Alert';
 
 export default function ResetPasswordPage() {
   const passwordInput = useDesktopAutofocus<HTMLInputElement>();
@@ -140,9 +141,9 @@ export default function ResetPasswordPage() {
                 </button>
               </div>
               {error && (
-                <div className="text-center alert alert-danger" role="alert">
+                <Alert tone="danger" align="center" role="alert">
                   <strong>{error}</strong>
-                </div>
+                </Alert>
               )}
             </fieldset>
           </form>

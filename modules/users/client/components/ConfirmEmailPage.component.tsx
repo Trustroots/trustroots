@@ -7,6 +7,7 @@ import {
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { getEmailFromToken } from '@/modules/users/client/utils/auth';
+import { Alert } from '@trustroots/ui/Alert';
 
 export default function ConfirmEmailPage() {
   const { user, setUser } = useAuth() as {
@@ -98,7 +99,7 @@ export default function ConfirmEmailPage() {
                 </div>
               )}
               {error && (
-                <div className="alert alert-danger text-center" role="alert">
+                <Alert tone="danger" align="center" role="alert">
                   <p>
                     <strong>
                       Email confirm token is invalid or has expired.
@@ -125,17 +126,17 @@ export default function ConfirmEmailPage() {
                       confirmation or change your email.
                     </p>
                   )}
-                </div>
+                </Alert>
               )}
               {success && (
-                <div className="alert alert-success text-center" role="alert">
+                <Alert tone="success" align="center" role="alert">
                   <p>
                     <strong>Your email is now confirmed!</strong>
                   </p>
                   <p>
                     <a href="/profile/edit">Edit your profile</a>
                   </p>
-                </div>
+                </Alert>
               )}
             </div>
           </div>

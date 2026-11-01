@@ -10,6 +10,7 @@ import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
 import { readApiError } from '../utils/api-error';
+import { Alert } from '@trustroots/ui/Alert';
 
 const BoardWithPhotoList = Board as unknown as React.ComponentType<{
   names: string | string[];
@@ -118,9 +119,9 @@ export default function SigninPage() {
           <div className="row">
             <div className="col-xs-12 col-sm-offset-3 col-sm-6 col-md-offset-4 col-md-4">
               {errorMessage && (
-                <div className="alert alert-danger" role="alert">
+                <Alert tone="danger" role="alert">
                   {errorMessage}
-                </div>
+                </Alert>
               )}
               <form
                 className="form-auth"

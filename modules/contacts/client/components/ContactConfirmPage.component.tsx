@@ -9,6 +9,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import type { ContactConfirmation } from '../types';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 import type { UserProfile } from '@/modules/users/client/types';
+import { Alert } from '@trustroots/ui/Alert';
 
 const AvatarWithLegacyClass = Avatar as unknown as React.ComponentType<{
   className?: string;
@@ -156,7 +157,7 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
             )}
 
             {success && (
-              <div className="alert alert-success">
+              <Alert tone="success" role="status">
                 <h4>{success}</h4>
                 {contact && (
                   <p>
@@ -174,12 +175,12 @@ export default function ContactConfirmPage({ user }: { user: UserProfile }) {
                     .
                   </p>
                 )}
-              </div>
+              </Alert>
             )}
             {error && (
-              <div className="alert alert-danger text-center">
+              <Alert tone="danger" align="center" role="alert">
                 <strong>{error}</strong>
-              </div>
+              </Alert>
             )}
 
             {canConfirm && (

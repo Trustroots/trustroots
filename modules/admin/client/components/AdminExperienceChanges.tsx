@@ -10,6 +10,7 @@ import type {
   AdminExperienceChangeSearchExperience,
 } from '../../shared/admin-experience-change';
 import AdminHeader from './AdminHeader.component';
+import { Alert } from '@trustroots/ui/Alert';
 
 function memberLabel(member: AdminExperienceChangeParticipant): string {
   if (typeof member === 'object' && member !== null) {
@@ -141,9 +142,9 @@ export default function AdminExperienceChanges(): React.JSX.Element {
       <div className="container">
         <h1>Experience changes</h1>
         {error && (
-          <p className="alert alert-danger" role="alert">
+          <Alert tone="danger" role="alert">
             {error}
-          </p>
+          </Alert>
         )}
         <section>
           <h2>Create a support link</h2>

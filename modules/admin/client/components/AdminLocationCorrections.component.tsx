@@ -8,6 +8,7 @@ import {
 } from '../api/location-corrections.api';
 import AdminHeader from './AdminHeader.component';
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
+import { Alert } from '@trustroots/ui/Alert';
 
 function offerEditUrl(offer: LocationCorrectionOffer): string {
   return offer.type === 'host' ? '/offer/host' : `/offer/meet/${offer._id}`;
@@ -121,14 +122,14 @@ export default function AdminLocationCorrections() {
           </p>
         )}
         {error && !selected && (
-          <p className="alert alert-danger" role="alert">
+          <Alert tone="danger" role="alert">
             {error}
-          </p>
+          </Alert>
         )}
         {notice && (
-          <p className="alert alert-success" role="status">
+          <Alert tone="success" role="status">
             {notice}
-          </p>
+          </Alert>
         )}
         {!isLoading && !error && candidates.length === 0 && (
           <p>No uncontacted candidates found.</p>
@@ -185,9 +186,9 @@ export default function AdminLocationCorrections() {
             </Modal.Header>
             <Modal.Body>
               {error && (
-                <p className="alert alert-danger" role="alert">
+                <Alert tone="danger" role="alert">
                   {error}
-                </p>
+                </Alert>
               )}
               <p>
                 {selected.match === 'exact'

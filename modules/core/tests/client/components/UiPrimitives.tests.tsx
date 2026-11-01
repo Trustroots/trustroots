@@ -33,7 +33,9 @@ test('buttons default to non-submitting and support native props', () => {
 test('alerts and badges render supplied content and attributes', () => {
   render(
     <>
-      <Alert className="extra">A warning</Alert>
+      <Alert tone="warning" role="alert" className="extra">
+        A warning
+      </Alert>
       <Badge className="extra" title="Count">
         3
       </Badge>
@@ -50,7 +52,9 @@ test('alerts and badges render supplied content and attributes', () => {
 test('alert and badge do not require a class name', () => {
   render(
     <>
-      <Alert>Warning</Alert>
+      <Alert tone="warning" role="alert">
+        Warning
+      </Alert>
       <Badge>New</Badge>
     </>,
   );

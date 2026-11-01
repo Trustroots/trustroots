@@ -8,6 +8,7 @@ import React from 'react';
 
 import BlockMember from './BlockMember.component';
 import ReportMemberImplementation from '@/modules/support/client/components/ReportMember.component.js';
+import { Alert } from '@trustroots/ui/Alert';
 
 const ReportMember =
   ReportMemberImplementation as unknown as React.ComponentType<{
@@ -25,13 +26,13 @@ export default function BlockedMemberBanner({
   };
 
   return (
-    <div className="alert alert-warning" role="alert">
+    <Alert tone="warning" role="alert">
       <p>
         {t('You have blocked this member.')}{' '}
         {t('They cannot see or message you.')}
         <ReportMember username={username} className="btn btn-link" />
         <BlockMember isBlocked username={username} className="btn btn-link" />
       </p>
-    </div>
+    </Alert>
   );
 }

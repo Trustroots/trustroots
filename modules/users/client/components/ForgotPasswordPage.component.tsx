@@ -5,6 +5,7 @@ import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofoc
 import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { readApiError } from '../utils/api-error';
+import { Alert } from '@trustroots/ui/Alert';
 
 export default function ForgotPasswordPage() {
   const usernameInput = useDesktopAutofocus<HTMLInputElement>();
@@ -97,12 +98,12 @@ export default function ForgotPasswordPage() {
                 </button>
               </div>
               {error && (
-                <div className="text-center alert alert-danger" role="alert">
+                <Alert tone="danger" align="center" role="alert">
                   <strong>{error}</strong>
-                </div>
+                </Alert>
               )}
               {success && (
-                <div className="text-center alert alert-success" role="alert">
+                <Alert tone="success" align="center" role="alert">
                   <p>
                     <strong>
                       If an account matches that username or email, we will send
@@ -114,7 +115,7 @@ export default function ForgotPasswordPage() {
                     minutes, look for it in your junk mail folder. If you find
                     it there, please mark it as &quot;Not Junk&quot;.
                   </p>
-                </div>
+                </Alert>
               )}
             </fieldset>
           </form>

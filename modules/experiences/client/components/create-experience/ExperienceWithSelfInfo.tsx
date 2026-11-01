@@ -1,6 +1,7 @@
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
+import { Alert } from '@trustroots/ui/Alert';
 
 /**
  * Error message when trying to share and experience with oneself.
@@ -11,8 +12,8 @@ export default function ExperienceWithSelfInfo() {
   };
 
   return (
-    <div role="alert" className="alert alert-warning">
+    <Alert role="alert" tone="warning">
       {t("Sorry, you can't share experience only with yourself.") as string}
-    </div>
+    </Alert>
   );
 }

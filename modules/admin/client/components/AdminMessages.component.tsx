@@ -13,6 +13,7 @@ import MessageBubble from '@/modules/messages/client/components/MessageBubble';
 import RichText from '@/modules/core/client/components/RichText';
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import UserLink from './UserLink.component';
+import { Alert } from '@trustroots/ui/Alert';
 
 interface AdminUser {
   _id: string;
@@ -186,9 +187,9 @@ export default function AdminMessages() {
         ) : null}
 
         {failed && (
-          <p className="alert alert-danger" role="alert">
+          <Alert tone="danger" role="alert">
             Unable to load conversation.
-          </p>
+          </Alert>
         )}
 
         {queried && !failed && messages.length > 0 && (
@@ -200,7 +201,7 @@ export default function AdminMessages() {
             </h3>
             <p className="text-muted">Times in UTC.</p>
             {referenceThreads.length > 0 && (
-              <div className="alert alert-warning">
+              <Alert tone="warning" role="note">
                 <strong>Thread votes</strong>
                 <ul>
                   {referenceThreads.map(referenceThread => (
@@ -210,7 +211,7 @@ export default function AdminMessages() {
                     />
                   ))}
                 </ul>
-              </div>
+              </Alert>
             )}
             {messages.map(message => {
               const sender = message.userFrom || { _id: '' };
@@ -260,9 +261,9 @@ export default function AdminMessages() {
           </>
         )}
         {queried && !failed && messages.length === 0 && (
-          <div className="alert alert-info">
+          <Alert tone="info" role="status">
             <em>Nothing found…</em>
-          </div>
+          </Alert>
         )}
       </div>
     </>

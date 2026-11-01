@@ -18,7 +18,16 @@
 }
 
 @theme {
-  /* Bootstrap 5.3 warning alert colours. */
+  /* Bootstrap 5.3 alert colours (`--bs-*-text-emphasis`, `-bg-subtle`, `-border-subtle`). */
+  --color-danger-text: #58151c;
+  --color-danger-bg: #f8d7da;
+  --color-danger-border: #f1aeb5;
+  --color-info-text: #055160;
+  --color-info-bg: #cff4fc;
+  --color-info-border: #9eeaf9;
+  --color-success-text: #0a3622;
+  --color-success-bg: #d1e7dd;
+  --color-success-border: #a3cfbb;
   --color-warning-text: #664d03;
   --color-warning-bg: #fff3cd;
   --color-warning-border: #ffe69c;

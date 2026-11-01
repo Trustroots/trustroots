@@ -94,7 +94,7 @@ export default function LanguageSelect({
         {...props}
       />
       {isError && (
-        <Alert>
+        <Alert tone="warning" role="alert">
           {t(
             'Snap! Something went wrong. If this keeps happening, please contact us.',
           )}

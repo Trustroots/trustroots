@@ -1,7 +1,6 @@
 // The primitives as they already exist. Before and after render the same
 // component, so these only change when its styles change.
 import React from 'react';
-import { Alert } from '@trustroots/ui/Alert';
 import { Badge } from '@trustroots/ui/Badge';
 import { Spinner } from '@trustroots/ui/Spinner';
 
@@ -13,11 +12,6 @@ const same = (fixture: Omit<Fixture, 'after'>): Fixture => ({
 });
 
 export const primitiveFixtures: Fixture[] = [
-  same({
-    id: 'alert',
-    width: 360,
-    before: text => <Alert>{text.sentence}</Alert>,
-  }),
   same({
     id: 'badge',
     before: text => (

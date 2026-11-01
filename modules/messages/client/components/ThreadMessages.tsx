@@ -7,6 +7,7 @@ import InfiniteMessages from '@/modules/messages/client/components/InfiniteMessa
 import Avatar from '@/modules/users/client/components/Avatar.component';
 import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
 import type { Message, MessageUser } from '../api/messages.api';
+import { Alert } from '@trustroots/ui/Alert';
 
 const MessagesContainer = styled.div`
   flex: 1 1 auto;
@@ -46,12 +47,12 @@ export default function ThreadMessages({
       }
       onFetchMore={onFetchMore}
     >
-      <div className="alert alert-warning" role="note">
+      <Alert tone="warning" role="note">
         <strong>{t('Safety note:')}</strong>{' '}
         {t(
           'Trustroots will never ask you for your ID, credit card details, or payment of any kind.',
         )}
-      </div>
+      </Alert>
       {isExtraSmall && otherUser.username && (
         <div className="message">
           <div className="message-recipient panel panel-default">

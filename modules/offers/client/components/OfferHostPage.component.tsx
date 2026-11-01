@@ -10,6 +10,7 @@ import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
 import OfferLocationEditor from './OfferLocationEditor.component';
+import { Alert } from '@trustroots/ui/Alert';
 
 type HostStatus = 'yes' | 'maybe' | 'no';
 const HOST_STATUSES: HostStatus[] = ['yes', 'maybe', 'no'];
@@ -216,7 +217,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         >
           <Tab eventKey="availability" title="Availability">
             {!hasLocation && (
-              <p className="alert alert-info" role="status">
+              <Alert tone="info" role="status">
                 <a
                   href="#location"
                   onClick={event => {
@@ -227,7 +228,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   Choose a location
                 </a>{' '}
                 in the Location tab before saving, even if you cannot host.
-              </p>
+              </Alert>
             )}
             <div className="row">
               <div className="col-xs-12 col-sm-6">
@@ -424,16 +425,17 @@ export default function OfferHostPage({ user }: HostPageProps) {
           <Tab eventKey="location" title="Location">
             <div id="location">
               {!hasLocation && (
-                <p className="alert alert-info" role="status">
+                <Alert tone="info" role="status">
                   Search for a place or move the map to set your hosting
                   location.
-                </p>
+                </Alert>
               )}
               {firstTimeAround && (
-                <div
+                <Alert
                   aria-describedby="firstTimeAroundDescription"
                   aria-labelledby="firstTimeAroundLabel"
-                  className="alert alert-info offer-map-guide"
+                  tone="info"
+                  className="offer-map-guide"
                   role="dialog"
                 >
                   <p className="lead" role="document">
@@ -458,7 +460,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       Got it!
                     </button>
                   </p>
-                </div>
+                </Alert>
               )}
               <OfferLocationEditor
                 location={offer.location}

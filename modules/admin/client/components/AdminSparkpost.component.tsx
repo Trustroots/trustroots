@@ -6,6 +6,7 @@ import {
   getSparkpostOverview,
   getSparkpostPreview,
 } from '../api/sparkpost.api';
+import { Alert } from '@trustroots/ui/Alert';
 
 function formatDateTime(value: string) {
   return value.slice(0, 16).replace('T', ' ');
@@ -64,11 +65,11 @@ function Preview({ window }: { window: { from: string; to: string } }) {
         {formatDateTime(data.from)} to {formatDateTime(data.to)} UTC. The start
         is included; the end is excluded.
       </p>
-      <div className="alert alert-info">
+      <Alert tone="info" role="note">
         <strong>Delivery unverified.</strong> This report cannot tell us how
         many emails were missed. It compares account status and stored job
         records, without checking individual deliveries with SparkPost.
-      </div>
+      </Alert>
       <div className="table-responsive">
         <table className="table">
           <caption>Two separate counts for the selected period</caption>
@@ -114,22 +115,22 @@ function Preview({ window }: { window: { from: string; to: string } }) {
       </div>
       {showAccounts && <SignupRecovery from={data.from} to={data.to} />}
       {data.capped && (
-        <p className="alert alert-warning">
+        <Alert tone="warning" role="note">
           Partial preview: only the first 1,000 completed jobs are included.
           Narrow the time window.
-        </p>
+        </Alert>
       )}
       <p>
         To recover confirmations, we will need to identify affected accounts and
         generate fresh links. This page does not resend anything.
       </p>
       {!data.campaigns.length ? (
-        <p className="alert alert-warning">
+        <Alert tone="warning" role="note">
           No stored email-job records were found for this period. This does not
           mean zero emails were sent or missed: records may have been removed or
           may not match the search. The unconfirmed-account count above comes
           from user profiles and is independent of these records.
-        </p>
+        </Alert>
       ) : (
         <table className="table table-striped">
           <caption>Completed jobs by campaign (delivery unverified)</caption>
@@ -202,11 +203,11 @@ export default function AdminSparkpost() {
         ) : (
           <>
             {data.provider !== 'ready' && (
-              <p className="alert alert-warning">
+              <Alert tone="warning" role="note">
                 {data.provider === 'disabled'
                   ? 'SparkPost is not configured. Set SPARKPOST_API_KEY on the server to enable provider metrics.'
                   : 'SparkPost metrics are unavailable. Check provider access and configuration.'}
-              </p>
+              </Alert>
             )}
             <div className="table-responsive">
               <table className="table table-striped">

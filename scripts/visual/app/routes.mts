@@ -85,6 +85,12 @@ export function routeTargets(
   return targets;
 }
 
+async function submitForgotPassword(page: Page) {
+  await page.locator('#username').fill('nobody@example.org');
+  await page.locator('form button[type="submit"]').first().click();
+  await page.waitForTimeout(500);
+}
+
 /** Open states: menus, errors, loading and interaction states. */
 export function stateTargets(params: SeedParams): Target[] {
   void params;
@@ -155,6 +161,50 @@ export function stateTargets(params: SeedParams): Target[] {
       path: '/search',
       user: 'member',
       failApi: /\/api\/languages/,
+    },
+    // Alerts that only appear after a submit or a failed request. API writes
+    // are answered with `{}`, so a plain submit shows the success alert.
+    {
+      name: 'state__forgot_password_success_alert',
+      path: '/password/forgot',
+      user: 'visitor',
+      prepare: submitForgotPassword,
+    },
+    {
+      name: 'state__forgot_password_error_alert',
+      path: '/password/forgot',
+      user: 'visitor',
+      failApi: /\/api\/auth\/forgot/,
+      prepare: submitForgotPassword,
+    },
+    {
+      name: 'state__reset_password_error_alert',
+      path: '/password/reset/visual-token',
+      user: 'visitor',
+      failApi: /\/api\/auth\/reset\//,
+      prepare: async page => {
+        await page.locator('#newPassword').fill('visual-password-1');
+        await page.locator('#verifyPassword').fill('visual-password-1');
+        await page.locator('form button[type="submit"]').first().click();
+        await page.waitForTimeout(500);
+      },
+    },
+    {
+      name: 'state__support_send_error_alert',
+      path: '/support',
+      user: 'member',
+      failApi: /\/api\/support$/,
+      prepare: async page => {
+        await page.locator('form textarea').first().fill('Visual check.');
+        await page.locator('form button[type="submit"]').first().click();
+        await page.waitForTimeout(500);
+      },
+    },
+    {
+      name: 'state__create_experience_load_error_alert',
+      path: `/profile/${OTHER_MEMBER}/experiences/new`,
+      user: 'member',
+      failApi: /\/api\/(experiences|my-experience)/,
     },
     {
       name: 'state__header_tab_focus',
