@@ -32,6 +32,13 @@ Avoid unnecessary re-exports. Import directly from the owning file and update
 consumers when moving code. Keep a compatibility re-export only when a concrete
 consumer or public API still needs the old path, and explain why it is needed.
 
+Components in `packages/ui` have no dead variants: every cva() variant, tone,
+size and flag value a component supports must be used somewhere in app code.
+When a change removes the last use of a value, remove the value from the
+component too. App code picks a component's look through these props, not
+through hand-written class names. `pnpm run lint:ui-variants` enforces the
+rule and runs as part of `pnpm check`.
+
 Use tables for overviews when they make information easier to compare, with
 coloured status dots where useful. Include text labels so meaning does not
 depend on colour alone.
