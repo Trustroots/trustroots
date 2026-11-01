@@ -1,5 +1,6 @@
 import { useAuth } from '../../../core/client/react-app/auth';
 import React, { useMemo, useState, useEffect } from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 
 // Internal dependencies
 import { getAcquisitionStories } from '../api/acquisition-stories.api';
@@ -30,13 +31,13 @@ function RestrictionBadges({
   statuses?: RestrictionStatus[];
 }) {
   return (
-    <>
+    <span className="admin-restriction-badges">
       {statuses.map(status => (
-        <span className="label label-danger admin-label" key={status}>
+        <Badge variant="solid" tone="danger" key={status}>
           {status === 'suspended' ? 'Suspended' : 'Shadowbanned'}
-        </span>
+        </Badge>
       ))}
-    </>
+    </span>
   );
 }
 

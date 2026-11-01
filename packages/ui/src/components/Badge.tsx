@@ -23,6 +23,8 @@ const badgeVariants = cva(
       tone: {
         neutral: '',
         primary: '',
+        success: '',
+        warning: '',
         danger: '',
         inverse: '',
       },
@@ -38,7 +40,10 @@ const badgeVariants = cva(
       },
     },
     compoundVariants: [
+      { variant: 'solid', tone: 'neutral', className: 'tw:bg-neutral' },
       { variant: 'solid', tone: 'primary', className: 'tw:bg-brand-primary' },
+      { variant: 'solid', tone: 'success', className: 'tw:bg-success' },
+      { variant: 'solid', tone: 'warning', className: 'tw:bg-warning' },
       { variant: 'solid', tone: 'danger', className: 'tw:bg-notification' },
       { variant: 'outline', tone: 'neutral', className: 'tw:text-neutral' },
       { variant: 'outline', tone: 'inverse', className: 'tw:text-white' },

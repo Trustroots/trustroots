@@ -447,7 +447,8 @@
 }
 
 .admin-action,
-.admin-label,
+.admin-user-state > [data-slot='badge'],
+.admin-restriction-badges > [data-slot='badge'],
 .zendesk-inbox-search {
   margin: 2px 5px;
 }
@@ -693,11 +694,8 @@ td:hover .admin-hidden-until-hover {
 
 .admin-user .admin-user-state {
   margin-bottom: 20px;
-  .admin-label {
-    font-size: 100%;
-    &:first-child {
-      margin-left: 0;
-    }
+  > [data-slot='badge']:first-child {
+    margin-left: 0;
   }
 }
 
@@ -1448,7 +1446,7 @@ td:hover .admin-hidden-until-hover {
 .admin-member-stat-total {
   font-size: 20px;
 }
-.admin-member-stats .admin-user-state .admin-label {
+.admin-member-stats .admin-user-state > [data-slot='badge'] {
   font-size: 12px;
 }
 

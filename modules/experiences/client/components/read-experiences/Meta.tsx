@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import styled from 'styled-components';
+import { Badge } from '@trustroots/ui/Badge';
 
 import type {
   ExperienceInteractions,
@@ -12,7 +13,7 @@ const Labels = styled.div`
   flex-wrap: wrap;
   align-items: center;
   padding: 10px 0;
-  .label {
+  > * {
     margin: 0 5px 5px 0;
   }
 `;
@@ -39,9 +40,9 @@ export default function Meta({
       ]
         .filter((label): label is string => typeof label === 'string')
         .map(label => (
-          <span key={label} className="label label-default">
+          <Badge key={label} variant="solid" tone="neutral">
             {label}
-          </span>
+          </Badge>
         ))}
     </Labels>
   );

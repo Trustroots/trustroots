@@ -30,8 +30,9 @@ variants describe them with `class-variance-authority` (`cva`).
 
 ## Badge
 
-Every badge in the app is a `Badge`. Callers pick `variant` (`solid` or
-`outline`) and `tone` (`neutral`, `primary`, `danger`, `inverse`), both
+Every badge in the app is a `Badge`, including the status tags that were
+Bootstrap 3 `.label`s. Callers pick `variant` (`solid` or `outline`) and
+`tone` (`neutral`, `primary`, `success`, `warning`, `danger`, `inverse`), both
 required, and optionally `size` (`md`, the default, scales with the text like
 Bootstrap's `.badge`; `sm` for profile counts and tags; `xs` for the header's
 unread counter) and `shape` (`rounded` or `pill`). `indicator` adds the

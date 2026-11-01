@@ -1,4 +1,5 @@
 import React from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 
 // Internal dependencies
 import UserLink from './UserLink.component';
@@ -20,14 +21,14 @@ interface ReferenceVote {
 function getReferenceLabel(reference = '') {
   if (reference === 'yes') {
     return {
-      labelClassName: 'label label-success',
+      tone: 'success' as const,
       text: 'positive',
       textClassName: 'text-success',
     };
   }
 
   return {
-    labelClassName: 'label label-danger',
+    tone: 'danger' as const,
     text: 'negative',
     textClassName: 'text-danger',
   };
@@ -42,7 +43,7 @@ export default function AdminReferenceVoteItem({
   showBadge?: boolean;
   showMessagesLink?: boolean;
 }) {
-  const { labelClassName, text, textClassName } = getReferenceLabel(
+  const { tone, text, textClassName } = getReferenceLabel(
     referenceThread.reference,
   );
   const messagesHref = getAdminMessagesHref(
@@ -53,7 +54,9 @@ export default function AdminReferenceVoteItem({
   if (showBadge) {
     return (
       <li>
-        <span className={labelClassName}>{text}</span>{' '}
+        <Badge variant="solid" tone={tone}>
+          {text}
+        </Badge>{' '}
         <UserLink
           user={
             typeof referenceThread.userFrom === 'object'

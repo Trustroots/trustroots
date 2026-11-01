@@ -1,5 +1,5 @@
-import classnames from 'classnames';
 import React, { useEffect, useState } from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 import { getThreads, type AdminThread } from '../api/threads.api';
 import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
@@ -160,14 +160,15 @@ export default function AdminThreads() {
                             <UserLink user={to} />
                           </td>
                           <td>
-                            <span
-                              className={classnames('label', {
-                                'label-success': thread.read,
-                                'label-warning': !thread.read,
-                              })}
-                            >
-                              {thread.read ? 'Read' : 'Unread'}
-                            </span>
+                            {thread.read ? (
+                              <Badge variant="solid" tone="success">
+                                Read
+                              </Badge>
+                            ) : (
+                              <Badge variant="solid" tone="warning">
+                                Unread
+                              </Badge>
+                            )}
                           </td>
                           <td>
                             {thread.votes?.length ? (

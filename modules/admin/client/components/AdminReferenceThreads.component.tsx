@@ -1,5 +1,6 @@
 // External dependencies
 import React, { useEffect, useState } from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 
 import * as api from '../api/admin-reference-threads.api';
 import UserLink from './UserLink.component';
@@ -68,7 +69,9 @@ export default function AdminReferenceThreads() {
                   const userId = typeof user === 'string' ? user : user._id;
                   return (
                     <li key={userId}>
-                      <span className="label label-danger">{count}</span>{' '}
+                      <Badge variant="solid" tone="danger">
+                        {count}
+                      </Badge>{' '}
                       <ReferenceUser user={user} />
                     </li>
                   );

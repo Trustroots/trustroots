@@ -77,7 +77,7 @@ test('shows a readable thread table with directional votes and exact UTC minute 
   expect(screen.getByText('2026-10-20 18:30')).toBeInTheDocument();
   expect(screen.getByText(/alice → bob:/)).toHaveTextContent('positive');
   expect(screen.getByText(/bob → alice:/)).toHaveTextContent('negative');
-  expect(screen.getByText('Unread')).toHaveClass('label-warning');
+  expect(screen.getByText('Unread')).toHaveAttribute('data-tone', 'warning');
   expect(screen.getByRole('link', { name: 'Read thread' })).toHaveAttribute(
     'href',
     '/admin/messages?username1=alice&username2=bob',
@@ -134,7 +134,7 @@ test('shows read state and placeholders without inventing dates, votes or links 
   ]);
   render(<AdminThreads />);
   const table = await screen.findByRole('table');
-  expect(screen.getByText('Read')).toHaveClass('label-success');
+  expect(screen.getByText('Read')).toHaveAttribute('data-tone', 'success');
   expect(within(table).getAllByText('—')).toHaveLength(4);
   expect(
     screen.queryByRole('link', { name: 'Read thread' }),

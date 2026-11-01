@@ -93,6 +93,27 @@ test('badge weight follows its variant at the small size', () => {
   expect(screen.getByText('Semibold')).toHaveClass('tw:font-semibold');
 });
 
+test('solid badges colour each status tone', () => {
+  render(
+    <>
+      <Badge variant="solid" tone="neutral">
+        Guest
+      </Badge>
+      <Badge variant="solid" tone="success">
+        Read
+      </Badge>
+      <Badge variant="solid" tone="warning">
+        Unread
+      </Badge>
+    </>,
+  );
+  expect(screen.getByText('Guest')).toHaveClass('tw:bg-neutral');
+  expect(screen.getByText('Read')).toHaveClass('tw:bg-success');
+  expect(screen.getByText('Read')).toHaveAttribute('data-tone', 'success');
+  expect(screen.getByText('Unread')).toHaveClass('tw:bg-warning');
+  expect(screen.getByText('Unread')).toHaveAttribute('data-tone', 'warning');
+});
+
 test('badge indicator is a decorative dot', () => {
   const { rerender } = render(
     <Badge variant="outline" tone="neutral" indicator>

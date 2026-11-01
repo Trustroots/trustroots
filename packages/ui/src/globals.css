@@ -11,6 +11,8 @@
   --color-brand-secondary: var(--tr-brand-secondary);
   --color-notification: var(--tr-notification-badge-bg);
   --color-neutral: var(--tr-gray-light);
+  --color-success: var(--tr-status-success);
+  --color-warning: var(--tr-status-warning);
   --color-text: var(--tr-text-color);
   --radius-base: var(--tr-border-radius-base);
   --spacing-control-x: var(--tr-padding-base-horizontal);

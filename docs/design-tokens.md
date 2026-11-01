@@ -28,10 +28,11 @@ strings for canvas or other non-CSS APIs.
 The web Vite build also provides Tailwind utilities with the `tw:` prefix, for
 example `tw:bg-notification`. The Tailwind theme tokens live in
 `packages/ui/src/globals.css`, which `config/client/styles/tailwind.css` imports
-once; the `brand-primary`, `brand-secondary`, `notification` and `neutral`
-(`--tr-gray-light`, used by neutral badges) colours refer to the shared CSS
-tokens. Tailwind Preflight is not loaded while Bootstrap remains
-in use. Tailwind utilities are unlayered and load after Bootstrap and the global
+once; the `brand-primary`, `brand-secondary`, `notification`, `neutral`
+(`--tr-gray-light`, used by neutral badges), `success` and `warning`
+(`--tr-status-success` and `--tr-status-warning`, used by status badges)
+colours refer to the shared CSS tokens. Tailwind Preflight is not loaded while
+Bootstrap remains in use. Tailwind utilities are unlayered and load after Bootstrap and the global
 Less, so a utility class overrides element rules such as Bootstrap's
 `button { border-radius: 0 }` and wins ties with Bootstrap classes. Module
 stylesheets load later and win ties with utilities, and selectors with higher

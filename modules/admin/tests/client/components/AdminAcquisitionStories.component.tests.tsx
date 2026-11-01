@@ -124,7 +124,10 @@ describe('<AdminAcquisitionStories />', () => {
       const row = screen
         .getByRole('link', { name: 'restricted-member' })
         .closest('tr')!;
-      expect(within(row).getByText('Suspended')).toHaveClass('label-danger');
+      expect(within(row).getByText('Suspended')).toHaveAttribute(
+        'data-tone',
+        'danger',
+      );
       expect(within(row).getAllByText('Shadowbanned')).toHaveLength(2);
       expect(within(row).getByText('Visible', { exact: true })).toBeVisible();
       for (const name of ['active-member', 'older-member']) {

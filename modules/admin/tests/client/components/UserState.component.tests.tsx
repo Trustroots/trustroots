@@ -10,6 +10,22 @@ describe('<UserState />', () => {
     expect(screen.getByText('Greeter')).toBeInTheDocument();
   });
 
+  it('shows team roles as neutral badges', () => {
+    render(
+      <UserState
+        user={{ roles: ['moderator', 'support-team'], public: true }}
+      />,
+    );
+    expect(screen.getByText('moderator')).toHaveAttribute(
+      'data-tone',
+      'neutral',
+    );
+    expect(screen.getByText('Support team')).toHaveAttribute(
+      'data-tone',
+      'neutral',
+    );
+  });
+
   it('renders support-relevant profile state labels', () => {
     render(
       <UserState
@@ -27,8 +43,14 @@ describe('<UserState />', () => {
     );
 
     expect(screen.queryByText('user')).not.toBeInTheDocument();
-    expect(screen.getByText('suspended')).toHaveClass('label-danger');
-    expect(screen.getByText('volunteer')).toHaveClass('label-success');
+    expect(screen.getByText('suspended')).toHaveAttribute(
+      'data-tone',
+      'danger',
+    );
+    expect(screen.getByText('volunteer')).toHaveAttribute(
+      'data-tone',
+      'success',
+    );
     expect(screen.getByText('Hidden profile')).toBeInTheDocument();
     expect(screen.getByText('Unconfirmed email change')).toBeInTheDocument();
     expect(screen.getByText('Pending removal')).toHaveAttribute(

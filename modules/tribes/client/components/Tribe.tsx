@@ -2,6 +2,7 @@ import React from 'react';
 import classnames from 'classnames';
 import { useTranslation } from 'react-i18next';
 import styled, { css } from 'styled-components';
+import { Badge } from '@trustroots/ui/Badge';
 
 import JoinButton from './JoinButton';
 
@@ -57,9 +58,9 @@ export default function Tribe({
       <a href={`/circles/${tribe.slug}`} className="tribe-link">
         {tribe.new && (
           <span className="tribe-new" aria-hidden={true}>
-            <span className="label label-primary">
+            <Badge variant="solid" tone="primary">
               {t('New circle!') as string}
-            </span>
+            </Badge>
           </span>
         )}
         <div
