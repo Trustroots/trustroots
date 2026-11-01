@@ -9,7 +9,9 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import { useNavigate } from '@tanstack/react-router';
 import AdminUser, {
+  AdminUserContent,
   InfoTable,
 } from '@/modules/admin/client/components/AdminUser.component';
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
@@ -19,11 +21,11 @@ jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
 
-type AdminUserRecord = Exclude<AdminUser['state']['user'], false>;
+type AdminUserRecord = Exclude<AdminUserContent['state']['user'], false>;
 type MemberList = {
   users: AdminUserRecord[];
-  pagination: NonNullable<AdminUser['state']['matchingUsersPagination']>;
-  sort: AdminUser['state']['matchingUsersSort'];
+  pagination: NonNullable<AdminUserContent['state']['matchingUsersPagination']>;
+  sort: AdminUserContent['state']['matchingUsersSort'];
 };
 type MemberListRow = React.ComponentProps<
   typeof AdminUserResultsTable
@@ -198,6 +200,14 @@ function submitMemberSearch(value: string) {
   fireEvent.submit(input.closest('form')!);
 }
 
+// Class instances outside a render get the route props their wrapper passes.
+function routeProps() {
+  return {
+    navigate: useNavigate(),
+    search: Object.fromEntries(new URL(window.location.href).searchParams),
+  };
+}
+
 describe('<AdminUser />', () => {
   it('omits an information table when it has no visible rows', () => {
     const { container } = render(<InfoTable rows={[]} />);
@@ -205,7 +215,7 @@ describe('<AdminUser />', () => {
   });
 
   it('handles role helpers safely before a profile has loaded', () => {
-    const component = new AdminUser({});
+    const component = new AdminUserContent(routeProps());
 
     expect(component.hasRole('volunteer')).toBe(false);
     expect(() => component.handleUserRoleChange('volunteer')).not.toThrow();
@@ -743,9 +753,9 @@ describe('<AdminUser />', () => {
   });
 
   it('ignores invalid ids passed directly to the loader', async () => {
-    const ref = React.createRef<AdminUser>();
+    const ref = React.createRef<AdminUserContent>();
 
-    render(<AdminUser ref={ref} />);
+    render(<AdminUserContent ref={ref} {...routeProps()} />);
 
     await act(async () => {
       ref.current?.getUserById('not-a-mongo-id');
@@ -1614,8 +1624,8 @@ describe('<AdminUser />', () => {
         finishRoleChange = resolve;
       }),
     );
-    const componentRef = React.createRef<AdminUser>();
-    render(<AdminUser ref={componentRef} />);
+    const componentRef = React.createRef<AdminUserContent>();
+    render(<AdminUserContent ref={componentRef} {...routeProps()} />);
     submitMemberSearch(userId);
 
     fireEvent.click(await screen.findByRole('button', { name: 'Suspend' }));

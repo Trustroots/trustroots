@@ -117,7 +117,7 @@ describe('OfferHostPage', () => {
     ).toBeVisible();
 
     window.history.replaceState({}, '', '/offer/host#location');
-    fireEvent(window, new HashChangeEvent('hashchange'));
+    fireEvent.popState(window);
     expect(screen.getByRole('tab', { name: 'Location' })).toHaveAttribute(
       'aria-selected',
       'true',
