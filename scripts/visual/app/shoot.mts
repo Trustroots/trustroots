@@ -161,6 +161,18 @@ async function settle(page: Page, target: Target) {
       .waitForLoadState('networkidle', { timeout: 15000 })
       .catch(() => {});
   }
+  // An unstyled page on both sides would compare as identical.
+  const appStylesheets = await page.evaluate(
+    () =>
+      [...document.querySelectorAll('link[rel="stylesheet"]')].filter(link =>
+        /\/assets\/react-main(\.rtl)?\.css/.test(
+          (link as HTMLLinkElement).href,
+        ),
+      ).length,
+  );
+  if (appStylesheets === 0) {
+    throw new Error(`${target.path}: the app stylesheet is not linked`);
+  }
   await page.addStyleTag({ content: freezeCss });
   await page.evaluate(async () => {
     await document.fonts.ready;
