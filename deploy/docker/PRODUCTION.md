@@ -150,6 +150,62 @@ Do not run the old update script concurrently. These safeguards require adopting
 the script and configuration on the production host; an image update alone does
 not change mounts, logging, proxy configuration or systemd dependencies.
 
+### Deployment success receipts
+
+The helper stores one JSON receipt per deployment attempt in
+`.trustroots-deployment-events/` beside Compose. Keep this directory on durable
+storage with the Compose file and restrict access to deployment operators.
+The existing lock serialises invocations using that Compose directory. All
+operators must use the same directory; this is not a lock across deployment
+hosts or independent Compose copies.
+
+An attempt is saved with a UUID, action, public origin, intended immutable image
+IDs and UTC start time **before** containers are replaced. After readiness and
+login verification, the helper records `status: succeeded`, the running webapp's
+full `TRUSTROOTS_BUILD_COMMIT` as `buildCommit`, and `readinessSucceededAt`.
+That timestamp is the verification time, separate from the commit timestamp.
+It confirms the checks described above, including only running-state checks for
+the worker. It does not confirm SMTP acceptance or inbox delivery.
+
+Adopting this helper creates no historical receipts. The first checked deployment
+creates the first event. Every subsequent `deploy` and explicit `rollback`
+creates a new event, including redeploying the same images. Ordinary app/worker
+restarts create no event. Failed attempts are marked `failed`; automatic
+restoration of previous images does not announce a successful deployment of the
+failed version. Interrupted attempts remain `pending`.
+
+If the initial receipt cannot be persisted, replacement stops. A completion
+failure (including missing/invalid build metadata) prints a warning with the
+event UUID and leaves the verified containers running. Monitor deployment output
+for these warnings. Preserve the pending receipt, repair storage or metadata,
+and recheck it using:
+
+```bash
+sudo python3 production-deploy.py record-success \
+  --event-id 11111111-2222-4333-8444-555555555555 \
+  --compose /var/local/tr-deploy/compose.yml \
+  --media-mount /mnt/media --url https://www.trustroots.org
+```
+
+Use the UUID printed for the actual attempt. Recovery acquires the same lock,
+requires the saved origin and both intended image IDs to match, and repeats
+readiness/login checks before completing the existing receipt. Its timestamp
+reflects this new verification. Repeating recovery of a completed event leaves
+it unchanged. Failed events cannot be recovered; perform a new checked deployment
+instead. If recording failure itself warned, investigate the deployment outcome
+before attempting recovery. Do not edit failed receipts into successes.
+
+These receipts are the first part of [#3502](https://github.com/Trustroots/trustroots/issues/3502).
+This version sends no deployment emails and does not consume historical events.
+A follow-up must add explicit production tier/runtime/domain/live-mail gates,
+recipient eligibility and address deduplication, individual queued emails and
+shared durable notification progress before enabling notifications. A host-local
+receipt alone is insufficient to deduplicate queueing across replicas. Recovery
+must not deliberately re-enqueue completed recipients; ambiguous SMTP acceptance
+can still cause duplicate delivery. Deployment emails will supplement the inbox
+canary proposed in [#3500](https://github.com/Trustroots/trustroots/issues/3500),
+and will not replace independent failure monitoring.
+
 ### Adopt independent log shipping
 
 Keep the optional collector in its own Compose project or systemd service. Do
