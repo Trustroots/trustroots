@@ -478,7 +478,7 @@ test.describe.serial('message action feature coverage', () => {
 
       await page.goto('/search');
       const messagesLink = page.locator('#tr-header a[href="/messages"]');
-      const unreadBadge = messagesLink.locator('.notification-badge');
+      const unreadBadge = messagesLink.locator('[data-slot="badge"]');
       for (const width of [1280, 390]) {
         await page.setViewportSize({ width, height: 844 });
         await expect(unreadBadge).toBeVisible();

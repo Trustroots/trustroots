@@ -1,5 +1,6 @@
 // Every component fixture. Add a file per component and list it here.
 import type { Fixture } from '../fixture.ts';
+import { badgeFixtures } from './badges.tsx';
 import { primitiveFixtures } from './primitives.tsx';
 
-export const fixtures: Fixture[] = [...primitiveFixtures];
+export const fixtures: Fixture[] = [...primitiveFixtures, ...badgeFixtures];

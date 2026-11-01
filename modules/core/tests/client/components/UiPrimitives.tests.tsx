@@ -34,7 +34,7 @@ test('alerts and badges render supplied content and attributes', () => {
   render(
     <>
       <Alert className="extra">A warning</Alert>
-      <Badge className="extra" title="Count">
+      <Badge variant="solid" tone="primary" className="extra" title="Count">
         3
       </Badge>
     </>,
@@ -47,15 +47,71 @@ test('alerts and badges render supplied content and attributes', () => {
   );
 });
 
-test('alert and badge do not require a class name', () => {
+test('alert does not require a class name', () => {
+  render(<Alert>Warning</Alert>);
+  expect(screen.getByRole('alert')).toHaveClass('tw:bg-warning-bg');
+});
+
+test('badges expose their resolved variant, tone, size and shape', () => {
   render(
     <>
-      <Alert>Warning</Alert>
-      <Badge>New</Badge>
+      <Badge variant="outline" tone="neutral">
+        12
+      </Badge>
+      <Badge variant="solid" tone="danger" size="xs" shape="pill">
+        3
+      </Badge>
     </>,
   );
-  expect(screen.getByRole('alert')).toHaveClass('tw:bg-warning-bg');
-  expect(screen.getByText('New')).toHaveClass('tw:bg-brand-primary');
+  const outline = screen.getByText('12');
+  expect(outline).toHaveAttribute('data-slot', 'badge');
+  expect(outline).toHaveAttribute('data-variant', 'outline');
+  expect(outline).toHaveAttribute('data-tone', 'neutral');
+  expect(outline).toHaveAttribute('data-size', 'md');
+  expect(outline).toHaveAttribute('data-shape', 'rounded');
+  expect(outline).toHaveClass('tw:border-current', 'tw:text-neutral');
+
+  const solid = screen.getByText('3');
+  expect(solid).toHaveAttribute('data-size', 'xs');
+  expect(solid).toHaveAttribute('data-shape', 'pill');
+  expect(solid).toHaveClass('tw:bg-notification', 'tw:rounded-full');
+  expect(solid).not.toHaveClass('tw:rounded');
+});
+
+test('badge weight follows its variant at the small size', () => {
+  render(
+    <>
+      <Badge variant="outline" tone="neutral" size="sm">
+        Light
+      </Badge>
+      <Badge variant="solid" tone="primary" size="sm">
+        Semibold
+      </Badge>
+    </>,
+  );
+  expect(screen.getByText('Light')).toHaveClass('tw:font-extralight');
+  expect(screen.getByText('Semibold')).toHaveClass('tw:font-semibold');
+});
+
+test('badge indicator is a decorative dot', () => {
+  const { rerender } = render(
+    <Badge variant="outline" tone="neutral" indicator>
+      5
+    </Badge>,
+  );
+  const dot = document.querySelector('[data-slot="badge-indicator"]');
+  expect(dot).toHaveAttribute('aria-hidden', 'true');
+  expect(dot).toHaveClass('tw:bg-notification');
+  expect(screen.getByText('5')).toHaveTextContent(/^5$/);
+
+  rerender(
+    <Badge variant="outline" tone="neutral">
+      5
+    </Badge>,
+  );
+  expect(
+    document.querySelector('[data-slot="badge-indicator"]'),
+  ).not.toBeInTheDocument();
 });
 
 test('spinner announces the caller supplied label', () => {

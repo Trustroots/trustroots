@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
+import { Badge } from '@trustroots/ui/Badge';
 
 import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import {
@@ -83,7 +84,12 @@ export default function BottomNavigationSmall({
               role="presentation"
             >
               <a href={link} role="tab" onClick={() => setActive(key)}>
-                {label} <span className="badge">{count}</span>
+                {label}{' '}
+                {count !== undefined && (
+                  <Badge variant="outline" tone="inverse">
+                    {count}
+                  </Badge>
+                )}
               </a>
             </li>
           ))}

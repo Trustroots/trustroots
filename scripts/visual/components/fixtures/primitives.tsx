@@ -2,7 +2,6 @@
 // component, so these only change when its styles change.
 import React from 'react';
 import { Alert } from '@trustroots/ui/Alert';
-import { Badge } from '@trustroots/ui/Badge';
 import { Spinner } from '@trustroots/ui/Spinner';
 
 import type { Fixture } from '../fixture.ts';
@@ -17,22 +16,6 @@ export const primitiveFixtures: Fixture[] = [
     id: 'alert',
     width: 360,
     before: text => <Alert>{text.sentence}</Alert>,
-  }),
-  same({
-    id: 'badge',
-    before: text => (
-      <span>
-        {text.label} <Badge>{text.short}</Badge>
-      </span>
-    ),
-  }),
-  same({
-    id: 'badge-heading',
-    before: text => (
-      <h3 style={{ margin: 0 }}>
-        {text.label} <Badge>{text.short}</Badge>
-      </h3>
-    ),
   }),
   same({
     id: 'spinner',

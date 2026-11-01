@@ -15,7 +15,7 @@ import {
   snapshotStyles,
   type StyleSnapshot,
 } from '../lib/styles.mts';
-import { ADMIN, MEMBER, type Target, type VisualUser } from './routes.mts';
+import { USERNAMES, type Target, type VisualUser } from './routes.mts';
 
 export interface AppRun {
   browser: Browser;
@@ -83,7 +83,7 @@ async function storageStateFor(
   if (user === 'visitor') return undefined;
   const context = await browser.newContext({ baseURL });
   const response = await context.request.post('/api/auth/signin', {
-    data: { username: user === 'admin' ? ADMIN : MEMBER, password },
+    data: { username: USERNAMES[user], password },
   });
   if (!response.ok()) {
     throw new Error(`Sign-in as ${user} failed: ${response.status()}`);

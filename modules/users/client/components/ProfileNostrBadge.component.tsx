@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 import { nostrService } from '@/modules/search/client/services/nostr.client.service';
 import { timeAgo } from '@/modules/search/client/utils/time-ago';
 import NostrootsActionModal from '@/modules/core/client/components/NostrootsActionModal.component';
@@ -50,7 +51,9 @@ export default function ProfileNostrBadge({
 
   return (
     <div>
-      <span className="profile-nostr-badge">Nostroots</span>
+      <Badge variant="solid" tone="primary" size="sm" shape="pill">
+        Nostroots
+      </Badge>
 
       {notes.length > 0 && (
         <div className="profile-nostr-notes">

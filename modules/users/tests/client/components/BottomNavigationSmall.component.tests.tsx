@@ -29,7 +29,7 @@ describe('<BottomNavigationSmall />', () => {
       'href',
       '/profile/alice/contacts',
     );
-    expect(screen.getByText('4')).toHaveClass('badge');
+    expect(screen.getByText('4')).toHaveAttribute('data-slot', 'badge');
     expect(
       screen.getByRole('tab', { name: 'Hosting' }).closest('li'),
     ).toHaveClass('active');

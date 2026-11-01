@@ -2,10 +2,10 @@
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 
 // Internal dependencies
 import { getCount as getExperiencesCount } from '@/modules/experiences/client/api/experiences.api';
-import Badge from '@/modules/core/client/components/Badge';
 
 interface ProfileTabsProps {
   activePathName?: string;
@@ -78,7 +78,14 @@ export default function ProfileTabs({
               role="tab"
             >
               {t('Contacts')}
-              <Badge>{contactsCount}</Badge>
+              <Badge
+                variant="outline"
+                tone="neutral"
+                size="sm"
+                className="tw:ms-1.25"
+              >
+                {contactsCount}
+              </Badge>
             </a>
           </li>
         )}
@@ -97,7 +104,13 @@ export default function ProfileTabs({
               role="tab"
             >
               {t('Experiences')}
-              <Badge withNotification={hasPendingExperiences}>
+              <Badge
+                variant="outline"
+                tone="neutral"
+                size="sm"
+                className="tw:ms-1.25"
+                indicator={hasPendingExperiences}
+              >
                 {experiencesCount}
               </Badge>
             </a>

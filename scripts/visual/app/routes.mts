@@ -2,7 +2,7 @@
 // with seeded parameters, plus open states that a plain page load misses.
 import type { Page } from '@playwright/test';
 
-export type VisualUser = 'visitor' | 'member' | 'admin';
+export type VisualUser = 'visitor' | 'member' | 'admin' | 'pending';
 
 export interface Target {
   /** Stable name, used in result keys. */
@@ -23,6 +23,15 @@ export interface Target {
 export const MEMBER = 'e2e-seeded-portland';
 export const OTHER_MEMBER = 'e2e-seeded-berlin';
 export const ADMIN = 'e2e-seeded-admin';
+/** Has an experience waiting for their reply, so their profile shows a dot. */
+export const PENDING_MEMBER = 'e2e-seeded-bob';
+
+/** Who each signed-in visual user is. */
+export const USERNAMES: Record<Exclude<VisualUser, 'visitor'>, string> = {
+  member: MEMBER,
+  admin: ADMIN,
+  pending: PENDING_MEMBER,
+};
 
 export interface SeedParams {
   circle: string;
@@ -155,6 +164,12 @@ export function stateTargets(params: SeedParams): Target[] {
       path: '/search',
       user: 'member',
       failApi: /\/api\/languages/,
+    },
+    {
+      // The experiences tab badge with its pending notification dot.
+      name: 'state__profile_pending_experience_dot',
+      path: `/profile/${PENDING_MEMBER}`,
+      user: 'pending',
     },
     {
       name: 'state__header_tab_focus',
