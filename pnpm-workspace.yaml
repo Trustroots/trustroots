@@ -31,3 +31,8 @@ peerDependencyRules:
     - webpack
 
 saveExact: true
+
+fetchRetries: 5
+fetchRetryMintimeout: 20000
+fetchRetryMaxtimeout: 120000
+fetchTimeout: 600000
