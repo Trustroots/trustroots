@@ -28,6 +28,25 @@ type StatisticsRouteProps = { isAuthenticated: boolean };
 type OfferShellRouteProps = UserRouteProps & { children?: React.ReactNode };
 type RouteToRender = Pick<(typeof routes)[number], 'path' | 'render'>;
 
+// Routes that are not mocked below fire API requests on mount. Keep them off
+// the network: real jsdom XHRs to localhost stay open after the tests finish
+// and make the Jest worker fail to exit gracefully.
+jest.mock('@/modules/core/client/api/http-client', () => {
+  const pending = () => new Promise(() => {});
+  return {
+    __esModule: true,
+    default: {
+      get: pending,
+      post: pending,
+      put: pending,
+      patch: pending,
+      delete: pending,
+    },
+    getErrorMessage: (_error: unknown, fallback: string) => fallback,
+    getErrorResponse: () => undefined,
+  };
+});
+
 /* eslint-disable react/display-name -- lightweight route renderer mocks for coverage */
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
