@@ -345,8 +345,8 @@ const UserSchema = new Schema<
   seen: {
     type: Date,
   },
-  // The current client IP address from authenticated activity; no history is kept.
-  lastIpAddress: {
+  // Keyed identifier of the current client address; no history is kept.
+  lastIpHash: {
     type: String,
     index: true,
   },

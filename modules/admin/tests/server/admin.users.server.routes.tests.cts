@@ -19,7 +19,7 @@ interface AdminUserSummary {
   username: string;
   displayName?: string;
   email?: string;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   password?: string;
   salt?: string;
   removeProfileToken?: string;
@@ -117,9 +117,10 @@ describe('Admin User CRUD tests', () => {
     });
     it('Non-authenticated users should not be allowed to list users by IP address', async () => {
       await agent
-        .post('/api/admin/users/by-last-ip-address')
+        .post('/api/admin/users/by-last-ip-hash')
         .send({
-          ipAddress: '203.0.113.10',
+          ipHash:
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
         })
         .expect(403);
     });
@@ -313,20 +314,23 @@ describe('Admin User CRUD tests', () => {
       it('non-admin users should not be allowed to list users by IP address', async () => {
         await utils.signIn(credentialsRegular, agent);
         await agent
-          .post('/api/admin/users/by-last-ip-address')
+          .post('/api/admin/users/by-last-ip-hash')
           .send({
-            ipAddress: '203.0.113.10',
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
           })
           .expect(403);
       });
       it('admin users can list only exact current IP address matches', async () => {
-        userRegular.lastIpAddress = '203.0.113.10';
+        userRegular.lastIpHash =
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
         await userRegular.save();
         const otherUser = new User({
           displayName: 'Other Name',
           email: 'other@example.com',
           firstName: 'Other',
-          lastIpAddress: '203.0.113.100',
+          lastIpHash:
+            'cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',
           lastName: 'Name',
           password: 'Password123!',
           provider: 'local',
@@ -336,24 +340,28 @@ describe('Admin User CRUD tests', () => {
         await otherUser.save();
         await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
-          .post('/api/admin/users/by-last-ip-address')
+          .post('/api/admin/users/by-last-ip-hash')
           .send({
-            ipAddress: '203.0.113.10',
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
           })
           .expect(200);
         body.users.should.have.length(1);
         body.users[0].username.should.equal('userregular');
-        body.users[0].lastIpAddress.should.equal('203.0.113.10');
+        body.users[0].lastIpHash.should.equal(
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        );
       });
       it('rejects malformed IP addresses', async () => {
         await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
-          .post('/api/admin/users/by-last-ip-address')
+          .post('/api/admin/users/by-last-ip-hash')
           .send({
-            ipAddress: '203.0.113.10, 198.51.100.10',
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 198.51.100.10',
           })
           .expect(400);
-        body.message.should.equal('Invalid IP address.');
+        body.message.should.equal('Invalid IP identifier.');
       });
     });
     describe('Get user by ID', () => {
@@ -373,6 +381,11 @@ describe('Admin User CRUD tests', () => {
           .expect(403);
       });
       it('admin users should be allowed to query and get correct result', async () => {
+        // Model an unmigrated record written by the previous application version.
+        await User.collection.updateOne(
+          { _id: userRegular._id },
+          { $set: { lastIpAddress: '203.0.113.30' } },
+        );
         await utils.signIn(credentialsAdmin, agent);
         const { body } = await agent
           .post('/api/admin/user')
@@ -386,6 +399,7 @@ describe('Admin User CRUD tests', () => {
         // These should have been removed
         should.not.exist(body.profile.password);
         should.not.exist(body.profile.salt);
+        should.not.exist(body.profile.lastIpAddress);
 
         // These should have been obfuscated
         should(body.profile.removeProfileToken).equal('(Hidden from admins.)');

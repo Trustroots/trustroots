@@ -23,6 +23,7 @@ if (
  */
 
 const service = {
+  ipHashSecret: 'test-only-ip-hash-secret-not-for-production',
   // Test-only VAPID pair. Production keys must be supplied through environment variables.
   webPush: {
     publicKey:

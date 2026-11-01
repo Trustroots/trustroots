@@ -51,7 +51,7 @@ describe('Compact audit log', () => {
         date: '2026-01-01',
         route: '/api/admin/users',
         user: { _id: 'staff-1', username: 'river' },
-        ip: '127.0.0.1',
+        ipHash: 'a'.repeat(64),
         body: {
           username: 'forest',
           userId: '',
@@ -90,7 +90,9 @@ describe('Compact audit log', () => {
     expect(screen.getByRole('table').querySelector('time')).toHaveTextContent(
       '—',
     );
-    expect(screen.getByText('IP: Unknown IP address')).toBeInTheDocument();
+    expect(
+      screen.getByText('IP identifier: Not collected'),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole('table').querySelector('.admin-audit-log-summary'),
     ).toHaveTextContent('—');

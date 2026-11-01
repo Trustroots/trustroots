@@ -147,7 +147,7 @@ export const invokeRolesPolicies = () => {
           permissions: ['post'],
         },
         {
-          resources: '/api/admin/users/by-last-ip-address',
+          resources: '/api/admin/users/by-last-ip-hash',
           permissions: ['post'],
         },
         { resources: '/api/admin/reference-threads', permissions: ['get'] },

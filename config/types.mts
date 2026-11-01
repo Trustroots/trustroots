@@ -29,6 +29,7 @@ export interface Config {
   https: boolean;
   sessionProxy: boolean;
   sessionSecret: string;
+  ipHashSecret: string;
   sessionCollection: string;
   domain: string;
   csrfAllowedOrigins: string[];

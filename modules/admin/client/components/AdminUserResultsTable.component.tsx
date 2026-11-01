@@ -17,7 +17,7 @@ interface UserResult {
   created?: string | number | Date;
   email?: string;
   emailTemporary?: string;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   username?: string;
   roles?: string[];
   profile?: { roles?: string[] };
@@ -119,8 +119,8 @@ export default function AdminUserResultsTable({
                 sort={sort}
               />
               <SortableHeader
-                column="lastIpAddress"
-                label="Last IP"
+                column="lastIpHash"
+                label="Shared IP"
                 onSortChange={sortChange}
                 sort={sort}
               />
@@ -133,7 +133,7 @@ export default function AdminUserResultsTable({
                 created,
                 email,
                 emailTemporary,
-                lastIpAddress,
+                lastIpHash,
                 username,
               } = user;
               const showProfileLink =
@@ -197,12 +197,12 @@ export default function AdminUserResultsTable({
                     </time>
                   </td>
                   <td>
-                    {lastIpAddress && (
+                    {lastIpHash && (
                       <a
-                        href={`/admin/user?ip=${lastIpAddress}`}
+                        href={`/admin/user?ipHash=${lastIpHash}`}
                         target="_self"
                       >
-                        {lastIpAddress}
+                        Find accounts using the same IP
                       </a>
                     )}
                   </td>

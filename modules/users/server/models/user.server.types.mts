@@ -58,7 +58,7 @@ export interface UserServerRecord {
   additionalProvidersData?: UserProviderData;
   roles: string[];
   seen?: Date;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   updated?: Date;
   created?: Date;
   avatarSource?: 'none' | 'gravatar' | 'local' | 'facebook';

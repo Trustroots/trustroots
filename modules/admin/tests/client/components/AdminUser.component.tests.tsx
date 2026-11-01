@@ -282,7 +282,8 @@ describe('<AdminUser />', () => {
             displayName: 'Alice Example',
             email: 'alice@example.org',
             emailTemporary: 'alice-new@example.org',
-            lastIpAddress: '203.0.113.10',
+            lastIpHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
             roles: ['user'],
             username: 'alice',
           },
@@ -331,14 +332,19 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByRole('link', { name: 'Public profile' }),
     ).toHaveAttribute('href', '/profile/alice');
-    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
+    expect(
+      screen.getAllByRole('link', {
+        name: 'Find accounts using the same IP',
+      })[0],
+    ).toHaveAttribute(
       'href',
-      '/admin/user?ip=203.0.113.10',
+      '/admin/user?ipHash=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     );
-    expect(screen.getByRole('link', { name: '203.0.113.10' })).toHaveAttribute(
-      'target',
-      '_self',
-    );
+    expect(
+      screen.getAllByRole('link', {
+        name: 'Find accounts using the same IP',
+      })[0],
+    ).toHaveAttribute('target', '_self');
     expect(
       screen.getByRole('row', { name: /Email alice@example.org/ }),
     ).toBeInTheDocument();
@@ -534,16 +540,21 @@ describe('<AdminUser />', () => {
   });
 
   it('lists members with the selected current IP address from the URL', async () => {
-    window.history.pushState({}, '', '/admin/user?ip=203.0.113.10');
+    window.history.pushState(
+      {},
+      '',
+      '/admin/user?ipHash=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    );
     const matchingUser = {
       _id: userId,
       created: '2026-01-01T00:00:00.000Z',
       displayName: 'Alice Example',
       email: 'alice@example.org',
-      lastIpAddress: '203.0.113.10',
+      lastIpHash:
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       username: 'alice',
     };
-    mockedUsersApi.listUsersByLastIpAddress
+    mockedUsersApi.listUsersByLastIpHash
       .mockResolvedValueOnce(
         makeMemberList([matchingUser], {
           pagination: {
@@ -566,7 +577,7 @@ describe('<AdminUser />', () => {
       )
       .mockResolvedValueOnce(
         makeMemberList([matchingUser], {
-          sort: { column: 'lastIpAddress', direction: 'ascending' },
+          sort: { column: 'lastIpHash', direction: 'ascending' },
         }),
       );
 
@@ -575,8 +586,8 @@ describe('<AdminUser />', () => {
     expect(
       await screen.findByRole('link', { name: 'alice (Alice Example)' }),
     ).toBeInTheDocument();
-    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenCalledWith(
-      '203.0.113.10',
+    expect(mockedUsersApi.listUsersByLastIpHash).toHaveBeenCalledWith(
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       {
         page: 1,
         sort: { column: 'username', direction: 'ascending' },
@@ -587,29 +598,29 @@ describe('<AdminUser />', () => {
     expect(
       await screen.findByText('151 user(s). Page 2 of 2.'),
     ).toBeInTheDocument();
-    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(2);
-    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
+    expect(mockedUsersApi.listUsersByLastIpHash).toHaveBeenCalledTimes(2);
+    expect(mockedUsersApi.listUsersByLastIpHash).toHaveBeenNthCalledWith(
       2,
-      '203.0.113.10',
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       {
         page: 2,
         sort: { column: 'username', direction: 'ascending' },
       },
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Last IP' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Shared IP' }));
     await waitFor(() =>
-      expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenCalledTimes(3),
+      expect(mockedUsersApi.listUsersByLastIpHash).toHaveBeenCalledTimes(3),
     );
     expect(
-      await screen.findByRole('button', { name: 'Last IP ▲' }),
+      await screen.findByRole('button', { name: 'Shared IP ▲' }),
     ).toBeInTheDocument();
-    expect(mockedUsersApi.listUsersByLastIpAddress).toHaveBeenNthCalledWith(
+    expect(mockedUsersApi.listUsersByLastIpHash).toHaveBeenNthCalledWith(
       3,
-      '203.0.113.10',
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
       {
         page: 1,
-        sort: { column: 'lastIpAddress', direction: 'ascending' },
+        sort: { column: 'lastIpHash', direction: 'ascending' },
       },
     );
   });
