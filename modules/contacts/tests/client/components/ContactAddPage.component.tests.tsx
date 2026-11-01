@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import '@/config/client/i18n';
 import ContactAddPage from '@/modules/contacts/client/components/ContactAddPage.component';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
 import type TrEditor from '@/modules/core/client/components/TrEditor';
 import * as usersApi from '@/modules/users/client/api/users.api';
@@ -19,13 +18,12 @@ type ExistingContact = Awaited<ReturnType<typeof contactsApi.getByUserId>>;
 const fetchMiniMock = jest.mocked(usersApi.fetchMini);
 const getByUserIdMock = jest.mocked(contactsApi.getByUserId);
 const createContactMock = jest.mocked(contactsApi.create);
-const routeParamsMock = jest.mocked(getCurrentRouteParams);
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('@/modules/contacts/client/api/contacts.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  getCurrentRouteParams: jest.fn(() => ({ userId: 'friend-1' })),
-}));
 jest.mock('@/modules/users/client/components/Avatar.component', () => {
   const React = jest.requireActual<typeof import('react')>('react');
 
@@ -82,7 +80,7 @@ function renderContactAddPage(pageUser: PageUser = user) {
 describe('ContactAddPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    routeParamsMock.mockReturnValue({ userId: 'friend-1' });
+    window.history.pushState({}, '', '/contact-add/friend-1');
     fetchMiniMock.mockResolvedValue(friend);
     getByUserIdMock.mockResolvedValue(null);
   });
@@ -127,7 +125,7 @@ describe('ContactAddPage', () => {
   });
 
   it('reports when the user tries to connect with themselves', async () => {
-    routeParamsMock.mockReturnValue({ userId: user._id });
+    window.history.pushState({}, '', `/contact-add/${user._id}`);
 
     renderContactAddPage();
 

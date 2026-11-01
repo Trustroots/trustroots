@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
+import { useSearch } from '@tanstack/react-router';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { readApiError } from '../utils/api-error';
 
 export default function ForgotPasswordPage() {
   const usernameInput = useDesktopAutofocus<HTMLInputElement>();
-  const { userhandle } = getCurrentRouteParams();
+  const { userhandle } = useSearch({ strict: false });
   const [credentials, setCredentials] = useState({
     username: userhandle || '',
   });

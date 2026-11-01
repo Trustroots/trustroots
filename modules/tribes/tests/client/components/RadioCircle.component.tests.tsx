@@ -25,6 +25,9 @@ import {
 } from '@/modules/tribes/client/services/radio.client.service';
 import type { UserProfile } from '@/modules/users/client/types';
 
+jest.mock('@tanstack/react-router', () =>
+  jest.requireActual('@/testutils/client/router-location.testutil'),
+);
 jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
   const original = jest.requireActual(
     '@/modules/tribes/client/services/radio.client.service',

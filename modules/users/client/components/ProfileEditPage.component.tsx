@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
+import { useLocation } from '@tanstack/react-router';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 
-import { useCurrentPath } from '@/modules/core/client/react-app/useCurrentPath';
 import {
   getProfileEditTab,
   getProfileEditTabPath,
@@ -94,7 +94,7 @@ export default function ProfileEditPage({
   user: UserProfile;
   children: React.ReactNode;
 }) {
-  const currentPath = useCurrentPath();
+  const currentPath = useLocation({ select: location => location.pathname });
   const activeTab = useMemo(
     () => getProfileEditTab(currentPath),
     [currentPath],

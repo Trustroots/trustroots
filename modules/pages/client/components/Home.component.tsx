@@ -1,12 +1,12 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
+import { useSearch } from '@tanstack/react-router';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
 
 // Internal dependencies
 import { getCircleBackgroundStyle } from '@/modules/tribes/client/utils';
-import { getCurrentRouteParams } from '@/modules/core/client/services/client-runtime';
 import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import Board from './PageBoard';
@@ -93,16 +93,10 @@ interface HomeProps {
   build?: Build | null;
   isNativeMobileApp?: boolean;
   photoCredits?: Record<string, PhotoCredit>;
-  routeParams?: Record<string, string>;
   user?: PageUser | null;
 }
 
-export default function Home({
-  user,
-  photoCredits,
-  build,
-  routeParams = getCurrentRouteParams(),
-}: HomeProps) {
+export default function Home({ user, photoCredits, build }: HomeProps) {
   const { t: rawT } = useTranslation('pages');
   const t = rawT as unknown as PageTranslator;
   const TypedTrans = Trans as unknown as React.ComponentType<{
@@ -112,7 +106,9 @@ export default function Home({
     values: { memberCount: string };
   }>;
   // `tribe` route supported for legacy reasons, deprecated Feb 2021
-  const { circle: circleRouteParam, tribe: tribeRouteParam } = routeParams;
+  const { circle: circleRouteParam, tribe: tribeRouteParam } = useSearch({
+    strict: false,
+  });
   const circleRoute = circleRouteParam || tribeRouteParam;
 
   // @TODO change this to be based on UI language rather than browser locale

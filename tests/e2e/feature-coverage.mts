@@ -82,7 +82,7 @@ const ROLE_DEFINITIONS = {
 };
 
 const source = {
-  adminClient: 'layers/shell/client/routes.tsx',
+  adminClient: 'layers/shell/client/routeTree.tsx',
   adminServer: 'modules/admin/server/routes/admin.server.routes.mjs',
   contactsClient: 'modules/contacts/client/config/contacts.client.routes.js',
   contactsServer: 'modules/contacts/server/routes/contacts.server.routes.js',
