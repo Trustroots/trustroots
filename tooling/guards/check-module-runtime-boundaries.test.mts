@@ -96,3 +96,64 @@ test('classifies module paths without relying on valid package manifests', t => 
     ].sort(),
   );
 });
+
+test('applies runtime tiers to shared package entry points', t => {
+  const root = makeRepo(t, {
+    'packages/analytics/package.json': manifest('@trustroots/analytics'),
+    'packages/analytics/client/index.ts': [
+      "import type { Events } from '../shared/events';",
+      "import server from '../server/index';",
+    ].join('\n'),
+    'packages/analytics/server/index.ts': [
+      "import type { Events } from '../shared/events';",
+      "import client from '@/packages/analytics/client/index';",
+    ].join('\n'),
+    'packages/analytics/shared/events.ts': 'export type Events = {};',
+    'modules/a/package.json': manifest('@trustroots/a'),
+    'modules/a/client/entry.ts': [
+      "import { useAnalytics } from '@trustroots/analytics/client';",
+      "import server from '@trustroots/analytics/server';",
+    ].join('\n'),
+    'modules/a/server/entry.ts': [
+      "import client from '@trustroots/analytics/client';",
+      "import server from '@trustroots/analytics/server';",
+    ].join('\n'),
+    'modules/a/shared/entry.ts':
+      "import server from '../../../packages/analytics/server/index';",
+  });
+
+  assert.deepEqual(
+    analyze(root).map(({ file, specifier, message }) => [
+      file,
+      specifier,
+      message,
+    ]),
+    [
+      [
+        'modules/a/client/entry.ts',
+        '@trustroots/analytics/server',
+        'Module client source cannot import server source.',
+      ],
+      [
+        'modules/a/server/entry.ts',
+        '@trustroots/analytics/client',
+        'Module server source cannot import client source.',
+      ],
+      [
+        'modules/a/shared/entry.ts',
+        '../../../packages/analytics/server/index',
+        'Module shared source cannot import server source.',
+      ],
+      [
+        'packages/analytics/client/index.ts',
+        '../server/index',
+        'Package client source cannot import server source.',
+      ],
+      [
+        'packages/analytics/server/index.ts',
+        '@/packages/analytics/client/index',
+        'Package server source cannot import client source.',
+      ],
+    ],
+  );
+});

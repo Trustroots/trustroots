@@ -19,6 +19,7 @@ module.exports = {
   collectCoverageFrom: [
     '<rootDir>/modules/*/client/**/*.{js,ts,tsx}',
     '<rootDir>/layers/shell/**/*.{js,ts,tsx}',
+    '<rootDir>/packages/analytics/client/**/*.{ts,tsx}',
     '<rootDir>/packages/ui/**/*.{js,ts,tsx}',
     '!<rootDir>/modules/core/client/types.d.ts',
     '!<rootDir>/modules/*/tests/**',

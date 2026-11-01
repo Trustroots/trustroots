@@ -9,7 +9,7 @@ import {
   generateClientUser,
   generateThreads,
 } from '@/testutils/client/data.client.testutil';
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
@@ -32,6 +32,8 @@ const otherMember: messagesApi.MessageUser = generateClientUser({
 const threads: messagesApi.MessageThreadSummary[] = generateThreads(10);
 const moreThreads: messagesApi.MessageThreadSummary[] = generateThreads(7);
 
+const analytics = fakeAnalytics();
+
 describe('<Inbox>', () => {
   it('filters a conversation with an absent participant by its preview', async () => {
     const missingParticipant: messagesApi.MessageThreadSummary = {
@@ -43,7 +45,9 @@ describe('<Inbox>', () => {
       message: { excerpt: 'A fictional matching preview' },
     };
     api.fetchThreads.mockResolvedValue({ threads: [missingParticipant] });
-    const { findByRole, getByRole } = render(<Inbox user={me} />);
+    const { findByRole, getByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     await findByRole('listitem');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -59,7 +63,9 @@ describe('<Inbox>', () => {
   it('asks private users to activate their profile before loading threads', () => {
     const privateUser = generateClientUser({ public: false });
 
-    const { getByRole } = render(<Inbox user={privateUser} />);
+    const { getByRole } = render(<Inbox user={privateUser} />, {
+      wrapper: analytics.wrapper,
+    });
 
     expect(getByRole('alertdialog')).toHaveTextContent(
       'Sorry, you need to first activate your profile',
@@ -69,7 +75,9 @@ describe('<Inbox>', () => {
 
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole } = render(<Inbox user={me} />);
+    const { findByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     expect(await findByRole('alert')).toHaveTextContent(
       'No conversations yet.',
     );
@@ -80,7 +88,9 @@ describe('<Inbox>', () => {
     window.history.replaceState(null, '', '/messages?filter=unread');
     api.fetchThreads.mockResolvedValue({ threads: [] });
 
-    const { findByRole, getByRole } = render(<Inbox user={me} />);
+    const { findByRole, getByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
 
     expect(await findByRole('alert')).toHaveTextContent(
       'No unread conversations.',
@@ -101,7 +111,9 @@ describe('<Inbox>', () => {
           : { threads, nextParams: { page: 2 } },
       ),
     );
-    const { findByRole } = render(<Inbox user={me} />);
+    const { findByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
 
     fireEvent.click(await findByRole('button', { name: 'More messages' }));
 
@@ -115,7 +127,9 @@ describe('<Inbox>', () => {
 
   it('shows a list of threads with excerpts', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
-    const { findAllByRole } = render(<Inbox user={me} />);
+    const { findAllByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     const items = await findAllByRole('listitem');
     expect(items.length).toBe(threads.length);
     threads.forEach((thread, i) => {
@@ -126,7 +140,9 @@ describe('<Inbox>', () => {
   it('shows that I have replied if the last message is from me', async () => {
     const threads = generateThreads(1, { userFrom: me, userTo: otherMember });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me} />);
+    const { container, findByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     await findByRole('listitem');
     const icon = container.querySelector('.icon-reply');
     expect(icon).toBeInTheDocument();
@@ -136,7 +152,9 @@ describe('<Inbox>', () => {
   it('does not show that I have replied if the last message is from them', async () => {
     const threads = generateThreads(1, { userFrom: otherMember, userTo: me });
     api.fetchThreads.mockResolvedValue({ threads });
-    const { container, findByRole } = render(<Inbox user={me} />);
+    const { container, findByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     await findByRole('listitem');
     const icon = container.querySelector('.icon-reply');
     expect(icon).not.toBeInTheDocument();
@@ -144,7 +162,9 @@ describe('<Inbox>', () => {
 
   it('shows a read more button if there are more results', async () => {
     api.fetchThreads.mockResolvedValue({ threads, nextParams: { foo: 'bar' } });
-    const { findByRole } = render(<Inbox user={me} />);
+    const { findByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     expect(await findByRole('button')).toHaveTextContent('More messages');
   });
 
@@ -159,7 +179,9 @@ describe('<Inbox>', () => {
           : { threads, nextParams: { page: 2 } },
       ),
     );
-    const { findByText, queryAllByRole } = render(<Inbox user={me} />);
+    const { findByText, queryAllByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     const more = await findByText('More messages');
 
     // Not sure why I had to wrap this in act()
@@ -179,9 +201,8 @@ describe('<Inbox>', () => {
     const items = queryAllByRole('listitem');
     expect(items.length).toBe(threads.length + olderThreads.length);
 
-    expect(trackEvent).toHaveBeenCalledWith('inbox-pagination', {
-      category: 'messages.inbox',
-      label: 'Inbox page 2',
+    expect(analytics.track).toHaveBeenCalledWith('inbox-load-more', {
+      page: 2,
     });
   });
 
@@ -204,6 +225,7 @@ describe('<Inbox>', () => {
 
     const { findByRole, getByRole, getByText, queryByText } = render(
       <Inbox user={me} />,
+      { wrapper: analytics.wrapper },
     );
     await findByRole('listitem');
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -225,7 +247,9 @@ describe('<Inbox>', () => {
 
   it('shows when no conversations match the filter', async () => {
     api.fetchThreads.mockResolvedValue({ threads });
-    const { findAllByRole, getByRole } = render(<Inbox user={me} />);
+    const { findAllByRole, getByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     await findAllByRole('listitem');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -242,7 +266,9 @@ describe('<Inbox>', () => {
     });
     sentThreads[0].userTo.displayName = 'Matching Recipient';
     api.fetchThreads.mockResolvedValue({ threads: sentThreads });
-    const { findByText, getByRole } = render(<Inbox user={me} />);
+    const { findByText, getByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     await findByText('Matching Recipient');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -264,7 +290,9 @@ describe('<Inbox>', () => {
           : { threads: firstPage, nextParams: { page: 2 } },
       ),
     );
-    const { findByRole, findByText, getByRole } = render(<Inbox user={me} />);
+    const { findByRole, findByText, getByRole } = render(<Inbox user={me} />, {
+      wrapper: analytics.wrapper,
+    });
     await findByRole('listitem');
 
     fireEvent.change(getByRole('searchbox', { name: 'Filter conversations' }), {
@@ -291,6 +319,7 @@ describe('<Inbox>', () => {
     );
     const { findAllByRole, findByRole, getByRole } = render(
       <Inbox user={me} />,
+      { wrapper: analytics.wrapper },
     );
     await findAllByRole('listitem');
 
@@ -314,6 +343,7 @@ describe('<Inbox>', () => {
     );
     const { findAllByRole, findByText, getByRole } = render(
       <Inbox user={me} />,
+      { wrapper: analytics.wrapper },
     );
     await findAllByRole('listitem');
 

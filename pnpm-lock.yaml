@@ -39,6 +39,9 @@ importers:
       '@tanstack/react-router':
         specifier: 1.170.46
         version: 1.170.46(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
+      '@trustroots/analytics':
+        specifier: workspace:*
+        version: link:packages/analytics
       '@trustroots/logger':
         specifier: workspace:*
         version: link:packages/logger
@@ -699,6 +702,15 @@ importers:
       '@trustroots/tribes':
         specifier: workspace:*
         version: link:../tribes
+
+  packages/analytics:
+    dependencies:
+      '@umami/node':
+        specifier: 0.4.0
+        version: 0.4.0
+      react:
+        specifier: 19.3.1
+        version: 19.3.1
 
   packages/logger:
     dependencies:
@@ -2949,6 +2961,9 @@ packages:
   '@typescript-eslint/visitor-keys@8.72.0':
     resolution: {integrity: sha512-E2mroviasaWecDzTGiGMtuEguuLVOeRggnrIn93CJuxYJzQBHbyymlT08aVQydbBal5538o+JkBKXh2sRuCyIA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+
+  '@umami/node@0.4.0':
+    resolution: {integrity: sha512-pyphprbiF7KiDSc+SWZ4/rVM8B5vU27zIiFfEPj2lEqczpI4xAKSp+dM3tlzyRAWJL32fcbCfAaLGhJZQV13Rg==}
 
   '@ungap/structured-clone@1.4.0':
     resolution: {integrity: sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ==}
@@ -9591,6 +9606,8 @@ snapshots:
     dependencies:
       '@typescript-eslint/types': 8.72.0
       eslint-visitor-keys: 5.0.1
+
+  '@umami/node@0.4.0': {}
 
   '@ungap/structured-clone@1.4.0': {}
 
