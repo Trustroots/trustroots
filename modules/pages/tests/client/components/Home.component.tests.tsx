@@ -141,6 +141,8 @@ describe('<Home />', () => {
   it('renders fetched circles', async () => {
     mockReadCircles.mockResolvedValueOnce([
       circle('circle-1', 'hitchhikers', 'Hitchhikers'),
+      circle('circle-2', 'cyclists', 'Cyclists'),
+      circle('circle-3', 'musicians', 'Musicians'),
     ]);
     window.history.pushState({}, '', '/');
 

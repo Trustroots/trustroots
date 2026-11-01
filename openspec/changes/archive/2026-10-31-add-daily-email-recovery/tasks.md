@@ -1,0 +1,5 @@
+- [x] Implement paginated daily provider messages and account matching.
+- [x] Implement bounded daily application recovery candidates and idempotent audited queueing.
+- [x] Add selection, select-all, explicit review and per-item results.
+- [x] Add server, client and browser coverage and run required checks.
+- [x] Update living specs and archive proposal.

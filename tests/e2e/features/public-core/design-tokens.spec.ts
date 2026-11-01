@@ -1,5 +1,8 @@
 /* global getComputedStyle */
 import type { Page } from '@playwright/test';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Button } from '@trustroots/ui/Button';
 import {
   annotateFeature,
   expect,
@@ -125,26 +128,79 @@ test('prefixed utilities coexist with Bootstrap in LTR and RTL', async ({
   await expectUtilityAndBootstrap(page);
 });
 
+async function expectButtonUtilitiesWin(page: Page) {
+  // Bootstrap's reboot sets `button { border-radius: 0 }` and the global Less
+  // sets `button { cursor: pointer }`; the owned button's utilities must win.
+  const markup = renderToStaticMarkup(
+    createElement(Button, { disabled: true }, 'Cascade probe'),
+  );
+  const styles = await page.evaluate(html => {
+    const host = document.createElement('div');
+    host.insertAdjacentHTML('beforeend', html);
+    document.body.append(host);
+    const style = getComputedStyle(host.querySelector('button')!);
+    const result = {
+      borderRadius: style.borderRadius,
+      cursor: style.cursor,
+      opacity: style.opacity,
+    };
+    host.remove();
+    return result;
+  }, markup);
+  expect(styles).toEqual({
+    borderRadius: '2px',
+    cursor: 'not-allowed',
+    opacity: '0.65',
+  });
+}
+
+test('owned button utilities override legacy button rules in LTR and RTL', async ({
+  page,
+  context,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.home', ['Homepage loads for visitors.']);
+  expectPresent(baseURL);
+  await page.goto('/');
+  await expectDesignTokens(page);
+  await expectButtonUtilitiesWin(page);
+
+  await context.addCookies([{ name: 'i18n', value: 'ar', url: baseURL }]);
+  await page.goto('/');
+  await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+  await expect
+    .poll(() =>
+      page
+        .locator('#rtl-style')
+        .evaluate(link => Boolean((link as HTMLLinkElement).sheet)),
+    )
+    .toBe(true);
+  await expectButtonUtilitiesWin(page);
+});
+
 test('owned buttons show a contrasting keyboard focus ring on white', async ({
   page,
 }, testInfo) => {
   annotateFeature(testInfo, 'public.home', ['Homepage loads for visitors.']);
   await page.goto('/');
   await expectDesignTokens(page);
-  await page.evaluate(() => {
+  // Render the real component so the test follows its Tailwind classes.
+  const buttons = (['primary', 'default'] as const)
+    .map(variant =>
+      renderToStaticMarkup(
+        createElement(Button, { variant }, `Focus ${variant}`),
+      ),
+    )
+    .join('');
+  await page.evaluate(markup => {
     const host = document.createElement('div');
     host.id = 'button-focus-probe';
     host.tabIndex = -1;
     host.style.backgroundColor = '#fff';
-    for (const variant of ['primary', 'default']) {
-      const button = document.createElement('button');
-      button.className = `tr-button tr-button--${variant}`;
-      button.textContent = `Focus ${variant}`;
-      host.append(button);
-    }
+    host.insertAdjacentHTML('beforeend', markup);
     document.body.prepend(host);
     host.focus();
-  });
+  }, buttons);
   for (const variant of ['primary', 'default']) {
     await page.keyboard.press('Tab');
     const button = page.getByRole('button', {

@@ -56,6 +56,7 @@ export default function AdminHeader() {
       pages: [
         { path: 'acquisition-stories', label: 'Acquisition stories' },
         { path: 'newsletter', label: 'Newsletter' },
+        { path: 'sparkpost', label: 'SparkPost' },
       ],
     },
     {
