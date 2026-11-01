@@ -24,7 +24,7 @@ describe('<Privacy />', () => {
     expect(within(services).getAllByRole('row')).toHaveLength(6);
     for (const provider of [
       'Hetzner, Germany',
-      'SparkPost',
+      'Sparkpost EU',
       'Gravatar',
       'Umami — self-hosted by Trustroots',
       'External Nostr relays',
@@ -34,10 +34,11 @@ describe('<Privacy />', () => {
       ).toBeInTheDocument();
     }
     expect(
-      screen.getByText(
-        'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
-      ),
+      within(services).getByText('Optional; very limited use'),
     ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/current operational use still needs confirmation/),
+    ).not.toBeInTheDocument();
     expect(
       screen.getByRole('link', { name: 'revision history below' }),
     ).toHaveAttribute('href', '#privacy-revision-history');
@@ -143,10 +144,9 @@ describe('<Privacy />', () => {
     expect(
       screen.queryByRole('heading', { name: 'Research' }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'SparkPost' })).toHaveAttribute(
-      'href',
-      'https://www.sparkpost.com/',
-    );
+    expect(
+      screen.queryByRole('link', { name: /Sparkpost/i }),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText(/Google Firebase/)).not.toBeInTheDocument();
     expect(
       screen.getByText(

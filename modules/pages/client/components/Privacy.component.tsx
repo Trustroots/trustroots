@@ -36,9 +36,9 @@ export default function Privacy() {
               itemProp="datePublished"
               {...{ dateTime: '2014-12-23' }}
             >
-              <time itemProp="dateModified" dateTime="2026-10-31">
+              <time itemProp="dateModified" dateTime="2026-11-01">
                 {t('Last updated on {{date, LL}}', {
-                  date: new Date(2026, 9, 31),
+                  date: new Date(2026, 10, 1),
                 })}
               </time>
             </p>
@@ -164,16 +164,14 @@ export default function Privacy() {
                       <td>{t('Core infrastructure')}</td>
                     </tr>
                     <tr>
-                      <th scope="row">
-                        <a href="https://www.sparkpost.com/">SparkPost</a>
-                      </th>
+                      <th scope="row">{t('Sparkpost EU')}</th>
                       <td>{t('Delivering emails')}</td>
                       <td>{t('When Trustroots sends email')}</td>
                     </tr>
                     <tr>
                       <th scope="row">{t('Gravatar')}</th>
                       <td>{t('Profile images')}</td>
-                      <td>{t('Where used for a member’s image')}</td>
+                      <td>{t('Optional; very limited use')}</td>
                     </tr>
                     <tr>
                       <th scope="row">
@@ -198,11 +196,6 @@ export default function Privacy() {
                   </tbody>
                 </table>
               </div>
-              <p>
-                {t(
-                  'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
-                )}
-              </p>
               <p>{t('Facebook is no longer used for profile images.')}</p>
             </div>
             <hr />

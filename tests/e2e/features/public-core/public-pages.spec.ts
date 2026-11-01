@@ -405,7 +405,10 @@ test.describe('public pages and unauthenticated flows', () => {
           services.getByText('Hetzner, Germany', { exact: true }),
         ).toBeVisible();
         await expect(
-          services.getByRole('link', { name: 'SparkPost', exact: true }),
+          services.getByRole('rowheader', {
+            name: 'Sparkpost EU',
+            exact: true,
+          }),
         ).toBeVisible();
         await expect(
           services.getByText('Gravatar', { exact: true }),
@@ -419,10 +422,7 @@ test.describe('public pages and unauthenticated flows', () => {
           services.getByText('External Nostr relays', { exact: true }),
         ).toBeVisible();
         await expect(
-          page.getByText(
-            'SparkPost and Gravatar remain listed in this policy; their current operational use still needs confirmation.',
-            { exact: true },
-          ),
+          services.getByText('Optional; very limited use', { exact: true }),
         ).toBeVisible();
         await expect(
           page.getByText(
