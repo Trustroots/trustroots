@@ -17,7 +17,8 @@ the client uses.
 #### Scenario: Unread messages
 
 - **WHEN** a member has unread messages
-- **THEN** the header's Messages link shows the count in an owned Badge
+- **THEN** the header's Messages link shows the count in an owned Badge at its
+  end corner, in both reading directions
 
 #### Scenario: Tests identify badges
 
