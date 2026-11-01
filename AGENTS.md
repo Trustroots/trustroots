@@ -36,6 +36,12 @@ Use tables for overviews when they make information easier to compare, with
 coloured status dots where useful. Include text labels so meaning does not
 depend on colour alone.
 
+For date/time range forms, display and accept `yyyy-mm-dd hh:mm` using the
+24-hour clock, with the time zone stated explicitly. Do not rely on native
+`datetime-local` controls when an exact display format is required: browsers
+localise them. For historical diagnostic ranges, clamp future dates to now,
+show the adjusted values, and validate the resulting range before submission.
+
 Use OpenSpec for new functionality, breaking behaviour changes, and material
 architectural changes. Create and validate a proposal in `openspec/changes/`
 before implementation, then archive it and update the relevant living specs in

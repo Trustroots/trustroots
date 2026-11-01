@@ -1,0 +1,34 @@
+/*
+ * Tailwind entry for @trustroots/ui. The web client's Tailwind stylesheet
+ * imports this once, after Tailwind's theme and utilities, so the `tw:` prefix
+ * and cascade layers come from the app.
+ */
+@source './components';
+
+/* Values owned by the app's Less variables, exposed as `--tr-*` tokens. */
+@theme inline {
+  --color-brand-primary: var(--tr-brand-primary);
+  --color-brand-secondary: var(--tr-brand-secondary);
+  --color-notification: var(--tr-notification-badge-bg);
+  --color-text: var(--tr-text-color);
+  --radius-base: var(--tr-border-radius-base);
+  --spacing-control-x: var(--tr-padding-base-horizontal);
+  --spacing-control-y: var(--tr-padding-base-vertical);
+  --leading-base: var(--tr-line-height-base);
+}
+
+@theme {
+  /* Bootstrap 5.3 warning alert colours. */
+  --color-warning-text: #664d03;
+  --color-warning-bg: #fff3cd;
+  --color-warning-border: #ffe69c;
+
+  /* Matches Bootstrap's .spinner-border timing. */
+  --animate-spinner: spinner-rotate 0.75s linear infinite;
+
+  @keyframes spinner-rotate {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}

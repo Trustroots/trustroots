@@ -336,7 +336,9 @@ SHALL preserve the current appearance and be included in LTR and RTL stylesheets
 
 The web client SHALL provide prefixed Tailwind utilities alongside existing
 Bootstrap styles without applying Tailwind's global Preflight reset. Brand
-utilities SHALL use the existing shared web design tokens.
+utilities SHALL use the existing shared web design tokens. A utility applied to
+an element SHALL take precedence over global Bootstrap and Less element rules
+for the same property, without `!important`.
 
 #### Scenario: Existing pages retain their styling
 
@@ -348,11 +350,19 @@ utilities SHALL use the existing shared web design tokens.
 - **WHEN** a web component uses a prefixed brand utility in LTR or RTL
 - **THEN** the utility resolves to the corresponding shared design token
 
+#### Scenario: Utilities override legacy element rules
+
+- **WHEN** a button carries a prefixed border radius or cursor utility
+- **THEN** the utility value applies instead of Bootstrap's or the global Less
+  `button` rule
+
 ### Requirement: Owned UI primitives
 
 The web client SHALL provide reusable Button, Alert, Badge and Spinner
 primitives independent of application configuration and translations. Their
-styles SHALL use shared design values and preserve existing presentation.
+styles SHALL be prefixed Tailwind utilities using theme tokens declared by the
+UI package, SHALL use shared design values and SHALL preserve existing
+presentation.
 
 #### Scenario: Language loading fails
 

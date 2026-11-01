@@ -2,10 +2,17 @@
 
 Import directly from `@trustroots/ui/Button`, `Alert`, `Badge` or `Spinner`.
 They accept caller-supplied text and do not depend on translations or feature
-modules. Styles use the web client's `--tr-*` tokens and are included by the
-components. `Button` is non-submitting by default; set `type="submit"` when
+modules. `Button` is non-submitting by default; set `type="submit"` when
 needed. `Alert` currently provides the warning appearance and alert semantics;
 `Spinner` requires a translated `label` supplied by its caller.
+
+Components live in `src/components/` and are styled with `tw:`-prefixed
+Tailwind utilities. `src/globals.css` (exported as `@trustroots/ui/globals.css`)
+is the package's Tailwind entry: it declares the `@theme` tokens the components
+use and the `@source` that lets Tailwind find their classes. The web client's
+Tailwind stylesheet imports it once; components do not import CSS themselves.
+Tokens refer to the app's `--tr-*` custom properties where one exists, so values
+stay owned by the Less variables.
 
 These are initial primitives, not complete replacements for Bootstrap. Add
 variants only when a real consumer needs them, keeping keyboard access and
