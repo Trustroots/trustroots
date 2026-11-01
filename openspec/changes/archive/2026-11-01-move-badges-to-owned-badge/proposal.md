@@ -19,9 +19,7 @@ copies one of these and adds more context-dependent Less.
 
 ## Impact
 
-Badges keep their appearance in LTR, checked pixel by pixel against main.
-In RTL, the unread counter no longer stretches across the Messages link and
-the profile tab counts no longer get a margin on both sides, because the
-flipped stylesheet no longer adds an opposite-side offset. The Nostroots badge
-loses an 8px indent so it lines up with the rest of the profile sidebar. No
-API or database change is required.
+Badges keep their appearance in LTR and RTL, checked pixel by pixel against
+main on every page that shows one. The Nostroots badge loses an 8px indent so
+it lines up with the rest of the profile sidebar. No API or database change is
+required.
