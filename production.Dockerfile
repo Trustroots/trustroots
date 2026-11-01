@@ -1,6 +1,6 @@
-FROM node:24.22.1-bookworm-slim AS node-runtime
+FROM node:24.22.2-bookworm-slim AS node-runtime
 
-FROM phusion/passenger-nodejs:3.1.10 AS builder
+FROM phusion/passenger-nodejs:3.2.2 AS builder
 COPY --from=node-runtime /usr/local/bin/node /usr/bin/node
 RUN ln -s /usr/bin/node /usr/local/bin/node
 RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1)) process.exit(1)"
@@ -65,7 +65,7 @@ RUN CI=true pnpm prune --prod --ignore-scripts
 # Create the production container
 # ------------------------------------------------------------------------------
 
-FROM phusion/passenger-nodejs:3.1.10
+FROM phusion/passenger-nodejs:3.2.2
 COPY --from=node-runtime /usr/local/bin/node /usr/bin/node
 RUN ln -s /usr/bin/node /usr/local/bin/node
 RUN node -e "const [major, minor, patch] = process.versions.node.split('.').map(Number); if (major !== 24 || minor < 22 || (minor === 22 && patch < 1)) process.exit(1)"

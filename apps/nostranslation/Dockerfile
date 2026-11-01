@@ -1,11 +1,11 @@
-FROM node:24.22.1-bookworm-slim AS dependencies
+FROM node:24.22.2-bookworm-slim AS dependencies
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
 RUN pnpm install --frozen-lockfile --ignore-scripts --prod
 
-FROM node:24.22.1-bookworm-slim
+FROM node:24.22.2-bookworm-slim
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=dependencies /app/node_modules ./node_modules
