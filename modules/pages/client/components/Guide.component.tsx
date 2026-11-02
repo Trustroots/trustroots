@@ -1,4 +1,5 @@
 import type { PageTranslator } from '../types';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
@@ -79,12 +80,12 @@ export default function Guide() {
             <br />
 
             <p>
-              <a href="/profile/edit" className="btn btn-lg btn-default">
+              <Button size="lg" render={<a href="/profile/edit" />}>
                 {t('Fill your profile')}
-              </a>
-              <a href="/search" className="btn btn-lg btn-default">
+              </Button>
+              <Button size="lg" render={<a href="/search" />}>
                 {t('Find members')}
-              </a>
+              </Button>
             </p>
 
             <h3>{t('More information')}</h3>

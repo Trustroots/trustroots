@@ -36,34 +36,6 @@ a {
   }
 }
 
-.btn-default {
-  --bs-btn-color: @btn-default-color;
-  --bs-btn-bg: @btn-default-bg;
-  --bs-btn-border-color: @btn-default-border;
-  --bs-btn-hover-color: @btn-default-color;
-  --bs-btn-hover-bg: darken(@btn-default-bg, 5%);
-  --bs-btn-hover-border-color: @btn-default-border;
-  --bs-btn-active-color: @btn-default-color;
-  --bs-btn-active-bg: darken(@btn-default-bg, 8%);
-  --bs-btn-active-border-color: @btn-default-border;
-  color: @btn-default-color;
-  background: @btn-default-bg;
-  border: 1px solid @btn-default-border;
-}
-
-.btn-primary {
-  --bs-btn-color: #fff;
-  --bs-btn-bg: @brand-primary;
-  --bs-btn-border-color: @brand-primary;
-  --bs-btn-hover-bg: darken(@brand-primary, 6%);
-  --bs-btn-hover-border-color: darken(@brand-primary, 6%);
-  --bs-btn-active-bg: darken(@brand-primary, 9%);
-  --bs-btn-active-border-color: darken(@brand-primary, 9%);
-  --bs-btn-disabled-bg: @brand-primary;
-  --bs-btn-disabled-border-color: @brand-primary;
-  --bs-btn-focus-shadow-rgb: ~'@{brand-primary-rgb}';
-}
-
 .form-check-input:checked {
   background-color: @brand-primary;
   border-color: @brand-primary;
@@ -72,17 +44,6 @@ a {
 .form-check-input:focus {
   border-color: lighten(@brand-primary, 30%);
   box-shadow: 0 0 0 0.25rem fade(@brand-primary, 25%);
-}
-
-.btn-link {
-  --bs-btn-color: @link-color;
-  --bs-btn-hover-color: @link-hover-color;
-}
-
-.btn-xs {
-  padding: @padding-xs-vertical @padding-xs-horizontal;
-  font-size: @font-size-small;
-  border-radius: @border-radius-small;
 }
 
 .text-right {
@@ -115,18 +76,6 @@ a {
   padding: 10px 16px;
   font-size: @font-size-large;
   border-radius: @border-radius-large;
-}
-.btn-block {
-  display: block;
-  width: 100%;
-}
-.btn-group-justified {
-  display: flex;
-  width: 100%;
-  > .btn,
-  > .btn-group {
-    flex: 1;
-  }
 }
 .form-control-static {
   padding-top: 7px;

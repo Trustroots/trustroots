@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
+import { Button } from '@trustroots/ui/Button';
 
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
@@ -87,13 +88,14 @@ export default function ConfirmEmailPage() {
                       ? 'Confirm your email and make your profile visible to others.'
                       : 'Confirm your email.'}
                   </p>
-                  <button
+                  <Button
+                    intent="primary"
+                    size="lg"
                     type="submit"
-                    className="btn btn-lg btn-primary"
                     disabled={isLoading || error}
                   >
                     Confirm
-                  </button>
+                  </Button>
                 </div>
               )}
               {error && (

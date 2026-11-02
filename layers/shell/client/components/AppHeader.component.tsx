@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { useLocation } from '@tanstack/react-router';
+import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { Navbar } from 'react-bootstrap';
 
@@ -47,18 +48,19 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
 
   return (
     <Navbar className="hidden-print" id="tr-header" fixed="top" ref={headerRef}>
-      <a
-        className="btn btn-primary sr-only sr-only-focusable sr-helper"
-        href="#tr-main"
+      <Button
+        intent="primary"
         onClick={event => {
           // The document base URL points at '/', so native hash navigation
           // would leave the current page. Move keyboard focus directly.
           event.preventDefault();
           document.getElementById('tr-main')?.focus();
         }}
+        className="sr-only sr-only-focusable sr-helper"
+        render={<a href="#tr-main" />}
       >
         {t('Skip to main content')}
-      </a>
+      </Button>
       {user?.username ? (
         <NavigationLoggedIn user={user} currentPath={currentPath} />
       ) : (

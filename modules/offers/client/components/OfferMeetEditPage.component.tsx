@@ -1,6 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { Button } from '@trustroots/ui/Button';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -150,8 +151,11 @@ export default function OfferMeetEditPage() {
     <section className="offers-edit">
       <form autoComplete="off" noValidate onSubmit={handleSubmit}>
         {!isNewOffer && (
-          <button
-            className="btn btn-lg btn-inverse-primary pull-right"
+          <Button
+            variant="outline"
+            intent="primary"
+            size="lg"
+            className="pull-right"
             disabled={
               isSaving ||
               descriptionLength < MIN_DESCRIPTION ||
@@ -161,16 +165,19 @@ export default function OfferMeetEditPage() {
             type="submit"
           >
             Save and Exit
-          </button>
+          </Button>
         )}
 
-        <a
+        <Button
           aria-label="Cancel adding a meet offer"
-          className="btn btn-lg btn-inverse-primary pull-right hidden-xs"
-          href="/offer/meet"
+          variant="outline"
+          intent="primary"
+          size="lg"
+          className="pull-right hidden-xs"
+          render={<a href="/offer/meet" />}
         >
           Cancel
-        </a>
+        </Button>
 
         <Tabs
           activeKey={activeTab}
@@ -269,36 +276,39 @@ export default function OfferMeetEditPage() {
         <div className="offer-meet-actions text-center">
           <br />
           {activeTab > 0 && (
-            <button
+            <Button
               aria-label="Previous section"
-              className="btn btn-action btn-link"
+              variant="link"
+              size="xl"
               onClick={() => setActiveTab(activeTab - 1)}
               type="button"
             >
               <span className="icon-left"></span>
               Back
-            </button>
+            </Button>
           )}
           {activeTab < 1 && (
-            <button
+            <Button
               aria-label="Next section"
-              className="btn btn-action btn-primary"
+              intent="primary"
+              size="xl"
               disabled={descriptionLength < MIN_DESCRIPTION}
               onClick={() => setActiveTab(activeTab + 1)}
               type="button"
             >
               Next
-            </button>
+            </Button>
           )}
           {activeTab === 1 && (
-            <button
+            <Button
               aria-label="Finish editing and save"
-              className="btn btn-action btn-primary"
+              intent="primary"
+              size="xl"
               disabled={isSaving || !hasValidExpiry || !hasLocation}
               type="submit"
             >
               Finish
-            </button>
+            </Button>
           )}
         </div>
       </form>

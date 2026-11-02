@@ -11,7 +11,7 @@ describe('<OfferStatusButton />', () => {
 
     const link = screen.getByRole('link', { name: 'Can host' });
     expect(link).toHaveAttribute('href', '/offer/host');
-    expect(link).toHaveClass('btn-offer-hosting-yes');
+    expect(link).toHaveAttribute('data-intent', 'success');
   });
 
   it('links other members to a message with the host', () => {
@@ -23,7 +23,7 @@ describe('<OfferStatusButton />', () => {
       name: 'Might be able to host',
     });
     expect(link).toHaveAttribute('href', '/messages/alice');
-    expect(link).toHaveClass('btn-offer-hosting-maybe');
+    expect(link).toHaveAttribute('data-intent', 'warning');
   });
 
   it('shows the cannot-host state when there is no status', () => {
@@ -32,6 +32,6 @@ describe('<OfferStatusButton />', () => {
     const link = screen.getByRole('link', {
       name: 'Cannot host currently',
     });
-    expect(link).toHaveClass('btn-offer-hosting-no');
+    expect(link).toHaveAttribute('data-intent', 'danger');
   });
 });

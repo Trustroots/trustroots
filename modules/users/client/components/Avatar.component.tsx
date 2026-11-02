@@ -1,4 +1,5 @@
 import React from 'react';
+import { Button } from '@trustroots/ui/Button';
 import '@/config/client/i18n';
 import { useTranslation } from 'react-i18next';
 
@@ -70,16 +71,16 @@ export default function Avatar({
           {img}
         </a>
       ) : onClick ? (
-        <button
+        <Button
           type="button"
-          className="btn btn-link"
+          variant="link"
           aria-label={t('Open profile picture of {{name}}', {
             name: user.displayName || user.username,
           })}
           onClick={onClick}
         >
           {img}
-        </button>
+        </Button>
       ) : (
         img
       )}

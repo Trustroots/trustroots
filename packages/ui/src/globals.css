@@ -4,17 +4,23 @@
  * and cascade layers come from the app.
  */
 @source './components';
+@source './lib';
 
 /* Values owned by the app's Less variables, exposed as `--tr-*` tokens. */
 @theme inline {
   --color-brand-primary: var(--tr-brand-primary);
-  --color-brand-secondary: var(--tr-brand-secondary);
-  --color-notification: var(--tr-notification-badge-bg);
+  --color-danger: var(--tr-danger);
   --color-text: var(--tr-text-color);
   --radius-base: var(--tr-border-radius-base);
   --spacing-control-x: var(--tr-padding-base-horizontal);
   --spacing-control-y: var(--tr-padding-base-vertical);
   --leading-base: var(--tr-line-height-base);
+  --font-base: var(--tr-font-family-base);
+
+  /* Text and link colours. Intent colours are read as --tr-* by lib/intent.ts. */
+  --color-muted: var(--tr-text-muted);
+  --color-link: var(--tr-link-color);
+  --color-link-hover: var(--tr-link-hover-color);
 }
 
 @theme {

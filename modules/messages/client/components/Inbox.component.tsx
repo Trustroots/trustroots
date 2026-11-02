@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAnalytics } from '@trustroots/analytics/client';
 
+import { Button } from '@trustroots/ui/Button';
 import * as api from '../api/messages.api';
 import Activate from '@/modules/users/client/components/Activate';
 import InboxThread from '@/modules/messages/client/components/InboxThread';
@@ -115,26 +116,22 @@ export default function Inbox({ user }: InboxProps) {
           aria-label={t('Conversation filter')}
           className="inbox-view-filters"
         >
-          <a
-            href="/messages"
-            rel="external"
+          <Button
+            render={<a href="/messages" rel="external" />}
             aria-current={unreadOnly ? undefined : 'page'}
             aria-label={t('All conversations')}
-            className="btn btn-default"
           >
             <span className="hidden-xs">{t('All conversations')}</span>
             <span className="visible-xs-inline">{t('All')}</span>
-          </a>
-          <a
-            href="/messages?filter=unread"
-            rel="external"
+          </Button>
+          <Button
+            render={<a href="/messages?filter=unread" rel="external" />}
             aria-current={unreadOnly ? 'page' : undefined}
             aria-label={t('Unread conversations')}
-            className="btn btn-default"
           >
             <span className="hidden-xs">{t('Unread conversations')}</span>
             <span className="visible-xs-inline">{t('Unread')}</span>
-          </a>
+          </Button>
         </nav>
         <div className="inbox-search">
           <input
@@ -185,12 +182,9 @@ export default function Inbox({ user }: InboxProps) {
       )}
       {!isFetching && !query && hasMore && (
         <div className="text-center">
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={() => fetchThreads(true)}
-          >
+          <Button intent="primary" size="lg" onClick={() => fetchThreads(true)}>
             {t('More messages')}
-          </button>
+          </Button>
         </div>
       )}
     </section>

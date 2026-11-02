@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 
 type QuickReplyProps = {
   onSend: (content: string) => void;
@@ -35,14 +36,12 @@ export default function QuickReply({ onSend, onFocus }: QuickReplyProps) {
 
   return (
     <div
-      className="btn-toolbar"
+      className="tw:flex tw:flex-wrap tw:justify-start"
       id="message-quick-reply"
       data-testid="quick-reply"
     >
       {replies.map(({ write, host, content }) => {
-        const className = write
-          ? 'btn-offer-meet'
-          : `btn-offer-hosting-${host ? 'yes' : 'no'}`;
+        const intent = write ? 'info' : host ? 'success' : 'danger';
 
         function onClick() {
           if (write) {
@@ -57,13 +56,9 @@ export default function QuickReply({ onSend, onFocus }: QuickReplyProps) {
         }
 
         return (
-          <button
-            key={content}
-            className={`btn btn-sm ${className}`}
-            onClick={onClick}
-          >
+          <Button key={content} intent={intent} size="sm" onClick={onClick}>
             {content}
-          </button>
+          </Button>
         );
       })}
     </div>

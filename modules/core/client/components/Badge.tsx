@@ -19,7 +19,7 @@ export default function Badge({ children, withNotification }: BadgeProps) {
   return (
     <span className="badge">
       {children}
-      {withNotification && <Dot className="tw:bg-notification" />}
+      {withNotification && <Dot className="tw:bg-danger" />}
     </span>
   );
 }

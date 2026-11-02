@@ -23,16 +23,16 @@ async function expectDesignTokens(page: Page) {
   const styles = await page.evaluate(() => {
     const root = getComputedStyle(document.documentElement);
     const tokens = {
-      '--tr-notification-badge-bg': {
-        value: root.getPropertyValue('--tr-notification-badge-bg').trim(),
+      '--tr-danger': {
+        value: root.getPropertyValue('--tr-danger').trim(),
         property: 'backgroundColor',
       },
       '--tr-brand-primary': {
         value: root.getPropertyValue('--tr-brand-primary').trim(),
         property: 'color',
       },
-      '--tr-brand-secondary': {
-        value: root.getPropertyValue('--tr-brand-secondary').trim(),
+      '--tr-link-color': {
+        value: root.getPropertyValue('--tr-link-color').trim(),
         property: 'color',
       },
       '--tr-font-size-base': {
@@ -60,7 +60,7 @@ async function expectDesignTokens(page: Page) {
   });
 
   expect(styles).toEqual({
-    '--tr-notification-badge-bg': {
+    '--tr-danger': {
       value: '#d9534f',
       style: 'rgb(217, 83, 79)',
     },
@@ -68,7 +68,7 @@ async function expectDesignTokens(page: Page) {
       value: '#12b591',
       style: 'rgb(18, 181, 145)',
     },
-    '--tr-brand-secondary': {
+    '--tr-link-color': {
       value: '#cd771b',
       style: 'rgb(205, 119, 27)',
     },
@@ -80,9 +80,10 @@ async function expectDesignTokens(page: Page) {
 async function expectUtilityAndBootstrap(page: Page) {
   const result = await page.evaluate(() => {
     const utility = document.createElement('span');
-    utility.className = 'tw:bg-notification';
+    utility.className = 'tw:bg-danger';
+    // A Bootstrap `.btn` under an owned-Button utility: the utility wins.
     const button = document.createElement('button');
-    button.className = 'btn btn-primary';
+    button.className = 'btn tw:bg-brand-primary';
     document.body.append(utility, button);
     const styles = {
       utility: getComputedStyle(utility).backgroundColor,
@@ -129,8 +130,8 @@ test('prefixed utilities coexist with Bootstrap in LTR and RTL', async ({
 });
 
 async function expectButtonUtilitiesWin(page: Page) {
-  // Bootstrap's reboot sets `button { border-radius: 0 }` and the global Less
-  // sets `button { cursor: pointer }`; the owned button's utilities must win.
+  // Bootstrap's reboot sets `button { border-radius: 0 }`; the owned button's
+  // radius utility must win, and its disabled utilities must apply.
   const markup = renderToStaticMarkup(
     createElement(Button, { disabled: true }, 'Cascade probe'),
   );
@@ -141,15 +142,15 @@ async function expectButtonUtilitiesWin(page: Page) {
     const style = getComputedStyle(host.querySelector('button')!);
     const result = {
       borderRadius: style.borderRadius,
-      cursor: style.cursor,
+      pointerEvents: style.pointerEvents,
       opacity: style.opacity,
     };
     host.remove();
     return result;
   }, markup);
   expect(styles).toEqual({
-    borderRadius: '2px',
-    cursor: 'not-allowed',
+    borderRadius: '6px',
+    pointerEvents: 'none',
     opacity: '0.65',
   });
 }
@@ -185,10 +186,10 @@ test('owned buttons show a contrasting keyboard focus ring on white', async ({
   await page.goto('/');
   await expectDesignTokens(page);
   // Render the real component so the test follows its Tailwind classes.
-  const buttons = (['primary', 'default'] as const)
-    .map(variant =>
+  const buttons = (['primary', 'inverse'] as const)
+    .map(intent =>
       renderToStaticMarkup(
-        createElement(Button, { variant }, `Focus ${variant}`),
+        createElement(Button, { intent }, `Focus ${intent}`),
       ),
     )
     .join('');
@@ -201,10 +202,10 @@ test('owned buttons show a contrasting keyboard focus ring on white', async ({
     document.body.prepend(host);
     host.focus();
   }, buttons);
-  for (const variant of ['primary', 'default']) {
+  for (const intent of ['primary', 'inverse']) {
     await page.keyboard.press('Tab');
     const button = page.getByRole('button', {
-      name: `Focus ${variant}`,
+      name: `Focus ${intent}`,
       exact: true,
     });
     await expect(button).toBeFocused();
