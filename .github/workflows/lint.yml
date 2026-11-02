@@ -75,11 +75,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            pnpm install --frozen-lockfile --ignore-scripts --prefer-offline \
-              --fetch-retries=5 \
-              --fetch-retry-mintimeout=20000 \
-              --fetch-retry-maxtimeout=120000 \
-              --fetch-timeout=600000 && break
+            pnpm install --frozen-lockfile --ignore-scripts --prefer-offline && break
 
             if [ "$attempt" -eq 3 ]; then
               exit 1
@@ -151,11 +147,7 @@ jobs:
       - name: Install dependencies
         run: |
           for attempt in 1 2 3; do
-            pnpm install --frozen-lockfile --ignore-scripts --prefer-offline \
-              --fetch-retries=5 \
-              --fetch-retry-mintimeout=20000 \
-              --fetch-retry-maxtimeout=120000 \
-              --fetch-timeout=600000 && break
+            pnpm install --frozen-lockfile --ignore-scripts --prefer-offline && break
 
             if [ "$attempt" -eq 3 ]; then
               exit 1
