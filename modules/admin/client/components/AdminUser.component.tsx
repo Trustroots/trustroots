@@ -14,7 +14,7 @@ import { Modal } from 'react-bootstrap';
 import {
   getUser,
   getUserByUsername as getUserRecordByUsername,
-  listUsersByLastIpAddress,
+  listUsersByLastIpHash,
   searchUsers,
   setUserRole,
 } from '../api/users.api';
@@ -56,7 +56,7 @@ interface MemberProfile {
   public?: boolean;
   created?: string | number;
   seen?: string | number;
-  lastIpAddress?: string;
+  lastIpHash?: string;
   location?: { city?: string; country?: string };
 }
 
@@ -185,7 +185,7 @@ interface AdminUserState {
   isSettingUserRole: boolean;
   isSearching: boolean;
   notesRevision: number;
-  matchingUsersIpAddress: string | null;
+  matchingUsersIpHash: string | null;
   matchingUsersPagination: MemberList['pagination'];
   matchingUsersSort: MemberSort;
   matchingUsersSource: 'ip' | 'search' | null;
@@ -333,7 +333,7 @@ interface AdminUserProps {
 
 interface AdminUserRouteProps extends AdminUserProps {
   navigate: ReturnType<typeof useNavigate>;
-  search: { id?: string; ip?: string; q?: string };
+  search: { id?: string; ipHash?: string; q?: string };
 }
 
 export class AdminUserContent extends Component<
@@ -343,7 +343,7 @@ export class AdminUserContent extends Component<
   constructor(props: AdminUserRouteProps) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
-    this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
+    this.getUsersByLastIpHash = this.getUsersByLastIpHash.bind(this);
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
     this.cancelUserRoleChange = this.cancelUserRoleChange.bind(this);
     this.confirmUserRoleChange = this.confirmUserRoleChange.bind(this);
@@ -359,7 +359,7 @@ export class AdminUserContent extends Component<
       isSettingUserRole: false,
       isSearching: false,
       notesRevision: 0,
-      matchingUsersIpAddress: null,
+      matchingUsersIpHash: null,
       matchingUsersPagination: null,
       matchingUsersSort: DEFAULT_MEMBER_LIST_SORT,
       matchingUsersSource: null,
@@ -372,7 +372,7 @@ export class AdminUserContent extends Component<
   }
 
   componentDidMount() {
-    const { id, ip: ipAddress, q: query } = this.props.search;
+    const { id, ipHash, q: query } = this.props.search;
 
     if (this.props.username) {
       this.setState({ query: this.props.username }, () =>
@@ -380,8 +380,8 @@ export class AdminUserContent extends Component<
       );
     } else if (id && isMongoObjectId(id)) {
       this.getUserById(id);
-    } else if (ipAddress) {
-      this.getUsersByLastIpAddress(ipAddress);
+    } else if (ipHash) {
+      this.getUsersByLastIpHash(ipHash);
     } else if (query) {
       this.setState({ query }, () => this.queryUser(null));
     }
@@ -402,7 +402,7 @@ export class AdminUserContent extends Component<
       search: (current: Record<string, string>) => ({
         ...current,
         id: undefined,
-        ip: undefined,
+        ipHash: undefined,
         q: undefined,
         ...search,
       }),
@@ -416,7 +416,7 @@ export class AdminUserContent extends Component<
 
   onMatchingUsersPageChange(page: number) {
     if (this.state.matchingUsersSource === 'ip') {
-      return this.getUsersByLastIpAddress(this.state.matchingUsersIpAddress, {
+      return this.getUsersByLastIpHash(this.state.matchingUsersIpHash, {
         page,
       });
     }
@@ -426,7 +426,7 @@ export class AdminUserContent extends Component<
   onMatchingUsersSortChange(sort: MemberSort) {
     this.setState({ matchingUsersSort: sort }, () => {
       if (this.state.matchingUsersSource === 'ip') {
-        this.getUsersByLastIpAddress(this.state.matchingUsersIpAddress, {
+        this.getUsersByLastIpHash(this.state.matchingUsersIpHash, {
           page: 1,
           sort,
         });
@@ -571,25 +571,22 @@ export class AdminUserContent extends Component<
     );
   }
 
-  getUsersByLastIpAddress(
-    ipAddress: string | null,
+  getUsersByLastIpHash(
+    ipHash: string | null,
     options: { page?: number; sort?: MemberSort } = {},
   ) {
     const requestedSort = options.sort || this.state.matchingUsersSort;
     this.setState(
       { hasSearched: true, isSearching: true, matchingUsers: [], user: false },
       async () => {
-        const memberList: MemberList = await listUsersByLastIpAddress(
-          ipAddress,
-          {
-            page: options.page || 1,
-            sort: requestedSort,
-          },
-        );
+        const memberList: MemberList = await listUsersByLastIpHash(ipHash, {
+          page: options.page || 1,
+          sort: requestedSort,
+        });
         this.setState({
           isSearching: false,
           matchingUsers: memberList.users,
-          matchingUsersIpAddress: ipAddress,
+          matchingUsersIpHash: ipHash,
           matchingUsersPagination: memberList.pagination,
           matchingUsersSort: memberList.sort,
           matchingUsersSource: 'ip',
@@ -670,13 +667,13 @@ export class AdminUserContent extends Component<
           ['Signed up', formatAdminDateTime(user.profile.created)],
           ['Last seen', formatAdminDateTime(user.profile.seen)],
           [
-            'Last IP address',
-            user.profile.lastIpAddress && (
+            'Shared IP',
+            user.profile.lastIpHash && (
               <a
-                href={`/admin/user?ip=${user.profile.lastIpAddress}`}
+                href={`/admin/user?ipHash=${user.profile.lastIpHash}`}
                 target="_self"
               >
-                {user.profile.lastIpAddress}
+                Find accounts using the same IP
               </a>
             ),
           ],

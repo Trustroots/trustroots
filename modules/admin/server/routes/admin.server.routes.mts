@@ -187,9 +187,9 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminUsers.listUsersByRole);
   app
-    .route('/api/admin/users/by-last-ip-address')
+    .route('/api/admin/users/by-last-ip-hash')
     .all(adminPolicy.isAllowed)
-    .post(adminAuditLog.record, adminUsers.listUsersByLastIpAddress);
+    .post(adminAuditLog.record, adminUsers.listUsersByLastIpHash);
   app
     .route('/api/admin/user')
     .all(adminPolicy.isAllowed)

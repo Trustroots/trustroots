@@ -1,7 +1,7 @@
 import net from 'net';
 
 interface ClientIpRequest {
-  get(header: string): string | undefined;
+  get(header: string): string | null | undefined;
   ip?: string;
 }
 

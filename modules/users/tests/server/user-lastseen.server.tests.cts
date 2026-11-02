@@ -1,5 +1,8 @@
 import type { QueryFilter, HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
+const {
+  hashIpAddress,
+}: typeof import('../../../core/server/services/ip-hash.server.service.mts') = require('../../../core/server/services/ip-hash.server.service.mts');
 
 const request: typeof import('supertest') = require('supertest');
 const moment: typeof import('moment') = require('moment');
@@ -15,12 +18,12 @@ const express: {
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 interface LastSeenUserRecord extends UserRecord {
   seen?: Date;
-  lastIpAddress?: string;
+  lastIpHash?: string;
 }
 interface LastSeenRequest {
   get(name: string): string | undefined;
   ip: string;
-  user?: { id: string; lastIpAddress?: string; seen?: Date };
+  user?: { id: string; lastIpHash?: string; seen?: Date };
 }
 const lastSeen: {
   (
@@ -133,7 +136,7 @@ describe('User last seen CRUD tests', function () {
                 if (err) throw err;
                 assertUser(user);
                 should(user.seen).eql(new Date());
-                user.lastIpAddress!.should.be.String();
+                user.lastIpHash!.should.be.String();
                 return done();
               } catch (err) {
                 return done(err);
@@ -175,7 +178,7 @@ describe('User last seen CRUD tests', function () {
         ip: '198.51.100.24',
         user: {
           id: 'user-id',
-          lastIpAddress: '203.0.113.23',
+          lastIpHash: hashIpAddress('203.0.113.23'),
           seen: new Date(),
         },
       };
@@ -187,7 +190,7 @@ describe('User last seen CRUD tests', function () {
       sinon.assert.calledOnce(findByIdAndUpdate);
       findByIdAndUpdate.firstCall.args[0].should.equal('user-id');
       findByIdAndUpdate.firstCall.args[1].should.deepEqual({
-        lastIpAddress: '203.0.113.24',
+        lastIpHash: hashIpAddress('203.0.113.24'),
       });
     });
     it('should update the last seen date only if a specific time passed since the last update', function (done) {

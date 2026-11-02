@@ -38,6 +38,7 @@ describe('Service: profile-response', function () {
   });
 
   const profile: OwnProfile<string, Date> & {
+    lastIpHash: string;
     lastIpAddress: string;
     pushRegistration: Array<{ token: string }>;
     providerData: Array<{ accessToken: string }>;
@@ -65,6 +66,7 @@ describe('Service: profile-response', function () {
     updated: new Date('2025-01-02T00:00:00.000Z'),
     passwordUpdated: new Date('2025-01-03T00:00:00.000Z'),
     avatarVersion: '0123456789abcdef0123456789abcdef',
+    lastIpHash: 'a'.repeat(64),
     lastIpAddress: '192.0.2.1',
     pushRegistration: [{ token: 'fictional-push-token' }],
     providerData: [{ accessToken: 'fictional-provider-token' }],
@@ -82,6 +84,7 @@ describe('Service: profile-response', function () {
     );
     esmService.profileQueryFields.should.containEql('avatarVersion');
     esmService.profileQueryFields.should.containEql('extSitesServas');
+    esmService.profileQueryFields.should.not.containEql('lastIpHash');
     esmService.profileQueryFields.should.not.containEql('lastIpAddress');
     esmService.profileQueryFields.should.not.containEql('pushRegistration');
   });
@@ -181,6 +184,7 @@ describe('Service: profile-response', function () {
       'usernameUpdateAllowed',
       'updated',
       'passwordUpdated',
+      'lastIpHash',
       'lastIpAddress',
       'pushRegistration',
       'providerData',
@@ -209,6 +213,7 @@ describe('Service: profile-response', function () {
       hasRuntimeField(response, field).should.be.true();
     }
     hasRuntimeField(response, 'futurePrivateField').should.be.false();
+    hasRuntimeField(response, 'lastIpHash').should.be.false();
     hasRuntimeField(response, 'lastIpAddress').should.be.false();
     hasRuntimeField(response, 'pushRegistration').should.be.false();
     hasRuntimeField(response, 'providerData').should.be.false();

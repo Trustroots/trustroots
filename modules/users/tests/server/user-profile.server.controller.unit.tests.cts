@@ -590,7 +590,7 @@ describe('Profile controller unit tests', () => {
     });
 
     it('keeps derived and server-managed fields when applying profile edits', async () => {
-      userDoc.lastIpAddress = '192.0.2.10';
+      userDoc.lastIpHash = '192.0.2.10';
       userDoc.providerData = { id: 'sample-provider' };
       await userDoc.save();
       const previousName = userDoc.displayName;
@@ -601,7 +601,7 @@ describe('Profile controller unit tests', () => {
             body: {
               tagline: 'A normal edit',
               displayName: 'Unrelated name',
-              lastIpAddress: '198.51.100.20',
+              lastIpHash: '198.51.100.20',
               providerData: { id: 'replacement' },
               roles: ['admin'],
               public: false,
@@ -615,7 +615,7 @@ describe('Profile controller unit tests', () => {
       const saved = await findUser(userDoc._id);
       saved.tagline!.should.equal('A normal edit');
       saved.displayName!.should.equal(previousName);
-      saved.lastIpAddress!.should.equal('192.0.2.10');
+      saved.lastIpHash!.should.equal('192.0.2.10');
       saved.providerData!.should.deepEqual({ id: 'sample-provider' });
       saved.roles!.should.not.containEql('admin');
     });
@@ -1739,7 +1739,7 @@ describe('Profile controller unit tests', () => {
           description: '',
           member: [],
           roles: ['user'],
-          lastIpAddress: '192.0.2.1',
+          lastIpHash: '192.0.2.1',
           pushRegistration: [{ token: 'fictional-push-token' }],
           providerData: [{ accessToken: 'fictional-provider-token' }],
           futurePrivateField: 'must stay private',
@@ -1752,7 +1752,7 @@ describe('Profile controller unit tests', () => {
       sanitized.email.should.equal('member@example.test');
       sanitized.locale.should.equal('en');
       for (const field of [
-        'lastIpAddress',
+        'lastIpHash',
         'pushRegistration',
         'providerData',
         'usernameHistory',

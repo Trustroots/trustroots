@@ -165,7 +165,7 @@ export default function AdminAuditLog() {
                     <td>
                       <details>
                         <summary>Show details</summary>
-                        <p>IP: {item.ip || 'Unknown IP address'}</p>
+                        <p>IP identifier: {item.ipHash || 'Not collected'}</p>
                         <p>
                           Audit log ID: <samp>{item._id}</samp>
                         </p>

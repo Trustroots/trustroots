@@ -239,6 +239,7 @@ test.describe('confirmed member flows', () => {
       'newsletter',
       'locale',
       'blocked',
+      'lastIpHash',
       'lastIpAddress',
       'pushRegistration',
       'providerData',

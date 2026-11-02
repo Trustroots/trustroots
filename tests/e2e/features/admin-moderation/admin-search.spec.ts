@@ -106,23 +106,47 @@ test.describe('admin moderation search flows', () => {
       .locator('table tbody tr')
       .filter({ hasText: SEEDED_ADMIN.username })
       .first();
-    const ipLink = resultRow.locator('a[href*="/admin/user?ip="]');
+    const ipLink = resultRow.locator('a[href*="/admin/user?ipHash="]');
     await expect(ipLink).toBeVisible();
+    await expect(ipLink).toHaveText('Find accounts using the same IP');
     const matchingMembersResponse = page.waitForResponse(
       response =>
-        response.url().includes('/api/admin/users/by-last-ip-address') &&
+        response.url().includes('/api/admin/users/by-last-ip-hash') &&
         response.request().method() === 'POST' &&
         response.ok(),
     );
     await ipLink.click();
-    await matchingMembersResponse;
+    const matchingResponse = await matchingMembersResponse;
+    const members = await matchingResponse.json();
+    for (const member of members.users) {
+      expect(member.lastIpAddress).toBeUndefined();
+      expect(member.lastIpHash).toMatch(/^[a-f0-9]{64}$/);
+    }
 
-    await expect(page).toHaveURL(/\/admin\/user\?ip=/);
+    await expect(page).toHaveURL(/\/admin\/user\?ipHash=/);
     await expect(
       page.getByRole('link', {
         name: new RegExp(`^${SEEDED_ADMIN.username} \\(`),
       }),
     ).toBeVisible();
+  });
+
+  test('admin matching rejects raw IP addresses', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.search-users', [
+      'Admin can inspect members sharing an exact current IP address.',
+    ]);
+    const response = await page.request.post(
+      '/api/admin/users/by-last-ip-hash',
+      {
+        data: { ipHash: '203.0.113.10' },
+      },
+    );
+    expect(response.status()).toBe(400);
+    expect(await response.json()).toEqual({
+      message: 'Invalid IP identifier.',
+    });
   });
 
   test('admin search finds the shadowbanned member', async ({
@@ -254,8 +278,8 @@ test.describe('admin moderation search flows', () => {
     });
 
     const invalidIpAddress = await page.request.post(
-      '/api/admin/users/by-last-ip-address',
-      { data: { ipAddress: 'invalid' } },
+      '/api/admin/users/by-last-ip-hash',
+      { data: { ipHash: 'invalid' } },
     );
     expect(invalidIpAddress.status()).toBe(400);
   });
@@ -290,8 +314,13 @@ test.describe('admin moderation search flows', () => {
       expect(byRole.status()).toBe(403);
 
       const byIpAddress = await page.request.post(
-        '/api/admin/users/by-last-ip-address',
-        { data: { ipAddress: '203.0.113.10' } },
+        '/api/admin/users/by-last-ip-hash',
+        {
+          data: {
+            ipHash:
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          },
+        },
       );
       expect(byIpAddress.status()).toBe(403);
     } finally {

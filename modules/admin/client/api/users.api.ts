@@ -29,12 +29,12 @@ export async function listUsersByRole(
   return data;
 }
 
-export async function listUsersByLastIpAddress(
-  ipAddress: string | null,
+export async function listUsersByLastIpHash(
+  ipHash: string | null,
   options: UserSearchOptions = {},
 ) {
-  const { data } = await axios.post('/api/admin/users/by-last-ip-address', {
-    ipAddress,
+  const { data } = await axios.post('/api/admin/users/by-last-ip-hash', {
+    ipHash,
     ...options,
   });
   return data;

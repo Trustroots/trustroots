@@ -2,6 +2,7 @@ import mongoose, { type UpdateQuery } from 'mongoose';
 import type { NextFunction, Request, Response } from 'express';
 import moment from 'moment';
 import net from 'net';
+import { hashIpAddress } from '../../../core/server/services/ip-hash.server.service.mts';
 import config from './../../../../config/config.mts';
 import type {
   UserServerDocument,
@@ -44,18 +45,18 @@ const defaultExport = function (
     const isTimePassed =
       !req.user.seen ||
       Date.now() - req.user.seen.getTime() > expectedTimeToPass;
-    const clientIpAddress = getClientIpAddress(req);
-    const hasChangedIpAddress =
-      clientIpAddress && clientIpAddress !== req.user.lastIpAddress;
-    if (isTimePassed || hasChangedIpAddress) {
+    const clientIpHash = hashIpAddress(getClientIpAddress(req));
+    const hasChangedIpHash =
+      clientIpHash && clientIpHash !== req.user.lastIpHash;
+    if (isTimePassed || hasChangedIpHash) {
       // Keep the activity timestamp rate-limited, but never leave a changed
       // address stale merely because the last-seen interval has not elapsed.
       const update: UpdateQuery<UserServerRecord> = {};
       if (isTimePassed) {
         update.seen = new Date();
       }
-      if (hasChangedIpAddress) {
-        update.lastIpAddress = clientIpAddress;
+      if (hasChangedIpHash) {
+        update.lastIpHash = clientIpHash;
       }
       User.findByIdAndUpdate(req.user.id, update).then(function () {
         next();

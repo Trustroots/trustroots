@@ -108,7 +108,7 @@ export default function Privacy() {
                 </li>
                 <li>
                   {t(
-                    'The most recent IP address used during authenticated activity. We use it to help administrators investigate abuse and protect the community. Only administrators can access it, it replaces any previously stored IP address, and it is deleted with your account.',
+                    'A keyed hash of the most recent IP address used during authenticated activity. Administrators use it to find accounts sharing an IP address when investigating abuse. The raw address is not stored with your account. The hash replaces the previous one and is deleted with your account. We also use your IP address temporarily with a local location database to estimate the initial map area.',
                   )}
                 </li>
               </ul>
