@@ -3,8 +3,8 @@
 Import directly from `@trustroots/ui/Button`, `ButtonGroup`, `Alert`, `Badge` or
 `Spinner`. They accept caller-supplied text and do not depend on translations
 or feature modules. `Button` is non-submitting by default; set `type="submit"` when
-needed. `Alert` currently provides the warning appearance and alert semantics;
-`Spinner` requires a translated `label` supplied by its caller.
+needed. `Alert` takes a status intent (`danger`, `warning`, `info` or `success`) and a
+required `role`; `Spinner` requires a translated `label` supplied by its caller.
 
 Components live in `src/components/` and are styled with `tw:`-prefixed
 Tailwind utilities. `src/globals.css` (exported as `@trustroots/ui/globals.css`)

@@ -26,6 +26,7 @@ import type {
   ExperienceRecommendation,
   ExperienceUser,
 } from '../../shared/experience';
+import { Alert } from '@trustroots/ui/Alert';
 
 export default function CreateExperience({
   userFrom,
@@ -353,7 +354,7 @@ function ExperienceForm({
 
   if (loadError) {
     return (
-      <div className="alert alert-danger" role="alert">
+      <Alert intent="danger" role="alert">
         <p>{t('We could not load the experience form. Please try again.')}</p>
         <Button
           intent="primary"
@@ -362,7 +363,7 @@ function ExperienceForm({
         >
           {t('Try again')}
         </Button>
-      </div>
+      </Alert>
     );
   }
 
@@ -384,7 +385,7 @@ function ExperienceForm({
           <p role="status">{t('Sending your private report…')}</p>
         )}
         {reportError && (
-          <div className="alert alert-warning" role="alert">
+          <Alert intent="warning" role="alert">
             <p>
               {t(
                 'Your experience was saved, but your private report could not be sent. Please try sending the report again.',
@@ -398,7 +399,7 @@ function ExperienceForm({
             >
               {t('Retry private report')}
             </Button>
-          </div>
+          </Alert>
         )}
       </div>
     );
@@ -406,7 +407,7 @@ function ExperienceForm({
 
   if (pendingDraft) {
     return (
-      <div className="alert alert-info">
+      <Alert intent="info" role="note">
         <p>
           {t(
             'You have an unfinished experience saved on this device. Restore it or start again.',
@@ -424,7 +425,7 @@ function ExperienceForm({
         >
           {t('Discard draft')}
         </Button>
-      </div>
+      </Alert>
     );
   }
 
@@ -456,9 +457,9 @@ function ExperienceForm({
           })}
         </Tabs>
         {submitError && (
-          <div className="alert alert-danger" role="alert">
+          <Alert intent="danger" role="alert">
             {submitError}
-          </div>
+          </Alert>
         )}
         <StepNavigation
           currentStep={step}

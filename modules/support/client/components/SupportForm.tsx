@@ -9,6 +9,7 @@ import usePersistentSupportMessage from '../hooks/use-persistent-support-message
 import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy.ts';
 import { Button } from '@trustroots/ui/Button';
+import { Alert } from '@trustroots/ui/Alert';
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };
@@ -129,16 +130,11 @@ export default function SupportForm({ user }: SupportFormProps) {
       </div>
       <div className="panel-body">
         {sendingFailed && (
-          <div
-            className="alert alert-danger"
-            role="alert"
-            ref={errorRef}
-            tabIndex={-1}
-          >
+          <Alert intent="danger" role="alert" ref={errorRef} tabIndex={-1}>
             <strong>{t('Something went wrong sending your message.')}</strong>
             <br />
             {t('Please ensure you are connected to internet and try again.')}
-          </div>
+          </Alert>
         )}
         <form
           name="supportForm"

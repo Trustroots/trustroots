@@ -1,6 +1,7 @@
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
+import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 
@@ -206,7 +207,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
         >
           <Tab eventKey="availability" title="Availability">
             {!hasLocation && (
-              <p className="alert alert-info" role="status">
+              <Alert intent="info" role="status">
                 <a
                   href="#location"
                   onClick={event => {
@@ -217,7 +218,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                   Choose a location
                 </a>{' '}
                 in the Location tab before saving, even if you cannot host.
-              </p>
+              </Alert>
             )}
             <div className="row">
               <div className="col-xs-12 col-sm-6">
@@ -425,16 +426,17 @@ export default function OfferHostPage({ user }: HostPageProps) {
           <Tab eventKey="location" title="Location">
             <div id="location">
               {!hasLocation && (
-                <p className="alert alert-info" role="status">
+                <Alert intent="info" role="status">
                   Search for a place or move the map to set your hosting
                   location.
-                </p>
+                </Alert>
               )}
               {firstTimeAround && (
-                <div
+                <Alert
                   aria-describedby="firstTimeAroundDescription"
                   aria-labelledby="firstTimeAroundLabel"
-                  className="alert alert-info offer-map-guide"
+                  intent="info"
+                  className="offer-map-guide"
                   role="dialog"
                 >
                   <p className="lead" role="document">
@@ -460,7 +462,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                       Got it!
                     </Button>
                   </p>
-                </div>
+                </Alert>
               )}
               <OfferLocationEditor
                 location={offer.location}

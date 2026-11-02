@@ -22,6 +22,7 @@ import { getErrorMessage } from '@/modules/core/client/api/http-client';
 import { newsletterAudienceFilename } from '../utils/newsletter-audience-filename';
 import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 import { Button } from '@trustroots/ui/Button';
+import { Alert } from '@trustroots/ui/Alert';
 
 const ALL_SUBSCRIBERS_FILE_NAME = 'newsletter-subscribers.csv';
 const CIRCLE_SUBSCRIBERS_FILE_PREFIX = 'newsletter-circle-';
@@ -490,7 +491,7 @@ export default function AdminNewsletter() {
           <Button intent="primary" type="submit">
             Count recipients
           </Button>
-          <div className="alert alert-info" style={{ marginTop: '12px' }}>
+          <Alert intent="info" role="status" style={{ marginTop: '12px' }}>
             {isAudienceCountLoading && <span>Counting recipients…</span>}
             {!isAudienceCountLoading && audienceCount === null && (
               <span>Complete the selected filters to see the match count.</span>
@@ -510,7 +511,7 @@ export default function AdminNewsletter() {
                 Export audience CSV
               </Button>
             )}
-          </div>
+          </Alert>
         </form>
 
         <h3>Export subscribers</h3>
