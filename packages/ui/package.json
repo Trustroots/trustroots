@@ -3,6 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "storybook": "storybook dev --port 6006 --no-open",
+    "build-storybook": "storybook build --output-dir storybook-static",
+    "test:stories": "vitest run"
+  },
   "exports": {
     "./globals.css": "./src/globals.css",
     "./Button": "./src/components/Button.tsx",
@@ -12,5 +17,14 @@
   },
   "peerDependencies": {
     "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "10.6.5",
+    "@storybook/addon-vitest": "10.6.5",
+    "@storybook/react-vite": "10.6.5",
+    "@vitest/browser-playwright": "5.0.5",
+    "playwright": "1.64.1",
+    "storybook": "10.6.5",
+    "vitest": "5.0.5"
   }
 }

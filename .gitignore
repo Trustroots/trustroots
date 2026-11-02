@@ -96,3 +96,6 @@ trustroots.tar.gz*
 
 # Browser scripts generated from docs/src TypeScript
 /docs/assets/js/
+
+# Storybook build output
+packages/ui/storybook-static/
