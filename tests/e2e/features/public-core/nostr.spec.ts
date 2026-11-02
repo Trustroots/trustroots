@@ -305,7 +305,9 @@ test.describe('nostr community notes badge on the profile view', () => {
 
     await page.goto(`/profile/${user.username}`);
 
-    await expect(page.locator('.profile-nostr-badge')).toHaveText('Nostroots');
+    await expect(
+      page.locator('[data-slot="badge"]', { hasText: 'Nostroots' }),
+    ).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Recent community notes' }),
     ).toBeVisible();
