@@ -22,11 +22,14 @@ const DELIVERY_TIMEOUT_MS = 1000;
  * and record the analytics deadline timer so tests can assert on it alone.
  */
 function useDeadlineClock() {
-  const clock = sinon.useFakeTimers({
+  // Keep timer fakes out of the shared sandbox: restoring an already-restored
+  // spy later can reinstall the fake timer it wrapped.
+  const sandbox = sinon.createSandbox();
+  const clock = sandbox.useFakeTimers({
     toFake: ['setTimeout', 'clearTimeout'],
   });
-  const setSpy = sinon.spy(global, 'setTimeout');
-  const clearSpy = sinon.spy(global, 'clearTimeout');
+  const setSpy = sandbox.spy(global, 'setTimeout');
+  const clearSpy = sandbox.spy(global, 'clearTimeout');
   return {
     clock,
     /** The deadline timer the analytics code created, if any. */
@@ -46,9 +49,7 @@ function useDeadlineClock() {
       );
     },
     restore() {
-      setSpy.restore();
-      clearSpy.restore();
-      clock.restore();
+      sandbox.restore();
     },
   };
 }
