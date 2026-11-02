@@ -2,7 +2,6 @@
 // until the shared UI package replaces this compatibility bridge.
 :root {
   --tr-brand-primary: @brand-primary;
-  --tr-brand-secondary: @brand-secondary;
   --tr-body-bg: @body-bg;
   --tr-panel-bg: @panel-bg;
   --tr-panel-border: @panel-border;
@@ -10,7 +9,6 @@
   --tr-text-muted: @text-muted;
   --tr-link-color: @link-color;
   --tr-link-hover-color: @link-hover-color;
-  --tr-notification-badge-bg: @notification-badge-bg;
   --tr-notification-badge-text: @notification-badge-text;
   --tr-font-family-base: @font-family-base;
   --tr-font-size-base: @font-size-base;
@@ -26,4 +24,11 @@
   --tr-border-radius-base: @border-radius-base;
   --tr-border-radius-small: @border-radius-small;
   --tr-border-radius-large: @border-radius-large;
+
+  // Intent colours shared by @trustroots/ui components.
+  --tr-success: @offer-hosting-yes;
+  --tr-warning: @offer-hosting-maybe;
+  --tr-danger: @notification-badge-bg; // = @offer-hosting-no
+  --tr-info: @offer-meet;
+  --tr-neutral: @gray-light;
 }

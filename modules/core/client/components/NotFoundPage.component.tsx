@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 
 export default function NotFoundPage() {
@@ -13,12 +14,8 @@ export default function NotFoundPage() {
               <h1>{t('This page cannot be found.')}</h1>
               <br />
               <br />
-              <a href="/" className="btn btn-default btn-md">
-                {t('Continue…')}
-              </a>{' '}
-              <a href="/support" className="btn btn-default btn-md">
-                {t('Contact us')}
-              </a>
+              <Button render={<a href="/" />}>{t('Continue…')}</Button>{' '}
+              <Button render={<a href="/support" />}>{t('Contact us')}</Button>
             </div>
           </div>
         </div>

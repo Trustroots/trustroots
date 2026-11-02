@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Button } from '@trustroots/ui/Button';
 import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
@@ -133,9 +134,9 @@ export default function SearchPlaceInput({
           value={searchQuery}
         />
         <span className="input-group-btn">
-          <button
+          <Button
             aria-label="Clear location search"
-            className="btn btn-lg btn-default"
+            size="lg"
             disabled={!searchQuery.length}
             onClick={() => {
               setSearchQuery('');
@@ -147,7 +148,7 @@ export default function SearchPlaceInput({
             type="button"
           >
             <i className="icon-close"></i>
-          </button>
+          </Button>
         </span>
       </div>
       {isOpen && suggestions.length > 0 && (

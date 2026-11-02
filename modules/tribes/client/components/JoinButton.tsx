@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import classnames from 'classnames';
+import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 import LeaveTribeModal from './LeaveTribeModal';
 import Tooltip from '@/modules/core/client/components/Tooltip';
 
@@ -8,8 +10,13 @@ import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
 
 interface PresentationalProps {
+  /** Hook class added while the user is a member. */
   activeClassName?: string;
+  /** Button look while the user is a member; falls back to `look`. */
+  activeLook?: ButtonStyleProps;
   className?: string;
+  /** Button look; defaults to a small default button. */
+  look?: ButtonStyleProps;
   icon?: boolean;
   isMember: boolean;
   isLoading?: boolean;
@@ -37,8 +44,10 @@ const TooltipWithContent = Tooltip as unknown as React.ComponentType<{
 }>;
 
 function JoinButtonPresentational({
-  className = 'btn btn-sm btn-default',
+  className,
   activeClassName,
+  look = { size: 'sm' },
+  activeLook,
   icon = true,
   isMember,
   isLoading,
@@ -57,16 +66,15 @@ function JoinButtonPresentational({
   const buttonLabel = isMember
     ? memberLabel || (t('Joined') as string)
     : (t('Join') as string);
-  const currentClassName =
-    isMember && activeClassName ? activeClassName : className;
+  const currentLook = isMember && activeLook ? activeLook : look;
 
   // a button to be shown when user is signed out
   if (!isLoggedIn) {
     return (
-      <a
-        href={`/signup?tribe=${tribe.slug}`}
-        type="button"
-        className={`${className} tribe-join`}
+      <Button
+        {...look}
+        render={<a href={`/signup?tribe=${tribe.slug}`} />}
+        className={classnames(className, 'tribe-join')}
       >
         {icon && (
           <>
@@ -74,7 +82,7 @@ function JoinButtonPresentational({
           </>
         )}
         {buttonLabel}
-      </a>
+      </Button>
     );
   }
 
@@ -85,11 +93,15 @@ function JoinButtonPresentational({
       hidden={!isMember}
       id={`tribe-${tribe._id}`}
     >
-      <button
+      <Button
+        {...currentLook}
         type="button"
-        className={`${
-          isMember ? 'btn-active' : ''
-        } ${currentClassName} tribe-join`}
+        className={classnames(
+          isMember && 'tribe-join-active',
+          isMember && activeClassName,
+          className,
+          'tribe-join',
+        )}
         disabled={isLoading}
         aria-label={ariaLabel}
         onClick={onToggle}
@@ -100,7 +112,7 @@ function JoinButtonPresentational({
           </>
         )}
         {buttonLabel}
-      </button>
+      </Button>
     </TooltipWithContent>
   );
 }

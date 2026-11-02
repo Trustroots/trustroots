@@ -1,6 +1,7 @@
 // External dependencies
 import { Trans, useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
+import { Button } from '@trustroots/ui/Button';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
@@ -194,31 +195,40 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                     <h4 className="home-subtagline">
                       {t('Sharing, hosting and getting people together.')}
                     </h4>
-                    <a
-                      href={getSignupUrl(circleRoute)}
-                      className="btn btn-action btn-default home-join hidden-xs"
+                    <Button
+                      size="xl"
+                      className="home-join hidden-xs"
+                      render={<a href={getSignupUrl(circleRoute)} />}
                     >
                       {t('Join Trustroots now')}
-                    </a>
+                    </Button>
                     {/*
                   {!isNativeMobileApp && (
                     <div className="home-apps">
-                      <a
-                        href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
-                        rel="noopener"
-                        className="btn btn-lg btn-default"
+                      <Button
+                        size="lg"
+                        render={
+                          <a
+                            href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
+                            rel="noopener"
+                          />
+                        }
                       >
                         <i className="icon-android"></i>
                         {t('Play Store')}
-                      </a>
-                      <a
-                        href="https://apps.apple.com/nl/app/trustroots-community-app/id6447916847"
-                        rel="noopener"
-                        className="btn btn-lg btn-default"
+                      </Button>
+                      <Button
+                        size="lg"
+                        render={
+                          <a
+                            href="https://apps.apple.com/nl/app/trustroots-community-app/id6447916847"
+                            rel="noopener"
+                          />
+                        }
                       >
                         <i className="icon-apple"></i>
                         {t('App Store')}
-                      </a>
+                      </Button>
                     </div>
                   )}
                   */}
@@ -314,9 +324,9 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                   tells others what you're interested in.`)}
                     <br />
                     <br />
-                    <a href="/circles" className="btn btn-default btn-lg">
+                    <Button size="lg" render={<a href="/circles" />}>
                       {t('More circles')}
-                    </a>
+                    </Button>
                   </p>
                 </div>
               </div>
@@ -368,12 +378,12 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
                 <p>
                   <br />
                   <br />
-                  <a
-                    href={getSignupUrl(circleRoute)}
-                    className="btn btn-lg btn-action btn-default"
+                  <Button
+                    size="xl"
+                    render={<a href={getSignupUrl(circleRoute)} />}
                   >
                     {t('Join Trustroots')}
-                  </a>
+                  </Button>
                 </p>
               )}
             </div>
@@ -480,22 +490,30 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
             {/*
             {!isNativeMobileApp && (
               <div className="home-apps">
-                <a
-                  href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
-                  rel="noopener"
-                  className="btn btn-lg btn-default"
+                <Button
+                  size="lg"
+                  render={
+                    <a
+                      href="https://play.google.com/store/apps/details?id=org.trustroots.trapp"
+                      rel="noopener"
+                    />
+                  }
                 >
                   <i className="icon-android"></i>
                   {t('Play Store')}
-                </a>
-                <a
-                  href="https://apps.apple.com/nl/app/trustroots-community-app/id6447916847"
-                  rel="noopener"
-                  className="btn btn-lg btn-default"
+                </Button>
+                <Button
+                  size="lg"
+                  render={
+                    <a
+                      href="https://apps.apple.com/nl/app/trustroots-community-app/id6447916847"
+                      rel="noopener"
+                    />
+                  }
                 >
                   <i className="icon-apple"></i>
                   {t('App Store')}
-                </a>
+                </Button>
               </div>
             )}
             <ul className="list-inline home-footer-some">

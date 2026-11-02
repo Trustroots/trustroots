@@ -32,6 +32,13 @@ Avoid unnecessary re-exports. Import directly from the owning file and update
 consumers when moving code. Keep a compatibility re-export only when a concrete
 consumer or public API still needs the old path, and explain why it is needed.
 
+Components in `packages/ui` have no dead variants: every variant, intent, size
+and flag value a component supports must be used somewhere in app code. When a
+change removes the last use of a value, remove the value from the component
+too. App code picks a component's look through these props, not through
+hand-written class names. Each value appears in the component's Storybook
+stories; see `packages/ui/README.md`.
+
 Use tables for overviews when they make information easier to compare, with
 coloured status dots where useful. Include text labels so meaning does not
 depend on colour alone.

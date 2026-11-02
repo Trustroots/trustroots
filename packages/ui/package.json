@@ -11,12 +11,24 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./Button": "./src/components/Button.tsx",
+    "./ButtonGroup": "./src/components/ButtonGroup.tsx",
     "./Alert": "./src/components/Alert.tsx",
     "./Badge": "./src/components/Badge.tsx",
-    "./Spinner": "./src/components/Spinner.tsx"
+    "./Spinner": "./src/components/Spinner.tsx",
+    "./intent": "./src/lib/intent.ts"
+  },
+  "imports": {
+    "#components/*": "./src/components/*.tsx",
+    "#lib/*": "./src/lib/*.ts"
   },
   "peerDependencies": {
     "react": "19.3.1"
+  },
+  "dependencies": {
+    "@base-ui/react": "1.9.0",
+    "class-variance-authority": "0.7.1",
+    "clsx": "2.1.1",
+    "tailwind-merge": "3.7.0"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "10.6.5",

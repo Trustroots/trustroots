@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { useLocation } from '@tanstack/react-router';
+import { Button } from '@trustroots/ui/Button';
 import classNames from 'classnames';
 import { useTranslation } from 'react-i18next';
 
@@ -78,9 +79,12 @@ function ProfileEditSidebar({
       <p>
         <br />
         <br />
-        <a href={`/profile/${username}`} className="btn btn-block btn-default">
+        <Button
+          className="tw:block tw:w-full"
+          render={<a href={`/profile/${username}`} />}
+        >
           {t('View profile')}
-        </a>
+        </Button>
       </p>
       {children}
     </>

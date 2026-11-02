@@ -27,6 +27,7 @@
     "packages/analytics/client/**/*.ts",
     "packages/analytics/client/**/*.tsx",
     "packages/analytics/shared/**/*.ts",
+    "packages/ui/**/*.ts",
     "packages/ui/**/*.tsx",
     "modules/*/client/**/*.ts",
     "modules/*/client/**/*.tsx"
