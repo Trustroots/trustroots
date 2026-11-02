@@ -27,6 +27,7 @@ import {
   USERNAME_MAX_LENGTH as USERNAME_MAXLENGTH,
   SIGNUP_USERNAME_FORMAT_MESSAGE,
 } from '@/modules/users/client/config/username.client.constants';
+import { Alert } from '@trustroots/ui/Alert';
 
 function formatMemberCount(count: number) {
   if (count === 0) {
@@ -320,9 +321,9 @@ export default function SignupPage() {
   return (
     <section className="container container-spacer">
       {errorMessage && (
-        <div className="alert alert-danger text-center" role="alert">
+        <Alert className="tw:text-center" intent="danger" role="alert">
           {errorMessage}
-        </div>
+        </Alert>
       )}
       <form
         className="signin form-horizontal"
@@ -442,7 +443,7 @@ export default function SignupPage() {
                       }}
                     />
                     {isEmailTaken && (
-                      <div className="alert alert-danger" role="alert">
+                      <Alert intent="danger" role="alert">
                         Account with this email exists already.{' '}
                         <a
                           href={`/password/forgot?userhandle=${encodeURIComponent(
@@ -451,7 +452,7 @@ export default function SignupPage() {
                         >
                           Try recover password?
                         </a>
-                      </div>
+                      </Alert>
                     )}
                   </div>
                 </div>

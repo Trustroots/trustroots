@@ -24,11 +24,6 @@
 }
 
 @theme {
-  /* Bootstrap 5.3 warning alert colours. */
-  --color-warning-text: #664d03;
-  --color-warning-bg: #fff3cd;
-  --color-warning-border: #ffe69c;
-
   /* Matches Bootstrap's .spinner-border timing. */
   --animate-spinner: spinner-rotate 0.75s linear infinite;
 

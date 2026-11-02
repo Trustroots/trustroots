@@ -130,14 +130,19 @@ test('nested and vertical button groups join their buttons', () => {
 test('alerts and badges render supplied content and attributes', () => {
   render(
     <>
-      <Alert className="extra">A warning</Alert>
+      <Alert intent="warning" role="alert" className="extra">
+        A warning
+      </Alert>
       <Badge className="extra" title="Count">
         3
       </Badge>
     </>,
   );
   expect(screen.getByRole('alert')).toHaveTextContent('A warning');
-  expect(screen.getByRole('alert')).toHaveClass('tw:bg-warning-bg', 'extra');
+  expect(screen.getByRole('alert')).toHaveClass(
+    'tw:bg-(--bs-warning-bg-subtle)',
+    'extra',
+  );
   expect(screen.getByTitle('Count')).toHaveClass(
     'tw:bg-brand-primary',
     'extra',
@@ -147,11 +152,15 @@ test('alerts and badges render supplied content and attributes', () => {
 test('alert and badge do not require a class name', () => {
   render(
     <>
-      <Alert>Warning</Alert>
+      <Alert intent="warning" role="alert">
+        Warning
+      </Alert>
       <Badge>New</Badge>
     </>,
   );
-  expect(screen.getByRole('alert')).toHaveClass('tw:bg-warning-bg');
+  expect(screen.getByRole('alert')).toHaveClass(
+    'tw:bg-(--bs-warning-bg-subtle)',
+  );
   expect(screen.getByText('New')).toHaveClass('tw:bg-brand-primary');
 });
 

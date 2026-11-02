@@ -11,6 +11,7 @@ import type { CreateOfferRequest } from '../../shared/offer';
 import { plainTextLength } from './offerEdit.helpers';
 import MeetsExplanation from './MeetsExplanation.component';
 import OfferLocationEditor from './OfferLocationEditor.component';
+import { Alert } from '@trustroots/ui/Alert';
 
 const MIN_DESCRIPTION = 5;
 
@@ -261,9 +262,9 @@ export default function OfferMeetEditPage() {
             title="Location"
           >
             {!hasLocation && (
-              <p className="alert alert-info" role="status">
+              <Alert intent="info" role="status">
                 Search for a place or move the map to set your meeting location.
-              </p>
+              </Alert>
             )}
             <OfferLocationEditor
               location={loadedOffer.location}
