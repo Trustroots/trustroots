@@ -1,0 +1,66 @@
+name: Semgrep
+
+on:
+  pull_request:
+    branches: [main, 'codex/**', 'chore/**']
+  push:
+    branches: [main]
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Scan JavaScript and TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep:1.183.0@sha256:2e45517a85e13a9cca14a2a00df6bb48affd66b8ebfae1b0991cd57578362fb0
+    permissions:
+      contents: read
+      security-events: write
+    env:
+      SEMGREP_SEND_METRICS: 'off'
+      SEMGREP_ENABLE_VERSION_CHECK: '0'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # PR merge commits have both the target and PR head as parents.
+          fetch-depth: 2
+      - name: Test local rules
+        run: semgrep scan --test tooling/semgrep/rules
+      - name: Scan source
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          args=()
+          if [ -n "$BASE_SHA" ]; then
+            args+=(--baseline-commit "$BASE_SHA" --error)
+          fi
+          # Explicit targets include Node's .mts/.cts sources, which normal
+          # language-based discovery currently skips.
+          mapfile -d '' targets < <(git ls-files -z -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' '*.mts' '*.cts')
+          semgrep scan \
+            --config p/nodejs --config p/expressjs --config p/react \
+            --config tooling/semgrep/rules \
+            --scan-unknown-extensions \
+            --exclude 'tooling/semgrep/rules/*.js' \
+            --metrics off --disable-version-check \
+            --json --output semgrep.json --sarif-output semgrep.sarif \
+            "${args[@]}" "${targets[@]}"
+      - name: Upload code scanning results
+        if: ${{ !cancelled() && hashFiles('semgrep.sarif') != '' }}
+        uses: github/codeql-action/upload-sarif@8498dc4c2b27cdd99baf0f87955b29ebbf30c78d # v4.39.1
+        with:
+          sarif_file: semgrep.sarif
+          category: semgrep

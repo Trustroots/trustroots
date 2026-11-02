@@ -1,0 +1,30 @@
+rules:
+  - id: request-object-in-database-filter
+    languages: [javascript, typescript]
+    severity: ERROR
+    message: Build a database filter from validated scalar fields instead of request objects.
+    mode: taint
+    pattern-sources:
+      - pattern-either:
+          - pattern: $REQ.body
+          - pattern: $REQ.query
+          - pattern: $REQ.params
+    pattern-sinks:
+      - patterns:
+          - pattern-either:
+              - pattern: $MODEL.find($FILTER, ...)
+              - pattern: $MODEL.findOne($FILTER, ...)
+              - pattern: $MODEL.countDocuments($FILTER, ...)
+              - pattern: $MODEL.exists($FILTER, ...)
+              - pattern: $MODEL.updateOne($FILTER, ...)
+              - pattern: $MODEL.updateMany($FILTER, ...)
+              - pattern: $MODEL.findOneAndUpdate($FILTER, ...)
+              - pattern: $MODEL.deleteOne($FILTER, ...)
+              - pattern: $MODEL.deleteMany($FILTER, ...)
+              - pattern: $MODEL.findOneAndDelete($FILTER, ...)
+          - focus-metavariable: $FILTER
+    pattern-sanitizers:
+      - pattern: String(...)
+      - pattern: Number(...)
+      - pattern: parseInt(...)
+      - pattern: parseFloat(...)
