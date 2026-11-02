@@ -46,6 +46,43 @@ interface MessageApiThread {
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('seeded message API flows', () => {
+  test('thread messages render formatted text without active markup', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.reply-send', [
+      'Sending a reply appends it to the thread.',
+    ]);
+    const content =
+      '<p><b>Fictional formatted message</b><img src="/missing-fixture-image" onerror="window.fixtureMarkupExecuted=true">' +
+      '<a href="javascript:window.fixtureMarkupExecuted=true">unsafe link</a></p>' +
+      '<script>window.fixtureMarkupExecuted=true</script>';
+    await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+    const response = await request.post('/api/messages', {
+      data: { userTo: SEEDED_MEMBERS[1].id, content },
+    });
+    expect(response.ok()).toBeTruthy();
+
+    await page.goto(`/messages/${SEEDED_MEMBERS[1].username}`);
+    const message = page
+      .locator('.message-sender-me')
+      .filter({ hasText: 'Fictional formatted message' });
+    const messageContent = message.locator('.panel-body');
+    await expect(messageContent.locator('b')).toHaveText(
+      'Fictional formatted message',
+    );
+    await expect(
+      messageContent.locator('img, script, a[href^="javascript:"]'),
+    ).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { fixtureMarkupExecuted?: boolean })
+            .fixtureMarkupExecuted,
+      ),
+    ).toBeUndefined();
+  });
+
   test('conversation retrieval preserves unread state until acknowledgement', async ({
     request,
   }, testInfo) => {
