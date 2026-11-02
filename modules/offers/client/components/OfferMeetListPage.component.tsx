@@ -3,7 +3,7 @@ import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useEffect, useState } from 'react';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import { deleteOffer, getOffers } from '../api/offers.api';
 import type { OfferPayload } from '../../shared/offer';
 import NoMeets from './NoMeets.component';
@@ -20,6 +20,7 @@ interface OfferMeetListPageProps {
 }
 
 export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
+  const { track } = useAnalytics();
   const [offers, setOffers] = useState<MeetOffer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRemoving, setIsRemoving] = useState(false);
@@ -81,10 +82,7 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
     try {
       await deleteOffer(offer._id);
       setOffers(current => current.filter(item => item._id !== offer._id));
-      trackEvent('offer-delete', {
-        category: 'offer.meet.delete',
-        label: 'Removed meet offer',
-      });
+      track('offer-delete', { type: 'meet' });
     } finally {
       setIsRemoving(false);
     }

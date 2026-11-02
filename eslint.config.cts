@@ -121,6 +121,7 @@ const legacyConfig = {
       files: [
         'modules/*/client/**/*.{js,ts,tsx}',
         'layers/shell/**/*.{js,ts,tsx}',
+        'packages/analytics/client/**/*.tsx',
         'packages/ui/**/*.{js,ts,tsx}',
       ],
       extends: ['plugin:jsx-a11y/recommended'],
@@ -191,6 +192,7 @@ const legacyConfig = {
         'modules/*/server/*.{js,mjs}',
         'modules/*/server/**/*.{js,mjs,mts}',
         'testutils/server/**',
+        'packages/analytics/server/**',
         'packages/logger/**',
         'testutils/common/**',
       ],
@@ -204,6 +206,7 @@ const legacyConfig = {
       files: [
         'modules/*/server/**/*.{mjs,mts}',
         'config/lib/**/*.{mjs,mts}',
+        'packages/analytics/server/**/*.mts',
         'packages/logger/**/*.mts',
         'bin/**/*.mjs',
       ],
@@ -310,6 +313,7 @@ const legacyConfig = {
         'modules/*/server/**/*.mts',
         'config/**/*.d.mts',
         'config/lib/**/*.mts',
+        'packages/analytics/**/*.{ts,tsx,mts}',
         'packages/logger/**/*.mts',
         'packages/ui/**/*.{ts,tsx}',
         'modules/*/tests/client/**/*.{ts,tsx,mts}',

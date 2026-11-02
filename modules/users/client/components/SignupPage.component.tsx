@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
 
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
@@ -104,6 +104,7 @@ function getCurrentUsernameFieldErrors(username: string): UsernameFieldErrors {
 }
 
 export default function SignupPage() {
+  const { track } = useAnalytics();
   const firstNameInput = useDesktopAutofocus<HTMLInputElement>();
   const { t } = useTranslation('users');
   const { user, setUser } = useAuth() as {
@@ -268,10 +269,7 @@ export default function SignupPage() {
 
   function handleOpenRules(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    trackEvent('signup.rules.open', {
-      category: 'signup',
-      label: 'Open rules from signup form',
-    });
+    track('signup-rules-open');
     window.location.assign('/rules');
   }
 

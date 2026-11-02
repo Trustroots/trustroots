@@ -1,5 +1,8 @@
 #!/usr/bin/env node
-/** Prevent production module source from crossing client/server/shared tiers. */
+/**
+ * Prevent production module and shared package source from crossing
+ * client/server/shared tiers.
+ */
 import fs from 'node:fs';
 import path from 'node:path';
 import {
@@ -18,6 +21,8 @@ export type Violation = {
 
 type RuntimeTier = 'client' | 'server' | 'shared';
 const TIERS: RuntimeTier[] = ['client', 'server', 'shared'];
+/** Workspace groups whose packages split source into runtime tier folders. */
+const TIERED_GROUPS = ['modules', 'packages'];
 
 function tierAtPath(
   moduleDir: string,
@@ -31,12 +36,12 @@ function tierAtPath(
 function targetTier(
   specifier: string,
   result: ReturnType<typeof resolveSpecifier>,
-  modulesDir: string,
+  groupDirs: string[],
 ): RuntimeTier | undefined {
   if (!result) return undefined;
   if (
     result.target &&
-    result.target.dir.includes(`${path.sep}modules${path.sep}`)
+    groupDirs.some(groupDir => inside(groupDir, result.target!.dir))
   ) {
     const suffix = specifier
       .slice(result.target.name.length)
@@ -44,11 +49,14 @@ function targetTier(
     const first = suffix.split('/')[0];
     if (TIERS.includes(first as RuntimeTier)) return first as RuntimeTier;
   }
-  if (result.resolved && inside(modulesDir, result.resolved)) {
-    const moduleName = path
-      .relative(modulesDir, result.resolved)
+  const groupDir = groupDirs.find(
+    dir => result.resolved && inside(dir, result.resolved),
+  );
+  if (result.resolved && groupDir) {
+    const packageName = path
+      .relative(groupDir, result.resolved)
       .split(path.sep)[0];
-    return tierAtPath(path.join(modulesDir, moduleName), result.resolved);
+    return tierAtPath(path.join(groupDir, packageName), result.resolved);
   }
   return undefined;
 }
@@ -67,32 +75,39 @@ export function analyze(
   root = fs.realpathSync(path.resolve(root));
   const packages = listPackages(root);
   const violations: Violation[] = [];
-  const modulesDir = path.join(root, 'modules');
-  if (!fs.existsSync(modulesDir)) return violations;
+  const groupDirs = TIERED_GROUPS.map(group => path.join(root, group)).filter(
+    dir => fs.existsSync(dir),
+  );
 
-  for (const entry of fs.readdirSync(modulesDir, { withFileTypes: true })) {
-    if (!entry.isDirectory()) continue;
-    const moduleDir = path.join(modulesDir, entry.name);
-    for (const sourceTier of TIERS) {
-      const sourceDir = path.join(moduleDir, sourceTier);
-      if (!fs.existsSync(sourceDir)) continue;
-      for (const source of listSourceFiles(sourceDir)) {
-        if (source.symlink) continue; // The module boundary guard diagnoses it.
-        const file = path.relative(root, source.file).split(path.sep).join('/');
-        for (const specifier of sourceSpecifiers(source.file)) {
-          const result = resolveSpecifier(
-            specifier,
-            source.file,
-            root,
-            packages,
-          );
-          const importedTier = targetTier(specifier, result, modulesDir);
-          if (importedTier && forbidden(sourceTier, importedTier)) {
-            violations.push({
-              file,
+  for (const groupDir of groupDirs) {
+    const kind = path.basename(groupDir) === 'modules' ? 'Module' : 'Package';
+    for (const entry of fs.readdirSync(groupDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const packageDir = path.join(groupDir, entry.name);
+      for (const sourceTier of TIERS) {
+        const sourceDir = path.join(packageDir, sourceTier);
+        if (!fs.existsSync(sourceDir)) continue;
+        for (const source of listSourceFiles(sourceDir)) {
+          if (source.symlink) continue; // The boundary guards diagnose it.
+          const file = path
+            .relative(root, source.file)
+            .split(path.sep)
+            .join('/');
+          for (const specifier of sourceSpecifiers(source.file)) {
+            const result = resolveSpecifier(
               specifier,
-              message: `Module ${sourceTier} source cannot import ${importedTier} source.`,
-            });
+              source.file,
+              root,
+              packages,
+            );
+            const importedTier = targetTier(specifier, result, groupDirs);
+            if (importedTier && forbidden(sourceTier, importedTier)) {
+              violations.push({
+                file,
+                specifier,
+                message: `${kind} ${sourceTier} source cannot import ${importedTier} source.`,
+              });
+            }
           }
         }
       }

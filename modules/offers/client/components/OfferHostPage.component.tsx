@@ -2,7 +2,7 @@ import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
@@ -41,6 +41,7 @@ function defaultHostOffer(): HostOffer {
 }
 
 export default function OfferHostPage({ user }: HostPageProps) {
+  const { track } = useAnalytics();
   const routeParams = useSearch({ strict: false });
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
   const hash = useLocation({ select: location => location.hash });
@@ -155,10 +156,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
         await createOffer(payload);
       }
 
-      trackEvent('offer-modified', {
-        category: 'offer.edit',
-        label: 'Modified offer',
-        value: offer.status,
+      track('offer-save', {
+        type: 'host',
+        action: offer._id ? 'update' : 'create',
+        status: offer.status,
       });
 
       window.location.assign(`/profile/${user.username}`);

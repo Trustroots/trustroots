@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
 import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferPayload } from '@/modules/offers/shared/offer';
 
@@ -31,10 +32,6 @@ jest.mock('react-bootstrap', () => {
 });
 
 jest.mock('@/modules/offers/client/api/offers.api');
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  trackEvent: jest.fn(),
-}));
-
 jest.mock(
   '@/modules/offers/client/components/OfferLocationEditor.component',
   () => ({
@@ -68,6 +65,8 @@ const hostOffer: OfferPayload = {
   showOnlyInMyCircles: false,
 };
 
+const analytics = fakeAnalytics();
+
 describe('OfferHostPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -79,7 +78,7 @@ describe('OfferHostPage', () => {
     'opens the %s tab from a direct link',
     async tab => {
       window.history.replaceState({}, '', `/offer/host#${tab}`);
-      render(<OfferHostPage user={user} />);
+      render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
       expect(
         await screen.findByRole('tab', { name: new RegExp(tab, 'i') }),
@@ -89,14 +88,14 @@ describe('OfferHostPage', () => {
 
   it('falls back to Availability for an unknown fragment', async () => {
     window.history.replaceState({}, '', '/offer/host#unknown');
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     expect(
       await screen.findByRole('tab', { name: 'Availability' }),
     ).toHaveAttribute('aria-selected', 'true');
   });
 
   it('updates the fragment and follows history without losing edits', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     fireEvent.click(await screen.findByRole('tab', { name: 'Description' }));
     expect(window.location.hash).toBe('#description');
     fireEvent.change(
@@ -127,7 +126,7 @@ describe('OfferHostPage', () => {
   it('opens Location for a new offer without a description', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     window.history.replaceState({}, '', '/offer/host#location');
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     expect(await screen.findByTestId('location-editor')).toBeVisible();
     expect(
       screen.getByRole('button', { name: 'Save and Exit' }),
@@ -135,7 +134,7 @@ describe('OfferHostPage', () => {
   });
 
   it('loads the host offer editor with availability controls', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     expect(screen.getByText('Yes')).toBeInTheDocument();
@@ -143,7 +142,7 @@ describe('OfferHostPage', () => {
   });
 
   it('keeps the active tab when selection is cleared', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
@@ -157,7 +156,7 @@ describe('OfferHostPage', () => {
   it('creates a new host offer when saving', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
     offersApiMock.createOffer.mockResolvedValue({ message: 'Offer saved.' });
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
 
@@ -186,11 +185,16 @@ describe('OfferHostPage', () => {
         }),
       );
     });
+    expect(analytics.track).toHaveBeenCalledWith('offer-save', {
+      type: 'host',
+      action: 'create',
+      status: 'yes',
+    });
   });
 
   it('updates an existing host offer when saving', async () => {
     offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
 
@@ -210,11 +214,15 @@ describe('OfferHostPage', () => {
         }),
       );
     });
+    expect(analytics.track).toHaveBeenCalledWith(
+      'offer-save',
+      expect.objectContaining({ type: 'host', action: 'update' }),
+    );
   });
 
   it('shows an error state when loading fails', async () => {
     offersApiMock.getOffers.mockRejectedValue(new Error('network'));
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText(/Snap!/)).toBeVisible();
   });
@@ -222,7 +230,7 @@ describe('OfferHostPage', () => {
   it('applies host status from route params when creating an offer', async () => {
     window.history.pushState({}, '', '/offer/host?status=maybe');
     offersApiMock.getOffers.mockResolvedValue([]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     expect(
@@ -232,7 +240,7 @@ describe('OfferHostPage', () => {
 
   it('shows first-time location guidance for new host offers', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
@@ -255,7 +263,7 @@ describe('OfferHostPage', () => {
 
   it('keeps the editor open when saving fails', async () => {
     offersApiMock.updateOffer.mockRejectedValue(new Error('save failed'));
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
@@ -276,7 +284,7 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([
       { ...hostOffer, status: 'no', description: 'Not hosting right now.' },
     ]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('radio', { name: 'No' }));
@@ -289,7 +297,7 @@ describe('OfferHostPage', () => {
 
   it('explains the location requirement when a new member cannot host', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('radio', { name: 'No' }));
@@ -315,7 +323,7 @@ describe('OfferHostPage', () => {
   });
 
   it('adjusts guest count and circle visibility settings', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(
@@ -339,7 +347,9 @@ describe('OfferHostPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferHostPage user={user} />);
+    const { unmount } = render(<OfferHostPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
     unmount();
     resolveOffers([hostOffer]);
     await new Promise(resolve => setTimeout(resolve, 20));
@@ -353,7 +363,9 @@ describe('OfferHostPage', () => {
       }),
     );
 
-    const { unmount } = render(<OfferHostPage user={user} />);
+    const { unmount } = render(<OfferHostPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
     unmount();
     rejectOffers(new Error('late failure'));
     await new Promise(resolve => setTimeout(resolve, 20));
@@ -362,7 +374,7 @@ describe('OfferHostPage', () => {
   it('overrides a loaded offer status from route params', async () => {
     window.history.pushState({}, '', '/offer/host?status=no');
     offersApiMock.getOffers.mockResolvedValue([hostOffer]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     expect(
@@ -371,7 +383,7 @@ describe('OfferHostPage', () => {
   });
 
   it('does not submit when the description is too short', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
@@ -386,7 +398,7 @@ describe('OfferHostPage', () => {
   });
 
   it('changes host status, guest count, and no-offer description', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('radio', { name: 'Maybe' }));
@@ -403,7 +415,7 @@ describe('OfferHostPage', () => {
 
   it('closes first-time location guidance and updates the location', async () => {
     offersApiMock.getOffers.mockResolvedValue([]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('Can you host?')).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
