@@ -1,6 +1,7 @@
 import RichText from '@/modules/core/client/components/RichText';
 import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
+import { Badge } from '@trustroots/ui/Badge';
 import { Button } from '@trustroots/ui/Button';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
@@ -280,23 +281,20 @@ export default function SearchSidebarResults({
                   className="search-result-label"
                 >
                   Hosting:{' '}
-                  <span
+                  <Badge
                     aria-hidden="true"
-                    className={`label ${
-                      offer.status === 'yes'
-                        ? 'label-success'
-                        : offer.status === 'maybe'
-                          ? 'label-warning'
-                          : ''
-                    }`}
+                    variant="solid"
+                    intent={offer.status === 'yes' ? 'success' : 'warning'}
                   >
                     {offer.status}
-                  </span>
+                  </Badge>
                 </div>
               )}
               {offer.type === 'meet' && (
                 <div aria-label="Meet offer" className="search-result-label">
-                  <span className="label label-offer-meet"> Meet </span>
+                  <Badge variant="solid" intent="info">
+                    Meet
+                  </Badge>
                 </div>
               )}
               <OfferDescription

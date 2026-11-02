@@ -354,7 +354,7 @@ describe('<SearchSidebarResults />', () => {
       />,
     );
 
-    expect(screen.getByText('maybe')).toBeInTheDocument();
+    expect(screen.getByText('maybe')).toHaveAttribute('data-intent', 'warning');
     expect(screen.getByText('female.')).toBeInTheDocument();
   });
 
@@ -396,6 +396,7 @@ describe('<SearchSidebarResults />', () => {
     );
 
     expect(screen.getByText('zz')).toBeInTheDocument();
+    expect(screen.getByText('yes')).toHaveAttribute('data-intent', 'success');
   });
 
   it('renders an offer while the language names are not loaded', () => {
@@ -414,5 +415,6 @@ describe('<SearchSidebarResults />', () => {
     expect(
       screen.getByRole('link', { name: /language-wait/ }),
     ).toBeInTheDocument();
+    expect(screen.getByText('Meet')).toHaveAttribute('data-intent', 'info');
   });
 });

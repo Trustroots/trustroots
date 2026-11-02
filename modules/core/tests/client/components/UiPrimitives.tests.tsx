@@ -203,6 +203,33 @@ test('badge weight follows its variant at the small size', () => {
   expect(screen.getByText('Semibold')).toHaveClass('tw:font-semibold');
 });
 
+test('solid badges take each status intent', () => {
+  render(
+    <>
+      <Badge variant="solid" intent="neutral">
+        Guest
+      </Badge>
+      <Badge variant="solid" intent="success">
+        Read
+      </Badge>
+      <Badge variant="solid" intent="warning">
+        Unread
+      </Badge>
+    </>,
+  );
+  expect(screen.getByText('Guest')).toHaveClass(
+    'tw:[--intent:var(--tr-neutral)]',
+  );
+  expect(screen.getByText('Read')).toHaveClass(
+    'tw:[--intent:var(--tr-success)]',
+  );
+  expect(screen.getByText('Read')).toHaveAttribute('data-intent', 'success');
+  expect(screen.getByText('Unread')).toHaveClass(
+    'tw:[--intent:var(--tr-warning)]',
+  );
+  expect(screen.getByText('Unread')).toHaveAttribute('data-intent', 'warning');
+});
+
 test('spinner announces the caller supplied label', () => {
   render(<Spinner label="Loading languages" />);
   expect(screen.getByRole('status')).toHaveTextContent('Loading languages');

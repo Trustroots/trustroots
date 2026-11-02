@@ -41,7 +41,7 @@ describe('<Meta />', () => {
       />,
     );
 
-    expect(container.querySelectorAll('.label')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-slot="badge"]')).toHaveLength(0);
   });
 
   it('omits labels for unknown recommendation with false interactions', () => {

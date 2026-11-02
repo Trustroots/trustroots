@@ -103,12 +103,12 @@ describe('<AdminReferenceThreads />', () => {
     expect(
       await screen.findByText('Top score from the last year'),
     ).toBeInTheDocument();
-    expect(screen.getByText('7')).toHaveClass('label-danger');
+    expect(screen.getByText('7')).toHaveAttribute('data-intent', 'danger');
     expect(screen.getAllByText('bob (Bob Receiver)')[0]).toHaveAttribute(
       'href',
       `/admin/user/${userTo.username}`,
     );
-    expect(screen.getByText('3')).toHaveClass('label-danger');
+    expect(screen.getByText('3')).toHaveAttribute('data-intent', 'danger');
     expect(screen.getAllByText('Unknown member')[0]).toBeInTheDocument();
   });
 

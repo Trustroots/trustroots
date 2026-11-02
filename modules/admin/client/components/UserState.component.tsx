@@ -1,7 +1,16 @@
 // External dependencies
-import classnames from 'classnames';
 import React from 'react';
+import { Badge, type BadgeProps } from '@trustroots/ui/Badge';
+
 import { formatRoleLabel } from '../utils/role-label';
+
+// Restrictions are red and volunteer roles green; other team roles are grey.
+function getRoleIntent(role: string): BadgeProps['intent'] {
+  if (['suspended', 'shadowban'].includes(role)) return 'danger';
+  if (['admin', 'volunteer', 'volunteer-alumni'].includes(role))
+    return 'success';
+  return 'neutral';
+}
 
 /**
  * Gives information about different profile "states" useful for debugging for support requests:
@@ -48,30 +57,23 @@ export default function UserState({
         roles
           .filter(role => role !== 'user')
           .map(role => {
-            const classes = classnames('label admin-label', {
-              'label-danger': ['suspended', 'shadowban'].includes(role),
-              'label-success': [
-                'admin',
-                'volunteer',
-                'volunteer-alumni',
-              ].includes(role),
-            });
-
             return (
-              <span className={classes} key={role}>
+              <Badge variant="solid" intent={getRoleIntent(role)} key={role}>
                 {formatRoleLabel(role)}
-              </span>
+              </Badge>
             );
           })}
 
       {/* Is profile public? */}
       {!user.public && (
-        <span className="label label-danger admin-label">Hidden profile</span>
+        <Badge variant="solid" intent="danger">
+          Hidden profile
+        </Badge>
       )}
 
       {/* Has email been confirmed */}
       {emailTemporary && (
-        <span className="label label-warning admin-label">
+        <Badge variant="solid" intent="warning">
           {
             // On initial signup both `email` and `emailTemporary` are the same, when email is confirmed
             // `emailTemporary` is set empty. When user changes email, these values are different.
@@ -79,27 +81,29 @@ export default function UserState({
               ? 'Unconfirmed signup'
               : 'Unconfirmed email change'
           }
-        </span>
+        </Badge>
       )}
 
       {/* Pending removal? */}
       {removeProfileToken && (
-        <span
-          className="label label-warning admin-label"
+        <Badge
+          variant="solid"
+          intent="warning"
           title={`Link expiration ${removeProfileExpires}`}
         >
           Pending removal
-        </span>
+        </Badge>
       )}
 
       {/* Pending password change? */}
       {resetPasswordToken && (
-        <span
-          className="label label-warning admin-label"
+        <Badge
+          variant="solid"
+          intent="warning"
           title={`Link expiration ${resetPasswordExpires}`}
         >
           Pending password change
-        </span>
+        </Badge>
       )}
     </div>
   );
