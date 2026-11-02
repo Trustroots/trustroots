@@ -8,6 +8,7 @@
     "../../modules/*/server/**/*.mts",
     "../../config/untyped-modules.d.mts",
     "../../config/lib/**/*.mts",
+    "../../packages/analytics/server/**/*.mts",
     "../../packages/logger/**/*.mts",
     "../../worker.mts"
   ]

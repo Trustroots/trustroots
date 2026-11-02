@@ -1,21 +1,8 @@
---- a/index.js
-+++ b/index.js
-@@ -55,10 +55,12 @@
- 	var destination = {}
- 	if (options.isMergeableObject(target)) {
- 		getKeys(target).forEach(function(key) {
-+			if (key === '__proto__') { return }
- 			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options)
- 		})
- 	}
- 	getKeys(source).forEach(function(key) {
-+		if (key === '__proto__') { return }
- 		if (propertyIsUnsafe(target, key)) {
- 			return
- 		}
+diff --git a/dist/cjs.js b/dist/cjs.js
+index 7c36cbdd06cc22c92d590be3f87a08a91ca06b40..10d1d115a659ec7020103c19326a8495f8c4d156 100644
 --- a/dist/cjs.js
 +++ b/dist/cjs.js
-@@ -80,10 +80,12 @@
+@@ -80,10 +80,12 @@ function mergeObject(target, source, options) {
  	var destination = {};
  	if (options.isMergeableObject(target)) {
  		getKeys(target).forEach(function(key) {
@@ -28,6 +15,8 @@
  		if (propertyIsUnsafe(target, key)) {
  			return
  		}
+diff --git a/dist/umd.js b/dist/umd.js
+index 4071e7c56ec8e5273fe166f6e723ac460fab8b72..7fcb64d80516d42ea2dc22837982c73703d9c895 100644
 --- a/dist/umd.js
 +++ b/dist/umd.js
 @@ -84,10 +84,12 @@
@@ -43,3 +32,20 @@
  			if (propertyIsUnsafe(target, key)) {
  				return
  			}
+diff --git a/index.js b/index.js
+index 77968aed5d456cccc294f60912ef381fa1e52a7b..9a9ea010433d88dae776f47614934e02d2b4fd1f 100644
+--- a/index.js
++++ b/index.js
+@@ -55,10 +55,12 @@ function mergeObject(target, source, options) {
+ 	var destination = {}
+ 	if (options.isMergeableObject(target)) {
+ 		getKeys(target).forEach(function(key) {
++			if (key === '__proto__') { return }
+ 			destination[key] = cloneUnlessOtherwiseSpecified(target[key], options)
+ 		})
+ 	}
+ 	getKeys(source).forEach(function(key) {
++		if (key === '__proto__') { return }
+ 		if (propertyIsUnsafe(target, key)) {
+ 			return
+ 		}

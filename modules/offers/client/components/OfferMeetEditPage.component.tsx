@@ -2,7 +2,7 @@ import { useParams } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import { createOffer, getOffer, updateOffer } from '../api/offers.api';
@@ -28,6 +28,7 @@ function defaultValidUntil() {
 }
 
 export default function OfferMeetEditPage() {
+  const { track } = useAnalytics();
   const { offerId } = useParams({ strict: false });
   const isNewOffer = !offerId;
   const [offer, setOffer] = useState<MeetOffer | null>(null);
@@ -132,17 +133,11 @@ export default function OfferMeetEditPage() {
     try {
       if (isNewOffer) {
         await createOffer(payload);
-        trackEvent('offer-modified', {
-          category: 'offer.meet.add',
-          label: 'Added meet offer',
-        });
+        track('offer-save', { type: 'meet', action: 'create' });
       } else {
         const existingOfferId = loadedOffer._id || offerId!;
         await updateOffer(existingOfferId, payload);
-        trackEvent('offer-modified', {
-          category: 'offer.meet.edit',
-          label: 'Modified meet offer',
-        });
+        track('offer-save', { type: 'meet', action: 'update' });
       }
 
       window.location.assign('/offer/meet');

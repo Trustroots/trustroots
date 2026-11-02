@@ -1,0 +1,19 @@
+{
+  "name": "@trustroots/analytics",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./client": "./client/index.tsx",
+    "./server": "./server/index.mts"
+  },
+  "scripts": {
+    "lint": "eslint --ext .ts,.tsx,.mts ."
+  },
+  "dependencies": {
+    "@umami/node": "0.4.0"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  }
+}

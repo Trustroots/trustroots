@@ -1,14 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
 import classNames from 'classnames';
 import shuffle from 'lodash/shuffle';
 
-import {
-  trackEvent,
-  navigate,
-} from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
@@ -107,6 +104,7 @@ function getCurrentUsernameFieldErrors(username: string): UsernameFieldErrors {
 }
 
 export default function SignupPage() {
+  const { track } = useAnalytics();
   const firstNameInput = useDesktopAutofocus<HTMLInputElement>();
   const { t } = useTranslation('users');
   const { user, setUser } = useAuth() as {
@@ -114,6 +112,7 @@ export default function SignupPage() {
     setUser: (user: UserProfile | AuthenticatedUser) => void;
   };
   const { tribe: tribeSlug } = useSearch({ strict: false });
+  const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
     acquisitionStory: '',
     ageConfirmed: false,
@@ -140,7 +139,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (user && step === 1) {
-      navigate('search.map');
+      void navigate({ to: '/search' });
     }
   }, [step, user]);
 
@@ -270,10 +269,7 @@ export default function SignupPage() {
 
   function handleOpenRules(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    trackEvent('signup.rules.open', {
-      category: 'signup',
-      label: 'Open rules from signup form',
-    });
+    track('signup-rules-open');
     window.location.assign('/rules');
   }
 

@@ -5,8 +5,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import { matchesMediaQuery } from '@/modules/core/client/hooks/use-media-query';
 import { getOffer } from '@/modules/offers/client/api/offers.api';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
@@ -56,23 +57,20 @@ function parseLocationQuery(locationParam?: string): string {
   return locationParam.replace(/_/g, ' ').replace(/\+/g, ' ');
 }
 
-function setOfferQueryParam(offerId?: string) {
-  const url = new URL(window.location.href);
-
-  if (offerId) {
-    url.searchParams.set('offer', offerId);
-  } else {
-    url.searchParams.delete('offer');
-  }
-
-  window.history.replaceState({}, '', url);
-}
-
 export default function SearchPage({ user }: { user?: SearchUser | null }) {
-  // setOfferQueryParam rewrites the URL behind the router's back, so read it directly.
-  const routeParams: SearchRouteParams = Object.fromEntries(
-    new URLSearchParams(window.location.search),
-  );
+  const { track } = useAnalytics();
+  const routeParams: SearchRouteParams = useSearch({ strict: false });
+  const navigate = useNavigate();
+  const setOfferQueryParam = (offerId?: string) =>
+    void navigate({
+      hash: true,
+      replace: true,
+      search: (search: Record<string, string>) => ({
+        ...search,
+        offer: offerId || undefined,
+      }),
+      to: '/search',
+    });
   const isUserPublic = Boolean(user?.public);
   const initialFilters = useMemo(
     () => getSearchFilters(user?._id),
@@ -200,12 +198,9 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         });
       }
 
-      trackEvent('offer.preview', {
-        category: 'search.map',
-        label: 'Preview offer',
-      });
+      track('search-offer-preview');
     },
-    [openSidebar],
+    [openSidebar, track],
   );
 
   const previewCommunityNote = useCallback(
@@ -374,10 +369,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         } catch {
           if (isMounted) {
             clearSelection({ clearOfferParam: false });
-            trackEvent('offer-not-found', {
-              category: 'search.map',
-              label: 'Offer not found',
-            });
+            track('search-offer-not-found');
           }
         }
       }

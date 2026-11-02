@@ -20,7 +20,6 @@ interface Window {
   env?: string;
   title?: string;
   isNativeMobileApp?: boolean;
-  ga?: (...args: unknown[]) => void;
 }
 
 declare const process: {

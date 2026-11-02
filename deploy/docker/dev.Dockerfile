@@ -49,7 +49,7 @@ RUN apt-get -qq update && apt-get -q install -y \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Keep the package manager consistent with `packageManager` in package.json.
-RUN npm -g i --force pnpm@11.18.0
+RUN npm -g i --force pnpm@12.16.1
 
 ENV PLAYWRIGHT_BROWSERS_PATH=/home/app/ms-playwright
 
@@ -61,6 +61,7 @@ ENV pnpm_config_store_dir=/pnpm/store
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
+COPY packages/analytics/package.json ./packages/analytics/package.json
 COPY packages/logger/package.json ./packages/logger/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 RUN --mount=type=cache,target=/pnpm/store \

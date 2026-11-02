@@ -6,7 +6,6 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ResetPasswordPage from '@/modules/users/client/components/ResetPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { useAuth } from '@/modules/core/client/react-app/auth';
-import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 
 type BoardProps = { children?: React.ReactNode };
 
@@ -21,12 +20,8 @@ jest.mock('@/modules/core/client/components/Board', () => {
     default: ({ children }: BoardProps) => <section>{children}</section>,
   };
 });
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  navigate: jest.fn(),
-}));
 
 const resetPassword = jest.mocked(authApi.resetPassword);
-const navigate = jest.mocked(clientRuntime.navigate);
 
 function SignedInUsername() {
   return <output aria-label="Signed in as">{useAuth().user?.username}</output>;
@@ -128,7 +123,7 @@ describe('ResetPasswordPage', () => {
     expect(screen.getByLabelText('Signed in as')).toHaveTextContent(
       'member-one',
     );
-    expect(navigate).toHaveBeenCalledWith('reset-success');
+    expect(window.location.pathname).toBe('/password/reset/success');
   });
 
   it('shows an error when the reset request fails', async () => {
@@ -176,7 +171,7 @@ describe('ResetPasswordPage', () => {
       ).toBeEnabled();
       expect(resetPassword).toHaveBeenCalledTimes(1);
       expect(screen.getByLabelText('Signed in as')).toBeEmptyDOMElement();
-      expect(navigate).not.toHaveBeenCalled();
+      expect(window.location.pathname).toBe('/password/reset/reset-token');
     },
   );
 });

@@ -1,3 +1,4 @@
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { plainText } from '../../../core/client/utils/filters';
 import AdminHeader from './AdminHeader.component';
@@ -48,23 +49,13 @@ function MemberUsername({
   );
 }
 
-function readInboxLocation(): InboxLocation {
-  const params = new URLSearchParams(window.location.search);
-  const rawStatus = params.get('status') || DEFAULT_STATUS;
+function readInboxLocation(
+  params: Record<string, string | undefined>,
+  requestId?: string,
+): InboxLocation {
+  const rawStatus = params.status || DEFAULT_STATUS;
   const status = rawStatus === 'resolved' ? 'solved' : rawStatus;
-  const pageValue = Number(params.get('page') || '1');
-  const requestMatch = window.location.pathname.match(
-    /^\/admin\/support\/requests\/([^/]+)\/?$/,
-  );
-  let requestId: string | null = null;
-  if (requestMatch) {
-    try {
-      requestId = decodeURIComponent(requestMatch[1]);
-    } catch {
-      // Keep malformed URL text inert; ids are validated by the API.
-      requestId = requestMatch[1];
-    }
-  }
+  const pageValue = Number(params.page || '1');
   return {
     status:
       status === 'all' ||
@@ -73,30 +64,20 @@ function readInboxLocation(): InboxLocation {
       SUPPORT_STATUSES.includes(status as SupportStatus)
         ? status
         : DEFAULT_STATUS,
-    category: params.get('category') || '',
+    category: params.category || '',
     page: Number.isInteger(pageValue) && pageValue > 0 ? pageValue : 1,
-    q: (params.get('q') || '').slice(0, SEARCH_LIMIT),
-    requestId,
+    q: (params.q || '').slice(0, SEARCH_LIMIT),
+    requestId: requestId ?? null,
   };
 }
 
-function writeInboxLocation(value: InboxLocation, replace: boolean): void {
-  const params = new URLSearchParams();
-  if (value.status !== DEFAULT_STATUS) params.set('status', value.status);
-  if (value.category) params.set('category', value.category);
-  if (value.page > 1) params.set('page', String(value.page));
-  if (value.q) params.set('q', value.q);
-  const pathname = value.requestId
-    ? `/admin/support/requests/${encodeURIComponent(value.requestId)}`
-    : '/admin/support';
-  const query = params.toString();
-  const url = `${pathname}${query ? `?${query}` : ''}`;
-  if (replace) window.history.replaceState(window.history.state, '', url);
-  else window.history.pushState(window.history.state, '', url);
-  // Let TanStack Router and this component observe history API navigation.
-  window.dispatchEvent(
-    new PopStateEvent('popstate', { state: window.history.state }),
-  );
+function inboxSearch(value: InboxLocation) {
+  return {
+    status: value.status !== DEFAULT_STATUS ? value.status : undefined,
+    category: value.category || undefined,
+    page: value.page > 1 ? value.page : undefined,
+    q: value.q || undefined,
+  };
 }
 
 function newIdempotencyKey(): string {
@@ -930,13 +911,14 @@ export function SupportMemberPage({ id }: { id: string }) {
     `/api/admin/support-members/${encodeURIComponent(id)}`,
   );
   const canOpenAdminUserPage = useAuth().hasRole('admin');
+  const navigate = useNavigate();
   useEffect(() => {
     if (member && id !== member.username) {
-      window.history.replaceState(
-        window.history.state,
-        '',
-        `/admin/support/member/${encodeURIComponent(member.username)}`,
-      );
+      void navigate({
+        params: { username: member.username },
+        replace: true,
+        to: '/admin/support/member/$username',
+      });
     }
   }, [id, member]);
   return (
@@ -978,50 +960,26 @@ export function SupportMemberPage({ id }: { id: string }) {
   );
 }
 
-export default function SupportInbox({ requestId }: { requestId?: string }) {
-  const [location, setLocation] = useState<InboxLocation>(() => {
-    const current = readInboxLocation();
-    return requestId ? { ...current, requestId } : current;
-  });
+export default function SupportInbox() {
+  const location = readInboxLocation(
+    useSearch({ strict: false }),
+    useParams({ strict: false }).requestId,
+  );
+  const navigate = useNavigate();
   const [searchDraft, setSearchDraft] = useState(location.q);
   const [data, setData] = useState<SupportQueueResponse | null>(null);
   const [failed, setFailed] = useState(false);
   const [revision, setRevision] = useState(0);
-  const [routeRequestId, setRouteRequestId] = useState(requestId ?? null);
-  const selected = routeRequestId ?? location.requestId;
+  const selected = location.requestId;
   const canImport = useAuth().hasRole('admin');
-
-  useEffect(() => {
-    if (requestId !== undefined) {
-      setRouteRequestId(requestId);
-      setLocation(current => ({ ...current, requestId }));
-    }
-  }, [requestId]);
-
-  useEffect(() => {
-    const syncLocation = () => {
-      const next = readInboxLocation();
-      setLocation(next);
-      setSearchDraft(next.q);
-      setRouteRequestId(next.requestId);
-    };
-    window.addEventListener('popstate', syncLocation);
-    return () => window.removeEventListener('popstate', syncLocation);
-  }, []);
 
   useEffect(() => {
     if (searchDraft === location.q) return undefined;
     const timer = window.setTimeout(() => {
-      const next = {
-        ...location,
-        q: searchDraft.slice(0, SEARCH_LIMIT),
-        page: 1,
-      };
-      setLocation(next);
-      writeInboxLocation(next, true);
+      updateLocation({ q: searchDraft.slice(0, SEARCH_LIMIT), page: 1 }, true);
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [location, searchDraft]);
+  }, [location.q, searchDraft]);
 
   useEffect(() => {
     let active = true;
@@ -1047,9 +1005,14 @@ export default function SupportInbox({ requestId }: { requestId?: string }) {
 
   function updateLocation(patch: Partial<InboxLocation>, replace = false) {
     const next = { ...location, ...patch };
-    setLocation(next);
-    if (patch.requestId !== undefined) setRouteRequestId(patch.requestId);
-    writeInboxLocation(next, replace);
+    void navigate({
+      params: { requestId: next.requestId ?? undefined },
+      replace,
+      search: inboxSearch(next),
+      to: next.requestId
+        ? '/admin/support/requests/$requestId'
+        : '/admin/support',
+    });
   }
 
   function reloadQueue() {

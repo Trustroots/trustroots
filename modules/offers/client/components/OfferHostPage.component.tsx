@@ -1,8 +1,8 @@
-import { useSearch } from '@tanstack/react-router';
+import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { Tab, Tabs } from 'react-bootstrap';
 
-import { trackEvent } from '@/modules/core/client/services/client-runtime';
+import { useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
@@ -12,11 +12,6 @@ import OfferLocationEditor from './OfferLocationEditor.component';
 type HostStatus = 'yes' | 'maybe' | 'no';
 const HOST_STATUSES: HostStatus[] = ['yes', 'maybe', 'no'];
 const HOST_TABS = ['availability', 'description', 'location'] as const;
-
-function getTabFromHash() {
-  const tab = window.location.hash.slice(1);
-  return HOST_TABS.find(value => value === tab) || 'availability';
-}
 
 interface HostOffer {
   _id?: string;
@@ -46,23 +41,16 @@ function defaultHostOffer(): HostOffer {
 }
 
 export default function OfferHostPage({ user }: HostPageProps) {
+  const { track } = useAnalytics();
   const routeParams = useSearch({ strict: false });
   const [offer, setOffer] = useState<HostOffer>(defaultHostOffer());
-  const [activeTab, setActiveTab] = useState<string>(getTabFromHash);
+  const hash = useLocation({ select: location => location.hash });
+  const activeTab = HOST_TABS.find(tab => tab === hash) || 'availability';
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [firstTimeAround, setFirstTimeAround] = useState(false);
   const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    const syncTab = () => setActiveTab(getTabFromHash());
-    window.addEventListener('hashchange', syncTab);
-    window.addEventListener('popstate', syncTab);
-    return () => {
-      window.removeEventListener('hashchange', syncTab);
-      window.removeEventListener('popstate', syncTab);
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -139,8 +127,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
     Array.isArray(offer.location) && offer.location.length === 2;
 
   function selectTab(tab: string) {
-    setActiveTab(tab);
-    window.location.hash = tab;
+    void navigate({ hash: tab, search: true, to: '.' });
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -169,10 +156,10 @@ export default function OfferHostPage({ user }: HostPageProps) {
         await createOffer(payload);
       }
 
-      trackEvent('offer-modified', {
-        category: 'offer.edit',
-        label: 'Modified offer',
-        value: offer.status,
+      track('offer-save', {
+        type: 'host',
+        action: offer._id ? 'update' : 'create',
+        status: offer.status,
       });
 
       window.location.assign(`/profile/${user.username}`);

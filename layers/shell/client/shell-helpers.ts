@@ -1,7 +1,4 @@
-import {
-  getBrowserPath,
-  navigateTo,
-} from '@/modules/core/client/services/browser-navigation';
+import { getBrowserPath } from '@/modules/core/client/services/browser-navigation';
 
 export function getClientNavigationTarget(
   event: MouseEvent,
@@ -51,14 +48,4 @@ export function getClientNavigationTarget(
   }
 
   return getBrowserPath(destination);
-}
-
-export const navigation = {
-  go(url: string) {
-    navigateTo(url);
-  },
-};
-
-export function defaultNavigate(url: string) {
-  navigation.go(url);
 }

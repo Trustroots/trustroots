@@ -4,13 +4,8 @@ import {
   getUsernameValidationError,
   redirectAfterSignin,
 } from '@/modules/users/client/utils/auth';
-import { navigate } from '@/modules/core/client/services/client-runtime';
 
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  navigate: jest.fn(),
-}));
-
-const mockedNavigate = jest.mocked(navigate);
+const mockedNavigate = jest.fn();
 
 describe('auth utils', () => {
   beforeEach(() => {
@@ -126,13 +121,24 @@ describe('auth utils', () => {
     ).toBe('Too long, maximum length is 34 characters.');
   });
 
-  it('redirects to the requested local destination after continuing signin', () => {
-    redirectAfterSignin(true, '/messages/alice?tab=unread#latest');
-    expect(mockedNavigate).toHaveBeenCalledWith(
+  it('reloads the requested local destination through the router after continuing signin', () => {
+    redirectAfterSignin(
+      mockedNavigate,
+      true,
       '/messages/alice?tab=unread#latest',
-      undefined,
-      { reload: true },
     );
+    expect(mockedNavigate).toHaveBeenCalledWith({
+      href: '/messages/alice?tab=unread#latest',
+      reloadDocument: true,
+    });
+  });
+
+  it('keeps local paths, query and hash in the safe return destination', () => {
+    expect(getSafeReturnTo('/')).toBe('/');
+    expect(getSafeReturnTo('/messages/alice?tab=unread#latest')).toBe(
+      '/messages/alice?tab=unread#latest',
+    );
+    expect(getSafeReturnTo('/a/../messages')).toBe('/messages');
   });
 
   it('rejects external destinations after signin', () => {
@@ -143,23 +149,38 @@ describe('auth utils', () => {
     expect(getSafeReturnTo('messages/alice')).toBeNull();
     expect(getSafeReturnTo(123 as unknown as string)).toBeNull();
 
-    redirectAfterSignin(true, '//example.com');
-    expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {
-      reload: true,
+    redirectAfterSignin(mockedNavigate, true, '//example.com');
+    expect(mockedNavigate).toHaveBeenCalledWith({
+      href: '/search',
+      reloadDocument: true,
+    });
+  });
+
+  it('rejects absolute same-origin destinations after signin', () => {
+    const sameOrigin = `${window.location.origin}/messages`;
+
+    expect(getSafeReturnTo(sameOrigin)).toBeNull();
+
+    redirectAfterSignin(mockedNavigate, true, sameOrigin);
+    expect(mockedNavigate).toHaveBeenCalledWith({
+      href: '/search',
+      reloadDocument: true,
     });
   });
 
   it('redirects to search when there is no continuation destination', () => {
-    redirectAfterSignin(true);
-    expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {
-      reload: true,
+    redirectAfterSignin(mockedNavigate, true, undefined);
+    expect(mockedNavigate).toHaveBeenCalledWith({
+      href: '/search',
+      reloadDocument: true,
     });
   });
 
   it('redirects to search when sign-in should not continue', () => {
-    redirectAfterSignin(false, '/messages/alice');
-    expect(mockedNavigate).toHaveBeenCalledWith('search.map', undefined, {
-      reload: true,
+    redirectAfterSignin(mockedNavigate, false, '/messages/alice');
+    expect(mockedNavigate).toHaveBeenCalledWith({
+      href: '/search',
+      reloadDocument: true,
     });
   });
 });

@@ -20,7 +20,7 @@ RUN rm -f /etc/apt/sources.list.d/passenger.list \
   && apt-get clean \
   && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN npm install -g --force pnpm@11.18.0
+RUN npm install -g --force pnpm@12.16.1
 
 RUN mkdir -p /trustroots
 WORKDIR /trustroots
@@ -33,6 +33,7 @@ WORKDIR /trustroots
 # - Allows docker to reuse previous build layers if these files do not change
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY patches ./patches
+COPY packages/analytics/package.json ./packages/analytics/package.json
 COPY packages/logger/package.json ./packages/logger/package.json
 COPY packages/ui/package.json ./packages/ui/package.json
 # This takes FOREVER if it's run in the passenger container, that's why we

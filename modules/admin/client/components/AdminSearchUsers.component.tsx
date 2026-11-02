@@ -1,4 +1,5 @@
 // External dependencies
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 import { formatRoleLabel } from '../utils/role-label';
 
@@ -46,6 +47,11 @@ interface SearchUsersProps {
   showHeading?: boolean;
 }
 
+interface SearchUsersRouteProps extends SearchUsersProps {
+  navigate: ReturnType<typeof useNavigate>;
+  search: { role?: string; search?: string };
+}
+
 interface SearchUsersState {
   hideObviousSpamUsers: boolean;
   role: string;
@@ -71,15 +77,15 @@ const USER_LIST_ROLES = [
   'volunteer',
 ];
 
-export class AdminSearchUsersContent extends Component<
-  SearchUsersProps,
+export class SearchUsersContent extends Component<
+  SearchUsersRouteProps,
   SearchUsersState
 > {
   static defaultProps = {
     showHeading: true,
   };
 
-  constructor(props: SearchUsersProps) {
+  constructor(props: SearchUsersRouteProps) {
     super(props);
     this.onSearchChange = this.onSearchChange.bind(this);
     this.onHideObviousSpamUsersChange =
@@ -101,13 +107,12 @@ export class AdminSearchUsersContent extends Component<
   }
 
   componentDidMount() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const role = urlParams.get('role');
+    const { role } = this.props.search;
     if (role && USER_LIST_ROLES.includes(role)) {
       this.setState({ role }, () => this.doListUsersByRole(null));
       return;
     }
-    const search = normalizeAdminQuery(urlParams.get('search'));
+    const search = normalizeAdminQuery(this.props.search.search);
     if (search) {
       this.setState({ search }, () => this.doSearch(null));
     }
@@ -152,19 +157,16 @@ export class AdminSearchUsersContent extends Component<
       event.preventDefault();
     }
     const { role, sort } = this.state;
-    const url = new URL(document.location.href);
-    url.searchParams.set('role', role);
-    url.searchParams.delete('search');
-    const state = { role };
-    if (
-      options.page ||
-      options.sort ||
-      url.toString() === document.location.href
-    ) {
-      window.history.replaceState(state, window.document.title, url.toString());
-    } else {
-      window.history.pushState(state, window.document.title, url.toString());
-    }
+    void this.props.navigate({
+      hash: true,
+      replace: Boolean(options.page || options.sort),
+      search: (search: Record<string, string>) => ({
+        ...search,
+        role,
+        search: undefined,
+      }),
+      to: '.',
+    });
     const memberList: MemberList = await listUsersByRole(role, {
       page: options.page || 1,
       sort: options.sort || sort,
@@ -189,23 +191,16 @@ export class AdminSearchUsersContent extends Component<
     if (search !== this.state.search) {
       this.setState({ search });
     }
-    const url = new URL(document.location.href);
-    url.searchParams.delete('role');
-    if (search) {
-      url.searchParams.set('search', search);
-    } else {
-      url.searchParams.delete('search');
-    }
-    const state = { search };
-    if (
-      options.page ||
-      options.sort ||
-      url.toString() === document.location.href
-    ) {
-      window.history.replaceState(state, window.document.title, url.toString());
-    } else {
-      window.history.pushState(state, window.document.title, url.toString());
-    }
+    void this.props.navigate({
+      hash: true,
+      replace: Boolean(options.page || options.sort),
+      search: (current: Record<string, string>) => ({
+        ...current,
+        role: undefined,
+        search: search || undefined,
+      }),
+      to: '.',
+    });
     if (search.length >= SEARCH_STRING_LIMIT) {
       const memberList: MemberList = await searchUsers(search, {
         page: options.page || 1,
@@ -319,6 +314,12 @@ export class AdminSearchUsersContent extends Component<
       </>
     );
   }
+}
+
+export function AdminSearchUsersContent(props: SearchUsersProps) {
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false });
+  return <SearchUsersContent {...props} navigate={navigate} search={search} />;
 }
 
 export default function AdminSearchUsers() {

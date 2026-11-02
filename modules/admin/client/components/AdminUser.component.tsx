@@ -6,6 +6,7 @@ import {
   formatAdminDateTime,
   getAdminDateTimeAttribute,
 } from '../utils/admin-date';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
 import { Modal } from 'react-bootstrap';
 
@@ -325,11 +326,21 @@ export function InfoTable({ rows }: InfoTableProps) {
   );
 }
 
-export default class AdminUser extends Component<
-  { username?: string; viewer?: AuthUser | null },
+interface AdminUserProps {
+  username?: string;
+  viewer?: AuthUser | null;
+}
+
+interface AdminUserRouteProps extends AdminUserProps {
+  navigate: ReturnType<typeof useNavigate>;
+  search: { id?: string; ip?: string; q?: string };
+}
+
+export class AdminUserContent extends Component<
+  AdminUserRouteProps,
   AdminUserState
 > {
-  constructor(props: { username?: string }) {
+  constructor(props: AdminUserRouteProps) {
     super(props);
     this.getUserById = this.getUserById.bind(this);
     this.getUsersByLastIpAddress = this.getUsersByLastIpAddress.bind(this);
@@ -361,10 +372,7 @@ export default class AdminUser extends Component<
   }
 
   componentDidMount() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const id = urlParams.get('id');
-    const ipAddress = urlParams.get('ip');
-    const query = urlParams.get('q');
+    const { id, ip: ipAddress, q: query } = this.props.search;
 
     if (this.props.username) {
       this.setState({ query: this.props.username }, () =>
@@ -384,20 +392,22 @@ export default class AdminUser extends Component<
     const normalizedQuery = normalizeAdminQuery(query);
     this.setState({ query });
 
-    // Update URL
-    const url = new URL(document.location.href);
-    url.pathname = '/admin/user';
-    url.searchParams.delete('id');
-    url.searchParams.delete('ip');
-    url.searchParams.delete('q');
-    if (query) {
-      if (isMongoObjectId(normalizedQuery)) {
-        url.searchParams.set('id', normalizedQuery);
-      } else {
-        url.searchParams.set('q', query);
-      }
-    }
-    window.history.pushState({ query }, window.document.title, url.toString());
+    const search = !query
+      ? {}
+      : isMongoObjectId(normalizedQuery)
+        ? { id: normalizedQuery }
+        : { q: query };
+    void this.props.navigate({
+      hash: true,
+      search: (current: Record<string, string>) => ({
+        ...current,
+        id: undefined,
+        ip: undefined,
+        q: undefined,
+        ...search,
+      }),
+      to: '/admin/user',
+    });
   }
 
   onHideObviousSpamUsersChange(event: ChangeEvent<HTMLInputElement>) {
@@ -1442,4 +1452,10 @@ export default class AdminUser extends Component<
       </>
     );
   }
+}
+
+export default function AdminUser(props: AdminUserProps) {
+  const navigate = useNavigate();
+  const search = useSearch({ strict: false });
+  return <AdminUserContent {...props} navigate={navigate} search={search} />;
 }

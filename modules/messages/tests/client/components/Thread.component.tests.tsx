@@ -1,3 +1,4 @@
+import { useParams } from '@tanstack/react-router';
 import React from 'react';
 import {
   fireEvent,
@@ -21,7 +22,6 @@ import {
   generateClientUser,
   generateMessage,
 } from '@/testutils/client/data.client.testutil';
-import * as clientRuntime from '@/modules/core/client/services/client-runtime';
 import type { UserProfile } from '@/modules/users/client/types';
 import type {
   Message,
@@ -52,9 +52,6 @@ jest.mock('@/modules/messages/client/api/messages.api');
 jest.mock(
   '@/modules/messages/client/services/unread-message-count.client.service',
 );
-jest.mock('@/modules/core/client/services/client-runtime', () => ({
-  navigate: jest.fn(),
-}));
 let mockIsExtraSmall = true;
 jest.mock('@/modules/core/client/hooks/use-media-query', () => ({
   ...jest.requireActual<object>('@/modules/core/client/hooks/use-media-query'),
@@ -386,11 +383,14 @@ describe('<Thread>', () => {
     showThread(routeParams);
     api.messages.fetchMessages.mockResolvedValueOnce({ messages: [] });
 
-    render(<Thread user={me} profileMinimumLength={0} />);
+    // Like the router, leaving the thread route unmounts the thread.
+    function ThreadRoute() {
+      const { username } = useParams({ strict: false });
+      return username ? <Thread user={me} profileMinimumLength={0} /> : null;
+    }
+    render(<ThreadRoute />);
 
-    await waitFor(() =>
-      expect(clientRuntime.navigate).toHaveBeenCalledWith('inbox'),
-    );
+    await waitFor(() => expect(window.location.pathname).toBe('/messages'));
     expect(
       screen.queryByText(/You haven't been talking yet/),
     ).not.toBeInTheDocument();
