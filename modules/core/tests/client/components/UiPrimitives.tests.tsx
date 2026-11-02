@@ -133,7 +133,7 @@ test('alerts and badges render supplied content and attributes', () => {
       <Alert intent="warning" role="alert" className="extra">
         A warning
       </Alert>
-      <Badge className="extra" title="Count">
+      <Badge variant="solid" intent="primary" className="extra" title="Count">
         3
       </Badge>
     </>,
@@ -144,24 +144,63 @@ test('alerts and badges render supplied content and attributes', () => {
     'extra',
   );
   expect(screen.getByTitle('Count')).toHaveClass(
-    'tw:bg-brand-primary',
+    'tw:[--intent:var(--tr-brand-primary)]',
     'extra',
   );
 });
 
-test('alert and badge do not require a class name', () => {
+test('alert does not require a class name', () => {
   render(
-    <>
-      <Alert intent="warning" role="alert">
-        Warning
-      </Alert>
-      <Badge>New</Badge>
-    </>,
+    <Alert intent="warning" role="alert">
+      Warning
+    </Alert>,
   );
   expect(screen.getByRole('alert')).toHaveClass(
     'tw:bg-(--bs-warning-bg-subtle)',
   );
-  expect(screen.getByText('New')).toHaveClass('tw:bg-brand-primary');
+});
+
+test('badges expose their resolved variant, intent and size', () => {
+  render(
+    <>
+      <Badge variant="outline" intent="neutral">
+        12
+      </Badge>
+      <Badge variant="solid" intent="danger" className="tw:rounded-full">
+        3
+      </Badge>
+    </>,
+  );
+  const outline = screen.getByText('12');
+  expect(outline).toHaveAttribute('data-slot', 'badge');
+  expect(outline).toHaveAttribute('data-variant', 'outline');
+  expect(outline).toHaveAttribute('data-intent', 'neutral');
+  expect(outline).toHaveAttribute('data-size', 'md');
+  expect(outline).toHaveClass(
+    'tw:border-current',
+    'tw:text-(--intent)',
+    'tw:[--intent:var(--tr-neutral)]',
+  );
+
+  // A caller's shape replaces the default corners.
+  const solid = screen.getByText('3');
+  expect(solid).toHaveClass('tw:bg-(--intent)', 'tw:rounded-full');
+  expect(solid).not.toHaveClass('tw:rounded-md');
+});
+
+test('badge weight follows its variant at the small size', () => {
+  render(
+    <>
+      <Badge variant="outline" intent="neutral" size="sm">
+        Light
+      </Badge>
+      <Badge variant="solid" intent="primary" size="sm">
+        Semibold
+      </Badge>
+    </>,
+  );
+  expect(screen.getByText('Light')).toHaveClass('tw:font-extralight');
+  expect(screen.getByText('Semibold')).toHaveClass('tw:font-semibold');
 });
 
 test('spinner announces the caller supplied label', () => {

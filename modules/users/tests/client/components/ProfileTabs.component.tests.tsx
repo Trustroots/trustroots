@@ -45,7 +45,7 @@ describe('<ProfileTabs />', () => {
       await screen.findByRole('tab', { name: '2 experiences' }),
     ).toHaveAttribute('href', '/profile/alice/experiences');
     expect(getCount).toHaveBeenCalledWith('user-1');
-    expect(screen.getByText('2')).toHaveClass('badge');
+    expect(screen.getByText('2')).toHaveAttribute('data-slot', 'badge');
   });
 
   it('updates the active tab when the route prop changes', () => {
@@ -120,8 +120,10 @@ describe('<ProfileTabs />', () => {
       })
       .closest('li');
 
-    expect(expTab?.querySelector('div')).toBeInTheDocument();
-    expect(screen.getByText('5')).toHaveClass('badge');
+    expect(
+      expTab?.querySelector('[data-slot="badge-indicator"]'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('5')).toHaveAttribute('data-slot', 'badge');
   });
 
   it('hides unavailable experience tabs without pending notification', async () => {
