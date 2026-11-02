@@ -1,6 +1,6 @@
-import classnames from 'classnames';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
+import { Badge } from '@trustroots/ui/Badge';
 import { getThreads, type AdminThread } from '../api/threads.api';
 import { getUser } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
@@ -173,14 +173,15 @@ export default function AdminThreads() {
                             <UserLink user={to} />
                           </td>
                           <td>
-                            <span
-                              className={classnames('label', {
-                                'label-success': thread.read,
-                                'label-warning': !thread.read,
-                              })}
-                            >
-                              {thread.read ? 'Read' : 'Unread'}
-                            </span>
+                            {thread.read ? (
+                              <Badge variant="solid" intent="success">
+                                Read
+                              </Badge>
+                            ) : (
+                              <Badge variant="solid" intent="warning">
+                                Unread
+                              </Badge>
+                            )}
                           </td>
                           <td>
                             {thread.votes?.length ? (

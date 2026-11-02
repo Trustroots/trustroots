@@ -45,13 +45,14 @@ height name), add it to the `extendTailwindMerge` call too.
 
 ## Badge
 
-Every badge in the app is a `Badge`. Callers pick `variant` (`solid` or
-`outline`) and an `intent`, both required, and optionally `size` (`md`, the
-default, scales with the text like Bootstrap's `.badge`; `sm` for profile counts
-and tags). One-off shapes, such as the header's tiny unread counter or a pill,
-are class names at the call site. The badge renders `data-slot="badge"` and its
-resolved `data-variant`, `data-intent` and `data-size`, which tests should use
-instead of class names. Only offer a value that the app uses; drop it
+Every badge in the app is a `Badge`, including the status tags that were
+Bootstrap 3 `.label`s. Callers pick `variant` (`solid` or `outline`) and an
+`intent`, both required, and optionally `size` (`md`, the default, scales with
+the text like Bootstrap's `.badge`; `sm` for profile counts and tags). One-off
+shapes, such as the header's tiny unread counter or a pill, are class names at
+the call site. The badge renders `data-slot="badge"` and its resolved
+`data-variant`, `data-intent` and `data-size`, which tests should use instead
+of class names. Only offer a value that the app uses; drop it
 when its last use goes.
 
 ## shadcn
