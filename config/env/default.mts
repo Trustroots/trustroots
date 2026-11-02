@@ -315,6 +315,13 @@ const service = {
     scriptSrc: 'https://1p.trustroots.org/script.js',
     websiteId: '',
   },
+  // Signing key for the member data export (see docs/data-export-signing.md).
+  // A dedicated key, used for nothing else, injected at runtime as an nsec.
+  // Never commit an nsec. With no key configured the export is served
+  // unsigned.
+  dataExportSigning: {
+    nsec: process.env.TRUSTROOTS_EXPORT_SIGNING_NSEC || '',
+  },
 } satisfies DefaultConfig;
 export default service;
 /** @commonjs */
