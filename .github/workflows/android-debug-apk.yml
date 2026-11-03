@@ -188,7 +188,7 @@ jobs:
     # Keep this check name stable: main requires it before Android changes merge.
     needs: [changes, debug-apk, coverage-build, coverage-device]
     if: >-
-      always() &&
+      !cancelled() &&
       (github.event_name != 'pull_request' || needs.changes.result != 'success' ||
        needs.changes.outputs.android == 'true')
     timeout-minutes: 10
