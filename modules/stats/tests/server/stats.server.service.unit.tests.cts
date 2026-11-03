@@ -135,6 +135,22 @@ describe('Stats service unit tests', () => {
     });
   });
 
+  it('records a complex stat object', done => {
+    const { influxService, statsService } = loadStatsService();
+    const stat = {
+      namespace: 'messages',
+      counts: { sent: 1 },
+      values: { length: 180 },
+      tags: { type: 'firstMessage' },
+      meta: { threadId: 'thread-1' },
+      time: new Date('2026-06-06T10:00:00.000Z'),
+    };
+
+    statsService.stat(stat, done);
+
+    influxService.stat.firstCall.args[0].should.deepEqual(stat);
+  });
+
   it('rejects an invalid stat object', done => {
     const { influxService, statsService } = loadStatsService();
 

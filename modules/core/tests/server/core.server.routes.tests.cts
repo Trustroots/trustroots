@@ -21,10 +21,6 @@ const User = mongoose.model<UserRecord>('User');
 let app: TestExpressApp;
 let agent: TestAgent;
 
-// Demo CSP Violation report
-// Doesn't matter what's in here,
-// but this is how they generally look:
-
 type NostrUserOverrides = Partial<ServerUserFixture> & {
   firstName?: string;
   lastName?: string;
@@ -485,6 +481,27 @@ describe('Core CRUD tests', function () {
       createNostrUser(
         {
           roles: ['user', 'shadowban'],
+        },
+        function (saveErr) {
+          if (saveErr) return done(saveErr);
+          agent
+            .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+            .expect(200)
+            .end(function (err, res) {
+              if (err) return done(err);
+              res.body.should.deepEqual({
+                linkedPubkeys: [validNpubHex],
+                pubkeys: [],
+              });
+              return done();
+            });
+        },
+      );
+    });
+    it('identifies private author keys without making them visible', function (done) {
+      createNostrUser(
+        {
+          public: false,
         },
         function (saveErr) {
           if (saveErr) return done(saveErr);

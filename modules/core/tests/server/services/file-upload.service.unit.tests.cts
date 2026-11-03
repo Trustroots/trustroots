@@ -342,6 +342,19 @@ describe('file-upload.service unit tests', () => {
     });
   }
 
+  it('removes temporary files after content validation declines an upload', done => {
+    const filePath = writeTempFile(Buffer.from('Sample text document'));
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      fs.existsSync(filePath).should.equal(false);
+      done();
+    });
+    uploadFile(validMimeTypes, uploadField, {}, res, () =>
+      done(new Error('Unexpected accepted file')),
+    );
+  });
+
   it('rejects requests without an uploaded file', done => {
     const uploadFile = loadUploadFileWithStubbedMulter(null);
     const res = mockResponse(() => {
@@ -428,6 +441,43 @@ describe('file-upload.service unit tests', () => {
         done(err);
       }
     });
+  });
+
+  it('rejects files when magic-byte detection finds no supported type', done => {
+    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    const filePath = writeTempFile(Buffer.from('not a supported file'));
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      try {
+        res.statusCode.should.equal(415);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        done();
+      } catch (err) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        done(err);
+      }
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
+
+  it('accepts svg files via the fallback detector', done => {
+    const filePath = writeTempFile(
+      Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>', 'utf8'),
+    );
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    const res = mockResponse(() => {
+      try {
+        res.statusCode.should.equal(415);
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        done();
+      } catch (err) {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        done(err);
+      }
+    });
+
+    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
   it('rejects files when fallback detection cannot read the file', done => {

@@ -69,6 +69,11 @@ describe('Controller: analytics', function () {
       result.should.equal('');
     });
 
+    it('returns an empty string when neither URL nor UTM params are given', function () {
+      const result = analytics.appendUTMParams();
+      result.should.equal('');
+    });
+
     it('returns the original URL when it cannot be parsed', function () {
       const result = analytics.appendUTMParams('http://', utmParams);
       result.should.equal('http://');
