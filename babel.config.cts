@@ -19,4 +19,16 @@ const babelConfig: BabelConfiguration = {
   ],
 };
 
-module.exports = babelConfig;
+interface BabelApi {
+  version: string;
+  cache: { using(callback: () => string): unknown };
+}
+
+// Stryker's instrumenter parses source with Babel 8, which picks up this file
+// but cannot load the Babel 7 presets. It only parses, so give it nothing.
+function config(api: BabelApi): BabelConfiguration | object {
+  api.cache.using(() => api.version);
+  return api.version.startsWith('7.') ? babelConfig : {};
+}
+
+module.exports = Object.assign(config, { babelConfig });
