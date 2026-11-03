@@ -81,6 +81,8 @@ describe('PR line-change summaries', () => {
       'modules/widget/tests/client/widget.tests.js': 'tests',
       'tests/e2e/fixtures/sample.json': 'tests',
       'src/widget.test.ts': 'tests',
+      'Button.stories.tsx': 'tests',
+      'modules/core/client/components/Button.stories.tsx': 'tests',
       'src/__mocks__/api.js': 'tests',
       'jest/setup.js': 'tests',
       '.github/workflows/test.yml': 'other',
