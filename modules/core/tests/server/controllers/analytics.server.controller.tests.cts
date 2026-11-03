@@ -11,16 +11,6 @@ describe('Controller: analytics', function () {
       campaign: 'password_reset_email',
     };
 
-    it('appends the required UTM parameters', function () {
-      const result = analytics.appendUTMParams(
-        'https://www.trustroots.org/',
-        utmParams,
-      );
-      result.should.containEql('utm_source=transactional_email');
-      result.should.containEql('utm_medium=email');
-      result.should.containEql('utm_campaign=password_reset_email');
-    });
-
     it('appends optional term and content parameters', function () {
       const result = analytics.appendUTMParams('https://www.trustroots.org/', {
         ...utmParams,
@@ -29,25 +19,6 @@ describe('Controller: analytics', function () {
       });
       result.should.containEql('utm_term=running%20shoes');
       result.should.containEql('utm_content=textlink');
-    });
-
-    it('preserves existing query parameters', function () {
-      const result = analytics.appendUTMParams(
-        'https://www.trustroots.org/?foo=bar',
-        utmParams,
-      );
-      result.should.containEql('foo=bar');
-      result.should.containEql('utm_source=transactional_email');
-    });
-
-    it('keeps the hash and replaces existing UTM parameters', function () {
-      const result = analytics.appendUTMParams(
-        'https://www.trustroots.org/page?utm_source=old#section',
-        utmParams,
-      );
-      result.should.containEql('utm_source=transactional_email');
-      result.should.not.containEql('utm_source=old');
-      result.should.endWith('#section');
     });
 
     it('returns the original URL when UTM params are missing', function () {

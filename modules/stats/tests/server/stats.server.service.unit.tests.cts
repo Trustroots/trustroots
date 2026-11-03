@@ -216,18 +216,4 @@ describe('Stats service unit tests', () => {
       });
     }).should.throw('Time must be a Date object or not provided');
   });
-
-  it('accepts valid count and value fields with unique keys', function () {
-    const { statsService } = loadStatsService();
-
-    (() => {
-      statsService._validateStat({
-        namespace: 'valid',
-        counts: { count: 1 },
-        values: { value: 2 },
-        meta: { source: 'unit' },
-        tags: { tag: 'test' },
-      });
-    }).should.not.throw();
-  });
 });

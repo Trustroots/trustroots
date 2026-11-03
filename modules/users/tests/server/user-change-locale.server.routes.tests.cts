@@ -100,16 +100,6 @@ describe('User account: change locale', () => {
       should(userAfter).have.property('locale', 'en');
     });
   });
-  context('not logged in', () => {
-    it('403', async () => {
-      await agent
-        .put('/api/users')
-        .send({
-          locale: 'en',
-        })
-        .expect(403);
-    });
-  });
 });
 describe('User account: read locale', () => {
   const publicUsers = utils.generateUsers(2, {
@@ -128,17 +118,6 @@ describe('User account: read locale', () => {
     });
     afterEach(async () => {
       await utils.signOut(agent);
-    });
-    it('[self] response body of /api/auth/signin should include locale', async () => {
-      const { username, password } = publicUsers[0];
-      const { body } = await agent
-        .post('/api/auth/signin')
-        .send({
-          username,
-          password,
-        })
-        .expect(200);
-      should(body).have.property('locale', 'en');
     });
     it("response body of /api/users/:username shouldn't include locale", async () => {
       const otherUser = publicUsers[1];

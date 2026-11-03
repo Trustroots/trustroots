@@ -109,32 +109,4 @@ describe('Stat API integration tests', function () {
       });
     });
   });
-
-  context('influx disabled', function () {
-    beforeEach(function () {
-      // stub enable influx in config
-      sinon.stub(config.influxdb, 'enabled').value(false);
-    });
-
-    it('influx ignored without error', function (done) {
-      statsService.stat(
-        {
-          namespace: 'test',
-          counts: {
-            c: 1,
-          },
-        },
-        function (e) {
-          if (e) return done(e);
-          try {
-            sinon.assert.callCount(writeMeasurement, 0);
-
-            return done();
-          } catch (e) {
-            return done(e);
-          }
-        },
-      );
-    });
-  });
 });

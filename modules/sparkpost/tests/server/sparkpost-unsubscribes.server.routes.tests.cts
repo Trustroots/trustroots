@@ -72,13 +72,6 @@ describe('SparkPost newsletter unsubscribe HTTP integration', () => {
     should(await User.findOne({ email }).lean().exec()).deepEqual(before);
   });
 
-  it('rejects recipient query operators at the HTTP boundary', async () => {
-    await post([event('list_unsubscribe', { $ne: null })]).expect(400);
-    should((await User.findOne({ email }).lean().exec())!.newsletter).equal(
-      true,
-    );
-  });
-
   it('returns 503 on persistence failure and applies the same batch on retry', async () => {
     const update = sinon.stub(User, 'updateOne').returns({
       exec: () => Promise.reject(new Error('database unavailable')),

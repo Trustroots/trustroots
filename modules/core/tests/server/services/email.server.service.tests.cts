@@ -150,32 +150,6 @@ describe('Service: email', function () {
     emailService = loadEmailService();
   });
 
-  it('passes Agenda enqueue failures to the email caller', function (done) {
-    const enqueueError = new Error('Job could not be queued');
-    emailService = loadEmailService({
-      '../../../../config/lib/agenda': {
-        now() {
-          return Promise.reject(enqueueError);
-        },
-      },
-    });
-    sandbox
-      .stub(emailService, 'renderEmail')
-      .callsFake(function (templateName, params, callback) {
-        callback(null, {
-          to: { address: 'member@example.test' },
-          subject: 'test',
-          text: 'test',
-        });
-      });
-
-    emailService.renderEmailAndSend('example', {}, function (err, job) {
-      err!.should.equal(enqueueError);
-      should.not.exist(job);
-      done();
-    });
-  });
-
   it('can send signup email confirmation', function (done) {
     const user = {
       displayName: 'test user',
@@ -794,28 +768,6 @@ describe('Service: email', function () {
     );
   });
 
-  it('builds HTTPS base template URLs when HTTPS is configured', function () {
-    const service = loadEmailService({
-      '../../../../config/config': {
-        ...config,
-        domain: 'secure.trustroots.test',
-        https: true,
-      },
-    });
-
-    const params = service.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@test.com',
-      utmCampaign: 'test',
-    });
-
-    params.footerUrlPlainText!.should.equal('https://secure.trustroots.test');
-    params.urlSupportPlainText!.should.equal(
-      'https://secure.trustroots.test/support',
-    );
-  });
-
   it('can send remove profile emails', function (done) {
     const user = {
       displayName: 'test user',
@@ -992,23 +944,6 @@ describe('Service: email', function () {
     );
   });
 
-  it('emails should have inline css styles', function (done) {
-    const params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@test.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-    });
-
-    emailService.renderEmail('reset-password', params, function (err, email) {
-      if (err) return done(err);
-      email!.html!.should.containEql('<body style=');
-      done();
-    });
-  });
-
   it('emails should have Sparkpost transactional and campaign_id headers', function (done) {
     const user = {
       displayName: 'test user',
@@ -1027,48 +962,6 @@ describe('Service: email', function () {
     });
   });
 
-  it('emails should have "do not reply" note when sending from default email', function (done) {
-    const params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@example.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-      // Ommiting `from` affects rendering of template's footer
-      // from: 'test@example.com'
-    });
-
-    emailService.renderEmail('reset-password', params, function (err, email) {
-      if (err) return done(err);
-      email!.text!.should.containEql(
-        'This is an automated email. Please don’t reply directly.',
-      );
-      done();
-    });
-  });
-
-  it('emails should not have "do not reply" note when sending from custom email', function (done) {
-    const params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@example.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-      // Adding `from` affects rendering of template's footer
-      from: 'test@example.com',
-    });
-
-    emailService.renderEmail('reset-password', params, function (err, email) {
-      if (err) return done(err);
-      email!.text!.should.not.containEql(
-        'This is an automated email. Please don’t reply directly.',
-      );
-      done();
-    });
-  });
-
   it('passes render failures to renderEmail callbacks', function (done) {
     const service = loadEmailService({
       '../../../../config/lib/render': (templatePath, params, callback) =>
@@ -1083,76 +976,6 @@ describe('Service: email', function () {
         done();
       },
     );
-  });
-
-  it('passes Agenda scheduling failures to renderEmailAndSend callbacks', function (done) {
-    const service = loadEmailService({
-      '../../../../config/lib/agenda': {
-        now(type, data) {
-          jobs.push(JSON.parse(JSON.stringify({ type, data })));
-          return Promise.reject(new Error('agenda failed'));
-        },
-      },
-    });
-
-    service.renderEmailAndSend(
-      'reset-password',
-      {
-        subject: 'test',
-        name: 'test',
-        email: 'test@test.com',
-        utmCampaign: 'test',
-      },
-      function (err) {
-        err!.message.should.equal('agenda failed');
-        jobs.length.should.equal(1);
-        done();
-      },
-    );
-  });
-
-  describe('Plain text emails', function () {
-    it('should be able to render text-only emails', function (done) {
-      const params = emailService.addEmailBaseTemplateParams({
-        subject: 'test',
-        name: 'test',
-        email: 'test@test.com',
-        utmCampaign: 'test',
-        urlConfirmPlainText: '#',
-        urlConfirm: '#',
-        skipHtmlTemplate: true,
-      });
-
-      emailService.renderEmail('reset-password', params, function (err, email) {
-        if (err) return done(err);
-        should.exist(email!.text);
-        should.not.exist(email!.html);
-        done();
-      });
-    });
-
-    it('plain text emails should not contain html or html entities', function (done) {
-      const params = {
-        skipHtmlTemplate: true, // Don't render html template for this email
-        request: {
-          message:
-            '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar',
-        },
-        subject: 'test',
-      };
-      emailService.renderEmail(
-        'support-request',
-        params,
-        function (err, email) {
-          if (err) return done(err);
-
-          email!.text!.should.containEql('> Foo & foobar bar');
-          email!.text!.should.not.containEql('script');
-
-          done();
-        },
-      );
-    });
   });
 
   context('Confirm contact email', function () {

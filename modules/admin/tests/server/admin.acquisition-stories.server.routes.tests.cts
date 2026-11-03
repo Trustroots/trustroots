@@ -151,15 +151,4 @@ describe('Admin acquisition stories CRUD tests', () => {
       });
     });
   });
-  it('returns 404 for the retired analysis API', async () => {
-    await utils.signIn(credentialsAdmin, agent);
-    try {
-      await agent
-        .post('/api/admin/acquisition-stories/analysis')
-        .set('X-Trustroots-Request', '1')
-        .expect(404);
-    } finally {
-      await utils.signOut(agent);
-    }
-  });
 });

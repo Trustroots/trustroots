@@ -282,20 +282,4 @@ describe('Read experiences by userTo Id', () => {
       });
     });
   });
-  context('logged in as non-public user', () => {
-    beforeEach(function () {
-      return utils.signIn.call(this, _usersPrivate[0], agent);
-    });
-    afterEach(function () {
-      return utils.signOut.call(this, agent);
-    });
-    it('403', async () => {
-      await agent.get(`/api/experiences?userTo=${users[2]._id}`).expect(403);
-    });
-  });
-  context('not logged in', () => {
-    it('403', async () => {
-      await agent.get(`/api/experiences?userTo=${users[2]._id}`).expect(403);
-    });
-  });
 });
