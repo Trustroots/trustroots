@@ -742,7 +742,7 @@ describe('<SearchPage />', () => {
   });
 
   it('does not apply an initial place lookup after device location succeeds', async () => {
-    mockGetRouteParams.mockReturnValue({ location: 'Paris' });
+    window.history.pushState({}, '', '/search?location=Paris');
     const pendingSuggestions: Array<
       (suggestions: LocationSuggestions) => void
     > = [];
