@@ -85,6 +85,10 @@ trustroots.tar.gz*
 /coverage/
 /coverage-report/
 
+# Mutation testing output
+/.stryker-tmp/
+/reports/stryker/
+
 # End-to-end test output
 /playwright-report/
 /test-results/
