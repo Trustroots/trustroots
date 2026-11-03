@@ -111,10 +111,9 @@ test.describe('public footer', () => {
     await expect(
       page.getByText(/This product includes GeoLite2 data/),
     ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'MaxMind' })).toHaveAttribute(
-      'href',
-      'https://www.maxmind.com',
-    );
+    await expect(
+      page.getByRole('link', { name: 'MaxMind', exact: true }),
+    ).toHaveAttribute('href', 'https://www.maxmind.com');
     await expect(
       page.getByRole('link', { name: 'OpenStreetMap contributors' }),
     ).toBeVisible();

@@ -23,7 +23,9 @@ export default function Credits() {
             <h3>Location data</h3>
             <p>
               This product includes GeoLite2 data created by MaxMind, available
-              from <a href="https://www.maxmind.com">MaxMind</a>.
+              from <a href="https://www.maxmind.com">MaxMind</a>. We look up
+              your approximate location on our own servers. Your IP address is
+              not shared with MaxMind.
             </p>
             <h3>Maps</h3>
             <p>
