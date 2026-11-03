@@ -7,7 +7,8 @@ const jestConfig = require('./apps/nostranslation/jest.config.cjs');
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
   testRunner: 'jest',
-  plugins: ['@stryker-mutator/jest-runner'],
+  plugins: ['@stryker-mutator/jest-runner', './tooling/stryker/ignore-export-names.mjs'],
+  ignorers: ['export-names'],
   jest: {
     configFile: 'apps/nostranslation/jest.config.cjs',
     enableFindRelatedTests: true,
@@ -15,11 +16,15 @@ export default {
   mutate: jestConfig.collectCoverageFrom.map(glob =>
     glob.replace('<rootDir>/', ''),
   ),
+  // Ansible vault files are not JavaScript, whatever their extension.
+  ignorePatterns: ['/deploy/files/secrets', '/.stryker-tmp', '/.prune-tmp', '/.stryker-work', '/reports', '/coverage'],
   coverageAnalysis: 'perTest',
-  disableBail: true,
+  // See stryker.client.config.mjs for why bail stays on.
+  disableBail: false,
   ignoreStatic: true,
-  concurrency: 2,
+  concurrency: 5,
   timeoutMS: 10000,
+  dryRunTimeoutMinutes: 60,
   incremental: true,
   incrementalFile: 'reports/stryker/nostranslation-incremental.json',
   tempDirName: '.stryker-tmp/nostranslation',
