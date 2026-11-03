@@ -3,7 +3,7 @@ import errorService from '../../../core/server/services/error.server.service.mjs
 import emailService from '../../../core/server/services/email.server.service.mjs';
 import userProfile from './users.profile.server.controller.mjs';
 import authenticationService from '../services/authentication.server.service.mts';
-import signupSafety from '../services/signup-safety.server.service.mts';
+import { matchSignupReviewRules } from '../services/signup-review-rules.server.service.mts';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
@@ -227,7 +227,7 @@ service.signup = function (req, res) {
       user.salt = undefined;
     }
     const createdUser = signupUser!;
-    const matchedKeywords = signupSafety.matchSignupProfile(createdUser);
+    const matchedKeywords = await matchSignupReviewRules(createdUser);
     if (matchedKeywords.length) {
       emailService.sendFlaggedSignupAlert(
         createdUser,

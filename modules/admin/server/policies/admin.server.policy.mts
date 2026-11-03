@@ -79,6 +79,10 @@ export const invokeRolesPolicies = () => {
     {
       roles: ['admin'],
       allows: [
+        {
+          resources: '/api/admin/signup-review-rules',
+          permissions: ['get', 'put'],
+        },
         { resources: '/api/admin/spam-cleanup/preview', permissions: ['post'] },
         { resources: '/api/admin/spam-cleanup/apply', permissions: ['post'] },
         {
@@ -132,6 +136,10 @@ export const invokeRolesPolicies = () => {
         },
         {
           resources: '/api/admin/user',
+          permissions: ['post'],
+        },
+        {
+          resources: '/api/admin/user/delete',
           permissions: ['post'],
         },
         {

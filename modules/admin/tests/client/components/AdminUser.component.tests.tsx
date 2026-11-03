@@ -311,6 +311,9 @@ describe('<AdminUser />', () => {
         name: 'alice: Alice Example',
       }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Delete member' }),
+    ).toBeDisabled();
     expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId);
     expect(screen.getByText('State for alice')).toBeInTheDocument();
     expect(
@@ -665,6 +668,7 @@ describe('<AdminUser />', () => {
     expect(
       screen.queryByRole('link', { name: 'Public profile' }),
     ).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete member' })).toBeEnabled();
     expect(
       screen.queryByRole('button', { name: 'Shadow ban' }),
     ).not.toBeInTheDocument();
@@ -680,6 +684,128 @@ describe('<AdminUser />', () => {
     expect(
       screen.getByText('No potential related accounts found.'),
     ).toBeInTheDocument();
+  });
+
+  it('deletes only a suspended member after exact username confirmation', async () => {
+    mockedUsersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          username: 'alice',
+          roles: ['user', 'suspended'],
+        },
+      }),
+    );
+    mockedUsersApi.deleteMember.mockResolvedValueOnce({});
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(<AdminUser />);
+    await screen.findByRole('heading', { name: 'alice' });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
+    const dialog = screen.getByRole('dialog');
+    expect(
+      within(dialog).getByText(/suspended member account/),
+    ).toBeInTheDocument();
+    fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'confirmed request' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Audit keywords'), {
+      target: { value: 'spam, repeat abuse' },
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Delete permanently' }),
+    );
+    await waitFor(() =>
+      expect(mockedUsersApi.deleteMember).toHaveBeenCalledWith(
+        userId,
+        'alice',
+        'confirmed request',
+        ['spam', 'repeat abuse'],
+      ),
+    );
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Member deleted successfully',
+    );
+    expect(
+      screen.queryByRole('heading', { name: 'alice' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('prevents closing the delete dialog while deletion is pending', () => {
+    const ref = React.createRef<AdminUserContent>();
+    render(<AdminUserContent {...routeProps()} ref={ref} />);
+    act(() => {
+      ref.current!.setState({ deleteDialogOpen: true, deletingMember: true });
+    });
+    act(() => ref.current!.cancelDeleteDialog());
+    expect(ref.current!.state.deleteDialogOpen).toBe(true);
+  });
+
+  it('does not call the deletion API without a loaded suspended member', async () => {
+    const component = new AdminUserContent(routeProps());
+    await component.confirmDeleteMember();
+    expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['administrator accounts', ['user', 'admin'], undefined],
+    ['the current administrator account', ['user', 'suspended'], userId],
+  ])('protects %s from deletion', async (_label, roles, viewerId) => {
+    mockedUsersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: { _id: userId, username: 'alice', roles },
+      }),
+    );
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(
+      <AdminUser
+        viewer={viewerId ? ({ _id: viewerId } as never) : undefined}
+      />,
+    );
+    await screen.findByRole('heading', { name: 'alice' });
+    expect(
+      screen.getByRole('button', { name: 'Delete member' }),
+    ).toBeDisabled();
+    expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
+  });
+
+  it('keeps the dialog open on delete failure and allows cancellation', async () => {
+    mockedUsersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: { _id: userId, username: 'alice', roles: ['suspended'] },
+      }),
+    );
+    mockedUsersApi.deleteMember.mockRejectedValueOnce(new Error('failed'));
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(<AdminUser />);
+    await screen.findByRole('heading', { name: 'alice' });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
+      target: { value: 'wrong' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'reason' },
+    });
+    expect(
+      within(dialog).getByRole('button', { name: 'Delete permanently' }),
+    ).toBeDisabled();
+    fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Delete permanently' }),
+    );
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'Could not delete this member',
+    );
+    expect(screen.getByRole('heading', { name: 'alice' })).toBeInTheDocument();
+    fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
   });
 
   it('shows acquisition context and potential matches for a shadowbanned member', async () => {

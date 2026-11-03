@@ -505,69 +505,89 @@ service.removeProfile = function (req, res) {
       report('failed', 'Profile remove token is invalid or has expired.', true);
       return;
     }
-    await User.findOneAndDelete({ _id: user._id });
-    await mongoose
-      .model('UnifiedPushRegistration')
-      .deleteMany({ user: user._id })
-      .catch(err => {
-        log('error', 'Error removing message alert registrations.', {
-          error: err,
-        });
-      });
-    await new Promise<void>(resolve => {
-      getOfferHandler().removeAllByUserId(user._id, err => {
-        if (err)
-          log('error', 'Error when removing all offers by user ID. #rj393', {
-            error: err,
-          });
-        resolve();
-      });
-    });
-    await new Promise<void>(resolve => {
-      getContactHandler().removeAllByUserId(user._id, err => {
-        if (err)
-          log('error', 'Error when removing all contacts by user ID. #j93hdd', {
-            error: err,
-          });
-        resolve();
-      });
-    });
-    await new Promise<void>((resolve, reject) => {
-      getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
-        err ? reject(err) : resolve(),
-      );
-    });
-    await Promise.all(
-      user.member.map(
-        membership =>
-          new Promise<void>((resolve, reject) => {
-            tribesHandler.updateCount(membership.tribe, -1, false, err =>
-              err ? reject(err) : resolve(),
-            );
-          }),
-      ),
-    );
-    await fileRemovalService.removeLocalPath(
-      path.resolve(config.uploadDir) + '/' + user._id,
-    );
-    await new Promise<void>(resolve => {
-      emailService.sendRemoveProfileConfirmed(
-        { displayName: user.displayName, email: user.email },
-        err => {
-          if (err)
-            log(
-              'error',
-              'Sending confirmation email about successfull profile removal failed #289hhs',
-              { error: err },
-            );
-          resolve();
-        },
-      );
-    });
+    await deleteUserAccount(user);
     report('removed', 'Your profile has been removed.');
   }
   remove().catch(() => report('failed', 'Removing your profile failed.', true));
 };
+
+/** Shared cleanup for self-service removal and confirmed admin deletion. */
+export async function deleteUserAccount(
+  user: UserServerDocument,
+  suspendedOnly = false,
+): Promise<void> {
+  const deleted = await User.findOneAndDelete({
+    _id: user._id,
+    ...(suspendedOnly
+      ? {
+          username: user.username,
+          roles: { $all: ['suspended'], $nin: ['admin'] },
+        }
+      : {}),
+  });
+  if (!deleted)
+    throw new Error(
+      'Account changed or was already deleted. Refresh the member report.',
+    );
+  await mongoose
+    .model('UnifiedPushRegistration')
+    .deleteMany({ user: user._id })
+    .catch(err => {
+      log('error', 'Error removing message alert registrations.', {
+        error: err,
+      });
+    });
+  await new Promise<void>(resolve => {
+    getOfferHandler().removeAllByUserId(user._id, err => {
+      if (err)
+        log('error', 'Error when removing all offers by user ID. #rj393', {
+          error: err,
+        });
+      resolve();
+    });
+  });
+  await new Promise<void>(resolve => {
+    getContactHandler().removeAllByUserId(user._id, err => {
+      if (err)
+        log('error', 'Error when removing all contacts by user ID. #j93hdd', {
+          error: err,
+        });
+      resolve();
+    });
+  });
+  await new Promise<void>((resolve, reject) => {
+    getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
+      err ? reject(err) : resolve(),
+    );
+  });
+  await Promise.all(
+    user.member.map(
+      membership =>
+        new Promise<void>((resolve, reject) => {
+          tribesHandler.updateCount(membership.tribe, -1, false, err =>
+            err ? reject(err) : resolve(),
+          );
+        }),
+    ),
+  );
+  await fileRemovalService.removeLocalPath(
+    path.resolve(config.uploadDir) + '/' + user._id,
+  );
+  await new Promise<void>(resolve => {
+    emailService.sendRemoveProfileConfirmed(
+      { displayName: user.displayName, email: user.email },
+      err => {
+        if (err)
+          log(
+            'error',
+            'Sending confirmation email about successfull profile removal failed #289hhs',
+            { error: err },
+          );
+        resolve();
+      },
+    );
+  });
+}
 
 /**
  * Show the profile of the user

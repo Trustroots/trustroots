@@ -58,3 +58,18 @@ export async function setUserRole(id: string, role: string, action?: string) {
   });
   return data;
 }
+
+export async function deleteMember(
+  id: string,
+  username: string,
+  reason: string,
+  keywords: string[] = [],
+) {
+  const { data } = await axios.post('/api/admin/user/delete', {
+    id,
+    username,
+    reason,
+    keywords,
+  });
+  return data;
+}
