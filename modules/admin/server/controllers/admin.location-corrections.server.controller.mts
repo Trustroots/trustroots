@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import mongoose, { type QueryFilter, type Types } from 'mongoose';
 import config from '../../../../config/config.mts';
-import textService from '../../../core/server/services/text.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mts';
 import messageToStatsService from '../../../messages/server/services/message-to-stats.server.service.mjs';
 import messageStatService from '../../../messages/server/services/message-stat.server.service.mjs';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';

@@ -8,7 +8,7 @@ import messageToStatsService from '../services/message-to-stats.server.service.m
 import messageStatService from '../services/message-stat.server.service.mjs';
 import messageThrottleAlertService from '../services/message-throttle-alert.server.service.mts';
 import errorService from '../../../core/server/services/error.server.service.mjs';
-import textService from '../../../core/server/services/text.server.service.mjs';
+import textService from '../../../core/server/services/text.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 import statService from '../../../stats/server/services/stats.server.service.mts';
 import paginationService from '../../../core/server/services/pagination.server.service.mjs';

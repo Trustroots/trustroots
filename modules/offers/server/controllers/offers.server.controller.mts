@@ -4,7 +4,7 @@ import _ from 'lodash';
 import config from './../../../../config/config.mts';
 import errorService from './../../../core/server/services/error.server.service.mjs';
 import tribes from './../../../tribes/server/controllers/tribes.server.controller.mjs';
-import textService from './../../../core/server/services/text.server.service.mjs';
+import textService from './../../../core/server/services/text.server.service.mts';
 import log from './../../../../config/lib/logger.mjs';
 import sanitizeHtml from 'sanitize-html';
 import moment from 'moment';
