@@ -1,4 +1,4 @@
-// Mutation testing for the Nostranslation Jest suite. See docs/testing/mutation-testing.md.
+// Mutation testing for the Nostranslation Jest suite. See docs/mutation-testing.md.
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);

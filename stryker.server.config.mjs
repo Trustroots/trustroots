@@ -1,4 +1,4 @@
-// Mutation testing for the server Vitest suite. See docs/testing/mutation-testing.md.
+// Mutation testing for the server Vitest suite. See docs/mutation-testing.md.
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {

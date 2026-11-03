@@ -72,11 +72,18 @@ function score(counts: Counts): number {
   return valid === 0 ? 100 : (detected / valid) * 100;
 }
 
-const floors = JSON.parse(fs.readFileSync(baselinePath, 'utf8')) as Record<
-  Suite,
-  number
+const floors = JSON.parse(fs.readFileSync(baselinePath, 'utf8')) as Partial<
+  Record<Suite, number>
 >;
-const selected = scope && isSuite(scope) ? [scope] : suites;
+// Without --scope, check every suite that has a floor.
+const selected =
+  scope && isSuite(scope)
+    ? [scope]
+    : suites.filter(suite => floors[suite] !== undefined);
+if (scope && isSuite(scope) && floors[scope] === undefined) {
+  console.error(`No mutation floor for "${scope}" in ${baselinePath}.`);
+  process.exit(1);
+}
 const failures: string[] = [];
 for (const suite of selected) {
   const reportPath = path.resolve(
@@ -96,10 +103,10 @@ for (const suite of selected) {
   const line = `${suite} mutation score ${value.toFixed(2)}% (killed ${counts.Killed}, timeout ${counts.Timeout}, survived ${counts.Survived}, no coverage ${counts.NoCoverage}, ignored ${counts.Ignored})`;
   if (summaryOnly) {
     console.log(line);
-  } else if (value < floors[suite]) {
+  } else if (value < (floors[suite] ?? 0)) {
     failures.push(`${line} is below the floor of ${floors[suite]}%`);
   } else {
-    console.log(`${line} passed the floor of ${floors[suite]}%`);
+    console.log(`${line} passed the floor of ${floors[suite] ?? 0}%`);
   }
 }
 
