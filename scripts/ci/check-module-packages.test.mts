@@ -65,3 +65,11 @@ test('main fails on a missing or drifted manifest and passes after --update', ()
   fs.writeFileSync(file, '{"name":"@trustroots/b"}\n');
   assert.equal(main([], root), 1);
 });
+
+test('main reports unreadable manifests instead of overwriting them', () => {
+  const root = makeRepo(FIXTURE);
+  const file = path.join(root, 'modules/a/package.json');
+  fs.mkdirSync(file);
+  assert.throws(() => main(['--update'], root), { code: 'EISDIR' });
+  assert.equal(fs.statSync(file).isDirectory(), true);
+});

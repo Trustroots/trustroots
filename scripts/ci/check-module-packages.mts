@@ -96,8 +96,10 @@ export function main(argv: string[], root = ROOT): number {
   listModules(root).forEach(name => {
     const file = path.join(root, 'modules', name, 'package.json');
     const expected = `${JSON.stringify(expectedManifest(name, root), null, 2)}\n`;
-    if (fs.existsSync(file) && fs.readFileSync(file, 'utf8') === expected) {
-      return;
+    try {
+      if (fs.readFileSync(file, 'utf8') === expected) return;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
     if (update) {
       fs.writeFileSync(file, expected);

@@ -1,4 +1,5 @@
 import express from 'express';
+import { rateLimit } from 'express-rate-limit';
 import type { ErrorRequestHandler } from 'express';
 import { catalogue } from './catalogue.mts';
 import {
@@ -78,6 +79,13 @@ export function createApp(
   });
   app.post(
     '/api/reviews',
+    rateLimit({
+      windowMs: 60 * 1000,
+      limit: 20,
+      standardHeaders: 'draft-8',
+      legacyHeaders: false,
+      message: { error: 'Too many review requests. Please retry in a minute.' },
+    }),
     express.text({ type: 'application/json', limit: '1mb' }),
     async (req, res) => {
       if (typeof req.body !== 'string')
