@@ -128,6 +128,11 @@ export default function Privacy() {
                   'Umami does not use analytics cookies or track people across websites. It records limited information such as pages visited, referrer, browser, operating system, device type and approximate country. We do not use this information to build personal profiles or for advertising, and we do not sell it. Analytics data is stored on infrastructure operated for Trustroots.',
                 )}
               </p>
+              <p>
+                {t(
+                  'Page addresses are sent to Umami as templates, such as /profile/:username, without usernames, links from emails, search terms or other query strings. If your browser sends a Global Privacy Control or Do Not Track signal, no analytics data is sent.',
+                )}
+              </p>
               <h3>{t('Nostroots and Nostr')}</h3>
               <p>
                 <Trans t={rawT} ns="pages">

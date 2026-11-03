@@ -114,6 +114,57 @@ test('a failed sign-in sends an anonymous product event to Umami', async ({
     .toEqual([['signin-failure', null]]);
 });
 
+test('Umami receives route templates instead of reset tokens', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'auth.password-reset', [
+    'A password reset link reaches Umami as /password/reset/:token, without the token, query or hash.',
+  ]);
+  // Stand in for the Umami tracker: record its settings and run the
+  // before-send hook it names on a page view of the current address.
+  await page.route('https://1p.trustroots.org/script.js', route =>
+    route.fulfill({
+      contentType: 'text/javascript',
+      body: [
+        'const script = document.currentScript;',
+        'window.umamiSettings = {',
+        '  beforeSend: script.getAttribute("data-before-send"),',
+        '  excludeSearch: script.getAttribute("data-exclude-search"),',
+        '  excludeHash: script.getAttribute("data-exclude-hash"),',
+        '};',
+      ].join('\n'),
+    }),
+  );
+  await page.goto('/password/reset/e2e-secret-token?from=mail#top');
+
+  const sent = await page.evaluate(() => {
+    const win = window as unknown as Record<string, unknown> & {
+      umamiSettings: Record<string, string>;
+    };
+    const hook = win[win.umamiSettings.beforeSend] as (
+      type: string,
+      payload: Record<string, string>,
+    ) => Record<string, string> | null;
+    return {
+      settings: win.umamiSettings,
+      payload: hook('pageview', {
+        url: window.location.href,
+        referrer: '/messages/e2e-member?unread=1',
+      }),
+    };
+  });
+
+  expect(sent.settings).toEqual({
+    beforeSend: 'trUmamiBeforeSend',
+    excludeSearch: 'true',
+    excludeHash: 'true',
+  });
+  expect(sent.payload).toEqual({
+    url: new URL('/password/reset/:token', page.url()).toString(),
+    referrer: '/messages/:username',
+  });
+});
+
 test('login works while the analytics script stalls and fails', async ({
   page,
 }, testInfo) => {

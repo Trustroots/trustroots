@@ -203,6 +203,9 @@
       src="{{ umami.scriptSrc }}"
       data-website-id="{{ umami.websiteId }}"
       data-do-not-track="true"
+      data-exclude-search="true"
+      data-exclude-hash="true"
+      data-before-send="trUmamiBeforeSend"
       nonce="{{ nonce }}"
     ></script>
     {% endif %}
