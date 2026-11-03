@@ -7,6 +7,7 @@ import {
   getUser,
   getUserByUsername,
   setUserRole,
+  deleteMember,
   type UserSearchOptions,
 } from '@/modules/admin/client/api/users.api';
 
@@ -135,6 +136,31 @@ describe('admin users api', () => {
     expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user/change-role', {
       id: 'user-1',
       role: 'admin',
+    });
+  });
+
+  it('deletes a suspended member with the supplied confirmation details', async () => {
+    const data = { success: true };
+    axiosMock.post.mockResolvedValueOnce(response(data));
+    await expect(
+      deleteMember('member-id', 'alice', 'confirmed request', ['spam']),
+    ).resolves.toBe(data);
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user/delete', {
+      id: 'member-id',
+      username: 'alice',
+      reason: 'confirmed request',
+      keywords: ['spam'],
+    });
+  });
+
+  it('defaults deletion audit keywords to an empty list', async () => {
+    axiosMock.post.mockResolvedValueOnce(response({ success: true }));
+    await deleteMember('member-id', 'alice', 'confirmed request');
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user/delete', {
+      id: 'member-id',
+      username: 'alice',
+      reason: 'confirmed request',
+      keywords: [],
     });
   });
 });

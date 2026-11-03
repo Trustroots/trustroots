@@ -660,7 +660,9 @@ describe('Authentication controller OAuth unit tests', () => {
 
       res.statusCode.should.equal(200);
       sendFlaggedSignupAlert.calledOnce.should.be.true();
-      sendFlaggedSignupAlert.firstCall.args[1].should.deepEqual(['trustroots']);
+      sendFlaggedSignupAlert.firstCall.args[1].should.deepEqual([
+        'keyword: trustroots',
+      ]);
       const saved = await User.findOne({ username: 'flaggedmember' });
       should.exist(saved);
     });

@@ -210,6 +210,24 @@ describe('Profile controller unit tests', () => {
     return utils.clearDatabase();
   });
 
+  describe('deleteUserAccount', () => {
+    it('fails closed when the account no longer matches the deletion criteria', async () => {
+      sinon.stub(User, 'findOneAndDelete').resolves(null);
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.removeProfileToken = 'valid-remove-token';
+      userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
+      await userDoc.save();
+      const { res } = await runHandler(res =>
+        profileController.removeProfile(
+          { user: { _id: saved._id }, params: { token: 'valid-remove-token' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+  });
+
   describe('profile removal status and cancellation', () => {
     for (const method of ['getProfileRemovalStatus', 'cancelProfileRemoval']) {
       it(`${method} refuses an unauthenticated caller`, async () => {

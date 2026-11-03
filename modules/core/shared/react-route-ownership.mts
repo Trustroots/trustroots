@@ -396,6 +396,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/signup-review-rules',
+    requiresRole: ['admin'],
+    title: 'Admin - Signup watchlist',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/acquisition-stories',
     requiresRole: ['admin', 'welcome-team', 'support-team'],
     title: 'Admin - Acquisition stories',

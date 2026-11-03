@@ -161,7 +161,11 @@ const specPaths: Record<string, string> = {
     'features/admin-moderation/admin-reference-errors.spec.js',
   'admin-role-audit.spec.js':
     'features/admin-moderation/admin-role-audit.spec.js',
+  'admin-signup-watchlist.spec.js':
+    'features/admin-moderation/admin-signup-watchlist.spec.js',
   'admin-search.spec.js': 'features/admin-moderation/admin-search.spec.js',
+  'admin-user-deletion.spec.js':
+    'features/admin-moderation/admin-user-deletion.spec.js',
   'auth-smoke.spec.js': 'features/auth-account/auth-smoke.spec.js',
   'authenticated.spec.js': 'features/profile-onboarding/authenticated.spec.js',
   'contacts-and-blocks.spec.js':
@@ -3304,6 +3308,35 @@ const features = [
     ],
   },
   {
+    id: 'admin.user-deletion',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Admins can permanently delete suspended member accounts after confirmation.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-user', '/admin/user', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/user/delete', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Administrators can permanently delete a suspended member after confirming their username and recording a reason.',
+      'Deleted members can no longer sign in.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-user-deletion.spec.js',
+        'admins can delete a suspended member after confirming the username',
+      ),
+    ],
+  },
+  {
     id: 'admin.notes',
     area: AREA.adminModeration,
     status: STATUS.active,
@@ -3354,6 +3387,38 @@ const features = [
       'Permission errors are shown for invalid role changes.',
     ],
     relatedSpecs: [],
+  },
+  {
+    id: 'admin.signup-watchlist',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Admins can manage keyword, email, and domain rules that flag signups for review.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-signup-review-rules',
+          '/admin/signup-review-rules',
+          source.adminClient,
+          { requiresAuth: true, requiresRole: 'admin' },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/signup-review-rules', source.adminServer),
+        apiRoute('PUT', '/api/admin/signup-review-rules', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Administrators can manage keyword, email, and domain watchlist rules.',
+      'A matching signup is allowed and queues an alert for staff.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-signup-watchlist.spec.js',
+        'admins can manage the signup watchlist and matching signups are flagged but allowed',
+      ),
+    ],
   },
   {
     id: 'admin.reference-threads',

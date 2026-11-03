@@ -17,6 +17,7 @@ import {
   listUsersByLastIpHash,
   searchUsers,
   setUserRole,
+  deleteMember,
 } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import AdminNotes from './AdminNotes';
@@ -195,6 +196,14 @@ interface AdminUserState {
   user: MemberRecord | false;
   roleChangeError?: 'change' | 'refresh' | false;
   roleChangeSucceeded: boolean;
+  deletingMember: boolean;
+  deleteDialogOpen: boolean;
+  deleteUsername: string;
+  deleteReason: string;
+  deleteKeywords: string;
+  deleteError: boolean;
+  deleteSucceeded: boolean;
+  deleteCleanupIncomplete: boolean;
   pendingRoleChange: {
     role: string;
     action?: 'add' | 'remove';
@@ -369,6 +378,14 @@ export class AdminUserContent extends Component<
       user: false,
       pendingRoleChange: null,
       roleChangeSucceeded: false,
+      deletingMember: false,
+      deleteDialogOpen: false,
+      deleteUsername: '',
+      deleteReason: '',
+      deleteKeywords: '',
+      deleteError: false,
+      deleteSucceeded: false,
+      deleteCleanupIncomplete: false,
     };
   }
 
@@ -454,6 +471,61 @@ export class AdminUserContent extends Component<
         roleChangeError: false,
         roleChangeSucceeded: false,
       });
+    }
+  }
+
+  openDeleteDialog() {
+    this.setState({
+      deleteDialogOpen: true,
+      deleteUsername: '',
+      deleteReason: '',
+      deleteKeywords: '',
+      deleteError: false,
+    });
+  }
+
+  cancelDeleteDialog() {
+    if (!this.state.deletingMember) {
+      this.setState({ deleteDialogOpen: false });
+    }
+  }
+
+  async confirmDeleteMember() {
+    const user = this.state.user;
+    if (
+      !user ||
+      !isSuspendedUser(user.profile) ||
+      !user.profile.username ||
+      this.state.deletingMember ||
+      this.state.deleteUsername !== user.profile.username ||
+      !this.state.deleteReason.trim()
+    )
+      return;
+    const reason = this.state.deleteReason.trim();
+    const keywords = this.state.deleteKeywords
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(Boolean);
+    this.setState({ deletingMember: true, deleteError: false });
+    try {
+      const result = await deleteMember(
+        user.profile._id,
+        user.profile.username,
+        reason,
+        keywords,
+      );
+      this.setState({
+        deleteDialogOpen: false,
+        user: false,
+        query: '',
+        hasSearched: true,
+        deleteSucceeded: true,
+        deleteCleanupIncomplete: result.cleanupIncomplete,
+      });
+    } catch {
+      this.setState({ deleteError: true });
+    } finally {
+      this.setState({ deletingMember: false });
     }
   }
 
@@ -743,11 +815,27 @@ export class AdminUserContent extends Component<
           )
         : null;
     const viewer = this.props.viewer;
+    const deleteKeywords = this.state.deleteKeywords
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(Boolean);
+    const invalidDeleteKeywords =
+      deleteKeywords.length > 20 ||
+      deleteKeywords.some(keyword => keyword.length > 80);
 
     return (
       <>
         <AdminHeader />
         <div className="container admin-user-page">
+          {this.state.deleteSucceeded &&
+            (this.state.deleteCleanupIncomplete ? (
+              <p role="alert">
+                Member account deleted, but some cleanup is incomplete. Staff
+                follow-up is required.
+              </p>
+            ) : (
+              <p role="status">Member deleted successfully.</p>
+            ))}
           {!isProfile && (
             <div className="admin-user-page__search">
               <form
@@ -868,6 +956,25 @@ export class AdminUserContent extends Component<
                           {label}
                         </Button>
                       ),
+                    )}
+                  </div>
+                  <div>
+                    <Button
+                      type="button"
+                      intent="danger"
+                      disabled={
+                        !isSuspended ||
+                        this.hasRole('admin') ||
+                        Boolean(viewer?._id && viewer._id === user.profile._id)
+                      }
+                      onClick={() => this.openDeleteDialog()}
+                    >
+                      Delete member
+                    </Button>
+                    {!isSuspended && (
+                      <p className="text-muted">
+                        Suspend this member before deleting their account.
+                      </p>
                     )}
                   </div>
                   <div
@@ -1390,6 +1497,97 @@ export class AdminUserContent extends Component<
             </section>
           )}
         </div>
+        <Modal
+          show={this.state.deleteDialogOpen}
+          onHide={() => this.cancelDeleteDialog()}
+          keyboard={!this.state.deletingMember}
+          backdrop={this.state.deletingMember ? 'static' : true}
+          aria-labelledby="admin-delete-member-title"
+        >
+          <Modal.Header>
+            <Modal.Title id="admin-delete-member-title">
+              Delete member?
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <p>
+              This permanently deletes the suspended member account, offers,
+              contacts and uploaded files. Existing messages, experiences and
+              moderation records are retained. Enter the exact username and a
+              reason (maximum 1000 characters).
+            </p>
+            <p>No confirmation email is sent to the member.</p>
+            {this.state.deleteError && (
+              <p role="alert">
+                Could not delete this member. Please try again.
+              </p>
+            )}
+            <label htmlFor="delete-member-username">Confirm username</label>
+            <input
+              id="delete-member-username"
+              className="form-control"
+              value={this.state.deleteUsername}
+              onChange={event =>
+                this.setState({ deleteUsername: event.target.value })
+              }
+              autoComplete="off"
+            />
+            <label htmlFor="delete-member-reason">Reason</label>
+            <textarea
+              id="delete-member-reason"
+              className="form-control"
+              maxLength={1000}
+              value={this.state.deleteReason}
+              onChange={event =>
+                this.setState({ deleteReason: event.target.value })
+              }
+            />
+            <label htmlFor="delete-member-keywords">Audit keywords</label>
+            <input
+              id="delete-member-keywords"
+              className="form-control"
+              value={this.state.deleteKeywords}
+              onChange={event =>
+                this.setState({ deleteKeywords: event.target.value })
+              }
+              placeholder="Comma-separated, up to 20"
+            />
+            <p className="text-muted">
+              Optional audit labels only; they are not added to the signup
+              watchlist.{' '}
+              <a href="/admin/signup-review-rules">Manage signup watchlist</a>
+            </p>
+            {invalidDeleteKeywords && (
+              <p role="alert">
+                Use at most 20 keywords, each 80 characters or fewer.
+              </p>
+            )}
+            {this.state.deletingMember && <p role="status">Deleting member…</p>}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              type="button"
+              onClick={() => this.setState({ deleteDialogOpen: false })}
+              disabled={this.state.deletingMember}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              intent="danger"
+              onClick={() => void this.confirmDeleteMember()}
+              disabled={
+                this.state.deletingMember ||
+                this.state.deleteUsername !== (user && user.profile.username) ||
+                !this.state.deleteReason.trim() ||
+                !isSuspended ||
+                invalidDeleteKeywords
+              }
+            >
+              {this.state.deletingMember ? 'Deleting…' : 'Delete permanently'}
+            </Button>
+          </Modal.Footer>
+        </Modal>
         <Modal
           show={Boolean(roleChangeConfirmation)}
           onHide={this.cancelUserRoleChange}

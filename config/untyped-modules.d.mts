@@ -107,6 +107,7 @@ declare module 'html-to-text' {
 
 declare module 'validator' {
   export function isEmail(text: string): boolean;
+  export function isFQDN(text: string): boolean;
   export function isLength(
     value: unknown,
     options: { min?: number; max?: number } | number,
@@ -117,6 +118,7 @@ declare module 'validator' {
   ): boolean;
   const validator: {
     isEmail: typeof isEmail;
+    isFQDN: typeof isFQDN;
     isLength: typeof isLength;
     isURL: typeof isURL;
   };

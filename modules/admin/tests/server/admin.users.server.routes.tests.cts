@@ -1,5 +1,6 @@
 const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
+const sinon: typeof import('sinon') = require('sinon');
 const should: typeof import('should') = require('should');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
@@ -14,6 +15,17 @@ type TestExpressApp =
 type TestAgent =
   import('../../../../testutils/server/model-contracts.mts').TestAgent;
 const User = mongoose.model<UserRecord, UserModel>('User');
+const AuditLog = mongoose.model<{
+  body?: {
+    reason?: string;
+    keywords?: string[];
+    confirmEmpty?: boolean;
+    revision?: number;
+    rules?: unknown[];
+  };
+}>('AuditLog');
+const SignupReviewRules = mongoose.model('SignupReviewRules');
+const UnifiedPushRegistration = mongoose.model('UnifiedPushRegistration');
 
 interface AdminUserSummary {
   username: string;
@@ -139,6 +151,12 @@ describe('Admin User CRUD tests', () => {
           id: userRegularId,
           role: 'suspended',
         })
+        .expect(403);
+    });
+    it('Non-authenticated users should not be allowed to delete users', async () => {
+      await agent
+        .post('/api/admin/user/delete')
+        .send({ id: userRegularId, username: 'userregular', reason: 'test' })
         .expect(403);
     });
     it('Non-authenticated users should not be allowed to change user roles', async () => {
@@ -268,6 +286,369 @@ describe('Admin User CRUD tests', () => {
           .expect(200);
         should(body.users.length).equal(1);
         should(body.users[0].email).equal('regular@example.com');
+      });
+    });
+    it('non-admin users should not be allowed to delete users', async () => {
+      await utils.signIn(credentialsRegular, agent);
+      await agent
+        .post('/api/admin/user/delete')
+        .send({ id: userRegularId, username: 'userregular', reason: 'test' })
+        .expect(403);
+    });
+    it('only administrators can read or update signup review rules', async () => {
+      await agent.get('/api/admin/signup-review-rules').expect(403);
+      await agent
+        .put('/api/admin/signup-review-rules')
+        .send({ revision: 0, rules: [] })
+        .expect(403);
+      await utils.signIn(credentialsRegular, agent);
+      await agent.get('/api/admin/signup-review-rules').expect(403);
+      await agent
+        .put('/api/admin/signup-review-rules')
+        .send({ revision: 0, rules: [] })
+        .expect(403);
+    });
+    it('normalises and audits signup review rule updates with optimistic concurrency', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const initial = await agent
+        .get('/api/admin/signup-review-rules')
+        .expect(200);
+      const payload = {
+        revision: initial.body.revision,
+        rules: [
+          { kind: 'keyword', value: '  Fictional Phrase ' },
+          { kind: 'email', value: ' Person@Example.org ' },
+          { kind: 'domain', value: ' Example.org ' },
+        ],
+      };
+      const saved = await agent
+        .put('/api/admin/signup-review-rules')
+        .send(payload)
+        .expect(200);
+      saved.body.revision.should.equal(initial.body.revision + 1);
+      saved.body.rules.should.deepEqual([
+        { kind: 'keyword', value: 'fictional phrase' },
+        { kind: 'email', value: 'person@example.org' },
+        { kind: 'domain', value: 'example.org' },
+      ]);
+      await agent
+        .put('/api/admin/signup-review-rules')
+        .send(payload)
+        .expect(409);
+      (
+        await AuditLog.countDocuments({
+          route: '/api/admin/signup-review-rules',
+        })
+      ).should.equal(1);
+    });
+    it('requires explicit confirmation to clear every signup review rule', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const initial = await agent
+        .get('/api/admin/signup-review-rules')
+        .expect(200);
+      const empty = { revision: initial.body.revision, rules: [] };
+      await agent.put('/api/admin/signup-review-rules').send(empty).expect(400);
+      should.equal(
+        await SignupReviewRules.findById('signup-review').lean(),
+        null,
+      );
+      (
+        await AuditLog.countDocuments({
+          route: '/api/admin/signup-review-rules',
+        })
+      ).should.equal(0);
+
+      const cleared = await agent
+        .put('/api/admin/signup-review-rules')
+        .send({ ...empty, confirmEmpty: true })
+        .expect(200);
+      cleared.body.rules.should.deepEqual([]);
+      const audit = await AuditLog.findOne({
+        route: '/api/admin/signup-review-rules',
+      }).lean();
+      should.exist(audit);
+      audit?.body?.confirmEmpty!.should.equal(true);
+      audit?.body?.rules!.should.deepEqual([]);
+    });
+    it('rejects invalid rules, fails closed on an update race, and does not update when audit logging fails', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const initial = await agent
+        .get('/api/admin/signup-review-rules')
+        .expect(200);
+      for (const rules of [
+        [
+          { kind: 'keyword', value: 'duplicate' },
+          { kind: 'keyword', value: ' DUPLICATE ' },
+        ],
+        [{ kind: 'email', value: 'invalid' }],
+        Array(501).fill({ kind: 'keyword', value: 'phrase' }),
+      ])
+        await agent
+          .put('/api/admin/signup-review-rules')
+          .send({ revision: initial.body.revision, rules })
+          .expect(400);
+
+      sinon
+        .stub(AuditLog.prototype, 'save')
+        .rejects(new Error('audit unavailable'));
+      try {
+        await agent
+          .put('/api/admin/signup-review-rules')
+          .send({
+            revision: initial.body.revision,
+            rules: [{ kind: 'keyword', value: 'new phrase' }],
+          })
+          .expect(500);
+      } finally {
+        sinon.restore();
+      }
+      should.equal(
+        await SignupReviewRules.findById('signup-review').lean(),
+        null,
+      );
+
+      const current = await agent
+        .get('/api/admin/signup-review-rules')
+        .expect(200);
+      sinon.stub(SignupReviewRules, 'findOneAndUpdate').resolves(null);
+      try {
+        await agent
+          .put('/api/admin/signup-review-rules')
+          .send({
+            revision: current.body.revision,
+            rules: [{ kind: 'keyword', value: 'concurrent phrase' }],
+          })
+          .expect(409);
+      } finally {
+        sinon.restore();
+      }
+    });
+    describe('Delete suspended users', () => {
+      it('requires an exact username and a non-empty reason', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        userRegular.roles = [...(userRegular.roles || []), 'suspended'];
+        await userRegular.save();
+        const invalid = [
+          { id: userRegularId, username: 'wrongname', reason: 'reviewed' },
+          { id: userRegularId, username: 'userregular', reason: '  ' },
+          {
+            id: userRegularId,
+            username: 'userregular',
+            reason: 'x'.repeat(1001),
+          },
+          { id: 'bad-id', username: 'userregular', reason: 'reviewed' },
+          {
+            id: userRegularId,
+            username: 'userregular',
+            reason: 'reviewed',
+            keywords: ['  '],
+          },
+          {
+            id: userRegularId,
+            username: 'userregular',
+            reason: 'reviewed',
+            keywords: Array(21).fill('tag'),
+          },
+          {
+            id: userRegularId,
+            username: 'userregular',
+            reason: 'reviewed',
+            keywords: ['x'.repeat(81)],
+          },
+        ];
+        for (const body of invalid)
+          await agent.post('/api/admin/user/delete').send(body).expect(400);
+        should.exist(await User.findById(userRegularId));
+        (
+          await AuditLog.countDocuments({ route: '/api/admin/user/delete' })
+        ).should.equal(0);
+      });
+
+      it('deletes a suspended member after saving the reason and trimmed keywords to the audit log', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        userRegular.roles = [...(userRegular.roles || []), 'suspended'];
+        await userRegular.save();
+        await agent
+          .post('/api/admin/user/delete')
+          .send({
+            id: userRegularId,
+            username: 'userregular',
+            reason: '  repeated abuse  ',
+            keywords: ['  abuse ', ' repeat '],
+          })
+          .expect(200);
+
+        should.not.exist(await User.findById(userRegularId));
+        const audit = await AuditLog.findOne({
+          route: '/api/admin/user/delete',
+        }).lean();
+        should.exist(audit);
+        if (!audit) throw new Error('Expected deletion audit record');
+        audit.body?.reason!.should.equal('repeated abuse');
+        audit.body?.keywords!.should.deepEqual(['abuse', 'repeat']);
+      });
+
+      it('protects the acting administrator, other administrators, active users, and missing members', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        const payload = { username: 'useradmin', reason: 'reviewed' };
+        await agent
+          .post('/api/admin/user/delete')
+          .send({ ...payload, id: userAdminId })
+          .expect(403);
+        await agent
+          .post('/api/admin/user/delete')
+          .send({ ...payload, id: userRegularId })
+          .expect(409);
+        await agent
+          .post('/api/admin/user/delete')
+          .send({ ...payload, id: '000000000000000000000001' })
+          .expect(404);
+
+        userRegular.roles = [
+          ...(userRegular.roles || []),
+          'admin',
+          'suspended',
+        ];
+        await userRegular.save();
+        await agent
+          .post('/api/admin/user/delete')
+          .send({
+            id: userRegularId,
+            username: 'userregular',
+            reason: 'reviewed',
+          })
+          .expect(409);
+      });
+
+      it('does not delete the member if audit logging fails', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        userRegular.roles = [...(userRegular.roles || []), 'suspended'];
+        await userRegular.save();
+        sinon
+          .stub(AuditLog.prototype, 'save')
+          .rejects(new Error('audit unavailable'));
+        try {
+          await agent
+            .post('/api/admin/user/delete')
+            .send({
+              id: userRegularId,
+              username: 'userregular',
+              reason: 'reviewed',
+            })
+            .expect(500);
+          should.exist(await User.findById(userRegularId));
+        } finally {
+          sinon.restore();
+        }
+      });
+
+      it('fails closed if the member changes between the lookup and atomic deletion', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        userRegular.roles = [...(userRegular.roles || []), 'suspended'];
+        await userRegular.save();
+        sinon.stub(User, 'findOneAndDelete').resolves(null);
+        try {
+          await agent
+            .post('/api/admin/user/delete')
+            .send({
+              id: userRegularId,
+              username: 'userregular',
+              reason: 'reviewed',
+            })
+            .expect(500);
+          should.exist(await User.findById(userRegularId));
+          (
+            await AuditLog.countDocuments({ route: '/api/admin/user/delete' })
+          ).should.equal(1);
+        } finally {
+          sinon.restore();
+        }
+      });
+
+      it('reports lookup failures without writing an audit record', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        sinon.stub(User, 'findById').rejects(new Error('lookup unavailable'));
+        try {
+          await agent
+            .post('/api/admin/user/delete')
+            .send({
+              id: userRegularId,
+              username: 'userregular',
+              reason: 'reviewed',
+            })
+            .expect(500);
+          (
+            await AuditLog.countDocuments({ route: '/api/admin/user/delete' })
+          ).should.equal(0);
+        } finally {
+          sinon.restore();
+        }
+      });
+
+      it('reports cleanup rejection after the account has been atomically removed', async () => {
+        await utils.signIn(credentialsAdmin, agent);
+        userRegular.roles = [...(userRegular.roles || []), 'suspended'];
+        await userRegular.save();
+        const files: typeof import('../../../core/server/services/file-removal.server.service.mjs') = require('../../../core/server/services/file-removal.server.service.mjs');
+        const offers: typeof import('../../../offers/server/controllers/offers.server.controller.mjs') = require('../../../offers/server/controllers/offers.server.controller.mjs');
+        const contacts: typeof import('../../../contacts/server/controllers/contacts.server.controller.mjs') = require('../../../contacts/server/controllers/contacts.server.controller.mjs');
+        const messages: typeof import('../../../messages/server/controllers/messages.server.controller.mjs') = require('../../../messages/server/controllers/messages.server.controller.mjs');
+        const tribes: typeof import('../../../tribes/server/controllers/tribes.server.controller.mjs') = require('../../../tribes/server/controllers/tribes.server.controller.mjs');
+        const email: typeof import('../../../core/server/services/email.server.service.mjs') = require('../../../core/server/services/email.server.service.mjs');
+        sinon
+          .stub(files, 'removeLocalPath')
+          .rejects(new Error('cleanup failed'));
+        sinon
+          .stub(UnifiedPushRegistration, 'deleteMany')
+          .rejects(new Error('push cleanup failed'));
+        const offerCleanup = sinon
+          .stub(offers, 'removeAllByUserId')
+          .callsFake((_id, callback) =>
+            callback?.(new Error('offer cleanup failed')),
+          );
+        const contactCleanup = sinon
+          .stub(contacts, 'removeAllByUserId')
+          .callsFake((_id, callback) =>
+            callback?.(new Error('contact cleanup failed')),
+          );
+        const messageCleanup = sinon
+          .stub(messages, 'markAllMessagesToUserNotified')
+          .callsFake((_id, callback) =>
+            callback(new Error('message cleanup failed')),
+          );
+        const tribe = await mongoose
+          .model('Tribe')
+          .create({ label: 'Cleanup test circle' });
+        userRegular.member = [{ tribe: tribe._id, since: new Date() }];
+        await userRegular.save();
+        const circleCleanup = sinon
+          .stub(tribes, 'updateCount')
+          .callsFake((_tribe, _count, _create, callback) =>
+            callback(new Error('circle cleanup failed')),
+          );
+        const confirmationEmail = sinon.spy(
+          email,
+          'sendRemoveProfileConfirmed',
+        );
+        try {
+          const { body } = await agent
+            .post('/api/admin/user/delete')
+            .send({
+              id: userRegularId,
+              username: 'userregular',
+              reason: 'reviewed',
+            })
+            .expect(200);
+          should.not.exist(await User.findById(userRegularId));
+          should(body.cleanupIncomplete).equal(true);
+          sinon.assert.calledOnce(offerCleanup);
+          sinon.assert.calledOnce(contactCleanup);
+          sinon.assert.calledOnce(messageCleanup);
+          sinon.assert.calledOnce(circleCleanup);
+          sinon.assert.notCalled(confirmationEmail);
+        } finally {
+          sinon.restore();
+        }
       });
     });
     describe('List users by role', () => {
