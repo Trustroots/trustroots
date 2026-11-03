@@ -1,5 +1,5 @@
 import React, { type PropsWithChildren } from 'react';
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -8,6 +8,13 @@ import Home, {
 } from '@/modules/pages/client/components/Home.component';
 import * as circlesAPI from '@/modules/tribes/client/api/tribes.api';
 import type { TribeSummary } from '@/modules/tribes/client/api/tribes.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),

@@ -4,6 +4,7 @@ import React from 'react';
 import { Button } from '@trustroots/ui/Button';
 
 // Internal dependencies
+import { rememberOutreachSource } from '@trustroots/analytics/client';
 import Tooltip from '@/modules/core/client/components/Tooltip.js';
 import { hostStatusIntent } from './hostStatusIntent';
 
@@ -41,7 +42,14 @@ export default function OfferStatusButton({
         size="sm"
         className="offer-hosting-button pull-right"
         render={
-          <a href={isOwnOffer ? '/offer/host' : `/messages/${username}`} />
+          isOwnOffer ? (
+            <a href="/offer/host" />
+          ) : (
+            <a
+              href={`/messages/${username}`}
+              onClick={() => rememberOutreachSource(username, 'offer')}
+            />
+          )
         }
       >
         {(!status || status === 'no') && String(t('Cannot host currently'))}

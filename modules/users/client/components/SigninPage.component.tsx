@@ -4,7 +4,10 @@ import { Button } from '@trustroots/ui/Button';
 
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
-import { useAnalytics } from '@trustroots/analytics/client';
+import {
+  signinFailureReason,
+  useAnalytics,
+} from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { redirectAfterSignin } from '@/modules/users/client/utils/auth';
@@ -92,12 +95,12 @@ export default function SigninPage() {
 
       setUser(signedInUser);
 
-      track('signin-success');
+      track('signin_succeeded');
     } catch (error: unknown) {
       setIsLoading(false);
       setAuthError(true);
       setErrorMessage(readApiError(error).message || 'Something went wrong.');
-      track('signin-failure');
+      track('signin_failed', { reason: signinFailureReason(error) });
     }
   }
 

@@ -6,6 +6,9 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ResetPasswordPage from '@/modules/users/client/components/ResetPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { useAuth } from '@/modules/core/client/react-app/auth';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 type BoardProps = { children?: React.ReactNode };
 
@@ -36,6 +39,7 @@ describe('ResetPasswordPage', () => {
   function renderPage() {
     return render(
       <AppProviders
+        analyticsTracker={analytics.tracker}
         bootstrapData={{
           env: 'test',
           isNativeMobileApp: false,
@@ -124,11 +128,12 @@ describe('ResetPasswordPage', () => {
       'member-one',
     );
     expect(window.location.pathname).toBe('/password/reset/success');
+    expect(analytics.track).toHaveBeenCalledWith('password_reset_completed');
   });
 
   it('shows an error when the reset request fails', async () => {
     resetPassword.mockRejectedValue({
-      response: { data: { message: 'Reset token expired.' } },
+      response: { status: 400, data: { message: 'Reset token expired.' } },
     });
 
     renderPage();
@@ -137,6 +142,33 @@ describe('ResetPasswordPage', () => {
     await submitForm();
 
     expect(await screen.findByText('Reset token expired.')).toBeInTheDocument();
+    expect(analytics.track).toHaveBeenCalledWith('password_reset_failed', {
+      reason: 'invalid_link',
+    });
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'password_reset_completed',
+    );
+  });
+
+  it.each([
+    [400, 'invalid_link'],
+    [429, 'rate_limited'],
+    [503, 'server'],
+    [undefined, 'server'],
+  ])('sends status %s as reason %s', async (status, reason) => {
+    resetPassword.mockRejectedValue(
+      status === undefined ? new Error('offline') : { response: { status } },
+    );
+
+    renderPage();
+    await fillPasswords('new-password', 'new-password');
+    await submitForm();
+
+    await waitFor(() =>
+      expect(analytics.track).toHaveBeenCalledWith('password_reset_failed', {
+        reason,
+      }),
+    );
   });
 
   it('keeps the form usable when the rejected value has no API message', async () => {

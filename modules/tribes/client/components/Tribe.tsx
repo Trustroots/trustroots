@@ -78,6 +78,7 @@ export default function Tribe({
             tribe={tribe}
             user={user}
             icon={true}
+            source="circles_list"
             onUpdated={onMembershipUpdated}
           />
         )}

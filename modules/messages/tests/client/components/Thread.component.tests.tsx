@@ -2,7 +2,7 @@ import { useParams } from '@tanstack/react-router';
 import React from 'react';
 import {
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
   within,
@@ -18,6 +18,8 @@ import {
   resolveMalformed,
 } from '@/testutils/client/malformed-fixtures';
 import { update as updateUnreadMessageCount } from '@/modules/messages/client/services/unread-message-count.client.service';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+import { rememberOutreachSource } from '@trustroots/analytics/client';
 import {
   generateClientUser,
   generateMessage,
@@ -27,6 +29,10 @@ import type {
   Message,
   MessageUser,
 } from '@/modules/messages/client/api/messages.api';
+
+let analytics = fakeAnalytics();
+const render = (ui: React.ReactElement) =>
+  rtlRender(ui, { wrapper: analytics.wrapper });
 
 const api = {
   users: { fetch: jest.mocked(usersAPI.fetch) },
@@ -149,6 +155,7 @@ function createMessage(
 }
 
 beforeEach(() => {
+  analytics = fakeAnalytics();
   api.users.fetch.mockReset();
   api.messages.fetchMessages.mockReset();
   api.messages.sendMessage.mockReset();
@@ -263,6 +270,9 @@ describe('<Thread>', () => {
     );
     expect(api.users.fetch).not.toHaveBeenCalled();
     expect(api.messages.fetchMessages).not.toHaveBeenCalled();
+    expect(analytics.track).toHaveBeenCalledWith('message_gate_shown', {
+      reason: 'not_public',
+    });
   });
 
   describe('no messages', () => {
@@ -304,6 +314,9 @@ describe('<Thread>', () => {
       );
       await findByText(/Your profile seems quite empty/);
       expect(queryByRole('textbox')).not.toBeInTheDocument();
+      expect(analytics.track).toHaveBeenCalledWith('message_gate_shown', {
+        reason: 'profile_too_short',
+      });
       expect(api.users.fetch).toHaveBeenCalledWith(otherUser.username);
       expect(api.messages.fetchMessages).toHaveBeenCalledWith(otherUser._id);
     });
@@ -373,6 +386,45 @@ describe('<Thread>', () => {
       expect(
         screen.queryByText(/You haven't been talking with/),
       ).not.toBeInTheDocument();
+      expect(analytics.track).toHaveBeenCalledWith('message_sent', {
+        kind: 'first',
+        via: 'editor',
+        source: 'other',
+      });
+      expect(analytics.track).not.toHaveBeenCalledWith(
+        'message_gate_shown',
+        expect.anything(),
+      );
+    });
+
+    it('says where reaching out started on a first message', async () => {
+      rememberOutreachSource(otherUser.username, 'search');
+      api.messages.sendMessage.mockResolvedValueOnce({
+        data: { ...createMessage(me), _id: 'first-message' },
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const editor = await screen.findByRole('textbox');
+      fireEvent.change(editor, { target: { value: '<p>Hello!</p>' } });
+      fireEvent.submit(editor.closest('form')!);
+
+      await waitFor(() =>
+        expect(analytics.track).toHaveBeenCalledWith('message_sent', {
+          kind: 'first',
+          via: 'editor',
+          source: 'search',
+        }),
+      );
+      window.sessionStorage.clear();
+    });
+
+    it('tracks an opened thread without unread messages', async () => {
+      render(<Thread user={me} profileMinimumLength={0} />);
+      await screen.findByRole('form');
+      expect(analytics.track).toHaveBeenCalledWith('message_thread_opened', {
+        unread: 'no',
+      });
+      expect(analytics.track).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -716,6 +768,9 @@ describe('<Thread>', () => {
         'You are writing to too many people too fast. Slow down and try later again.',
       ),
     );
+    expect(analytics.track).toHaveBeenCalledWith('message_send_failed', {
+      reason: 'rate_limited',
+    });
   });
 
   it('displays a generic alert when send fails without a rate limit', async () => {
@@ -741,6 +796,13 @@ describe('<Thread>', () => {
       expect(alertSpy).toHaveBeenCalledWith(
         'Failed to send the message. Perhaps your internet went down? Please try again.',
       ),
+    );
+    expect(analytics.track).toHaveBeenCalledWith('message_send_failed', {
+      reason: 'other',
+    });
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'message_sent',
+      expect.anything(),
     );
   });
 
@@ -816,6 +878,10 @@ describe('<Thread>', () => {
         expect(screen.queryByTestId('quick-reply')).not.toBeInTheDocument(),
       );
       expect(screen.getByText('Yes, I can host!')).toBeInTheDocument();
+      expect(analytics.track).toHaveBeenCalledWith('message_sent', {
+        kind: 'reply',
+        via: 'quick_reply',
+      });
     });
   });
 
@@ -834,6 +900,31 @@ describe('<Thread>', () => {
         expect(api.messages.markRead).toHaveBeenCalledWith(['unread-message']),
       );
       expect(updateUnreadCount).toHaveBeenCalledTimes(1);
+      expect(analytics.track).toHaveBeenCalledWith('message_thread_opened', {
+        unread: 'yes',
+      });
+    });
+  });
+
+  describe('only own unanswered messages', () => {
+    it('counts another message as a follow-up, not a reply', async () => {
+      api.messages.fetchMessages.mockResolvedValueOnce({
+        messages: [createMessage(me)],
+      });
+      api.messages.sendMessage.mockResolvedValueOnce({
+        data: { ...createMessage(me), _id: 'follow-up' },
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const editor = await screen.findByRole('textbox');
+      fireEvent.change(editor, { target: { value: '<p>Any news?</p>' } });
+      fireEvent.submit(editor.closest('form')!);
+
+      await waitFor(() =>
+        expect(analytics.track).toHaveBeenCalledWith('message_sent', {
+          kind: 'followup',
+          via: 'editor',
+        }),
+      );
     });
   });
 
@@ -848,6 +939,23 @@ describe('<Thread>', () => {
       api.messages.fetchMessages.mockResolvedValueOnce({
         messages: [messageFromOther, messageFromMe],
       });
+    });
+
+    it('tracks a typed reply in an existing thread', async () => {
+      api.messages.sendMessage.mockResolvedValueOnce({
+        data: { ...createMessage(me), _id: 'typed-reply' },
+      } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
+      render(<Thread user={me} profileMinimumLength={0} />);
+      const editor = await screen.findByRole('textbox');
+      fireEvent.change(editor, { target: { value: '<p>Thanks!</p>' } });
+      fireEvent.submit(editor.closest('form')!);
+
+      await waitFor(() =>
+        expect(analytics.track).toHaveBeenCalledWith('message_sent', {
+          kind: 'reply',
+          via: 'editor',
+        }),
+      );
     });
 
     it('does not show the quick reply buttons', async () => {

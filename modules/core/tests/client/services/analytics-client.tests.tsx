@@ -45,11 +45,14 @@ describe('createUmamiTracker', () => {
     );
     const tracker = createUmamiTracker();
 
-    tracker.track('inbox-load-more', { page: 2 });
-    tracker.track('signin-success');
+    tracker.track('search_no_results', { zoom: 9, filters: 2 });
+    tracker.track('signin_succeeded');
 
-    expect(track).toHaveBeenNthCalledWith(1, 'inbox-load-more', { page: 2 });
-    expect(track).toHaveBeenNthCalledWith(2, 'signin-success', undefined);
+    expect(track).toHaveBeenNthCalledWith(1, 'search_no_results', {
+      zoom: 9,
+      filters: 2,
+    });
+    expect(track).toHaveBeenNthCalledWith(2, 'signin_succeeded', undefined);
   });
 
   it('drops events once the page has loaded without a tracker', () => {
@@ -57,10 +60,10 @@ describe('createUmamiTracker', () => {
     const tracker = createUmamiTracker();
     const addEventListener = jest.spyOn(window, 'addEventListener');
 
-    tracker.track('signup-rules-open');
+    tracker.track('signup_rules_opened');
     window.dispatchEvent(new Event('load'));
     const track = installTracker();
-    tracker.track('signin-failure');
+    tracker.track('page_not_found');
 
     expect(addEventListener).not.toHaveBeenCalledWith(
       'load',
@@ -68,7 +71,7 @@ describe('createUmamiTracker', () => {
       expect.anything(),
     );
     expect(track).toHaveBeenCalledTimes(1);
-    expect(track).toHaveBeenCalledWith('signin-failure', undefined);
+    expect(track).toHaveBeenCalledWith('page_not_found', undefined);
     addEventListener.mockRestore();
   });
 
@@ -76,15 +79,15 @@ describe('createUmamiTracker', () => {
     setReadyState('loading');
     const tracker = createUmamiTracker();
 
-    tracker.track('offer-delete', { type: 'host' });
-    tracker.track('search-offer-not-found');
+    tracker.track('offer_deleted', { type: 'host' });
+    tracker.track('search_offer_not_found');
     const track = installTracker();
     window.dispatchEvent(new Event('load'));
     window.dispatchEvent(new Event('load'));
 
     expect(track.mock.calls).toEqual([
-      ['offer-delete', { type: 'host' }],
-      ['search-offer-not-found', undefined],
+      ['offer_deleted', { type: 'host' }],
+      ['search_offer_not_found', undefined],
     ]);
   });
 
@@ -93,7 +96,7 @@ describe('createUmamiTracker', () => {
     const tracker = createUmamiTracker();
 
     for (let page = 0; page < MAX_QUEUED_EVENTS + 5; page += 1) {
-      tracker.track('inbox-load-more', { page });
+      tracker.track('search_no_results', { zoom: page, filters: 0 });
     }
     const track = installTracker();
     window.dispatchEvent(new Event('load'));
@@ -105,13 +108,13 @@ describe('createUmamiTracker', () => {
     setReadyState('loading');
     const tracker = createUmamiTracker();
 
-    tracker.track('offer-delete', { type: 'meet' });
+    tracker.track('offer_deleted', { type: 'meet' });
     window.dispatchEvent(new Event('load'));
     const track = installTracker();
     setReadyState('complete');
-    tracker.track('offer-delete', { type: 'host' });
+    tracker.track('offer_deleted', { type: 'host' });
 
-    expect(track.mock.calls).toEqual([['offer-delete', { type: 'host' }]]);
+    expect(track.mock.calls).toEqual([['offer_deleted', { type: 'host' }]]);
   });
 
   it('ignores a tracker without a track function', () => {
@@ -119,7 +122,7 @@ describe('createUmamiTracker', () => {
     window.umami = {} as Window['umami'];
     const tracker = createUmamiTracker();
 
-    expect(() => tracker.track('signin-success')).not.toThrow();
+    expect(() => tracker.track('signin_succeeded')).not.toThrow();
   });
 
   it('keeps tracker failures away from the caller', async () => {
@@ -133,8 +136,8 @@ describe('createUmamiTracker', () => {
     );
     const tracker = createUmamiTracker();
 
-    expect(() => tracker.track('signin-success')).not.toThrow();
-    expect(() => tracker.track('signin-failure')).not.toThrow();
+    expect(() => tracker.track('signin_succeeded')).not.toThrow();
+    expect(() => tracker.track('page_not_found')).not.toThrow();
     await expect(rejected.catch(() => 'handled')).resolves.toBe('handled');
     expect(track).toHaveBeenCalledTimes(2);
   });
@@ -145,12 +148,12 @@ function TrackButtons() {
 
   return (
     <>
-      <button type="button" onClick={() => track('signin-success')}>
+      <button type="button" onClick={() => track('signin_succeeded')}>
         Sign in
       </button>
       <button
         type="button"
-        onClick={() => track('offer-delete', { type: 'meet' })}
+        onClick={() => track('offer_deleted', { type: 'meet' })}
       >
         Delete
       </button>
@@ -171,8 +174,8 @@ describe('AnalyticsProvider', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
     expect(tracker.track.mock.calls).toEqual([
-      ['signin-success'],
-      ['offer-delete', { type: 'meet' }],
+      ['signin_succeeded'],
+      ['offer_deleted', { type: 'meet' }],
     ]);
   });
 
@@ -208,7 +211,7 @@ describe('AnalyticsProvider', () => {
     );
     fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
 
-    expect(track).toHaveBeenCalledWith('offer-delete', { type: 'meet' });
+    expect(track).toHaveBeenCalledWith('offer_deleted', { type: 'meet' });
   });
 
   it('throws when useAnalytics is used outside AnalyticsProvider', () => {

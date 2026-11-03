@@ -17,6 +17,41 @@ export {
   createUmamiTracker,
   type AnalyticsTracker,
 } from './umami.ts';
+export {
+  rememberOutreachSource,
+  readOutreachSource,
+} from './outreach-source.ts';
+export {
+  emailConfirmFailureReason,
+  messageSendFailureReason,
+  passwordResetFailureReason,
+  saveFailureReason,
+  signinFailureReason,
+} from './failure-reasons.ts';
+export {
+  ANALYTICS_EVENTS,
+  ANALYTICS_LANGUAGES,
+  NAVIGATION_ITEMS,
+  toAnalyticsLanguage,
+  type AnalyticsEventArgs,
+  type AnalyticsEventName,
+  type AnalyticsEvents,
+  type AnalyticsLanguage,
+  type CircleSource,
+  type EmailConfirmFailureReason,
+  type MessageGateReason,
+  type MessageSendFailureReason,
+  type NavigationItem,
+  type NavigationSurface,
+  type OfferType,
+  type OutreachSource,
+  type PasswordResetFailureReason,
+  type ProfileSection,
+  type SaveFailureReason,
+  type SearchFilter,
+  type SigninFailureReason,
+  type SupportCategory,
+} from '../shared/events.ts';
 
 const AnalyticsContext = createContext<AnalyticsTracker | null>(null);
 

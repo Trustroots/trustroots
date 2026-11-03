@@ -1,7 +1,6 @@
 import { useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAnalytics } from '@trustroots/analytics/client';
 
 import { Button } from '@trustroots/ui/Button';
 import * as api from '../api/messages.api';
@@ -21,7 +20,6 @@ export default function Inbox({ user }: InboxProps) {
     );
   }
   const { t } = useTranslation('messages');
-  const { track } = useAnalytics();
   const unreadOnly = useSearch({ strict: false }).filter === 'unread';
 
   const [nextParams, setNextParams] = useState<PageParams | null>(null);
@@ -52,10 +50,6 @@ export default function Inbox({ user }: InboxProps) {
   async function fetchThreads(next = false) {
     setIsFetching(true);
     try {
-      if (next) {
-        track('inbox-load-more', { page: Number(nextParams?.page) });
-      }
-
       const params = next ? (nextParams as PageParams) : {};
       const data = await api.fetchThreads(
         unreadOnly ? { ...params, filter: 'unread' } : params,

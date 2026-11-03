@@ -26,7 +26,10 @@ export async function getByUserId(
   userId: string,
 ): Promise<ContactRecord | null> {
   try {
-    const { data } = await axios.get(`/api/contact-by/${userId}`);
+    // 404 means "not a contact".
+    const { data } = await axios.get(`/api/contact-by/${userId}`, {
+      expectedStatuses: [404],
+    });
     return data;
   } catch (error: unknown) {
     if (readApiError(error).status === 404) return null;
@@ -50,7 +53,12 @@ export async function create({
   friendUserId,
   message,
 }: ContactRequest): Promise<ContactRecord> {
-  const { data } = await axios.post('/api/contact', { friendUserId, message });
+  // 409 means "already connected or requested"; the caller shows that.
+  const { data } = await axios.post(
+    '/api/contact',
+    { friendUserId, message },
+    { expectedStatuses: [409] },
+  );
   return data;
 }
 

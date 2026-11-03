@@ -99,6 +99,7 @@ describe('Core CRUD tests', function () {
         .expect(/https:\/\/1p\.trustroots\.org\/script\.js/)
         .expect(new RegExp(`data-website-id="${config.umami.websiteId}"`))
         .expect(/data-do-not-track="true"/)
+        .expect(/data-performance="true"/)
         .end(function (err) {
           return done(err);
         });

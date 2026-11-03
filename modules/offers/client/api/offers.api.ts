@@ -44,6 +44,8 @@ export async function getOffers(
       `/api/offers-by/${userId}`,
       {
         ...requestOptions,
+        // 404 means "no offers of these types".
+        expectedStatuses: [404],
         params: { ...requestOptions.params, types },
       },
     );

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { rememberOutreachSource } from '@trustroots/analytics/client';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
 import { useTranslation } from 'react-i18next';
 import RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
@@ -66,6 +67,7 @@ export default function TopNavigationSmall({
         id: 'send-message',
         label: t('Send a message'),
         link: `/messages/${username}`,
+        onClick: () => rememberOutreachSource(username, 'profile'),
       },
     ];
 
@@ -83,6 +85,7 @@ export default function TopNavigationSmall({
             id: 'add-contact',
             label: t('Add contact'),
             link: `/contact-add/${userId}`,
+            onClick: () => rememberOutreachSource(username, 'profile'),
           }
         : contact.confirmed
           ? {

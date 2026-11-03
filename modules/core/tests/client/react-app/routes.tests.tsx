@@ -44,6 +44,7 @@ jest.mock('@/modules/core/client/api/http-client', () => {
     },
     getErrorMessage: (_error: unknown, fallback: string) => fallback,
     getErrorResponse: () => undefined,
+    onRequestFailure: () => () => undefined,
   };
 });
 

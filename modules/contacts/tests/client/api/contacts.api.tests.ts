@@ -84,7 +84,9 @@ describe('contacts api', () => {
     axiosMock.get.mockResolvedValueOnce(response(contact));
 
     await expect(getByUserId('user-2')).resolves.toBe(contact);
-    expect(axiosMock.get).toHaveBeenCalledWith('/api/contact-by/user-2');
+    expect(axiosMock.get).toHaveBeenCalledWith('/api/contact-by/user-2', {
+      expectedStatuses: [404],
+    });
   });
 
   it('fetches a contact by contact id', async () => {
@@ -121,10 +123,11 @@ describe('contacts api', () => {
     await expect(
       create({ friendUserId: 'user-2', message: 'Hello!' }),
     ).resolves.toBe(contact);
-    expect(axiosMock.post).toHaveBeenCalledWith('/api/contact', {
-      friendUserId: 'user-2',
-      message: 'Hello!',
-    });
+    expect(axiosMock.post).toHaveBeenCalledWith(
+      '/api/contact',
+      { friendUserId: 'user-2', message: 'Hello!' },
+      { expectedStatuses: [409] },
+    );
   });
 
   it('confirms a contact request', async () => {

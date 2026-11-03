@@ -69,6 +69,7 @@ function SignupTribePanel({
           tribe={tribe}
           user={user || undefined}
           onUpdated={onMembershipUpdated}
+          source="signup"
         />
       </div>
     </div>
@@ -138,6 +139,12 @@ export default function SignupPage() {
   const [usernamePending, setUsernamePending] = useState(false);
   const [usernameValidationMessage, setUsernameValidationMessage] =
     useState('');
+
+  useEffect(() => {
+    // Signed-in members on step 1 are redirected away by the next effect.
+    if (user && step === 1) return;
+    track('signup_step_viewed', { step: step as 1 | 2 | 3 });
+  }, [step]);
 
   useEffect(() => {
     if (user && step === 1) {
@@ -271,13 +278,14 @@ export default function SignupPage() {
 
   function handleOpenRules(event: React.MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    track('signup-rules-open');
+    track('signup_rules_opened');
     window.location.assign('/rules');
   }
 
   async function handleSubmitSignup() {
     if (step !== 1) return;
     if (!credentials.ageConfirmed) {
+      track('signup_failed', { reason: 'age_not_confirmed' });
       setErrorMessage(
         t('You must confirm that you are 18 years old or older to sign up.'),
       );
@@ -290,13 +298,18 @@ export default function SignupPage() {
     setIsEmailTaken(false);
     setErrorMessage('');
 
+    let signedUp = false;
+
     try {
       const newUser = await authApi.signup(credentials);
+      signedUp = true;
+      track('signup_completed', { referred_circle: tribe?._id ? 'yes' : 'no' });
       let authenticatedUser = newUser;
 
       if (tribe?._id) {
         const membership = await tribesApi.join(tribe._id);
         authenticatedUser = membership.user || newUser;
+        track('circle_joined', { source: 'signup' });
       }
 
       setStep(2);
@@ -305,8 +318,17 @@ export default function SignupPage() {
       const message =
         readApiError(error).message ??
         'Something went wrong while signing you up. Try again!';
+      const emailTaken = message === 'Account with this email exists already.';
 
-      if (message === 'Account with this email exists already.') {
+      // The server answers 400 for every failure, so only the message tells
+      // an existing email apart from anything else.
+      if (!signedUp) {
+        track('signup_failed', {
+          reason: emailTaken ? 'email_taken' : 'other',
+        });
+      }
+
+      if (emailTaken) {
         setIsEmailTaken(true);
       } else {
         setErrorMessage(message);

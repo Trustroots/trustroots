@@ -4,6 +4,12 @@ import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Navigate, useParams, useSearch } from '@tanstack/react-router';
+import {
+  messageSendFailureReason,
+  readOutreachSource,
+  useAnalytics,
+  type MessageGateReason,
+} from '@trustroots/analytics/client';
 
 import * as messagesAPI from '@/modules/messages/client/api/messages.api';
 import * as usersAPI from '@/modules/users/client/api/users.api';
@@ -141,12 +147,23 @@ type ThreadCurrentUser = MessageUser & {
 };
 type ThreadProps = { user: ThreadCurrentUser; profileMinimumLength: number };
 
+/** Counts, once per showing, that the reply form is hidden from the member. */
+function MessageGateShown({ reason }: { reason: MessageGateReason }) {
+  const { track } = useAnalytics();
+  useEffect(() => {
+    track('message_gate_shown', { reason });
+  }, [reason, track]);
+  return null;
+}
+
 export default function Thread({ user, profileMinimumLength }: ThreadProps) {
   const { t } = useTranslation('messages');
+  const { track } = useAnalytics();
 
   if (!user.public) {
     return (
       <section className="container-spacer">
+        <MessageGateShown reason="not_public" />
         <Activate />
       </section>
     );
@@ -296,15 +313,25 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         setMessages(sortedMessages);
       }
       setNextParams(nextParams ?? null);
+      track('message_thread_opened', {
+        unread: messages.some(
+          message => !message.read && message.userFrom?._id !== user._id,
+        )
+          ? 'yes'
+          : 'no',
+      });
     } finally {
       setIsFetching(false);
     }
   }
 
-  async function sendMessage(content: string) {
+  async function sendMessage(content: string, via: 'editor' | 'quick_reply') {
     const apiResponse = await api.messages
       .sendMessage((otherUser as MessageUser)._id, content)
       .catch(error => {
+        track('message_send_failed', {
+          reason: messageSendFailureReason(error),
+        });
         // Too many requests - error
         if (error?.response?.status === 429) {
           window.alert(
@@ -324,6 +351,23 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
     // Failed to send message
     if (!apiResponse?.data) {
       return false;
+    }
+
+    if (messages.length === 0) {
+      track('message_sent', {
+        kind: 'first',
+        via,
+        source: readOutreachSource((otherUser as MessageUser).username),
+      });
+    } else {
+      // A reply answers the other member; a follow-up chases one's own
+      // unanswered messages.
+      track('message_sent', {
+        kind: messages.some(message => message.userFrom?._id !== user._id)
+          ? 'reply'
+          : 'followup',
+        via,
+      });
     }
 
     // Append in thread the formatted message we got as a response from API
@@ -385,7 +429,10 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 <>
                   <FlexGrow />
                   {hasEmptyProfile ? (
-                    <YourProfileSeemsQuiteEmpty />
+                    <>
+                      <MessageGateShown reason="profile_too_short" />
+                      <YourProfileSeemsQuiteEmpty />
+                    </>
                   ) : (
                     <YouHaveNotBeenTalkingYet
                       name={otherUser?.displayName || otherUser?.username}
@@ -412,7 +459,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
               {!userHasReplied && showReply && <SafetyReminder />}
               {!isBlocked && showQuickReply && (
                 <QuickReply
-                  onSend={content => sendMessage(content)}
+                  onSend={content => sendMessage(content, 'quick_reply')}
                   onFocus={focus}
                 />
               )}
@@ -421,7 +468,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                   key={cacheKey}
                   cacheKey={cacheKey}
                   autoFocus={!isExtraSmall}
-                  onSend={content => sendMessage(content)}
+                  onSend={content => sendMessage(content, 'editor')}
                 />
               )}
               {removed && (

@@ -105,13 +105,23 @@ test('a failed sign-in sends an anonymous product event to Umami', async ({
   await page.getByLabel('Password', { exact: true }).fill('wrong-password');
   await page.getByRole('button', { name: 'Login', exact: true }).click();
   await expect(page.getByRole('alert')).toBeVisible();
+  const recordedEvents = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { umamiEvents: [string, unknown][] }).umamiEvents,
+    );
   await expect
-    .poll(() =>
-      page.evaluate(
-        () => (window as unknown as { umamiEvents: unknown[] }).umamiEvents,
-      ),
-    )
-    .toEqual([['signin-failure', null]]);
+    .poll(async () => (await recordedEvents()).map(([name]) => name))
+    .toEqual(['api_request_failed', 'signin_failed']);
+  // The failed request is reported by status, method and API area only.
+  expect(await recordedEvents()).toEqual([
+    [
+      'api_request_failed',
+      { status: expect.any(Number), method: 'post', area: 'auth' },
+    ],
+    // A wrong password answers 400, so the reason is `credentials`.
+    ['signin_failed', { reason: 'credentials' }],
+  ]);
 });
 
 test('Umami receives route templates instead of reset tokens', async ({

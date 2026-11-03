@@ -140,7 +140,7 @@ describe('OfferMeetEditPage', () => {
         }),
       );
     });
-    expect(analytics.track).toHaveBeenCalledWith('offer-save', {
+    expect(analytics.track).toHaveBeenCalledWith('offer_saved', {
       type: 'meet',
       action: 'create',
     });
@@ -173,7 +173,7 @@ describe('OfferMeetEditPage', () => {
         }),
       );
     });
-    expect(analytics.track).toHaveBeenCalledWith('offer-save', {
+    expect(analytics.track).toHaveBeenCalledWith('offer_saved', {
       type: 'meet',
       action: 'update',
     });
@@ -257,24 +257,39 @@ describe('OfferMeetEditPage', () => {
     expect(await screen.findByText('Wait a moment…')).toBeInTheDocument();
   });
 
-  it('stays on the form when saving a new meet offer fails', async () => {
-    offersApiMock.createOffer.mockRejectedValue(new Error('save failed'));
-    render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
+  it.each([
+    ['validation', { response: { status: 400 } }],
+    ['server', { response: { status: 500 } }],
+    ['server', new Error('offline')],
+  ])(
+    'stays on the form when saving a new meet offer fails (reason %s)',
+    async (reason, rejection) => {
+      offersApiMock.createOffer.mockRejectedValue(rejection);
+      render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
-    fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
-      target: { value: 'Coffee in the park.' },
-    });
-    fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
-    fireEvent.click(
-      document.querySelector('[data-testid="location-editor"] button')!,
-    );
-    fireEvent.submit(document.querySelector('form')!);
+      fireEvent.change(await screen.findByPlaceholderText('Write here...'), {
+        target: { value: 'Coffee in the park.' },
+      });
+      fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
+      fireEvent.click(
+        document.querySelector('[data-testid="location-editor"] button')!,
+      );
+      fireEvent.submit(document.querySelector('form')!);
 
-    await waitFor(() => {
-      expect(offersApiMock.createOffer).toHaveBeenCalled();
-    });
-    expect(screen.getByText('What is this about?')).toBeInTheDocument();
-  });
+      await waitFor(() => {
+        expect(offersApiMock.createOffer).toHaveBeenCalled();
+      });
+      expect(screen.getByText('What is this about?')).toBeInTheDocument();
+      expect(analytics.track).toHaveBeenCalledWith('offer_save_failed', {
+        type: 'meet',
+        reason,
+      });
+      expect(analytics.track).not.toHaveBeenCalledWith(
+        'offer_saved',
+        expect.anything(),
+      );
+    },
+  );
 
   it('ignores loaded meet offers after unmounting', async () => {
     window.history.pushState({}, '', '/offer/meet/offer-1');

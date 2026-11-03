@@ -230,7 +230,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
         });
       }
 
-      track('search-offer-preview');
+      track('search_offer_previewed');
     },
     [openSidebar, track],
   );
@@ -240,8 +240,10 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
       clearSelection({ clearOfferParam: false });
       setCommunityNote(data);
       openSidebar('results');
+      // Opened from the map or the sidebar list.
+      track('search_community_note_opened');
     },
-    [clearSelection, openSidebar],
+    [clearSelection, openSidebar, track],
   );
 
   const closeOffer = useCallback(() => {
@@ -416,7 +418,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               locationNavigationGenerationRef.current
           ) {
             clearSelection({ clearOfferParam: false });
-            track('search-offer-not-found');
+            track('search_offer_not_found');
           }
         }
       }

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
+import { useAnalytics } from '@trustroots/analytics/client';
 import useDebouncedCallback from '../hooks/use-debounced-callback';
 
 import { fetchLocationSuggestions, locatePlace } from '../api/location.api';
@@ -29,6 +30,7 @@ export default function SearchPlaceInput({
   searchQuery,
   setSearchQuery,
 }: SearchPlaceInputProps) {
+  const { track } = useAnalytics();
   const [suggestions, setSuggestions] = useState<PlaceSuggestion[]>([]);
   const [locationNotFound, setLocationNotFound] = useState<string | false>(
     false,
@@ -55,7 +57,7 @@ export default function SearchPlaceInput({
       skipSuggestionsRef.current = false;
 
       if (results.length) {
-        handleSelect(results[0]);
+        handleSelect(results[0], 'query');
       } else {
         setLocationNotFound(query);
       }
@@ -92,10 +94,14 @@ export default function SearchPlaceInput({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  function handleSelect(feature: PlaceSuggestion) {
+  function handleSelect(
+    feature: PlaceSuggestion,
+    source: 'suggestion' | 'query',
+  ) {
     const located = locatePlace(feature);
 
     if (located) {
+      track('search_place_selected', { source });
       onPlaceSearch(located.data, located.type);
     }
 
@@ -176,7 +182,7 @@ export default function SearchPlaceInput({
                 className="dropdown-item"
                 type="button"
                 onClick={() => {
-                  handleSelect(feature);
+                  handleSelect(feature, 'suggestion');
                 }}
               >
                 {feature.trTitle}

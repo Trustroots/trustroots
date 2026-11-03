@@ -10,6 +10,7 @@ import {
   type BootstrapData,
 } from '@/modules/core/client/react-app/app-context';
 import { AuthProvider } from '@/modules/core/client/react-app/auth';
+import { AnalyticsErrorEvents } from './AnalyticsErrorEvents';
 import { getBootstrapData } from './bootstrap';
 
 type AppProvidersProps = {
@@ -31,6 +32,7 @@ export function AppProviders({
   return (
     <AppBootstrapContext.Provider value={resolvedBootstrapData}>
       <AnalyticsProvider tracker={analyticsTracker}>
+        <AnalyticsErrorEvents />
         <QueryClientProvider client={queryClient}>
           <AuthProvider initialUser={resolvedBootstrapData.user}>
             {children}

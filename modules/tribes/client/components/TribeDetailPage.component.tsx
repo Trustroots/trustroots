@@ -239,6 +239,7 @@ export default function TribeDetailPage({
                       look={{}}
                       activeClassName="circle-membership-active"
                       icon={false}
+                      source="circle_page"
                       memberLabel={t("You're a member") as string}
                       onUpdated={handleMembershipUpdated}
                     />

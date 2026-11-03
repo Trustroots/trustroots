@@ -1,5 +1,6 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
+  countNarrowingFilters,
   DEFAULT_FILTERS,
   getSearchFilters,
   normalizeTypes,
@@ -8,6 +9,19 @@ import {
 } from '@/modules/search/client/utils/search-filters';
 
 describe('search-filters utils', () => {
+  it('counts circles, languages and leaving out hosts as narrowing filters', () => {
+    expect(countNarrowingFilters({})).toBe(0);
+    expect(countNarrowingFilters(DEFAULT_FILTERS)).toBe(0);
+    expect(
+      countNarrowingFilters({
+        tribes: ['circle-1'],
+        languages: ['fin'],
+        types: ['meet'],
+      }),
+    ).toBe(3);
+    expect(countNarrowingFilters({ types: [{ id: 'host' }] })).toBe(0);
+  });
+
   beforeEach(() => {
     window.localStorage.clear();
   });

@@ -178,7 +178,7 @@ describe('OfferHostPage', () => {
         }),
       );
     });
-    expect(analytics.track).toHaveBeenCalledWith('offer-save', {
+    expect(analytics.track).toHaveBeenCalledWith('offer_saved', {
       type: 'host',
       action: 'create',
       status: 'yes',
@@ -208,7 +208,7 @@ describe('OfferHostPage', () => {
       );
     });
     expect(analytics.track).toHaveBeenCalledWith(
-      'offer-save',
+      'offer_saved',
       expect.objectContaining({ type: 'host', action: 'update' }),
     );
   });
@@ -256,24 +256,39 @@ describe('OfferHostPage', () => {
     expect(offersApiMock.createOffer).not.toHaveBeenCalled();
   });
 
-  it('keeps the editor open when saving fails', async () => {
-    offersApiMock.updateOffer.mockRejectedValue(new Error('save failed'));
-    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+  it.each([
+    ['validation', { response: { status: 400 } }],
+    ['server', { response: { status: 500 } }],
+    ['server', new Error('offline')],
+  ])(
+    'keeps the editor open when saving fails (reason %s)',
+    async (reason, rejection) => {
+      offersApiMock.updateOffer.mockRejectedValue(rejection);
+      render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
-    const descriptionTextareas =
-      screen.getAllByPlaceholderText('Write here...');
-    fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
-      target: { value: 'Updated hosting description.' },
-    });
-    fireEvent.submit(document.querySelector('form')!);
+      expect(await screen.findByText('Can you host?')).toBeVisible();
+      fireEvent.click(screen.getByRole('tab', { name: 'Description' }));
+      const descriptionTextareas =
+        screen.getAllByPlaceholderText('Write here...');
+      fireEvent.change(descriptionTextareas[descriptionTextareas.length - 1], {
+        target: { value: 'Updated hosting description.' },
+      });
+      fireEvent.submit(document.querySelector('form')!);
 
-    await waitFor(() => {
-      expect(offersApiMock.updateOffer).toHaveBeenCalled();
-    });
-    expect(screen.getByText('Can you host?')).toBeInTheDocument();
-  });
+      await waitFor(() => {
+        expect(offersApiMock.updateOffer).toHaveBeenCalled();
+      });
+      expect(screen.getByText('Can you host?')).toBeInTheDocument();
+      expect(analytics.track).toHaveBeenCalledWith('offer_save_failed', {
+        type: 'host',
+        reason,
+      });
+      expect(analytics.track).not.toHaveBeenCalledWith(
+        'offer_saved',
+        expect.anything(),
+      );
+    },
+  );
 
   it('shows no-offer fields when hosting is unavailable', async () => {
     offersApiMock.getOffers.mockResolvedValue([

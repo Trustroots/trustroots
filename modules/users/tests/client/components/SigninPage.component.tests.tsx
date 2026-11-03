@@ -115,7 +115,7 @@ describe('SigninPage', () => {
         undefined,
       );
     });
-    expect(analytics.track).toHaveBeenCalledWith('signin-success');
+    expect(analytics.track).toHaveBeenCalledWith('signin_succeeded');
   });
 
   it('preserves the protected destination after successful sign-in', async () => {
@@ -149,7 +149,7 @@ describe('SigninPage', () => {
 
   it('shows an error message when sign-in fails', async () => {
     signin.mockRejectedValue({
-      response: { data: { message: 'Invalid credentials.' } },
+      response: { status: 400, data: { message: 'Invalid credentials.' } },
     });
 
     renderPage();
@@ -164,7 +164,37 @@ describe('SigninPage', () => {
 
     expect(await screen.findByText('Invalid credentials.')).toBeInTheDocument();
     expect(getSession).not.toHaveBeenCalled();
-    expect(analytics.track).toHaveBeenCalledWith('signin-failure');
+    expect(analytics.track).toHaveBeenCalledWith('signin_failed', {
+      reason: 'credentials',
+    });
+  });
+
+  it.each([
+    [400, 'credentials'],
+    [403, 'suspended'],
+    [429, 'rate_limited'],
+    [503, 'server'],
+    [undefined, 'server'],
+  ])('sends status %s as reason %s', async (status, reason) => {
+    signin.mockRejectedValue(
+      status === undefined ? new Error('offline') : { response: { status } },
+    );
+
+    renderPage();
+
+    fireEvent.change(screen.getByLabelText('Email or username'), {
+      target: { value: 'member-one' },
+    });
+    fireEvent.change(screen.getByLabelText('Password'), {
+      target: { value: 'wrong' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Login' }));
+
+    await waitFor(() =>
+      expect(analytics.track).toHaveBeenCalledWith('signin_failed', {
+        reason,
+      }),
+    );
   });
 
   it('uses the fallback sign-in error and continue label', async () => {

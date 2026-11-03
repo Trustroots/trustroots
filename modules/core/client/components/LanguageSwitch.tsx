@@ -10,6 +10,10 @@ import {
   getLocales,
   getSearchedLocales,
 } from '@/modules/core/client/utils/locales';
+import {
+  toAnalyticsLanguage,
+  useAnalytics,
+} from '@trustroots/analytics/client';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import i18n from '@/config/client/i18n';
 
@@ -57,6 +61,7 @@ export default function LanguageSwitch({
   saveToAPI,
 }: LanguageSwitchProps) {
   const { t } = useTranslation('core');
+  const { track } = useAnalytics();
   const locales = getLocales();
   const [search, setSearch] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -66,10 +71,22 @@ export default function LanguageSwitch({
     setCurrentLanguageCode(code);
     i18n.changeLanguage(code);
 
-    // Save the user's choice to API.
+    // Save the user's choice to API. The interface has switched either way,
+    // so a failed save only means the next visit starts in the old language.
+    let saved = false;
     if (saveToAPI) {
-      await usersApi.update({ locale: code });
+      try {
+        await usersApi.update({ locale: code });
+        saved = true;
+      } catch {
+        // Reported as a failed API request; nothing to show here.
+      }
     }
+
+    track('language_switched', {
+      language: toAnalyticsLanguage(code),
+      saved: saved ? 'yes' : 'no',
+    });
   };
 
   // selected language

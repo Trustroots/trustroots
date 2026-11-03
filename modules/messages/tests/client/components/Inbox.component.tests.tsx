@@ -200,10 +200,6 @@ describe('<Inbox>', () => {
 
     const items = queryAllByRole('listitem');
     expect(items.length).toBe(threads.length + olderThreads.length);
-
-    expect(analytics.track).toHaveBeenCalledWith('inbox-load-more', {
-      page: 2,
-    });
   });
 
   it('filters by member name and latest preview across older pages', async () => {

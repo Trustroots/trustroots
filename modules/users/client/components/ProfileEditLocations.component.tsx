@@ -6,6 +6,7 @@ import LocationInput from '@/modules/core/client/components/LocationInput.compon
 import HostingAndMeetPanel from './HostingAndMeetPanel.component';
 import ProfileEditPage from './ProfileEditPage.component';
 import { update } from '../api/users.api';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
@@ -15,6 +16,7 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth();
+  const { track } = useAnalytics();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -37,7 +39,12 @@ export default function ProfileEditLocations({ user }: { user: UserProfile }) {
       setDraftUser({ ...savedUser });
       setHasChanges(false);
       setStatusMessage(t('Profile updated.'));
+      track('profile_section_saved', { section: 'locations' });
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'locations',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setStatusMessage(message || t('Something went wrong. Please try again!'));
     }

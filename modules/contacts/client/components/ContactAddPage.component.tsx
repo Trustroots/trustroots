@@ -13,6 +13,7 @@ import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator'
 import type { UserProfile } from '@/modules/users/client/types';
 import { readApiError } from '@/modules/users/client/utils/api-error';
 import { Alert } from '@trustroots/ui/Alert';
+import { readOutreachSource, useAnalytics } from '@trustroots/analytics/client';
 
 function defaultContactMessage(displayName: string): string {
   return `<p>Hi!</p><p>I would like to add you as a contact.</p><p>- ${displayName}</p>`;
@@ -22,6 +23,7 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
   const { t } = useTranslation('contacts') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
+  const { track } = useAnalytics();
   const { userId } = useParams({ strict: false });
   const [message, setMessage] = useState(
     defaultContactMessage(user.displayName),
@@ -86,6 +88,10 @@ export default function ContactAddPage({ user }: { user: UserProfile }) {
         ) as string,
       );
       setWasConnected(true);
+      track('contact_request_sent', {
+        // The form only shows once the member to add has loaded.
+        source: readOutreachSource(friend!.username),
+      });
     } catch (requestError: unknown) {
       const apiError = readApiError(requestError);
       if (apiError.status === 409) {

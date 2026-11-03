@@ -13,6 +13,9 @@ import ProfileEditPhoto from '@/modules/users/client/components/ProfileEditPhoto
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type Avatar from '@/modules/users/client/components/Avatar.component';
 import type { UserProfile } from '@/modules/users/client/types';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 jest.mock('@/modules/users/client/api/users.api');
 jest.mock('react-i18next', () => ({
@@ -61,6 +64,7 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -161,6 +165,9 @@ describe('ProfileEditPhoto', () => {
         expect(usersApi.uploadAvatar).toHaveBeenCalled();
       });
       expect(await screen.findByText('Profile photo updated.')).toBeVisible();
+      expect(analytics.track.mock.calls).toEqual([
+        ['profile_section_saved', { section: 'photo' }],
+      ]);
     },
   );
 
@@ -229,6 +236,9 @@ describe('ProfileEditPhoto', () => {
       );
     });
     expect(await screen.findByText('Profile photo updated.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'photo',
+    });
   });
 
   it('rejects files that exceed the upload limit', () => {
@@ -280,6 +290,10 @@ describe('ProfileEditPhoto', () => {
         /Whoops, your file is too big. Please keep it up to/,
       ),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'photo',
+      reason: 'validation',
+    });
   });
 
   it('shows a generic upload error message', async () => {
@@ -300,6 +314,10 @@ describe('ProfileEditPhoto', () => {
     expect(
       await screen.findByText('Oops! Something went wrong. Try again later.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'photo',
+      reason: 'server',
+    });
   });
 
   it('shows a specific message when upload returns media-type error status', async () => {
@@ -322,6 +340,10 @@ describe('ProfileEditPhoto', () => {
     expect(
       await screen.findByText('Sorry, we do not support this type of file.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'photo',
+      reason: 'validation',
+    });
   });
 
   it('handles update failures without a message', async () => {
@@ -333,11 +355,18 @@ describe('ProfileEditPhoto', () => {
     expect(
       await screen.findByText('Oops! Something went wrong.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'photo',
+      reason: 'server',
+    });
   });
 
   it('reports avatar source save failures', async () => {
     updateUser.mockRejectedValue({
-      response: { data: { message: 'Unable to save avatar source.' } },
+      response: {
+        status: 400,
+        data: { message: 'Unable to save avatar source.' },
+      },
     });
     renderPage({ avatarUploaded: true, avatarSource: 'local' });
 
@@ -346,6 +375,10 @@ describe('ProfileEditPhoto', () => {
     expect(
       await screen.findByText('Unable to save avatar source.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'photo',
+      reason: 'validation',
+    });
   });
 
   it('opens the file picker and handles an empty-sized file', () => {

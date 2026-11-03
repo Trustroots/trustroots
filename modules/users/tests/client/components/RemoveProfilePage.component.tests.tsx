@@ -1,9 +1,16 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import RemoveProfilePage from '@/modules/users/client/components/RemoveProfilePage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 type BoardProps = { children?: React.ReactNode };
 
@@ -45,6 +52,7 @@ describe('RemoveProfilePage', () => {
       await screen.findByText('Your profile was removed.'),
     ).toBeInTheDocument();
     expect(removeProfile).toHaveBeenCalledWith('remove-token');
+    expect(analytics.track).toHaveBeenCalledWith('account_removed');
   });
 
   it('shows failure when removal fails', async () => {
@@ -61,6 +69,8 @@ describe('RemoveProfilePage', () => {
     expect(
       screen.getByRole('link', { name: /get a new confirmation email/i }),
     ).toHaveAttribute('href', '/profile/edit/account#remove');
+    expect(analytics.track).not.toHaveBeenCalled();
+    expect(analytics.track).not.toHaveBeenCalledWith('account_removed');
   });
 
   it('ignores a successful removal response after unmounting', async () => {

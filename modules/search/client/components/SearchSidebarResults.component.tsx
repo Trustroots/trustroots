@@ -3,6 +3,7 @@ import { plainText } from '@/modules/core/client/utils/filters';
 import React, { useRef } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 import { Button } from '@trustroots/ui/Button';
+import { rememberOutreachSource } from '@trustroots/analytics/client';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
 import Avatar from '@/modules/users/client/components/Avatar.component';
@@ -250,7 +251,13 @@ export default function SearchSidebarResults({
           aria-relevant="additions removals"
           className="search-result panel panel-default"
         >
-          <a className="panel-body" href={`/profile/${offer.user.username}`}>
+          <a
+            className="panel-body"
+            href={`/profile/${offer.user.username}`}
+            onClick={() =>
+              rememberOutreachSource(offer.user.username, 'search')
+            }
+          >
             <Avatar link={false} size={32} user={offer.user} />
             <h4>
               {offer.user.displayName}

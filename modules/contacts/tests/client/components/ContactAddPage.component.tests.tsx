@@ -9,6 +9,8 @@ import type Avatar from '@/modules/users/client/components/Avatar.component';
 import type TrEditor from '@/modules/core/client/components/TrEditor';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import * as contactsApi from '@/modules/contacts/client/api/contacts.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+import { rememberOutreachSource } from '@trustroots/analytics/client';
 
 type AddPageProps = React.ComponentProps<typeof ContactAddPage>;
 type PageUser = AddPageProps['user'];
@@ -65,6 +67,8 @@ const friend: Friend = {
   displayName: 'Bob Example',
 };
 
+let analytics = fakeAnalytics();
+
 function renderContactAddPage(pageUser: PageUser = user) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -74,12 +78,14 @@ function renderContactAddPage(pageUser: PageUser = user) {
     <QueryClientProvider client={queryClient}>
       <ContactAddPage user={pageUser} />
     </QueryClientProvider>,
+    { wrapper: analytics.wrapper },
   );
 }
 
 describe('ContactAddPage', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    analytics = fakeAnalytics();
     window.history.pushState({}, '', '/contact-add/friend-1');
     fetchMiniMock.mockResolvedValue(friend);
     getByUserIdMock.mockResolvedValue(null);
@@ -94,6 +100,7 @@ describe('ContactAddPage', () => {
   });
 
   it('renders the add contact form and submits a request', async () => {
+    rememberOutreachSource('bob', 'search');
     createContactMock.mockResolvedValue({ _id: 'contact-request-1' });
     renderContactAddPage();
 
@@ -122,6 +129,11 @@ describe('ContactAddPage', () => {
     expect(
       await screen.findByText(/Done! We sent an email to your contact/),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('contact_request_sent', {
+      source: 'search',
+    });
+    expect(analytics.track).toHaveBeenCalledTimes(1);
+    window.sessionStorage.clear();
   });
 
   it('reports when the user tries to connect with themselves', async () => {
@@ -190,6 +202,7 @@ describe('ContactAddPage', () => {
         'Connection already initiated; now it has to be confirmed.',
       ),
     ).toBeVisible();
+    expect(analytics.track).not.toHaveBeenCalled();
   });
 
   it('shows a generic error when contact creation fails', async () => {
@@ -206,6 +219,7 @@ describe('ContactAddPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add contact' }));
 
     expect(await screen.findByText('Unable to add contact.')).toBeVisible();
+    expect(analytics.track).not.toHaveBeenCalled();
   });
 
   it('handles confirmed duplicate and message-less failures', async () => {

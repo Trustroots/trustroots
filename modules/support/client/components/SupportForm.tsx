@@ -4,6 +4,10 @@ import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofoc
 import { Trans, useTranslation } from 'react-i18next';
 
 // Internal dependencies
+import {
+  useAnalytics,
+  type SupportCategory as AnalyticsSupportCategory,
+} from '@trustroots/analytics/client';
 import { send } from '../api/support.api';
 import usePersistentSupportMessage from '../hooks/use-persistent-support-message';
 import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
@@ -15,9 +19,20 @@ type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };
 type SupportCategory = keyof typeof SUPPORT_CATEGORIES;
 
+/** The form's categories as snake_case analytics values. */
+const ANALYTICS_CATEGORIES: Record<SupportCategory, AnalyticsSupportCategory> =
+  {
+    account: 'account',
+    reportMember: 'report_member',
+    reportBug: 'report_bug',
+    volunteering: 'volunteering',
+    other: 'other',
+  };
+
 export default function SupportForm({ user }: SupportFormProps) {
   const categoryInput = useDesktopAutofocus<HTMLSelectElement>();
   const { t } = useTranslation('support');
+  const { track } = useAnalytics();
   // Keep literal keys discoverable by the translation extractor.
   const categoryLabels: Record<SupportCategory, string> = {
     account: t('Account help'),
@@ -50,6 +65,10 @@ export default function SupportForm({ user }: SupportFormProps) {
       });
       setSupportMessage(''); // Clear out message from browser cache
       setIsSent(true);
+      track('support_request_sent', {
+        signed_in: user ? 'yes' : 'no',
+        category: ANALYTICS_CATEGORIES[category],
+      });
     } catch {
       setSendingFailed(true);
     } finally {

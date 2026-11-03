@@ -146,6 +146,8 @@ describe('messages api', () => {
 
     await expect(unreadCount()).resolves.toBe(3);
 
-    expect(mockedAxios.get).toHaveBeenCalledWith('/api/messages-count');
+    expect(mockedAxios.get).toHaveBeenCalledWith('/api/messages-count', {
+      expectedStatuses: [401, 403],
+    });
   });
 });

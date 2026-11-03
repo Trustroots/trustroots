@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
-import { useAnalytics } from '@trustroots/analytics/client';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { DEFAULT_LOCATION } from '@/modules/core/client/utils/constants';
 import { createOffer, getOffer, updateOffer } from '../api/offers.api';
@@ -135,15 +135,19 @@ export default function OfferMeetEditPage() {
     try {
       if (isNewOffer) {
         await createOffer(payload);
-        track('offer-save', { type: 'meet', action: 'create' });
+        track('offer_saved', { type: 'meet', action: 'create' });
       } else {
         const existingOfferId = loadedOffer._id || offerId!;
         await updateOffer(existingOfferId, payload);
-        track('offer-save', { type: 'meet', action: 'update' });
+        track('offer_saved', { type: 'meet', action: 'update' });
       }
 
       window.location.assign('/offer/meet');
-    } catch {
+    } catch (error: unknown) {
+      track('offer_save_failed', {
+        type: 'meet',
+        reason: saveFailureReason(error),
+      });
       setIsSaving(false);
     }
   }

@@ -1,9 +1,21 @@
 import React from 'react';
-import { render, fireEvent, screen, waitFor } from '@testing-library/react';
+import {
+  render as rtlRender,
+  fireEvent,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import i18n from '@/config/client/i18n';
 import LanguageSwitch from '@/modules/core/client/components/LanguageSwitch';
 import * as usersApi from '@/modules/users/client/api/users.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 const updateUserMock = jest.mocked(usersApi.update);
 
@@ -43,6 +55,10 @@ describe('default presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Suomi' }));
 
     await waitFor(() => expect(screen.getByTitle('Suomi')).toBeInTheDocument());
+    expect(analytics.track).toHaveBeenCalledWith('language_switched', {
+      language: 'fi',
+      saved: 'no',
+    });
     await waitFor(() =>
       expect(screen.queryByText('Select a language')).not.toBeInTheDocument(),
     );
@@ -61,8 +77,29 @@ describe('default presentation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
 
     await waitFor(() =>
-      expect(updateUserMock).toHaveBeenCalledWith({ locale: 'cs' }),
+      expect(analytics.track).toHaveBeenCalledWith('language_switched', {
+        language: 'cs',
+        saved: 'yes',
+      }),
     );
+    expect(updateUserMock).toHaveBeenCalledWith({ locale: 'cs' });
+  });
+
+  it('says the language was not saved when saving fails', async () => {
+    updateUserMock.mockRejectedValue(new Error('offline'));
+
+    render(<LanguageSwitch saveToAPI={true} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'English' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Čeština' }));
+
+    await waitFor(() =>
+      expect(analytics.track).toHaveBeenCalledWith('language_switched', {
+        language: 'cs',
+        saved: 'no',
+      }),
+    );
+    expect(screen.getByTitle('Čeština')).toBeInTheDocument();
   });
 
   it('falls back to English when the current language is unknown', () => {

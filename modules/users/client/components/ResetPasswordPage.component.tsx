@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate, useParams } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 
+import {
+  passwordResetFailureReason,
+  useAnalytics,
+} from '@trustroots/analytics/client';
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useAuth } from '@/modules/core/client/react-app/auth';
@@ -10,6 +14,7 @@ import { readApiError } from '../utils/api-error';
 import { Alert } from '@trustroots/ui/Alert';
 
 export default function ResetPasswordPage() {
+  const { track } = useAnalytics();
   const passwordInput = useDesktopAutofocus<HTMLInputElement>();
   const { token } = useParams({ strict: false });
   const navigate = useNavigate();
@@ -38,8 +43,12 @@ export default function ResetPasswordPage() {
       const user = await authApi.resetPassword(token, passwordDetails);
 
       setUser(user);
+      track('password_reset_completed');
       void navigate({ to: '/password/reset/success' });
     } catch (requestError: unknown) {
+      track('password_reset_failed', {
+        reason: passwordResetFailureReason(requestError),
+      });
       setError(
         readApiError(requestError).message ||
           'We could not confirm whether your password was changed. Try signing in with your new password before requesting another reset.',

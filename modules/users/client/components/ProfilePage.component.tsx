@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useLocation, useParams } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import { getAdminUserHref } from '@/modules/admin/client/utils/member-url';
@@ -25,6 +31,10 @@ import {
   getProfileViewTabStateName,
 } from '../utils/profile-routes';
 import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-links';
+import {
+  rememberOutreachSource,
+  useAnalytics,
+} from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import ContactList from '@/modules/contacts/client/components/ContactList.component';
@@ -162,7 +172,14 @@ function ProfileDesktopActions({
           <li>
             <Button
               variant="link"
-              render={<a href={`/messages/${profile.username}`} />}
+              render={
+                <a
+                  href={`/messages/${profile.username}`}
+                  onClick={() =>
+                    rememberOutreachSource(profile.username, 'profile')
+                  }
+                />
+              }
             >
               <i className="fa icon-message-alt" />
               {t('Send a message') as string}
@@ -185,7 +202,14 @@ function ProfileDesktopActions({
             {contactResolved && !contact._id && (
               <Button
                 variant="link"
-                render={<a href={`/contact-add/${profile._id}`} />}
+                render={
+                  <a
+                    href={`/contact-add/${profile._id}`}
+                    onClick={() =>
+                      rememberOutreachSource(profile.username, 'profile')
+                    }
+                  />
+                }
               >
                 <i className="icon-plus-squared-alt" />
                 {t('Add contact') as string}
@@ -245,6 +269,8 @@ export default function ProfilePage({
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth() as { setUser: (user: UserProfile) => void };
+  const { track } = useAnalytics();
+  const viewedProfileId = useRef<string | null>(null);
   const browserPath = useLocation({ select: location => location.pathname });
   const currentPath = routedPath || browserPath;
   const routeParams = useParams({ strict: false });
@@ -351,6 +377,12 @@ export default function ProfilePage({
         if (replyOnly) return;
 
         const viewingOwnProfile = loadedProfile._id === authUser?._id;
+        // The load re-runs when the experience form opens or closes; count
+        // each profile once while this page stays mounted.
+        if (viewedProfileId.current !== loadedProfile._id) {
+          viewedProfileId.current = loadedProfile._id;
+          track('profile_viewed', { own: viewingOwnProfile ? 'yes' : 'no' });
+        }
         const [loadedContact, loadedContacts] = await Promise.all([
           viewingOwnProfile || !authUser?._id
             ? Promise.resolve(null)

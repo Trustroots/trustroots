@@ -6,6 +6,9 @@ import { AppProviders } from '@/layers/shell/client/AppProviders';
 import ProfileEditNetworks from '@/modules/users/client/components/ProfileEditNetworks.component';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 const mockedUsersApi = jest.mocked(usersApi);
 
@@ -44,6 +47,7 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -122,6 +126,9 @@ describe('ProfileEditNetworks', () => {
     expect(
       await screen.findByText('Hospitality networks updated.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'networks',
+    });
   });
 
   it('rejects invalid npubs without saving', async () => {
@@ -143,7 +150,7 @@ describe('ProfileEditNetworks', () => {
       getPublicKey: jest.fn().mockResolvedValue('public-key'),
     };
     mockedUsersApi.update.mockRejectedValue({
-      response: { data: { message: 'Unable to save networks.' } },
+      response: { status: 400, data: { message: 'Unable to save networks.' } },
     });
     renderPage();
 
@@ -157,6 +164,10 @@ describe('ProfileEditNetworks', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(await screen.findByText('Unable to save networks.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'networks',
+      reason: 'validation',
+    });
   });
 
   it('uses generic messages when network updates cannot provide one', async () => {

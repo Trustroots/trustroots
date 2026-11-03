@@ -28,6 +28,19 @@ function normalizeTypes(types: SearchType[] = []): string[] {
   return hasHosts ? ['host', 'meet'] : ['meet'];
 }
 
+/**
+ * How many filters narrow the search beyond the defaults: circles, languages,
+ * and leaving out hosts. Used for analytics, which may count filters but not
+ * know which circles or languages.
+ */
+export function countNarrowingFilters(filters: Partial<SearchFilters>): number {
+  return [
+    Boolean(filters.tribes?.length),
+    Boolean(filters.languages?.length),
+    Boolean(filters.types) && !normalizeTypes(filters.types).includes('host'),
+  ].filter(Boolean).length;
+}
+
 function getCacheKey(userId?: string | null): string {
   return userId ? `search.filters.${userId}` : 'search.filters';
 }

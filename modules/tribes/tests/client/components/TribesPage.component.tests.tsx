@@ -1,6 +1,12 @@
 import React from 'react';
-import { fireEvent, render, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render as rtlRender,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
 
 import { broadcastClientEvent } from '@/modules/core/client/services/client-runtime';
@@ -16,6 +22,10 @@ const api = { tribes: jest.mocked(tribesApi) };
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
 jest.mock('@/modules/core/client/services/client-runtime');
+
+const analytics = fakeAnalytics();
+const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
+  rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 const onMembershipUpdated = jest.fn<void, [MembershipUpdate]>();
 
@@ -209,6 +219,9 @@ describe('CirclesPage', () => {
           // Check that api and onMembershipUpdated was called.
           expect(api.tribes.leave).toHaveBeenCalledTimes(1);
           expect(api.tribes.leave).toHaveBeenCalledWith(tribeData._id);
+          expect(analytics.track).toHaveBeenCalledWith('circle_left', {
+            source: 'circles_list',
+          });
           expect(onMembershipUpdated).toHaveBeenCalledTimes(1);
           expect(onMembershipUpdated).toHaveBeenCalledWith({
             tribe: tribeData,
@@ -235,6 +248,9 @@ describe('CirclesPage', () => {
           // Check that api and onMembershipUpdated was called.
           expect(api.tribes.join).toHaveBeenCalledTimes(1);
           expect(api.tribes.join).toHaveBeenCalledWith(tribeData._id);
+          expect(analytics.track).toHaveBeenCalledWith('circle_joined', {
+            source: 'circles_list',
+          });
           expect(onMembershipUpdated).toHaveBeenCalledTimes(1);
           expect(onMembershipUpdated).toHaveBeenCalledWith({
             tribe: tribeData,

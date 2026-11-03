@@ -3,7 +3,8 @@
  * layout loads. The script applies Do-Not-Track, the `umami.disabled` opt-out
  * and the configured website itself, so this adapter only hands events over.
  *
- * This is the only module in the package that reads `window`.
+ * Besides `outreach-source.ts`, which keeps one value in `sessionStorage`,
+ * this is the only module in the package that reads `window`.
  */
 import type {
   AnalyticsEventArgs,

@@ -43,6 +43,7 @@ describe('offers api', () => {
 
     await expect(getOffers('user-1', ['host'])).resolves.toBe(offers);
     expect(mockedAxios.get).toHaveBeenCalledWith('/api/offers-by/user-1', {
+      expectedStatuses: [404],
       params: { types: ['host'] },
     });
   });
@@ -57,6 +58,7 @@ describe('offers api', () => {
     });
 
     expect(mockedAxios.get).toHaveBeenCalledWith('/api/offers-by/user-1', {
+      expectedStatuses: [404],
       params: { types: ['host'] },
       signal: controller.signal,
       timeout: 45000,

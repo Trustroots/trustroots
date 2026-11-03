@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import classnames from 'classnames';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
+import { useAnalytics, type CircleSource } from '@trustroots/analytics/client';
 import LeaveTribeModal from './LeaveTribeModal';
 import Tooltip from '@/modules/core/client/components/Tooltip';
 
@@ -33,6 +34,8 @@ interface JoinButtonProps extends Omit<
   tribe: TribeSummary;
   user?: UserProfile;
   onUpdated?: (data: MembershipUpdate) => void;
+  /** Where the button is shown, for analytics; defaults to 'other'. */
+  source?: CircleSource;
 }
 
 const TooltipWithContent = Tooltip as unknown as React.ComponentType<{
@@ -122,8 +125,10 @@ export default function JoinButton({
   tribe,
   user,
   onUpdated,
+  source = 'other',
   ...rest
 }: JoinButtonProps) {
+  const { track } = useAnalytics();
   // isLeaving controls whether the modal for leaving a tribe is shown
   const [isLeaving, setIsLeaving] = useState(false);
 
@@ -145,7 +150,15 @@ export default function JoinButton({
       setIsUpdating(true);
 
       // join
-      const data = await api.join(tribe._id);
+      let data: MembershipUpdate;
+      try {
+        data = await api.join(tribe._id);
+      } catch {
+        // The button becomes usable again so the member can retry.
+        setIsUpdating(false);
+        return;
+      }
+      track('circle_joined', { source });
       // update the membership locally
       setIsMember(true);
 
@@ -161,10 +174,19 @@ export default function JoinButton({
    */
   async function handleLeave() {
     setIsUpdating(true);
-    const data = await api.leave(tribe._id);
+    let data: MembershipUpdate;
+    try {
+      data = await api.leave(tribe._id);
+    } catch {
+      // Close the dialog and keep the membership so the member can retry.
+      setIsUpdating(false);
+      setIsLeaving(false);
+      return;
+    }
     setIsUpdating(false);
     setIsLeaving(false);
     setIsMember(false);
+    track('circle_left', { source });
     // tell the ancestor components that the membership was updated
     onUpdated?.(data);
   }

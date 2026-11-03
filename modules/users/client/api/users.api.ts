@@ -31,8 +31,10 @@ export async function update(data: UserUpdate): Promise<OwnProfile> {
 export async function fetch(
   username: string,
 ): Promise<PublicProfile | OwnProfile> {
+  // 404 is a removed, blocked or unknown member; profiles and threads show that.
   const { data: user } = await axios.get<PublicProfile | OwnProfile>(
     `/api/users/${username}`,
+    { expectedStatuses: [404] },
   );
   return user;
 }

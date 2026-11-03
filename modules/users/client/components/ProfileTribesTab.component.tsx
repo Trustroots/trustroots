@@ -50,6 +50,7 @@ function TribeCard({
           <JoinButton
             look={{ size: 'xs', intent: 'primary' }}
             onUpdated={onMembershipUpdated}
+            source="profile"
             tribe={tribe}
             user={user}
           />

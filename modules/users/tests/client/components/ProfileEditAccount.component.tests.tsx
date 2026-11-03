@@ -7,6 +7,9 @@ import ProfileEditAccount from '@/modules/users/client/components/ProfileEditAcc
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
 import { malformedFixture } from '@/testutils/client/malformed-fixtures';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
@@ -59,6 +62,7 @@ const user: UserProfile = {
 function renderUser(profile: UserProfile) {
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -175,6 +179,9 @@ describe('ProfileEditAccount', () => {
     expect(
       await screen.findByText(/We sent you an email to new@example.test/),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'account',
+    });
   });
 
   it('updates the username and shows success', async () => {
@@ -187,6 +194,9 @@ describe('ProfileEditAccount', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
 
     expect(await screen.findByText('Username updated.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'account',
+    });
   });
 
   it.each(['sample_member', 'sample-member', 'sample.member', '123456', ''])(
@@ -245,6 +255,9 @@ describe('ProfileEditAccount', () => {
     expect(
       await screen.findByText('Your password is now changed. Have a nice day!'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'account',
+    });
   });
 
   it('toggles the newsletter subscription immediately', async () => {
@@ -257,6 +270,11 @@ describe('ProfileEditAccount', () => {
       expect(usersApi.update).toHaveBeenCalledWith(
         expect.objectContaining({ newsletter: true }),
       );
+    });
+    await waitFor(() => {
+      expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+        section: 'account',
+      });
     });
   });
 
@@ -291,7 +309,7 @@ describe('ProfileEditAccount', () => {
 
   it('reports email change failures', async () => {
     updateUser.mockRejectedValue({
-      response: { data: { message: 'Email already taken.' } },
+      response: { status: 400, data: { message: 'Email already taken.' } },
     });
     renderPage();
 
@@ -301,11 +319,15 @@ describe('ProfileEditAccount', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Change email' }));
 
     expect(await screen.findByText('Email already taken.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'account',
+      reason: 'validation',
+    });
   });
 
   it('reports username change failures', async () => {
     updateUser.mockRejectedValue({
-      response: { data: { message: 'Username unavailable.' } },
+      response: { status: 400, data: { message: 'Username unavailable.' } },
     });
     renderPage();
 
@@ -315,11 +337,18 @@ describe('ProfileEditAccount', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Change username' }));
 
     expect(await screen.findByText('Username unavailable.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'account',
+      reason: 'validation',
+    });
   });
 
   it('reports password change failures', async () => {
     changePassword.mockRejectedValue({
-      response: { data: { message: 'Current password incorrect.' } },
+      response: {
+        status: 400,
+        data: { message: 'Current password incorrect.' },
+      },
     });
     renderPage();
 
@@ -337,6 +366,10 @@ describe('ProfileEditAccount', () => {
     expect(
       await screen.findByText('Current password incorrect.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'account',
+      reason: 'validation',
+    });
   });
 
   it('reports newsletter update failures', async () => {
@@ -350,6 +383,10 @@ describe('ProfileEditAccount', () => {
     expect(
       await screen.findByText('Subscription update failed.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'account',
+      reason: 'server',
+    });
   });
 
   it('reports resend confirmation failures', async () => {

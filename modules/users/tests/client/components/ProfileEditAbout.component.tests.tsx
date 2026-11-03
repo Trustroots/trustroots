@@ -9,6 +9,9 @@ import type TrEditor from '@/modules/core/client/components/TrEditor';
 import type BirthdateSelect from '@/modules/core/client/components/BirthdateSelect.component';
 import type ProfileEditLanguages from '@/modules/users/client/components/ProfileEditLanguages.component';
 import type { UserProfile } from '@/modules/users/client/types';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 jest.mock('@/modules/users/client/api/users.api');
 const updateUser = jest.mocked(usersApi.update);
@@ -110,6 +113,7 @@ function renderPage(
 
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -166,6 +170,9 @@ describe('ProfileEditAbout', () => {
       );
     });
     expect(await screen.findByText('Profile updated.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'about',
+    });
   });
 
   it('saves a cleared last name for an existing profile', async () => {
@@ -210,7 +217,7 @@ describe('ProfileEditAbout', () => {
 
   it('reports save failures', async () => {
     updateUser.mockRejectedValue({
-      response: { data: { message: 'Unable to save profile.' } },
+      response: { status: 400, data: { message: 'Unable to save profile.' } },
     });
     renderPage();
 
@@ -220,6 +227,10 @@ describe('ProfileEditAbout', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Save' })[0]);
 
     expect(await screen.findByText('Unable to save profile.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'about',
+      reason: 'validation',
+    });
   });
 
   it('uses default settings and blank values for incomplete profiles', () => {

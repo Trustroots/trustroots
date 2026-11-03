@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { readOutreachSource } from '@trustroots/analytics/client';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -24,6 +25,11 @@ describe('<OfferStatusButton />', () => {
     });
     expect(link).toHaveAttribute('href', '/messages/alice');
     expect(link).toHaveAttribute('data-intent', 'warning');
+
+    link.addEventListener('click', event => event.preventDefault());
+    fireEvent.click(link);
+    expect(readOutreachSource('alice')).toBe('offer');
+    window.sessionStorage.clear();
   });
 
   it('shows the cannot-host state when there is no status', () => {

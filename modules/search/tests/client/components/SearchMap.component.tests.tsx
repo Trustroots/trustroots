@@ -3,11 +3,12 @@ import { getMapBoxToken } from '@/modules/core/client/utils/map';
 import {
   act,
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 import '@/config/client/i18n';
 import { OpenLocationCode } from 'open-location-code';
@@ -26,6 +27,10 @@ import type {
   OfferSearchFeatureCollection,
 } from '@/modules/offers/shared/offer';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
+
+const analytics = fakeAnalytics();
+const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
+  rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 let mockApproximateLocation: MapDefaultLocation | null = null;
 let mockHasSavedLocation = true;
@@ -509,6 +514,7 @@ beforeEach(() => {
     zoom: 2,
   };
   mockMapStyle = 'mock-map-style';
+  analytics.track.mockClear();
   mockFitBounds.mockReturnValue({
     center: { lat: 52, lng: 13 },
     zoom: 8,
@@ -1072,6 +1078,43 @@ describe('Search', () => {
       features: [],
       type: 'FeatureCollection',
     });
+  });
+
+  it('counts each move into an area without offers once, without the place', async () => {
+    mockPersistentMapLocation = {
+      ...mockPersistentMapLocation,
+      zoom: 6.4,
+    };
+
+    renderSearchMap({
+      filters: '{"tribes":["circle-1"],"types":["meet"],"languages":[]}',
+    });
+
+    await waitFor(() =>
+      expect(analytics.track).toHaveBeenCalledWith('search_no_results', {
+        zoom: 6,
+        filters: 2,
+      }),
+    );
+
+    act(() => mockMapProps.onMoveEnd());
+    await waitFor(() => expect(mockQueryOffers).toHaveBeenCalledTimes(2));
+
+    mockQueryOffers.mockResolvedValueOnce({
+      features: DATELINE_OFFER_FEATURES,
+      type: 'FeatureCollection',
+    });
+    act(() => mockMapProps.onMoveEnd());
+    await waitFor(() => expect(mockQueryOffers).toHaveBeenCalledTimes(3));
+    await waitFor(() =>
+      expect(mockSourceProps.data).toEqual(
+        expect.objectContaining({ features: DATELINE_OFFER_FEATURES }),
+      ),
+    );
+    expect(analytics.track).toHaveBeenCalledTimes(1);
+
+    act(() => mockMapProps.onMoveEnd());
+    await waitFor(() => expect(analytics.track).toHaveBeenCalledTimes(2));
   });
 
   it('skips offer queries when map bounds lack north-east and south-west corners', async () => {

@@ -107,7 +107,7 @@ describe('OfferMeetListPage', () => {
       expect(screen.queryByText('Coffee meetup.')).not.toBeInTheDocument(),
     );
     expect(offersApiMock.deleteOffer).toHaveBeenCalledWith('offer-1');
-    expect(analytics.track).toHaveBeenCalledWith('offer-delete', {
+    expect(analytics.track).toHaveBeenCalledWith('offer_deleted', {
       type: 'meet',
     });
   });

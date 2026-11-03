@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 
+import { useAnalytics } from '@trustroots/analytics/client';
 import Board from '@/modules/core/client/components/Board';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import * as authApi from '@/modules/users/client/api/auth.api';
@@ -9,6 +10,7 @@ import { readApiError } from '../utils/api-error';
 import { Alert } from '@trustroots/ui/Alert';
 
 export default function ForgotPasswordPage() {
+  const { track } = useAnalytics();
   const usernameInput = useDesktopAutofocus<HTMLInputElement>();
   const { userhandle } = useSearch({ strict: false });
   const [credentials, setCredentials] = useState({
@@ -28,6 +30,7 @@ export default function ForgotPasswordPage() {
       const response = await authApi.forgotPassword(credentials);
       setCredentials({ username: '' });
       setSuccess(response.message);
+      track('password_reset_requested');
     } catch (requestError: unknown) {
       setError(
         readApiError(requestError).message ||
