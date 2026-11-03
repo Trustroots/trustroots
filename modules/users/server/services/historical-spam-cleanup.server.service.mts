@@ -208,7 +208,7 @@ async function findUsersWithProtectedActivity(
 async function processBatch(
   userIds: Types.ObjectId[],
   deleteAccounts: boolean,
-  inactiveOnly = false,
+  inactiveOnly: boolean | 'unknown-login' = false,
 ): Promise<BatchResult> {
   const User = mongoose.model<UserServerRecord>('User');
   const protectedIds = await findUsersWithProtectedActivity(userIds);
@@ -229,7 +229,11 @@ async function processBatch(
         $and: [
           candidateQuery(),
           ...(inactiveOnly
-            ? [{ seen: { $lt: new Date(SPAM_INACTIVE_BEFORE) } }]
+            ? [
+                inactiveOnly === 'unknown-login'
+                  ? { seen: null }
+                  : { seen: { $lt: new Date(SPAM_INACTIVE_BEFORE) } },
+              ]
             : []),
           {
             _id: {
@@ -324,7 +328,7 @@ export async function previewAdminBatch(after?: Types.ObjectId) {
 
 export async function deleteAdminBatch(
   ids: Types.ObjectId[],
-  inactiveOnly = false,
+  inactiveOnly: boolean | 'unknown-login' = false,
 ) {
   const User = mongoose.model<UserServerRecord>('User');
   if (!ids.length) return { deleted: 0, skipped: 0 };
@@ -333,7 +337,11 @@ export async function deleteAdminBatch(
       candidateQuery(),
       { _id: { $in: ids } },
       ...(inactiveOnly
-        ? [{ seen: { $lt: new Date(SPAM_INACTIVE_BEFORE) } }]
+        ? [
+            inactiveOnly === 'unknown-login'
+              ? { seen: null }
+              : { seen: { $lt: new Date(SPAM_INACTIVE_BEFORE) } },
+          ]
         : []),
     ],
   })

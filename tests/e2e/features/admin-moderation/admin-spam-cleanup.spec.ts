@@ -108,7 +108,7 @@ test('administrators review historical spam accounts and explicitly delete only 
       page.getByText('Protected or no longer available — retained'),
     ).toBeVisible();
     const stage = page.getByRole('combobox', { name: 'Cleanup stage' });
-    await stage.selectOption('review');
+    await stage.selectOption('unknown-login');
     await expect(
       page.getByRole('checkbox', {
         name: 'Select fictional-unrecorded-login',
@@ -166,5 +166,171 @@ test('administrators review historical spam accounts and explicitly delete only 
     });
   } finally {
     await context.close();
+    await withE2eDb(async db => {
+      const fixtureNames = [
+        'fictional-campaign-account',
+        'fictional-retained-choice',
+        'fictional-login-changed',
+        'fictional-unrecorded-login',
+        'fictional-protected-account',
+      ];
+      const users = await db
+        .collection('users')
+        .find({ username: { $in: fixtureNames } })
+        .toArray();
+      await db
+        .collection('adminnotes')
+        .deleteMany({ user: { $in: users.map(user => user._id) } });
+      await db
+        .collection('users')
+        .deleteMany({ username: { $in: fixtureNames } });
+    });
+  }
+});
+
+test('administrators sort the full cleanup preview while selections persist across pages', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.spam-cleanup', [
+    'Administrators sort the full cleanup preview while selections persist across pages.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const administrator = createUser({
+    firstName: 'Fictional',
+    lastName: 'Administrator',
+  });
+  try {
+    await registerViaApi(context.request, administrator);
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .updateOne(
+          { username: administrator.username },
+          { $set: { roles: ['user', 'admin'] } },
+        );
+      await db
+        .collection('users')
+        .deleteMany({ username: { $regex: /^fictional-sort-/ } });
+      await db.collection('users').insertMany(
+        Array.from({ length: 105 }, (_, index) => {
+          const suffix = String(index).padStart(3, '0');
+          return {
+            username: `fictional-sort-${suffix}`,
+            email: `fictional-sort-${suffix}@example.test`,
+            created: new Date('2021-07-04T12:00:00Z'),
+            roles: ['user', 'suspended'],
+            public: false,
+          };
+        }),
+      );
+    });
+    await signInViaApi(page, context.request, administrator);
+    await page.goto('/admin/spam-cleanup');
+    await page.getByRole('button', { name: 'Preview all accounts' }).click();
+    await expect(page.getByText('Page 1 of 2.')).toBeVisible();
+    await expect(
+      page.getByRole('combobox', { name: 'Cleanup stage' }),
+    ).toHaveValue('unknown-login');
+    await page
+      .getByRole('button', { name: 'Select all accounts in this stage' })
+      .click();
+    await expect(
+      page.getByText('105 selected across all pages.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Next accounts' }).click();
+    const exception = page.getByRole('checkbox', {
+      name: 'Select fictional-sort-104',
+    });
+    await expect(exception).toBeChecked();
+    await exception.uncheck();
+    await expect(
+      page.getByText('104 selected across all pages.'),
+    ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await expect(page.getByText('Page 1 of 2.')).toBeVisible();
+    await expect(
+      page.getByText('104 selected across all pages.'),
+    ).toBeVisible();
+    const accountRows = page.locator(
+      'table[aria-label="Account review"] tbody tr',
+    );
+    await expect(
+      accountRows.first().getByRole('link', { name: 'fictional-sort-000' }),
+    ).toBeVisible();
+    await expect(
+      accountRows.last().getByRole('link', { name: 'fictional-sort-099' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Next accounts' }).click();
+    await expect(
+      page.getByRole('checkbox', { name: 'Select fictional-sort-104' }),
+    ).not.toBeChecked();
+    await expect(
+      page.getByText('104 selected across all pages.'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Select', exact: true }).click();
+    await expect(page.getByText('Page 1 of 2.')).toBeVisible();
+    await expect(
+      page.getByText('104 selected across all pages.'),
+    ).toBeVisible();
+    const selectionCheckboxes = page.locator(
+      'table[aria-label="Account review"] tbody input[type="checkbox"]',
+    );
+    const uncheckedNamesOnFirstPage = await page
+      .locator('table[aria-label="Account review"] tbody tr')
+      .filter({
+        has: page.locator('input[type="checkbox"]:not(:checked)'),
+      })
+      .locator('a')
+      .allTextContents();
+    await page.getByRole('button', { name: 'Next accounts' }).click();
+    await expect(page.getByText('Page 2 of 2.')).toBeVisible();
+    await expect(selectionCheckboxes).toHaveCount(5);
+    const uncheckedNamesOnSecondPage = await page
+      .locator('table[aria-label="Account review"] tbody tr')
+      .filter({
+        has: page.locator('input[type="checkbox"]:not(:checked)'),
+      })
+      .locator('a')
+      .allTextContents();
+    expect(
+      [...uncheckedNamesOnFirstPage, ...uncheckedNamesOnSecondPage],
+      'Only the explicitly excluded account should remain unchecked after Select sorting',
+    ).toEqual(['fictional-sort-104']);
+    await expect(
+      page.getByText('104 selected across all pages.'),
+    ).toBeVisible();
+    await page
+      .getByRole('checkbox', {
+        name: 'I reviewed this selection and understand deletion is permanent.',
+      })
+      .check();
+    await page
+      .getByRole('button', { name: 'Delete 104 selected accounts' })
+      .click();
+    await expect(
+      page.getByText(/Complete. Deleted 104; skipped 0/),
+    ).toBeVisible();
+    await withE2eDb(async db => {
+      expect(
+        await db
+          .collection('users')
+          .countDocuments({ username: { $regex: /^fictional-sort-/ } }),
+      ).toBe(1);
+      expect(
+        await db
+          .collection('users')
+          .countDocuments({ username: 'fictional-sort-104' }),
+      ).toBe(1);
+    });
+  } finally {
+    await context.close();
+    await withE2eDb(async db => {
+      await db
+        .collection('users')
+        .deleteMany({ username: { $regex: /^fictional-sort-/ } });
+    });
   }
 });

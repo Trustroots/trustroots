@@ -274,3 +274,164 @@ test('shows scanning progress before the full preview is ready', async () => {
     await screen.findByRole('table', { name: 'Account review' }),
   ).toBeVisible();
 });
+
+test('sorts the entire preview and keeps exclusions across page changes', async () => {
+  post.mockResolvedValue({ data: batch });
+  render(<AdminSpamCleanup />);
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText('fictional/spammer');
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Account' }));
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/preview', {
+      previewId: batch.previewId,
+      page: 1,
+      sort: 'account',
+      direction: 'asc',
+    }),
+  );
+  fireEvent.click(screen.getByRole('button', { name: /^Account/ }));
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/preview', {
+      previewId: batch.previewId,
+      page: 1,
+      sort: 'account',
+      direction: 'desc',
+    }),
+  );
+  expect(screen.getByRole('button', { name: /Account/ })).toHaveTextContent(
+    '↓',
+  );
+  expect(
+    screen.getByRole('columnheader', { name: /^Account ↓$/ }),
+  ).toHaveAttribute('aria-sort', 'descending');
+  expect(screen.getByText('Delete 99 selected accounts')).toBeDisabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Next accounts' }));
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/preview', {
+      previewId: batch.previewId,
+      page: 2,
+      sort: 'account',
+      direction: 'desc',
+    }),
+  );
+});
+test('sorts by selection across the preview and refreshes when it changes', async () => {
+  post.mockResolvedValue({ data: batch });
+  render(<AdminSpamCleanup />);
+  fireEvent.click(screen.getByText('Preview all accounts'));
+  await screen.findByText('fictional/spammer');
+  fireEvent.click(screen.getByRole('button', { name: /^Select$/ }));
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/preview', {
+      previewId: batch.previewId,
+      page: 1,
+      sort: 'selected',
+      direction: 'asc',
+      selectionMode: 'selected',
+      selectionStage: 'inactive',
+      selectionIds: [],
+    }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+    ).toBeEnabled(),
+  );
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Select fictional/spammer' }),
+  );
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith('/api/admin/spam-cleanup/preview', {
+      previewId: batch.previewId,
+      page: 1,
+      sort: 'selected',
+      direction: 'asc',
+      selectionMode: 'selected',
+      selectionStage: 'inactive',
+      selectionIds: ['one'],
+    }),
+  );
+  await waitFor(() =>
+    expect(screen.getByText('Select all accounts in this stage')).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByText('Select all accounts in this stage'));
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith(
+      '/api/admin/spam-cleanup/preview',
+      expect.objectContaining({
+        selectionMode: 'all',
+        selectionStage: 'inactive',
+        selectionIds: [],
+      }),
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.getByText('Clear selection')).toBeEnabled(),
+  );
+  fireEvent.click(screen.getByText('Clear selection'));
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith(
+      '/api/admin/spam-cleanup/preview',
+      expect.objectContaining({
+        selectionMode: 'selected',
+        selectionStage: 'inactive',
+        selectionIds: [],
+      }),
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.getByLabelText('Cleanup stage')).toBeEnabled(),
+  );
+  fireEvent.change(screen.getByLabelText('Cleanup stage'), {
+    target: { value: 'unknown-login' },
+  });
+  await waitFor(() =>
+    expect(post).toHaveBeenLastCalledWith(
+      '/api/admin/spam-cleanup/preview',
+      expect.objectContaining({
+        selectionMode: 'selected',
+        selectionStage: 'unknown-login',
+        selectionIds: [],
+      }),
+    ),
+  );
+});
+
+test.each([
+  [0, 2, 1, 'unknown-login'],
+  [0, 0, 1, 'review'],
+  [0, 0, 0, 'inactive'],
+])(
+  'selects the first non-empty stage (%s old, %s unrecorded, %s recent)',
+  async (inactive, unknownLogin, review, expected) => {
+    post.mockResolvedValue({
+      data: {
+        ...batch,
+        inactive,
+        unknownLogin,
+        review,
+        items: [{ ...one, stage: 'unknown-login', lastSeen: null }],
+      },
+    });
+    render(<AdminSpamCleanup />);
+    fireEvent.click(screen.getByText('Preview all accounts'));
+    await screen.findByText('fictional/spammer');
+    expect(screen.getByLabelText('Cleanup stage')).toHaveValue(expected);
+    expect(
+      screen.getByRole('checkbox', { name: confirmation }),
+    ).not.toBeChecked();
+    expect(screen.getByText('Delete 0 selected accounts')).toBeDisabled();
+    if (expected === 'unknown-login') {
+      const checkbox = screen.getByRole('checkbox', {
+        name: 'Select fictional/spammer',
+      });
+      expect(checkbox).toBeEnabled();
+      fireEvent.click(checkbox);
+      expect(screen.getByText('Delete 1 selected accounts')).toBeDisabled();
+    }
+  },
+);

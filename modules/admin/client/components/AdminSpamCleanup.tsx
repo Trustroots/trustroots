@@ -34,6 +34,10 @@ interface Progress {
 export default function AdminSpamCleanup() {
   const [batch, setBatch] = useState<Batch | null>(null);
   const [stage, setStage] = useState<SpamCleanupStage>('inactive');
+  const [sort, setSort] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
   const [selection, setSelection] = useState<'all' | 'selected'>('selected');
   const [exceptions, setExceptions] = useState<Set<string>>(new Set());
   const [confirmed, setConfirmed] = useState(false);
@@ -43,9 +47,11 @@ export default function AdminSpamCleanup() {
   const stageTotal = batch
     ? stage === 'inactive'
       ? batch.inactive
-      : stage === 'review'
-        ? batch.review
-        : batch.eligible
+      : stage === 'unknown-login'
+        ? batch.unknownLogin
+        : stage === 'review'
+          ? batch.review
+          : batch.eligible
     : 0;
   const selected =
     selection === 'all' ? stageTotal - exceptions.size : exceptions.size;
@@ -57,6 +63,7 @@ export default function AdminSpamCleanup() {
     setResult(null);
     setSelection('selected');
     setStage('inactive');
+    setSort(null);
     setExceptions(new Set());
     try {
       let response = await http.post<Batch>(
@@ -70,6 +77,15 @@ export default function AdminSpamCleanup() {
         });
         setBatch(response.data);
       }
+      setStage(
+        response.data.inactive > 0
+          ? 'inactive'
+          : response.data.unknownLogin > 0
+            ? 'unknown-login'
+            : response.data.review > 0
+              ? 'review'
+              : 'inactive',
+      );
     } catch (cause) {
       setError(
         getErrorMessage(
@@ -82,7 +98,12 @@ export default function AdminSpamCleanup() {
       setWorking(false);
     }
   }
-  async function page(page: number, previewId: string) {
+  async function page(
+    page: number,
+    previewId: string,
+    order = sort,
+    selectedState = { selection, stage, exceptions },
+  ) {
     setWorking(true);
     setError('');
     try {
@@ -91,6 +112,14 @@ export default function AdminSpamCleanup() {
           await http.post<Batch>('/api/admin/spam-cleanup/preview', {
             previewId,
             page,
+            ...(order ? { sort: order.key, direction: order.direction } : {}),
+            ...(order?.key === 'selected'
+              ? {
+                  selectionMode: selectedState.selection,
+                  selectionStage: selectedState.stage,
+                  selectionIds: [...selectedState.exceptions],
+                }
+              : {}),
           })
         ).data,
       );
@@ -99,6 +128,25 @@ export default function AdminSpamCleanup() {
     } finally {
       setWorking(false);
     }
+  }
+  function refreshSelectedOrder(next: {
+    selection: 'all' | 'selected';
+    stage: SpamCleanupStage;
+    exceptions: Set<string>;
+  }) {
+    if (batch && sort?.key === 'selected')
+      void page(1, batch.previewId, sort, next);
+  }
+  function sortBy(key: string, previewId: string) {
+    const order = {
+      key,
+      direction:
+        sort?.key === key && sort.direction === 'asc'
+          ? ('desc' as const)
+          : ('asc' as const),
+    };
+    setSort(order);
+    void page(1, previewId, order);
   }
   async function apply(previewId: string) {
     setWorking(true);
@@ -196,15 +244,17 @@ export default function AdminSpamCleanup() {
                   <td>{batch.inactive}</td>
                 </tr>
                 <tr>
-                  <td>2. Needs review</td>
-                  <td>
-                    More recent login or no recorded login ({batch.unknownLogin}{' '}
-                    unrecorded).
-                  </td>
+                  <td>2. No recorded login</td>
+                  <td>No recorded login; no protected activity.</td>
+                  <td>{batch.unknownLogin}</td>
+                </tr>
+                <tr>
+                  <td>3. Recent login — needs review</td>
+                  <td>Recorded login on or after 1 January 2024 UTC.</td>
                   <td>{batch.review}</td>
                 </tr>
                 <tr>
-                  <td>3. Protected</td>
+                  <td>4. Protected</td>
                   <td>
                     Existing activity or moderation protections; retained.
                   </td>
@@ -219,7 +269,13 @@ export default function AdminSpamCleanup() {
               value={stage}
               disabled={working}
               onChange={event => {
-                setStage(event.target.value as SpamCleanupStage);
+                const nextStage = event.target.value as SpamCleanupStage;
+                setStage(nextStage);
+                refreshSelectedOrder({
+                  selection: 'selected',
+                  stage: nextStage,
+                  exceptions: new Set(),
+                });
                 setSelection('selected');
                 setExceptions(new Set());
                 setConfirmed(false);
@@ -229,7 +285,10 @@ export default function AdminSpamCleanup() {
               <option value="inactive">
                 Stage 1: Inactive since 2023 or earlier
               </option>
-              <option value="review">Stage 2: Needs review</option>
+              <option value="unknown-login">Stage 2: No recorded login</option>
+              <option value="review">
+                Stage 3: Recent login — needs review
+              </option>
               <option value="all">All eligible accounts (manual review)</option>
             </select>
             <p>
@@ -243,10 +302,15 @@ export default function AdminSpamCleanup() {
             <Button
               type="button"
 
-              disabled={working}
+              disabled={working || stageTotal === 0}
               onClick={() => {
                 setSelection('all');
                 setExceptions(new Set());
+                refreshSelectedOrder({
+                  selection: 'all',
+                  stage,
+                  exceptions: new Set(),
+                });
                 setConfirmed(false);
               }}
             >
@@ -259,20 +323,55 @@ export default function AdminSpamCleanup() {
               onClick={() => {
                 setSelection('selected');
                 setExceptions(new Set());
+                refreshSelectedOrder({
+                  selection: 'selected',
+                  stage,
+                  exceptions: new Set(),
+                });
                 setConfirmed(false);
               }}
             >
               Clear selection
             </Button>
+            <p>
+              Column sorting applies to the entire preview. Rows from other
+              stages remain visible; choose their stage to select them.
+            </p>
             <table className="table table-striped" aria-label="Account review">
               <thead>
                 <tr>
-                  <th>Select</th>
-                  <th>Account</th>
-                  <th>Created</th>
-                  <th>Last recorded login</th>
-                  <th>Stage</th>
-                  <th>Decision</th>
+                  {[
+                    ['selected', 'Select'],
+                    ['account', 'Account'],
+                    ['created', 'Created'],
+                    ['lastSeen', 'Last recorded login'],
+                    ['stage', 'Stage'],
+                    ['decision', 'Decision'],
+                  ].map(([key, label]) => (
+                    <th
+                      key={key}
+                      aria-sort={
+                        sort?.key === key
+                          ? sort.direction === 'asc'
+                            ? 'ascending'
+                            : 'descending'
+                          : 'none'
+                      }
+                    >
+                      <button
+                        type="button"
+                        disabled={working}
+                        onClick={() => sortBy(key, batch.previewId)}
+                      >
+                        {label}
+                        {sort?.key === key
+                          ? sort.direction === 'asc'
+                            ? ' ↑'
+                            : ' ↓'
+                          : ''}
+                      </button>
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -295,11 +394,14 @@ export default function AdminSpamCleanup() {
                             : exceptions.has(item.id))
                         }
                         onChange={() => {
-                          setExceptions(current => {
-                            const next = new Set(current);
-                            if (next.has(item.id)) next.delete(item.id);
-                            else next.add(item.id);
-                            return next;
+                          const next = new Set(exceptions);
+                          if (next.has(item.id)) next.delete(item.id);
+                          else next.add(item.id);
+                          setExceptions(next);
+                          refreshSelectedOrder({
+                            selection,
+                            stage,
+                            exceptions: next,
                           });
                           setConfirmed(false);
                         }}
