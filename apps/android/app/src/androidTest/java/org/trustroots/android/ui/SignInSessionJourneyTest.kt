@@ -143,7 +143,7 @@ class SignInSessionJourneyTest {
         }
         compose.onNodeWithText("No conversations yet.").assertIsDisplayed()
 
-        val signInRequests = requests.filter { it.requestLine.startsWith("POST /api/auth/signin ") }
+        val signInRequests = requests.filter { it.requestLine.startsWith("POST /api/mobile/v0/auth/signin ") }
         assertEquals(2, signInRequests.size)
         assertEquals("steady-heron", JSONObject(signInRequests[0].body).getString("username"))
         assertEquals("wrong-fictional-password", JSONObject(signInRequests[0].body).getString("password"))
@@ -184,7 +184,7 @@ class SignInSessionJourneyTest {
                     val body = bodyBuffer.concatToString()
                     requests += CapturedRequest(requestLine, body)
                     val response = when {
-                        requestLine.startsWith("POST /api/auth/signin ") -> {
+                        requestLine.startsWith("POST /api/mobile/v0/auth/signin ") -> {
                             if (signInAttempts.incrementAndGet() == 1) {
                                 FixtureResponse("401 Unauthorized", """{"message":"Those credentials were not accepted."}""")
                             } else {

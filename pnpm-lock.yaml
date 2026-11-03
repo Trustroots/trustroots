@@ -698,6 +698,30 @@ importers:
         specifier: workspace:*
         version: link:../users
 
+  modules/mobile:
+    dependencies:
+      '@trustroots/contacts':
+        specifier: workspace:*
+        version: link:../contacts
+      '@trustroots/experiences':
+        specifier: workspace:*
+        version: link:../experiences
+      '@trustroots/messages':
+        specifier: workspace:*
+        version: link:../messages
+      '@trustroots/offers':
+        specifier: workspace:*
+        version: link:../offers
+      '@trustroots/support':
+        specifier: workspace:*
+        version: link:../support
+      '@trustroots/tribes':
+        specifier: workspace:*
+        version: link:../tribes
+      '@trustroots/users':
+        specifier: workspace:*
+        version: link:../users
+
   modules/offers:
     dependencies:
       '@trustroots/core':

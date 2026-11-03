@@ -5,6 +5,15 @@
     "core": ["support", "tribes", "users"],
     "experiences": ["core", "support", "users"],
     "messages": ["core", "references-thread", "stats", "support", "users"],
+    "mobile": [
+      "contacts",
+      "experiences",
+      "messages",
+      "offers",
+      "support",
+      "tribes",
+      "users"
+    ],
     "offers": ["core", "search", "tribes", "users"],
     "pages": ["core", "support", "tribes", "users"],
     "references-thread": ["core", "stats", "users"],
@@ -41,6 +50,7 @@
     "core": ["users"],
     "experiences": ["contacts", "users"],
     "messages": ["users"],
+    "mobile": ["users"],
     "offers": ["users"],
     "pages": ["users"],
     "references-thread": ["messages", "users"],

@@ -44,7 +44,7 @@ internal class MobileApiMessageConversationRepository(
     private val drafts = MessageDraftStore(context.applicationContext)
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed
@@ -132,7 +132,7 @@ internal class MessageConversationViewModel(
     }
 
     private fun updateSession(value: MemberSession) {
-        if (session.cookieHeader == value.cookieHeader && session.member.username == value.member.username) return
+        if (session.credentialKey == value.credentialKey && session.member.username == value.member.username) return
         session = value
         repository.updateSession(value)
         refreshForEnvironmentChange()

@@ -98,7 +98,7 @@ internal class MobileHostMapRepository(
     private var session = session
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed
@@ -189,10 +189,10 @@ internal class HostMapResultsCacheStore {
     private var cache = HostMapResultsCache()
 
     fun forSession(backendURL: String, session: MemberSession): HostMapResultsCache {
-        if (this.backendURL != backendURL || username != session.member.username || sessionCookie != session.cookieHeader) {
+        if (this.backendURL != backendURL || username != session.member.username || sessionCookie != session.credentialKey) {
             this.backendURL = backendURL
             username = session.member.username
-            sessionCookie = session.cookieHeader
+            sessionCookie = session.credentialKey
             cache = HostMapResultsCache()
         }
         return cache

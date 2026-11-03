@@ -87,7 +87,7 @@ internal class MobileApiHostOfferRepository(
     }
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed
@@ -178,7 +178,7 @@ internal class HostOfferViewModel(
     fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
         val backendChanged = backendURL != api.backendURL
         val accountChanged = username != session.member.username
-        val credentialsChanged = cookieHeader != session.cookieHeader
+        val credentialsChanged = cookieHeader != session.credentialKey
         val environmentChanged = backendChanged || accountChanged || credentialsChanged
         repository.updateApi(api)
         repository.updateSession(session)
@@ -186,7 +186,7 @@ internal class HostOfferViewModel(
 
         backendURL = api.backendURL
         username = session.member.username
-        cookieHeader = session.cookieHeader
+        cookieHeader = session.credentialKey
         sessionInvalidationEmitted = false
 
         if (backendChanged || accountChanged) {

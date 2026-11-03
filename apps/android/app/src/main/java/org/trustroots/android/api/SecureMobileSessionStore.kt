@@ -18,6 +18,8 @@ class SecureMobileSessionStore(context: Context) {
     fun save(session: MemberSession) {
         val payload = JSONObject()
             .put("cookieHeader", session.cookieHeader)
+            .put("accessToken", session.accessToken)
+            .put("refreshToken", session.refreshToken)
             .put("username", session.member.username)
             .put("displayName", session.member.displayName)
             .toString()
@@ -43,6 +45,8 @@ class SecureMobileSessionStore(context: Context) {
         val session = JSONObject(String(decoded, StandardCharsets.UTF_8))
         MemberSession(
             cookieHeader = session.getString("cookieHeader"),
+            accessToken = session.optString("accessToken").takeIf(String::isNotBlank),
+            refreshToken = session.optString("refreshToken").takeIf(String::isNotBlank),
             member = MobileMember(
                 username = session.getString("username"),
                 displayName = session.getString("displayName"),

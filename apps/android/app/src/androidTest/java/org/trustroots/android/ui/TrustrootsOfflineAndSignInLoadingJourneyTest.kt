@@ -136,8 +136,8 @@ class TrustrootsOfflineAndSignInLoadingJourneyTest {
         }
         compose.onNode(hasProgressBarRangeInfo(ProgressBarRangeInfo.Indeterminate)).assertIsDisplayed()
         assertTrue(compose.onAllNodesWithText("Sign in").fetchSemanticsNodes().isEmpty())
-        assertEquals(1, requests.count { it.startsWith("POST /api/auth/signin ") })
-        assertEquals("POST /api/auth/signin HTTP/1.1", requests.single())
+        assertEquals(1, requests.count { it.startsWith("POST /api/mobile/v0/auth/signin ") })
+        assertEquals("POST /api/mobile/v0/auth/signin HTTP/1.1", requests.single())
 
         requireNotNull(releaseSignInResponse).countDown()
         waitForText("Fictional credentials were rejected.")

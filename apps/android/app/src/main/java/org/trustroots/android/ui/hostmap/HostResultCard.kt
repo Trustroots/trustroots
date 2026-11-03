@@ -90,7 +90,7 @@ internal fun HostResultCard(
                     else -> notHosting
                 }
                 Row(verticalAlignment = Alignment.Top) {
-                    RemoteArtwork(offer.user.id?.let { api.avatarURL(it, 64) }, session.cookieHeader, offer.user.localizedLabel(), 64.dp)
+                    RemoteArtwork(offer.user.id?.let { api.avatarURL(it, 64, session.accessToken != null) }, session.cookieHeader, offer.user.localizedLabel(), 64.dp, accessToken = session.accessToken)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(offer.user.localizedLabel(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)

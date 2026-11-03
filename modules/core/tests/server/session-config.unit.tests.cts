@@ -82,6 +82,12 @@ describe('Session configuration', function () {
     expressConfig.initMiddleware(app);
     expressConfig.initSession(app, { getClient: () => ({}) });
     app.get('/visit', (req, res) => res.send('visited'));
+    app.get('/api/mobile/v0/me', (req, res) =>
+      res.json({ hasSession: 'session' in req }),
+    );
+    app.get('/api/mobile/v0-other', (req, res) =>
+      res.json({ hasSession: 'session' in req }),
+    );
     app.get('/change', (req, res) => {
       const sessionRequest = req as import('express').Request & {
         session: SessionData;
@@ -107,6 +113,22 @@ describe('Session configuration', function () {
     should(response.headers['set-cookie']).be.undefined();
     store.setCalls.should.equal(0);
     store.touchCalls.should.equal(0);
+  });
+
+  it('ignores browser sessions on mobile routes while retaining neighbouring browser routes', async function () {
+    config.https = false;
+    config.sessionProxy = false;
+    const agent = request.agent(createApp());
+    await agent.get('/change').expect(200);
+
+    const mobile = await agent.get('/api/mobile/v0/me').expect(200);
+    mobile.body.hasSession.should.equal(false);
+    should(mobile.headers['set-cookie']).be.undefined();
+    store.touchCalls.should.equal(0);
+
+    const browser = await agent.get('/api/mobile/v0-other').expect(200);
+    browser.body.hasSession.should.equal(true);
+    store.touchCalls.should.equal(1);
   });
 
   it('issues HttpOnly SameSite=Lax cookies after a session is changed', async function () {

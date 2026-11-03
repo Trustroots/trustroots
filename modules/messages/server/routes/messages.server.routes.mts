@@ -31,7 +31,9 @@ function register(app: Application): void {
     .post(messages.preview);
 
   // Finish by binding the message middleware
-  app.param('messageUserId', messages.threadByUser);
+  app.param('messageUserId', (req, res, next, userId) =>
+    messages.threadByUser(req, res, next, userId),
+  );
 }
 
 export { register };

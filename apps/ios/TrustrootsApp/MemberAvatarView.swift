@@ -62,25 +62,15 @@ struct MemberAvatarImageView: View {
             return nil
         }
         return configuration.baseURL
-            .appendingPathComponent("api/users/\(memberID)/avatar")
+            .appendingPathComponent("api/mobile/v0/members/\(memberID)/avatar")
             .appending(queryItems: [URLQueryItem(name: "size", value: "128")])
     }
 
     private func loadAvatar() async -> UIImage? {
-        guard let avatarURL,
-              let cookieHeader = SessionCredentialStore().load()?.cookieHeader else {
-            return nil
-        }
-        var request = URLRequest(url: avatarURL)
-        request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
-        request.setValue("image/*", forHTTPHeaderField: "Accept")
-
+        guard let memberID else { return nil }
         do {
-            let (data, response) = try await MemberAvatarSession.shared.data(for: request)
-            guard let response = response as? HTTPURLResponse,
-                  (200..<300).contains(response.statusCode) else {
-                return nil
-            }
+            let data = try await TrustrootsAPI(session: MemberAvatarSession.shared)
+                .avatar(serverURLString: serverURLString, memberID: memberID)
             return UIImage(data: data)
         } catch {
             return nil
@@ -113,8 +103,11 @@ private final class AvatarRedirectDelegate: NSObject, URLSessionTaskDelegate {
         completionHandler: @escaping (URLRequest?) -> Void
     ) {
         var safeRequest = request
-        if request.url?.host?.lowercased() != task.originalRequest?.url?.host?.lowercased() {
+        if request.url?.host?.lowercased() != task.originalRequest?.url?.host?.lowercased()
+            || request.url?.scheme != task.originalRequest?.url?.scheme
+            || request.url?.port != task.originalRequest?.url?.port {
             safeRequest.setValue(nil, forHTTPHeaderField: "Cookie")
+            safeRequest.setValue(nil, forHTTPHeaderField: "Authorization")
         }
         completionHandler(safeRequest)
     }

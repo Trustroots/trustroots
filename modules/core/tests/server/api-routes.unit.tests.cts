@@ -267,9 +267,32 @@ describe('API route registrations', () => {
     ]);
     routes.forEach(route => assertPolicy(route, policy));
     assert.deepStrictEqual(
-      params.map(param => [param.name, param.middleware.routeTestName]),
-      [['messageUserId', 'messages.threadByUser']],
+      params.map(param => param.name),
+      ['messageUserId'],
     );
+    const req = {};
+    const res = {};
+    const next = sinon.spy();
+    const realMessages = require('../../../messages/server/controllers/messages.server.controller.mjs');
+    const threadByUser = sinon.stub(realMessages, 'threadByUser');
+    try {
+      Reflect.apply(params[0].middleware, undefined, [
+        req,
+        res,
+        next,
+        'member-id',
+        'messageUserId',
+      ]);
+      sinon.assert.calledOnceWithExactly(
+        threadByUser,
+        req,
+        res,
+        next,
+        'member-id',
+      );
+    } finally {
+      threadByUser.restore();
+    }
   });
 
   it('registers offers routes with list, create, read, update, delete, and params', () => {

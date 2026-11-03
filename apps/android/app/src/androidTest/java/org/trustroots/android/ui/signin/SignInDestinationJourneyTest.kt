@@ -122,7 +122,7 @@ class SignInDestinationJourneyTest {
         releaseSignIn = CountDownLatch(1)
         startResponder { request ->
             when {
-                request.line.startsWith("POST /api/auth/signin ") -> {
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> {
                     requireNotNull(receivedSignIn).countDown()
                     check(requireNotNull(releaseSignIn).await(10, TimeUnit.SECONDS))
                     Response(
@@ -156,13 +156,13 @@ class SignInDestinationJourneyTest {
         assertPasswordMaskedAndRetained("fictional-password")
         compose.onNode(hasProgressBarRangeInfo(androidx.compose.ui.semantics.ProgressBarRangeInfo.Indeterminate))
             .assertIsDisplayed()
-        assertEquals(1, requests.count { it.line.startsWith("POST /api/auth/signin ") })
+        assertEquals(1, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
 
         requireNotNull(releaseSignIn).countDown()
         compose.waitUntil(15_000) {
             compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
         }
-        assertEquals(1, requests.count { it.line.startsWith("POST /api/auth/signin ") })
+        assertEquals(1, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
         assertEquals("connect.sid=fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
         assertEquals("anonymous-heron", SecureMobileSessionStore(context).load()?.member?.username)
     }
@@ -248,7 +248,7 @@ class SignInDestinationJourneyTest {
         val releaseNewBackendResponse = CountDownLatch(1)
         startResponder(server) { request ->
             when {
-                request.line.startsWith("POST /api/auth/signin ") -> {
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> {
                     requireNotNull(receivedSignIn).countDown()
                     check(requireNotNull(releaseSignIn).await(10, TimeUnit.SECONDS))
                     Response(
@@ -265,7 +265,7 @@ class SignInDestinationJourneyTest {
         }
         startResponder(alternateServer, alternateRequests) { request ->
             when {
-                request.line.startsWith("POST /api/auth/signin ") -> {
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> {
                     receivedNewBackendRequest.countDown()
                     check(releaseNewBackendResponse.await(10, TimeUnit.SECONDS))
                     Response(
@@ -309,8 +309,8 @@ class SignInDestinationJourneyTest {
         waitForText("Discover circles")
         assertEquals("new-backend-member", SecureMobileSessionStore(context).load()?.member?.username)
         assertEquals("connect.sid=new-backend-session", SecureMobileSessionStore(context).load()?.cookieHeader)
-        assertEquals(1, requests.count { it.line.startsWith("POST /api/auth/signin ") })
-        assertEquals(1, alternateRequests.count { it.line.startsWith("POST /api/auth/signin ") })
+        assertEquals(1, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
+        assertEquals(1, alternateRequests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
     }
 
     @Test
@@ -351,7 +351,7 @@ class SignInDestinationJourneyTest {
         scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         waitForSignIn()
         assertEditableText("signin-username", "anonymous-heron")
-        assertEquals(0, requests.count { it.line.startsWith("POST /api/auth/signin ") })
+        assertEquals(0, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
     }
 
     @Test
@@ -386,7 +386,7 @@ class SignInDestinationJourneyTest {
 
         waitForSignIn()
         assertEditableText("signin-username", "anonymous-otter")
-        assertEquals(0, requests.count { it.line.startsWith("POST /api/auth/signin ") })
+        assertEquals(0, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
     }
 
     @Test
@@ -394,7 +394,7 @@ class SignInDestinationJourneyTest {
         var signInCount = 0
         startResponder { request ->
             when {
-                request.line.startsWith("POST /api/auth/signin ") -> {
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> {
                     signInCount++
                     if (signInCount == 1) {
                         Response(
@@ -494,7 +494,7 @@ class SignInDestinationJourneyTest {
         val expiredOwnProfileReads = AtomicInteger()
         startResponder { request ->
             when {
-                request.line.startsWith("POST /api/auth/signin ") -> Response(
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> Response(
                     "200 OK",
                     """{"username":"anonymous-heron","displayName":"Anonymous Heron"}""",
                     "Set-Cookie: connect.sid=fictional-session; Path=/; HttpOnly\r\n",
@@ -543,7 +543,7 @@ class SignInDestinationJourneyTest {
         assertTrue(requests.any { it.line.startsWith("GET /api/users/anonymous-heron ") })
         assertEditableText("signin-username", "")
         assertEditableText("signin-password", "")
-        assertEquals(1, requests.count { it.line.startsWith("POST /api/auth/signin ") })
+        assertEquals(1, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
         assertNull(SecureMobileSessionStore(context).load())
     }
 

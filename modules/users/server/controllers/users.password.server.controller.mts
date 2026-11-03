@@ -26,6 +26,7 @@ interface PasswordRequest {
   params: Record<string, string>;
   query: Record<string, unknown>;
   user?: UserServerDocument;
+  mobileSession?: unknown;
   login(
     user: UserServerDocument,
     callback: (error: Error | null) => void,
@@ -319,12 +320,14 @@ service.changePassword = function (req, res) {
       { new: true, runValidators: true },
     );
     if (!updatedUser) throw new Error('Current password is incorrect.');
-    await new Promise<void>((resolve, reject) => {
-      req.login(updatedUser, err => {
-        if (err) reject(err);
-        else resolve();
+    if (!req.mobileSession) {
+      await new Promise<void>((resolve, reject) => {
+        req.login(updatedUser, err => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
-    });
+    }
     return updatedUser;
   }
   change().then(

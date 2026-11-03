@@ -45,7 +45,7 @@ internal class MobileApiCircleRepository(
     }
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed

@@ -1,5 +1,6 @@
 import { invokeMalformed } from '@/testutils/client/malformed-fixtures';
 import {
+  addRasterMapTiles,
   getRasterMapTiles,
   isWebGLSupported,
 } from '@/modules/core/client/utils/map';
@@ -76,6 +77,52 @@ describe('map utilities', () => {
       options: expect.objectContaining({ maxZoom: 19 }),
       url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     });
+  });
+
+  it('replaces a failed Mapbox raster layer with OpenStreetMap once', () => {
+    const map = {};
+    const mapboxLayer = {
+      addTo: jest.fn(),
+      once: jest.fn((event: string, handler: () => void) => {
+        expect(event).toBe('tileerror');
+        expect(handler).toEqual(expect.any(Function));
+      }),
+      remove: jest.fn(),
+    };
+    const osmLayer = { addTo: jest.fn() };
+    const tileLayer = jest
+      .fn()
+      .mockReturnValueOnce(mapboxLayer)
+      .mockReturnValueOnce(osmLayer);
+
+    expect(
+      addRasterMapTiles({ map, mapboxToken: 'public-token', tileLayer }),
+    ).toBe(mapboxLayer);
+    expect(mapboxLayer.addTo).toHaveBeenCalledWith(map);
+
+    const tileError = mapboxLayer.once.mock.calls[0][1];
+    tileError();
+    tileError();
+
+    expect(mapboxLayer.remove).toHaveBeenCalledTimes(1);
+    expect(tileLayer).toHaveBeenNthCalledWith(
+      2,
+      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+      expect.objectContaining({ maxZoom: 19 }),
+    );
+    expect(osmLayer.addTo).toHaveBeenCalledTimes(1);
+    expect(osmLayer.addTo).toHaveBeenCalledWith(map);
+  });
+
+  it('adds OpenStreetMap directly without a Mapbox token', () => {
+    const map = {};
+    const layer = { addTo: jest.fn(), once: jest.fn(), remove: jest.fn() };
+    const tileLayer = jest.fn(() => layer);
+
+    addRasterMapTiles({ map, mapboxToken: false, tileLayer });
+
+    expect(layer.once).not.toHaveBeenCalled();
+    expect(layer.addTo).toHaveBeenCalledWith(map);
   });
 
   it('returns false outside a browser', () => {

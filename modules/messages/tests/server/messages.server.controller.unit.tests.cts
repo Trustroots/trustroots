@@ -933,6 +933,7 @@ describe('Messages controller unit tests', () => {
     function runThreadByUser(
       req: ThreadByUserRequest,
       userId: string,
+      markThreadRead = false,
     ): Promise<ThreadByUserResult> {
       return new Promise<ThreadByUserResult>(resolve => {
         const res = deferredResponse();
@@ -952,7 +953,13 @@ describe('Messages controller unit tests', () => {
           finish(false);
           return res;
         };
-        messagesController.threadByUser(req, res, () => finish(true), userId);
+        messagesController.threadByUser(
+          req,
+          res,
+          () => finish(true),
+          userId,
+          markThreadRead,
+        );
       });
     }
 
@@ -1014,7 +1021,82 @@ describe('Messages controller unit tests', () => {
       const { nextCalled } = await runThreadByUser(
         { user: sender, query: {} },
         receiver._id.toString(),
+        true,
       );
+      nextCalled.should.be.true();
+    });
+
+    it('acknowledges received messages only when mobile reading is requested', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      const message = await Message.create({
+        content: 'A fictional mobile conversation',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      });
+      const thread = await Thread.create({
+        userFrom: sender._id,
+        userTo: receiver._id,
+        message: message._id,
+        read: false,
+        updated: new Date(),
+      });
+
+      const { nextCalled } = await runThreadByUser(
+        { user: receiver, query: {} },
+        sender._id.toString(),
+        true,
+      );
+
+      nextCalled.should.be.true();
+      required(await Message.findById(message._id)).read!.should.be.true();
+      required(await Thread.findById(thread._id)).read!.should.be.true();
+    });
+
+    it('returns an acknowledgement failure without continuing to the thread response', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      await Message.create({
+        content: 'A fictional unread message',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      });
+      sinon
+        .stub(Message, 'updateMany')
+        .rejects(new Error('Read update failed'));
+
+      const { nextCalled, res } = await runThreadByUser(
+        { user: receiver, query: {} },
+        sender._id.toString(),
+        true,
+      );
+
+      nextCalled.should.be.false();
+      res.statusCode.should.equal(400);
+    });
+
+    it('can load sent messages after the recipient has been removed', async () => {
+      const [sender, receiver] = await utils.saveUsers(
+        utils.generateUsers(2, { public: true }),
+      );
+      await Message.create({
+        content: 'A fictional saved conversation',
+        userFrom: sender._id,
+        userTo: receiver._id,
+        read: false,
+      });
+      await User.deleteOne({ _id: receiver._id });
+
+      const { nextCalled } = await runThreadByUser(
+        { user: sender, query: {} },
+        receiver._id.toString(),
+        true,
+      );
+
       nextCalled.should.be.true();
     });
   });

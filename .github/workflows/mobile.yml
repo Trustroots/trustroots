@@ -8,6 +8,7 @@ on:
       - 'apps/android/**'
       - 'config/languages/languages.json'
       - 'apps/ios/**'
+      - 'modules/mobile/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - 'openspec/changes/add-native-android-member-mvp/**'
   push:
@@ -17,6 +18,7 @@ on:
       - 'apps/android/**'
       - 'config/languages/languages.json'
       - 'apps/ios/**'
+      - 'modules/mobile/**'
       - 'openspec/changes/add-native-ios-member-mvp/**'
       - 'openspec/changes/add-native-android-member-mvp/**'
   workflow_dispatch:

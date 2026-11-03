@@ -28,7 +28,11 @@ data class AccountDetails(
 data class MemberSession(
     val cookieHeader: String,
     val member: MobileMember,
-)
+    val accessToken: String? = null,
+    val refreshToken: String? = null,
+) {
+    val credentialKey: String get() = accessToken ?: cookieHeader
+}
 
 data class MemberProfile(
     val id: String?,
@@ -176,8 +180,8 @@ class MobileApiClient(
         URL("$baseURL/uploads-circle/${encode(slug).replace("+", "%20")}/120x120.jpg")
     fun circleHeroURL(slug: String): URL =
         URL("$baseURL/uploads-circle/${encode(slug).replace("+", "%20")}/742x496.jpg")
-    fun avatarURL(memberID: String, size: Int = 128): URL =
-        URL("$baseURL/api/users/${encode(memberID)}/avatar?size=$size")
+    fun avatarURL(memberID: String, size: Int = 128, bearer: Boolean = false): URL =
+        URL("$baseURL${if (bearer) "/api/mobile/v0/members" else "/api/users"}/${encode(memberID)}/avatar?size=$size")
     suspend fun signIn(usernameOrEmail: String, password: String): Result<MemberSession> =
         withContext(Dispatchers.IO) {
             runCatching {
@@ -186,11 +190,16 @@ class MobileApiClient(
                     .put("password", password)
                     .toString()
                 val response = jsonRequest(
-                        path = "/api/auth/signin",
+                        path = "/api/mobile/v0/auth/signin",
                         method = "POST",
                         body = request,
                         failureKind = ApiFailureKind.SIGN_IN_REJECTED,
                     )
+                val bearerSession = JSONObject(response.body)
+                val accessToken = bearerSession.optString("accessToken").takeIf(String::isNotBlank)
+                if (accessToken != null) {
+                    return@runCatching mobileSessionFrom(bearerSession)
+                }
                 MemberSession(
                     cookieHeader = response.sessionCookie ?: throw MobileApiException(
                         statusCode = HttpURLConnection.HTTP_OK,
@@ -201,12 +210,24 @@ class MobileApiClient(
             }
         }
 
+    suspend fun refresh(session: MemberSession): Result<MemberSession> = withContext(Dispatchers.IO) {
+        runCatching {
+            val token = session.refreshToken ?: return@runCatching session
+            val response = JSONObject(jsonRequest(
+                path = "/api/mobile/v0/auth/refresh",
+                method = "POST",
+                body = JSONObject().put("refreshToken", token).toString(),
+            ).body)
+            mobileSessionFrom(response)
+        }
+    }
+
     suspend fun accountDetails(session: MemberSession): Result<AccountDetails> =
         withContext(Dispatchers.IO) {
             runCatching {
                 parseAccountDetails(JSONObject(jsonRequest(
                     "/api/users/${encode(session.member.username)}", "GET",
-                    sessionCookie = session.cookieHeader,
+                    sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -223,7 +244,7 @@ class MobileApiClient(
                 .put("newsletter", newsletter)
                 .toString()
             parseAccountDetails(JSONObject(jsonRequest(
-                "/api/users", "PUT", body, session.cookieHeader,
+                "/api/users", "PUT", body, session.cookieHeader, session.accessToken,
             ).body))
         }
     }
@@ -242,7 +263,7 @@ class MobileApiClient(
                 .put("newPassword", newPassword)
                 .put("verifyPassword", verifyPassword)
                 .toString()
-            jsonRequest("/api/users/password", "POST", body, session.cookieHeader)
+            jsonRequest("/api/users/password", "POST", body, session.cookieHeader, session.accessToken)
             Unit
         }
     }
@@ -251,7 +272,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseContacts(JSONArray(jsonRequest(
-                    "/api/contacts/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
+                    "/api/contacts/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -262,7 +283,7 @@ class MobileApiClient(
                 val response = runCatching {
                     jsonRequest(
                         "/api/contact-by/${encode(memberID)}", "GET",
-                        sessionCookie = session.cookieHeader,
+                        sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                     )
                 }
                 val body = response.getOrElse { error ->
@@ -280,7 +301,7 @@ class MobileApiClient(
             runCatching {
                 jsonRequest(
                     "/api/contact/${encode(contactID)}", "DELETE",
-                    sessionCookie = session.cookieHeader,
+                    sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 )
                 Unit
             }
@@ -290,7 +311,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseReferences(JSONArray(jsonRequest(
-                    "/api/experiences?userTo=${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
+                    "/api/experiences?userTo=${encode(memberID)}", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -302,7 +323,7 @@ class MobileApiClient(
                 authors.chunked(100).flatMap { batch ->
                     val query = batch.joinToString("&") { "pubkey=${encode(it)}" }
                     val payload = JSONObject(jsonRequest(
-                        "/api/nostr/author-visibility?$query", "GET", sessionCookie = session.cookieHeader,
+                        "/api/nostr/author-visibility?$query", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                     ).body)
                     val linked = payload.getJSONArray("linkedPubkeys").let { array ->
                         (0 until array.length()).map { array.getString(it).lowercase() }.toSet()
@@ -320,9 +341,9 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 jsonRequest(
-                    path = "/api/auth/signout",
+                    path = if (session.accessToken != null) "/api/mobile/v0/auth/signout" else "/api/auth/signout",
                     method = "POST",
-                    sessionCookie = session.cookieHeader,
+                    sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                     requestHeaders = mapOf("X-Trustroots-Request" to "1"),
                 )
                 Unit
@@ -333,7 +354,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response = JSONObject(jsonRequest(
-                    "/api/users/unified-push", "GET", sessionCookie = session.cookieHeader,
+                    "/api/users/unified-push", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body)
                 if (response.optBoolean("enabled")) response.getString("publicKey") else null
             }
@@ -348,7 +369,7 @@ class MobileApiClient(
         runCatching {
             val body = JSONObject().put("endpoint", endpoint)
                 .put("publicKey", publicKey).put("auth", auth).toString()
-            jsonRequest("/api/users/unified-push", "POST", body, session.cookieHeader)
+            jsonRequest("/api/users/unified-push", "POST", body, session.cookieHeader, session.accessToken)
             Unit
         }
     }
@@ -358,7 +379,7 @@ class MobileApiClient(
             runCatching {
                 jsonRequest(
                     "/api/users/unified-push", "DELETE",
-                    JSONObject().put("endpoint", endpoint).toString(), session.cookieHeader,
+                    JSONObject().put("endpoint", endpoint).toString(), session.cookieHeader, session.accessToken,
                 )
                 Unit
             }
@@ -369,7 +390,7 @@ class MobileApiClient(
             runCatching {
                 require(query.trim().length >= 3)
                 val path = "/api/users?search=${encode(query.trim())}&limit=50"
-                val body = jsonRequest(path, "GET", sessionCookie = session.cookieHeader).body
+                val body = jsonRequest(path, "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken).body
                 parseMembers(JSONArray(body))
             }
         }
@@ -378,7 +399,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseMember(JSONObject(jsonRequest(
-                    "/api/users/${encode(username)}", "GET", sessionCookie = session.cookieHeader,
+                    "/api/users/${encode(username)}", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -389,7 +410,7 @@ class MobileApiClient(
             runCatching {
                 require(memberID.isNotBlank())
                 val member = parseMessageMember(JSONObject(jsonRequest(
-                    "/api/users/mini/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader,
+                    "/api/users/mini/${encode(memberID)}", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
                 ConversationRecipient(requireNotNull(member.id), member.username, member.displayName)
             }
@@ -400,7 +421,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 val response = jsonRequest(
-                    "/api/blocked-users", "GET", sessionCookie = session.cookieHeader,
+                    "/api/blocked-users", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                     allowResponseCache = false,
                 )
                 val values = JSONArray(response.body)
@@ -418,7 +439,7 @@ class MobileApiClient(
             jsonRequest(
                 "/api/blocked-users/${encode(username).replace("+", "%20")}",
                 if (blocked) "PUT" else "DELETE",
-                sessionCookie = session.cookieHeader,
+                sessionCookie = session.cookieHeader, accessToken = session.accessToken,
             )
             Unit
         }
@@ -436,7 +457,7 @@ class MobileApiClient(
                 .put("reportMember", username)
                 .put("message", message.trim())
                 .toString()
-            jsonRequest("/api/support", "POST", body, session.cookieHeader)
+            jsonRequest("/api/support", "POST", body, session.cookieHeader, session.accessToken)
             Unit
         }
     }
@@ -454,7 +475,7 @@ class MobileApiClient(
                     .put("languages", JSONArray(update.languages.distinct().sorted()))
                     .toString()
                 parseMember(JSONObject(jsonRequest(
-                    "/api/users", "PUT", body, session.cookieHeader,
+                    "/api/users", "PUT", body, session.cookieHeader, session.accessToken,
                 ).body))
             }
         }
@@ -464,7 +485,7 @@ class MobileApiClient(
             runCatching {
                 parseThreads(
                     JSONArray(jsonRequest(
-                        "/api/messages?page=$page&limit=50", "GET", sessionCookie = session.cookieHeader,
+                        "/api/messages?page=$page&limit=50", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                     ).body),
                     session.member.username,
                 )
@@ -476,7 +497,7 @@ class MobileApiClient(
             runCatching {
                 parseMessages(JSONArray(jsonRequest(
                     "/api/messages/${encode(memberID)}?limit=100", "GET",
-                    sessionCookie = session.cookieHeader,
+                    sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -487,7 +508,7 @@ class MobileApiClient(
                 require(content.isNotBlank())
                 val body = JSONObject().put("userTo", memberID).put("content", content.trim()).toString()
                 parseMessage(JSONObject(jsonRequest(
-                    "/api/messages", "POST", body, session.cookieHeader,
+                    "/api/messages", "POST", body, session.cookieHeader, session.accessToken,
                 ).body))
             }
         }
@@ -515,7 +536,7 @@ class MobileApiClient(
             val filters = encode(filterObject.toString())
             val path = "/api/offers?southWestLat=$south&southWestLng=$west" +
                 "&northEastLat=$north&northEastLng=$east&filters=$filters"
-            parseMapOffers(JSONObject(jsonRequest(path, "GET", sessionCookie = session.cookieHeader).body))
+            parseMapOffers(JSONObject(jsonRequest(path, "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken).body))
         }
     }
 
@@ -523,7 +544,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseHostOffer(JSONObject(jsonRequest(
-                    "/api/offers/${encode(offerID)}", "GET", sessionCookie = session.cookieHeader,
+                    "/api/offers/${encode(offerID)}", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -533,7 +554,7 @@ class MobileApiClient(
             runCatching {
                 val offers = JSONArray(jsonRequest(
                     "/api/offers-by/${encode(memberID)}?types=host", "GET",
-                    sessionCookie = session.cookieHeader,
+                    sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body)
                 if (offers.length() == 0) null else parseAccommodationOffer(offers.getJSONObject(0))
             }
@@ -556,7 +577,7 @@ class MobileApiClient(
                     .toString()
                 val path = if (update.id.isNullOrBlank()) "/api/offers" else "/api/offers/${encode(update.id)}"
                 val method = if (update.id.isNullOrBlank()) "POST" else "PUT"
-                parseAccommodationOffer(JSONObject(jsonRequest(path, method, body, session.cookieHeader).body))
+                parseAccommodationOffer(JSONObject(jsonRequest(path, method, body, session.cookieHeader, session.accessToken).body))
             }
         }
 
@@ -578,7 +599,7 @@ class MobileApiClient(
                     .put("recommend", experience.recommend)
                     .put("feedbackPublic", experience.feedbackPublic.trim())
                     .toString()
-                jsonRequest("/api/experiences", "POST", body, session.cookieHeader)
+                jsonRequest("/api/experiences", "POST", body, session.cookieHeader, session.accessToken)
                 Unit
             }
         }
@@ -587,7 +608,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseCircles(JSONArray(jsonRequest(
-                    "/api/tribes?limit=150", "GET", sessionCookie = session.cookieHeader,
+                    "/api/tribes?limit=150", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -596,7 +617,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseCircle(JSONObject(jsonRequest(
-                    "/api/tribes/${encode(slug)}", "GET", sessionCookie = session.cookieHeader,
+                    "/api/tribes/${encode(slug)}", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -605,7 +626,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 parseCircleMemberGroups(JSONObject(jsonRequest(
-                    "/api/tribes/${encode(slug)}/members", "GET", sessionCookie = session.cookieHeader,
+                    "/api/tribes/${encode(slug)}/members", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body))
             }
         }
@@ -614,7 +635,7 @@ class MobileApiClient(
         withContext(Dispatchers.IO) {
             runCatching {
                 val memberships = JSONArray(jsonRequest(
-                    "/api/users/memberships", "GET", sessionCookie = session.cookieHeader,
+                    "/api/users/memberships", "GET", sessionCookie = session.cookieHeader, accessToken = session.accessToken,
                 ).body)
                 (0 until memberships.length()).mapNotNull { index ->
                     memberships.getJSONObject(index).optJSONObject("tribe")?.let {
@@ -633,7 +654,7 @@ class MobileApiClient(
             jsonRequest(
                 "/api/users/memberships/${encode(circleID)}",
                 if (isMember) "DELETE" else "POST",
-                sessionCookie = session.cookieHeader,
+                sessionCookie = session.cookieHeader, accessToken = session.accessToken,
             )
             Unit
         }
@@ -649,12 +670,14 @@ class MobileApiClient(
         method: String,
         body: String? = null,
         sessionCookie: String? = null,
+        accessToken: String? = null,
         requestHeaders: Map<String, String> = emptyMap(),
         failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
         allowResponseCache: Boolean = true,
     ): JsonResponse {
-        val endpoint = URL("$baseURL$path")
-        val authenticatedCacheScope = responseCacheScope?.takeIf { sessionCookie != null }
+        val requestPath = if (accessToken != null) mobileApiPath(path, method, body) else path
+        val endpoint = URL("$baseURL$requestPath")
+        val authenticatedCacheScope = responseCacheScope?.takeIf { sessionCookie != null || accessToken != null }
         val readCacheScope = authenticatedCacheScope?.takeIf { allowResponseCache && method == "GET" }
         val mutationCacheScope = authenticatedCacheScope?.takeIf { method != "GET" }
         val connection = endpoint.openConnection() as HttpURLConnection
@@ -668,7 +691,11 @@ class MobileApiClient(
                 connection.setRequestProperty("X-Trustroots-Request", "1")
             }
             requestHeaders.forEach { (name, value) -> connection.setRequestProperty(name, value) }
-            sessionCookie?.let { connection.setRequestProperty("Cookie", it) }
+            if (accessToken != null) {
+                connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            } else {
+                sessionCookie?.let { connection.setRequestProperty("Cookie", it) }
+            }
             body?.let {
                 connection.doOutput = true
                 connection.setRequestProperty("Content-Type", "application/json")
@@ -681,7 +708,7 @@ class MobileApiClient(
             } else {
                 connection.errorStream
             }
-            val responseBody = responseStream?.use { it.reader().readText() }.orEmpty()
+            var responseBody = responseStream?.use { it.reader().readText() }.orEmpty()
             if (!successful) {
                 val message = runCatching { JSONObject(responseBody).optString("message") }
                     .getOrNull()
@@ -691,6 +718,11 @@ class MobileApiClient(
                     serverMessage = message,
                     failureKind = failureKind,
                 )
+            }
+            if (accessToken != null && path.startsWith("/api/users/") && !path.startsWith("/api/users/mini/")) {
+                responseBody = runCatching {
+                    JSONObject(responseBody).optJSONObject("profile")?.toString() ?: responseBody
+                }.getOrDefault(responseBody)
             }
             when {
                 readCacheScope != null -> readCacheScope.cache.save(
@@ -739,6 +771,47 @@ internal fun sessionCookieFrom(headers: Map<String?, List<String>>): String? =
         .flatMap { (_, values) -> values.asSequence() }
         .map { it.substringBefore(';') }
         .firstOrNull { it.startsWith("connect.sid=") }
+
+internal fun mobileSessionFrom(response: JSONObject) = MemberSession(
+    cookieHeader = "",
+    accessToken = response.getString("accessToken"),
+    refreshToken = response.getString("refreshToken"),
+    member = mobileMemberFrom(response.getJSONObject("member")),
+)
+
+internal fun mobileApiPath(path: String, method: String, body: String?): String {
+    val query = path.substringAfter('?', "").let { if (it.isEmpty()) "" else "?$it" }
+    val route = path.substringBefore('?')
+    val mapped = when {
+        route.startsWith("/api/mobile/v0/") -> route
+        route == "/api/users" && method == "GET" && query.startsWith("?search=") -> "/api/mobile/v0/members"
+        route == "/api/users" && method == "PUT" -> {
+            val hasAccountFields = runCatching {
+                val json = JSONObject(body ?: "{}")
+                json.has("email") || json.has("newsletter")
+            }.getOrDefault(false)
+            if (hasAccountFields) "/api/mobile/v0/account" else "/api/mobile/v0/profile"
+        }
+        route == "/api/users/memberships" -> "/api/mobile/v0/memberships"
+        route.startsWith("/api/users/memberships/") -> route.replaceFirst("/api/users/memberships/", "/api/mobile/v0/memberships/")
+        route == "/api/users/password" -> "/api/mobile/v0/account/password"
+        route == "/api/users/unified-push" -> "/api/mobile/v0/users/unified-push"
+        route.startsWith("/api/users/mini/") -> route.replaceFirst("/api/users/mini/", "/api/mobile/v0/members/")
+        route.startsWith("/api/users/") -> route.replaceFirst("/api/users/", "/api/mobile/v0/profiles/")
+        route.startsWith("/api/tribes") -> route.replaceFirst("/api/tribes", "/api/mobile/v0/circles")
+        route.startsWith("/api/messages/") -> route.replaceFirst("/api/messages/", "/api/mobile/v0/messages/")
+        route == "/api/messages" -> "/api/mobile/v0/messages"
+        route.startsWith("/api/offers-by/") -> route.replaceFirst("/api/offers-by/", "/api/mobile/v0/offers-by/")
+        route == "/api/offers" || route.startsWith("/api/offers/") -> route.replaceFirst("/api/offers", "/api/mobile/v0/offers")
+        route == "/api/blocked-users" || route.startsWith("/api/blocked-users/") -> route.replaceFirst("/api/blocked-users", "/api/mobile/v0/blocked-users")
+        route.startsWith("/api/contacts/") -> route.replaceFirst("/api/contacts/", "/api/mobile/v0/contacts/")
+        route == "/api/experiences" -> "/api/mobile/v0/experiences"
+        route == "/api/nostr/author-visibility" -> route
+        route == "/api/support" -> "/api/mobile/v0/support"
+        else -> route.replaceFirst("/api/", "/api/mobile/v0/")
+    }
+    return mapped + query
+}
 
 internal fun secureApiBaseURL(value: String): String {
     val url = URL(value.trim())

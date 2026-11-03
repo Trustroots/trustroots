@@ -543,7 +543,7 @@ class TrustrootsMemberShellJourneysTest {
     }
 
     private fun responseFor(method: String, path: String, body: String): FixtureResponse = when {
-        method == "POST" && path == "/api/auth/signin" -> FixtureResponse(
+        method == "POST" && path == "/api/mobile/v0/auth/signin" -> FixtureResponse(
             "200 OK",
             """{"username":"steady-heron","displayName":"Steady Heron"}""",
             "Set-Cookie: connect.sid=renewed-fictional-session; Path=/; HttpOnly\r\n",

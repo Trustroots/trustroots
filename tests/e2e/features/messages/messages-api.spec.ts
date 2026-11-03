@@ -23,6 +23,8 @@ import {
   fetchUserIdByUsername,
   authenticateViaApi,
   signInViaApi,
+  createUser,
+  registerViaApi,
 } from '../../support/helpers.mts';
 
 const test = base.extend({
@@ -44,6 +46,181 @@ interface MessageApiThread {
 }
 
 test.use({ storageState: { cookies: [], origins: [] } });
+
+test.describe('mobile bearer message regressions', () => {
+  test('main profile features remain available through bearer routes', async ({
+    baseURL,
+  }) => {
+    const client = await playwrightRequest.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
+    try {
+      const member = SEEDED_MEMBERS[0];
+      const signin = await client.post('/api/mobile/v0/auth/signin', {
+        data: { username: member.username, password: member.password },
+      });
+      expect(signin.status()).toBe(200);
+      const headers = {
+        Authorization: `Bearer ${(await signin.json()).accessToken as string}`,
+      };
+      const search = await client.get('/api/mobile/v0/members', {
+        headers,
+        params: { search: SEEDED_MEMBERS[1].firstName },
+      });
+      expect(search.status()).toBe(200);
+      expect(
+        (await search.json()).some(
+          (result: { username: string }) =>
+            result.username === SEEDED_MEMBERS[1].username,
+        ),
+      ).toBe(true);
+      const offers = await client.get(
+        `/api/mobile/v0/offers-by/${member.id}?types=host`,
+        { headers },
+      );
+      expect(offers.status()).toBe(200);
+      expect((await offers.json()).length).toBeGreaterThan(0);
+      const avatar = await client.get(
+        `/api/mobile/v0/members/${member.id}/avatar?size=128`,
+        { headers, maxRedirects: 0 },
+      );
+      expect(avatar.status()).toBe(302);
+      const blocked = await client.get('/api/mobile/v0/blocked-users', {
+        headers,
+      });
+      expect(blocked.status()).toBe(200);
+      expect(blocked.headers()['set-cookie']).toBeUndefined();
+    } finally {
+      await client.dispose();
+    }
+  });
+
+  test('search preserves unread state and reading acknowledges only received messages', async ({
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'messages.read-count-sync', [
+      'Unread count changes after opening or marking a thread read.',
+    ]);
+    const client = await playwrightRequest.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
+    try {
+      const signIn = async (
+        member: (typeof SEEDED_MEMBERS)[number],
+      ): Promise<{ Authorization: string }> => {
+        const response = await client.post('/api/mobile/v0/auth/signin', {
+          data: { username: member.username, password: member.password },
+        });
+        expect(response.status()).toBe(200);
+        expect(response.headers()['set-cookie']).toBeUndefined();
+        const data = (await response.json()) as { accessToken: string };
+        return { Authorization: `Bearer ${data.accessToken}` };
+      };
+      const sender = await signIn(SEEDED_MEMBERS[0]);
+      const reader = await signIn(SEEDED_MEMBERS[1]);
+      const sent = await client.post('/api/mobile/v0/messages', {
+        headers: sender,
+        data: {
+          userTo: SEEDED_MEMBERS[1].id,
+          content: 'An example message for the mobile read-state regression.',
+        },
+      });
+      expect(sent.status()).toBe(200);
+      const message = (await sent.json()) as { _id: string };
+      const acknowledge = (headers: { Authorization: string }) =>
+        client.post('/api/mobile/v0/messages-read', {
+          headers,
+          data: { messageIds: [message._id] },
+        });
+      expect((await acknowledge(sender)).status()).toBe(200);
+      const threadPath = `/api/mobile/v0/messages/${SEEDED_MEMBERS[0].id}`;
+      const searched = await client.get(`${threadPath}?markRead=false`, {
+        headers: reader,
+      });
+      expect(searched.status()).toBe(200);
+      expect(
+        (await searched.json()).find(
+          (item: { _id: string; read: boolean }) => item._id === message._id,
+        ).read,
+      ).toBe(false);
+      const inbox = await client.get('/api/mobile/v0/messages', {
+        headers: reader,
+      });
+      expect(
+        (await inbox.json()).find(
+          (item: {
+            userFrom?: { username: string };
+            userTo?: { username: string };
+            read: boolean;
+          }) =>
+            [item.userFrom?.username, item.userTo?.username].includes(
+              SEEDED_MEMBERS[1].username,
+            ),
+        ).read,
+      ).toBe(false);
+      expect((await client.get(threadPath, { headers: reader })).status()).toBe(
+        200,
+      );
+      const acknowledged = await acknowledge(reader);
+      expect(acknowledged.status()).toBe(200);
+      expect(acknowledged.headers()['set-cookie']).toBeUndefined();
+      const opened = await client.get(`${threadPath}?markRead=false`, {
+        headers: reader,
+      });
+      expect(
+        (await opened.json()).find(
+          (item: { _id: string; read: boolean }) => item._id === message._id,
+        ).read,
+      ).toBe(true);
+    } finally {
+      await client.dispose();
+    }
+  });
+
+  test('unconfirmed members cannot use bearer tokens to bypass publication policies', async ({
+    baseURL,
+  }) => {
+    const client = await playwrightRequest.newContext({
+      baseURL,
+      storageState: { cookies: [], origins: [] },
+    });
+    try {
+      const member = createUser();
+      await registerViaApi(client, member);
+      const signin = await client.post('/api/mobile/v0/auth/signin', {
+        data: { username: member.username, password: member.password },
+      });
+      expect(signin.status()).toBe(200);
+      const data = (await signin.json()) as { accessToken: string };
+      const headers = { Authorization: `Bearer ${data.accessToken}` };
+      expect(
+        (await client.get('/api/mobile/v0/me', { headers })).status(),
+      ).toBe(200);
+      for (const path of [
+        '/api/mobile/v0/messages',
+        '/api/mobile/v0/offers',
+        '/api/mobile/v0/experiences',
+      ]) {
+        expect((await client.get(path, { headers })).status()).toBe(403);
+      }
+      expect(
+        (
+          await client.post('/api/mobile/v0/messages', {
+            headers,
+            data: {
+              userTo: SEEDED_MEMBERS[0].id,
+              content: 'An unconfirmed example.',
+            },
+          })
+        ).status(),
+      ).toBe(403);
+    } finally {
+      await client.dispose();
+    }
+  });
+});
 
 test.describe('seeded message API flows', () => {
   test('thread messages render formatted text without active markup', async ({

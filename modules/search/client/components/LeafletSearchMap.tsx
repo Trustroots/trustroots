@@ -6,7 +6,7 @@ import Supercluster from 'supercluster';
 import './leaflet-search-map.less';
 
 // Internal dependencies
-import { getRasterMapTiles } from '@/modules/core/client/utils/map';
+import { addRasterMapTiles } from '@/modules/core/client/utils/map';
 import { CLUSTER_MAX_ZOOM, MIN_ZOOM } from './constants';
 
 const offerColours = {
@@ -220,8 +220,7 @@ export default function LeafletSearchMap({
     const offerGroup = L.layerGroup().addTo(map);
     const communityNoteGroup = L.layerGroup().addTo(map);
 
-    const tiles = getRasterMapTiles();
-    L.tileLayer(tiles.url, tiles.options).addTo(map);
+    addRasterMapTiles({ map, tileLayer: L.tileLayer });
 
     const onMoveEnd = () => {
       callbacksRef.current.onMapChange(

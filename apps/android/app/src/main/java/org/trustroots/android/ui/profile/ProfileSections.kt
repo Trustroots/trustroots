@@ -112,10 +112,11 @@ internal fun ProfileOverviewSection(
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RemoteArtwork(
-                        reference.author.id?.let { api.avatarURL(it, 64) },
+                        reference.author.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
                         session.cookieHeader,
-                        reference.author.localizedLabel(),
-                        36.dp,
+                        accessToken = session.accessToken,
+                        label = reference.author.localizedLabel(),
+                        size = 36.dp,
                     )
                     TextButton(onClick = { reference.author.username?.let(onOpenRelated) }) {
                         Text(reference.author.localizedLabel())
@@ -228,10 +229,11 @@ internal fun ProfileContactsSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RemoteArtwork(
-                contact.user.id?.let { api.avatarURL(it, 64) },
+                contact.user.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
                 session.cookieHeader,
-                contact.user.localizedLabel(),
-                36.dp,
+                accessToken = session.accessToken,
+                label = contact.user.localizedLabel(),
+                size = 36.dp,
             )
             Text(contact.user.localizedLabel(), modifier = Modifier.padding(start = 10.dp))
         }

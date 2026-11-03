@@ -35,7 +35,7 @@ internal class MobileApiInboxRepository(
     private var session = session
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed
@@ -151,7 +151,7 @@ internal class InboxViewModel(
     }
 
     private fun updateSession(newSession: MemberSession) {
-        if (session.cookieHeader == newSession.cookieHeader &&
+        if (session.credentialKey == newSession.credentialKey &&
             session.member.username == newSession.member.username
         ) return
 
