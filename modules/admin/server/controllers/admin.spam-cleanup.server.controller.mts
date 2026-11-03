@@ -53,8 +53,41 @@ export async function preview(req: Request, res: Response) {
   const body = req.body;
   if (
     !object(body) ||
-    Object.keys(body).some(key => !['previewId', 'page'].includes(key)) ||
+    Object.keys(body).some(
+      key =>
+        ![
+          'previewId',
+          'page',
+          'sort',
+          'direction',
+          'selectionMode',
+          'selectionStage',
+          'selectionIds',
+        ].includes(key),
+    ) ||
     (body.previewId !== undefined && !id(body.previewId)) ||
+    (body.sort !== undefined &&
+      ![
+        'account',
+        'created',
+        'lastSeen',
+        'stage',
+        'decision',
+        'selected',
+      ].includes(String(body.sort))) ||
+    (body.direction !== undefined &&
+      !['asc', 'desc'].includes(String(body.direction))) ||
+    (body.sort === 'selected' &&
+      (!['all', 'selected'].includes(String(body.selectionMode)) ||
+        !['all', 'inactive', 'unknown-login', 'review'].includes(
+          String(body.selectionStage),
+        ) ||
+        !Array.isArray(body.selectionIds) ||
+        !body.selectionIds.every(id))) ||
+    (body.sort !== 'selected' &&
+      ['selectionMode', 'selectionStage', 'selectionIds'].some(key =>
+        Object.hasOwn(body, key),
+      )) ||
     (body.page !== undefined &&
       (!Number.isSafeInteger(body.page) ||
         Number(body.page) < 1 ||
@@ -74,6 +107,7 @@ export async function preview(req: Request, res: Response) {
         actor: req.user._id,
         expiresAt: expiry(),
         scanSize: SPAM_CLEANUP_SCAN_SIZE,
+        formatVersion: 2,
       });
       await audit(req.user._id, 'spam-cleanup/preview', record._id, {});
       await record.save();
@@ -82,7 +116,10 @@ export async function preview(req: Request, res: Response) {
       return res
         .status(410)
         .send({ message: 'Preview unavailable or expired. Preview again.' });
-    if (record.scanSize !== SPAM_CLEANUP_SCAN_SIZE)
+    if (
+      record.scanSize !== SPAM_CLEANUP_SCAN_SIZE ||
+      record.formatVersion !== 2
+    )
       return res
         .status(410)
         .send({ message: 'Preview format changed. Start a fresh preview.' });
@@ -121,6 +158,22 @@ export async function preview(req: Request, res: Response) {
           inactiveIds: batch.items
             .filter(row => row.eligible && row.inactive)
             .map(row => new mongoose.Types.ObjectId(row.id)),
+          unknownLoginIds: batch.items
+            .filter(row => row.eligible && !row.lastSeen)
+            .map(row => new mongoose.Types.ObjectId(row.id)),
+          reviewRows: batch.items.map(row => ({
+            user: new mongoose.Types.ObjectId(row.id),
+            username: row.username,
+            created: row.created,
+            lastSeen: row.lastSeen,
+            stage: !row.eligible
+              ? 'protected'
+              : row.inactive
+                ? 'inactive'
+                : !row.lastSeen
+                  ? 'unknown-login'
+                  : 'review',
+          })),
           expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
         });
         record.chunkCount++;
@@ -148,12 +201,13 @@ export async function preview(req: Request, res: Response) {
       return res.status(400).send({ message: 'Invalid cleanup page.' });
     // Scanning responses contain counts only, avoiding redundant account reads.
     const offset = (page - 1) * SPAM_CLEANUP_PAGE_SIZE;
-    const chunk = record.building
-      ? null
-      : await Chunk.findOne({
-          preview: record._id,
-          index: Math.floor(offset / SPAM_CLEANUP_SCAN_SIZE),
-        }).lean();
+    const chunk =
+      record.building || body.sort
+        ? null
+        : await Chunk.findOne({
+            preview: record._id,
+            index: Math.floor(offset / SPAM_CLEANUP_SCAN_SIZE),
+          }).lean();
     const pageIds = (chunk?.ids || []).slice(
       offset % SPAM_CLEANUP_SCAN_SIZE,
       (offset % SPAM_CLEANUP_SCAN_SIZE) + SPAM_CLEANUP_PAGE_SIZE,
@@ -179,7 +233,10 @@ export async function preview(req: Request, res: Response) {
     const inactiveIds = new Set(
       (chunk?.inactiveIds || []).map(value => String(value)),
     );
-    const items = pageIds.map(userId => {
+    const unknownLoginIds = new Set(
+      (chunk?.unknownLoginIds || []).map(value => String(value)),
+    );
+    let items = pageIds.map(userId => {
       const key = String(userId);
       const user = byId.get(key);
       const eligible = Boolean(user && eligibleIds.has(key));
@@ -193,9 +250,80 @@ export async function preview(req: Request, res: Response) {
           ? 'protected'
           : inactiveIds.has(key)
             ? 'inactive'
-            : 'review',
+            : unknownLoginIds.has(key)
+              ? 'unknown-login'
+              : 'review',
       };
     });
+    if (!record.building && body.sort) {
+      const sortField: Record<string, string> = {
+        account: 'reviewRows.username',
+        created: 'reviewRows.created',
+        lastSeen: 'reviewRows.lastSeen',
+        stage: 'reviewRows.stage',
+        decision: 'decision',
+        selected: 'reviewRows.selected',
+      };
+      const selectionIds =
+        body.sort === 'selected'
+          ? (body.selectionIds as string[]).map(value => value.toLowerCase())
+          : [];
+      const selectionStage = String(body.selectionStage ?? 'all');
+      const selectableStage =
+        selectionStage === 'all'
+          ? { $ne: ['$reviewRows.stage', 'protected'] }
+          : { $eq: ['$reviewRows.stage', selectionStage] };
+      const selectedExpression = {
+        $and: [
+          selectableStage,
+          {
+            $eq: [
+              {
+                $in: [{ $toString: '$reviewRows.user' }, selectionIds],
+              },
+              body.selectionMode === 'selected',
+            ],
+          },
+        ],
+      };
+      const sorted = await Chunk.aggregate([
+        { $match: { preview: record._id } },
+        { $project: { reviewRows: 1 } },
+        { $unwind: '$reviewRows' },
+        {
+          $addFields: {
+            decision: {
+              $cond: [
+                { $eq: ['$reviewRows.stage', 'protected'] },
+                'protected',
+                'eligible',
+              ],
+            },
+            ...(body.sort === 'selected'
+              ? { 'reviewRows.selected': selectedExpression }
+              : {}),
+          },
+        },
+        {
+          $sort: {
+            [sortField[String(body.sort)]]: body.direction === 'desc' ? -1 : 1,
+            'reviewRows.user': 1,
+          },
+        },
+        { $skip: offset },
+        { $limit: SPAM_CLEANUP_PAGE_SIZE },
+        { $replaceRoot: { newRoot: '$reviewRows' } },
+      ]).allowDiskUse(true);
+      items = sorted.map(row => ({
+        id: String(row.user),
+        username: row.username,
+        created: row.created?.toISOString() || null,
+        lastSeen: row.lastSeen?.toISOString() || null,
+        eligible: row.stage !== 'protected',
+        stage: row.stage,
+        ...(body.sort === 'selected' ? { selected: row.selected } : {}),
+      }));
+    }
     return res.send({
       previewId: String(record._id),
       expiresAt: record.expiresAt,
@@ -206,7 +334,7 @@ export async function preview(req: Request, res: Response) {
       page,
       pages,
       inactive: record.inactive,
-      review: record.eligible - record.inactive,
+      review: record.eligible - record.inactive - record.unknownLogin,
       unknownLogin: record.unknownLogin,
       inactiveBefore: SPAM_INACTIVE_BEFORE,
       items,
@@ -235,7 +363,9 @@ export async function apply(req: Request, res: Response) {
     !Array.isArray(body.accountIds) ||
     !body.accountIds.every(id) ||
     (body.stage !== undefined &&
-      !['inactive', 'review', 'all'].includes(String(body.stage)))
+      !['inactive', 'unknown-login', 'review', 'all'].includes(
+        String(body.stage),
+      ))
   )
     return res
       .status(400)
@@ -262,7 +392,10 @@ export async function apply(req: Request, res: Response) {
       return res
         .status(410)
         .send({ message: 'Preview unavailable or expired. Preview again.' });
-    if (record.scanSize !== SPAM_CLEANUP_SCAN_SIZE)
+    if (
+      record.scanSize !== SPAM_CLEANUP_SCAN_SIZE ||
+      record.formatVersion !== 2
+    )
       return res
         .status(410)
         .send({ message: 'Preview format changed. Start a fresh preview.' });
@@ -300,19 +433,28 @@ export async function apply(req: Request, res: Response) {
     const inactiveIds = new Set(
       (chunk?.inactiveIds || []).map(value => String(value)),
     );
+    const unknownLoginIds = new Set(
+      (chunk?.unknownLoginIds || []).map(value => String(value)),
+    );
     const stageIds = (chunk?.eligibleIds || []).filter(
       value =>
         stage === 'all' ||
         (stage === 'inactive'
           ? inactiveIds.has(String(value))
-          : !inactiveIds.has(String(value))),
+          : stage === 'unknown-login'
+            ? unknownLoginIds.has(String(value))
+            : !inactiveIds.has(String(value)) &&
+              !unknownLoginIds.has(String(value))),
     );
     const ids = stageIds.filter(value =>
       body.selection === 'all'
         ? !exceptions.has(String(value))
         : exceptions.has(String(value)),
     );
-    const result = await deleteAdminBatch(ids, stage === 'inactive');
+    const result = await deleteAdminBatch(
+      ids,
+      stage === 'unknown-login' ? 'unknown-login' : stage === 'inactive',
+    );
     record.selectionKey = selectionKey;
     record.selection = body.selection as 'all' | 'selected';
     record.accountIds = accountIds.map(

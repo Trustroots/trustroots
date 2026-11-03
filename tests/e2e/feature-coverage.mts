@@ -2934,6 +2934,7 @@ const features = [
       apiRoutes: [],
     },
     requiredScenarios: [
+      'Administrators sort the full cleanup preview while selections persist across pages.',
       'Administrators explicitly delete reviewed eligible spam accounts while protected accounts remain.',
     ],
     relatedSpecs: [],

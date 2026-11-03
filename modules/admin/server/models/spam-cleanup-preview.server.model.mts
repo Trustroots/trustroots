@@ -1,6 +1,7 @@
 import mongoose, { type Types } from 'mongoose';
 export interface SpamCleanupPreview {
   scanSize?: number;
+  formatVersion?: number;
   inactive: number;
   unknownLogin: number;
   actor: Types.ObjectId;
@@ -26,10 +27,19 @@ export interface SpamCleanupChunk {
   ids: Types.ObjectId[];
   eligibleIds: Types.ObjectId[];
   inactiveIds: Types.ObjectId[];
+  unknownLoginIds: Types.ObjectId[];
+  reviewRows: Array<{
+    user: Types.ObjectId;
+    username: string;
+    created?: Date;
+    lastSeen?: Date;
+    stage: string;
+  }>;
   expiresAt: Date;
 }
 const schema = new mongoose.Schema<SpamCleanupPreview>({
   scanSize: Number,
+  formatVersion: Number,
   inactive: { type: Number, default: 0 },
   unknownLogin: { type: Number, default: 0 },
   actor: { type: mongoose.Schema.Types.ObjectId, required: true },
@@ -57,6 +67,17 @@ const chunkSchema = new mongoose.Schema<SpamCleanupChunk>({
   ids: [mongoose.Schema.Types.ObjectId],
   eligibleIds: [mongoose.Schema.Types.ObjectId],
   inactiveIds: [mongoose.Schema.Types.ObjectId],
+  unknownLoginIds: [mongoose.Schema.Types.ObjectId],
+  reviewRows: [
+    {
+      _id: false,
+      user: mongoose.Schema.Types.ObjectId,
+      username: String,
+      created: Date,
+      lastSeen: Date,
+      stage: String,
+    },
+  ],
   expiresAt: { type: Date, required: true },
 });
 chunkSchema.index({ preview: 1, index: 1 }, { unique: true });

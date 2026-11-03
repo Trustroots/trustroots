@@ -23,6 +23,9 @@ interface Body {
     username: string;
     created: string | null;
     eligible: boolean;
+    stage: string;
+    lastSeen: string | null;
+    selected?: boolean;
   }>;
   deleted: number;
   skipped: number;
@@ -54,12 +57,13 @@ describe('Administrator spam account cleanup', () => {
   async function candidate(
     username: string,
     seen: Date | null = new Date('2021-07-04T12:00:00Z'),
+    created: Date = new Date('2021-07-04T12:00:00Z'),
   ) {
     return (
       await User.insertOne({
         username,
         email: `${username}@example.test`,
-        created: new Date('2021-07-04T12:00:00Z'),
+        created,
         ...(seen ? { seen } : {}),
         public: false,
         roles: ['user', 'suspended'],
@@ -141,6 +145,160 @@ describe('Administrator spam account cleanup', () => {
       (await preview({ previewId: review.body.previewId })).statusCode,
       409,
     );
+  });
+  it('sorts the full snapshot consistently across pages and keeps selections attached to accounts', async () => {
+    const protectedIds = [] as import('mongoose').Types.ObjectId[];
+    for (let i = 0; i < 1002; i++) {
+      const seen =
+        i % 3 === 0
+          ? null
+          : i % 3 === 1
+            ? new Date('2021-07-05T12:00:00Z')
+            : new Date('2024-02-01T12:00:00Z');
+      const id = await candidate(
+        `fictional-sort-${String(1001 - i).padStart(4, '0')}`,
+        seen,
+        new Date(`2021-07-04T${String(i % 24).padStart(2, '0')}:00:00Z`),
+      );
+      if (i % 100 === 0) protectedIds.push(id);
+    }
+    await mongoose.model('AdminNote').insertMany(
+      protectedIds.map(user => ({
+        user,
+        note: 'Fictional sort fixture note',
+      })),
+    );
+    const review = await fullPreview();
+    assert.equal(review.body.candidates, 1002);
+    const sorts = ['account', 'created', 'lastSeen', 'stage', 'decision'];
+    for (const sort of sorts) {
+      for (const direction of ['asc', 'desc']) {
+        const readPage = async (page: number) =>
+          preview({
+            previewId: review.body.previewId,
+            page,
+            sort,
+            direction,
+          });
+        const first = await readPage(1);
+        const repeatFirst = await readPage(1);
+        assert.deepEqual(
+          first.body.items.map(item => item.id),
+          repeatFirst.body.items.map(item => item.id),
+          `${sort} ${direction} page 1 should be deterministic`,
+        );
+        const sortedPages = [first.body.items];
+        for (let page = 2; page <= review.body.pages; page++) {
+          sortedPages.push((await readPage(page)).body.items);
+        }
+        const repeatLast = await readPage(review.body.pages);
+        assert.deepEqual(
+          sortedPages.at(-1)?.map(item => item.id),
+          repeatLast.body.items.map(item => item.id),
+          `${sort} ${direction} last page should be deterministic`,
+        );
+        const items = sortedPages.flat();
+        assert.equal(items.length, review.body.candidates);
+        assert.equal(new Set(items.map(item => item.id)).size, items.length);
+        const values = items.map(item => {
+          if (sort === 'account') return item.username;
+          if (sort === 'created') return item.created || '';
+          if (sort === 'lastSeen') return item.lastSeen || '';
+          if (sort === 'decision')
+            return item.eligible ? 'eligible' : 'protected';
+          return item.stage;
+        });
+        const sortedValues = [...values].sort((left, right) =>
+          direction === 'asc'
+            ? left.localeCompare(right)
+            : right.localeCompare(left),
+        );
+        assert.deepEqual(values, sortedValues, `${sort} ${direction} order`);
+        for (let index = 1; index < items.length; index++) {
+          if (values[index - 1] === values[index])
+            assert.ok(
+              items[index - 1].id < items[index].id,
+              `${sort} ${direction} ties use ascending account ID`,
+            );
+        }
+      }
+    }
+    const eligibleId = review.body.items.find(item => item.eligible)?.id;
+    assert.ok(eligibleId);
+    const readSelectionPages = async (
+      selectionMode: 'all' | 'selected',
+      selectionStage: string,
+      selectionIds: string[],
+      direction: 'asc' | 'desc' = 'asc',
+    ) => {
+      const pages = [] as Body['items'][];
+      for (let page = 1; page <= review.body.pages; page++) {
+        const response = await preview({
+          previewId: review.body.previewId,
+          page,
+          sort: 'selected',
+          direction,
+          selectionMode,
+          selectionStage,
+          selectionIds,
+        });
+        pages.push(response.body.items);
+      }
+      return pages.flat();
+    };
+    const explicitlySelected = await readSelectionPages('selected', 'all', [
+      eligibleId,
+    ]);
+    assert.equal(explicitlySelected.filter(item => item.selected).length, 1);
+    assert.equal(
+      explicitlySelected.find(item => item.selected)?.id,
+      eligibleId,
+    );
+    const selectedExceptOne = await readSelectionPages('all', 'all', [
+      eligibleId,
+    ]);
+    assert.equal(
+      selectedExceptOne.filter(item => item.selected).length,
+      review.body.eligible - 1,
+    );
+    assert.equal(
+      selectedExceptOne.some(item => item.id === eligibleId && item.selected),
+      false,
+    );
+    const sortedSelectionPage = await preview({
+      previewId: review.body.previewId,
+      page: 11,
+      sort: 'account',
+      direction: 'desc',
+    });
+    const selectedItem = sortedSelectionPage.body.items.find(
+      item => item.eligible,
+    );
+    assert.ok(selectedItem);
+    const selectedId = selectedItem.id;
+    const firstApply = await apply(
+      review.body.previewId,
+      [selectedId],
+      'selected',
+    );
+    assert.equal(firstApply.body.done, false);
+    const completed = await apply(
+      review.body.previewId,
+      [selectedId],
+      'selected',
+    );
+    assert.deepEqual(completed.body, {
+      deleted: 1,
+      skipped: 0,
+      done: true,
+    });
+    assert.equal(
+      await User.countDocuments({
+        _id: new mongoose.Types.ObjectId(selectedId),
+      }),
+      0,
+    );
+    assert.equal(await User.countDocuments({}), 1001);
   });
   it('retains protected accounts and applies only individually selected accounts', async () => {
     const selected = await candidate('fictional-selected');
@@ -266,14 +424,106 @@ describe('Administrator spam account cleanup', () => {
       { deleted: 2, skipped: 0, done: true },
     );
   });
-  it('classifies recent and missing login activity as review accounts', async () => {
+  it('separates recent and missing login activity', async () => {
     await candidate('fictional-recent', new Date('2024-01-01T00:00:00Z'));
     await candidate('fictional-no-login', null);
     const review = await fullPreview();
     assert.equal(review.body.eligible, 2);
     assert.equal(review.body.inactive, 0);
-    assert.equal(review.body.review, 2);
+    assert.equal(review.body.review, 1);
     assert.equal(review.body.unknownLogin, 1);
+  });
+  it('deletes only no-login selections and skips accounts whose login appears after preview', async () => {
+    const missing = await candidate('fictional-missing-login', null);
+    const nullLogin = await candidate('fictional-null-login', null);
+    await User.updateOne({ _id: nullLogin }, { $set: { seen: null } });
+    const changed = await candidate('fictional-login-recorded', null);
+    const recent = await candidate(
+      'fictional-recent-retained',
+      new Date('2025-01-01T00:00:00Z'),
+    );
+    const old = await candidate('fictional-old-retained');
+    const protectedId = await candidate('fictional-no-login-protected', null);
+    await mongoose
+      .model('AdminNote')
+      .create({ user: protectedId, note: 'Fictional protection' });
+    const review = await fullPreview();
+    assert.equal(review.body.unknownLogin, 3);
+    assert.equal(review.body.review, 1);
+    assert.equal(
+      review.body.items.find(item => item.id === String(missing))?.stage,
+      'unknown-login',
+    );
+    const sorted = await preview({
+      previewId: review.body.previewId,
+      sort: 'selected',
+      direction: 'desc',
+      selectionMode: 'all',
+      selectionStage: 'unknown-login',
+      selectionIds: [String(nullLogin)],
+    });
+    assert.deepEqual(
+      sorted.body.items
+        .filter(item => item.selected)
+        .map(item => item.id)
+        .sort(),
+      [String(missing), String(changed)].sort(),
+    );
+    await User.updateOne(
+      { _id: changed },
+      { $set: { seen: new Date('2020-01-01T00:00:00Z') } },
+    );
+    assert.deepEqual(
+      (await apply(review.body.previewId, [], 'all', admin, 'unknown-login'))
+        .body,
+      { deleted: 2, skipped: 1, done: true },
+    );
+    assert.equal(
+      await User.countDocuments({ _id: { $in: [missing, nullLogin] } }),
+      0,
+    );
+    assert.equal(
+      await User.countDocuments({
+        _id: { $in: [changed, recent, old, protectedId] },
+      }),
+      4,
+    );
+  });
+  it('sorts rows with missing dates and rejects malformed sort requests', async () => {
+    await candidate('fictional-missing-date', null);
+    const review = await fullPreview();
+    await Chunk.updateOne(
+      { preview: review.body.previewId },
+      { $unset: { 'reviewRows.0.created': '' } },
+    );
+    const sorted = await preview({
+      previewId: review.body.previewId,
+      sort: 'created',
+    });
+    assert.equal(sorted.body.items[0].created, null);
+    for (const body of [
+      { sort: 'invalid' },
+      { direction: 'invalid' },
+      { sort: 'selected' },
+      {
+        sort: 'selected',
+        selectionMode: 'all',
+        selectionStage: 'invalid',
+        selectionIds: [],
+      },
+      {
+        sort: 'selected',
+        selectionMode: 'all',
+        selectionStage: 'all',
+        selectionIds: ['invalid'],
+      },
+      { sort: 'account', selectionMode: 'all' },
+    ])
+      assert.equal(
+        (await preview({ previewId: review.body.previewId, ...body }))
+          .statusCode,
+        400,
+      );
   });
   it('skips an inactive account that logs in after preview', async () => {
     const id = await candidate('fictional-logged-in-later');
