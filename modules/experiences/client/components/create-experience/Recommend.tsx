@@ -1,5 +1,5 @@
 // External dependencies
-import { ToggleButton, ToggleButtonGroup } from 'react-bootstrap';
+import { ToggleGroup, ToggleGroupItem } from '@trustroots/ui/ToggleGroup';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import styled from 'styled-components';
@@ -67,39 +67,19 @@ export default function Recommend({
         </h4>
       </div>
       <div className="panel-body">
-        <ToggleButtonGroup
-          type="radio"
+        <ToggleGroup
           name="recommend"
-          onChange={onChangeRecommend}
+          onValueChange={onChangeRecommend}
           value={recommend}
           aria-labelledby="would-you-recommend-them-question"
         >
-          <ToggleButton
-            id="recommend-yes"
-            value="yes"
-            variant="outline-secondary"
-            size="lg"
-          >
-            {t('Yes') as string}
-          </ToggleButton>
-          <ToggleButton
-            id="recommend-no"
-            value="no"
-            variant="outline-secondary"
-            size="lg"
-          >
-            {t('No') as string}
-          </ToggleButton>
+          <ToggleGroupItem value="yes">{t('Yes') as string}</ToggleGroupItem>
+          <ToggleGroupItem value="no">{t('No') as string}</ToggleGroupItem>
           <RecommendationDivider />
-          <ToggleButton
-            id="recommend-unknown"
-            value="unknown"
-            variant="outline-secondary"
-            size="lg"
-          >
+          <ToggleGroupItem value="unknown">
             {t('Skip') as string}
-          </ToggleButton>
-        </ToggleButtonGroup>
+          </ToggleGroupItem>
+        </ToggleGroup>
         {recommend === 'no' && (
           <SadNotice className="lead">
             {

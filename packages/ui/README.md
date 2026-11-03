@@ -1,7 +1,7 @@
 # Shared UI primitives
 
-Import directly from `@trustroots/ui/Button`, `ButtonGroup`, `Alert`, `Badge` or
-`Spinner`. They accept caller-supplied text and do not depend on translations
+Import directly from `@trustroots/ui/Button`, `ButtonGroup`, `Alert`, `Badge`,
+`Spinner`, `Tabs` or `ToggleGroup`. They accept caller-supplied text and do not depend on translations
 or feature modules. `Button` is non-submitting by default; set `type="submit"` when
 needed. `Alert` takes a status intent (`danger`, `warning`, `info` or `success`) and a
 required `role`; `Spinner` requires a translated `label` supplied by its caller.
@@ -54,6 +54,31 @@ the call site. The badge renders `data-slot="badge"` and its resolved
 `data-variant`, `data-intent` and `data-size`, which tests should use instead
 of class names. Only offer a value that the app uses; drop it
 when its last use goes.
+
+## Tabs
+
+`Tabs` holds the active value and its `onValueChange`; inside it go one
+`TabsList` of `Tab`s and a `TabsPanel` per tab. They are built on Base UI's
+tabs and always controlled. `TabsList` takes a `variant`: `tabs`, Bootstrap's
+bordered tabs (the offer editors and the search sidebar), or `pills` (the
+experience form's steps); `justified` shares the width equally, as in the
+search sidebar. Arrow keys move between tabs and select the one they land on,
+skipping disabled tabs and wrapping at the ends, as the app's tabs always have;
+Base UI on its own would stop on disabled tabs. Disabled tabs are never tab
+stops. Hidden panels stay mounted, so
+maps and form fields keep their state. The parts render `data-slot` values
+`tabs`, `tabs-list`, `tab` and `tabs-panel`; Base UI adds `data-active` to the
+selected tab and `data-disabled` to disabled ones. Page Less that restyles a
+tab, such as the offer editors' filled tabs, targets those attributes.
+
+## ToggleGroup
+
+`ToggleGroup` with `ToggleGroupItem`s is one choice drawn as joined buttons,
+like Bootstrap's radio toggle buttons. Each option is a native radio inside its
+label, so arrow keys move and select, Tab reaches the checked option and a
+disabled fieldset disables the options. Base UI's ToggleGroup has pressed-button
+semantics and its Radio ignores fieldsets, so it is not used here. The group
+needs `aria-labelledby` pointing at its question.
 
 ## shadcn
 

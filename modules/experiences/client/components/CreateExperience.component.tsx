@@ -1,6 +1,6 @@
 // External dependencies
-import { Tab, Tabs } from 'react-bootstrap';
 import { Button } from '@trustroots/ui/Button';
+import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 
@@ -442,19 +442,20 @@ function ExperienceForm({
       </p>
       {isSubmitting && <p role="status">{t('Saving your experience…')}</p>}
       <fieldset disabled={isSubmitting}>
-        <Tabs
-          activeKey={step}
-          variant="pills"
-          id="create-experience-tabs"
-          className="create-experience-tabs"
-        >
-          {tabs.map(({ id, component, title }, i) => {
-            return (
-              <Tab disabled eventKey={i} key={id} title={title}>
-                {component}
+        {/* Every step tab is disabled: StepNavigation moves between them. */}
+        <Tabs value={step} onValueChange={setStep}>
+          <TabsList variant="pills" className="create-experience-tabs">
+            {tabs.map(({ id, title }, i) => (
+              <Tab disabled value={i} key={id}>
+                {title}
               </Tab>
-            );
-          })}
+            ))}
+          </TabsList>
+          {tabs.map(({ id, component }, i) => (
+            <TabsPanel value={i} key={id}>
+              {component}
+            </TabsPanel>
+          ))}
         </Tabs>
         {submitError && (
           <Alert intent="danger" role="alert">

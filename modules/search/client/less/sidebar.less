@@ -4,7 +4,7 @@
 
 // Styled as 'mobile first'
 .search-sidebar-container {
-  .nav-tabs .nav-link {
+  [data-slot='tab'] {
     color: @text-color;
 
     &:hover,
@@ -13,8 +13,12 @@
     }
   }
 
-  .nav-tabs .nav-link.active {
-    color: @text-color;
+  [data-slot='tab'][data-active] {
+    &,
+    &:hover,
+    &:focus {
+      color: @text-color;
+    }
     border-bottom-color: @brand-primary;
   }
 
@@ -23,7 +27,7 @@
   @media (max-width: @screen-xs-max) {
     width: 100%;
     padding-top: 20px;
-    .nav-tabs {
+    [data-slot='tabs-list'] {
       display: none;
     }
   }
