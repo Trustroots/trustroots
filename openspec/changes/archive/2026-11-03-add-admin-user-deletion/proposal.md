@@ -9,7 +9,8 @@ Administrators can suspend accounts but cannot complete a requested or necessary
 - Record the actor, target and reason before deletion; fail closed if the audit cannot be saved.
 - Support optional keyword labels in deletion audit records, distinct from signup review rules.
 - Add an administrator-managed list of signup review keywords, exact email addresses and exact email domains. Matching signups remain allowed and alert staff through the existing flagged-signup workflow. Preserve the current three keyword defaults until administrators save a replacement list.
-- Reuse the existing profile removal cleanup and confirmation email. Retain historical messages, experiences and moderation records according to the existing deletion behaviour.
+- Reuse the existing profile removal cleanup, continuing after individual cleanup failures and reporting incomplete cleanup separately from account deletion. Keep confirmation emails for self-service removal only. Retain historical messages, experiences and moderation records according to the existing deletion behaviour.
+- Require explicit acknowledgement before saving an empty watchlist, enforced by both the client and API.
 
 ## Impact
 

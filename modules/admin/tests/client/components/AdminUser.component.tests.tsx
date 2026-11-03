@@ -686,52 +686,72 @@ describe('<AdminUser />', () => {
     ).toBeInTheDocument();
   });
 
-  it('deletes only a suspended member after exact username confirmation', async () => {
-    mockedUsersApi.getUser.mockResolvedValueOnce(
-      makeReportCard({
-        profile: {
-          _id: userId,
-          username: 'alice',
-          roles: ['user', 'suspended'],
-        },
-      }),
-    );
-    mockedUsersApi.deleteMember.mockResolvedValueOnce({});
-    window.history.pushState({}, '', `/admin/user?id=${userId}`);
-    render(<AdminUser />);
-    await screen.findByRole('heading', { name: 'alice' });
-    fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
-    const dialog = screen.getByRole('dialog');
-    expect(
-      within(dialog).getByText(/suspended member account/),
-    ).toBeInTheDocument();
-    fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
-      target: { value: 'alice' },
-    });
-    fireEvent.change(within(dialog).getByLabelText('Reason'), {
-      target: { value: 'confirmed request' },
-    });
-    fireEvent.change(within(dialog).getByLabelText('Audit keywords'), {
-      target: { value: 'spam, repeat abuse' },
-    });
-    fireEvent.click(
-      within(dialog).getByRole('button', { name: 'Delete permanently' }),
-    );
-    await waitFor(() =>
-      expect(mockedUsersApi.deleteMember).toHaveBeenCalledWith(
-        userId,
-        'alice',
-        'confirmed request',
-        ['spam', 'repeat abuse'],
-      ),
-    );
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      'Member deleted successfully',
-    );
-    expect(
-      screen.queryByRole('heading', { name: 'alice' }),
-    ).not.toBeInTheDocument();
-  });
+  it.each([false, true])(
+    'deletes only a suspended member after exact username confirmation (cleanup incomplete: %s)',
+    async cleanupIncomplete => {
+      mockedUsersApi.getUser.mockResolvedValueOnce(
+        makeReportCard({
+          profile: {
+            _id: userId,
+            username: 'alice',
+            roles: ['user', 'suspended'],
+          },
+        }),
+      );
+      mockedUsersApi.deleteMember.mockResolvedValueOnce({
+        message: 'Member deleted',
+        cleanupIncomplete,
+      });
+      window.history.pushState({}, '', `/admin/user?id=${userId}`);
+      render(<AdminUser />);
+      await screen.findByRole('heading', { name: 'alice' });
+      fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
+      const dialog = screen.getByRole('dialog');
+      expect(
+        within(dialog).getByText(/suspended member account/),
+      ).toBeInTheDocument();
+      expect(
+        within(dialog).getByText(
+          'No confirmation email is sent to the member.',
+        ),
+      ).toBeInTheDocument();
+      fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
+        target: { value: 'alice' },
+      });
+      fireEvent.change(within(dialog).getByLabelText('Reason'), {
+        target: { value: 'confirmed request' },
+      });
+      fireEvent.change(within(dialog).getByLabelText('Audit keywords'), {
+        target: { value: 'spam, repeat abuse' },
+      });
+      fireEvent.click(
+        within(dialog).getByRole('button', { name: 'Delete permanently' }),
+      );
+      await waitFor(() =>
+        expect(mockedUsersApi.deleteMember).toHaveBeenCalledWith(
+          userId,
+          'alice',
+          'confirmed request',
+          ['spam', 'repeat abuse'],
+        ),
+      );
+      if (cleanupIncomplete) {
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+          'Member account deleted, but some cleanup is incomplete. Staff follow-up is required.',
+        );
+      } else {
+        expect(await screen.findByRole('status')).toHaveTextContent(
+          'Member deleted successfully',
+        );
+      }
+      expect(
+        screen.queryByRole('heading', { name: 'alice' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Delete member' }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it('prevents closing the delete dialog while deletion is pending', () => {
     const ref = React.createRef<AdminUserContent>();
@@ -746,6 +766,52 @@ describe('<AdminUser />', () => {
   it('does not call the deletion API without a loaded suspended member', async () => {
     const component = new AdminUserContent(routeProps());
     await component.confirmDeleteMember();
+    expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
+  });
+
+  it('does not delete a suspended record without a username', async () => {
+    const component = new AdminUserContent(routeProps());
+    component.state = {
+      ...component.state,
+      user: makeReportCard({
+        profile: { _id: userId, roles: ['suspended'] },
+      }) as AdminUserRecord,
+      deleteReason: 'confirmed request',
+    };
+    await component.confirmDeleteMember();
+    expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
+  });
+
+  it('rejects audit keyword lists over the limit before deletion', async () => {
+    mockedUsersApi.getUser.mockResolvedValueOnce(
+      makeReportCard({
+        profile: { _id: userId, username: 'alice', roles: ['suspended'] },
+      }),
+    );
+    window.history.pushState({}, '', `/admin/user?id=${userId}`);
+    render(<AdminUser />);
+    await screen.findByRole('heading', { name: 'alice' });
+    fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
+    const dialog = screen.getByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('Confirm username'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Reason'), {
+      target: { value: 'confirmed request' },
+    });
+    fireEvent.change(within(dialog).getByLabelText('Audit keywords'), {
+      target: {
+        value: Array.from({ length: 21 }, (_, index) => `tag-${index}`).join(
+          ', ',
+        ),
+      },
+    });
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'Use at most 20 keywords',
+    );
+    expect(
+      within(dialog).getByRole('button', { name: 'Delete permanently' }),
+    ).toBeDisabled();
     expect(mockedUsersApi.deleteMember).not.toHaveBeenCalled();
   });
 
@@ -803,6 +869,15 @@ describe('<AdminUser />', () => {
     );
     expect(screen.getByRole('heading', { name: 'alice' })).toBeInTheDocument();
     fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' });
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Delete member' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Cancel',
+      }),
+    );
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
     );

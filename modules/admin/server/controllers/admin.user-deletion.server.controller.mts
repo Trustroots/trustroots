@@ -73,8 +73,8 @@ export async function deleteMember(req: Request, res: Response) {
       params: {},
       query: {},
     }).save();
-    await deleteUserAccount(member, true);
-    return res.send({ message: 'Member account deleted.' });
+    const { cleanupIncomplete } = await deleteUserAccount(member, true);
+    return res.send({ message: 'Member account deleted.', cleanupIncomplete });
   } catch {
     return res.status(500).send({
       message:

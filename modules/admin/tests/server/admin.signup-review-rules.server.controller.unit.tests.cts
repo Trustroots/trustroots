@@ -64,7 +64,7 @@ describe('Admin signup review rules controller unit tests', () => {
     await controller.save(
       {
         user: { _id: 'admin', roles: ['admin'] },
-        body: { revision: 0, rules: [] },
+        body: { revision: 0, rules: [], confirmEmpty: true },
       },
       duplicateResponse,
     );
@@ -79,7 +79,7 @@ describe('Admin signup review rules controller unit tests', () => {
     await controller.save(
       {
         user: { _id: 'admin', roles: ['admin'] },
-        body: { revision: 0, rules: [] },
+        body: { revision: 0, rules: [], confirmEmpty: true },
       },
       failedResponse,
     );

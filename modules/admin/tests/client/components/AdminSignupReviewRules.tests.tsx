@@ -1,5 +1,11 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminSignupReviewRules from '../../../client/components/AdminSignupReviewRules';
 import http from '../../../../core/client/api/http-client';
@@ -87,6 +93,75 @@ test('loads, edits, adds, removes, and saves the complete watchlist', async () =
   expect(await screen.findByRole('status')).toHaveTextContent(
     'Signup watchlist saved.',
   );
+});
+
+test('requires explicit confirmation to save an empty watchlist', async () => {
+  get.mockResolvedValueOnce({ data: { revision: 7, rules: [] } });
+  put.mockResolvedValueOnce({ data: { revision: 8, rules: [] } });
+  render(<AdminSignupReviewRules />);
+
+  const emptyConfirmation = await screen.findByRole('checkbox', {
+    name: 'I understand that saving an empty watchlist disables all signup review rules',
+  });
+  const saveButton = screen.getByRole('button', { name: 'Save rules' });
+  expect(saveButton).toBeDisabled();
+
+  fireEvent.click(emptyConfirmation);
+  expect(saveButton).toBeEnabled();
+  fireEvent.change(screen.getByLabelText('New rule value'), {
+    target: { value: 'temporary' },
+  });
+  fireEvent.click(screen.getByRole('button', { name: 'Add rule' }));
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Remove rule 1' }));
+  const resetConfirmation = screen.getByRole('checkbox', {
+    name: 'I understand that saving an empty watchlist disables all signup review rules',
+  });
+  expect(resetConfirmation).not.toBeChecked();
+  expect(saveButton).toBeDisabled();
+
+  fireEvent.click(resetConfirmation);
+  fireEvent.click(saveButton);
+  await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
+  expect(put).toHaveBeenCalledWith('/api/admin/signup-review-rules', {
+    revision: 7,
+    rules: [],
+    confirmEmpty: true,
+  });
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Signup watchlist saved.',
+  );
+  expect(screen.getByRole('checkbox')).not.toBeChecked();
+  expect(saveButton).toBeDisabled();
+});
+
+test('does not update state after a pending watchlist load resolves on unmount', async () => {
+  let resolveLoad!: (response: { data: typeof defaults }) => void;
+  get.mockReturnValueOnce(
+    new Promise(resolve => {
+      resolveLoad = resolve;
+    }),
+  );
+  const { unmount } = render(<AdminSignupReviewRules />);
+  unmount();
+
+  await act(async () => resolveLoad({ data: defaults }));
+  expect(get).toHaveBeenCalledWith('/api/admin/signup-review-rules');
+});
+
+test('ignores a failed watchlist load after unmount', async () => {
+  let rejectLoad!: (error: Error) => void;
+  get.mockReturnValueOnce(
+    new Promise((_resolve, reject) => {
+      rejectLoad = reject;
+    }),
+  );
+  const { unmount } = render(<AdminSignupReviewRules />);
+  unmount();
+
+  await act(async () => rejectLoad(new Error('unavailable')));
+  expect(get).toHaveBeenCalledWith('/api/admin/signup-review-rules');
 });
 
 test('keeps focus while typing several characters into an existing rule', async () => {

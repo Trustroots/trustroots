@@ -36,11 +36,20 @@ test('admins can manage the signup watchlist and matching signups are flagged bu
   ]);
 
   await signInViaApi(page, request, SEEDED_ADMIN);
-  const originalResponse = await request.get(rulesEndpoint);
-  expect(originalResponse.ok()).toBeTruthy();
-  const original = (await originalResponse.json()) as RulesResponse;
-  const marker = `watchlist${Date.now()}`;
-  const member = createUser({ firstName: marker });
+  const marker = `watchlist${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+  const uniqueDomain = `${marker}.example.org`;
+  const member = createUser({
+    firstName: marker,
+    email: `${marker}@${uniqueDomain}`,
+  });
+  const ownedRules: Rule[] = [
+    { kind: 'keyword', value: marker },
+    { kind: 'email', value: member.email },
+    { kind: 'domain', value: uniqueDomain },
+  ];
+  const ownedRuleKeys = new Set(
+    ownedRules.map(rule => `${rule.kind}:${rule.value}`),
+  );
   let registered = false;
 
   try {
@@ -53,16 +62,12 @@ test('admins can manage the signup watchlist and matching signups are flagged bu
     await expect(
       page.getByText(/Matching signups are allowed and flagged/),
     ).toBeVisible();
+    const ruleInputs = table.locator('input[id^="rule-value-"]');
+    const existingRuleValues = await ruleInputs.evaluateAll(inputs =>
+      inputs.map(input => (input as HTMLInputElement).value),
+    );
 
-    while (await table.getByRole('button', { name: /Remove rule/ }).count()) {
-      await table.getByRole('button', { name: 'Remove rule 1' }).click();
-    }
-
-    for (const rule of [
-      { kind: 'keyword', value: marker },
-      { kind: 'email', value: member.email },
-      { kind: 'domain', value: 'example.test' },
-    ] as const) {
+    for (const rule of ownedRules) {
       await page.getByLabel('New rule type').selectOption(rule.kind);
       await page.getByLabel('New rule value').fill(rule.value);
       await page.getByRole('button', { name: 'Add rule' }).click();
@@ -71,9 +76,15 @@ test('admins can manage the signup watchlist and matching signups are flagged bu
     await expect(page.getByRole('status')).toHaveText(
       'Signup watchlist saved.',
     );
-    await expect(page.getByLabel('Rule 1 value')).toHaveValue(marker);
-    await expect(page.getByLabel('Rule 2 value')).toHaveValue(member.email);
-    await expect(page.getByLabel('Rule 3 value')).toHaveValue('example.test');
+    const savedRuleValues = await ruleInputs.evaluateAll(inputs =>
+      inputs.map(input => (input as HTMLInputElement).value),
+    );
+    expect(savedRuleValues).toEqual([
+      ...existingRuleValues,
+      marker,
+      member.email,
+      uniqueDomain,
+    ]);
 
     const result = await registerViaApi(request, member);
     registered = true;
@@ -104,29 +115,50 @@ test('admins can manage the signup watchlist and matching signups are flagged bu
     );
     expect(alert?.data.text).toContain(`keyword: ${marker}`);
     expect(alert?.data.text).toContain(`email: ${member.email}`);
-    expect(alert?.data.text).toContain('domain: example.test');
+    expect(alert?.data.text).toContain(`domain: <http://${uniqueDomain}>`);
   } finally {
-    // Re-authenticate before restoring settings, even when signup replaced the
-    // request fixture's session cookie.
-    await signInViaApi(page, request, SEEDED_ADMIN);
-    const currentResponse = await request.get(rulesEndpoint);
-    if (currentResponse.ok()) {
-      const current = (await currentResponse.json()) as RulesResponse;
-      const restored = await request.put(rulesEndpoint, {
-        data: { revision: current.revision, rules: original.rules },
-      });
-      expect(restored.ok()).toBeTruthy();
-    }
-    await withE2eDb(async db => {
-      await db.collection('users').deleteOne({ username: member.username });
-      if (registered) {
-        await db.collection('agendaJobs').deleteMany({
-          'data.to.address': member.email,
+    try {
+      // Re-authenticate before cleanup, even if signup replaced the request
+      // fixture's session cookie. Remove only this test's unique rules.
+      await signInViaApi(page, request, SEEDED_ADMIN);
+      let rulesRemoved = false;
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const currentResponse = await request.get(rulesEndpoint);
+        expect(currentResponse.ok()).toBeTruthy();
+        const current = (await currentResponse.json()) as RulesResponse;
+        const remainingRules = current.rules.filter(
+          rule => !ownedRuleKeys.has(`${rule.kind}:${rule.value}`),
+        );
+        if (remainingRules.length === current.rules.length) {
+          rulesRemoved = true;
+          break;
+        }
+
+        const cleanup = await request.put(rulesEndpoint, {
+          data: {
+            revision: current.revision,
+            rules: remainingRules,
+            confirmEmpty: remainingRules.length === 0,
+          },
         });
-        await db.collection('agendaJobs').deleteMany({
-          'data.text': { $regex: member.username },
-        });
+        if (cleanup.status() === 409) continue;
+        expect(cleanup.ok()).toBeTruthy();
+        rulesRemoved = true;
+        break;
       }
-    });
+      expect(rulesRemoved).toBeTruthy();
+    } finally {
+      await withE2eDb(async db => {
+        await db.collection('users').deleteOne({ username: member.username });
+        if (registered) {
+          await db.collection('agendaJobs').deleteMany({
+            'data.to.address': member.email,
+          });
+          await db.collection('agendaJobs').deleteMany({
+            'data.text': { $regex: member.username },
+          });
+        }
+      });
+    }
   }
 });

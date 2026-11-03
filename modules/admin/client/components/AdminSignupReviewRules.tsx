@@ -24,6 +24,7 @@ export default function AdminSignupReviewRules() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [confirmEmpty, setConfirmEmpty] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -33,6 +34,7 @@ export default function AdminSignupReviewRules() {
         if (!active) return;
         setRevision(data.revision);
         setRules(data.rules);
+        setConfirmEmpty(false);
       })
       .catch(cause => {
         if (active)
@@ -55,6 +57,7 @@ export default function AdminSignupReviewRules() {
       ),
     );
     setSaved(false);
+    setConfirmEmpty(false);
   }
 
   function addRule() {
@@ -67,25 +70,28 @@ export default function AdminSignupReviewRules() {
     setNewValue('');
     setError('');
     setSaved(false);
+    setConfirmEmpty(false);
   }
 
   function removeRule(index: number) {
     setRules(current => current.filter((_, row) => row !== index));
     setSaved(false);
+    setConfirmEmpty(false);
   }
 
-  async function saveRules() {
-    if (revision === null) return;
+  async function saveRules(currentRevision: number) {
     setSaving(true);
     setError('');
     setSaved(false);
     try {
       const { data } = await http.put<RulesResponse>(endpoint, {
-        revision,
+        revision: currentRevision,
         rules: rules.map(rule => ({ ...rule, value: rule.value.trim() })),
+        ...(rules.length === 0 && confirmEmpty ? { confirmEmpty: true } : {}),
       });
       setRevision(data.revision);
       setRules(data.rules);
+      setConfirmEmpty(false);
       setSaved(true);
     } catch (cause) {
       setError(
@@ -221,10 +227,22 @@ export default function AdminSignupReviewRules() {
                 </tr>
               </tbody>
             </table>
+            {rules.length === 0 && (
+              <label>
+                <input
+                  type="checkbox"
+                  checked={confirmEmpty}
+                  disabled={saving}
+                  onChange={event => setConfirmEmpty(event.target.checked)}
+                />{' '}
+                I understand that saving an empty watchlist disables all signup
+                review rules
+              </label>
+            )}
             <Button
               type="button"
-              disabled={saving}
-              onClick={() => void saveRules()}
+              disabled={saving || (rules.length === 0 && !confirmEmpty)}
+              onClick={() => void saveRules(revision)}
             >
               {saving ? 'Saving…' : 'Save rules'}
             </Button>

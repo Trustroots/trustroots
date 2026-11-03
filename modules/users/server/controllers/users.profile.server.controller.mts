@@ -514,11 +514,11 @@ service.removeProfile = function (req, res) {
 /** Shared cleanup for self-service removal and confirmed admin deletion. */
 export async function deleteUserAccount(
   user: UserServerDocument,
-  suspendedOnly = false,
-): Promise<void> {
+  adminDeletion = false,
+): Promise<{ cleanupIncomplete: boolean }> {
   const deleted = await User.findOneAndDelete({
     _id: user._id,
-    ...(suspendedOnly
+    ...(adminDeletion
       ? {
           username: user.username,
           roles: { $all: ['suspended'], $nin: ['admin'] },
@@ -529,64 +529,84 @@ export async function deleteUserAccount(
     throw new Error(
       'Account changed or was already deleted. Refresh the member report.',
     );
-  await mongoose
-    .model('UnifiedPushRegistration')
-    .deleteMany({ user: user._id })
-    .catch(err => {
-      log('error', 'Error removing message alert registrations.', {
-        error: err,
+  let cleanupIncomplete = false;
+  async function cleanup(action: () => Promise<unknown>, bestEffort = false) {
+    try {
+      await action();
+    } catch (error) {
+      if (!adminDeletion && !bestEffort) throw error;
+      cleanupIncomplete = true;
+      log('error', 'Account removed but related cleanup failed.', {
+        userId: String(user._id),
+        error,
       });
-    });
-  await new Promise<void>(resolve => {
-    getOfferHandler().removeAllByUserId(user._id, err => {
-      if (err)
-        log('error', 'Error when removing all offers by user ID. #rj393', {
-          error: err,
+    }
+  }
+  await cleanup(async () => {
+    await mongoose
+      .model('UnifiedPushRegistration')
+      .deleteMany({ user: user._id });
+  }, true);
+  await cleanup(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        getOfferHandler().removeAllByUserId(user._id, err => {
+          if (err) reject(err);
+          else resolve();
         });
-      resolve();
-    });
-  });
-  await new Promise<void>(resolve => {
-    getContactHandler().removeAllByUserId(user._id, err => {
-      if (err)
-        log('error', 'Error when removing all contacts by user ID. #j93hdd', {
-          error: err,
+      }),
+    true,
+  );
+  await cleanup(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        getContactHandler().removeAllByUserId(user._id, err => {
+          if (err) reject(err);
+          else resolve();
         });
-      resolve();
-    });
-  });
-  await new Promise<void>((resolve, reject) => {
-    getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
-      err ? reject(err) : resolve(),
-    );
-  });
+      }),
+    true,
+  );
+  await cleanup(
+    () =>
+      new Promise<void>((resolve, reject) => {
+        getMessageHandler().markAllMessagesToUserNotified(user._id, err =>
+          err ? reject(err) : resolve(),
+        );
+      }),
+  );
   await Promise.all(
-    user.member.map(
-      membership =>
-        new Promise<void>((resolve, reject) => {
-          tribesHandler.updateCount(membership.tribe, -1, false, err =>
-            err ? reject(err) : resolve(),
-          );
-        }),
+    user.member.map(membership =>
+      cleanup(
+        () =>
+          new Promise<void>((resolve, reject) => {
+            tribesHandler.updateCount(membership.tribe, -1, false, err =>
+              err ? reject(err) : resolve(),
+            );
+          }),
+      ),
     ),
   );
-  await fileRemovalService.removeLocalPath(
-    path.resolve(config.uploadDir) + '/' + user._id,
+  await cleanup(() =>
+    fileRemovalService.removeLocalPath(
+      path.resolve(config.uploadDir) + '/' + user._id,
+    ),
   );
-  await new Promise<void>(resolve => {
-    emailService.sendRemoveProfileConfirmed(
-      { displayName: user.displayName, email: user.email },
-      err => {
-        if (err)
-          log(
-            'error',
-            'Sending confirmation email about successfull profile removal failed #289hhs',
-            { error: err },
+  if (!adminDeletion)
+    await cleanup(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          emailService.sendRemoveProfileConfirmed(
+            { displayName: user.displayName, email: user.email },
+            err => {
+              if (err) reject(err);
+              else resolve();
+            },
           );
-        resolve();
-      },
+        }),
+      true,
     );
-  });
+  return { cleanupIncomplete };
 }
 
 /**

@@ -8,7 +8,7 @@ import type { SignupReviewRules } from '../../../users/server/models/signup-revi
 
 interface Request {
   user?: { _id: Types.ObjectId | string; roles: string[] };
-  body?: { revision?: unknown; rules?: unknown };
+  body?: { revision?: unknown; rules?: unknown; confirmEmpty?: unknown };
 }
 interface Response {
   status(code: number): Response;
@@ -31,12 +31,16 @@ export async function list(req: Request, res: Response) {
 export async function save(req: Request, res: Response) {
   if (!req.user?.roles.includes('admin'))
     return res.status(403).send({ message: 'Administrator access required.' });
-  const { revision, rules: input } = req.body || {};
+  const { revision, rules: input, confirmEmpty } = req.body || {};
   const rules = normaliseReviewRules(input);
   if (!Number.isSafeInteger(revision) || Number(revision) < 0 || !rules)
     return res.status(400).send({
       message:
         'Provide a current revision and at most 500 unique, valid keyword, email or domain rules.',
+    });
+  if (rules.length === 0 && confirmEmpty !== true)
+    return res.status(400).send({
+      message: 'Confirm that you intend to disable all signup review rules.',
     });
   try {
     const current = await getReviewRules();
@@ -47,7 +51,7 @@ export async function save(req: Request, res: Response) {
     await new (mongoose.model('AuditLog'))({
       user: req.user._id,
       route: '/api/admin/signup-review-rules',
-      body: { revision, rules },
+      body: { revision, rules, confirmEmpty: rules.length === 0 },
       params: {},
       query: {},
     }).save();

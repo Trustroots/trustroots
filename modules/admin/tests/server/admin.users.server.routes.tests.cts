@@ -16,9 +16,16 @@ type TestAgent =
   import('../../../../testutils/server/model-contracts.mts').TestAgent;
 const User = mongoose.model<UserRecord, UserModel>('User');
 const AuditLog = mongoose.model<{
-  body?: { reason?: string; keywords?: string[] };
+  body?: {
+    reason?: string;
+    keywords?: string[];
+    confirmEmpty?: boolean;
+    revision?: number;
+    rules?: unknown[];
+  };
 }>('AuditLog');
 const SignupReviewRules = mongoose.model('SignupReviewRules');
+const UnifiedPushRegistration = mongoose.model('UnifiedPushRegistration');
 
 interface AdminUserSummary {
   username: string;
@@ -334,6 +341,35 @@ describe('Admin User CRUD tests', () => {
         })
       ).should.equal(1);
     });
+    it('requires explicit confirmation to clear every signup review rule', async () => {
+      await utils.signIn(credentialsAdmin, agent);
+      const initial = await agent
+        .get('/api/admin/signup-review-rules')
+        .expect(200);
+      const empty = { revision: initial.body.revision, rules: [] };
+      await agent.put('/api/admin/signup-review-rules').send(empty).expect(400);
+      should.equal(
+        await SignupReviewRules.findById('signup-review').lean(),
+        null,
+      );
+      (
+        await AuditLog.countDocuments({
+          route: '/api/admin/signup-review-rules',
+        })
+      ).should.equal(0);
+
+      const cleared = await agent
+        .put('/api/admin/signup-review-rules')
+        .send({ ...empty, confirmEmpty: true })
+        .expect(200);
+      cleared.body.rules.should.deepEqual([]);
+      const audit = await AuditLog.findOne({
+        route: '/api/admin/signup-review-rules',
+      }).lean();
+      should.exist(audit);
+      audit?.body?.confirmEmpty!.should.equal(true);
+      audit?.body?.rules!.should.deepEqual([]);
+    });
     it('rejects invalid rules, fails closed on an update race, and does not update when audit logging fails', async () => {
       await utils.signIn(credentialsAdmin, agent);
       const initial = await agent
@@ -554,19 +590,62 @@ describe('Admin User CRUD tests', () => {
         userRegular.roles = [...(userRegular.roles || []), 'suspended'];
         await userRegular.save();
         const files: typeof import('../../../core/server/services/file-removal.server.service.mjs') = require('../../../core/server/services/file-removal.server.service.mjs');
+        const offers: typeof import('../../../offers/server/controllers/offers.server.controller.mjs') = require('../../../offers/server/controllers/offers.server.controller.mjs');
+        const contacts: typeof import('../../../contacts/server/controllers/contacts.server.controller.mjs') = require('../../../contacts/server/controllers/contacts.server.controller.mjs');
+        const messages: typeof import('../../../messages/server/controllers/messages.server.controller.mjs') = require('../../../messages/server/controllers/messages.server.controller.mjs');
+        const tribes: typeof import('../../../tribes/server/controllers/tribes.server.controller.mjs') = require('../../../tribes/server/controllers/tribes.server.controller.mjs');
+        const email: typeof import('../../../core/server/services/email.server.service.mjs') = require('../../../core/server/services/email.server.service.mjs');
         sinon
           .stub(files, 'removeLocalPath')
           .rejects(new Error('cleanup failed'));
+        sinon
+          .stub(UnifiedPushRegistration, 'deleteMany')
+          .rejects(new Error('push cleanup failed'));
+        const offerCleanup = sinon
+          .stub(offers, 'removeAllByUserId')
+          .callsFake((_id, callback) =>
+            callback?.(new Error('offer cleanup failed')),
+          );
+        const contactCleanup = sinon
+          .stub(contacts, 'removeAllByUserId')
+          .callsFake((_id, callback) =>
+            callback?.(new Error('contact cleanup failed')),
+          );
+        const messageCleanup = sinon
+          .stub(messages, 'markAllMessagesToUserNotified')
+          .callsFake((_id, callback) =>
+            callback(new Error('message cleanup failed')),
+          );
+        const tribe = await mongoose
+          .model('Tribe')
+          .create({ label: 'Cleanup test circle' });
+        userRegular.member = [{ tribe: tribe._id, since: new Date() }];
+        await userRegular.save();
+        const circleCleanup = sinon
+          .stub(tribes, 'updateCount')
+          .callsFake((_tribe, _count, _create, callback) =>
+            callback(new Error('circle cleanup failed')),
+          );
+        const confirmationEmail = sinon.spy(
+          email,
+          'sendRemoveProfileConfirmed',
+        );
         try {
-          await agent
+          const { body } = await agent
             .post('/api/admin/user/delete')
             .send({
               id: userRegularId,
               username: 'userregular',
               reason: 'reviewed',
             })
-            .expect(500);
+            .expect(200);
           should.not.exist(await User.findById(userRegularId));
+          should(body.cleanupIncomplete).equal(true);
+          sinon.assert.calledOnce(offerCleanup);
+          sinon.assert.calledOnce(contactCleanup);
+          sinon.assert.calledOnce(messageCleanup);
+          sinon.assert.calledOnce(circleCleanup);
+          sinon.assert.notCalled(confirmationEmail);
         } finally {
           sinon.restore();
         }

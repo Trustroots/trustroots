@@ -64,7 +64,7 @@ export async function deleteMember(
   username: string,
   reason: string,
   keywords: string[] = [],
-) {
+): Promise<DeleteMemberResult> {
   const { data } = await axios.post('/api/admin/user/delete', {
     id,
     username,
@@ -72,4 +72,9 @@ export async function deleteMember(
     keywords,
   });
   return data;
+}
+
+export interface DeleteMemberResult {
+  message: string;
+  cleanupIncomplete: boolean;
 }

@@ -8,8 +8,15 @@ Administrators SHALL be able to permanently delete a suspended member from the a
 
 - **WHEN** an administrator confirms a suspended member's current username and supplies a reason
 - **THEN** the system saves an audit record containing the actor, member ID, username and reason before removing the account
-- **AND** it uses existing profile deletion cleanup for offers, contacts, push registrations, messages awaiting notification, circle counts and uploaded files, and sends the existing deletion confirmation email
+- **AND** it uses existing profile deletion cleanup for offers, contacts, push registrations, messages awaiting notification, circle counts and uploaded files without sending a confirmation email for administrator-initiated deletion
 - **AND** the member report is replaced with a success message
+
+#### Scenario: Cleanup fails after the account has been deleted
+
+- **WHEN** an administrator deletes an account and a later cleanup step fails
+- **THEN** the remaining cleanup steps are still attempted and failures are logged
+- **AND** the API reports that the account was deleted with incomplete cleanup
+- **AND** the client clears the member report and displays a warning requiring staff follow-up instead of offering to retry account deletion
 
 #### Scenario: A protected or unsuspended account is selected
 
@@ -33,7 +40,13 @@ Administrators SHALL be able to permanently delete a suspended member from the a
 
 ### Requirement: Administrators manage signup review rules
 
-Administrators SHALL be able to list, add, edit and remove signup review rules for keywords, exact email addresses and exact email domains. Rules SHALL use case-insensitive literal matching, with keywords matching identifying profile text, email addresses matching the complete address and domains matching only the complete email domain. Rules SHALL NOT accept regular expressions or match message content. Matching signups SHALL remain allowed and SHALL use the existing flagged-signup staff alert. The existing `support`, `system` and `trustroots` keyword defaults SHALL apply until a list is first saved. The list SHALL permit at most 500 rules with values of at most 254 characters and SHALL reject duplicates and invalid email or domain rules. Rule changes SHALL be audited and concurrent edits SHALL be detected through a revision number.
+Administrators SHALL be able to list, add, edit and remove signup review rules for keywords, exact email addresses and exact email domains. Rules SHALL use case-insensitive literal matching, with keywords matching identifying profile text, email addresses matching the complete address and domains matching only the complete email domain. Rules SHALL NOT accept regular expressions or match message content. Matching signups SHALL remain allowed and SHALL use the existing flagged-signup staff alert. The existing `support`, `system` and `trustroots` keyword defaults SHALL apply until a list is first saved. The list SHALL permit at most 500 rules with values of at most 254 characters and SHALL reject duplicates and invalid email or domain rules. Saving an empty list SHALL require an explicit acknowledgement that all signup review rules will be disabled, enforced by both the UI and API and recorded in the audit. Rule changes SHALL be audited and concurrent edits SHALL be detected through a revision number.
+
+#### Scenario: Administrator clears the watchlist
+
+- **WHEN** an administrator removes all rules
+- **THEN** the UI requires a separate acknowledgement before enabling Save
+- **AND** an API save without explicit empty-list confirmation is rejected without changing the rules
 
 #### Scenario: Administrator saves review rules
 

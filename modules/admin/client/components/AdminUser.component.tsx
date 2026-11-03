@@ -203,6 +203,7 @@ interface AdminUserState {
   deleteKeywords: string;
   deleteError: boolean;
   deleteSucceeded: boolean;
+  deleteCleanupIncomplete: boolean;
   pendingRoleChange: {
     role: string;
     action?: 'add' | 'remove';
@@ -384,6 +385,7 @@ export class AdminUserContent extends Component<
       deleteKeywords: '',
       deleteError: false,
       deleteSucceeded: false,
+      deleteCleanupIncomplete: false,
     };
   }
 
@@ -493,21 +495,23 @@ export class AdminUserContent extends Component<
     if (
       !user ||
       !isSuspendedUser(user.profile) ||
+      !user.profile.username ||
       this.state.deletingMember ||
       this.state.deleteUsername !== user.profile.username ||
       !this.state.deleteReason.trim()
     )
       return;
+    const reason = this.state.deleteReason.trim();
+    const keywords = this.state.deleteKeywords
+      .split(',')
+      .map(keyword => keyword.trim())
+      .filter(Boolean);
     this.setState({ deletingMember: true, deleteError: false });
     try {
-      const keywords = this.state.deleteKeywords
-        .split(',')
-        .map(keyword => keyword.trim())
-        .filter(Boolean);
-      await deleteMember(
+      const result = await deleteMember(
         user.profile._id,
-        user.profile.username || '',
-        this.state.deleteReason.trim(),
+        user.profile.username,
+        reason,
         keywords,
       );
       this.setState({
@@ -516,6 +520,7 @@ export class AdminUserContent extends Component<
         query: '',
         hasSearched: true,
         deleteSucceeded: true,
+        deleteCleanupIncomplete: result.cleanupIncomplete,
       });
     } catch {
       this.setState({ deleteError: true });
@@ -822,9 +827,15 @@ export class AdminUserContent extends Component<
       <>
         <AdminHeader />
         <div className="container admin-user-page">
-          {this.state.deleteSucceeded && (
-            <p role="status">Member deleted successfully.</p>
-          )}
+          {this.state.deleteSucceeded &&
+            (this.state.deleteCleanupIncomplete ? (
+              <p role="alert">
+                Member account deleted, but some cleanup is incomplete. Staff
+                follow-up is required.
+              </p>
+            ) : (
+              <p role="status">Member deleted successfully.</p>
+            ))}
           {!isProfile && (
             <div className="admin-user-page__search">
               <form
@@ -1505,6 +1516,7 @@ export class AdminUserContent extends Component<
               moderation records are retained. Enter the exact username and a
               reason (maximum 1000 characters).
             </p>
+            <p>No confirmation email is sent to the member.</p>
             {this.state.deleteError && (
               <p role="alert">
                 Could not delete this member. Please try again.
