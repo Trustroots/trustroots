@@ -1,13 +1,25 @@
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
+const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 require('should');
+
+type SparkPostEvent = {
+  msys: {
+    message_event: {
+      type: string;
+      campaign_id: string;
+      timestamp: string;
+    };
+  };
+};
 
 /**
  * Globals
  */
 let app: import('express').Express;
 let agent: ReturnType<typeof request.agent>;
+let events: SparkPostEvent[];
 
 /**
  * Sparkpost routes tests
@@ -19,6 +31,19 @@ describe('Sparkpost CRUD tests', function () {
         // Get application
         app = await express.init(mongoose.connection);
         agent = request.agent(app);
+
+        // Sparkpost webhook event example
+        events = [
+          {
+            msys: {
+              message_event: {
+                type: 'delivery',
+                campaign_id: 'example',
+                timestamp: '1454442600',
+              },
+            },
+          },
+        ];
         done();
       })().catch(done);
     });
@@ -35,6 +60,17 @@ describe('Sparkpost CRUD tests', function () {
           // Call the assertion callback
           return done(err);
         });
+    });
+    it('Should be allowed to access endpoint with credentials', function (done) {
+      agent
+        .post('/api/sparkpost/webhook')
+        .auth(
+          config.sparkpostWebhook.username,
+          config.sparkpostWebhook.password,
+        )
+        .send(events)
+        .expect(200)
+        .end(done);
     });
   });
 });

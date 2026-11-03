@@ -230,6 +230,31 @@ describe('SparkPost webhook controller unit tests', () => {
     stat.called.should.be.false();
   });
 
+  it('keeps a persisted opt-out when metrics fail', async () => {
+    const { controller } = loadController({
+      statError: new Error('metrics unavailable'),
+    });
+    const { updateOne } = stubPreferenceUpdate();
+    const res = mockResponse();
+    receiveBatch(
+      controller,
+      [
+        {
+          msys: {
+            unsubscribe_event: {
+              type: 'link_unsubscribe',
+              rcpt_to: 'member@example.test',
+            },
+          },
+        },
+      ],
+      res,
+    );
+    await res.waitForResponse();
+    res.statusCode.should.equal(200);
+    updateOne.calledOnce.should.be.true();
+  });
+
   it('logs and ignores events with invalid category or type', async () => {
     const { controller, log, stat } = loadController();
 
