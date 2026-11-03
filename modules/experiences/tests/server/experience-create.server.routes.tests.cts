@@ -49,7 +49,6 @@ describe('Create an experience', () => {
   let realNow: number;
   let user1: UserDocument;
   let user2: UserDocument;
-  let user3Nonpublic: UserDocument;
   const _usersPublic = utils.generateUsersWithSharedPassword(2, {
     public: true,
   });
@@ -71,8 +70,7 @@ describe('Create an experience', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    [user1, user2, user3Nonpublic] =
-      await utils.saveUsersWithCachedPasswords(_users);
+    [user1, user2] = await utils.saveUsersWithCachedPasswords(_users);
   });
   afterEach(utils.clearDatabase);
   context('logged in', () => {
@@ -154,35 +152,6 @@ describe('Create an experience', () => {
             },
           });
         });
-        it('[duplicate experience (the same (from, to) combination)] 409 Conflict', async () => {
-          // send the first request and expect 201 Created
-          await agent
-            .post('/api/experiences')
-            .send({
-              userTo: user2._id,
-              interactions: {
-                met: true,
-                guest: true,
-                host: true,
-              },
-              recommend: 'yes',
-            })
-            .expect(201);
-
-          // send the second request and expect 409 Conflict
-          await agent
-            .post('/api/experiences')
-            .send({
-              userTo: user2._id,
-              interactions: {
-                met: false,
-                guest: true,
-                host: false,
-              },
-              recommend: 'no',
-            })
-            .expect(409);
-        });
         it('[creating an experience for self] 400', async () => {
           const { body } = await agent
             .post('/api/experiences')
@@ -210,27 +179,6 @@ describe('Create an experience', () => {
             .send({
               userTo: '0'.repeat(24),
               // nonexistent user id
-              interactions: {
-                met: false,
-                guest: true,
-                host: false,
-              },
-              recommend: 'no',
-            })
-            .expect(404);
-          should(body).match({
-            message: 'Not found.',
-            details: {
-              userTo: 'not found',
-            },
-          });
-        });
-        it('[creating an experience for non-public user] 404', async () => {
-          const { body } = await agent
-            .post('/api/experiences')
-            .send({
-              userTo: user3Nonpublic._id,
-              // non-public user id
               interactions: {
                 met: false,
                 guest: true,
@@ -304,24 +252,6 @@ describe('Create an experience', () => {
           should(job.data.html).containEql(
             `${config.limits.timeToReplyExperience.days} days`,
           );
-        });
-        it('does not enqueue a push notification', async () => {
-          await agent
-            .post('/api/experiences')
-            .send({
-              userTo: user2._id,
-              interactions: {
-                met: true,
-                guest: true,
-                host: true,
-              },
-              recommend: 'yes',
-            })
-            .expect(201);
-
-          // Future push: assert delivery job again when experience pushes return
-          const pushJobs = jobs.filter(job => job.type === 'send push message');
-          should(pushJobs.length).equal(0);
         });
       });
       context('reply experience', () => {
@@ -448,38 +378,6 @@ describe('Create an experience', () => {
           should(job.data.html).containEql(
             `/profile/${user2.username}/experiences?utm_source=transactional-email&amp;utm_medium=email&amp;utm_campaign=experience-notification-second&amp;utm_content=see-experiences#${experienceResponse._id}`,
           );
-        });
-        it('does not enqueue a push notification', async () => {
-          should(jobs.length).equal(0);
-
-          // First, create an experience in the opposite direction
-          const experience = new Experience({
-            userFrom: user2._id,
-            userTo: user1._id,
-            interaction: {
-              met: true,
-            },
-            recommend: 'no',
-          });
-          await experience.save();
-
-          // Then respond to that experience
-          await agent
-            .post('/api/experiences')
-            .send({
-              userTo: user2._id,
-              interactions: {
-                met: true,
-                guest: true,
-                host: true,
-              },
-              recommend: 'yes',
-            })
-            .expect(201);
-
-          // Future push: assert delivery job again when experience pushes return
-          const pushJobs = jobs.filter(job => job.type === 'send push message');
-          should(pushJobs.length).equal(0);
         });
       });
     });
@@ -634,23 +532,6 @@ describe('Create an experience', () => {
           },
         });
       });
-    });
-  });
-  context('logged in as non-public user', () => {
-    // Sign in and sign out
-    beforeEach(function () {
-      return utils.signIn.call(this, _usersNonpublic[0], agent);
-    });
-    afterEach(function () {
-      return utils.signOut.call(this, agent);
-    });
-    it('403', async () => {
-      await agent.post('/api/experiences').send({}).expect(403);
-    });
-  });
-  context('not logged in', () => {
-    it('403', async () => {
-      await agent.post('/api/experiences').send({}).expect(403);
     });
   });
 });

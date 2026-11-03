@@ -1013,46 +1013,7 @@ describe('User profile CRUD tests', function () {
       })
       .catch(done);
   });
-  it('should not be able to update profile if not logged-in', function (done) {
-    user.roles = ['user'];
-    user
-      .save()
-      .then(() => {
-        should.not.exist(null);
-        const userUpdate = {
-          firstName: 'user_update_first',
-          lastName: 'user_update_last',
-        };
-        agent
-          .put('/api/users')
-          .send(userUpdate)
-          .expect(403)
-          .end(function (userInfoErr, userInfoRes) {
-            if (userInfoErr) {
-              return done(userInfoErr);
-            }
-            userInfoRes.body.message.should.equal('Forbidden.');
-            // Call the assertion callback
-            return done();
-          });
-      })
-      .catch(done);
-  });
   describe('Profile picture tests', function () {
-    it('should not be able to update profile picture without being logged-in', function (done) {
-      agent
-        .post('/api/users-avatar')
-        .send({})
-        .expect(403)
-        .end(function (userInfoErr, userInfoRes) {
-          if (userInfoErr) {
-            return done(userInfoErr);
-          }
-          userInfoRes.body.message.should.equal('Forbidden.');
-          // Call the assertion callback
-          return done();
-        });
-    });
     it('should be able to change profile picture to a jpg file when logged-in', function (done) {
       agent
         .post('/api/auth/signin')

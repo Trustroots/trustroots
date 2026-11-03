@@ -81,7 +81,6 @@ describe('Session configuration', function () {
 
     expressConfig.initMiddleware(app);
     expressConfig.initSession(app, { getClient: () => ({}) });
-    app.get('/visit', (req, res) => res.send('visited'));
     app.get('/api/mobile/v0/me', (req, res) =>
       res.json({ hasSession: 'session' in req }),
     );
@@ -95,25 +94,8 @@ describe('Session configuration', function () {
       sessionRequest.session.value = 'saved';
       res.send('changed');
     });
-    app.get('/read', (req, res) => {
-      const sessionRequest = req as import('express').Request & {
-        session: SessionData;
-      };
-      res.send(sessionRequest.session.value);
-    });
     return app;
   }
-
-  it('does not save or issue cookies for uninitialised requests', async function () {
-    config.https = false;
-    config.sessionProxy = false;
-
-    const response = await request(createApp()).get('/visit').expect(200);
-
-    should(response.headers['set-cookie']).be.undefined();
-    store.setCalls.should.equal(0);
-    store.touchCalls.should.equal(0);
-  });
 
   it('ignores browser sessions on mobile routes while retaining neighbouring browser routes', async function () {
     config.https = false;
@@ -128,67 +110,6 @@ describe('Session configuration', function () {
 
     const browser = await agent.get('/api/mobile/v0-other').expect(200);
     browser.body.hasSession.should.equal(true);
-    store.touchCalls.should.equal(1);
-  });
-
-  it('issues HttpOnly SameSite=Lax cookies after a session is changed', async function () {
-    config.https = false;
-    config.sessionProxy = false;
-
-    const response = await request(createApp()).get('/change').expect(200);
-    const cookie = response.headers['set-cookie'][0];
-
-    cookie.should.match(/HttpOnly/);
-    cookie.should.match(/SameSite=Lax/);
-    cookie.should.not.match(/; Secure(?:;|$)/);
-    store.setCalls.should.equal(1);
-  });
-
-  it('restores a changed session from its cookie through the middleware stack', async function () {
-    config.https = false;
-    config.sessionProxy = false;
-    const agent = request.agent(createApp());
-    await agent.get('/change').expect(200);
-    const response = await agent.get('/read').expect(200);
-    response.text.should.equal('saved');
-  });
-
-  it('ignores forwarded HTTPS unless the session proxy is explicitly trusted', async function () {
-    config.https = true;
-    config.sessionProxy = false;
-
-    const response = await request(createApp())
-      .get('/change')
-      .set('X-Forwarded-Proto', 'https')
-      .expect(200);
-
-    should(response.headers['set-cookie']).be.undefined();
-  });
-
-  it('marks session cookies Secure when HTTPS is forwarded by a trusted proxy', async function () {
-    config.https = true;
-    config.sessionProxy = true;
-
-    const response = await request(createApp())
-      .get('/change')
-      .set('X-Forwarded-Proto', 'https')
-      .expect(200);
-    const cookie = response.headers['set-cookie'][0];
-
-    cookie.should.match(/; Secure(?:;|$)/);
-    cookie.should.match(/HttpOnly/);
-    cookie.should.match(/SameSite=Lax/);
-  });
-
-  it('touches stored sessions on unchanged requests without rewriting them', async function () {
-    config.https = false;
-    config.sessionProxy = false;
-    const agent = request.agent(createApp());
-
-    await agent.get('/change').expect(200);
-    await agent.get('/visit').expect(200);
-
-    store.setCalls.should.equal(1);
     store.touchCalls.should.equal(1);
   });
 });

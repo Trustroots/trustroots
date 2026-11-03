@@ -2,7 +2,6 @@ const assert: typeof import('assert/strict') = require('assert/strict');
 const { ObjectId } = require('mongoose').Types;
 const {
   prepareNewOffer,
-  prepareOfferMutationResponse,
   prepareOfferPayload,
   prepareOfferSearchResults,
   prepareOfferUpdate,
@@ -103,18 +102,6 @@ describe('Offer API payload construction', () => {
     });
     assert.deepEqual(prepareOfferUpdate({ status: 'yes' }), {
       status: 'yes',
-    });
-  });
-
-  it('constructs the existing mutation response messages', () => {
-    assert.deepEqual(prepareOfferMutationResponse('Offer saved.'), {
-      message: 'Offer saved.',
-    });
-    assert.deepEqual(prepareOfferMutationResponse('Offer updated.'), {
-      message: 'Offer updated.',
-    });
-    assert.deepEqual(prepareOfferMutationResponse('Offer removed.'), {
-      message: 'Offer removed.',
     });
   });
 

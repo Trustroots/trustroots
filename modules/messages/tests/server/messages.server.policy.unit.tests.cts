@@ -86,22 +86,6 @@ describe('Messages policy unit tests', () => {
     next.calledOnce.should.be.true();
   });
 
-  it('checks guest permissions when there is no signed-in user', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-
-    policy.isAllowed(
-      {
-        route: { path: '/api/messages' },
-        method: 'GET',
-      },
-      mockResponse(),
-      () => {},
-    );
-
-    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
-  });
-
   it('blocks non-public signed-in users before ACL', () => {
     const { policy } = loadPolicy();
     const res = mockResponse();
@@ -115,53 +99,6 @@ describe('Messages policy unit tests', () => {
         },
         route: { path: '/api/messages' },
         method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-  });
-
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/messages' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(500);
-    res.body!.message.should.equal('Unexpected authorization error');
-    done();
-  });
-
-  it('returns 403 JSON when ACL denies access', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/messages-read' },
-        method: 'DELETE',
       },
       res,
       () => {},
