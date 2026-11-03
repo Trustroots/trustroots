@@ -66,6 +66,47 @@ describe('SearchPlaceInput', () => {
     expect(screen.getByPlaceholderText('Search Places')).toBeInTheDocument();
   });
 
+  it('ignores an autocomplete response already in flight when its query is cleared', async () => {
+    let resolveSuggestions!: (suggestions: PlaceSuggestion[]) => void;
+    locationApiMock.fetchLocationSuggestions.mockReturnValue(
+      new Promise(resolve => {
+        resolveSuggestions = resolve;
+      }),
+    );
+
+    const rendered = render(
+      <SearchPlaceInput
+        onPlaceSearch={onPlaceSearch}
+        searchQuery="Paris"
+        setSearchQuery={setSearchQuery}
+      />,
+    );
+    await waitFor(() => {
+      expect(locationApi.fetchLocationSuggestions).toHaveBeenCalledWith(
+        'Paris',
+      );
+    });
+
+    rendered.rerender(
+      <SearchPlaceInput
+        onPlaceSearch={onPlaceSearch}
+        searchQuery=""
+        setSearchQuery={setSearchQuery}
+      />,
+    );
+    resolveSuggestions([{ id: 'place-1', trTitle: 'Paris, France' }]);
+
+    await waitFor(() => {
+      expect(locationApi.locatePlace).not.toHaveBeenCalledWith(
+        expect.objectContaining({ id: 'place-1' }),
+      );
+    });
+    expect(onPlaceSearch).not.toHaveBeenCalled();
+    expect(
+      screen.queryByRole('button', { name: 'Paris, France' }),
+    ).not.toBeInTheDocument();
+  });
+
   it('updates the search query when typing', () => {
     renderInput('Par');
 

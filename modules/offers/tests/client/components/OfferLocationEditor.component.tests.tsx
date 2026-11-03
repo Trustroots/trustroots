@@ -16,6 +16,30 @@ jest.mock('@/modules/core/client/utils/use-map-default-location', () => ({
     mockStopDefaultLocation,
   ],
 }));
+jest.mock('@/modules/core/client/components/DeviceLocationButton', () => ({
+  __esModule: true,
+  default: ({
+    onLocation,
+    onApproximateLocation,
+  }: {
+    onLocation: (location: { lat: number; lng: number }) => void;
+    onApproximateLocation?: (location: MapDefaultLocation) => void;
+  }) => (
+    <>
+      <button type="button" onClick={() => onLocation({ lat: 0, lng: 0 })}>
+        Use my location
+      </button>
+      <button
+        type="button"
+        onClick={() =>
+          onApproximateLocation?.({ latitude: 12, longitude: 23, zoom: 5 })
+        }
+      >
+        Use approximate location
+      </button>
+    </>
+  ),
+}));
 beforeEach(() => {
   mockApproximateLocation = null;
   mockStopDefaultLocation.mockClear();
@@ -181,6 +205,27 @@ describe('OfferLocationEditor', () => {
     );
     expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '13');
   });
+  it('centres approximately without changing the chosen offer location', () => {
+    const onLocationChange = jest.fn();
+    render(
+      <OfferLocationEditor
+        location={[40, -70]}
+        onLocationChange={onLocationChange}
+      />,
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Use approximate location' }),
+    );
+
+    expect(screen.getByTestId('offer-map')).toHaveAttribute(
+      'data-location',
+      '12,23',
+    );
+    expect(screen.getByTestId('offer-map')).toHaveAttribute('data-zoom', '5');
+    expect(screen.queryByTestId('location-overlay')).not.toBeInTheDocument();
+    expect(onLocationChange).not.toHaveBeenCalled();
+  });
   it('shows a map without an offer marker before a location is chosen', () => {
     render(
       <OfferLocationEditor location={null} onLocationChange={jest.fn()} />,
@@ -264,6 +309,20 @@ describe('OfferLocationEditor', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Search places' }));
 
     expect(onLocationChange).toHaveBeenCalledWith([48.8566, 2.3522]);
+  });
+
+  it('accepts zero coordinates from device location', () => {
+    const onLocationChange = jest.fn();
+    render(
+      <OfferLocationEditor
+        location={null}
+        onLocationChange={onLocationChange}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(onLocationChange).toHaveBeenCalledWith([0, 0]);
   });
 
   it('updates the location when the map is clicked', () => {

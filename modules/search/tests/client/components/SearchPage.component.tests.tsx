@@ -25,7 +25,13 @@ import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 type SearchMapProps = React.ComponentProps<typeof SearchMap>;
 type SearchMapHarnessProps = Pick<
   SearchMapProps,
-  'filters' | 'isUserPublic' | 'location' | 'locationBounds'
+  | 'filters'
+  | 'isUserPublic'
+  | 'location'
+  | 'locationBounds'
+  | 'onApproximateLocation'
+  | 'onDeviceLocation'
+  | 'onDeviceLocationRequest'
 > & {
   onOfferOpen: (offer: Partial<SearchResultOffer>, recenter?: boolean) => void;
   onCommunityNoteOpen: (note: {
@@ -264,6 +270,28 @@ jest.mock('@/modules/search/client/components/SearchMap.component', () => ({
         </button>
         <button onClick={() => props.onOfferClose()} type="button">
           Close offer
+        </button>
+        <button
+          onClick={() => {
+            props.onDeviceLocationRequest?.();
+            props.onDeviceLocation?.({ lat: 0, lng: 0 });
+          }}
+          type="button"
+        >
+          Use my location
+        </button>
+        <button
+          onClick={() => {
+            props.onDeviceLocationRequest?.();
+            props.onApproximateLocation?.({
+              latitude: 12,
+              longitude: 23,
+              zoom: 5,
+            });
+          }}
+          type="button"
+        >
+          Use approximate location
         </button>
       </div>
     );
@@ -662,6 +690,90 @@ describe('<SearchPage />', () => {
         southWest: { lat: 60, lng: 24 },
       });
     });
+  });
+
+  it('uses device coordinates, clears selected content and removes the old location query', () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('location', 'Helsinki_Finland');
+    url.searchParams.set('communityNotes', 'true');
+    window.history.replaceState({}, '', url);
+    renderSearchPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Preview offer' }));
+    expect(
+      screen.getByRole('link', { name: /host person/i }),
+    ).toBeInTheDocument();
+    const filtersBeforeLocation = searchMapProps.filters;
+
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    expect(searchMapProps.location).toEqual({
+      lat: 0,
+      lng: 0,
+      zoom: 13,
+      clearSelection: true,
+    });
+    expect(searchMapProps.locationBounds).toEqual({});
+    expect(searchMapProps.filters).toBe(filtersBeforeLocation);
+    expect(
+      screen.queryByRole('link', { name: /host person/i }),
+    ).not.toBeInTheDocument();
+    expect(new URL(window.location.href).searchParams.has('location')).toBe(
+      false,
+    );
+  });
+
+  it('uses an approximate location at its coarse zoom without changing filters', () => {
+    renderSearchPage();
+    const filtersBeforeLocation = searchMapProps.filters;
+
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Use approximate location' }),
+    );
+
+    expect(searchMapProps.location).toEqual({
+      lat: 12,
+      lng: 23,
+      zoom: 5,
+      clearSelection: true,
+    });
+    expect(searchMapProps.locationBounds).toEqual({});
+    expect(searchMapProps.filters).toBe(filtersBeforeLocation);
+  });
+
+  it('does not apply an initial place lookup after device location succeeds', async () => {
+    window.history.pushState({}, '', '/search?location=Paris');
+    const pendingSuggestions: Array<
+      (suggestions: LocationSuggestions) => void
+    > = [];
+    locationApi.fetchLocationSuggestions.mockImplementation(
+      () =>
+        new Promise(resolve => {
+          pendingSuggestions.push(resolve);
+        }),
+    );
+    locationApi.locatePlace.mockReturnValue({
+      data: { lat: 48.8566, lng: 2.3522, zoom: 10 },
+      type: 'center',
+    });
+
+    renderSearchPage();
+    await waitFor(() => expect(pendingSuggestions.length).toBeGreaterThan(0));
+    fireEvent.click(screen.getByRole('button', { name: 'Use my location' }));
+
+    await act(async () => {
+      pendingSuggestions.forEach(resolve =>
+        resolve([{ id: 'place-paris', trTitle: 'Paris, France' }]),
+      );
+    });
+
+    expect(searchMapProps.location).toEqual({
+      lat: 0,
+      lng: 0,
+      zoom: 13,
+      clearSelection: true,
+    });
+    expect(searchMapProps.locationBounds).toEqual({});
   });
 
   it('updates sidebar filters from the filters panel', () => {

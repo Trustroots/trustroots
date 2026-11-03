@@ -35,6 +35,7 @@ export default function SearchPlaceInput({
   );
   const [isOpen, setIsOpen] = useState(false);
   const skipSuggestionsRef = useRef(false);
+  const suggestionRequestRef = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const loadSuggestions = useDebouncedCallback(async (query: string) => {
@@ -44,7 +45,11 @@ export default function SearchPlaceInput({
       return;
     }
 
+    const requestId = ++suggestionRequestRef.current;
     const results = await fetchLocationSuggestions(query);
+    if (requestId !== suggestionRequestRef.current) {
+      return;
+    }
 
     if (skipSuggestionsRef.current) {
       skipSuggestionsRef.current = false;
@@ -66,6 +71,9 @@ export default function SearchPlaceInput({
   }, 300);
 
   useEffect(() => {
+    // A parent can clear the query after a map location request. Ignore any
+    // suggestions that were already in flight for the previous query.
+    suggestionRequestRef.current += 1;
     loadSuggestions(searchQuery);
   }, [loadSuggestions, searchQuery]);
 
@@ -113,6 +121,8 @@ export default function SearchPlaceInput({
           className="form-control input-lg"
           id={id}
           onChange={({ target: { value } }) => {
+            suggestionRequestRef.current += 1;
+            skipSuggestionsRef.current = false;
             setLocationNotFound(false);
             setSearchQuery(value);
           }}
@@ -123,6 +133,7 @@ export default function SearchPlaceInput({
           }}
           onKeyDown={event => {
             if (event.key === 'Enter') {
+              suggestionRequestRef.current += 1;
               skipSuggestionsRef.current = true;
               event.preventDefault();
               loadSuggestions(searchQuery);
@@ -139,6 +150,8 @@ export default function SearchPlaceInput({
             size="lg"
             disabled={!searchQuery.length}
             onClick={() => {
+              suggestionRequestRef.current += 1;
+              skipSuggestionsRef.current = false;
               setSearchQuery('');
               setSuggestions([]);
               setIsOpen(false);

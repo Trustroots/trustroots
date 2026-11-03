@@ -1,10 +1,22 @@
-import { expect, expectPresent, test } from '../../support/fixtures.mts';
+import {
+  annotateFeature,
+  expect,
+  expectPresent,
+  test,
+} from '../../support/fixtures.mts';
 import {
   installNostrRelayStub,
   type SignedNostrEvent,
 } from '../../support/nostr.mts';
 import { finalizeEvent, generateSecretKey, getPublicKey } from 'nostr-tools';
 import type { Page } from '@playwright/test';
+import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
+
+declare global {
+  interface Window {
+    __deviceLocationRequests?: number;
+  }
+}
 
 test('circle map stays still without dragging and preserves its view as live places arrive', async ({
   page,
@@ -103,6 +115,126 @@ async function prepareCircle(
     }),
   );
 }
+
+test('keeps a chosen map view between the two circles', async ({ page }) => {
+  await prepareCircle(page);
+  await installNostrRelayStub(page, { relayUrl: 'wss://relay.trustroots.org' });
+  await installNostrRelayStub(page, { relayUrl: 'wss://relay.nomadwiki.org' });
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'fictional-hackers',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
+      },
+    }),
+  );
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: (success: PositionCallback) =>
+          success({
+            coords: { latitude: 34, longitude: -17 },
+          } as GeolocationPosition),
+      },
+    });
+  });
+  await page.goto('/circles/hitchhikers');
+  await page.getByRole('button', { name: 'Use my location' }).click();
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem('circle-map-view')))
+    .not.toBeNull();
+  const view = await page.evaluate(() =>
+    sessionStorage.getItem('circle-map-view'),
+  );
+  await expect
+    .poll(() => page.locator('.circle-location-map .leaflet-tile').count())
+    .toBeGreaterThan(0);
+  const tiles = await page
+    .locator('.circle-location-map .leaflet-tile')
+    .evaluateAll(elements =>
+      elements.map(element => (element as HTMLImageElement).src).sort(),
+    );
+  await page.goto('/circles/hackers');
+  await expect(page.locator('.circle-location-map')).toBeVisible();
+  await expect
+    .poll(() =>
+      page
+        .locator('.circle-location-map .leaflet-tile')
+        .evaluateAll(elements =>
+          elements.map(element => (element as HTMLImageElement).src).sort(),
+        ),
+    )
+    .toEqual(tiles);
+  expect(
+    await page.evaluate(() => sessionStorage.getItem('circle-map-view')),
+  ).toBe(view);
+});
+
+test('hitchhiking map uses explicit device location and GeoIP fallback on failure', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.public', [
+    'Circle location controls only request device location after activation.',
+    'A denied device request falls back to the approximate member location.',
+  ]);
+  await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+  await page.addInitScript(() => {
+    window.__deviceLocationRequests = 0;
+    Object.defineProperty(navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition(
+          _success: PositionCallback,
+          failure: PositionErrorCallback | null,
+        ) {
+          window.__deviceLocationRequests! += 1;
+          queueMicrotask(() =>
+            failure?.({
+              code: 1,
+              message: 'Fictional permission denial',
+              PERMISSION_DENIED: 1,
+              POSITION_UNAVAILABLE: 2,
+              TIMEOUT: 3,
+            } as GeolocationPositionError),
+          );
+        },
+      },
+    });
+  });
+  let defaultLocationRequests = 0;
+  await page.route('**/api/map-default-location', route => {
+    defaultLocationRequests += 1;
+    return route.fulfill({
+      json: { location: { latitude: 34, longitude: -17, zoom: 6 } },
+    });
+  });
+  await prepareCircle(page);
+  await page.goto('/circles/hitchhikers');
+  await expect(page.locator('.circle-location-map')).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+    .toBe(0);
+  expect(defaultLocationRequests).toBe(0);
+
+  const locate = page.getByRole('button', {
+    name: 'Use my location',
+    exact: true,
+  });
+  await expect(locate).toBeVisible();
+  await locate.click();
+  await expect
+    .poll(() => page.evaluate(() => window.__deviceLocationRequests))
+    .toBe(1);
+  await expect(page.getByRole('status')).toContainText(
+    'Showing an approximate location based on your IP address.',
+  );
+  await expect(page.getByRole('status')).toContainText('approximate');
+  await expect.poll(() => defaultLocationRequests).toBe(1);
+});
 
 test('ride popups link named hitchhikers to Maps accounts and leave Anonymous unlinked', async ({
   page,
@@ -240,12 +372,35 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
     await page.goto(`/circles/${circle}`);
     const map = page.locator('.circle-location-map');
     const zoomOut = map.locator('.leaflet-control-zoom-out');
-    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
     await map.hover();
+    if (circle === 'hackers') {
+      // The previous map's pinch zoom is restored on the next circle.
+      await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
+      await page.mouse.wheel(0, 10000);
+    }
+    await expect(zoomOut).toHaveClass(/leaflet-disabled/);
     await page.mouse.wheel(0, -240);
     await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
     await page.mouse.wheel(0, 10000);
     await expect(zoomOut).toHaveClass(/leaflet-disabled/);
+    const minimumZoom = await map.evaluate(element =>
+      Math.max(
+        3,
+        Math.ceil(
+          Math.log2(
+            Math.max(element.clientWidth, element.clientHeight, 1) / 256,
+          ),
+        ),
+      ),
+    );
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const view = sessionStorage.getItem('circle-map-view');
+          return view ? (JSON.parse(view) as number[])[2] : null;
+        }),
+      )
+      .toBe(minimumZoom);
     const box = await map.boundingBox();
     expectPresent(box);
     const x = box.x + box.width / 2;
@@ -267,6 +422,14 @@ test('both circle maps support wheel and pinch zoom without zooming out beyond t
       touchPoints: [],
     });
     await expect(zoomOut).not.toHaveClass(/leaflet-disabled/);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          const view = sessionStorage.getItem('circle-map-view');
+          return view ? (JSON.parse(view) as number[])[2] : null;
+        }),
+      )
+      .toBeGreaterThan(minimumZoom);
   }
 });
 
