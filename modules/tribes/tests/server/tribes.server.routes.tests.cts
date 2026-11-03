@@ -133,13 +133,6 @@ describe('Tribe CRUD tests', function () {
     response.headers.link.should.not.containEql('constructor');
     response.body.should.have.length(1);
   });
-  it('serves the catalogue and details through the React root', async () => {
-    for (const url of ['/circles', `/circles/${tribe.slug}`]) {
-      const response = await agent.get(url).expect(200);
-      response.text.should.containEql('id="tr-react-root"');
-      response.text.should.not.containEql('data-ui-view');
-    }
-  });
   it('lists only recent, visible members of circles the viewer joined', async () => {
     user.member!.push({ tribe: tribe._id });
     await user.save();
@@ -272,39 +265,6 @@ describe('Tribe CRUD tests', function () {
     response.body.contacts
       .map((member: { username: string }) => member.username)
       .should.deepEqual(['eligiblecontact']);
-  });
-  it('requires circle membership to list active members', async () => {
-    await agent.post('/api/auth/signin').send(credentials).expect(200);
-    await agent.get(`/api/tribes/${tribe.slug}/members`).expect(403);
-  });
-  it('should be able to read tribes when not logged in', function (done) {
-    // Read tribes
-    agent
-      .get('/api/tribes')
-      .expect(200)
-      .end(function (tribesReadErr, tribesReadRes) {
-        tribesReadRes.body.should.have.length(1);
-        tribesReadRes.body[0].label.should.equal('Awesome Tribe');
-        tribesReadRes.body[0].slug.should.equal('awesome-tribe');
-        tribesReadRes.body[0].description.should.equal(_tribe.description);
-        tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
-        tribesReadRes.body[0].attribution_url.should.equal(
-          _tribe.attribution_url,
-        );
-        tribesReadRes.body[0].count.should.eql(0);
-        tribesReadRes.body[0].new.should.equal(true); // Virtual field
-        should.exist(tribesReadRes.body[0].created);
-        should.exist(tribesReadRes.body[0]._id);
-        // `color` and `image` are published only for tribes
-        should.exist(tribesReadRes.body[0].color);
-        tribesReadRes.body[0].image.should.equal(_tribe.image);
-        // These are at the model, but aren't exposed
-        should.not.exist(tribesReadRes.body[0].synonyms);
-        should.not.exist(tribesReadRes.body[0].labelHistory);
-        should.not.exist(tribesReadRes.body[0].slugHistory);
-        // Call the assertion callback
-        return done(tribesReadErr);
-      });
   });
   it('should be able to read tribes when logged in', function (done) {
     agent

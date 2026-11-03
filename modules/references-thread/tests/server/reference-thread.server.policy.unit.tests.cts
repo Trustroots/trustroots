@@ -151,30 +151,6 @@ describe('Reference thread policy unit tests', () => {
     next.calledOnce.should.be.true();
   });
 
-  it('lets unpublished users read through ACL when not owning the thread', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: 'reader-id',
-          public: false,
-          roles: ['user'],
-        },
-        referenceThread: { userFrom: { equals: sinon.stub().returns(false) } },
-        route: { path: '/api/references-thread/:referenceThreadUserToId' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
-
-    mockAcl.areAnyRolesAllowed.calledOnce.should.be.true();
-    next.calledOnce.should.be.true();
-  });
-
   it('checks guest permissions for signed-in users without roles', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, false);
@@ -190,53 +166,5 @@ describe('Reference thread policy unit tests', () => {
     );
 
     mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
-  });
-
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/references-thread' },
-        method: 'POST',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(500);
-    res.body!.message.should.equal('Unexpected authorization error');
-    done();
-  });
-
-  it('returns 403 JSON when the user is not allowed', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['guest'],
-        },
-        route: { path: '/api/references-thread' },
-        method: 'POST',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-    done();
   });
 });

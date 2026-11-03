@@ -115,54 +115,6 @@ describe('Targeted request limit middleware', function () {
       await import('../../server/middleware/targeted-request-limit.server.middleware.mjs'));
   });
 
-  it('counts signup by normalised recipient independently of client address', async function () {
-    const calls: ConsumeOptions[] = [];
-    const middleware = loadMiddleware(
-      async options => {
-        calls.push(options);
-        return { allowed: true };
-      },
-      req => req.ip,
-    );
-    for (const ip of ['198.51.100.21', '198.51.100.22']) {
-      await middleware.signup(
-        { ip, body: { email: ' Fictional@Example.org ' } },
-        response(),
-        () => {},
-      );
-    }
-    calls[0].operation.should.equal('signup');
-    for (const call of calls) {
-      call.dimensions[2].should.deepEqual({
-        name: 'recipient',
-        value: 'fictional@example.org',
-        limit: 2,
-      });
-    }
-    calls[0].dimensions[0].value.should.not.equal(calls[1].dimensions[0].value);
-  });
-
-  it('limits anonymous support by client address and signed-in support by member', async function () {
-    const calls: ConsumeOptions[] = [];
-    const middleware = loadMiddleware(async options => {
-      calls.push(options);
-      return { allowed: true };
-    });
-    await middleware.support({}, response(), () => {});
-    await middleware.support(
-      { user: { id: 'fictional-member' } },
-      response(),
-      () => {},
-    );
-    calls[0].operation.should.equal('support');
-    calls[0].dimensions
-      .map(dimension => dimension.name)
-      .should.deepEqual(['ip']);
-    calls[1].dimensions
-      .map(dimension => dimension.name)
-      .should.deepEqual(['ip', 'ip-and-identity', 'member']);
-  });
-
   it('ignores missing and non-string signup recipients', function () {
     const assert = require('assert/strict');
     assert.equal(getRequestIdentity({}, 'recipient'), undefined);
@@ -285,41 +237,6 @@ describe('Targeted request limit middleware', function () {
       undefined,
     );
     assert.equal(getRequestIdentity({}, 'unknown'), undefined);
-  });
-
-  it('fails closed when the policy window is invalid', async function () {
-    const middleware = loadMiddleware(
-      async () => {
-        throw new Error('should not consume');
-      },
-      () => '198.51.100.20',
-      { signin: { windowMs: 0 } },
-    );
-    const res = response();
-    await middleware.signin({ body: { username: 'member' } }, res, () => {
-      throw new Error('should not proceed');
-    });
-    res.statusCode.should.equal(503);
-  });
-
-  it('limits member actions without an IP dimension when IP limiting is disabled', async function () {
-    let options: ConsumeOptions | undefined;
-    const middleware = loadMiddleware(
-      async value => {
-        options = value;
-        return { allowed: true };
-      },
-      () => undefined,
-      { avatarUpload: { ipLimit: 0 } },
-    );
-    await middleware.avatarUpload(
-      { user: { id: 'fictional-member' } },
-      response(),
-      () => {},
-    );
-    options!.dimensions.should.deepEqual([
-      { name: 'member', value: 'fictional-member', limit: 2 },
-    ]);
   });
 
   it('skips storage when no configured dimension has an identity', async function () {

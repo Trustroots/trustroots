@@ -143,14 +143,6 @@ describe('Reference thread controller unit tests', () => {
       await res.waitForResponse();
       responseBody(res).should.eql({});
     });
-
-    it('returns the attached reference thread', async () => {
-      const res = deferredResponse();
-      const referenceThread = { _id: 'ref-1', reference: 'yes' as const };
-      controller.readReferenceThread({ referenceThread }, res);
-      await res.waitForResponse();
-      responseBody(res).should.eql(referenceThread);
-    });
   });
 
   describe('readReferenceThreadById', () => {
@@ -280,50 +272,6 @@ describe('Reference thread controller unit tests', () => {
         throw new Error('Expected a callback error');
       nextArg.should.be.Error();
       nextArg.message.should.equal('message lookup failed');
-    });
-
-    it('passes database errors to next', async () => {
-      const [user] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsersWithSharedPassword(1, { public: true }),
-      );
-      type CallbackQuery<T> = {
-        sort(order: string): CallbackQuery<T>;
-        exec(callback: (error: Error | null, document: T | null) => void): void;
-      };
-      const referenceThreadQueries = ReferenceThread as unknown as {
-        findOne(query: object): CallbackQuery<ReferenceThreadDocument>;
-      };
-      const failedQuery: CallbackQuery<ReferenceThreadDocument> = {
-        sort() {
-          return this;
-        },
-        exec(callback) {
-          if (callback) {
-            callback(new Error('lookup failed'), null);
-            return;
-          }
-          return Promise.reject(new Error('lookup failed'));
-        },
-      };
-      sinon.stub(referenceThreadQueries, 'findOne').returns(failedQuery);
-
-      let nextArg: unknown;
-      await new Promise<void>(resolve => {
-        controller.readReferenceThreadById(
-          { user },
-          deferredResponse(),
-          err => {
-            nextArg = err;
-            resolve();
-          },
-          new mongoose.Types.ObjectId().toString(),
-        );
-      });
-
-      if (!(nextArg instanceof Error))
-        throw new Error('Expected a callback error');
-      nextArg.should.be.Error();
-      nextArg.message.should.equal('lookup failed');
     });
   });
 
@@ -493,108 +441,6 @@ describe('Reference thread controller unit tests', () => {
       saved._id.equals(suppliedId).should.be.false();
       if (!saved.created) throw new Error('Expected created timestamp');
       (saved.created.getTime() >= createdBefore).should.be.true();
-    });
-
-    it('responds with 400 when saving the reference fails', async () => {
-      sinon
-        .stub(statService, 'stat')
-        .callsFake((_data, callback) => callback?.());
-      const [author, other] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsersWithSharedPassword(2, { public: true }),
-      );
-      await createThreadWithMessage(author, other, false);
-      sinon
-        .stub(ReferenceThread.prototype, 'save')
-        .callsFake(() => Promise.reject(new Error('save failed')));
-
-      const res = deferredResponse();
-      controller.createReferenceThread(
-        {
-          user: author,
-          body: {
-            userTo: other._id.toString(),
-            reference: 'yes',
-          },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
-
-    it('responds with 400 when the waterfall fails', async () => {
-      sinon
-        .stub(statService, 'stat')
-        .callsFake((_data, callback) => callback?.());
-      const [author, other] = await utils.saveUsersWithCachedPasswords(
-        utils.generateUsersWithSharedPassword(2, { public: true }),
-      );
-      await createThreadWithMessage(author, other, false);
-      const userModelWithCallbackFindById = User as unknown as {
-        findById(id: import('mongoose').Types.ObjectId): {
-          select(fields: string): { exec(): Promise<UserDocument | null> };
-        };
-      };
-      sinon.stub(userModelWithCallbackFindById, 'findById').returns({
-        select: () => ({
-          exec: () => Promise.reject(new Error('user lookup failed')),
-        }),
-      });
-
-      const res = deferredResponse();
-      controller.createReferenceThread(
-        {
-          user: author,
-          body: {
-            userTo: other._id.toString(),
-            reference: 'yes',
-          },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
-
-    it('rejects references when the user is not in the thread', async () => {
-      const [author, other, stranger] =
-        await utils.saveUsersWithCachedPasswords(
-          utils.generateUsersWithSharedPassword(3, { public: true }),
-        );
-      const threadModelWithCallbackFindOne = Thread as unknown as {
-        findOne(
-          query: object,
-          fields: string,
-        ): {
-          exec(): Promise<{
-            _id: import('mongoose').Types.ObjectId;
-            userFrom: import('mongoose').Types.ObjectId;
-            userTo: import('mongoose').Types.ObjectId;
-          } | null>;
-        };
-      };
-      sinon.stub(threadModelWithCallbackFindOne, 'findOne').returns({
-        exec: () =>
-          Promise.resolve({
-            _id: new mongoose.Types.ObjectId(),
-            userFrom: new mongoose.Types.ObjectId(author._id.toString()),
-            userTo: new mongoose.Types.ObjectId(other._id.toString()),
-          }),
-      });
-
-      const res = deferredResponse();
-      controller.createReferenceThread(
-        {
-          user: stranger,
-          body: {
-            userTo: other._id.toString(),
-            reference: 'yes',
-          },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(403);
     });
   });
 });

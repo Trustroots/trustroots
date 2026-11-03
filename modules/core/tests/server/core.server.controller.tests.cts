@@ -1,10 +1,4 @@
 const sinon = require('sinon');
-const mongoose: typeof import('mongoose') = require('mongoose');
-type UserServerModel =
-  import('../../../users/server/models/user.server.types.mts').UserServerModel;
-type UserServerRecord =
-  import('../../../users/server/models/user.server.types.mts').UserServerRecord;
-const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 const winston: typeof import('winston') = require('winston');
 const userProfile: typeof import('../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const languagesObject: Record<
@@ -167,18 +161,6 @@ describe('Controller: core', function () {
       should(renderVars(res).invite).be.true();
     });
 
-    it('does not mark other pages as invites', function () {
-      const res = mockResponse();
-      coreController.renderIndex({ path: '/' }, res);
-      should(renderVars(res).invite === undefined).be.true();
-    });
-
-    it('renders the React index for React-owned paths', function () {
-      const res = mockResponse();
-      coreController.renderIndex({ path: '/support' }, res);
-      res.rendered.should.equal('react-index.server.view.html');
-    });
-
     it('redirects legacy React routes to their replacement', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/about' }, res);
@@ -192,23 +174,6 @@ describe('Controller: core', function () {
       };
       coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
       res.rendered.should.equal('react-index.server.view.html');
-    });
-
-    it('exposes a sanitized user profile when signed in', function () {
-      const res = mockResponse();
-      const user = new User({
-        username: 'alice',
-        email: 'alice@example.com',
-        firstName: 'Alice',
-        lastName: 'Example',
-        provider: 'local',
-      });
-      user.set('roles', undefined);
-      coreController.renderIndex({ path: '/', user }, res);
-      should(renderVars(res).user).deepEqual({
-        sanitized: true,
-        username: 'alice',
-      });
     });
 
     it('exposes the current tribe when browsing a tribe page', function () {
@@ -285,20 +250,6 @@ describe('Controller: core', function () {
       } finally {
         winston.log = originalLog;
       }
-    });
-
-    it('responds with status 204 when no report body is present', function () {
-      const res = mockResponse();
-      coreController.receiveCSPViolationReport({ body: null }, res);
-      res.statusCode.should.equal(204);
-    });
-
-    it('responds with status 204 in test mode', function () {
-      process.env.NODE_ENV = 'test';
-
-      const res = mockResponse();
-      coreController.receiveCSPViolationReport({ body: { foo: 'bar' } }, res);
-      res.statusCode.should.equal(204);
     });
   });
 

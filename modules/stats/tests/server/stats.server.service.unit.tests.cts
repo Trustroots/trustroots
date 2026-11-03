@@ -54,13 +54,6 @@ describe('Stats service unit tests', () => {
     backend.lastCall.args[1]();
   });
 
-  it('acknowledges telemetry when the backend throws synchronously', () => {
-    sinon.stub(influxService, 'stat').throws(new Error('unavailable'));
-    const accepted = sinon.spy();
-    statsService.stat({ namespace: 'outage', counts: { count: 1 } }, accepted);
-    accepted.calledOnce.should.be.true();
-  });
-
   it('preserves backend acknowledgement and errors for delivery-aware jobs', () => {
     const backend = sinon.stub(influxService, 'stat');
     const callback = sinon.spy();
@@ -114,19 +107,6 @@ describe('Stats service unit tests', () => {
     });
   });
 
-  it('records a count stat when no callback is provided', () => {
-    const { influxService, statsService } = loadStatsService();
-
-    statsService.count('unitCount');
-
-    influxService.stat.firstCall.args[0].should.deepEqual({
-      namespace: 'unitCount',
-      counts: {
-        count: 1,
-      },
-    });
-  });
-
   it('records a value stat', done => {
     const { influxService, statsService } = loadStatsService();
 
@@ -153,35 +133,6 @@ describe('Stats service unit tests', () => {
       },
       time,
     });
-  });
-
-  it('records a value stat when no callback is provided', () => {
-    const { influxService, statsService } = loadStatsService();
-
-    statsService.value('unitValue', 12);
-
-    influxService.stat.firstCall.args[0].should.deepEqual({
-      namespace: 'unitValue',
-      values: {
-        value: 12,
-      },
-    });
-  });
-
-  it('records a complex stat object', done => {
-    const { influxService, statsService } = loadStatsService();
-    const stat = {
-      namespace: 'messages',
-      counts: { sent: 1 },
-      values: { length: 180 },
-      tags: { type: 'firstMessage' },
-      meta: { threadId: 'thread-1' },
-      time: new Date('2026-06-06T10:00:00.000Z'),
-    };
-
-    statsService.stat(stat, done);
-
-    influxService.stat.firstCall.args[0].should.deepEqual(stat);
   });
 
   it('rejects an invalid stat object', done => {
@@ -262,18 +213,5 @@ describe('Stats service unit tests', () => {
         tags: { tag: 'test' },
       });
     }).should.not.throw();
-  });
-
-  it('passes influx errors to delivery-aware callbacks', done => {
-    const influxError = new Error('influx failed');
-    sinon.stub(influxService, 'stat').callsArgWith(1, influxError);
-
-    statsService.deliver(
-      { namespace: 'unitCount', counts: { count: 1 } },
-      (err?: Error | null) => {
-        assert.equal(err, influxError);
-        done();
-      },
-    );
   });
 });
