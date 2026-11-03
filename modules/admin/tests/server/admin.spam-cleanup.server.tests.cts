@@ -36,6 +36,10 @@ function response() {
       this.statusCode = code;
       return this;
     },
+    json(body: unknown) {
+      this.body = body as Body;
+      return this;
+    },
     send(body: unknown) {
       this.body = body as Body;
       return this;
@@ -288,7 +292,7 @@ describe('Administrator spam account cleanup', () => {
   it('invalidates previews created with an older scan format', async () => {
     const review = await fullPreview();
     await Preview.updateOne(
-      { _id: review.body.previewId },
+      { _id: String(review.body.previewId) },
       { $set: { scanSize: 500 } },
     );
     assert.equal(
@@ -332,7 +336,7 @@ describe('Administrator spam account cleanup', () => {
     assert.equal(building.body.building, true);
     assert.equal((await apply(building.body.previewId)).statusCode, 409);
     await Preview.updateOne(
-      { _id: building.body.previewId },
+      { _id: String(building.body.previewId) },
       { $set: { claimed: true } },
     );
     assert.equal(
@@ -340,7 +344,7 @@ describe('Administrator spam account cleanup', () => {
       409,
     );
     await Preview.updateOne(
-      { _id: building.body.previewId },
+      { _id: String(building.body.previewId) },
       { $set: { claimed: false } },
     );
     const review = await preview({ previewId: building.body.previewId });
@@ -359,12 +363,12 @@ describe('Administrator spam account cleanup', () => {
       410,
     );
     await Preview.updateOne(
-      { _id: review.body.previewId },
+      { _id: String(review.body.previewId) },
       { $set: { claimed: true } },
     );
     assert.equal((await apply(review.body.previewId)).statusCode, 409);
     await Preview.updateOne(
-      { _id: review.body.previewId },
+      { _id: String(review.body.previewId) },
       { $set: { expiresAt: new Date(0) } },
     );
     assert.equal((await apply(review.body.previewId)).statusCode, 410);
@@ -427,7 +431,7 @@ describe('Administrator spam account cleanup', () => {
     assert.equal(await User.countDocuments({}), 1);
     sinon.restore();
     const fresh = await fullPreview();
-    await Chunk.deleteMany({ preview: fresh.body.previewId });
+    await Chunk.deleteMany({ preview: String(fresh.body.previewId) });
     assert.equal((await apply(fresh.body.previewId)).statusCode, 500);
   });
   it('shows deleted or renamed snapshot accounts without changing the snapshot', async () => {

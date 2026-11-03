@@ -704,7 +704,10 @@ test.describe('rendered search map feature coverage', () => {
     ).toBeVisible();
     await expect(page.locator('.mapboxgl-canvas')).toHaveCount(0);
     const tile = page.locator('.leaflet-tile').first();
-    await expect(tile).toHaveAttribute('src', /tile\.openstreetmap\.org/);
+    await expect(tile).toHaveAttribute(
+      'src',
+      /^https:\/\/[abc]\.tile\.openstreetmap\.org\//,
+    );
     await expect(tile).toHaveJSProperty('naturalWidth', 1);
     const hostMarker = page.locator('.leaflet-interactive[fill="#58ba58"]');
     await expect(hostMarker).toBeVisible();

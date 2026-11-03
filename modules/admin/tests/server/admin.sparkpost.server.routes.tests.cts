@@ -178,10 +178,10 @@ describe('SparkPost admin diagnostics', () => {
     );
     assert.equal(get.firstCall.args[1].maxRedirects, 0);
     assert.equal(get.firstCall.args[1].params.precision, 'day');
-    assert.match(get.firstCall.args[0], /^https:\/\/api.eu.sparkpost.com\//);
+    assert.match(get.firstCall.args[0], /^https:\/\/api\.eu\.sparkpost\.com\//);
     process.env.SPARKPOST_API_BASE = 'https://api.sparkpost.com/';
     await diagnostics.overview(7, now);
-    assert.match(get.lastCall.args[0], /^https:\/\/api.sparkpost.com\//);
+    assert.match(get.lastCall.args[0], /^https:\/\/api\.sparkpost\.com\//);
     process.env.SPARKPOST_API_BASE = 'https://untrusted.example.test';
     assert.equal((await diagnostics.overview(7, now)).provider, 'unavailable');
     delete process.env.SPARKPOST_API_KEY;

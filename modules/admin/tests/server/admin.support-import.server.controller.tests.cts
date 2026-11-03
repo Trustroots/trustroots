@@ -24,6 +24,7 @@ interface ResponseCapture {
   body?: unknown;
   status(code: number): ResponseCapture;
   send(body: unknown): ResponseCapture;
+  json(body: unknown): ResponseCapture;
 }
 
 const SupportRequest = mongoose.model<SupportRequestFixture>('SupportRequest');
@@ -37,6 +38,10 @@ function captureResponse(): ResponseCapture {
       return this;
     },
     send(body) {
+      this.body = body;
+      return this;
+    },
+    json(body) {
       this.body = body;
       return this;
     },

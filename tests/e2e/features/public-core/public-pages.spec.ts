@@ -353,7 +353,7 @@ test.describe('public pages and unauthenticated flows', () => {
 
       await page.goto(pagePath);
 
-      await expect(page).toHaveURL(new RegExp(pagePath.replace(/\//g, '\\/')));
+      await expect(page).toHaveURL(url => url.pathname === pagePath);
       await expect(page).toHaveTitle(title);
 
       if (['/rules', '/privacy', '/faq'].includes(pagePath)) {

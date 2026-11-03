@@ -51,13 +51,14 @@ let singleStub: SinonStub;
 const errorService = require('./../../../server/services/error.server.service.mjs');
 require('should');
 
+const temporaryUploadDirectories: string[] = [];
+
 function writeTempFile(buffer: Buffer): string {
-  const filePath = path.join(
-    os.tmpdir(),
-    `trustroots-upload-test-${Date.now()}-${Math.random()
-      .toString(16)
-      .slice(2)}`,
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'trustroots-upload-test-'),
   );
+  temporaryUploadDirectories.push(directory);
+  const filePath = path.join(directory, 'upload');
   fs.writeFileSync(filePath, buffer);
   return filePath;
 }
@@ -148,6 +149,11 @@ describe('file-upload.service unit tests', () => {
   });
 
   afterEach(() => {
+    temporaryUploadDirectories
+      .splice(0)
+      .forEach(directory =>
+        fs.rmSync(directory, { recursive: true, force: true }),
+      );
     sinon.restore();
     Object.keys(config).forEach(key => {
       if (!Object.prototype.hasOwnProperty.call(originalConfig, key)) {

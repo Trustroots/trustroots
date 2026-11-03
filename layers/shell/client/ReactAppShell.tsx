@@ -51,10 +51,7 @@ export default function ReactAppShell() {
     }
 
     const destination = new URL(target, window.location.origin);
-    const search: Record<string, string> = {};
-    destination.searchParams.forEach((value, key) => {
-      search[key] = value;
-    });
+    const search = Object.fromEntries(destination.searchParams);
     router.navigate({
       hash: destination.hash.slice(1),
       search,

@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   expect,
   type APIRequestContext,
@@ -103,7 +104,7 @@ export const EUROPE_OFFERS_QUERY =
  * database without colliding.
  */
 export function createUser(overrides: CreateUserOverrides = {}): NewUser {
-  const unique = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+  const unique = randomBytes(6).toString('hex');
 
   return {
     firstName: 'Eddie',

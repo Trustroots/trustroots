@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { htmlToText } from 'html-to-text';
 import mongooseService from './../../config/lib/mongoose.mjs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
@@ -21,8 +22,7 @@ let areWeDone = false;
 const service: AdminShell = {
   mongoose,
   htmlFormat(value) {
-    // Quick'n'dirty way of ditching HTML
-    return value.replace(/<.*?>/gi, '');
+    return htmlToText(value, { wordwrap: 0 });
   },
   weAreDone() {
     areWeDone = true;

@@ -139,6 +139,27 @@ describe('Coverage PR summary unit tests', () => {
       );
       table.should.containEql('| **Total** |  | **7** | **0** | **7** |');
     });
+
+    it('escapes backslashes and every pipe in area labels', () => {
+      const lane = {
+        ...e2eLane,
+        e2eMetrics: {
+          ...e2eLane.e2eMetrics,
+          byArea: {
+            'API\\|Billing||Alerts': {
+              total: 2,
+              passed: 2,
+              failed: 0,
+              skipped: 0,
+            },
+          },
+        },
+      };
+
+      renderE2eAreaTable(lane).should.containEql(
+        '| API\\\\\\|Billing\\|\\|Alerts | ✅ Passed | 2 | 0 | 2 |',
+      );
+    });
   });
 
   describe('buildMarkdown', () => {

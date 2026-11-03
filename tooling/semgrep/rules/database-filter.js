@@ -43,3 +43,15 @@ export function constantFilter(Member) {
   // ok: request-object-in-database-filter
   return Member.find({ username: 'fictional-member' });
 }
+
+export function objectIdFilter(req, Member, mongoose) {
+  const id = new mongoose.Types.ObjectId(req.body.id);
+  // ok: request-object-in-database-filter
+  return Member.findOne({ _id: id });
+}
+
+export function mixedFilter(req, Member, mongoose) {
+  const id = new mongoose.Types.ObjectId(req.body.id);
+  // ruleid: request-object-in-database-filter
+  return Member.findOne({ _id: id, username: req.body.username });
+}

@@ -38,7 +38,7 @@ export async function signerIdentity(
     const user = await mongoose
       .model<{ username: string }>('User')
       .findOne({
-        nostrNpub: nip19.npubEncode(publicKey.toLowerCase()),
+        nostrNpub: nip19.npubEncode(String(publicKey).toLowerCase()),
         public: true,
         email: { $exists: true, $nin: ['', null] },
         roles: { $nin: ['suspended', 'shadowban'] },

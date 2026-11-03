@@ -367,7 +367,7 @@ service.signupValidation = function (req, res) {
       'username-not-available-reserved',
     );
   }
-  User.findOne({ username: username.toLowerCase() }).then(
+  User.findOne({ username: String(username).toLowerCase() }).then(
     user =>
       user
         ? finished(
@@ -530,7 +530,9 @@ service.removeOAuthProvider = function (req, res) {
  */
 service.validateEmailToken = function (req, res) {
   const now = new Date();
-  User.findOne(emailConfirmationTokenQuery(req.params!.token, now)).then(
+  User.findOne(
+    emailConfirmationTokenQuery(String(req.params!.token), now),
+  ).then(
     (user: UserDocument | null) => {
       if (!user) {
         return res.redirect('/confirm-email-invalid');
@@ -546,7 +548,10 @@ service.validateEmailToken = function (req, res) {
  */
 service.confirmEmail = function (req, res) {
   const now = new Date();
-  const tokenQuery = emailConfirmationTokenQuery(req.params!.token, now);
+  const tokenQuery = emailConfirmationTokenQuery(
+    String(req.params!.token),
+    now,
+  );
   async function confirm() {
     const user = await User.findOne(tokenQuery).catch(() => null);
     if (!user) {

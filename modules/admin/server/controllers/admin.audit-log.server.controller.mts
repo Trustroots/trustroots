@@ -43,6 +43,7 @@ interface AuditRecordRequest {
 interface AuditResponse {
   status(code: number): AuditResponse;
   send(body: unknown): unknown;
+  json(body: unknown): unknown;
 }
 
 const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
@@ -99,8 +100,9 @@ export const list = async (
     const criteria: Record<string, unknown> = {};
     if (username || team) {
       const actorCriteria: Record<string, unknown> = {};
-      if (username) actorCriteria.username = username.trim().toLowerCase();
-      if (team) actorCriteria.roles = team;
+      if (username)
+        actorCriteria.username = String(username).trim().toLowerCase();
+      if (team) actorCriteria.roles = String(team);
       const actors = await User.find(actorCriteria).select('_id').lean();
       criteria.user = { $in: actors.map(actor => actor._id) };
     }
@@ -114,7 +116,7 @@ export const list = async (
         model: 'User',
       })
       .exec();
-    return res.send(items || []);
+    return res.json(items || []);
   } catch (err: unknown) {
     return res.status(400).send({
       message: errorService.getErrorMessage(err as ValidationFailure),

@@ -403,7 +403,11 @@ describe('Support team access and investigation', () => {
     await SupportRequest.insertMany(
       Array.from({ length: 51 }, () => ({ message: 'Fictional request' })),
     );
-    const res = { send: sinon.spy(), status: sinon.stub().returnsThis() };
+    const res = {
+      send: sinon.spy(),
+      json: sinon.spy(),
+      status: sinon.stub().returnsThis(),
+    };
     await controller.list(
       {
         user: users[0],

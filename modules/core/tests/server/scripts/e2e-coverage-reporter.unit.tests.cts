@@ -90,6 +90,16 @@ function manifest(features: unknown[]) {
   };
 }
 
+const temporaryReportDirectories: string[] = [];
+
+function createTemporaryReportDirectory(): string {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'trustroots-e2e-report-'),
+  );
+  temporaryReportDirectories.push(directory);
+  return directory;
+}
+
 describe('E2E coverage reporter unit tests', () => {
   describe('areaForSpec', () => {
     function featureSpecFiles(
@@ -401,15 +411,18 @@ describe('E2E coverage reporter unit tests', () => {
   });
 
   describe('summarize-results status output', () => {
+    afterEach(() => {
+      temporaryReportDirectories
+        .splice(0)
+        .forEach(directory =>
+          fs.rmSync(directory, { recursive: true, force: true }),
+        );
+    });
+
     it('honors TRUSTROOTS_E2E_STATUS_PATH for isolated status writes', () => {
-      const statusPath = path.join(
-        os.tmpdir(),
-        `trustroots-e2e-status-${process.pid}-${Date.now()}.json`,
-      );
-      const missingResultsPath = path.join(
-        os.tmpdir(),
-        `trustroots-e2e-results-missing-${process.pid}-${Date.now()}.json`,
-      );
+      const directory = createTemporaryReportDirectory();
+      const statusPath = path.join(directory, 'status.json');
+      const missingResultsPath = path.join(directory, 'results-missing.json');
 
       const result = spawnSync(
         process.execPath,
@@ -450,14 +463,9 @@ describe('E2E coverage reporter unit tests', () => {
     });
 
     it('fails status output when required feature scenarios are missing', () => {
-      const statusPath = path.join(
-        os.tmpdir(),
-        `trustroots-e2e-status-${process.pid}-${Date.now()}.json`,
-      );
-      const resultsPath = path.join(
-        os.tmpdir(),
-        `trustroots-e2e-results-${process.pid}-${Date.now()}.json`,
-      );
+      const directory = createTemporaryReportDirectory();
+      const statusPath = path.join(directory, 'status.json');
+      const resultsPath = path.join(directory, 'results.json');
 
       const report = reportWithSpecs([
         {

@@ -22,5 +22,7 @@ export default function RichText({
       ? sanitised
       : disableUserContentLinks(sanitised, allowTrustrootsLinks);
   }, [content, allowLinks, allowTrustrootsLinks]);
+  // html is produced by DOMPurify in sanitiseRichText; link handling only removes destinations.
+  // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
   return <div {...props} dangerouslySetInnerHTML={{ __html: html }} />;
 }

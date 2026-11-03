@@ -160,7 +160,7 @@ export const supportRequest: SupportService['supportRequest'] = async function (
     let target;
     try {
       target = await User.findOne({
-        username: req.body.reportMember.trim().toLowerCase(),
+        username: String(req.body.reportMember).trim().toLowerCase(),
       }).select('_id');
     } catch {
       return res

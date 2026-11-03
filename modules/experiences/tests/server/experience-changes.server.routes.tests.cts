@@ -482,7 +482,7 @@ describe('Experience change requests', () => {
     );
 
     await ExperienceChangeRequest.updateOne(
-      { _id: submitted.body._id },
+      { _id: String(submitted.body._id) },
       {
         $set: {
           reviewedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
@@ -494,7 +494,7 @@ describe('Experience change requests', () => {
       .expect(200);
     agedOut.body.should.deepEqual([]);
     await ExperienceChangeRequest.updateOne(
-      { _id: submitted.body._id },
+      { _id: String(submitted.body._id) },
       { $set: { reviewedAt: new Date() } },
     );
 
@@ -904,7 +904,7 @@ describe('Experience change requests', () => {
       .send({ kind: 'remove' })
       .expect(201);
     await ExperienceChangeRequest.updateOne(
-      { _id: submitted.body._id },
+      { _id: String(submitted.body._id) },
       { $set: { status: 'processing' } },
     );
     const mine = await authorAgent
@@ -912,7 +912,7 @@ describe('Experience change requests', () => {
       .expect(200);
     mine.body.status.should.equal('processing');
     await ExperienceChangeRequest.updateOne(
-      { _id: submitted.body._id },
+      { _id: String(submitted.body._id) },
       { $set: { status: 'pending' } },
     );
     await Experience.updateOne(

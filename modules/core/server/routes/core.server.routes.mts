@@ -71,9 +71,14 @@ const defaultExport = function (app: Application) {
       });
     }
     const normalizedPubkeys = [
-      ...new Set((pubkeys as string[]).map(pubkey => pubkey.toLowerCase())),
+      ...new Set(
+        (pubkeys as string[]).map(pubkey => String(pubkey).toLowerCase()),
+      ),
     ];
-    const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
+    const npubs: string[] = [];
+    for (const pubkey of normalizedPubkeys) {
+      npubs.push(nip19.npubEncode(String(pubkey)));
+    }
     User.find({
       nostrNpub: {
         $in: npubs,
@@ -134,7 +139,7 @@ const defaultExport = function (app: Application) {
         error: 'Valid username required.',
       });
     }
-    const name = (rawName as string).toLowerCase();
+    const name = String(rawName).toLowerCase();
     User.findOne({
       username: name,
       public: true,

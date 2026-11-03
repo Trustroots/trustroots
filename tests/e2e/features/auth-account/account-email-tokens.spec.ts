@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 
 import {
@@ -238,7 +239,7 @@ test.describe.serial('auth email and token feature coverage', () => {
       await signInViaApi(firstPage, firstContext.request, user);
       await signInViaApi(secondPage, secondContext.request, user);
 
-      const token = `reset-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+      const token = `reset-${Date.now()}-${randomBytes(6).toString('hex')}`;
       await updateUserByUsername(user.username, {
         $set: {
           resetPasswordToken: token,
@@ -305,9 +306,7 @@ test.describe.serial('auth email and token feature coverage', () => {
 
     const user = createUser();
     await registerViaApi(request, user);
-    const token = `parallel-reset-${Date.now()}-${Math.floor(
-      Math.random() * 1e6,
-    )}`;
+    const token = `parallel-reset-${Date.now()}-${randomBytes(6).toString('hex')}`;
     await updateUserByUsername(user.username, {
       $set: {
         resetPasswordToken: token,

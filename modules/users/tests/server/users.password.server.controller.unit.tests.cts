@@ -195,6 +195,10 @@ describe('Password controller unit tests', () => {
     });
 
     it('returns the same acknowledgement when sending the reset email fails', async () => {
+      let resolveEmailAttempt: () => void = () => {};
+      const emailAttempted = new Promise<void>(resolve => {
+        resolveEmailAttempt = resolve;
+      });
       const controller = mockModule<PasswordController>(
         require.resolve(controllerPath),
         {
@@ -202,7 +206,10 @@ describe('Password controller unit tests', () => {
             sendResetPassword: (
               _user: PasswordUserDocument,
               cb: (error?: Error) => void,
-            ) => cb(new Error('smtp down')),
+            ) => {
+              cb(new Error('smtp down'));
+              resolveEmailAttempt();
+            },
           },
         },
       );
@@ -219,6 +226,20 @@ describe('Password controller unit tests', () => {
       res.body.message!.should.equal(
         'If an account matches that username or email, we will send recovery instructions.',
       );
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          emailAttempted,
+          new Promise<never>((_resolve, reject) => {
+            timeout = setTimeout(
+              () => reject(new Error('Reset email was not attempted')),
+              5000,
+            );
+          }),
+        ]);
+      } finally {
+        if (timeout) clearTimeout(timeout);
+      }
     });
 
     it('acknowledges before a stalled email provider responds', async () => {

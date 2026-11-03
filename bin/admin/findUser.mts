@@ -8,7 +8,7 @@ const User = trshell.mongoose.model<AdminUserRecord>('User');
 const query = process.argv[2];
 console.log('Trustroots admin shell: find user');
 console.log('Looking for user', query);
-const re = new RegExp('.*' + query + '.*', 'i');
+const re = new RegExp(_.escapeRegExp(query), 'i');
 const requery = {
   $regex: re,
 };

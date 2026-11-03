@@ -8,6 +8,17 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const proxyquire: typeof import('./../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 
 const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
+const temporaryUploadDirectories: string[] = [];
+
+function createTemporaryUpload(): { directory: string; path: string } {
+  const directory = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'trustroots-avatar-'),
+  );
+  temporaryUploadDirectories.push(directory);
+  const sourcePath = path.join(directory, 'upload.jpg');
+  fs.writeFileSync(sourcePath, 'anonymous-test-image');
+  return { directory, path: sourcePath };
+}
 require('./../../server/models/user.server.model.mjs');
 
 type AvatarUser = {
@@ -191,6 +202,11 @@ describe('Avatar controller unit tests', () => {
   });
 
   afterEach(() => {
+    temporaryUploadDirectories
+      .splice(0)
+      .forEach(directory =>
+        fs.rmSync(directory, { recursive: true, force: true }),
+      );
     return mongoose.connection.readyState ? utils.clearDatabase() : undefined;
   });
 
@@ -763,11 +779,7 @@ describe('Avatar controller unit tests', () => {
     it('logs version cleanup failures and uses the fallback save error message', async () => {
       const logged: AvatarLogEntry[] = [];
       let job: AvatarProcessingJob | undefined;
-      const sourcePath = path.join(
-        os.tmpdir(),
-        `avatar-save-${Date.now()}.jpg`,
-      );
-      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const { path: sourcePath } = createTemporaryUpload();
       const controller = loadAvatarWithStubs({
         './../../../../config/lib/logger.mjs': (
           level: string,
@@ -958,8 +970,7 @@ describe('Avatar controller unit tests', () => {
       const userDoc = await findUser(user._id);
       userDoc.avatarVersion = 'a'.repeat(32);
       await userDoc.save();
-      const sourcePath = path.join(os.tmpdir(), `avatar-${Date.now()}.jpg`);
-      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const { path: sourcePath } = createTemporaryUpload();
       let job: AvatarProcessingJob | undefined;
       const removed: string[] = [];
       const nextVersion = 'b'.repeat(32);
@@ -996,11 +1007,7 @@ describe('Avatar controller unit tests', () => {
       const userDoc = await findUser(user._id);
       userDoc.avatarVersion = 'c'.repeat(32);
       await userDoc.save();
-      const sourcePath = path.join(
-        os.tmpdir(),
-        `avatar-failed-${Date.now()}.jpg`,
-      );
-      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const { path: sourcePath } = createTemporaryUpload();
       let job: AvatarProcessingJob | undefined;
       const controller = loadAvatarWithProcessor({
         enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
@@ -1036,11 +1043,7 @@ describe('Avatar controller unit tests', () => {
           removed.push(version);
         },
       });
-      const sourcePath = path.join(
-        os.tmpdir(),
-        `avatar-save-failed-${Date.now()}.jpg`,
-      );
-      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const { path: sourcePath } = createTemporaryUpload();
       const user = {
         _id: new mongoose.Types.ObjectId(),
         avatarVersion: oldVersion,
@@ -1064,11 +1067,7 @@ describe('Avatar controller unit tests', () => {
     });
 
     it('returns 503 and cleans up the temporary upload when the queue is full', async () => {
-      const sourcePath = path.join(
-        os.tmpdir(),
-        `avatar-queued-${Date.now()}.jpg`,
-      );
-      fs.writeFileSync(sourcePath, 'anonymous-test-image');
+      const { path: sourcePath } = createTemporaryUpload();
       const controller = loadAvatarWithProcessor({
         enqueueAvatarProcessing: () => false,
       });

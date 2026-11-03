@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import {
   request,
   type APIRequestContext,
@@ -18,7 +19,7 @@ async function globalSetup(): Promise<void> {
 
   try {
     while (Date.now() < signupDeadline) {
-      const unique = `${Date.now()}${Math.floor(Math.random() * 1e6)}`;
+      const unique = `${Date.now()}${randomBytes(6).toString('hex')}`;
 
       let response: APIResponse;
       try {

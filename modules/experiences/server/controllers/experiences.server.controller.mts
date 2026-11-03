@@ -117,7 +117,7 @@ const plainText = textService.plainText as (
 service.readReplyRecipient = async function (req, res, next) {
   try {
     const recipient = await User.findOne({
-      username: req.params.recipientUsername!.toLowerCase(),
+      username: String(req.params.recipientUsername).toLowerCase(),
       public: true,
       roles: visibleAuthorRoles,
     })
@@ -348,7 +348,7 @@ async function findMyExperience(req: ExperienceRequest, userTo: string) {
 async function checkDuplicate(req: ExperienceRequest) {
   const ref = await Experience.findOne({
     userFrom: req.user._id,
-    userTo: req.body.userTo,
+    userTo: String(req.body.userTo),
   }).exec();
   if (ref === null) return;
 
@@ -419,7 +419,7 @@ function validate<T>(
 async function isUserToPublic(
   req: ExperienceRequest,
 ): Promise<ExperienceUserRecord> {
-  const userTo = await User.findOne({ _id: req.body.userTo }).exec();
+  const userTo = await User.findOne({ _id: String(req.body.userTo) }).exec();
 
   // Can't create an experience to a nonexistent user
   // Can't create an experience to a nonpublic user
@@ -534,7 +534,7 @@ service.create = async function (req, res, next) {
     const otherExperience = senderIsRestricted
       ? null
       : await Experience.findOne({
-          userFrom: req.body.userTo,
+          userFrom: String(req.body.userTo),
           userTo: selfId,
           removedAt: { $exists: false },
         }).exec();
@@ -846,12 +846,12 @@ service.readMine = async function readMine(req, res) {
 
   let experience = await findMyExperience(req, userWith);
   const visibleOtherAuthor = await User.exists({
-    _id: userWith,
+    _id: String(userWith),
     roles: visibleAuthorRoles,
   });
   let otherExperience = visibleOtherAuthor
     ? await Experience.findOne({
-        userFrom: userWith,
+        userFrom: String(userWith),
         userTo: selfId,
         removedAt: { $exists: false },
       }).exec()

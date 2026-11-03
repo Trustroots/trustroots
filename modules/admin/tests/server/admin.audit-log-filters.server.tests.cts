@@ -26,6 +26,7 @@ type MockResponse = {
   body: unknown;
   status(code: number): MockResponse;
   send(body: unknown): MockResponse;
+  json(body: unknown): MockResponse;
 };
 const AuditLog = mongoose.model<AuditLogRecord>('AuditLog');
 const User = mongoose.model<UserRecord>('User');
@@ -38,6 +39,10 @@ function response(): MockResponse {
       return this;
     },
     send(body) {
+      this.body = body;
+      return this;
+    },
+    json(body) {
       this.body = body;
       return this;
     },
