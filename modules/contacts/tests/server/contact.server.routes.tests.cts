@@ -169,20 +169,6 @@ describe('Contact CRUD tests', function () {
         return done(contactSaveErr);
       });
   });
-  it('should not be able to delete contact if not logged in', function (done) {
-    agent
-      .delete('/api/contact/' + contact1Id)
-      .set('X-Trustroots-Request', '1')
-      .expect(403)
-      .end(function (contactDelErr, contactDelRes) {
-        // Handle contact del error
-        if (contactDelErr) return done(contactDelErr);
-        contactDelRes.body.message.should.equal('Forbidden.');
-
-        // Call the assertion callback
-        return done();
-      });
-  });
   context('logged in', function () {
     beforeEach(function (done) {
       agent

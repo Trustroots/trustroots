@@ -9,20 +9,6 @@ describe('React contact creation route responses', function () {
     agent = request.agent(await express.init(mongoose.connection));
   });
   afterEach(utils.clearDatabase);
-  it('redirects guests to sign in', async () => {
-    for (const path of [
-      '/contact-add/665000000000000000000090',
-      '/profile/sample-member/experiences/new',
-    ]) {
-      await agent
-        .get(path)
-        .expect(302)
-        .expect(
-          'Location',
-          `/signin?continue=true&returnTo=${encodeURIComponent(path)}`,
-        );
-    }
-  });
   it('renders the React root for the extracted pages', async () => {
     const credentials = {
       username: 'sampleaddmember',

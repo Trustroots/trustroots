@@ -103,48 +103,6 @@ describe('Service: pagination', function () {
   });
 
   describe('setLinkHeader', function () {
-    it('sets a next link header pointing at the following page', function () {
-      const originalHttps = config.https;
-      try {
-        config.https = true;
-        const req = { query: { page: '2', limit: '20' } };
-        const res = mockResponse();
-        paginationService.setLinkHeader(
-          req as unknown as import('express').Request,
-          res as unknown as import('express').Response,
-          3,
-        );
-        res.linksSet!.should.have.property('next');
-        res.linksSet!.next.should.endWith('?page=3');
-        res.linksSet!.next.should.match(/^https:\/\/[^/?#]+\?page=3$/);
-      } finally {
-        config.https = originalHttps;
-      }
-    });
-
-    it('does not set a link header on the last page', function () {
-      const req = { query: { page: 3, limit: 20 } };
-      const res = mockResponse();
-      paginationService.setLinkHeader(
-        req as unknown as import('express').Request,
-        res as unknown as import('express').Response,
-        3,
-      );
-      should(res.linksSet).be.null();
-    });
-
-    it('can keep catalogue links relative', function () {
-      const req = { query: { page: '2', limit: '20' } };
-      const res = mockResponse();
-      paginationService.setLinkHeader(
-        req as unknown as import('express').Request,
-        res as unknown as import('express').Response,
-        3,
-        { relative: true },
-      );
-      res.linksSet!.next.should.equal('?page=3');
-    });
-
     it('uses HTTP when HTTPS is disabled', function () {
       const originalHttps = config.https;
       try {

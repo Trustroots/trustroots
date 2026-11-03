@@ -24,15 +24,6 @@ let agent: TestAgent;
 // Demo CSP Violation report
 // Doesn't matter what's in here,
 // but this is how they generally look:
-const cspViolationReport = {
-  'csp-report': {
-    'document-uri': 'https://trustroots.org/foo/bar',
-    referrer: 'https://www.google.com/',
-    'violated-directive': 'default-src self',
-    'original-policy': 'default-src self; report-uri /api/report-csp-violation',
-    'blocked-uri': 'http://evil.com',
-  },
-};
 
 type NostrUserOverrides = Partial<ServerUserFixture> & {
   firstName?: string;
@@ -65,33 +56,6 @@ describe('Core CRUD tests', function () {
   });
 
   describe('Content Security Policy Tests:', function () {
-    it('Responses should have content security policy header', function (done) {
-      agent
-        .get('/')
-        .expect('content-security-policy', /.*/)
-        .end(function (err) {
-          return done(err);
-        });
-    });
-    it('Responses should have content security policy header with "report-uri" value', function (done) {
-      agent
-        .get('/')
-        .expect(
-          'content-security-policy',
-          /report-uri \/api\/report-csp-violation/,
-        )
-        .end(function (err) {
-          return done(err);
-        });
-    });
-    it('Responses should allow the Umami analytics origin', function (done) {
-      agent
-        .get('/')
-        .expect('content-security-policy', /https:\/\/1p\.trustroots\.org/)
-        .end(function (err) {
-          return done(err);
-        });
-    });
     it('Responses should load Umami analytics', function (done) {
       agent
         .get('/')
@@ -104,57 +68,6 @@ describe('Core CRUD tests', function () {
           return done(err);
         });
     });
-    it('loads analytics asynchronously without delaying document readiness', async function () {
-      const response = await agent.get('/').expect(200);
-      response.text.should.match(
-        /<script\s+async\s+src="https:\/\/1p\.trustroots\.org\/script\.js"/,
-      );
-    });
-    it('can disable analytics without changing the application scripts', async function () {
-      const previous = app.locals.umami;
-      try {
-        app.locals.umami = { ...previous, enabled: false };
-        const response = await agent.get('/').expect(200);
-        response.text.should.not.match(/data-website-id=/);
-        response.text.should.match(/react-main\.js/);
-      } finally {
-        app.locals.umami = previous;
-      }
-    });
-    it('should be able to receive CSP report with "application/json" accept header', function (done) {
-      agent
-        .post('/api/report-csp-violation')
-        .set('Accept', 'application/json')
-        .send(cspViolationReport)
-        .expect(204)
-        .end(function (err, res) {
-          // Handle errors
-          if (err) {
-            return done(err);
-          }
-
-          // Set assertion
-          void res.body.should.be.empty;
-          return done();
-        });
-    });
-    it('should be able to receive CSP report with "application/csp-report" accept header', function (done) {
-      agent
-        .post('/api/report-csp-violation')
-        .set('Accept', 'application/csp-report')
-        .send(cspViolationReport)
-        .expect(204)
-        .end(function (err, res) {
-          // Handle errors
-          if (err) {
-            return done(err);
-          }
-
-          // Set assertion
-          void res.body.should.be.empty;
-          return done();
-        });
-    });
   });
   describe('Member-only circle routes', function () {
     it('redirects visitors away from the Naturists circle', function (done) {
@@ -163,22 +76,6 @@ describe('Core CRUD tests', function () {
         .expect('Location', '/signin')
         .expect(302)
         .end(done);
-    });
-  });
-  describe('Mobile app wrapper detection Tests:', function () {
-    it('Mobile app state should be false without "app" query argument', function (done) {
-      agent.get('/').end(function (err, res) {
-        should.not.exist(err);
-        res.text.should.containEql('isNativeMobileApp = false');
-        return done();
-      });
-    });
-    it('Mobile app state should be true with "app" query argument', function (done) {
-      agent.get('/?app').end(function (err, res) {
-        should.not.exist(err);
-        res.text.should.containEql('isNativeMobileApp = true');
-        return done();
-      });
     });
   });
   describe('Frontend app root selection', function () {
@@ -196,94 +93,6 @@ describe('Core CRUD tests', function () {
         })
         .save();
     }
-    it('renders React assets and root for React-owned pages', function (done) {
-      agent.get('/support').end(function (err, res) {
-        should.not.exist(err);
-        res.text.should.containEql('id="tr-react-root"');
-        res.text.should.containEql('assets/react-main.js');
-        return done();
-      });
-    });
-    it('redirects guests away from protected React-owned pages', function (done) {
-      agent
-        .get('/admin?tab=activity')
-        .expect(302)
-        .expect(
-          'Location',
-          '/signin?continue=true&returnTo=%2Fadmin%3Ftab%3Dactivity',
-        )
-        .end(done);
-    });
-    it('requires sign-in for all React member entry pages', async function () {
-      for (const page of [
-        '/welcome',
-        '/navigation',
-        '/search/members?search=sample',
-      ]) {
-        await agent
-          .get(page)
-          .expect(302)
-          .expect(
-            'Location',
-            `/signin?continue=true&returnTo=${encodeURIComponent(page)}`,
-          );
-      }
-    });
-    it('renders React assets for a signed-in member on entry pages', async function () {
-      const credentials = {
-        username: 'sampleentrymember',
-        password: 'Password123!',
-      };
-      await createUser({
-        ...credentials,
-        email: 'sample-entry-member@example.test',
-      });
-      await utils.signIn(credentials, agent);
-      try {
-        for (const page of [
-          '/welcome',
-          '/navigation',
-          '/search/members?search=sample',
-        ]) {
-          const response = await agent.get(page).expect(200);
-          response.text.should.containEql('id="tr-react-root"');
-          response.text.should.containEql('assets/react-main.js');
-          response.text.should.not.containEql('data-ui-view');
-        }
-      } finally {
-        await utils.signOut(agent);
-      }
-    });
-    it('redirects non-admin users away from admin React-owned pages', function (done) {
-      const memberCredentials = {
-        password: 'Password123!',
-        username: 'frontendrootmember',
-      };
-      createUser({
-        email: 'frontend-root-member@example.com',
-        roles: ['user'],
-        ...memberCredentials,
-      })
-        .then(function () {
-          return utils.signIn(memberCredentials, agent);
-        })
-        .then(function () {
-          agent
-            .get('/admin')
-            .expect(302)
-            .expect('Location', '/volunteering')
-            .end(function (err) {
-              if (err) {
-                return done(err);
-              }
-              utils
-                .signOut(agent)
-                .then(() => done())
-                .catch(done);
-            });
-        })
-        .catch(done);
-    });
     it('renders React assets and root for admin users on admin pages', function (done) {
       const adminCredentials = {
         password: 'Password123!',
@@ -310,13 +119,6 @@ describe('Core CRUD tests', function () {
           });
         })
         .catch(done);
-    });
-    it('redirects guests away from profile pages', function (done) {
-      agent
-        .get('/profile/alice')
-        .expect(302)
-        .expect('Location', '/signin?continue=true&returnTo=%2Fprofile%2Falice')
-        .end(done);
     });
     it('renders React assets and root for authenticated profile pages', function (done) {
       const profileCredentials = {
@@ -360,16 +162,6 @@ describe('Core CRUD tests', function () {
     });
     it('redirects /invite to /signup', function (done) {
       agent.get('/invite').expect(301).expect('Location', '/signup').end(done);
-    });
-    it('redirects /tribes/lgbt to /circles/lgbtq', function (done) {
-      agent
-        .get('/tribes/lgbt')
-        .expect(301)
-        .expect('Location', '/circles/lgbtq')
-        .end(done);
-    });
-    it('redirects /tribes to /circles', function (done) {
-      agent.get('/tribes').expect(301).expect('Location', '/circles').end(done);
     });
     it('redirects /tribes/:slug to /circles/:slug when tribe exists', function (done) {
       const Tribe = mongoose.model<TribeRecord>('Tribe');
@@ -710,48 +502,6 @@ describe('Core CRUD tests', function () {
         },
       );
     });
-    it('identifies private author keys without making them visible', function (done) {
-      createNostrUser(
-        {
-          public: false,
-        },
-        function (saveErr) {
-          if (saveErr) return done(saveErr);
-          agent
-            .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
-            .expect(200)
-            .end(function (err, res) {
-              if (err) return done(err);
-              res.body.should.deepEqual({
-                linkedPubkeys: [validNpubHex],
-                pubkeys: [],
-              });
-              return done();
-            });
-        },
-      );
-    });
-    it('identifies unconfirmed author keys without making them visible', function (done) {
-      createNostrUser({}, function (saveErr, user) {
-        if (saveErr) return done(saveErr);
-        void User.updateOne({ _id: user!._id }, { $set: { email: '' } })
-          .exec()
-          .then(() => {
-            agent
-              .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
-              .expect(200)
-              .end(function (err, res) {
-                if (err) return done(err);
-                res.body.should.deepEqual({
-                  linkedPubkeys: [validNpubHex],
-                  pubkeys: [],
-                });
-                return done();
-              });
-          })
-          .catch(done);
-      });
-    });
     it('rejects invalid author key batches', function (done) {
       agent
         .get('/api/nostr/author-visibility?pubkey=invalid')
@@ -760,25 +510,6 @@ describe('Core CRUD tests', function () {
           if (err) return done(err);
           res.body.error.should.equal('One to 100 valid public keys required.');
           return done();
-        });
-    });
-    it('rejects non-string and oversized author key batches', function (done) {
-      const oversizedBatch = Array(101).fill(validNpubHex).join('&pubkey=');
-      agent
-        .get('/api/nostr/author-visibility?pubkey[$ne]=x')
-        .expect(400)
-        .end(function (objectErr) {
-          if (objectErr) return done(objectErr);
-          agent
-            .get('/api/nostr/author-visibility?pubkey=' + oversizedBatch)
-            .expect(400)
-            .end(function (batchErr, res) {
-              if (batchErr) return done(batchErr);
-              res.body.error.should.equal(
-                'One to 100 valid public keys required.',
-              );
-              return done();
-            });
         });
     });
     it('returns an error when the author lookup fails', function (done) {

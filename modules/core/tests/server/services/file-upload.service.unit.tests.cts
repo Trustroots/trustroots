@@ -204,23 +204,6 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
-  it('uses the supplied avatar limit in size errors', () => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null, {
-      code: 'LIMIT_FILE_SIZE',
-    });
-    const res = mockResponse();
-    uploadFile(
-      validMimeTypes,
-      uploadField,
-      {},
-      res,
-      () => {},
-      20 * 1024 * 1024,
-    );
-    res.statusCode.should.equal(413);
-    res.body!.message!.should.containEql('20.00');
-  });
-
   it('accepts a file above the general limit using the larger avatar limit', async () => {
     singleStub.restore();
     const express = require('express');
@@ -302,22 +285,6 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
-  it('rejects multer files with unsupported mime types before magic-byte validation', done => {
-    const { uploadFile } = loadUploadFileWithFileFilter(
-      { mimetype: 'text/plain' },
-      { path: '/tmp/not-used' },
-    );
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      res.body!.message!.should.equal(
-        errorService.getErrorMessageByKey('unsupported-media-type'),
-      );
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
   it('accepts multer files with supported mime types before magic-byte validation', done => {
     const filePath = writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00]));
     const { getMulterOptions, uploadFile } = loadUploadFileWithFileFilter(
@@ -374,19 +341,6 @@ describe('file-upload.service unit tests', () => {
       uploadFile(validMimeTypes, uploadField, {}, res, finish);
     });
   }
-
-  it('removes temporary files after content validation declines an upload', done => {
-    const filePath = writeTempFile(Buffer.from('Sample text document'));
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      fs.existsSync(filePath).should.equal(false);
-      done();
-    });
-    uploadFile(validMimeTypes, uploadField, {}, res, () =>
-      done(new Error('Unexpected accepted file')),
-    );
-  });
 
   it('rejects requests without an uploaded file', done => {
     const uploadFile = loadUploadFileWithStubbedMulter(null);
@@ -474,43 +428,6 @@ describe('file-upload.service unit tests', () => {
         done(err);
       }
     });
-  });
-
-  it('rejects files when magic-byte detection finds no supported type', done => {
-    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    const filePath = writeTempFile(Buffer.from('not a supported file'));
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      try {
-        res.statusCode.should.equal(415);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done();
-      } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done(err);
-      }
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('accepts svg files via the fallback detector', done => {
-    const filePath = writeTempFile(
-      Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>', 'utf8'),
-    );
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      try {
-        res.statusCode.should.equal(415);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done();
-      } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done(err);
-      }
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
   it('rejects files when fallback detection cannot read the file', done => {

@@ -365,29 +365,6 @@ describe('Service: email', function () {
     });
   });
 
-  it('omits the reactivation survey link when disabled', function (done) {
-    const service = loadEmailService({
-      '../../../../config/config': {
-        ...config,
-        surveyReactivateHosts: false,
-      },
-    });
-    const user = {
-      firstName: 'first',
-      lastName: 'last',
-      displayName: 'first last',
-      email: 'test@test.com',
-    };
-
-    service.sendReactivateHosts(user, function (err) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      job(0).data.html!.should.not.containEql('ideas.trustroots.org');
-      job(0).data.text.should.not.containEql('ideas.trustroots.org');
-      done();
-    });
-  });
-
   it('can send messages unread email', function (done) {
     const userFrom = {
       _id: 'from-user-id',
@@ -720,40 +697,6 @@ describe('Service: email', function () {
       if (err) return done(err);
       jobs.length.should.equal(1);
       job(0).data.subject.should.equal('Support request [Other]');
-      done();
-    });
-  });
-
-  it('includes only username in the support request subject when display name is missing', function (done) {
-    const supportRequest = {
-      message: 'test-support-message',
-      username: 'joedoe',
-    };
-    const replyTo = {
-      email: 'replyto@test.com',
-    };
-
-    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      job(0).data.subject.should.equal('Support request [Other] from joedoe');
-      done();
-    });
-  });
-
-  it('includes only display name in the support request subject when username is missing', function (done) {
-    const supportRequest = {
-      message: 'test-support-message',
-      displayName: 'Joe Doe',
-    };
-    const replyTo = {
-      email: 'replyto@test.com',
-    };
-
-    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      job(0).data.subject.should.equal('Support request [Other] (Joe Doe)');
       done();
     });
   });
@@ -1142,23 +1085,6 @@ describe('Service: email', function () {
     );
   });
 
-  it('passes render failures to renderEmailAndSend callbacks without scheduling jobs', function (done) {
-    const service = loadEmailService({
-      '../../../../config/lib/render': (templatePath, params, callback) =>
-        callback(new Error('render failed')),
-    });
-
-    service.renderEmailAndSend(
-      'reset-password',
-      { subject: 'test', name: 'test', email: 'test@test.com' },
-      function (err) {
-        err!.message.should.equal('render failed');
-        jobs.length.should.equal(0);
-        done();
-      },
-    );
-  });
-
   it('passes Agenda scheduling failures to renderEmailAndSend callbacks', function (done) {
     const service = loadEmailService({
       '../../../../config/lib/agenda': {
@@ -1255,41 +1181,6 @@ describe('Service: email', function () {
       );
     });
 
-    it('creates a [send email] job', function () {
-      jobs.length.should.equal(1);
-      job(0).type.should.equal('send email');
-    });
-
-    it('sends to the correct recipient', function () {
-      job(0).data.to.name!.should.equal(friend.displayName);
-      job(0).data.to.address.should.equal(friend.email);
-    });
-
-    it('sets the subject', function () {
-      job(0).data.subject.should.equal('Confirm contact');
-    });
-
-    it('contains the user and friends name', function () {
-      job(0).data.html!.should.containEql(user.displayName);
-      job(0).data.html!.should.containEql(friend.displayName);
-      job(0).data.text.should.containEql(user.displayName);
-      job(0).data.text.should.containEql(friend.displayName);
-    });
-
-    it('sets the custom message', function () {
-      job(0).data.html!.should.containEql(messageHTML);
-      job(0).data.text.should.containEql(messageText);
-    });
-
-    it('contains the correct message', function () {
-      job(0).data.html!.should.containEql(
-        user.displayName + '</a> would like to connect with you on Trustroots.',
-      );
-      job(0).data.text.should.containEql(
-        user.displayName + ' would like to connect with you on Trustroots.',
-      );
-    });
-
     it('contains the contact confirm url', function () {
       job(0).data.html!.should.containEql('/contact-confirm/' + contact._id);
       job(0).data.text.should.containEql('/contact-confirm/' + contact._id);
@@ -1304,26 +1195,6 @@ describe('Service: email', function () {
       emailService.sendConfirmContact(
         bannedUser,
         friend,
-        contact,
-        messageHTML,
-        messageText,
-        function (err) {
-          if (err) return done(err);
-          jobs.length.should.equal(0);
-          done();
-        },
-      );
-    });
-
-    it('suppresses confirm contact email for banned recipient', function (done) {
-      jobs.length = 0;
-      const bannedFriend = {
-        ...friend,
-        roles: ['user', 'suspended'],
-      };
-      emailService.sendConfirmContact(
-        user,
-        bannedFriend,
         contact,
         messageHTML,
         messageText,

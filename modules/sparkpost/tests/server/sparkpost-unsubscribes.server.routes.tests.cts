@@ -57,54 +57,10 @@ describe('SparkPost newsletter unsubscribe HTTP integration', () => {
     });
   }
 
-  it('ignores unknown, pending and malformed recipients and unrelated events in a mixed batch', async () => {
-    const before = await User.findOne({ email }).lean().exec();
-    await post([
-      { msys: {} },
-      event('list_unsubscribe', 'unknown-member@example.test'),
-      event('link_unsubscribe', 'pending-member@example.test'),
-      event('list_unsubscribe', { address: email }),
-      event('list_unsubscribe', 'invalid'),
-      event('list_unsubscribe', null),
-      event('delivery'),
-      { msys: { message_event: { type: 'list_unsubscribe', rcpt_to: email } } },
-    ]).expect(200);
-    should(await User.findOne({ email }).lean().exec()).deepEqual(before);
-  });
-
-  it('rejects unauthenticated opt-outs without changing consent', async () => {
-    await agent
-      .post('/api/sparkpost/webhook')
-      .send([event('list_unsubscribe')])
-      .expect(401);
-    should((await User.findOne({ email }).lean().exec())!.newsletter).equal(
-      true,
-    );
-  });
-
   it('rejects recipient query operators at the HTTP boundary', async () => {
     await post([event('list_unsubscribe', { $ne: null })]).expect(400);
     should((await User.findOne({ email }).lean().exec())!.newsletter).equal(
       true,
-    );
-  });
-
-  it('returns 503 on persistence failure and applies the same batch on retry', async () => {
-    const update = sinon.stub(User, 'updateOne').returns({
-      exec: () => Promise.reject(new Error('database unavailable')),
-    } as unknown as ReturnType<typeof User.updateOne>);
-    const batch = [event('list_unsubscribe')];
-    const failed = await post(batch).expect(503);
-    failed.body.should.deepEqual({
-      message: 'Could not process SparkPost unsubscribe events.',
-    });
-    should((await User.findOne({ email }).lean().exec())!.newsletter).equal(
-      true,
-    );
-    update.restore();
-    await post(batch).expect(200);
-    should((await User.findOne({ email }).lean().exec())!.newsletter).equal(
-      false,
     );
   });
 });

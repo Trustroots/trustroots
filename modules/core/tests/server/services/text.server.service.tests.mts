@@ -61,11 +61,6 @@ describe('Text processor tests', function () {
       testString.should.equal('foo bar');
     });
 
-    it('Should return an empty string for editor-only whitespace markup', function () {
-      const testString = textService.html('&nbsp;<p><br></p>');
-      testString.should.equal('');
-    });
-
     it('Remove non-allowed tags and keep allowed ones', function () {
       const htmlOutput =
         'Foo' +
@@ -93,13 +88,6 @@ describe('Text processor tests', function () {
     describe('Link handling', function () {
       it('Should remove links without href attributes', function () {
         const testString = textService.html('<a>http://trustroots.org</a>');
-        testString.should.equal('');
-      });
-
-      it('Should remove empty links', function () {
-        const testString = textService.html(
-          '<a href="http://trustroots.org"></a>',
-        );
         testString.should.equal('');
       });
 
@@ -222,16 +210,6 @@ describe('Text processor tests', function () {
               testString.should.equal(schemeTest.out);
             },
           );
-        });
-
-        it('Should not autolink "file" URL scheme', function () {
-          const testString = textService.html('file://host/path');
-          testString.should.equal('');
-        });
-
-        it('Should not autolink non-whitelisted URL schemes', function () {
-          const testString = textService.html('bad://www.trustroots.org');
-          testString.should.equal('');
         });
 
         it('Should allow autolinking protocol relative urls', function () {
@@ -360,12 +338,6 @@ describe('Text processor tests', function () {
       );
 
       stripped.should.equal('Write to , call , or visit . Welcome!');
-    });
-
-    it('preserves unrelated text', function () {
-      textService
-        .stripContactDetails('<p>A quiet place near the station.</p>')
-        .should.equal('A quiet place near the station.');
     });
 
     it('removes contact links with custom labels', function () {

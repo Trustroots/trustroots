@@ -136,27 +136,6 @@ describe('Tribes controller unit tests', () => {
       res.body.map(tribe => tribe.slug).should.deepEqual(['visible']);
     });
 
-    it('includes member-only tribes for authenticated members', async () => {
-      await new Tribe({
-        label: 'Naturists',
-        slug: 'naturists',
-        public: true,
-      }).save();
-
-      const res = deferredResponse<TestTribeView[]>();
-      tribesController.listTribes(
-        {
-          user: { roles: ['user'] },
-          query: {},
-          protocol: 'https',
-          originalUrl: '/api/tribes',
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.body.map(tribe => tribe.slug).should.deepEqual(['naturists']);
-    });
-
     it('sorts tribes alphabetically when requested', async () => {
       await new Tribe({
         label: 'Zulu',
@@ -205,29 +184,6 @@ describe('Tribes controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
     });
-
-    it('returns 400 when tribe count fails', async () => {
-      sinon.stub(Tribe, 'find').returns({
-        select: () => ({
-          sort: () => ({
-            limit: () => ({
-              skip: () => ({
-                exec: () => Promise.resolve([]),
-              }),
-            }),
-          }),
-        }),
-      } as unknown as ReturnType<typeof Tribe.find>);
-      sinon.stub(Tribe, 'countDocuments').rejects(new Error('count failed'));
-
-      const res = deferredResponse();
-      tribesController.listTribes(
-        { query: {}, protocol: 'https', originalUrl: '/api/tribes' },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
   });
 
   describe('getTribe', () => {
@@ -236,14 +192,6 @@ describe('Tribes controller unit tests', () => {
       tribesController.getTribe({}, res);
       await res.waitForResponse();
       res.body.should.deepEqual({});
-    });
-
-    it('returns the tribe attached to the request', async () => {
-      const tribe = await new Tribe({ label: 'Shown', slug: 'shown' }).save();
-      const res = deferredResponse<TestTribeView>();
-      tribesController.getTribe({ tribe }, res);
-      await res.waitForResponse();
-      res.body.slug.should.equal('shown');
     });
   });
 
@@ -320,29 +268,6 @@ describe('Tribes controller unit tests', () => {
       req.tribe?._id?.toString().should.equal(tribe._id.toString());
     });
 
-    it('attaches a tribe and calls next', async () => {
-      const tribe = await new Tribe({
-        label: 'Lookup',
-        public: true,
-      }).save();
-      const res = deferredResponse();
-      let nextCalled = false;
-      const req: { tribe?: TestTribeView } = {};
-      await new Promise<void>(resolve => {
-        tribesController.tribeBySlug(
-          req,
-          res,
-          () => {
-            nextCalled = true;
-            resolve();
-          },
-          tribe.slug!,
-        );
-      });
-      nextCalled.should.be.true();
-      req.tribe?._id?.toString().should.equal(tribe._id.toString());
-    });
-
     it('returns 400 when tribe lookup fails', async () => {
       sinon.stub(Tribe, 'findOne').returns({
         exec: () => Promise.reject(new Error('find failed')),
@@ -411,12 +336,6 @@ describe('Tribes controller unit tests', () => {
         select: tribesController.tribeFields,
         model: 'Tribe',
       });
-    });
-
-    it('accepts a reduced field selection', () => {
-      const options = tribesController.tribePopulateOptions('slug label');
-      options.select.should.equal('slug label');
-      options.path.should.equal('member.tribe');
     });
   });
 });

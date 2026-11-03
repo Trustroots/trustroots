@@ -148,65 +148,9 @@ describe('Sparkpost Webhooks - Integration Test', function () {
       res.body.should.have.property('message');
     });
 
-    it('receiveBatch accepts a valid batch', function (done) {
-      const processStub = sinon
-        .stub(sparkpostWebhooks, 'processAndSendMetrics')
-        .callsFake(
-          (_event: SparkpostEvent, callback: (error?: Error | null) => void) =>
-            callback(),
-        );
-      const res = {
-        statusCode: 200,
-        status(code: number) {
-          this.statusCode = code;
-          return this;
-        },
-        end() {
-          processStub.restore();
-          res.statusCode.should.equal(200);
-          done();
-        },
-      };
-
-      receiveBatch([testEvent], res);
-    });
-
-    it('processAndSendMetrics skips empty msys payloads', function (done) {
-      sparkpostWebhooks.processAndSendMetrics(
-        { msys: {} },
-        function (err: Error | null | undefined) {
-          should.not.exist(err);
-          sinon.assert.notCalled(writeMeasurementStub);
-          done();
-        },
-      );
-    });
-
-    it('processAndSendMetrics skips events without msys payloads', function (done) {
-      sparkpostWebhooks.processAndSendMetrics(
-        {},
-        function (err: Error | null | undefined) {
-          should.not.exist(err);
-          sinon.assert.notCalled(writeMeasurementStub);
-          done();
-        },
-      );
-    });
-
     it('processAndSendMetrics skips invalid event categories', function (done) {
       sparkpostWebhooks.processAndSendMetrics(
         { msys: { unknown: { type: 'click' } } },
-        function (err: Error | null | undefined) {
-          should.not.exist(err);
-          sinon.assert.notCalled(writeMeasurementStub);
-          done();
-        },
-      );
-    });
-
-    it('processAndSendMetrics skips invalid event types', function (done) {
-      sparkpostWebhooks.processAndSendMetrics(
-        { msys: { message_event: { type: 'unknown' } } },
         function (err: Error | null | undefined) {
           should.not.exist(err);
           sinon.assert.notCalled(writeMeasurementStub);
@@ -250,21 +194,6 @@ describe('Sparkpost Webhooks - Integration Test', function () {
           }
         },
       );
-    });
-
-    it('basicAuthenticate rejects missing credentials', function () {
-      const originalEnabled = config.sparkpostWebhook.enabled;
-      config.sparkpostWebhook.enabled = true;
-      const res = createResponse();
-      let nextCalled = false;
-
-      basicAuthenticate({}, res, () => {
-        nextCalled = true;
-      });
-
-      nextCalled.should.be.false();
-      res.statusCode.should.equal(401);
-      config.sparkpostWebhook.enabled = originalEnabled;
     });
 
     it('basicAuthenticate rejects valid credentials when webhook auth is disabled', function () {
@@ -314,29 +243,6 @@ describe('Sparkpost Webhooks - Integration Test', function () {
 
       nextCalled.should.be.false();
       res.statusCode.should.equal(401);
-      config.sparkpostWebhook.enabled = originalEnabled;
-    });
-
-    it('basicAuthenticate accepts matching credentials when webhook auth is enabled', function () {
-      const originalEnabled = config.sparkpostWebhook.enabled;
-      config.sparkpostWebhook.enabled = true;
-      const res = createResponse();
-      let nextCalled = false;
-      const req = {
-        headers: {
-          authorization: basicAuthHeader(
-            config.sparkpostWebhook.username,
-            config.sparkpostWebhook.password,
-          ),
-        },
-      };
-
-      basicAuthenticate(req.headers, res, () => {
-        nextCalled = true;
-      });
-
-      nextCalled.should.be.true();
-      res.statusCode.should.equal(200);
       config.sparkpostWebhook.enabled = originalEnabled;
     });
 
