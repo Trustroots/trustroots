@@ -199,11 +199,9 @@ describe('CirclesPage', () => {
           fireEvent.click(joined);
 
           // Confirmation modal should open...
-          const modal = await waitFor(() =>
-            page.getByText(nestedTextMatch('Leave this circle?'), {
-              selector: '.modal-dialog',
-            }),
-          );
+          const modal = await page.findByRole('dialog', {
+            name: 'Leave this circle?',
+          });
 
           // ...and we click Leave Tribe button within it.
           const confirm = within(modal).getByText('Leave circle', {

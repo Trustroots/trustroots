@@ -1,7 +1,13 @@
 import React from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
-import { Modal } from 'react-bootstrap';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@trustroots/ui/Modal';
 import type { TribeSummary } from '../api/tribes.api';
 
 export default function LeaveTribeModal({
@@ -20,27 +26,25 @@ export default function LeaveTribeModal({
   };
 
   return (
-    <Modal show={show} onHide={onCancel}>
-      <div className="modal-content">
-        <Modal.Header>
-          <Modal.Title>{t('Leave this circle?') as string}</Modal.Title>
-        </Modal.Header>
+    <Modal open={show} onClose={onCancel}>
+      <ModalHeader>
+        <ModalTitle>{t('Leave this circle?') as string}</ModalTitle>
+      </ModalHeader>
 
-        <Modal.Body>
-          {
-            t('Do you want to leave "{{label}}"?', {
-              label: tribe.label,
-            }) as string
-          }
-        </Modal.Body>
+      <ModalBody>
+        {
+          t('Do you want to leave "{{label}}"?', {
+            label: tribe.label,
+          }) as string
+        }
+      </ModalBody>
 
-        <Modal.Footer>
-          <Button intent="primary" onClick={onConfirm}>
-            {t('Leave circle') as string}
-          </Button>
-          <Button onClick={onCancel}>{t('Cancel') as string}</Button>
-        </Modal.Footer>
-      </div>
+      <ModalFooter>
+        <Button intent="primary" onClick={onConfirm}>
+          {t('Leave circle') as string}
+        </Button>
+        <Button onClick={onCancel}>{t('Cancel') as string}</Button>
+      </ModalFooter>
     </Modal>
   );
 }

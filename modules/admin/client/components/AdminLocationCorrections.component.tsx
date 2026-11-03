@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { Modal } from 'react-bootstrap';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  Modal,
+  ModalBody,
+  ModalHeader,
+  ModalTitle,
+} from '@trustroots/ui/Modal';
 import {
   getLocationCorrections,
   sendLocationCorrection,
@@ -40,6 +45,7 @@ export default function AdminLocationCorrections() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const messageRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -172,20 +178,19 @@ export default function AdminLocationCorrections() {
           })}
         {selected && (
           <Modal
-            show
-            onHide={() => setSelected(null)}
-            keyboard={!isSending}
-            backdrop={isSending ? 'static' : true}
-            aria-labelledby="location-correction-review-title"
+            open
+            onClose={() => setSelected(null)}
+            dismissible={!isSending}
+            initialFocus={messageRef}
             size="lg"
             scrollable
           >
-            <Modal.Header closeButton={!isSending}>
-              <Modal.Title id="location-correction-review-title">
+            <ModalHeader closeLabel={isSending ? undefined : 'Close'}>
+              <ModalTitle id="location-correction-review-title">
                 Review {selected.displayName || selected.username}
-              </Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
               {error && (
                 <Alert intent="danger" role="alert">
                   {error}
@@ -209,11 +214,10 @@ export default function AdminLocationCorrections() {
                 <label htmlFor="location-correction-message">
                   Message from your account
                 </label>
-                {/* This dialog opens after an explicit Review action; focus
-                    starts in the message field within the modal focus trap. */}
-                {/* eslint-disable jsx-a11y/no-autofocus */}
+                {/* Focus starts in the message field: the dialog opens
+                    after an explicit Review action. */}
                 <textarea
-                  autoFocus
+                  ref={messageRef}
                   className="form-control"
                   id="location-correction-message"
                   maxLength={5000}
@@ -221,7 +225,6 @@ export default function AdminLocationCorrections() {
                   rows={8}
                   value={content}
                 />
-                {/* eslint-enable jsx-a11y/no-autofocus */}
                 <Button
                   intent="primary"
                   disabled={isSending || !content.trim()}
@@ -237,7 +240,7 @@ export default function AdminLocationCorrections() {
                   Cancel
                 </Button>
               </form>
-            </Modal.Body>
+            </ModalBody>
           </Modal>
         )}
       </main>

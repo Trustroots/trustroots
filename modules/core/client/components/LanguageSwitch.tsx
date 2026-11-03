@@ -1,7 +1,13 @@
 // External dependencies
-import { Modal } from 'react-bootstrap';
 import { useTranslation } from 'react-i18next';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@trustroots/ui/Modal';
 import React, { useState } from 'react';
 import styled from 'styled-components';
 
@@ -115,11 +121,11 @@ export default function LanguageSwitch({
       >
         {currentLanguage?.label ?? 'English'}
       </Button>
-      <Modal show={isModalVisible} onHide={onModalHide}>
-        <Modal.Header closeButton>
-          <Modal.Title>{t('Select a language')}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
+      <Modal open={isModalVisible} onClose={onModalHide}>
+        <ModalHeader closeLabel={t('Close')}>
+          <ModalTitle>{t('Select a language')}</ModalTitle>
+        </ModalHeader>
+        <ModalBody>
           {locales.length >= 8 && (
             <SearchInput
               type="search"
@@ -153,8 +159,8 @@ export default function LanguageSwitch({
               </li>
             ))}
           </LanguageList>
-        </Modal.Body>
-        <Modal.Footer>
+        </ModalBody>
+        <ModalFooter>
           <Button className="pull-left" onClick={onModalHide}>
             {t('Cancel')}
           </Button>
@@ -167,7 +173,7 @@ export default function LanguageSwitch({
               {t('Help us translate.')}
             </a>
           </small>
-        </Modal.Footer>
+        </ModalFooter>
       </Modal>
     </>
   );

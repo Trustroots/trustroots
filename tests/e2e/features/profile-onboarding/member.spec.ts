@@ -453,7 +453,9 @@ test.describe('confirmed member flows', () => {
         response.ok(),
     );
     await joinButton.click();
-    const leaveDialog = page.locator('div.modal[role="dialog"]');
+    const leaveDialog = page.getByRole('dialog', {
+      name: 'Leave this circle?',
+    });
     await expect(leaveDialog).toBeVisible();
     await leaveDialog
       .getByRole('button', { name: 'Leave circle', exact: true })

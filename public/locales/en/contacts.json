@@ -2,6 +2,7 @@
   "(additional {{count}} pending)_one": "(additional {{count}} pending)",
   "(additional {{count}} pending)_other": "(additional {{count}} pending)",
   "Cancel": "Cancel",
+  "Close": "Close",
   "Confirm Request": "Confirm Request",
   "Connected since {{date, LL}}": "Connected since {{date, LL}}",
   "Contact request sent and pending.": "Contact request sent and pending.",
