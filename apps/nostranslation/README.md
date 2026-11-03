@@ -92,6 +92,10 @@ member records or credentials. See the [Structured Outputs documentation](https:
 - The service requires a fresh NIP-98 signature bound to the exact request URL,
   method and body. Five batches per key per hour are allowed. Retry failures
   from the same saved draft; deterministic branches recover existing PRs.
+- The review endpoint accepts up to 20 requests per minute per connecting IP,
+  including unsuccessful attempts. Excess requests return HTTP 429 and a
+  `Retry-After` header. The existing per-key submission limit also applies.
+  Behind a reverse proxy, connecting IPs share this request budget.
 - If English or the target string changes, refresh and proofread it again.
   Refresh preserves typed corrections and clears approval for stale entries.
 - After merge, accepted corrections guide the next generated draft for that

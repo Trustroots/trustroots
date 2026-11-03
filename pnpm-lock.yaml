@@ -243,6 +243,9 @@ importers:
       express:
         specifier: 5.3.0
         version: 5.3.0(supports-color@5.5.0)
+      express-rate-limit:
+        specifier: 8.7.2
+        version: 8.7.2(express@5.3.0(supports-color@5.5.0))(supports-color@5.5.0)
       express-session:
         specifier: 1.19.0
         version: 1.19.0(supports-color@5.5.0)
@@ -5091,6 +5094,12 @@ packages:
   expect@30.5.2:
     resolution: {integrity: sha512-0LNuMvs8/5mRYhnCR4k+lGV7fqPMs6Bnksda4S3zsCUmdxBpAn4zU4NNzXdq1pMKe/H4W5t/zVIDSJ/H3e0vDA==}
     engines: {node: ^18.14.0 || ^20.0.0 || ^22.0.0 || >=24.0.0}
+
+  express-rate-limit@8.7.2:
+    resolution: {integrity: sha512-U1ScocxDD9WI09LaBVypvNkOtNR5yWAmZLkuKJdAzIchA4YKFYF6GT5IKER7epG58oXtjvGlV0/6ii0F83EyZg==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
 
   express-session@1.19.0:
     resolution: {integrity: sha512-0csaMkGq+vaiZTmSMMGkfdCOabYv192VbytFypcvI0MANrp+4i/7yEkJ0sbAEhycQjntaKGzYfjfXQyVb7BHMA==}
@@ -12598,6 +12607,14 @@ snapshots:
       jest-message-util: 30.5.1
       jest-mock: 30.5.2
       jest-util: 30.5.1
+
+  express-rate-limit@8.7.2(express@5.3.0(supports-color@5.5.0))(supports-color@5.5.0):
+    dependencies:
+      debug: 4.4.3(supports-color@5.5.0)
+      express: 5.3.0(supports-color@5.5.0)
+      ip-address: 10.7.4
+    transitivePeerDependencies:
+      - supports-color
 
   express-session@1.19.0(supports-color@5.5.0):
     dependencies:

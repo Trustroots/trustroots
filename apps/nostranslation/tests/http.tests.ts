@@ -187,4 +187,21 @@ describe('review API', () => {
       .get('/api/languages')
       .expect(200, []);
   });
+
+  it('limits unsuccessful review attempts and returns retry instructions', async () => {
+    const { app, submit } = setup();
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await request(app).post('/api/reviews').send({}).expect(401);
+    }
+    await request(app)
+      .post('/api/reviews')
+      .set('Content-Type', 'application/json')
+      .send('{invalid')
+      .expect('Retry-After', /\d+/)
+      .expect(429, {
+        error: 'Too many review requests. Please retry in a minute.',
+      });
+    await request(app).get('/health').expect(200);
+    expect(submit).not.toHaveBeenCalled();
+  });
 });
