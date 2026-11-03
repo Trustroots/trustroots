@@ -356,6 +356,48 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
+    it('should be able to read offers by id and get populated tribes array', function (done) {
+      agent
+        .post('/api/auth/signin')
+        // authenticated as `user1`
+        .send(credentials)
+        .expect(200)
+        .end(function (signinErr) {
+          // Handle signin error
+          if (signinErr) return done(signinErr);
+
+          // Get a offer from the other user by offer id
+          agent
+            .get('/api/offers/' + offer2Id)
+            .expect(200)
+            .end(function (offerGetErr, offerGetRes) {
+              // Handle offer get error
+              if (offerGetErr) return done(offerGetErr);
+
+              // Set assertions
+              offerGetRes.body.user.member.length.should.equal(1);
+              offerGetRes.body.user.member[0].since.should.not.be.empty();
+              offerGetRes.body.user.member[0].tribe._id.should.equal(
+                tribe2Id.toString(),
+              );
+              offerGetRes.body.user.member[0].tribe.color.should.equal(
+                tribe2.color,
+              );
+              offerGetRes.body.user.member[0].tribe.count.should.equal(
+                tribe2.count,
+              );
+              offerGetRes.body.user.member[0].tribe.slug.should.equal(
+                tribe2.slug,
+              );
+              offerGetRes.body.user.member[0].tribe.label.should.equal(
+                tribe2.label,
+              );
+
+              // Call the assertion callback
+              return done();
+            });
+        });
+    });
   });
   describe('Read offer by user id:', function () {
     it('should be able to read offers of other users by user id when authenticated', function (done) {

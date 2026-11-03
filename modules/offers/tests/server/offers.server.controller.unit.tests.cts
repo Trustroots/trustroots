@@ -892,6 +892,23 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.type.should.equal('host');
     });
+
+    it('returns an offer when tribe memberships are undefined', async () => {
+      const offer = await createOffer(owner._id);
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
+      );
+      delete offerReq.user.member;
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer: offerReq }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.type.should.equal('host');
+    });
   });
 
   describe('listOffersByUser', () => {
