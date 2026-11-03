@@ -69,8 +69,14 @@ export function umamiBeforeSend(
   return scrubbed;
 }
 
-/** Expose the hook before the tracker sends its first page view. */
+/** Install the hook, then activate the tracker from the page template. */
 export function installUmamiBeforeSend(): void {
   (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND] =
     umamiBeforeSend;
+
+  const template =
+    document.querySelector<HTMLTemplateElement>('#tr-umami-tracker');
+  if (template) {
+    template.replaceWith(template.content.cloneNode(true));
+  }
 }

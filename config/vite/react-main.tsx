@@ -11,7 +11,7 @@ import { enable as enableFaviconUpdater } from '@/modules/messages/client/servic
 
 import './load-styles';
 
-// Before the Umami script's first page view, which waits for the page load.
+// Install the hook before activating the tracker from the page template.
 installUmamiBeforeSend();
 
 function enableMessageShellServices(): void {

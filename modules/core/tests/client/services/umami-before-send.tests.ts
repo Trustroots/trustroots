@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom';
 import {
   UMAMI_BEFORE_SEND,
   installUmamiBeforeSend,
@@ -56,6 +57,8 @@ function setGlobalPrivacyControl(value: unknown): void {
 }
 
 afterEach(() => {
+  document.head.querySelector('#tr-umami-tracker')?.remove();
+  document.head.querySelector('script[data-before-send]')?.remove();
   delete (window.navigator as { globalPrivacyControl?: unknown })
     .globalPrivacyControl;
   delete (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND];
@@ -168,6 +171,36 @@ describe('umamiBeforeSend', () => {
 });
 
 describe('installUmamiBeforeSend', () => {
+  it('installs the hook before activating the tracker and activates it only once', () => {
+    const template = document.createElement('template');
+    template.id = 'tr-umami-tracker';
+    template.innerHTML =
+      '<script async src="https://analytics.example.org/script.js" data-before-send="trUmamiBeforeSend" nonce="test-nonce"></script>';
+    document.head.append(template);
+    const replaceWith = jest.spyOn(template, 'replaceWith');
+    replaceWith.mockImplementationOnce((...nodes) => {
+      expect(
+        (window as unknown as Record<string, unknown>)[UMAMI_BEFORE_SEND],
+      ).toBe(umamiBeforeSend);
+      replaceWith.mockRestore();
+      template.replaceWith(...nodes);
+    });
+
+    expect(document.head.querySelector('script[data-before-send]')).toBeNull();
+    installUmamiBeforeSend();
+    installUmamiBeforeSend();
+
+    const scripts = document.head.querySelectorAll('script[data-before-send]');
+    expect(scripts).toHaveLength(1);
+    expect(scripts[0]).toHaveAttribute(
+      'src',
+      'https://analytics.example.org/script.js',
+    );
+    expect(scripts[0]).toHaveAttribute('async');
+    expect(scripts[0]).toHaveAttribute('nonce', 'test-nonce');
+    expect(document.querySelector('#tr-umami-tracker')).toBeNull();
+  });
+
   it('exposes the hook under the name the script tag points to', () => {
     installUmamiBeforeSend();
 
