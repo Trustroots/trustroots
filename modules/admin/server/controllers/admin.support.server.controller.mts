@@ -106,6 +106,7 @@ interface SupportRequest {
 interface SupportResponse {
   status(code: number): SupportResponse;
   send(body: unknown): unknown;
+  json(body: unknown): unknown;
 }
 
 type Action = (req: SupportRequest, res: SupportResponse) => Promise<unknown>;
@@ -523,7 +524,7 @@ export const retry = handler(async (req, res) => {
   const safe = await SupportMessage.findById(message._id)
     .select(CONVERSATION_FIELDS)
     .lean();
-  return res.send(safe);
+  return res.json(safe);
 });
 
 /** @esmNamed */
@@ -645,12 +646,12 @@ export const searchMembers = handler(async (req, res) => {
   }
   const members = await findMembers(search);
   await audit(req);
-  return res.send(members.map(memberPayload));
+  return res.json(members.map(memberPayload));
 });
 
 /** @esmNamed */
 export const member = handler(async (req, res) => {
-  const identifier = req.params.memberId;
+  const identifier = String(req.params.memberId);
   const result =
     (await User.findOne({ username: identifier })
       .select(MEMBER_FIELDS)
@@ -662,7 +663,7 @@ export const member = handler(async (req, res) => {
     throw Object.assign(new Error('Member not found.'), { status: 404 });
   }
   await audit(req);
-  return res.send(memberPayload(result));
+  return res.json(memberPayload(result));
 });
 
 const api = {

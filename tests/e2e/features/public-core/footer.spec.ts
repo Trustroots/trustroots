@@ -82,7 +82,7 @@ test.describe('public footer', () => {
       footer.getByRole('link', { name: /currently deployed code/i }),
     ).toHaveAttribute(
       'href',
-      /https:\/\/github\.com\/Trustroots\/trustroots\/commit\/[0-9a-f]{40}/,
+      /^https:\/\/github\.com\/Trustroots\/trustroots\/commit\/[0-9a-f]{40}$/,
     );
 
     const contentBox = await footer

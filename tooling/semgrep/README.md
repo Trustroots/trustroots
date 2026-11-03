@@ -21,7 +21,7 @@ from the application scan and run separately using `semgrep scan --test`.
 
 The local rule follows request body, query and parameter values into common
 database-filter methods. Explicit conversion to a string or number ends that
-object flow. This is a conservative local check: it cannot infer every schema
+object flow, as does construction of a Mongoose ObjectId. This is a conservative local check: it cannot infer every schema
 validator or distinguish every unrelated object with a method named `find`.
 Review findings in context. Do not add blanket exclusions for modules or entire
 rule families to resolve individual false positives.

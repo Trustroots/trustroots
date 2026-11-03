@@ -785,7 +785,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
   // Clearly labelled synthetic tiles keep visual layout checks independent of
   // remote map servers. These are test graphics, not geographical evidence.
   await page.route(
-    /https:\/\/(?:[abc]\.tile\.openstreetmap\.org\/|api\.mapbox\.com\/styles\/)/,
+    /^https:\/\/(?:[abc]\.tile\.openstreetmap\.org\/|api\.mapbox\.com\/styles\/)/,
     route =>
       route.fulfill({
         contentType: 'image/svg+xml',

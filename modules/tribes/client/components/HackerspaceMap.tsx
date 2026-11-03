@@ -58,7 +58,21 @@ export function parseHackerPlace(event: {
   const point = decodeGeohash(geohashes[0] || '');
   const name = tag(event.tags, 'name');
   const website = tag(event.tags, 'website');
-  if (!metadata(event.tags, 'source')?.includes('spaceapi.io')) return null;
+  const source = metadata(event.tags, 'source');
+  let trustedSource = false;
+  if (source) {
+    try {
+      const sourceUrl = new URL(source);
+      trustedSource =
+        sourceUrl.protocol === 'https:' &&
+        !sourceUrl.username &&
+        !sourceUrl.password &&
+        ['spaceapi.io', 'api.spaceapi.io'].includes(sourceUrl.hostname);
+    } catch {
+      trustedSource = false;
+    }
+  }
+  if (!trustedSource) return null;
   if (!point || !name) return null;
   return {
     id: event.pubkey

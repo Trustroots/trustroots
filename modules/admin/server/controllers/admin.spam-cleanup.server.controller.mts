@@ -20,6 +20,7 @@ interface Request {
 interface Response {
   status(code: number): Response;
   send(body: unknown): unknown;
+  json(body: unknown): unknown;
 }
 const Preview = mongoose.model<SpamCleanupPreview>('SpamCleanupPreview');
 const Chunk = mongoose.model<SpamCleanupChunk>('SpamCleanupChunk');
@@ -64,7 +65,7 @@ export async function preview(req: Request, res: Response) {
     let record;
     if (body.previewId)
       record = await Preview.findOne({
-        _id: body.previewId,
+        _id: String(body.previewId),
         actor: req.user._id,
         expiresAt: { $gt: new Date() },
       });
@@ -252,7 +253,7 @@ export async function apply(req: Request, res: Response) {
     .digest('hex');
   try {
     const filter = {
-      _id: body.previewId,
+      _id: String(body.previewId),
       actor: req.user._id,
       expiresAt: { $gt: new Date() },
     };
@@ -273,7 +274,7 @@ export async function apply(req: Request, res: Response) {
         message:
           'Finish previewing first and keep the reviewed selection unchanged during apply.',
       });
-    if (record.result) return res.send(record.result);
+    if (record.result) return res.json(record.result);
     const claimed = await Preview.findOneAndUpdate(
       { ...filter, nextChunk: record.nextChunk, claimed: { $ne: true } },
       { $set: { claimed: true } },
@@ -332,7 +333,7 @@ export async function apply(req: Request, res: Response) {
       });
     }
     await record.save();
-    return res.send(progress);
+    return res.json(progress);
   } catch {
     return res.status(500).send({
       message:

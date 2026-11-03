@@ -46,6 +46,34 @@ function place(tags: string[][] = [], content = ''): Event {
   };
 }
 describe('hackerspace place event parsing', () => {
+  it('accepts only HTTPS sources on SpaceAPI hostnames', () => {
+    const base = place();
+    const withSource = (source: string) => ({
+      ...base,
+      tags: base.tags.map(value =>
+        value[0] === 'meta' && value[1] === 'source'
+          ? ['meta', 'source', source]
+          : value,
+      ),
+    });
+
+    expect(parseHackerPlace(withSource('https://spaceapi.io/'))).not.toBeNull();
+    expect(
+      parseHackerPlace(withSource('https://api.spaceapi.io/directory')),
+    ).not.toBeNull();
+
+    for (const source of [
+      'https://spaceapi.io.evil.example/',
+      'https://evil.example/spaceapi.io',
+      'https://spaceapi.io@evil.example/',
+      'https://evil.example@api.spaceapi.io/',
+      'http://api.spaceapi.io/',
+      'https://[malformed/',
+    ]) {
+      expect(parseHackerPlace(withSource(source))).toBeNull();
+    }
+  });
+
   it('handles legacy metadata, multiple precisions, missing names and inactive states', () => {
     const legacy = place();
     legacy.tags = [

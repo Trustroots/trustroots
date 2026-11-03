@@ -157,7 +157,9 @@ function formatDuration(ms: number | null | undefined): string {
 }
 
 function escapeMarkdown(value: unknown): string {
-  return String(value == null ? '' : value).replace(/\|/g, '\\|');
+  return String(value == null ? '' : value)
+    .replace(/\\/g, '\\\\')
+    .replace(/\|/g, '\\|');
 }
 
 function escapeHtml(value: unknown): string {

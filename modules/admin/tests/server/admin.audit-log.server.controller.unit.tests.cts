@@ -33,6 +33,7 @@ type AuditLogResponse = {
   body: unknown;
   status(code: number): AuditLogResponse;
   send(body: unknown): AuditLogResponse;
+  json(body: unknown): AuditLogResponse;
   waitForResponse(): Promise<AuditLogResponse>;
 };
 
@@ -53,6 +54,11 @@ function mockResponse(): AuditLogResponse {
       return res;
     },
     send(body) {
+      res.body = body;
+      resolveResponse(res);
+      return res;
+    },
+    json(body) {
       res.body = body;
       resolveResponse(res);
       return res;

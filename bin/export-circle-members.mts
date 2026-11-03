@@ -100,10 +100,7 @@ interface CircleMemberRecord extends Document {
         users.forEach(user => {
           data += '\n';
           data += [user.email, user.firstName, user.lastName]
-            .map(value =>
-              // Sanitize data for CSV compatibility
-              value.trim().replace("'", '').replace('"', '').replace(',', ''),
-            )
+            .map(value => '"' + value.trim().replace(/"/g, '""') + '"')
             .join(',');
         });
 

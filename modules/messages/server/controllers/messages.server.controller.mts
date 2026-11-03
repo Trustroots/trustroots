@@ -568,7 +568,7 @@ service.send = async function (req, res) {
     let receiver;
     try {
       receiver = await User.findOne({
-        _id: body.userTo,
+        _id: String(body.userTo),
         ...publicityLimit,
       }).exec();
     } catch {
@@ -582,8 +582,8 @@ service.send = async function (req, res) {
         .send({ message: 'Member you are writing to does not exist.' });
     const existingThread = await Thread.findOne({
       $or: [
-        { userTo: user._id, userFrom: body.userTo },
-        { userTo: body.userTo, userFrom: user._id },
+        { userTo: user._id, userFrom: String(body.userTo) },
+        { userTo: String(body.userTo), userFrom: user._id },
       ],
     });
     if (!existingThread) {
@@ -647,12 +647,12 @@ service.send = async function (req, res) {
           // User id's can be either way around in old thread handle, so we gotta test for both situations
           $or: [
             {
-              userTo: upsertData.userTo,
-              userFrom: upsertData.userFrom,
+              userTo: String(body.userTo),
+              userFrom: String(user._id),
             },
             {
-              userTo: upsertData.userFrom,
-              userFrom: upsertData.userTo,
+              userTo: String(user._id),
+              userFrom: String(body.userTo),
             },
           ],
         },
@@ -790,13 +790,15 @@ service.markRead = function (req, res) {
   if (messageIds.length === 0) {
     return res.status(200).send(prepareMarkReadResponse());
   }
+  const validatedMessageIds: string[] = [];
+  for (const id of messageIds) validatedMessageIds.push(String(id));
   // Mark messages read
-  Message.updateMany(prepareMarkReadSelector(messageIds, user.id), {
+  Message.updateMany(prepareMarkReadSelector(validatedMessageIds, user.id), {
     read: true,
   })
     .then(() =>
       Thread.updateMany(
-        { userTo: user._id, message: { $in: messageIds } },
+        { userTo: user._id, message: { $in: validatedMessageIds } },
         { $set: { read: true } },
       ),
     )

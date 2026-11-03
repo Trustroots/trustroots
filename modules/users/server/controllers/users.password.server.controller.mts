@@ -91,7 +91,7 @@ service.forgot = function (req, res) {
       message:
         'If an account matches that username or email, we will send recovery instructions.',
     });
-  const userHandle = req.body.username.toLowerCase();
+  const userHandle = String(req.body.username).toLowerCase();
   acknowledge();
 
   // Account lookup, persistence, and email delivery must not affect the
@@ -160,7 +160,7 @@ service.forgot = function (req, res) {
  */
 service.validateResetToken = function (req, res) {
   User.findOne({
-    resetPasswordToken: matchToken(req.params.token),
+    resetPasswordToken: matchToken(String(req.params.token)),
     resetPasswordExpires: {
       $gt: Date.now(),
     },
@@ -220,7 +220,7 @@ service.reset = async function (req, res) {
   const now = new Date();
   findOneAndUpdateWithCallback(
     {
-      resetPasswordToken: matchToken(req.params.token),
+      resetPasswordToken: matchToken(String(req.params.token)),
       resetPasswordExpires: { $gt: now },
     },
     {

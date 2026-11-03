@@ -49,7 +49,8 @@ jobs:
           fi
           # Explicit targets include Node's .mts/.cts sources, which normal
           # language-based discovery currently skips.
-          mapfile -d '' targets < <(git ls-files -z -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' '*.mts' '*.cts')
+          # Explicit file targets bypass exclusions, so omit rule fixtures here.
+          mapfile -d '' targets < <(git ls-files -z -- '*.js' '*.jsx' '*.ts' '*.tsx' '*.mjs' '*.cjs' '*.mts' '*.cts' ':!tooling/semgrep/rules/*.js')
           semgrep scan \
             --config p/nodejs --config p/expressjs --config p/react \
             --config tooling/semgrep/rules \

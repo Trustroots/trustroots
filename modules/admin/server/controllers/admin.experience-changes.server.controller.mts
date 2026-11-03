@@ -215,7 +215,7 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
         .json({ message: 'Invalid Experience or member.' });
     }
     const experience = await Experience.findOne({
-      _id: request.params.id,
+      _id: String(request.params.id),
       ...active,
     })
       .lean()
@@ -241,7 +241,7 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
     await ExperienceChangeLink.findOneAndUpdate(
       {
         experience: experience._id,
-        member: new mongoose.Types.ObjectId(memberId),
+        member: new mongoose.Types.ObjectId(String(memberId)),
       },
       {
         tokenHash,
@@ -389,12 +389,13 @@ const decide: Handler<
     if (!isId(request.params.id)) {
       return response.status(400).json({ message: 'Invalid review decision.' });
     }
-    const decision = bodyField(request.body, 'decision');
-    if (!isDecision(decision)) {
+    const suppliedDecision = bodyField(request.body, 'decision');
+    if (!isDecision(suppliedDecision)) {
       return response.status(400).json({ message: 'Invalid review decision.' });
     }
+    const decision = String(suppliedDecision);
     const pendingRequest = await ExperienceChangeRequest.findOne({
-      _id: request.params.id,
+      _id: String(request.params.id),
       status:
         decision === 'approve' ? { $in: ['pending', 'processing'] } : 'pending',
       active: true,
@@ -421,7 +422,7 @@ const decide: Handler<
     const rejecting = decision === 'reject';
     let changeRequest = await ExperienceChangeRequest.findOneAndUpdate(
       {
-        _id: request.params.id,
+        _id: String(request.params.id),
         active: true,
         $or: rejecting
           ? [{ status: 'pending' }]
@@ -444,7 +445,7 @@ const decide: Handler<
       .exec();
     if (!changeRequest && !rejecting) {
       changeRequest = await ExperienceChangeRequest.findOne({
-        _id: request.params.id,
+        _id: String(request.params.id),
         status: 'processing',
         active: true,
       })

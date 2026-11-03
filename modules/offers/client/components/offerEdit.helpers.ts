@@ -1,3 +1,4 @@
 export function plainTextLength(value = ''): number {
-  return value.replace(/<[^>]*>/g, '').trim().length;
+  const document = new DOMParser().parseFromString(value, 'text/html');
+  return (document.body.textContent || '').trim().length;
 }

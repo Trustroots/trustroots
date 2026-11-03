@@ -258,8 +258,8 @@ service.update = function (req, res) {
       const emailUser = await User.findOne(
         {
           $or: [
-            { emailTemporary: requestedEmail.toLowerCase() },
-            { email: requestedEmail.toLowerCase() },
+            { emailTemporary: String(requestedEmail).toLowerCase() },
+            { email: String(requestedEmail).toLowerCase() },
           ],
         },
         'emailTemporary email',
@@ -273,7 +273,10 @@ service.update = function (req, res) {
     }
     if (requestedNostrNpub) {
       const existingNostrUser = await User.findOne(
-        { _id: { $ne: authenticatedUser._id }, nostrNpub: requestedNostrNpub },
+        {
+          _id: { $ne: authenticatedUser._id },
+          nostrNpub: String(requestedNostrNpub),
+        },
         '_id',
       );
       if (existingNostrUser) {
@@ -495,7 +498,7 @@ service.removeProfile = function (req, res) {
   async function remove(): Promise<void> {
     const user = await User.findOne({
       _id: authenticatedUser._id,
-      removeProfileToken: matchToken(req.params.token),
+      removeProfileToken: matchToken(String(req.params.token)),
       removeProfileExpires: { $gt: Date.now() },
     }).catch(() => null);
     if (!user) {
@@ -1230,7 +1233,7 @@ service.search = function (req, res, next) {
         },
         {
           $text: {
-            $search: req.query.search.trim(),
+            $search: String(req.query.search).trim(),
           },
         },
       ],

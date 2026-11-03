@@ -14,6 +14,7 @@ interface SupportImportRequest {
 interface SupportImportResponse {
   status(code: number): SupportImportResponse;
   send(body: unknown): unknown;
+  json(body: unknown): unknown;
 }
 
 interface SupportImportError extends Error {
@@ -52,7 +53,7 @@ export async function preview(
   res: SupportImportResponse,
 ): Promise<unknown> {
   try {
-    return res.send(
+    return res.json(
       await previewReducedManifest(
         req.body,
         req.user._id,
@@ -92,7 +93,7 @@ export async function apply(
       'selectedMatches' in body
         ? (body.selectedMatches as SupportStatusImportSelection[])
         : undefined;
-    return res.send(
+    return res.json(
       await applyPreview(body.previewId, req.user._id, selectedMatches),
     );
   } catch (error) {

@@ -298,7 +298,7 @@ describe('Shared support inbox', () => {
       1,
     );
     await SupportMessage.updateOne(
-      { _id: posted.body._id },
+      { _id: String(posted.body._id) },
       { $set: { deliveryState: 'failed' } },
     );
     const retried = await write(

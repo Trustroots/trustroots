@@ -594,11 +594,11 @@ export const listCircleMembers = async (
   const onlyNewsletterCircleMembers = !req?.query?.onlyNewsletterCircleMembers;
   const query = onlyNewsletterCircleMembers
     ? buildEligibleSubscribersQuery({
-        'member.tribe': circleId,
+        'member.tribe': new mongoose.Types.ObjectId(circleId),
       })
     : {
         public: true,
-        'member.tribe': circleId,
+        'member.tribe': new mongoose.Types.ObjectId(circleId),
         roles: {
           $nin: userRolesService.restrictedMessagingRoles,
         },
@@ -637,11 +637,15 @@ export const audience = async (
     : [];
   const audienceQuery = buildAudienceQuery(criteria, hostingUserIds);
   if (criteria.format === 'preview') {
+    // parseAudienceCriteria validates every field and constructs the ObjectIds.
+    // nosemgrep: request-object-in-database-filter
     const count = await User.countDocuments(audienceQuery).exec();
     return res.send({
       count,
     });
   }
+  // parseAudienceCriteria validates every field and constructs the ObjectIds.
+  // nosemgrep: request-object-in-database-filter
   const users = await User.find(audienceQuery, {
     email: 1,
     firstName: 1,

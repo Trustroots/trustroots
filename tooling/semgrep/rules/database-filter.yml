@@ -28,3 +28,4 @@ rules:
       - pattern: Number(...)
       - pattern: parseInt(...)
       - pattern: parseFloat(...)
+      - pattern: new mongoose.Types.ObjectId(...)
