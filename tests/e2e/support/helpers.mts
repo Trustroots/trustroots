@@ -104,7 +104,7 @@ export const EUROPE_OFFERS_QUERY =
  * database without colliding.
  */
 export function createUser(overrides: CreateUserOverrides = {}): NewUser {
-  const unique = `${Date.now()}${randomBytes(6).toString('hex')}`;
+  const unique = randomBytes(6).toString('hex');
 
   return {
     firstName: 'Eddie',

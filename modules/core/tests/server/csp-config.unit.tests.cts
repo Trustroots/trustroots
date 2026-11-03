@@ -30,23 +30,15 @@ describe('Production content security policy', function () {
     assert.ok(policy.includes("'nonce-" + res.body.nonce + "'"));
     assert.ok(!policy.match(/script-src[^;]*\*\./));
     assert.ok(policy.includes("worker-src 'self' blob:"));
-    assert.ok(policy.split(/\s+/).includes('https://1p.trustroots.org'));
+    assert.ok(new Set(policy.split(/\s+/)).has('https://1p.trustroots.org'));
     const connections = policy
       .split(';')
       .find(directive => directive.trim().startsWith('connect-src'));
     assert.ok(connections);
-    assert.ok(
-      connections.trim().split(/\s+/).includes('wss://relay.trustroots.org'),
-    );
-    assert.ok(
-      connections.trim().split(/\s+/).includes('wss://relay.nomadwiki.org'),
-    );
-    assert.ok(
-      connections
-        .trim()
-        .split(/\s+/)
-        .includes('wss://relay.maps.hitchwiki.org'),
-    );
+    const connectionSources = new Set(connections.trim().split(/\s+/));
+    assert.ok(connectionSources.has('wss://relay.trustroots.org'));
+    assert.ok(connectionSources.has('wss://relay.nomadwiki.org'));
+    assert.ok(connectionSources.has('wss://relay.maps.hitchwiki.org'));
     assert.notEqual(res.body.nonce, (await response('production')).body.nonce);
   });
   it('retains development eval source maps in report-only mode', async function () {

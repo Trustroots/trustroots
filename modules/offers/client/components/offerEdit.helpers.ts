@@ -1,4 +1,10 @@
+import DOMPurify from 'dompurify';
+
 export function plainTextLength(value = ''): number {
-  const document = new DOMParser().parseFromString(value, 'text/html');
-  return (document.body.textContent || '').trim().length;
+  const fragment = DOMPurify.sanitize(value, {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+    RETURN_DOM_FRAGMENT: true,
+  });
+  return (fragment.textContent || '').trim().length;
 }
