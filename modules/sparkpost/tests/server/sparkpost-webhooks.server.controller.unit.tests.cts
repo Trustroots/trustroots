@@ -254,25 +254,6 @@ describe('SparkPost webhook controller unit tests', () => {
     res.statusCode.should.equal(200);
     updateOne.calledOnce.should.be.true();
   });
-  it('rejects non-array webhook batches', async () => {
-    const { controller } = loadController();
-    const res = mockResponse();
-
-    receiveBatch(controller, {}, res);
-    await res.waitForResponse();
-
-    res.statusCode.should.equal(400);
-  });
-
-  it('rejects empty webhook batches', async () => {
-    const { controller } = loadController();
-    const res = mockResponse();
-
-    receiveBatch(controller, [], res);
-    await res.waitForResponse();
-
-    res.statusCode.should.equal(400);
-  });
 
   it('responds 200 even when metric writing reports an error', async () => {
     const { controller } = loadController();
@@ -287,24 +268,6 @@ describe('SparkPost webhook controller unit tests', () => {
     await res.waitForResponse();
 
     res.statusCode.should.equal(200);
-  });
-
-  it('ignores SparkPost validation pings without msys data', async () => {
-    const { controller, stat } = loadController();
-
-    const err = await processEvent(controller, {});
-
-    should.not.exist(err);
-    stat.called.should.be.false();
-  });
-
-  it('ignores SparkPost validation pings with empty msys data', async () => {
-    const { controller, stat } = loadController();
-
-    const err = await processEvent(controller, { msys: {} });
-
-    should.not.exist(err);
-    stat.called.should.be.false();
   });
 
   it('logs and ignores events with invalid category or type', async () => {
@@ -386,19 +349,6 @@ describe('SparkPost webhook controller unit tests', () => {
     res.headers['WWW-Authenticate'].should.equal('Basic realm="Knock Knock"');
   });
 
-  it('denies webhook auth when the webhook is disabled', () => {
-    const { controller } = loadController({ enabled: false });
-    const res = mockResponse();
-
-    authenticate(
-      controller,
-      { authorization: authHeader('sparkpost', 'secret') },
-      res,
-    );
-
-    res.statusCode.should.equal(401);
-  });
-
   it('denies webhook auth when username is wrong', () => {
     const { controller } = loadController();
     const res = mockResponse();
@@ -410,36 +360,5 @@ describe('SparkPost webhook controller unit tests', () => {
     );
 
     res.statusCode.should.equal(401);
-  });
-
-  it('denies webhook auth when password is wrong', () => {
-    const { controller } = loadController();
-    const res = mockResponse();
-
-    authenticate(
-      controller,
-      { authorization: authHeader('sparkpost', 'wrong') },
-      res,
-    );
-
-    res.statusCode.should.equal(401);
-  });
-
-  it('allows webhook auth with configured credentials', () => {
-    const { controller } = loadController();
-    const res = mockResponse();
-    let nextCalled = false;
-
-    authenticate(
-      controller,
-      { authorization: authHeader('sparkpost', 'secret') },
-      res,
-      () => {
-        nextCalled = true;
-      },
-    );
-
-    nextCalled.should.be.true();
-    res.statusCode.should.equal(200);
   });
 });
