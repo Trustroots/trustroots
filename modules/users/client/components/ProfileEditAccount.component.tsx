@@ -12,6 +12,7 @@ import {
   resendEmailConfirmation,
   update,
 } from '../api/users.api';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
@@ -31,6 +32,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth();
+  const { track } = useAnalytics();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [emailMessage, setEmailMessage] = useState('');
   const [usernameMessage, setUsernameMessage] = useState('');
@@ -112,6 +114,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       const savedUser = await update({ email: draftUser.email });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
+      track('profile_section_saved', { section: 'account' });
       setEmailMessage(
         t(
           'We sent you an email to {{email}} with further instructions. Email change will not be active until that.',
@@ -119,6 +122,10 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
         ),
       );
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'account',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setEmailMessage(message || t('Something went wrong.'));
     }
@@ -142,7 +149,12 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
       setUsernameMessage(t('Username updated.'));
+      track('profile_section_saved', { section: 'account' });
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'account',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setUsernameMessage(message || t('Something went wrong'));
     }
@@ -156,7 +168,12 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       const savedUser = await update({ newsletter: value });
       setUser(current => ({ ...current, ...savedUser }));
       setDraftUser({ ...savedUser });
+      track('profile_section_saved', { section: 'account' });
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'account',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setEmailMessage(message || t('Something went wrong.'));
     }
@@ -178,7 +195,12 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       setNewPassword('');
       setVerifyPassword('');
       setPasswordMessage(t('Your password is now changed. Have a nice day!'));
+      track('profile_section_saved', { section: 'account' });
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'account',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setPasswordMessage(
         message || t('Password not changed due to an error, try again.'),

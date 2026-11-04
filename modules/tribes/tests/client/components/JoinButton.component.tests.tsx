@@ -1,13 +1,14 @@
 import React from 'react';
 import {
   fireEvent,
-  render,
+  render as rtlRender,
   screen,
   waitFor,
   within,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
 import JoinButton from '@/modules/tribes/client/components/JoinButton';
 import {
@@ -19,6 +20,10 @@ import {
 import type LeaveTribeModal from '@/modules/tribes/client/components/LeaveTribeModal';
 import type Tooltip from '@/modules/core/client/components/Tooltip';
 import type { UserProfile } from '@/modules/users/client/types';
+
+const analytics = fakeAnalytics();
+const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
+  rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 const joinMock = jest.mocked(join);
 const leaveMock = jest.mocked(leave);
@@ -98,6 +103,34 @@ describe('<JoinButton />', () => {
     ).toHaveClass('tribe-join-active');
     expect(join).toHaveBeenCalledWith('tribe-1');
     expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
+    expect(analytics.track).toHaveBeenCalledWith('circle_joined', {
+      source: 'other',
+    });
+  });
+
+  it('re-enables the button after a failed join without tracking it', async () => {
+    const onUpdated = jest.fn();
+    joinMock.mockRejectedValueOnce(new Error('join failed'));
+
+    render(
+      <JoinButton
+        source="circle_page"
+        tribe={tribe}
+        user={{ ...user, memberIds: [] }}
+        onUpdated={onUpdated}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Join (Hitchhikers)' }));
+
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Join (Hitchhikers)' }),
+      ).toBeEnabled(),
+    );
+    expect(joinMock).toHaveBeenCalledTimes(1);
+    expect(analytics.track).not.toHaveBeenCalled();
+    expect(onUpdated).not.toHaveBeenCalled();
   });
 
   it('supports a large iconless presentation', () => {
@@ -218,5 +251,36 @@ describe('<JoinButton />', () => {
     ).not.toHaveClass('tribe-join-active');
     expect(leave).toHaveBeenCalledWith('tribe-1');
     expect(onUpdated).toHaveBeenCalledWith(updatedMembership);
+    expect(analytics.track).toHaveBeenCalledWith('circle_left', {
+      source: 'other',
+    });
+  });
+
+  it('keeps the membership and closes the dialog when leaving fails', async () => {
+    const onUpdated = jest.fn<void, [MembershipUpdate]>();
+    leaveMock.mockRejectedValueOnce(new Error('offline'));
+
+    render(
+      <JoinButton
+        source="profile"
+        tribe={tribe}
+        user={{ ...user, memberIds: ['tribe-1'] }}
+        onUpdated={onUpdated}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leave circle' }));
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Leave circle',
+      }),
+    );
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Leave circle' })).toBeEnabled();
+    expect(onUpdated).not.toHaveBeenCalled();
+    expect(analytics.track).not.toHaveBeenCalled();
   });
 });

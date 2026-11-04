@@ -4,6 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { Navbar, NavDropdown, Nav, Dropdown } from 'react-bootstrap';
 
 // Internal dependencies
+import {
+  useAnalytics,
+  type NavigationItem,
+} from '@trustroots/analytics/client';
 import { useAuth, type AuthUser } from '@/modules/core/client/react-app/auth';
 import Avatar from '@/modules/users/client/components/Avatar.component.js';
 import UnreadCount from '@/modules/messages/client/components/UnreadCount.component';
@@ -22,6 +26,9 @@ type Props = {
 export default function NavigationLoggedIn({ currentPath, user }: Props) {
   const { t } = useTranslation('core');
   const { signOut } = useAuth();
+  const { track } = useAnalytics();
+  const trackNav = (item: NavigationItem) => () =>
+    track('navigation_clicked', { surface: 'top', item });
   const [memberships, setMemberships] = useState<TribeSummary[]>([]);
   useEffect(() => {
     let active = true;
@@ -79,14 +86,21 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           id="support-dropdown"
           title={t('Support')}
         >
-          <Dropdown.Item href="/faq">
+          <Dropdown.Item href="/faq" onClick={trackNav('support_faq')}>
             {t('Frequently Asked Questions')}
           </Dropdown.Item>
-          <Dropdown.Item href="/safety">{t('Safety')}</Dropdown.Item>
-          <Dropdown.Item href="/support?category=reportBug">
+          <Dropdown.Item href="/safety" onClick={trackNav('support_safety')}>
+            {t('Safety')}
+          </Dropdown.Item>
+          <Dropdown.Item
+            href="/support?category=reportBug"
+            onClick={trackNav('support_report_bug')}
+          >
             {t('Report a bug')}
           </Dropdown.Item>
-          <Dropdown.Item href="/support">{t('Contact us')}</Dropdown.Item>
+          <Dropdown.Item href="/support" onClick={trackNav('support_contact')}>
+            {t('Contact us')}
+          </Dropdown.Item>
         </NavDropdown>
       </Nav>
 
@@ -104,6 +118,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
                   ? '/admin/acquisition-stories'
                   : '/admin'
             }
+            onLinkClick={trackNav('admin')}
             className={
               currentPath === '/admin' || currentPath.startsWith('/admin/')
                 ? 'hidden-xs active'
@@ -116,6 +131,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         <MenuItem
           currentPath={currentPath}
           path="/circles"
+          onLinkClick={trackNav('circles')}
           aria-label={t('Circles')}
           className={
             circles.length ? 'dropdown header-link-dropdown' : undefined
@@ -148,6 +164,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         <MenuItem
           currentPath={currentPath}
           path="/search"
+          onLinkClick={trackNav('search')}
           aria-label={t('Search hosts')}
           className="dropdown header-link-dropdown"
           submenu={
@@ -171,6 +188,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         <MenuItem
           currentPath={currentPath}
           path="/messages"
+          onLinkClick={trackNav('messages')}
           aria-label={t('Messages')}
         >
           <Icon
@@ -185,6 +203,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         <MenuItem
           currentPath={currentPath}
           path="/offer/host"
+          onLinkClick={trackNav('host')}
           className="hidden-xs"
         >
           {t('Host')}
@@ -192,6 +211,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         <MenuItem
           currentPath={currentPath}
           path="https://nos.trustroots.org/"
+          onLinkClick={trackNav('nostroots')}
           target="_blank"
           className="hidden-xs"
         >
@@ -220,20 +240,35 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
             {user.displayName}
           </div>
           <Dropdown.Divider />
-          <Dropdown.Item href={`/profile/${user.username}`}>
+          <Dropdown.Item
+            href={`/profile/${user.username}`}
+            onClick={trackNav('profile')}
+          >
             {t('My profile')}
           </Dropdown.Item>
-          <Dropdown.Item href="/profile/edit">
+          <Dropdown.Item
+            href="/profile/edit"
+            onClick={trackNav('profile_edit')}
+          >
             {t('Edit profile')}
           </Dropdown.Item>
-          <Dropdown.Item href={`/profile/${user.username}/contacts`}>
+          <Dropdown.Item
+            href={`/profile/${user.username}/contacts`}
+            onClick={trackNav('contacts')}
+          >
             {t('Contacts')}
           </Dropdown.Item>
-          <Dropdown.Item href="/search/members">
+          <Dropdown.Item
+            href="/search/members"
+            onClick={trackNav('find_people')}
+          >
             {t('Find people')}
           </Dropdown.Item>
           <Dropdown.Divider />
-          <Dropdown.Item href="/profile/edit/account">
+          <Dropdown.Item
+            href="/profile/edit/account"
+            onClick={trackNav('account')}
+          >
             {t('Account')}
           </Dropdown.Item>
           <Dropdown.Item
@@ -329,6 +364,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           className="visible-xs-block"
           currentPath={currentPath}
           path="/navigation"
+          onLinkClick={trackNav('menu')}
         >
           <Icon icon="menu" fixedWidth size="lg" />
         </MenuItem>

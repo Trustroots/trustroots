@@ -1,8 +1,15 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import ReactFooter from '@/layers/shell/client/ReactFooter';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 type BuildMetadata = NonNullable<
   React.ComponentProps<typeof ReactFooter>['build']

@@ -7,6 +7,9 @@ import ProfileEditLocations from '@/modules/users/client/components/ProfileEditL
 import * as usersApi from '@/modules/users/client/api/users.api';
 import type { UserProfile } from '@/modules/users/client/types';
 import type LocationInput from '@/modules/core/client/components/LocationInput.component';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 jest.mock('@/modules/users/client/api/users.api');
 const updateUser = jest.mocked(usersApi.update);
@@ -61,6 +64,7 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -107,6 +111,9 @@ describe('ProfileEditLocations', () => {
       );
     });
     expect(await screen.findByText('Profile updated.')).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
+      section: 'locations',
+    });
   });
 
   it('updates the origin location and shows a fallback error', async () => {
@@ -121,5 +128,9 @@ describe('ProfileEditLocations', () => {
     expect(
       await screen.findByText('Something went wrong. Please try again!'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('profile_save_failed', {
+      section: 'locations',
+      reason: 'server',
+    });
   });
 });

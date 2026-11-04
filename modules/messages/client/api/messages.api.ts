@@ -69,9 +69,12 @@ export async function markRead(messageIds: string[]): Promise<void> {
 }
 
 export async function unreadCount(): Promise<number> {
+  // The poller asks every 30 seconds; an ended session is not an error here.
   const {
     data: { unread },
-  } = await axios.get<UnreadMessageCountResponse>('/api/messages-count');
+  } = await axios.get<UnreadMessageCountResponse>('/api/messages-count', {
+    expectedStatuses: [401, 403],
+  });
   return unread;
 }
 

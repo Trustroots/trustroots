@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 
+import {
+  emailConfirmFailureReason,
+  useAnalytics,
+} from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
 import { getEmailFromToken } from '@/modules/users/client/utils/auth';
 import { Alert } from '@trustroots/ui/Alert';
 
 export default function ConfirmEmailPage() {
+  const { track } = useAnalytics();
   const { user, setUser } = useAuth() as {
     user: { email?: string } | null;
     setUser: (user: { _id: string; username: string; email?: string }) => void;
@@ -30,6 +35,10 @@ export default function ConfirmEmailPage() {
       const response = await authApi.confirmEmail(token);
 
       setUser(response.user);
+      // Only the first confirmation, after signup, makes a profile public.
+      track('email_confirmed', {
+        kind: response.profileMadePublic ? 'signup' : 'change',
+      });
 
       if (response.profileMadePublic) {
         void navigate({ to: '/welcome' });
@@ -37,7 +46,10 @@ export default function ConfirmEmailPage() {
       }
 
       setSuccess(true);
-    } catch {
+    } catch (error: unknown) {
+      track('email_confirm_failed', {
+        reason: emailConfirmFailureReason(error),
+      });
       setError(true);
     } finally {
       setIsLoading(false);

@@ -148,6 +148,25 @@ describe('Unread Message Count Service', () => {
     expect(api.messages.unreadCount).toHaveBeenCalledTimes(2);
   });
 
+  it('swallows a failed poll and keeps polling', async () => {
+    jest.useFakeTimers();
+    api.messages.unreadCount
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockRejectedValueOnce(new Error('signed out'))
+      .mockResolvedValue(unreadCount);
+    const watcher = jest.fn();
+    unreadMessageCountService.watch(watcher);
+
+    stopPolling = unreadMessageCountService.start();
+    await jest.advanceTimersByTimeAsync(30000);
+    expect(watcher).not.toHaveBeenCalled();
+    await jest.advanceTimersByTimeAsync(30000);
+
+    expect(api.messages.unreadCount).toHaveBeenCalledTimes(3);
+    expect(watcher).toHaveBeenCalledWith(unreadCount);
+    jest.useRealTimers();
+  });
+
   it('delivers cached unread count to late subscribers', async () => {
     api.messages.unreadCount.mockResolvedValue(unreadCount);
     await unreadMessageCountService.update();

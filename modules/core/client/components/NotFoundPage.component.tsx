@@ -1,9 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useAnalytics } from '@trustroots/analytics/client';
 
 export default function NotFoundPage() {
   const { t } = useTranslation('core');
+  const { track } = useAnalytics();
+
+  useEffect(() => {
+    track('page_not_found');
+  }, []);
 
   return (
     <section className="container container-fullscreen container-error board board-error">

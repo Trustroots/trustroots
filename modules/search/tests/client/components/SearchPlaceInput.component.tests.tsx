@@ -2,6 +2,7 @@ import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import SearchPlaceInput from '@/modules/search/client/components/SearchPlaceInput.component';
 import * as locationApi from '@/modules/search/client/api/location.api';
 
@@ -34,6 +35,7 @@ jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
 });
 
 describe('SearchPlaceInput', () => {
+  const analytics = fakeAnalytics();
   const onPlaceSearch = jest.fn<
     ReturnType<InputProps['onPlaceSearch']>,
     Parameters<InputProps['onPlaceSearch']>
@@ -56,6 +58,7 @@ describe('SearchPlaceInput', () => {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />,
+      { wrapper: analytics.wrapper },
     );
   }
 
@@ -74,13 +77,7 @@ describe('SearchPlaceInput', () => {
       }),
     );
 
-    const rendered = render(
-      <SearchPlaceInput
-        onPlaceSearch={onPlaceSearch}
-        searchQuery="Paris"
-        setSearchQuery={setSearchQuery}
-      />,
-    );
+    const rendered = renderInput('Paris');
     await waitFor(() => {
       expect(locationApi.fetchLocationSuggestions).toHaveBeenCalledWith(
         'Paris',
@@ -182,6 +179,9 @@ describe('SearchPlaceInput', () => {
       'center',
     );
     expect(setSearchQuery).toHaveBeenCalledWith('Paris, France');
+    expect(analytics.track).toHaveBeenCalledWith('search_place_selected', {
+      source: 'suggestion',
+    });
   });
 
   it('keeps the query when a suggestion cannot be located', async () => {
@@ -196,6 +196,7 @@ describe('SearchPlaceInput', () => {
     );
 
     expect(onPlaceSearch).not.toHaveBeenCalled();
+    expect(analytics.track).not.toHaveBeenCalled();
     expect(setSearchQuery).toHaveBeenCalledWith('Unknown place');
   });
 
@@ -222,6 +223,9 @@ describe('SearchPlaceInput', () => {
       );
     });
     expect(setSearchQuery).toHaveBeenCalledWith('Helsinki, Finland');
+    expect(analytics.track).toHaveBeenCalledWith('search_place_selected', {
+      source: 'query',
+    });
   });
 
   it('shows a warning when Enter cannot find a location', async () => {

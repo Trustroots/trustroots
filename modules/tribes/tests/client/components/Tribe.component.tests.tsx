@@ -1,13 +1,18 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
 import Tribe from '@/modules/tribes/client/components/Tribe';
 import type {
   TribeSummary,
   MembershipUpdate,
 } from '@/modules/tribes/client/api/tribes.api';
+
+const analytics = fakeAnalytics();
+const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
+  rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 const tribe: TribeSummary = {
   _id: 'tribe-id',

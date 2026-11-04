@@ -193,6 +193,9 @@ describe('SignupPage', () => {
     expect(screen.getByRole('alert')).toHaveTextContent(
       'You must confirm that you are 18 years old or older to sign up.',
     );
+    expect(analytics.track).toHaveBeenCalledWith('signup_failed', {
+      reason: 'age_not_confirmed',
+    });
     fireEvent.click(checkbox);
     expect(screen.getByRole('button', { name: 'Next' })).toBeEnabled();
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -254,6 +257,10 @@ describe('SignupPage', () => {
     });
 
     expect(window.location.pathname).toBe('/search');
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'signup_step_viewed',
+      expect.anything(),
+    );
   });
 
   it('loads a referred circle from route params', async () => {
@@ -348,6 +355,52 @@ describe('SignupPage', () => {
     expect(
       await screen.findByRole('button', { name: 'Join Hitchhikers' }),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('signup_completed', {
+      referred_circle: 'yes',
+    });
+    expect(analytics.track).toHaveBeenCalledWith('circle_joined', {
+      source: 'signup',
+    });
+  });
+
+  it('does not report signup as failed when the referred circle join fails', async () => {
+    window.history.pushState({}, '', '/signup?tribe=hitchhikers');
+    getTribe.mockResolvedValue({
+      _id: 'tribe-ref',
+      label: 'Hitchhikers',
+      slug: 'hitchhikers',
+      count: 5,
+    });
+    signup.mockResolvedValue({
+      _id: 'user-1',
+      username: 'ada',
+      email: 'ada@example.test',
+    });
+    joinTribe.mockRejectedValue(new Error('join failed'));
+
+    renderPage();
+
+    await screen.findByText('+ Circle Hitchhikers');
+    fillStepOne();
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+
+    await waitFor(() => expect(joinTribe).toHaveBeenCalledWith('tribe-ref'));
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'Something went wrong while signing you up. Try again!',
+      ),
+    );
+    expect(analytics.track).toHaveBeenCalledWith('signup_completed', {
+      referred_circle: 'yes',
+    });
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'signup_failed',
+      expect.anything(),
+    );
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'circle_joined',
+      expect.anything(),
+    );
   });
 
   it('renders a referred circle when no current user is available', async () => {
@@ -413,6 +466,22 @@ describe('SignupPage', () => {
     expect(await screen.findByText('Welcome to Trustroots!')).toBeVisible();
     expect(screen.getByText('ada@example.test')).toBeInTheDocument();
     expect(
+      analytics.track.mock.calls.filter(
+        ([name]) => name === 'signup_step_viewed',
+      ),
+    ).toEqual([
+      ['signup_step_viewed', { step: 1 }],
+      ['signup_step_viewed', { step: 2 }],
+      ['signup_step_viewed', { step: 3 }],
+    ]);
+    expect(analytics.track).toHaveBeenCalledWith('signup_completed', {
+      referred_circle: 'no',
+    });
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'circle_joined',
+      expect.anything(),
+    );
+    expect(
       screen.getByRole('link', { name: 'Fill your profile' }),
     ).toHaveAttribute('href', '/profile/edit');
   });
@@ -452,6 +521,9 @@ describe('SignupPage', () => {
     expect(
       screen.getByRole('link', { name: 'Try recover password?' }),
     ).toHaveAttribute('href', '/password/forgot?userhandle=ada%40example.test');
+    expect(analytics.track).toHaveBeenCalledWith('signup_failed', {
+      reason: 'email_taken',
+    });
   });
 
   it('clears the taken email alert when the email field changes', async () => {
@@ -491,6 +563,13 @@ describe('SignupPage', () => {
     expect(
       await screen.findByText('Signup is temporarily unavailable.'),
     ).toBeVisible();
+    expect(analytics.track).toHaveBeenCalledWith('signup_failed', {
+      reason: 'other',
+    });
+    expect(analytics.track).not.toHaveBeenCalledWith(
+      'signup_completed',
+      expect.anything(),
+    );
   });
 
   it('shows a fallback error when signup fails without a message', async () => {
@@ -684,7 +763,7 @@ describe('SignupPage', () => {
 
     fireEvent.click(screen.getByRole('link', { name: 'rules' }));
 
-    expect(analytics.track).toHaveBeenCalledWith('signup-rules-open');
+    expect(analytics.track).toHaveBeenCalledWith('signup_rules_opened');
   });
 
   it('submits optional signup fields', async () => {

@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import TopNavigationSmall from '@/modules/users/client/components/TopNavigationSmall.component';
+import { readOutreachSource } from '@trustroots/analytics/client';
 import type RemoveContact from '@/modules/contacts/client/components/RemoveContactContainer';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserSummary } from '@/modules/users/client/types';
@@ -122,6 +123,24 @@ describe('<TopNavigationSmall />', () => {
       'href',
       '/contact-add/alice-id',
     );
+  });
+
+  it('remembers the profile as where reaching out started', () => {
+    const preventNavigation = (event: Event) => event.preventDefault();
+    document.addEventListener('click', preventNavigation);
+    try {
+      renderNavigation();
+
+      fireEvent.click(screen.getByRole('link', { name: 'Add contact' }));
+      expect(readOutreachSource('alice')).toBe('profile');
+      window.sessionStorage.clear();
+
+      fireEvent.click(screen.getByRole('link', { name: 'Send a message' }));
+      expect(readOutreachSource('alice')).toBe('profile');
+    } finally {
+      document.removeEventListener('click', preventNavigation);
+      window.sessionStorage.clear();
+    }
   });
 
   it('omits experience and contact actions when they are unavailable', () => {

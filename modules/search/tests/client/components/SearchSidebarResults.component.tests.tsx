@@ -1,6 +1,7 @@
 import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { readOutreachSource } from '@trustroots/analytics/client';
 
 import SearchSidebarResults, {
   OfferDescription,
@@ -291,6 +292,12 @@ describe('<SearchSidebarResults />', () => {
     expect(screen.getByText('English')).toBeInTheDocument();
     expect(screen.getByText('Finnish')).toBeInTheDocument();
     expect(screen.getByText(/show more/i)).toBeInTheDocument();
+
+    const profileLink = screen.getByRole('link', { name: /river host/i });
+    profileLink.addEventListener('click', event => event.preventDefault());
+    fireEvent.click(profileLink);
+    expect(readOutreachSource('river')).toBe('search');
+    window.sessionStorage.clear();
   });
 
   it('renders meet offers without truncating short descriptions', () => {

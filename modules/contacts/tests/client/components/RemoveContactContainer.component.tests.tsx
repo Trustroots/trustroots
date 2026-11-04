@@ -62,4 +62,25 @@ describe('<RemoveContactContainer />', () => {
     fireEvent.click(screen.getByText('cancel'));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
+
+  it('re-enables the dialog when removing fails', async () => {
+    const onSuccess = jest.fn();
+    removeMock.mockRejectedValue(new Error('offline'));
+
+    render(
+      <RemoveContactContainer
+        selfId="me"
+        contact={{ _id: 'contact-1' }}
+        show
+        onSuccess={onSuccess}
+        onCancel={jest.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByText('remove'));
+
+    expect(screen.getByText('inProgress:true')).toBeInTheDocument();
+    expect(await screen.findByText('inProgress:false')).toBeInTheDocument();
+    expect(onSuccess).not.toHaveBeenCalled();
+  });
 });

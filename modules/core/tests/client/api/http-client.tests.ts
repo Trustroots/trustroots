@@ -1,8 +1,10 @@
 import { AxiosHeaders, type AxiosAdapter } from 'axios';
 
 import httpClient, {
+  describeRequestFailure,
   getErrorMessage,
   getErrorResponse,
+  onRequestFailure,
 } from '@/modules/core/client/api/http-client';
 
 describe('shared module HTTP client', () => {
@@ -152,5 +154,129 @@ describe('shared module HTTP client', () => {
     expect(getErrorMessage(new Error('Network issue'), 'Request failed.')).toBe(
       'Request failed.',
     );
+  });
+
+  it('reduces a failed request to its status, method and API area', () => {
+    expect(
+      describeRequestFailure({
+        config: { method: 'POST', url: '/api/users/some-member?x=1' },
+        response: { status: 422 },
+      }),
+    ).toEqual({ status: 422, method: 'post', area: 'users' });
+    expect(
+      describeRequestFailure({ config: { method: 'get', url: '/api/offers' } }),
+    ).toEqual({ status: 0, method: 'get', area: 'offers' });
+    expect(
+      describeRequestFailure({
+        config: { method: 'options', url: 'https://example.org/api/x' },
+      }),
+    ).toEqual({ status: 0, method: 'other', area: 'external' });
+    expect(describeRequestFailure(new Error('offline'))).toEqual({
+      status: 0,
+      method: 'other',
+      area: 'external',
+    });
+    expect(describeRequestFailure(null)).toEqual({
+      status: 0,
+      method: 'other',
+      area: 'external',
+    });
+  });
+
+  it('tells subscribers about failed requests until they unsubscribe', async () => {
+    const listener = jest.fn();
+    const unsubscribe = onRequestFailure(listener);
+    const adapter: AxiosAdapter = async config => {
+      throw Object.assign(new Error('Unavailable'), {
+        config,
+        response: { status: 503 },
+      });
+    };
+
+    await expect(
+      httpClient.get('/api/messages/thread-id', { adapter }),
+    ).rejects.toThrow('Unavailable');
+    expect(listener).toHaveBeenCalledWith({
+      status: 503,
+      method: 'get',
+      area: 'messages',
+    });
+
+    unsubscribe();
+    await expect(httpClient.get('/api/messages', { adapter })).rejects.toThrow(
+      'Unavailable',
+    );
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips expected statuses and requests without a response', async () => {
+    const listener = jest.fn();
+    const unsubscribe = onRequestFailure(listener);
+    const failWith =
+      (failure: object): AxiosAdapter =>
+      async () => {
+        throw failure;
+      };
+
+    await expect(
+      httpClient.get('/api/offers-by/someone', {
+        adapter: async config => {
+          throw Object.assign(new Error('Not found'), {
+            config,
+            response: { status: 404 },
+          });
+        },
+        expectedStatuses: [404],
+      }),
+    ).rejects.toMatchObject({ response: { status: 404 } });
+    await expect(
+      httpClient.get('/api/messages-count', {
+        adapter: failWith(new Error('Network Error')),
+      }),
+    ).rejects.toThrow('Network Error');
+    expect(listener).not.toHaveBeenCalled();
+
+    await expect(
+      httpClient.get('/api/offers-by/someone', {
+        adapter: failWith({ response: { status: 500 } }),
+      }),
+    ).rejects.toMatchObject({ response: { status: 500 } });
+    expect(listener).toHaveBeenCalledWith({
+      status: 500,
+      method: 'other',
+      area: 'external',
+    });
+
+    const adapter: AxiosAdapter = async config => {
+      throw Object.assign(new Error('Server error'), {
+        config,
+        response: { status: 500 },
+      });
+    };
+    await expect(
+      httpClient.get('/api/offers-by/someone', {
+        adapter,
+        expectedStatuses: [404],
+      }),
+    ).rejects.toMatchObject({ response: { status: 500 } });
+    expect(listener).toHaveBeenLastCalledWith({
+      status: 500,
+      method: 'get',
+      area: 'offers-by',
+    });
+    unsubscribe();
+  });
+
+  it('does not report cancelled requests', async () => {
+    const listener = jest.fn();
+    const unsubscribe = onRequestFailure(listener);
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      httpClient.get('/api/example', { signal: controller.signal }),
+    ).rejects.toMatchObject({ code: 'ERR_CANCELED' });
+    expect(listener).not.toHaveBeenCalled();
+    unsubscribe();
   });
 });

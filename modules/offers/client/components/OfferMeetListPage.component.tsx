@@ -83,7 +83,7 @@ export default function OfferMeetListPage({ user }: OfferMeetListPageProps) {
     try {
       await deleteOffer(offer._id);
       setOffers(current => current.filter(item => item._id !== offer._id));
-      track('offer-delete', { type: 'meet' });
+      track('offer_deleted', { type: 'meet' });
     } finally {
       setIsRemoving(false);
     }

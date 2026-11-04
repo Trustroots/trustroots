@@ -1,5 +1,11 @@
 import React, { type ComponentProps } from 'react';
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render as rtlRender,
+  screen,
+  within,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -9,6 +15,13 @@ import {
   type MembershipUpdate,
 } from '@/modules/tribes/client/api/tribes.api';
 import { mockSignOut } from '@/testutils/client/auth.testutil';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
@@ -38,6 +51,7 @@ jest.mock('@/modules/users/client/components/Avatar.component.js', () => {
 
 describe('<NavigationLoggedIn />', () => {
   beforeEach(() => {
+    analytics.track.mockClear();
     mockListMemberships.mockReset();
     mockListMemberships.mockResolvedValue([]);
   });
@@ -208,6 +222,72 @@ describe('<NavigationLoggedIn />', () => {
     fireEvent.click(signOut);
 
     expect(mockSignOut).toHaveBeenCalledTimes(1);
+    expect(analytics.track).not.toHaveBeenCalled();
+  });
+
+  it('tracks top navigation clicks without member details', () => {
+    const preventNavigation = (event: Event) => event.preventDefault();
+    document.addEventListener('click', preventNavigation);
+    try {
+      render(
+        <NavigationLoggedIn
+          currentPath="/search"
+          user={{ ...user, roles: ['admin'] }}
+        />,
+      );
+      fireEvent.click(screen.getByRole('button', { name: 'Support' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
+
+      const clicks: Array<[string, string]> = [
+        ['Frequently Asked Questions', 'support_faq'],
+        ['Report a bug', 'support_report_bug'],
+        ['Contact us', 'support_contact'],
+        ['Admin', 'admin'],
+        ['Circles', 'circles'],
+        ['Search hosts', 'search'],
+        ['Messages', 'messages'],
+        ['Host', 'host'],
+        ['Nostroots', 'nostroots'],
+        ['My profile', 'profile'],
+        ['Edit profile', 'profile_edit'],
+        ['Contacts', 'contacts'],
+        ['Find people', 'find_people'],
+        ['Account', 'account'],
+        ['My profile, info and support', 'menu'],
+      ];
+      clicks.forEach(([name, item]) => {
+        fireEvent.click(screen.getByRole('link', { name }));
+        expect(analytics.track).toHaveBeenLastCalledWith('navigation_clicked', {
+          surface: 'top',
+          item,
+        });
+      });
+      fireEvent.click(
+        within(
+          requireElement(
+            screen.getByRole('button', { name: 'Support' }).closest('li'),
+          ),
+        ).getByRole('link', { name: 'Safety' }),
+      );
+      expect(analytics.track).toHaveBeenLastCalledWith('navigation_clicked', {
+        surface: 'top',
+        item: 'support_safety',
+      });
+
+      // Submenu entries and padding are not credited to the parent item.
+      analytics.track.mockClear();
+      fireEvent.click(
+        screen.getByRole('link', { name: 'Find member by name' }),
+      );
+      fireEvent.click(
+        requireElement(
+          screen.getByRole('link', { name: 'Search hosts' }).closest('li'),
+        ),
+      );
+      expect(analytics.track).not.toHaveBeenCalled();
+    } finally {
+      document.removeEventListener('click', preventNavigation);
+    }
   });
 
   it('marks active menu item for current path', () => {

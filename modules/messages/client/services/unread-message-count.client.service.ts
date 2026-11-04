@@ -23,7 +23,7 @@ export function start(): () => void {
   if (unwatchVisibility) unwatchVisibility();
   unwatchVisibility = watchVisibility(visible => {
     if (visible) {
-      update();
+      void poll();
       setPollingInterval(FOREGROUND_POLLING_INTERVAL);
     } else {
       setPollingInterval(BACKGROUND_POLLING_INTERVAL);
@@ -41,7 +41,16 @@ function stop(): void {
 
 function setPollingInterval(interval: number): void {
   if (timer) clearInterval(timer);
-  timer = setInterval(update, interval);
+  timer = setInterval(poll, interval);
+}
+
+/** A failed poll keeps the last count; the next one tries again. */
+async function poll(): Promise<void> {
+  try {
+    await update();
+  } catch {
+    // Offline or signed out: nothing to show, and nothing to report.
+  }
 }
 
 /** Polling and the inbox and thread pages call this only for a public member. */

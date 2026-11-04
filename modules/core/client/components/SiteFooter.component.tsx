@@ -1,6 +1,10 @@
 import React from 'react';
 import classnames from 'classnames';
 
+import {
+  useAnalytics,
+  type NavigationItem,
+} from '@trustroots/analytics/client';
 import BoardCredits, { type PhotoCredit } from './BoardCredits';
 
 export type Build = {
@@ -48,39 +52,50 @@ function BuildLink({ build }: { build?: Build | null }) {
   );
 }
 
+const FOOTER_LINKS: {
+  item: NavigationItem;
+  href: string;
+  label: string;
+  external?: boolean;
+}[] = [
+  {
+    item: 'volunteering',
+    href: '/support?category=volunteering',
+    label: 'Volunteering',
+  },
+  { item: 'rules', href: '/rules', label: 'Rules' },
+  { item: 'safety', href: '/safety', label: 'Safety' },
+  { item: 'faq', href: '/faq', label: 'FAQ' },
+  {
+    item: 'wiki',
+    href: 'https://wiki.trustroots.org/',
+    label: 'Wiki',
+    external: true,
+  },
+  { item: 'privacy', href: '/privacy', label: 'Privacy' },
+  { item: 'credits', href: '/credits', label: 'Credits' },
+  { item: 'contact', href: '/contact', label: 'Contact' },
+];
+
 function FooterLinks() {
+  const { track } = useAnalytics();
+
   return (
     <ul className="site-footer-links list-inline">
-      <li>
-        <a href="/support?category=volunteering">Volunteering</a>
-      </li>
-      <li>
-        <a href="/rules">Rules</a>
-      </li>
-      <li>
-        <a href="/safety">Safety</a>
-      </li>
-      <li>
-        <a href="/faq">FAQ</a>
-      </li>
-      <li>
-        <a
-          href="https://wiki.trustroots.org/"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Wiki
-        </a>
-      </li>
-      <li>
-        <a href="/privacy">Privacy</a>
-      </li>
-      <li>
-        <a href="/credits">Credits</a>
-      </li>
-      <li>
-        <a href="/contact">Contact</a>
-      </li>
+      {FOOTER_LINKS.map(({ item, href, label, external }) => (
+        <li key={item}>
+          <a
+            href={href}
+            target={external ? '_blank' : undefined}
+            rel={external ? 'noopener noreferrer' : undefined}
+            onClick={() =>
+              track('navigation_clicked', { surface: 'footer', item })
+            }
+          >
+            {label}
+          </a>
+        </li>
+      ))}
     </ul>
   );
 }
@@ -113,6 +128,8 @@ export default function SiteFooter({
   photoCredits,
   variant = 'standard',
 }: Props) {
+  const { track } = useAnalytics();
+
   if (variant === 'account') {
     return (
       <footer className="site-footer-account hidden-print" role="contentinfo">
@@ -124,7 +141,14 @@ export default function SiteFooter({
   if (variant === 'home') {
     return (
       <footer className="site-footer-home hidden-print" role="contentinfo">
-        <a href="/credits">Credits</a>
+        <a
+          href="/credits"
+          onClick={() =>
+            track('navigation_clicked', { surface: 'footer', item: 'credits' })
+          }
+        >
+          Credits
+        </a>
         <BuildLink build={build} />
         <BoardCredits photoCredits={photoCredits || {}} />
       </footer>

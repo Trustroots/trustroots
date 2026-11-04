@@ -1,11 +1,18 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import SiteFooter, {
   type Build,
 } from '@/modules/core/client/components/SiteFooter.component';
 import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 jest.mock('@/modules/core/client/services/client-runtime', () => ({
   onClientEvent: jest.fn(() => () => {}),
@@ -93,6 +100,23 @@ describe('<SiteFooter />', () => {
       'list-inline',
     );
     expect(container.querySelector('#tr-footer')).toHaveClass('hidden-xs');
+  });
+
+  it('tracks footer link clicks', () => {
+    const { rerender } = render(<SiteFooter build={build} />);
+
+    fireEvent.click(screen.getByRole('link', { name: 'Wiki' }));
+    expect(analytics.track).toHaveBeenCalledWith('navigation_clicked', {
+      surface: 'footer',
+      item: 'wiki',
+    });
+
+    rerender(<SiteFooter variant="home" build={build} />);
+    fireEvent.click(screen.getByRole('link', { name: 'Credits' }));
+    expect(analytics.track).toHaveBeenCalledWith('navigation_clicked', {
+      surface: 'footer',
+      item: 'credits',
+    });
   });
 
   it('shows non-main branch names with build metadata', () => {

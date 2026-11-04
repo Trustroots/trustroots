@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import Avatar from './Avatar.component';
 import ProfileEditPage from './ProfileEditPage.component';
 import { update, uploadAvatar } from '../api/users.api';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import { formatBytes } from '@/modules/core/client/utils/format';
@@ -16,6 +17,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth();
+  const { track } = useAnalytics();
   /* istanbul ignore next -- settings bootstrap always supplies the upload limit. */
   const { maxUploadSize = 20 * 1024 * 1024 } = useSettings();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -32,6 +34,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
     setUser(current => ({ ...current, ...savedUser }));
     setDraftUser({ ...savedUser });
     setStatusMessage(t('Profile photo updated.'));
+    track('profile_section_saved', { section: 'photo' });
   }
 
   async function handleFileSelected(
@@ -75,6 +78,10 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
           avatarUploaded: true,
         });
       } catch (error: unknown) {
+        track('profile_save_failed', {
+          section: 'photo',
+          reason: saveFailureReason(error),
+        });
         const { status } = readApiError(error);
 
         setStatusMessage(
@@ -102,6 +109,10 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
     try {
       await persistUser(nextUser);
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'photo',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setStatusMessage(message || t('Oops! Something went wrong.'));
     }

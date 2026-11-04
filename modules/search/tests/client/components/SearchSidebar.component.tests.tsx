@@ -1,9 +1,14 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 
 import '@/config/client/i18n';
 import SearchSidebar from '@/modules/search/client/components/SearchSidebar.component';
+
+const analyticsWrapper = fakeAnalytics().wrapper;
+const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
+  rtlRender(ui, { wrapper: analyticsWrapper, ...options });
 
 jest.mock('@/modules/search/client/hooks/use-debounced-callback', () => {
   const React = jest.requireActual<typeof import('react')>('react');

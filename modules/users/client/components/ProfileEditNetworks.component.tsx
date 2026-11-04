@@ -5,6 +5,7 @@ import { nip19 } from 'nostr-tools';
 
 import ProfileEditPage from './ProfileEditPage.component';
 import { removeSocialAccount, update } from '../api/users.api';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '../types';
 import { readApiError } from '../utils/api-error';
@@ -41,6 +42,7 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth();
+  const { track } = useAnalytics();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
@@ -89,7 +91,12 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
       setDraftUser({ ...savedUser });
       setHasChanges(false);
       setStatusMessage(t('Hospitality networks updated.'));
+      track('profile_section_saved', { section: 'networks' });
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'networks',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setStatusMessage(message || t('Something went wrong. Please try again!'));
     }

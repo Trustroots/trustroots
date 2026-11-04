@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@trustroots/ui/Button';
+import { useAnalytics, type SearchFilter } from '@trustroots/analytics/client';
 
 import SearchFilterLanguage from './SearchFilterLanguage.component';
 import SearchCirclesToggle from './SearchCirclesToggle.component';
@@ -26,19 +27,32 @@ export default function SearchSidebarFilters({
   onlineInPast6Months,
   onOnlineInPast6MonthsChange,
 }: SearchSidebarFiltersProps) {
+  const { track } = useAnalytics();
+
+  function changeFilters(
+    filter: SearchFilter,
+    changes: Partial<SearchFilters>,
+  ) {
+    track('search_filter_changed', { filter });
+    onFiltersChange(changes);
+  }
+
   return (
     <section className="search-sidebar-section search-sidebar-filters">
       <div aria-label="Map content" role="group">
         <h4>Map content</h4>
         <SearchTypesToggle
-          onChange={types => onFiltersChange({ types })}
+          onChange={types => changeFilters('types', { types })}
           types={filters.types}
         />
         <p>
           <label className="tr-switch">
             <input
               checked={communityNotesEnabled}
-              onChange={onCommunityNotesToggle}
+              onChange={() => {
+                track('search_filter_changed', { filter: 'community_notes' });
+                onCommunityNotesToggle();
+              }}
               type="checkbox"
             />
             <div className="toggle"></div>
@@ -67,11 +81,11 @@ export default function SearchSidebarFilters({
         </div>
 
         <SearchMyCirclesToggle
-          onChange={tribes => onFiltersChange({ tribes })}
+          onChange={tribes => changeFilters('my_circles', { tribes })}
           selectedTribeIds={filters.tribes}
         />
         <SearchCirclesToggle
-          onChange={tribes => onFiltersChange({ tribes })}
+          onChange={tribes => changeFilters('circles', { tribes })}
           selectedTribeIds={filters.tribes}
         />
       </div>
@@ -82,7 +96,10 @@ export default function SearchSidebarFilters({
         <label className="tr-switch">
           <input
             checked={onlineInPast6Months}
-            onChange={onOnlineInPast6MonthsChange}
+            onChange={() => {
+              track('search_filter_changed', { filter: 'online_recently' });
+              onOnlineInPast6MonthsChange();
+            }}
             type="checkbox"
           />
           <div className="toggle"></div>
@@ -93,7 +110,9 @@ export default function SearchSidebarFilters({
       <hr className="hr-gray hr-tight" />
 
       <SearchFilterLanguage
-        onChangeLanguages={languages => onFiltersChange({ languages })}
+        onChangeLanguages={languages =>
+          changeFilters('languages', { languages })
+        }
         preSelectedLanguages={filters.languages}
       />
 

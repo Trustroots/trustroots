@@ -1,7 +1,8 @@
 import React from 'react';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import '@/config/client/i18n';
 import SearchSidebarFilters from '@/modules/search/client/components/SearchSidebarFilters.component';
 import type SearchTypesToggle from '@/modules/search/client/components/SearchTypesToggle.component';
@@ -64,6 +65,10 @@ jest.mock(
     ),
   }),
 );
+
+const analytics = fakeAnalytics();
+const render = (...[ui, options]: Parameters<typeof rtlRender>) =>
+  rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 const defaultProps: SidebarProps = {
   communityNotesEnabled: true,
@@ -128,6 +133,12 @@ describe('<SearchSidebarFilters />', () => {
     expect(onFiltersChange).toHaveBeenCalledWith({ tribes: ['cyclists'] });
     expect(onFiltersChange).toHaveBeenCalledWith({ tribes: ['hikers'] });
     expect(onFiltersChange).toHaveBeenCalledWith({ languages: ['en'] });
+    expect(analytics.track.mock.calls).toEqual([
+      ['search_filter_changed', { filter: 'types' }],
+      ['search_filter_changed', { filter: 'circles' }],
+      ['search_filter_changed', { filter: 'my_circles' }],
+      ['search_filter_changed', { filter: 'languages' }],
+    ]);
   });
 
   it('clears selected circles and toggles sidebar switches', () => {
@@ -169,6 +180,10 @@ describe('<SearchSidebarFilters />', () => {
     expect(onCommunityNotesToggle).toHaveBeenCalled();
     expect(onOnlineInPast6MonthsChange).toHaveBeenCalled();
     expect(onCloseSidebar).toHaveBeenCalled();
+    expect(analytics.track.mock.calls).toEqual([
+      ['search_filter_changed', { filter: 'community_notes' }],
+      ['search_filter_changed', { filter: 'online_recently' }],
+    ]);
   });
 
   it('disables clear circles when no circles are selected', () => {

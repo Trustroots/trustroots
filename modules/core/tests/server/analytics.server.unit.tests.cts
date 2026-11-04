@@ -73,8 +73,8 @@ describe('@trustroots/analytics/server', function () {
   it('sends events with and without data to the Umami send endpoint', async function () {
     const analytics = createServerAnalytics(options);
 
-    await analytics.track({}, 'offer-delete', { type: 'meet' });
-    await analytics.track({ dnt: '0' }, 'signin-success');
+    await analytics.track({}, 'offer_deleted', { type: 'meet' });
+    await analytics.track({ dnt: '0' }, 'signin_succeeded');
 
     assert.equal(sent.length, 2);
     assert.equal(sent[0].url, 'https://analytics.example.org/api/send');
@@ -84,21 +84,21 @@ describe('@trustroots/analytics/server', function () {
       payload: {
         website: options.websiteId,
         hostname: options.hostname,
-        name: 'offer-delete',
+        name: 'offer_deleted',
         data: { type: 'meet' },
       },
     });
     assert.deepEqual(JSON.parse(String(sent[1].init.body)).payload, {
       website: options.websiteId,
       hostname: options.hostname,
-      name: 'signin-success',
+      name: 'signin_succeeded',
     });
   });
 
   it('sends nothing when analytics is disabled', async function () {
     const analytics = createServerAnalytics({ ...options, enabled: false });
 
-    await analytics.track({}, 'signin-success');
+    await analytics.track({}, 'signin_succeeded');
 
     assert.equal(sent.length, 0);
   });
@@ -109,7 +109,7 @@ describe('@trustroots/analytics/server', function () {
       new Response(null, { status: 204 })) as typeof global.fetch;
     try {
       const analytics = createServerAnalytics(options);
-      await analytics.track({}, 'signin-success');
+      await analytics.track({}, 'signin_succeeded');
       deadline.assertDeadlineCleared();
     } finally {
       deadline.restore();
@@ -119,8 +119,8 @@ describe('@trustroots/analytics/server', function () {
   it('respects Do-Not-Track and Global Privacy Control', async function () {
     const analytics = createServerAnalytics({ ...options, enabled: true });
 
-    await analytics.track({ dnt: '1' }, 'signin-success');
-    await analytics.track({ 'sec-gpc': ['1'] }, 'signin-success');
+    await analytics.track({ dnt: '1' }, 'signin_succeeded');
+    await analytics.track({ 'sec-gpc': ['1'] }, 'signin_succeeded');
 
     assert.equal(sent.length, 0);
     assert.equal(requestsNoTracking({ dnt: ' 1 ' }), true);
@@ -134,7 +134,7 @@ describe('@trustroots/analytics/server', function () {
     }) as typeof global.fetch;
     const analytics = createServerAnalytics(options);
 
-    await assert.doesNotReject(analytics.track({}, 'signin-failure'));
+    await assert.doesNotReject(analytics.track({}, 'page_not_found'));
   });
 
   it('aborts stalled delivery and resolves without rejecting', async function () {
@@ -150,7 +150,7 @@ describe('@trustroots/analytics/server', function () {
     try {
       const analytics = createServerAnalytics(options);
       let resolved = false;
-      const delivery = analytics.track({}, 'signin-success').then(() => {
+      const delivery = analytics.track({}, 'signin_succeeded').then(() => {
         resolved = true;
       });
 

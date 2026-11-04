@@ -21,7 +21,13 @@ export default function RemoveContactContainer({
 
   async function handleRemove() {
     setRemoving(true);
-    await api.contacts.remove(contact._id);
+    try {
+      await api.contacts.remove(contact._id);
+    } catch {
+      // Re-enable the dialog so the member can try again or cancel.
+      setRemoving(false);
+      return;
+    }
     setRemoving(false);
     onSuccess();
   }

@@ -4,9 +4,11 @@ import { Button } from '@trustroots/ui/Button';
 
 import Board from '@/modules/core/client/components/Board';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import { useAnalytics } from '@trustroots/analytics/client';
 import * as authApi from '@/modules/users/client/api/auth.api';
 
 export default function RemoveProfilePage() {
+  const { track } = useAnalytics();
   const { token } = useParams({ strict: false });
   const [state, setState] = useState('review');
 
@@ -19,6 +21,7 @@ export default function RemoveProfilePage() {
     async function removeProfile() {
       try {
         await authApi.removeProfile(token);
+        track('account_removed');
 
         if (isMounted) {
           setState('success');
@@ -35,7 +38,7 @@ export default function RemoveProfilePage() {
     return () => {
       isMounted = false;
     };
-  }, [token, state]);
+  }, [token, state, track]);
 
   return (
     <Board className="container container-fullscreen" names="bokeh">

@@ -1,9 +1,21 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import {
+  fireEvent,
+  render as rtlRender,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import ForgotPasswordPage from '@/modules/users/client/components/ForgotPasswordPage.component';
 import * as authApi from '@/modules/users/client/api/auth.api';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
+const render = (
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) => rtlRender(ui, { wrapper: analytics.wrapper, ...options });
 
 type BoardProps = { children?: React.ReactNode };
 
@@ -61,6 +73,7 @@ describe('ForgotPasswordPage', () => {
     expect(
       screen.getByText(/look for it in your junk mail folder/i),
     ).toBeInTheDocument();
+    expect(analytics.track).toHaveBeenCalledWith('password_reset_requested');
   });
 
   it('shows an error when the reset request fails', async () => {
@@ -73,6 +86,7 @@ describe('ForgotPasswordPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Restore' }));
 
     expect(await screen.findByText('Unknown user.')).toBeInTheDocument();
+    expect(analytics.track).not.toHaveBeenCalled();
   });
 
   it('keeps the form usable when the rejected value has no API message', async () => {

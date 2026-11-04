@@ -5,7 +5,7 @@ import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
-import { useAnalytics } from '@trustroots/analytics/client';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import { createOffer, getOffers, updateOffer } from '../api/offers.api';
 import type { CreateOfferRequest } from '../../shared/offer';
@@ -160,14 +160,18 @@ export default function OfferHostPage({ user }: HostPageProps) {
         await createOffer(payload);
       }
 
-      track('offer-save', {
+      track('offer_saved', {
         type: 'host',
         action: offer._id ? 'update' : 'create',
         status: offer.status,
       });
 
       window.location.assign(`/profile/${user.username}`);
-    } catch {
+    } catch (error: unknown) {
+      track('offer_save_failed', {
+        type: 'host',
+        reason: saveFailureReason(error),
+      });
       setIsSaving(false);
     }
   }

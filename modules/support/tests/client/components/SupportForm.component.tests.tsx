@@ -1,11 +1,21 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import {
+  render as rtlRender,
+  screen,
+  fireEvent,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
 import SupportForm from '@/modules/support/client/components/SupportForm';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import { send } from '@/modules/support/client/api/support.api';
 import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
+
+let analytics = fakeAnalytics();
+const render = (ui: React.ReactElement) =>
+  rtlRender(ui, { wrapper: analytics.wrapper });
 
 const sendMock = jest.mocked(send);
 const supportUser: NonNullable<
@@ -25,6 +35,10 @@ beforeAll(() => {
 });
 afterAll(() => {
   HTMLElement.prototype.scrollIntoView = originalScrollIntoView;
+});
+
+beforeEach(() => {
+  analytics = fakeAnalytics();
 });
 
 afterEach(() => {
@@ -80,7 +94,7 @@ describe('<SupportForm />', () => {
   it('sends a support message and shows a confirmation', async () => {
     sendMock.mockResolvedValueOnce({});
 
-    render(<SupportForm user={{}} />);
+    render(<SupportForm />);
 
     fireEvent.change(screen.getByLabelText('Message'), {
       target: { value: 'I need help' },
@@ -105,6 +119,26 @@ describe('<SupportForm />', () => {
       username: 'alice',
     });
     expect(window.localStorage.getItem('support-message')).toBe('""');
+    expect(analytics.track).toHaveBeenCalledWith('support_request_sent', {
+      signed_in: 'no',
+      category: 'other',
+    });
+    expect(analytics.track).toHaveBeenCalledTimes(1);
+  });
+
+  it('tracks a support message from a signed-in member', async () => {
+    sendMock.mockResolvedValueOnce({});
+    render(<SupportForm user={supportUser} />);
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'I need help' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+
+    await screen.findByRole('link', { name: 'frequently asked questions' });
+    expect(analytics.track).toHaveBeenCalledWith('support_request_sent', {
+      signed_in: 'yes',
+      category: 'other',
+    });
   });
 
   it('shows an error message when sending fails', async () => {
@@ -125,6 +159,7 @@ describe('<SupportForm />', () => {
     await waitFor(() => expect(screen.getByRole('alert')).toHaveFocus());
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'center' });
     expect(screen.getByLabelText('Message')).toHaveValue('I need help');
+    expect(analytics.track).not.toHaveBeenCalled();
   });
 
   it('refocuses a repeated failure and allows a successful retry', async () => {
@@ -216,6 +251,10 @@ describe('<SupportForm />', () => {
         }),
       ),
     );
+    await screen.findByRole('link', { name: 'frequently asked questions' });
+    expect(analytics.track.mock.calls).toEqual([
+      ['support_request_sent', { signed_in: 'yes', category: 'report_member' }],
+    ]);
   });
 
   it('falls back to the raw query string when report URL parsing fails', async () => {

@@ -8,6 +8,7 @@ import ProfileEditLanguages from './ProfileEditLanguages.component';
 import ProfileEditPage from './ProfileEditPage.component';
 import { update } from '../api/users.api';
 import { plainTextLength } from '@/modules/core/client/utils/filters';
+import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import { useSettings } from '@/modules/core/client/react-app/app-context';
 import type { UserProfile } from '../types';
@@ -18,6 +19,7 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
   const { setUser } = useAuth();
+  const { track } = useAnalytics();
   const { profileMinimumLength = 140 } = useSettings();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [hasChanges, setHasChanges] = useState(false);
@@ -47,7 +49,12 @@ export default function ProfileEditAbout({ user }: { user: UserProfile }) {
       setDraftUser({ ...savedUser });
       setHasChanges(false);
       setStatusMessage(t('Profile updated.'));
+      track('profile_section_saved', { section: 'about' });
     } catch (error: unknown) {
+      track('profile_save_failed', {
+        section: 'about',
+        reason: saveFailureReason(error),
+      });
       const { message } = readApiError(error);
       setStatusMessage(message || t('Something went wrong. Please try again!'));
     }

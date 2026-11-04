@@ -571,7 +571,7 @@ describe('<SearchPage />', () => {
     expect(
       await screen.findByRole('link', { name: /host person/i }),
     ).toBeInTheDocument();
-    expect(analytics.track).toHaveBeenCalledWith('search-offer-preview');
+    expect(analytics.track).toHaveBeenCalledWith('search_offer_previewed');
   });
 
   it('tracks missing offers loaded from the route params', async () => {
@@ -581,7 +581,7 @@ describe('<SearchPage />', () => {
     renderSearchPage();
 
     await waitFor(() => {
-      expect(analytics.track).toHaveBeenCalledWith('search-offer-not-found');
+      expect(analytics.track).toHaveBeenCalledWith('search_offer_not_found');
     });
   });
 
@@ -603,6 +603,9 @@ describe('<SearchPage />', () => {
 
     expect(screen.getByTestId('community-notes-sidebar')).toHaveTextContent(
       '9F2X+XX',
+    );
+    expect(analytics.track).toHaveBeenCalledWith(
+      'search_community_note_opened',
     );
 
     fireEvent.click(screen.getByRole('button', { name: /close offer/i }));

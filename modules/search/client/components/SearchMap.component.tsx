@@ -9,7 +9,10 @@ import type {
   MapboxGeoJSONFeature,
   StyleSpecification,
 } from 'mapbox-gl';
-import type { SearchFilters } from '../utils/search-filters';
+import {
+  countNarrowingFilters,
+  type SearchFilters,
+} from '../utils/search-filters';
 import type { SearchResultOffer } from './SearchSidebarResults.component';
 import type { OfferSearchFeatureCollection } from '@/modules/offers/shared/offer';
 
@@ -32,6 +35,7 @@ import DeviceLocationButton from '@/modules/core/client/components/DeviceLocatio
 import type { DeviceLocation } from '@/modules/core/client/utils/use-device-location';
 import MapNavigationControl from '@/modules/core/client/components/Map/MapNavigationControl';
 import MapScaleControl from '@/modules/core/client/components/Map/MapScaleControl';
+import { useAnalytics } from '@trustroots/analytics/client';
 import MapStyleControl from '@/modules/core/client/components/Map/MapStyleControl';
 import usePageWheel from '@/modules/core/client/components/Map/use-page-wheel';
 import SearchMapNoContent from './SearchMapNoContent';
@@ -401,6 +405,8 @@ export default function SearchMap({
     type: 'FeatureCollection',
   });
   const offersRequestRef = useRef(0);
+  const lastAreaWasEmptyRef = useRef(false);
+  const { track } = useAnalytics();
   const [communityNotes, setCommunityNotes] = useState<FeatureCollection>({
     type: 'FeatureCollection',
     features: [],
@@ -510,12 +516,15 @@ export default function SearchMap({
     const southWestLng = ensureValidLng(southWest.lng - boundsBuffer);
 
     // @TODO: no need to fetch if in same area as in previous fetch — thus store in state?
-    fetchOffers({
-      northEastLat,
-      northEastLng,
-      southWestLat,
-      southWestLng,
-    });
+    fetchOffers(
+      {
+        northEastLat,
+        northEastLng,
+        southWestLat,
+        southWestLng,
+      },
+      zoom,
+    );
   };
 
   /**
@@ -879,7 +888,10 @@ export default function SearchMap({
   /**
    * Fetch offers inside bounding box
    */
-  async function fetchOffers(boundingBox: Record<string, number>) {
+  async function fetchOffers(
+    boundingBox: Record<string, number>,
+    zoom: number,
+  ) {
     if (!isUserPublic) {
       return;
     }
@@ -893,6 +905,16 @@ export default function SearchMap({
       });
       if (requestId === offersRequestRef.current) {
         setOffers(data);
+        // Count each move into an area without offers once, by zoom and
+        // number of narrowing filters only, never by place.
+        const isEmpty = data.features.length === 0;
+        if (isEmpty && !lastAreaWasEmptyRef.current) {
+          track('search_no_results', {
+            zoom: Math.round(zoom),
+            filters: countNarrowingFilters(parsedFilters),
+          });
+        }
+        lastAreaWasEmptyRef.current = isEmpty;
       }
     } catch {
       // @TODO Error handling

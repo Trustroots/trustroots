@@ -1,0 +1,9 @@
+- [x] Extend the typed event catalogue, rename existing events to snake_case and add the `ANALYTICS_EVENTS` description map.
+- [x] Track the events at their call sites, with component tests for success and failure branches.
+- [x] Report unexpected failed API requests and uncaught errors from the app shell, mark by-design statuses with `expectedStatuses`, and catch the unread-count poller, with unit tests.
+- [x] Add the outreach `source`, `message_gate_shown`, `search_no_results` and the support `category`, with tests.
+- [x] Give contact removal, circle leave and language save a failure path, with tests.
+- [x] Give every feature `*_failed` event a fixed `reason` from the HTTP status, with component tests for each reason.
+- [x] Enable Web Vitals collection on the Umami script tag, with a server route test.
+- [x] Document every event and the question it answers in `docs/analytics.md`, kept in step by a unit test, and update the sign-in end-to-end test for the renamed event and its `reason`.
+- [x] Update living specifications and archive the completed change.

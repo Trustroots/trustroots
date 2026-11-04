@@ -45,7 +45,9 @@ describe('users api', () => {
     axiosMock.get.mockResolvedValueOnce(response(user));
 
     await expect(fetch('alice')).resolves.toBe(user);
-    expect(axiosMock.get).toHaveBeenCalledWith('/api/users/alice');
+    expect(axiosMock.get).toHaveBeenCalledWith('/api/users/alice', {
+      expectedStatuses: [404],
+    });
   });
 
   it('fetches a mini user profile', async () => {

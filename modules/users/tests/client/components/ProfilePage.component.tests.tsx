@@ -1,4 +1,5 @@
 import React from 'react';
+import { readOutreachSource } from '@trustroots/analytics/client';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
@@ -12,6 +13,9 @@ import * as profileRoutes from '@/modules/users/client/utils/profile-routes';
 import type { ContactRecord } from '@/modules/contacts/client/types';
 import type { UserProfile, UserSummary } from '@/modules/users/client/types';
 import { resolveMalformed } from '@/testutils/client/malformed-fixtures';
+import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
+
+const analytics = fakeAnalytics();
 
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
@@ -239,6 +243,7 @@ function renderPage(
 
   return render(
     <AppProviders
+      analyticsTracker={analytics.tracker}
       bootstrapData={{
         env: 'test',
         isNativeMobileApp: false,
@@ -396,6 +401,10 @@ describe('ProfilePage', () => {
     expect(screen.getByText('Offers panel')).toBeVisible();
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
     expect(usersApi.fetch).toHaveBeenCalledWith('bob');
+    expect(analytics.track).toHaveBeenCalledTimes(1);
+    expect(analytics.track).toHaveBeenCalledWith('profile_viewed', {
+      own: 'no',
+    });
   });
 
   it('renders an embedded profile for its explicit subject without page navigation', async () => {
@@ -463,6 +472,7 @@ describe('ProfilePage', () => {
 
     rerender(
       <AppProviders
+        analyticsTracker={analytics.tracker}
         bootstrapData={{
           env: 'test',
           isNativeMobileApp: false,
@@ -493,6 +503,40 @@ describe('ProfilePage', () => {
     expect(
       await screen.findByRole('link', { name: 'Add contact' }),
     ).toHaveAttribute('href', '/contact-add/user-2');
+  });
+
+  it('remembers the profile as where reaching out started', async () => {
+    const preventNavigation = (event: Event) => event.preventDefault();
+    document.addEventListener('click', preventNavigation);
+    try {
+      renderPage();
+
+      fireEvent.click(await screen.findByRole('link', { name: 'Add contact' }));
+      expect(readOutreachSource('bob')).toBe('profile');
+      window.sessionStorage.clear();
+
+      fireEvent.click(screen.getByRole('link', { name: 'Send a message' }));
+      expect(readOutreachSource('bob')).toBe('profile');
+    } finally {
+      document.removeEventListener('click', preventNavigation);
+      window.sessionStorage.clear();
+    }
+  });
+
+  it('counts a profile view once when the experience form opens and closes', async () => {
+    renderPage(authUser, '/profile/bob', { referencesEnabled: true });
+    expect(await screen.findByText('About Bob Example')).toBeVisible();
+
+    window.history.pushState({}, '', '/profile/bob/experiences/new');
+    fireEvent.popState(window);
+    await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledTimes(2));
+    window.history.pushState({}, '', '/profile/bob');
+    fireEvent.popState(window);
+    await waitFor(() => expect(usersApi.fetch).toHaveBeenCalledTimes(3));
+
+    expect(
+      analytics.track.mock.calls.filter(([name]) => name === 'profile_viewed'),
+    ).toEqual([['profile_viewed', { own: 'no' }]]);
   });
 
   it('shows remove contact for an existing confirmed contact', async () => {
@@ -630,6 +674,7 @@ describe('ProfilePage', () => {
     window.history.pushState({}, '', '/profile/bob/experiences');
     render(
       <AppProviders
+        analyticsTracker={analytics.tracker}
         bootstrapData={{
           env: 'test',
           isNativeMobileApp: false,
@@ -646,6 +691,7 @@ describe('ProfilePage', () => {
     window.history.pushState({}, '', '/profile/bob/experiences/new');
     render(
       <AppProviders
+        analyticsTracker={analytics.tracker}
         bootstrapData={{
           env: 'test',
           isNativeMobileApp: false,
@@ -745,6 +791,7 @@ describe('ProfilePage', () => {
         'The person you are looking for is not available.',
       ),
     ).toBeVisible();
+    expect(analytics.track).not.toHaveBeenCalled();
   });
 
   it('renders the about tab for the signed-in member viewing their own profile', async () => {
@@ -761,6 +808,9 @@ describe('ProfilePage', () => {
 
     expect(await screen.findByText('About Ada Example')).toBeVisible();
     expect(screen.queryByText('Tribes in common')).not.toBeInTheDocument();
+    expect(analytics.track).toHaveBeenCalledWith('profile_viewed', {
+      own: 'yes',
+    });
   });
 
   it('removes a contact from the loaded contact list', async () => {

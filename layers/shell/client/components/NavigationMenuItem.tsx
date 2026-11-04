@@ -8,6 +8,8 @@ type NavigationMenuItemProps = React.LiHTMLAttributes<HTMLLIElement> & {
   path: string;
   target?: string;
   submenu?: ReactNode;
+  /** Runs for clicks on this item's own link, not its submenu or padding. */
+  onLinkClick?: React.MouseEventHandler<HTMLAnchorElement>;
 };
 
 export default function NavigationMenuItem({
@@ -18,6 +20,7 @@ export default function NavigationMenuItem({
   target,
   submenu,
   onClick,
+  onLinkClick,
   'aria-label': ariaLabel,
   ...rest
 }: NavigationMenuItemProps) {
@@ -51,6 +54,7 @@ export default function NavigationMenuItem({
         target={target}
         aria-label={ariaLabel}
         aria-current={path === currentPath ? 'page' : undefined}
+        onClick={onLinkClick}
       >
         {children}
       </a>
