@@ -7,7 +7,10 @@ const jestConfig = require('./jest.config.cjs');
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
   testRunner: 'jest',
-  plugins: ['@stryker-mutator/jest-runner', './tooling/stryker/ignore-export-names.mjs'],
+  plugins: [
+    '@stryker-mutator/jest-runner',
+    './tooling/stryker/ignore-export-names.mjs',
+  ],
   ignorers: ['export-names'],
   jest: {
     configFile: 'jest.config.cjs',
@@ -18,7 +21,14 @@ export default {
     glob.replace('<rootDir>/', ''),
   ),
   // Ansible vault files are not JavaScript, whatever their extension.
-  ignorePatterns: ['/deploy/files/secrets', '/.stryker-tmp', '/.prune-tmp', '/.stryker-work', '/reports', '/coverage'],
+  ignorePatterns: [
+    '/deploy/files/secrets',
+    '/.stryker-tmp',
+    '/.prune-tmp',
+    '/.stryker-work',
+    '/reports',
+    '/coverage',
+  ],
   coverageAnalysis: 'perTest',
   // Stop at the first failing test. Each killed mutant records the test that
   // caught it first, so a test that is never a first killer has every kill

@@ -3,7 +3,10 @@
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
   testRunner: 'vitest',
-  plugins: ['@stryker-mutator/vitest-runner', './tooling/stryker/ignore-export-names.mjs'],
+  plugins: [
+    '@stryker-mutator/vitest-runner',
+    './tooling/stryker/ignore-export-names.mjs',
+  ],
   ignorers: ['export-names'],
   vitest: {
     configFile: 'vitest.stryker.server.config.mts',
@@ -27,7 +30,14 @@ export default {
     '!modules/core/server/services/file-removal.server.service.mts',
   ],
   // Ansible vault files are not JavaScript, whatever their extension.
-  ignorePatterns: ['/deploy/files/secrets', '/.stryker-tmp', '/.prune-tmp', '/.stryker-work', '/reports', '/coverage'],
+  ignorePatterns: [
+    '/deploy/files/secrets',
+    '/.stryker-tmp',
+    '/.prune-tmp',
+    '/.stryker-work',
+    '/reports',
+    '/coverage',
+  ],
   coverageAnalysis: 'perTest',
   // See stryker.client.config.mjs for why bail stays on.
   disableBail: false,
