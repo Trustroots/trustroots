@@ -237,7 +237,7 @@ private fun readableContentColor(background: Color): Color {
 }
 
 @Composable
-internal fun rememberArtworkBitmap(url: URL?, sessionCookie: String?, accessToken: String? = null): Bitmap? =
+internal fun rememberArtworkBitmap(url: URL?, sessionCookie: String?, accessToken: String?): Bitmap? =
     (rememberArtworkBitmapState(url, sessionCookie, accessToken = accessToken) as? ArtworkBitmapState.Loaded)?.bitmap
 
 @Composable

@@ -65,7 +65,11 @@ class ArtworkSessionCacheJourneyTest {
         }
     }
 
-    @Test fun avatarAndHeroShareCookieScopedArtworkCache() {
+    @Test fun avatarAndHeroShareCookieScopedArtworkCache() = exerciseSessionScopedCache(bearer = false)
+
+    @Test fun avatarAndHeroShareBearerScopedArtworkCache() = exerciseSessionScopedCache(bearer = true)
+
+    private fun exerciseSessionScopedCache(bearer: Boolean) {
         val redPNG = png(android.graphics.Color.RED)
         val bluePNG = png(android.graphics.Color.BLUE)
         startImageServer(redPNG, bluePNG)
@@ -87,7 +91,8 @@ class ArtworkSessionCacheJourneyTest {
                     if (showHero) {
                         ArtworkHero(
                             url = url,
-                            sessionCookie = cookie,
+                            sessionCookie = if (bearer) null else cookie,
+                            accessToken = if (bearer) cookie else null,
                             label = "Fictional member",
                             subtitle = "A fictional profile",
                             background = Color.DarkGray,
@@ -95,7 +100,13 @@ class ArtworkSessionCacheJourneyTest {
                             testTag = "fixtureArtworkHero",
                         )
                     } else {
-                        RemoteArtwork(url, cookie, "Fictional member", 96.dp)
+                        RemoteArtwork(
+                            url,
+                            if (bearer) null else cookie,
+                            "Fictional member",
+                            96.dp,
+                            accessToken = if (bearer) cookie else null,
+                        )
                     }
                 }
             }
@@ -182,6 +193,8 @@ class ArtworkSessionCacheJourneyTest {
                                 if (header.isEmpty()) break
                                 if (header.startsWith("Cookie:", ignoreCase = true)) {
                                     cookie = header.substringAfter(':').trim()
+                                } else if (header.startsWith("Authorization:", ignoreCase = true)) {
+                                    cookie = header.substringAfter(':').trim().removePrefix("Bearer ")
                                 }
                             }
                             val path = requestLine.substringAfter(' ').substringBefore(' ')
