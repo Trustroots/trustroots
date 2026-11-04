@@ -15,7 +15,8 @@ import java.net.URL
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.concurrent.thread
 import org.junit.After
-import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +27,7 @@ class RemoteArtworkAvatarJourneyTest {
     @get:Rule val compose = createComposeRule()
     private val server = ServerSocket(0)
     private val receivedCookie = AtomicReference<String>()
+    private val receivedAuthorization = AtomicReference<String>()
     private var responder: Thread? = null
 
     @After fun closeServer() {
@@ -39,7 +41,11 @@ class RemoteArtworkAvatarJourneyTest {
         if (server.isClosed) null else throw error
     }
 
-    @Test fun loadsAnAvatarWithTheMemberSessionCookie() {
+    @Test fun loadsAnAvatarWithTheMemberSessionCookie() = loadAvatar(null)
+
+    @Test fun loadsAnAvatarWithBearerCredentialsWithoutSendingBrowserCookies() = loadAvatar("example-access")
+
+    private fun loadAvatar(accessToken: String?) {
         responder = thread(isDaemon = true) {
             val socket = acceptOrStop() ?: return@thread
             socket.use {
@@ -49,6 +55,7 @@ class RemoteArtworkAvatarJourneyTest {
                     val header = input.readLine() ?: break
                     if (header.isEmpty()) break
                     if (header.startsWith("Cookie:", true)) receivedCookie.set(header.substringAfter(':').trim())
+                    if (header.startsWith("Authorization:", true)) receivedAuthorization.set(header.substringAfter(':').trim())
                 }
                 val png = ByteArrayOutputStream().also { output ->
                     Bitmap.createBitmap(2, 2, Bitmap.Config.ARGB_8888)
@@ -67,6 +74,7 @@ class RemoteArtworkAvatarJourneyTest {
                 RemoteArtwork(
                     url = avatarUrl,
                     sessionCookie = "connect.sid=fictional-session",
+                    accessToken = accessToken,
                     label = "Quiet Fox",
                     size = 64.dp,
                 )
@@ -77,7 +85,13 @@ class RemoteArtworkAvatarJourneyTest {
             compose.onAllNodesWithContentDescription("Quiet Fox image").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithContentDescription("Quiet Fox image").assertIsDisplayed()
-        assertTrue(receivedCookie.get() == "connect.sid=fictional-session")
+        if (accessToken == null) {
+            assertEquals("connect.sid=fictional-session", receivedCookie.get())
+            assertNull(receivedAuthorization.get())
+        } else {
+            assertNull(receivedCookie.get())
+            assertEquals("Bearer example-access", receivedAuthorization.get())
+        }
         responder?.join(1_000)
     }
 }

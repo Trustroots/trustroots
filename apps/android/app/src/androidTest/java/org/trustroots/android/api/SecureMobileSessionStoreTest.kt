@@ -11,6 +11,11 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import kotlinx.coroutines.runBlocking
+import org.trustroots.android.ui.LocalTransportFixture
+import org.trustroots.android.ui.MemberShellViewModelStoreOwner
+import org.trustroots.android.ui.session.AndroidAppSessionOperations
+import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
 
 @RunWith(AndroidJUnit4::class)
 class SecureMobileSessionStoreTest {
@@ -61,6 +66,59 @@ class SecureMobileSessionStoreTest {
                 it.contains(session.member.displayName)
         })
     }
+
+    @Test
+    fun persistsRotatedBearerTokensWithoutPlaintextPreferences() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access", "example-refresh")
+        store.save(session)
+        assertEquals(session, store.load())
+        assertTrue(preferences.all.values.filterIsInstance<String>().none {
+            it.contains("example-access") || it.contains("example-refresh")
+        })
+    }
+
+    @Test
+    fun restoresBearerSessionsByRefreshingAndPersistingTheRotation() = runBlocking {
+        val saved = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "old-access", "old-refresh")
+        store.save(saved)
+        LocalTransportFixture { request ->
+            assertEquals("POST", request.method)
+            assertEquals("/api/mobile/v0/auth/refresh", request.path)
+            assertEquals("old-refresh", org.json.JSONObject(request.body).getString("refreshToken"))
+            assertNull(request.cookie)
+            LocalTransportFixture.Response("""{"accessToken":"new-access","refreshToken":"new-refresh","member":{"username":"quiet-fox","displayName":"Quiet Fox"}}""")
+        }.use { local ->
+            val refreshed = operations(local.baseURL).loadSession()
+            assertEquals(saved.copy(accessToken = "new-access", refreshToken = "new-refresh"), refreshed)
+            assertEquals(refreshed, store.load())
+        }
+    }
+
+    @Test
+    fun refreshRejectionClearsTheSessionButTemporaryFailuresKeepIt() = runBlocking {
+        val saved = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access", "example-refresh")
+        for (status in listOf(401, 500)) {
+            store.save(saved)
+            LocalTransportFixture { LocalTransportFixture.Response("{}", status) }.use { local ->
+                val restored = operations(local.baseURL).loadSession()
+                assertEquals(if (status == 401) null else saved, restored)
+                assertEquals(restored, store.load())
+            }
+        }
+        store.save(saved)
+        LocalTransportFixture { null }.use { local ->
+            assertEquals(saved, operations(local.baseURL).loadSession())
+            assertEquals(saved, store.load())
+        }
+    }
+
+    private fun operations(backendURL: String) = AndroidAppSessionOperations(
+        store,
+        SecureResponseCache(context),
+        SignInDestinationStoreHolder(),
+        MemberShellViewModelStoreOwner(),
+        backendURL,
+    )
 
     @Test
     fun replacingSessionReturnsOnlyTheMostRecentlySavedAccount() {

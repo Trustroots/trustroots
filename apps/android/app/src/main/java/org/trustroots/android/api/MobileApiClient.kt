@@ -180,8 +180,8 @@ class MobileApiClient(
         URL("$baseURL/uploads-circle/${encode(slug).replace("+", "%20")}/120x120.jpg")
     fun circleHeroURL(slug: String): URL =
         URL("$baseURL/uploads-circle/${encode(slug).replace("+", "%20")}/742x496.jpg")
-    fun avatarURL(memberID: String, size: Int = 128, bearer: Boolean = false): URL =
-        URL("$baseURL${if (bearer) "/api/mobile/v0/members" else "/api/users"}/${encode(memberID)}/avatar?size=$size")
+    fun avatarURL(memberID: String, size: Int = 128, session: MemberSession? = null): URL =
+        URL("$baseURL${if (session?.accessToken != null) "/api/mobile/v0/members" else "/api/users"}/${encode(memberID)}/avatar?size=$size")
     suspend fun signIn(usernameOrEmail: String, password: String): Result<MemberSession> =
         withContext(Dispatchers.IO) {
             runCatching {

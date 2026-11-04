@@ -115,7 +115,7 @@ internal fun MessageConversationEntryScreen(
                 leadingContent = member?.let {
                     {
                         RemoteArtwork(
-                            url = api.avatarURL(it.id, 64, session.accessToken != null),
+                            url = api.avatarURL(it.id, 64, session),
                             sessionCookie = session.cookieHeader,
                             accessToken = session.accessToken,
                             label = it.localizedLabel(),
@@ -159,7 +159,7 @@ internal fun MessageConversationEntryScreen(
                         ) {
                             if (message.sender.username != state.currentUsername) {
                                 RemoteArtwork(
-                                    url = api.avatarURL(member.id, 64, session.accessToken != null),
+                                    url = api.avatarURL(member.id, 64, session),
                                     sessionCookie = session.cookieHeader,
                                     accessToken = session.accessToken,
                                     label = member.localizedLabel(),

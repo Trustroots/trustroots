@@ -112,7 +112,7 @@ internal fun ProfileOverviewSection(
             Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RemoteArtwork(
-                        reference.author.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
+                        reference.author.id?.let { api.avatarURL(it, 64, session) },
                         session.cookieHeader,
                         accessToken = session.accessToken,
                         label = reference.author.localizedLabel(),
@@ -229,7 +229,7 @@ internal fun ProfileContactsSection(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             RemoteArtwork(
-                contact.user.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
+                contact.user.id?.let { api.avatarURL(it, 64, session) },
                 session.cookieHeader,
                 accessToken = session.accessToken,
                 label = contact.user.localizedLabel(),

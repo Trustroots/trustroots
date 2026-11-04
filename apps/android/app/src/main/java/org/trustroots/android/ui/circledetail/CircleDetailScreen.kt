@@ -325,7 +325,7 @@ private fun CircleMemberGroup(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RemoteArtwork(
-                    url = member.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
+                    url = member.id?.let { api.avatarURL(it, 64, session) },
                     sessionCookie = session.cookieHeader,
                     accessToken = session.accessToken,
                     label = member.displayName,

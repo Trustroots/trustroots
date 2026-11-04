@@ -146,7 +146,7 @@ internal fun ContactsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         RemoteArtwork(
-                            url = contact.user.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
+                            url = contact.user.id?.let { api.avatarURL(it, 64, session) },
                             sessionCookie = session.cookieHeader,
                             accessToken = session.accessToken,
                             label = contact.user.displayName,

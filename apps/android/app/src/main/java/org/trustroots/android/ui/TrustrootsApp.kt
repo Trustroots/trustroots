@@ -358,7 +358,7 @@ private fun MemberShell(
                 MemberNavigationBar(
                     destination = destination,
                     unreadMessageCount = shellState.unreadMessageCount,
-                    avatarURL = shellState.avatarID?.let { api.avatarURL(it, 64, session.accessToken != null) },
+                    avatarURL = shellState.avatarID?.let { api.avatarURL(it, 64, session) },
                     sessionCookie = session.cookieHeader,
                     accessToken = session.accessToken,
                     memberLabel = session.member.displayName,

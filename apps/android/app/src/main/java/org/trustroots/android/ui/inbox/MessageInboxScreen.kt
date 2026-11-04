@@ -246,7 +246,7 @@ private fun InboxContent(
                 ) {
                     Row(Modifier.weight(1f)) {
                         RemoteArtwork(
-                            url = thread.otherMember.id?.let { api.avatarURL(it, 64, session.accessToken != null) },
+                            url = thread.otherMember.id?.let { api.avatarURL(it, 64, session) },
                             sessionCookie = session.cookieHeader,
                             accessToken = session.accessToken,
                             label = memberLabels[thread.id].orEmpty(),

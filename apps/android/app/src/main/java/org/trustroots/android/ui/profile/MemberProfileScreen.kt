@@ -269,7 +269,7 @@ private fun MemberProfileContent(
     var showingProfileImage by rememberSaveable(username, profile?.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val profileImageState = rememberArtworkBitmapState(
-        url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048, session.accessToken != null) } else null,
+        url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048, session) } else null,
         sessionCookie = if (showingProfileImage) session.cookieHeader else null,
         maxDownloadBytes = 8 * 1024 * 1024,
         accessToken = if (showingProfileImage) session.accessToken else null,
@@ -408,7 +408,7 @@ private fun MemberProfileContent(
                     Column(Modifier.fillMaxSize().nestedScroll(collapsibleHeader.connection)) {
                         Box(Modifier.fillMaxWidth().height(headerHeight).clipToBounds()) {
                             ArtworkHero(
-                                url = member.id?.let { api.avatarURL(it, 512, session.accessToken != null) },
+                                url = member.id?.let { api.avatarURL(it, 512, session) },
                                 sessionCookie = session.cookieHeader,
                                 accessToken = session.accessToken,
                                 label = member.displayName,

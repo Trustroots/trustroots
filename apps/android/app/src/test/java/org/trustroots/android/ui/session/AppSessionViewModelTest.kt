@@ -189,6 +189,20 @@ class AppSessionViewModelTest {
     }
 
     @Test
+    fun callbacksFromAnOlderBearerTokenCannotInvalidateTheCurrentSession() = withScope { scope ->
+        val current = session().copy(cookieHeader = "", accessToken = "new-access", refreshToken = "new-refresh")
+        val operations = FakeOperations().apply { restoredSession = current }
+        val model = settledModel(scope, operations)
+        operations.events.clear()
+        val previous = current.copy(accessToken = "old-access")
+
+        model.onEvent(AppSessionEvent.SessionInvalidated(AppSessionSource.from(previous, "")))
+
+        assertEquals(current, model.state.value.session)
+        assertTrue(operations.events.isEmpty())
+    }
+
+    @Test
     fun memberUpdateDeliveredAfterSignOutCannotRecreateTheSession() = withScope { scope ->
         val backendURL = "https://example.invalid"
         val existingSession = session()
