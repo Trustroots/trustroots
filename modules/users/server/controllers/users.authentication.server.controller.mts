@@ -772,6 +772,10 @@ export const removeOAuthProvider = service.removeOAuthProvider;
 /** @esmNamed */
 export const validateEmailToken = service.validateEmailToken;
 /** @esmNamed */
+export const emailConfirmationDetails = service.emailConfirmationDetails;
+/** @esmNamed */
+export const cancelEmailChange = service.cancelEmailChange;
+/** @esmNamed */
 export const confirmEmail = service.confirmEmail;
 /** @esmNamed */
 export const resendConfirmation = service.resendConfirmation;
