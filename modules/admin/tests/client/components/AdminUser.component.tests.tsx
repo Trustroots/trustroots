@@ -867,7 +867,10 @@ describe('<AdminUser />', () => {
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
       'Could not delete this member',
     );
-    expect(screen.getByRole('heading', { name: 'alice' })).toBeInTheDocument();
+    // The page stays behind the modal, which hides it from the accessibility tree.
+    expect(
+      screen.getByRole('heading', { name: 'alice', hidden: true }),
+    ).toBeInTheDocument();
     fireEvent.keyDown(dialog, { key: 'Escape', code: 'Escape' });
     await waitFor(() =>
       expect(screen.queryByRole('dialog')).not.toBeInTheDocument(),

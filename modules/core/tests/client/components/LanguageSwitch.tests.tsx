@@ -36,8 +36,12 @@ describe('default presentation', () => {
       'Search languages…',
     );
     expect(
-      screen.getByText('English', { selector: 'strong' }),
+      screen.getByRole('searchbox', { name: 'Search languages…' }),
     ).toBeInTheDocument();
+    expect(screen.getByText('English', { selector: 'strong' })).toHaveAttribute(
+      'aria-current',
+      'true',
+    );
   });
 
   it('can filter and change language from the modal', async () => {

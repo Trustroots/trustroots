@@ -8,7 +8,13 @@ import {
 } from '../utils/admin-date';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import React, { Component, type ChangeEvent, type FormEvent } from 'react';
-import { Modal } from 'react-bootstrap';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@trustroots/ui/Modal';
 
 // Internal dependencies
 import {
@@ -1498,18 +1504,16 @@ export class AdminUserContent extends Component<
           )}
         </div>
         <Modal
-          show={this.state.deleteDialogOpen}
-          onHide={() => this.cancelDeleteDialog()}
-          keyboard={!this.state.deletingMember}
-          backdrop={this.state.deletingMember ? 'static' : true}
-          aria-labelledby="admin-delete-member-title"
+          open={this.state.deleteDialogOpen}
+          onClose={() => this.cancelDeleteDialog()}
+          dismissible={!this.state.deletingMember}
         >
-          <Modal.Header>
-            <Modal.Title id="admin-delete-member-title">
+          <ModalHeader>
+            <ModalTitle id="admin-delete-member-title">
               Delete member?
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
             <p>
               This permanently deletes the suspended member account, offers,
               contacts and uploaded files. Existing messages, experiences and
@@ -1563,8 +1567,8 @@ export class AdminUserContent extends Component<
               </p>
             )}
             {this.state.deletingMember && <p role="status">Deleting member…</p>}
-          </Modal.Body>
-          <Modal.Footer>
+          </ModalBody>
+          <ModalFooter>
             <Button
               type="button"
               onClick={() => this.setState({ deleteDialogOpen: false })}
@@ -1586,23 +1590,21 @@ export class AdminUserContent extends Component<
             >
               {this.state.deletingMember ? 'Deleting…' : 'Delete permanently'}
             </Button>
-          </Modal.Footer>
+          </ModalFooter>
         </Modal>
         <Modal
-          show={Boolean(roleChangeConfirmation)}
-          onHide={this.cancelUserRoleChange}
-          keyboard={!isSettingUserRole}
-          backdrop={isSettingUserRole ? 'static' : true}
-          aria-labelledby="admin-role-change-title"
+          open={Boolean(roleChangeConfirmation)}
+          onClose={this.cancelUserRoleChange}
+          dismissible={!isSettingUserRole}
         >
           {roleChangeConfirmation && (
             <>
-              <Modal.Header>
-                <Modal.Title id="admin-role-change-title">
+              <ModalHeader>
+                <ModalTitle id="admin-role-change-title">
                   {roleChangeConfirmation.title}
-                </Modal.Title>
-              </Modal.Header>
-              <Modal.Body>
+                </ModalTitle>
+              </ModalHeader>
+              <ModalBody>
                 {roleChangeConfirmation.message && (
                   <p>{roleChangeConfirmation.message}</p>
                 )}
@@ -1622,8 +1624,8 @@ export class AdminUserContent extends Component<
                     Updating role…
                   </p>
                 )}
-              </Modal.Body>
-              <Modal.Footer>
+              </ModalBody>
+              <ModalFooter>
                 <Button
                   type="button"
 
@@ -1644,7 +1646,7 @@ export class AdminUserContent extends Component<
                       ? 'Close'
                       : roleChangeConfirmation.confirmLabel}
                 </Button>
-              </Modal.Footer>
+              </ModalFooter>
             </>
           )}
         </Modal>

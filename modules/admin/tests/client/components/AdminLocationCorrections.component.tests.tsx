@@ -72,7 +72,9 @@ describe('AdminLocationCorrections', () => {
         'Exact default location',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByLabelText('Message from your account')).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByLabelText('Message from your account')).toHaveFocus(),
+    );
     expect(screen.getByRole('link', { name: 'View offer' })).toHaveAttribute(
       'href',
       '/search?offer=offer-1',
@@ -114,8 +116,9 @@ describe('AdminLocationCorrections', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Candidate changed.',
     );
+    // Still listed behind the dialog, which hides the page from assistive technology.
     expect(
-      screen.getByRole('button', { name: 'Review sam' }),
+      screen.getByRole('button', { name: 'Review sam', hidden: true }),
     ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(screen.queryByRole('form')).not.toBeInTheDocument();

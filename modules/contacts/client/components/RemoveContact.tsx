@@ -1,7 +1,13 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal } from 'react-bootstrap';
 import { Button } from '@trustroots/ui/Button';
+import {
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+  ModalTitle,
+} from '@trustroots/ui/Modal';
 import type { ContactRecord } from '../types';
 
 export default function RemoveContact({
@@ -51,40 +57,28 @@ export default function RemoveContact({
   }
 
   return (
-    <Modal show={show} onHide={onCancel}>
-      <div className="modal-content">
-        <Modal.Header>
-          {!inProgress && (
-            <button
-              type="button"
-              className="close"
-              aria-hidden="true"
-              onClick={onCancel}
-            >
-              &times;
-            </button>
+    <Modal open={show} onClose={onCancel}>
+      <ModalHeader closeLabel={inProgress ? undefined : t('Close')}>
+        <ModalTitle>{labelTitle}</ModalTitle>
+      </ModalHeader>
+
+      <ModalBody>
+        <p>{labelTime}</p>
+      </ModalBody>
+
+      <ModalFooter>
+        <Button variant="link" onClick={onCancel} disabled={inProgress}>
+          {t('Cancel') as string}
+        </Button>
+        <Button intent="primary" onClick={onRemove} disabled={inProgress}>
+          {!inProgress && <span>{labelConfirm}</span>}
+          {inProgress && (
+            <span role="alertdialog" aria-busy="true" aria-live="assertive">
+              {t('Wait a moment…') as string}
+            </span>
           )}
-          <Modal.Title>{labelTitle}</Modal.Title>
-        </Modal.Header>
-
-        <Modal.Body>
-          <p>{labelTime}</p>
-        </Modal.Body>
-
-        <Modal.Footer>
-          <Button variant="link" onClick={onCancel} disabled={inProgress}>
-            {t('Cancel') as string}
-          </Button>
-          <Button intent="primary" onClick={onRemove} disabled={inProgress}>
-            {!inProgress && <span>{labelConfirm}</span>}
-            {inProgress && (
-              <span role="alertdialog" aria-busy="true" aria-live="assertive">
-                {t('Wait a moment…') as string}
-              </span>
-            )}
-          </Button>
-        </Modal.Footer>
-      </div>
+        </Button>
+      </ModalFooter>
     </Modal>
   );
 }

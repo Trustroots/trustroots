@@ -7,7 +7,7 @@
 import React, { useState } from 'react';
 import Avatar from './Avatar.component';
 import ProfileViewBasics from './ProfileViewBasics';
-import { Modal } from 'react-bootstrap';
+import { Modal } from '@trustroots/ui/Modal';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { UserProfile } from '../types';
 
@@ -55,8 +55,8 @@ export default function ProfileOverview({
 
       {/* modal with avatar */}
       <Modal
-        show={isAvatarModalOpen}
-        onHide={handleClose}
+        open={isAvatarModalOpen}
+        onClose={handleClose}
         className="modal-avatar"
       >
         <Avatar user={profile} size={512} link={false} onClick={handleClose} />

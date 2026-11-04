@@ -17,6 +17,7 @@
     "./Spinner": "./src/components/Spinner.tsx",
     "./Tabs": "./src/components/Tabs.tsx",
     "./ToggleGroup": "./src/components/ToggleGroup.tsx",
+    "./Modal": "./src/components/Modal.tsx",
     "./intent": "./src/lib/intent.ts"
   },
   "imports": {

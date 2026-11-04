@@ -1,7 +1,7 @@
 # Shared UI primitives
 
 Import directly from `@trustroots/ui/Button`, `ButtonGroup`, `Alert`, `Badge`,
-`Spinner`, `Tabs` or `ToggleGroup`. They accept caller-supplied text and do not depend on translations
+`Spinner`, `Tabs`, `ToggleGroup` or `Modal`. They accept caller-supplied text and do not depend on translations
 or feature modules. `Button` is non-submitting by default; set `type="submit"` when
 needed. `Alert` takes a status intent (`danger`, `warning`, `info` or `success`) and a
 required `role`; `Spinner` requires a translated `label` supplied by its caller.
@@ -79,6 +79,20 @@ label, so arrow keys move and select, Tab reaches the checked option and a
 disabled fieldset disables the options. Base UI's ToggleGroup has pressed-button
 semantics and its Radio ignores fieldsets, so it is not used here. The group
 needs `aria-labelledby` pointing at its question.
+
+## Modal
+
+`Modal` is Base UI's Dialog with Bootstrap's modal look and the app's grey
+header. Compose it from `ModalHeader`, `ModalTitle`, `ModalBody` and
+`ModalFooter`; the title labels the dialog. Focus moves to the dialog when it
+opens (or to `initialFocus`), stays inside while it is open and returns to
+where it was when it closes. Escape, a backdrop click and the header's close
+button (shown when `closeLabel` is set) call `onClose`; set
+`dismissible={false}` while an action is in progress. `size` is `md` (500px,
+the default) or `lg` (800px on wide screens), and `scrollable` keeps the
+dialog within the viewport with a scrolling body. Each part renders a
+`data-slot` (`modal`, `modal-header`, `modal-title`, `modal-close`,
+`modal-body`, `modal-footer`), and the dialog its `data-size`.
 
 ## shadcn
 

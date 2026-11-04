@@ -142,23 +142,17 @@
 
 // Keep the enlarged photo centred and within the viewport, including short screens.
 .modal-avatar {
-  .modal-dialog {
-    width: min(514px, calc(100vw - 32px), calc(100vh - 64px));
-    max-width: none;
-    margin: 32px auto;
-  }
+  width: min(514px, calc(100vw - 32px), calc(100vh - 64px));
+  max-width: none;
+  margin: 32px auto;
 
-  .modal-content {
-    padding: 0;
-
-    .avatar {
-      display: block;
-      width: 100%;
-      height: auto;
-      max-width: 100%;
-      max-height: none;
-      cursor: zoom-out;
-    }
+  .avatar {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+    max-height: none;
+    cursor: zoom-out;
   }
 }
 

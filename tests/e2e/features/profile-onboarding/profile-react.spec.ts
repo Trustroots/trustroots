@@ -21,13 +21,14 @@ for (const viewport of [
     await page.goto(`/profile/${SEEDED_MEMBERS[1].username}`);
     await page.locator('.profile-overview .avatar').click();
 
+    // The dialog box itself carries the class.
     const modal = page.locator('.modal-avatar');
     const photo = modal.locator('.avatar');
     await expect(photo).toBeVisible();
     // The desktop modal must also fit if the window becomes narrow while open.
     await page.setViewportSize(viewport);
     await expect(async () => {
-      const content = await modal.locator('.modal-content').boundingBox();
+      const content = await modal.boundingBox();
       const image = await photo.boundingBox();
       expect(content).not.toBeNull();
       expect(image).not.toBeNull();
