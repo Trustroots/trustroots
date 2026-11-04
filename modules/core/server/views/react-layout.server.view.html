@@ -13,6 +13,20 @@
     </title>
     <base href="/" />
     <meta name="fragment" content="!" />
+    {% if umami.enabled != false %}
+    <template id="tr-umami-tracker">
+      <script
+        async
+        src="{{ umami.scriptSrc }}"
+        data-website-id="{{ umami.websiteId }}"
+        data-do-not-track="true"
+        data-exclude-search="true"
+        data-exclude-hash="true"
+        data-before-send="trUmamiBeforeSend"
+        nonce="{{ nonce }}"
+      ></script>
+    </template>
+    {% endif %}
     {% for cssFile in reactCssFiles %}
     <link rel="stylesheet" href="/{{cssFile}}?c={{appSettings.commit}}" />
     {% endfor %} {% if env === 'development' or env === 'test' %} {% for jsFile
@@ -196,16 +210,6 @@
       name="msapplication-TileImage"
       content="{{hostPort}}/img/icons/apple-touch-icon-144x144-precomposed.png"
     />
-
-    {% if umami.enabled != false %}
-    <script
-      async
-      src="{{ umami.scriptSrc }}"
-      data-website-id="{{ umami.websiteId }}"
-      data-do-not-track="true"
-      nonce="{{ nonce }}"
-    ></script>
-    {% endif %}
   </head>
   <body>
     {% block content %}{% endblock content %}

@@ -129,6 +129,11 @@ describe('<Privacy />', () => {
       screen.getByRole('heading', { name: 'First-party analytics' }),
     ).toBeInTheDocument();
     expect(
+      screen.getByText(
+        /Page addresses are sent to Umami as templates.*Global Privacy Control or Do Not Track/,
+      ),
+    ).toBeInTheDocument();
+    expect(
       screen.getByRole('heading', { name: 'Nostroots and Nostr' }),
     ).toBeInTheDocument();
     expect(
