@@ -72,8 +72,9 @@ internal fun RemoteArtwork(
     label: String,
     size: Dp,
     background: Color = MaterialTheme.colorScheme.primary,
+    accessToken: String? = null,
 ) {
-    val bitmap = rememberArtworkBitmap(url, sessionCookie)
+    val bitmap = rememberArtworkBitmap(url, sessionCookie, accessToken)
     Box(
         modifier = Modifier.size(size).clip(CircleShape).background(background),
         contentAlignment = Alignment.Center,
@@ -108,8 +109,9 @@ internal fun ArtworkHero(
     bottomContent: (@Composable () -> Unit)? = null,
     onProfileImageClick: (() -> Unit)? = null,
     leadingContent: (@Composable () -> Unit)? = null,
+    accessToken: String? = null,
 ) {
-    val bitmap = rememberArtworkBitmap(url, sessionCookie)
+    val bitmap = rememberArtworkBitmap(url, sessionCookie, accessToken)
     val avatarSize = if (compact) 40.dp else 88.dp
     Box(Modifier.fillMaxWidth().height(heroHeight).background(background).testTag(testTag)) {
         if (bitmap != null) {
@@ -235,24 +237,25 @@ private fun readableContentColor(background: Color): Color {
 }
 
 @Composable
-internal fun rememberArtworkBitmap(url: URL?, sessionCookie: String?): Bitmap? =
-    (rememberArtworkBitmapState(url, sessionCookie) as? ArtworkBitmapState.Loaded)?.bitmap
+internal fun rememberArtworkBitmap(url: URL?, sessionCookie: String?, accessToken: String?): Bitmap? =
+    (rememberArtworkBitmapState(url, sessionCookie, accessToken = accessToken) as? ArtworkBitmapState.Loaded)?.bitmap
 
 @Composable
 internal fun rememberArtworkBitmapState(
     url: URL?,
     sessionCookie: String?,
     maxDownloadBytes: Int = 2 * 1024 * 1024,
+    accessToken: String? = null,
 ): ArtworkBitmapState {
     val context = LocalContext.current.applicationContext
-    val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}|$maxDownloadBytes"
+    val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}|${accessToken.orEmpty()}|$maxDownloadBytes"
     return key(cacheKey) {
         produceState<ArtworkBitmapState>(ArtworkBitmapState.Loading) {
             val cached = if (url == null) null else artworkCache.get(cacheKey)
             val bitmap = if (url == null) {
                 null
             } else {
-                cached ?: withContext(Dispatchers.IO) { loadArtwork(context, url, sessionCookie, maxDownloadBytes) }
+                cached ?: withContext(Dispatchers.IO) { loadArtwork(context, url, sessionCookie, maxDownloadBytes, accessToken) }
             }
             currentCoroutineContext().ensureActive()
             if (cached == null && bitmap != null) artworkCache.put(cacheKey, bitmap)
@@ -263,7 +266,7 @@ internal fun rememberArtworkBitmapState(
 
 private fun URL?.orEmpty(): String = this?.toString().orEmpty()
 
-private fun loadArtwork(context: Context, url: URL, sessionCookie: String?, maxDownloadBytes: Int): Bitmap? {
+private fun loadArtwork(context: Context, url: URL, sessionCookie: String?, maxDownloadBytes: Int, accessToken: String?): Bitmap? {
     val cacheDirectory = File(context.cacheDir, "circle-artwork")
     val cached = if (url.path.startsWith("/uploads-circle/")) circleImageFile(cacheDirectory, url) else null
     if (cached != null && System.currentTimeMillis() - cached.lastModified() < 7L * 24 * 60 * 60 * 1000) {
@@ -280,7 +283,10 @@ private fun loadArtwork(context: Context, url: URL, sessionCookie: String?, maxD
                 connection.readTimeout = 10_000
                 connection.setRequestProperty("Accept", "image/*")
                 connection.setRequestProperty("User-Agent", "TrustrootsAndroid/0.1")
-                if (attempt == 0) sessionCookie?.let { connection.setRequestProperty("Cookie", it) }
+                if (attempt == 0) {
+                    if (accessToken != null) connection.setRequestProperty("Authorization", "Bearer $accessToken")
+                    else sessionCookie?.let { connection.setRequestProperty("Cookie", it) }
+                }
                 when (connection.responseCode) {
                     HttpURLConnection.HTTP_OK -> {
                         val bytes = connection.inputStream.use { input ->

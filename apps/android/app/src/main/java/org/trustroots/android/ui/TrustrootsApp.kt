@@ -118,7 +118,7 @@ internal fun TrustrootsApp(
         activity,
         AppSessionViewModel::class.java,
         AppSessionViewModel.Factory(
-            AndroidAppSessionOperations(sessionStore, responseCache, signInStoreHolder, shellGraphStore),
+            AndroidAppSessionOperations(sessionStore, responseCache, signInStoreHolder, shellGraphStore, apiBaseUrl),
             initialBackendURL = apiBaseUrl,
         ),
     )
@@ -358,8 +358,9 @@ private fun MemberShell(
                 MemberNavigationBar(
                     destination = destination,
                     unreadMessageCount = shellState.unreadMessageCount,
-                    avatarURL = shellState.avatarID?.let { api.avatarURL(it, 64) },
+                    avatarURL = shellState.avatarID?.let { api.avatarURL(it, 64, session) },
                     sessionCookie = session.cookieHeader,
+                    accessToken = session.accessToken,
                     memberLabel = session.member.displayName,
                     onNavigate = { item ->
                         val guardedMenuDeparture = destination == Destination.Menu && leaveGuard.value != null

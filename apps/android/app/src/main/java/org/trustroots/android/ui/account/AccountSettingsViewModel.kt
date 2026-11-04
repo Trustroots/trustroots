@@ -53,7 +53,7 @@ internal class MobileApiAccountRepository(
     }
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed
@@ -231,7 +231,7 @@ internal class AccountSettingsViewModel(
     fun updateEnvironment(api: MobileApiClient, session: MemberSession, platform: AccountPlatformSettings) {
         val backendChanged = backendURL != api.backendURL
         val accountChanged = username != session.member.username
-        val credentialsChanged = cookieHeader != session.cookieHeader
+        val credentialsChanged = cookieHeader != session.credentialKey
         val environmentChanged = backendChanged || accountChanged || credentialsChanged
         if (environmentChanged) cancelEnvironmentJobs()
         repository.updateApi(api)
@@ -250,7 +250,7 @@ internal class AccountSettingsViewModel(
 
         backendURL = api.backendURL
         username = session.member.username
-        cookieHeader = session.cookieHeader
+        cookieHeader = session.credentialKey
         sessionInvalidated = false
 
         if (backendChanged || accountChanged) {

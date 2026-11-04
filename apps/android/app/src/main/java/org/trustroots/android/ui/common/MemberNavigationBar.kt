@@ -32,6 +32,7 @@ internal fun MemberNavigationBar(
     unreadMessageCount: Int,
     avatarURL: java.net.URL?,
     sessionCookie: String?,
+    accessToken: String? = null,
     memberLabel: String,
     onNavigate: (Destination) -> Unit,
 ) {
@@ -72,6 +73,7 @@ internal fun MemberNavigationBar(
                             Destination.Menu -> RemoteArtwork(
                                 url = avatarURL,
                                 sessionCookie = sessionCookie,
+                                accessToken = accessToken,
                                 label = memberLabel,
                                 size = 24.dp,
                             )

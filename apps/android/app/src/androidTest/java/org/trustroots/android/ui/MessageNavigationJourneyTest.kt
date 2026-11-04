@@ -62,7 +62,7 @@ class MessageNavigationJourneyTest {
     private val rejectNextSend = AtomicBoolean(false)
     private val fixture = LocalTransportFixture { request ->
         when {
-            request.method == "POST" && request.path == "/api/auth/signin" -> LocalTransportFixture.Response(
+            request.method == "POST" && request.path == "/api/mobile/v0/auth/signin" -> LocalTransportFixture.Response(
                 """{"username":"steady-heron","displayName":"Steady Heron"}""",
                 headers = mapOf("Set-Cookie" to "connect.sid=renewed-fictional-session; Path=/; HttpOnly"),
             )
@@ -302,7 +302,7 @@ class MessageNavigationJourneyTest {
         waitForText("Discover circles")
         assertEquals(
             1,
-            fixture.requests.count { it.method == "POST" && it.path == "/api/auth/signin" },
+            fixture.requests.count { it.method == "POST" && it.path == "/api/mobile/v0/auth/signin" },
         )
         assertEquals("connect.sid=renewed-fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
         compose.onNodeWithTag("navigation-messages").performClick()

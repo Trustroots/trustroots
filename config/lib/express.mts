@@ -235,30 +235,35 @@ function initSession(app: Express, connection: Connection) {
   };
   // Express MongoDB session storage
   // https://www.npmjs.com/package/express-session
-  app.use(
-    session({
-      saveUninitialized: false,
-      resave: false,
-      secret: config.sessionSecret,
-      // Trust forwarded protocol only when explicitly enabled for a trusted
-      // HTTPS frontend. Direct TLS (for example Passenger) needs no proxy.
-      proxy: config.sessionProxy === true,
-      cookie: {
-        secure: config.https === true,
-        httpOnly: true,
-        sameSite: 'lax',
-        // Specifies the number (in milliseconds) to use when calculating the
-        // Expires Set-Cookie attribute. This is done by taking the current
-        // server time and adding maxAge milliseconds to the value to calculate
-        // an Expires datetime.
-        // By default cookie.maxAge is null, meaning no "expires" parameter is
-        // set so the cookie becomes a browser-session cookie. When the user
-        // closes the browser the cookie (and session) will be removed.
-        maxAge: 2419200000, // (in milliseconds) 28 days
-      },
-      store: mongoStore.create(sessionStoreOptions),
-    }),
-  );
+  const browserSession = session({
+    saveUninitialized: false,
+    resave: false,
+    secret: config.sessionSecret,
+    // Trust forwarded protocol only when explicitly enabled for a trusted
+    // HTTPS frontend. Direct TLS (for example Passenger) needs no proxy.
+    proxy: config.sessionProxy === true,
+    cookie: {
+      secure: config.https === true,
+      httpOnly: true,
+      sameSite: 'lax',
+      // Specifies the number (in milliseconds) to use when calculating the
+      // Expires Set-Cookie attribute. This is done by taking the current
+      // server time and adding maxAge milliseconds to the value to calculate
+      // an Expires datetime.
+      // By default cookie.maxAge is null, meaning no "expires" parameter is
+      // set so the cookie becomes a browser-session cookie. When the user
+      // closes the browser the cookie (and session) will be removed.
+      maxAge: 2419200000, // (in milliseconds) 28 days
+    },
+    store: mongoStore.create(sessionStoreOptions),
+  });
+
+  app.use(function browserSessionOnly(req, res, next) {
+    if (/^\/api\/mobile\/v0(?:\/|$)/.test(req.path)) {
+      return next();
+    }
+    return browserSession(req, res, next);
+  });
 }
 
 /**

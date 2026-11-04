@@ -40,7 +40,7 @@ internal class MobileHostDetailRepository(
 ) : HostDetailRepository {
     override fun updateClientAndSession(api: MobileApiClient, session: MemberSession): Boolean {
         val changed = this.api.backendURL != api.backendURL ||
-            this.session.cookieHeader != session.cookieHeader ||
+            this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.api = api
         this.session = session

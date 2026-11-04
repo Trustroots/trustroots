@@ -254,7 +254,7 @@ class DesignFixesJourneyTest {
     @Composable private fun frame(destination: Destination, content: @Composable (PaddingValues) -> Unit) {
         TrustrootsTheme {
             Scaffold(contentWindowInsets = WindowInsets.safeDrawing, bottomBar = {
-                MemberNavigationBar(destination, 0, null, null, "Steady Heron", {})
+                MemberNavigationBar(destination, 0, null, null, memberLabel = "Steady Heron", onNavigate = {})
             }) { padding ->
                 Box(Modifier.fillMaxSize()) { content(padding) }
             }

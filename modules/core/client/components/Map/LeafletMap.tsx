@@ -2,7 +2,7 @@
 import L from 'leaflet';
 import React, { useEffect, useRef } from 'react';
 
-import { getRasterMapTiles } from '../../utils/map';
+import { addRasterMapTiles } from '../../utils/map';
 
 type Coordinate = [number, number];
 type LeafletMapProps = {
@@ -47,8 +47,7 @@ export default function LeafletMap({
       zoomControl: true,
     }).setView(location, zoom);
 
-    const tiles = getRasterMapTiles();
-    L.tileLayer(tiles.url, tiles.options).addTo(map);
+    addRasterMapTiles({ map, tileLayer: L.tileLayer });
 
     mapRef.current = map;
     // Tabs can initialise the map while hidden. Recalculate tile positions

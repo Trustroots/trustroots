@@ -261,17 +261,18 @@ private fun MemberProfileContent(
     val relationshipResolved = profileState.relationshipResolved
     var confirmRemoveContact by rememberSaveable(username) { mutableStateOf(false) }
     val removingContact = profileState.isRemovingContact
-    var blockTarget by rememberSaveable(username, api.backendURL, session.member.username, session.cookieHeader) { mutableStateOf<Boolean?>(null) }
-    var reportVisible by rememberSaveable(username, api.backendURL, session.member.username, session.cookieHeader) { mutableStateOf(false) }
+    var blockTarget by rememberSaveable(username, api.backendURL, session.member.username, session.credentialKey) { mutableStateOf<Boolean?>(null) }
+    var reportVisible by rememberSaveable(username, api.backendURL, session.member.username, session.credentialKey) { mutableStateOf(false) }
     var profileActionsHeight by remember(username) { mutableStateOf(0.dp) }
     var profileSectionBarHeight by remember(username) { mutableStateOf(48.dp) }
     val density = LocalDensity.current
     var showingProfileImage by rememberSaveable(username, profile?.id) { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val profileImageState = rememberArtworkBitmapState(
-        url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048) } else null,
+        url = if (showingProfileImage) profile?.id?.let { api.avatarURL(it, 2048, session) } else null,
         sessionCookie = if (showingProfileImage) session.cookieHeader else null,
         maxDownloadBytes = 8 * 1024 * 1024,
+        accessToken = if (showingProfileImage) session.accessToken else null,
     )
     ProfileHeaderStatusBarStyle(
         enabled = isActiveProfileRoute && profile != null && error == null,
@@ -407,8 +408,9 @@ private fun MemberProfileContent(
                     Column(Modifier.fillMaxSize().nestedScroll(collapsibleHeader.connection)) {
                         Box(Modifier.fillMaxWidth().height(headerHeight).clipToBounds()) {
                             ArtworkHero(
-                                url = member.id?.let { api.avatarURL(it, 512) },
+                                url = member.id?.let { api.avatarURL(it, 512, session) },
                                 sessionCookie = session.cookieHeader,
+                                accessToken = session.accessToken,
                                 label = member.displayName,
                                 subtitle = stringResource(R.string.screen_username_handle, member.username),
                                 background = MaterialTheme.colorScheme.primary,

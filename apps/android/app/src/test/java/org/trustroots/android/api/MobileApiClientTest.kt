@@ -18,6 +18,93 @@ import org.junit.Test
 
 class MobileApiClientTest {
     @Test
+    fun preservesTheBearerResourceContractForEveryMemberFeature() {
+        val routes = listOf(
+            Triple("/api/mobile/v0/auth/signout", "POST", "/api/mobile/v0/auth/signout"),
+            Triple("/api/users?limit=50", "GET", "/api/mobile/v0/users?limit=50"),
+            Triple("/api/users", "POST", "/api/mobile/v0/users"),
+            Triple("/api/users/memberships", "GET", "/api/mobile/v0/memberships"),
+            Triple("/api/users/unified-push", "POST", "/api/mobile/v0/users/unified-push"),
+            Triple("/api/users/mini/member-one", "GET", "/api/mobile/v0/members/member-one"),
+            Triple("/api/messages?page=2", "GET", "/api/mobile/v0/messages?page=2"),
+            Triple("/api/offers-by/member-one?types=host", "GET", "/api/mobile/v0/offers-by/member-one?types=host"),
+            Triple("/api/offers", "POST", "/api/mobile/v0/offers"),
+            Triple("/api/offers/offer-one", "PUT", "/api/mobile/v0/offers/offer-one"),
+            Triple("/api/blocked-users", "GET", "/api/mobile/v0/blocked-users"),
+            Triple("/api/blocked-users/quiet-fox", "PUT", "/api/mobile/v0/blocked-users/quiet-fox"),
+            Triple("/api/contacts/member-one", "GET", "/api/mobile/v0/contacts/member-one"),
+            Triple("/api/experiences?userTo=member-one", "GET", "/api/mobile/v0/experiences?userTo=member-one"),
+            Triple("/api/nostr/author-visibility?pubkey=example", "GET", "/api/nostr/author-visibility?pubkey=example"),
+            Triple("/api/support", "POST", "/api/mobile/v0/support"),
+        )
+        routes.forEach { (path, method, expected) ->
+            assertEquals("$method $path", expected, mobileApiPath(path, method, null))
+        }
+        assertEquals("/api/mobile/v0/account", mobileApiPath("/api/users", "PUT", "{\"newsletter\":true}"))
+        assertEquals("/api/mobile/v0/profile", mobileApiPath("/api/users", "PUT", null))
+        assertEquals("/api/mobile/v0/profile", mobileApiPath("/api/users", "PUT", "invalid-json"))
+    }
+
+    @Test
+    fun selectsBearerCredentialsAndAvatarRoutesWhileRetainingLegacySessions() {
+        val legacy = MemberSession("connect.sid=example", MobileMember("quiet-fox", "Quiet Fox"))
+        val bearer = legacy.copy(accessToken = "example-access", refreshToken = "example-refresh")
+        assertEquals("connect.sid=example", legacy.credentialKey)
+        assertEquals("example-access", bearer.credentialKey)
+        val api = MobileApiClient("https://example.invalid")
+        assertEquals("https://example.invalid/api/users/member-one/avatar?size=128", api.avatarURL("member-one").toString())
+        assertEquals("https://example.invalid/api/users/member-one/avatar?size=64", api.avatarURL("member-one", 64, legacy).toString())
+        assertEquals("https://example.invalid/api/mobile/v0/members/member-one/avatar?size=64", api.avatarURL("member-one", 64, bearer).toString())
+        assertEquals(legacy, runBlocking { api.refresh(legacy) }.getOrThrow())
+    }
+
+    @Test
+    fun readsBearerProfileEnvelopesAndSignsOutTheMobileSession() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access", "example-refresh")
+        val (profile, profileRequest) = withApiResponse(200, """{"profile":{"username":"quiet-fox","displayName":"Quiet Fox"}}""") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).profile(session, "quiet-fox") }
+        }
+        assertEquals("Quiet Fox", profile.getOrThrow().displayName)
+        assertEquals("GET /api/mobile/v0/profiles/quiet-fox HTTP/1.1", profileRequest.line)
+        val (bareProfile, _) = withApiResponse(200, """{"username":"quiet-fox","displayName":"Quiet Fox"}""") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).profile(session, "quiet-fox") }
+        }
+        assertEquals("Quiet Fox", bareProfile.getOrThrow().displayName)
+        val (malformedProfile, _) = withApiResponse(200, "invalid-json") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).profile(session, "quiet-fox") }
+        }
+        assertTrue(malformedProfile.isFailure)
+        val (member, _) = withApiResponse(200, """{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox"}""") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).messageMember(session, "member-one") }
+        }
+        assertEquals("member-one", member.getOrThrow().id)
+        val (result, request) = withApiResponse(200, "{}") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).signOut(session) }
+        }
+        result.getOrThrow()
+        assertEquals("POST /api/mobile/v0/auth/signout HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Authorization: Bearer example-access", ignoreCase = true) })
+        assertFalse(request.headers.any { it.startsWith("Cookie:", ignoreCase = true) })
+    }
+
+    @Test
+    fun mapsCookieApiRequestsToBearerResourceRoutes() {
+        assertEquals("/api/mobile/v0/contact-by/member?limit=5", mobileApiPath("/api/contact-by/member?limit=5", "GET", null))
+        assertEquals("/api/mobile/v0/members?search=quiet-fox&limit=50", mobileApiPath("/api/users?search=quiet-fox&limit=50", "GET", null))
+        assertEquals("/api/mobile/v0/profiles/quiet-fox", mobileApiPath("/api/users/quiet-fox", "GET", null))
+        assertEquals("/api/mobile/v0/circles/travellers/members", mobileApiPath("/api/tribes/travellers/members", "GET", null))
+        assertEquals("/api/mobile/v0/messages/steady-heron", mobileApiPath("/api/messages/steady-heron", "GET", null))
+        assertEquals("/api/mobile/v0/account/password", mobileApiPath("/api/users/password", "POST", "{}"))
+        assertEquals("/api/mobile/v0/memberships/circle-id", mobileApiPath("/api/users/memberships/circle-id", "DELETE", null))
+    }
+
+    @Test
+    fun mapsAccountAndProfileUpdatesSeparately() {
+        assertEquals("/api/mobile/v0/account", mobileApiPath("/api/users", "PUT", "{\"email\":\"member@example.invalid\"}"))
+        assertEquals("/api/mobile/v0/profile", mobileApiPath("/api/users", "PUT", "{\"displayName\":\"Quiet Fox\"}"))
+    }
+
+    @Test
     fun parsesMemberSearchAndProfileFields() {
         val members = parseMembers(JSONArray("""[{"_id":"member-one","username":"quiet-fox","displayName":"Quiet Fox","locationLiving":"Leeds","languages":["en"],"member":[{"tribe":{"_id":"circle-one","slug":"travellers","label":"Travellers","image":true,"count":12}}]}]"""))
         assertEquals("member-one", members.single().id)
@@ -354,29 +441,26 @@ class MobileApiClientTest {
     }
 
     @Test
-    fun parsesExistingSignInMemberPayload() {
-        val member = mobileMemberFrom(
+    fun parsesMobileSession() {
+        val session = mobileSessionFrom(
             JSONObject(
-                """{"username":"river-otter","displayName":"River Otter","public":true}""",
+                """
+                {
+                  "accessToken": "access-token",
+                  "refreshToken": "refresh-token",
+                  "member": {
+                    "username": "river-otter",
+                    "displayName": "River Otter"
+                  }
+                }
+                """.trimIndent(),
             ),
         )
 
-        assertEquals("river-otter", member.username)
-        assertEquals("River Otter", member.displayName)
-    }
-
-    @Test
-    fun selectsMemberSessionFromMultipleResponseCookies() {
-        val sessionCookie = sessionCookieFrom(
-            mapOf(
-                "set-cookie" to listOf(
-                    "_passenger_route=route-value; Path=/; Secure",
-                    "connect.sid=session-value; Path=/; HttpOnly",
-                ),
-            ),
-        )
-
-        assertEquals("connect.sid=session-value", sessionCookie)
+        assertEquals("access-token", session.accessToken)
+        assertEquals("refresh-token", session.refreshToken)
+        assertEquals("river-otter", session.member.username)
+        assertEquals("River Otter", session.member.displayName)
     }
 
     @Test
@@ -458,7 +542,7 @@ class MobileApiClientTest {
         val session = result.getOrThrow()
         assertEquals("connect.sid=session-value", session.cookieHeader)
         assertEquals("Quiet Fox", session.member.displayName)
-        assertEquals("POST /api/auth/signin HTTP/1.1", request.line)
+        assertEquals("POST /api/mobile/v0/auth/signin HTTP/1.1", request.line)
         assertTrue(request.headers.any { it.equals("X-Trustroots-Request: 1", ignoreCase = true) })
         assertTrue(request.headers.any { it.equals("Content-Type: application/json", ignoreCase = true) })
         assertEquals(
@@ -466,6 +550,62 @@ class MobileApiClientTest {
             JSONObject(request.body).getString("username"),
         )
         assertEquals("fictional password", JSONObject(request.body).getString("password"))
+    }
+
+    @Test
+    fun signsInWithBearerCredentialsWithoutKeepingBrowserCookies() {
+        val (result, request) = withApiResponse(
+            status = 200,
+            responseBody = """{"accessToken":"access-value","refreshToken":"refresh-value","member":{"username":"examplemember","displayName":"Example Member"}}""",
+            responseHeaders = listOf("Set-Cookie: connect.sid=unused; Path=/; HttpOnly"),
+        ) { baseURL ->
+            runBlocking { MobileApiClient(baseURL).signIn("examplemember", "fictional password") }
+        }
+
+        val session = result.getOrThrow()
+        assertEquals("", session.cookieHeader)
+        assertEquals("access-value", session.accessToken)
+        assertEquals("refresh-value", session.refreshToken)
+        assertEquals("Example Member", session.member.displayName)
+        assertEquals("POST /api/mobile/v0/auth/signin HTTP/1.1", request.line)
+    }
+
+    @Test
+    fun sendsBearerCredentialsOnMappedResourcesWithoutBrowserCookies() {
+        val session = MemberSession(
+            cookieHeader = "connect.sid=unused",
+            member = MobileMember("examplemember", "Example Member"),
+            accessToken = "access-value",
+            refreshToken = "refresh-value",
+        )
+        val (result, request) = withApiResponse(200, "[]") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).circleMemberships(session) }
+        }
+
+        assertTrue(result.getOrThrow().isEmpty())
+        assertEquals("GET /api/mobile/v0/memberships HTTP/1.1", request.line)
+        assertTrue(request.headers.any { it.equals("Authorization: Bearer access-value", ignoreCase = true) })
+        assertFalse(request.headers.any { it.startsWith("Cookie:", ignoreCase = true) })
+    }
+
+    @Test
+    fun refreshesAndReturnsRotatedBearerCredentials() {
+        val session = MemberSession(
+            cookieHeader = "",
+            member = MobileMember("examplemember", "Example Member"),
+            accessToken = "old-access",
+            refreshToken = "old-refresh",
+        )
+        val (result, request) = withApiResponse(
+            200,
+            """{"accessToken":"new-access","refreshToken":"new-refresh","member":{"username":"examplemember","displayName":"Example Member"}}""",
+        ) { baseURL -> runBlocking { MobileApiClient(baseURL).refresh(session) } }
+
+        assertEquals("new-access", result.getOrThrow().accessToken)
+        assertEquals("new-refresh", result.getOrThrow().refreshToken)
+        assertEquals("POST /api/mobile/v0/auth/refresh HTTP/1.1", request.line)
+        assertEquals("old-refresh", JSONObject(request.body).getString("refreshToken"))
+        assertFalse(request.headers.any { it.startsWith("Cookie:", ignoreCase = true) })
     }
 
     @Test
@@ -627,7 +767,7 @@ class MobileApiClientTest {
         assertEquals(ApiFailureKind.MISSING_SESSION, failure?.failureKind)
         assertNull(failure?.serverMessage)
         assertNull(failure?.message)
-        assertEquals("POST /api/auth/signin HTTP/1.1", request.line)
+        assertEquals("POST /api/mobile/v0/auth/signin HTTP/1.1", request.line)
     }
 
     @Test

@@ -96,7 +96,7 @@ class Navigation3MemberShellJourneyTest {
     @Volatile private var hostMapOffers = """{"features":[]}"""
     private val fixture = LocalTransportFixture { request ->
         when {
-            request.method == "POST" && request.path == "/api/auth/signin" -> LocalTransportFixture.Response(
+            request.method == "POST" && request.path == "/api/mobile/v0/auth/signin" -> LocalTransportFixture.Response(
                 """{"username":"amber-owl","displayName":"Amber Owl"}""",
                 headers = mapOf("Set-Cookie" to "connect.sid=second-fictional-session; Path=/; HttpOnly"),
             )
@@ -912,7 +912,7 @@ class Navigation3MemberShellJourneyTest {
             "connect.sid=second-fictional-session",
             SecureMobileSessionStore(context).load()?.cookieHeader,
         )
-        assertEquals(1, fixture.requests.count { it.method == "POST" && it.path == "/api/auth/signin" })
+        assertEquals(1, fixture.requests.count { it.method == "POST" && it.path == "/api/mobile/v0/auth/signin" })
     }
 
     private fun selectMembersMode() {

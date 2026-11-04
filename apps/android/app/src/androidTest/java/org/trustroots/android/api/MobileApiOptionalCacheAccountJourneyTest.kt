@@ -14,6 +14,27 @@ import org.trustroots.android.ui.LocalTransportFixture
 
 @RunWith(AndroidJUnit4::class)
 class MobileApiOptionalCacheAccountJourneyTest {
+    @Test fun bearerAccountReadsPopulateTheAccountScopedOfflineCache() = runBlocking {
+        LocalTransportFixture {
+            LocalTransportFixture.Response("""{"profile":{"username":"quiet-fox","displayName":"Quiet Fox","email":"member@example.invalid"}}""")
+        }.use { local ->
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val cache = SecureResponseCache(context)
+            val account = "bearer-cache-${System.nanoTime()}"
+            val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access", "example-refresh")
+            try {
+                val details = MobileApiClient(local.baseURL, cache, account).accountDetails(session).getOrThrow()
+                assertEquals("Quiet Fox", details.displayName)
+                assertEquals("/api/mobile/v0/profiles/quiet-fox", local.requests.single().path)
+                assertNull(local.requests.single().cookie)
+                val snapshot = cache.load(local.baseURL, account, "/api/users/quiet-fox")
+                assertEquals("Quiet Fox", org.json.JSONObject(snapshot!!.body).getString("displayName"))
+            } finally {
+                cache.clear(local.baseURL, account)
+            }
+        }
+    }
+
     @Test fun offlineReadWithConfiguredAccountButNoCachePropagatesTransportFailure() = runBlocking {
         LocalTransportFixture { null }.use { local ->
             val session = MemberSession(

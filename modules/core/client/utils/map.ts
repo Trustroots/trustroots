@@ -32,6 +32,44 @@ export const getRasterMapTiles = (mapboxToken = getMapBoxToken()) =>
         url: OSM_TILE_URL,
       };
 
+type RasterTileLayer<MapTarget> = {
+  addTo(map: MapTarget): unknown;
+  once(event: string, handler: () => void): unknown;
+  remove(): unknown;
+};
+
+export const addRasterMapTiles = <MapTarget>({
+  map,
+  mapboxToken = getMapBoxToken(),
+  tileLayer,
+}: {
+  map: MapTarget;
+  mapboxToken?: ReturnType<typeof getMapBoxToken>;
+  tileLayer: (
+    url: string,
+    options: ReturnType<typeof getRasterMapTiles>['options'],
+  ) => RasterTileLayer<MapTarget>;
+}) => {
+  const primaryTiles = getRasterMapTiles(mapboxToken);
+  const primaryLayer = tileLayer(primaryTiles.url, primaryTiles.options);
+  let fallbackStarted = false;
+
+  if (mapboxToken) {
+    primaryLayer.once('tileerror', () => {
+      if (fallbackStarted) {
+        return;
+      }
+      fallbackStarted = true;
+      primaryLayer.remove();
+      const fallbackTiles = getRasterMapTiles(false);
+      tileLayer(fallbackTiles.url, fallbackTiles.options).addTo(map);
+    });
+  }
+
+  primaryLayer.addTo(map);
+  return primaryLayer;
+};
+
 /**
  * Mapbox GL v3 needs WebGL2, so callers choose a raster renderer before
  * mounting it when the browser cannot create one.

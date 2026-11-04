@@ -154,7 +154,8 @@ struct MessageInboxView: View {
             guard let memberID = thread.otherMember(excluding: session.member?.username).id else { continue }
             loaded[thread.id] = (try? await api.conversation(
                 serverURLString: session.serverURLString,
-                memberID: memberID
+                memberID: memberID,
+                markRead: false
             )) ?? []
         }
         guard query == filterText.trimmingCharacters(in: .whitespacesAndNewlines) else { return }
@@ -382,6 +383,10 @@ struct ConversationView: View {
 
         do {
             messages = try await api.conversation(serverURLString: session.serverURLString, memberID: id)
+            try await api.markMessagesRead(
+                serverURLString: session.serverURLString,
+                messageIDs: messages.filter { !$0.isFrom(username: session.member?.username) }.map(\.id)
+            )
             conversationExperience = try? await api.conversationExperience(
                 serverURLString: session.serverURLString,
                 memberID: id

@@ -2,7 +2,7 @@
 
 - [x] 1.1 Create the Gradle, Kotlin and Jetpack Compose application project.
 - [x] 1.2 Add build-time API server configuration and Trustroots design tokens.
-- [x] 1.3 Add the existing API client, session model and Keystore-backed cookie
+- [x] 1.3 Add the mobile API client, session model and Keystore-backed token
       storage.
 - [x] 1.4 Add native sign-in and application navigation shells.
 

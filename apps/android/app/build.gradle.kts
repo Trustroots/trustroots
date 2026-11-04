@@ -30,7 +30,7 @@ tasks.withType<Test>().configureEach {
     }
 }
 val configuredApiURL = providers.gradleProperty("trustrootsApiUrl")
-    .orElse("https://www.trustroots.org")
+    .orElse("https://pr2777.test.trustroots.org")
 val configuredMapboxToken = providers.gradleProperty("trustrootsMapboxToken")
     .orElse(providers.environmentVariable("TRUSTROOTS_MAPBOX_TOKEN"))
     .orElse("")

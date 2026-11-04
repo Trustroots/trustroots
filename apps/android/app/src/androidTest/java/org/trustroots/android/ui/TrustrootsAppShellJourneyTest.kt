@@ -218,7 +218,7 @@ class TrustrootsAppShellJourneyTest {
         val requests = CopyOnWriteArrayList<String>()
         startResponder(requests) { path ->
             when {
-                path == "/api/auth/signin" -> "200 OK" to """{"username":"steady-heron","displayName":"Steady Heron"}"""
+                path == "/api/mobile/v0/auth/signin" -> "200 OK" to """{"username":"steady-heron","displayName":"Steady Heron"}"""
                 path.startsWith("/api/users/steady-heron") ->
                     "200 OK" to """{"_id":"member-safe-id","username":"steady-heron","displayName":"Steady Heron"}"""
                 path.startsWith("/api/messages?") ->
@@ -259,7 +259,7 @@ class TrustrootsAppShellJourneyTest {
         val requests = CopyOnWriteArrayList<String>()
         startResponder(requests) { path ->
             when {
-                path == "/api/auth/signin" -> "200 OK" to """{"username":"quiet-fox","displayName":"Quiet Fox"}"""
+                path == "/api/mobile/v0/auth/signin" -> "200 OK" to """{"username":"quiet-fox","displayName":"Quiet Fox"}"""
                 path.startsWith("/api/users/steady-heron") ->
                     "200 OK" to """{"_id":"member-self","username":"steady-heron","displayName":"Steady Heron","email":"steady@example.test","newsletter":false}"""
                 path.startsWith("/api/users/quiet-fox") ->
@@ -373,7 +373,7 @@ class TrustrootsAppShellJourneyTest {
                         payload(path)
                     }
                     val bytes = body.toByteArray()
-                    val sessionCookie = if (request.startsWith("POST /api/auth/signin ")) {
+                    val sessionCookie = if (request.startsWith("POST /api/mobile/v0/auth/signin ")) {
                         "Set-Cookie: connect.sid=renewed-fictional-session; Path=/; HttpOnly\r\n"
                     } else ""
                     socket.getOutputStream().write(
@@ -396,7 +396,7 @@ class TrustrootsAppShellJourneyTest {
         compose.waitUntil(10_000) {
             compose.onAllNodesWithText("Discover circles").fetchSemanticsNodes().isNotEmpty()
         }
-        assertEquals(1, requests.count { it.startsWith("POST /api/auth/signin ") })
+        assertEquals(1, requests.count { it.startsWith("POST /api/mobile/v0/auth/signin ") })
         assertEquals("connect.sid=renewed-fictional-session", SecureMobileSessionStore(context).load()?.cookieHeader)
     }
 

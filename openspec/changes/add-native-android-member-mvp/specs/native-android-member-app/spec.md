@@ -24,32 +24,33 @@ SHALL NOT expose administration or moderation tools.
 - **WHEN** an administrator needs administration or moderation functionality
 - **THEN** that functionality remains on the website
 
-### Requirement: Shared existing API contract
+### Requirement: Shared mobile API contract
 
-The Android app SHALL use the same existing website-session authentication and
-policy-protected member routes as the iOS app.
+The Android app SHALL use the same versioned mobile authentication and member
+API contract as the iOS app. Platform clients SHALL receive compatible member
+resources and error semantics.
 
 #### Scenario: Member signs in on Android
 
 - **WHEN** a member submits valid credentials in the Android app
-- **THEN** the app stores the resulting signed session credential
-- **AND** can use authorised existing member endpoints
+- **THEN** the app receives a mobile session from the versioned mobile API
+- **AND** can use authorised member endpoints
 
 #### Scenario: Member signs out on Android
 
 - **WHEN** a member signs out in the Android app
-- **THEN** the app calls the existing sign-out route
-- **AND** removes its stored session credential
+- **THEN** the server revokes the active mobile session
+- **AND** the app removes its stored credentials
 
 ### Requirement: Android secure credential storage
 
-The Android app SHALL store its signed session credential only in storage protected by
+The Android app SHALL store refresh credentials only in storage protected by
 the Android Keystore and SHALL NOT persist raw credentials in logs, plain
 preferences or application backups.
 
 #### Scenario: App restores a signed-in session
 
-- **WHEN** the application restarts with a valid stored member session
+- **WHEN** the application restarts with a valid stored mobile session
 - **THEN** it restores the member session from Keystore-protected storage
 
 #### Scenario: Protected storage is unavailable
@@ -60,7 +61,7 @@ preferences or application backups.
 
 ### Requirement: Android secure transport
 
-The Android app SHALL send its session credential only to an HTTPS API origin.
+The Android app SHALL send mobile credentials only to an HTTPS API origin.
 Debug builds MAY use clear-text HTTP only for explicit loopback and Android
 emulator host aliases, and the network security configuration SHALL keep other
 clear-text destinations disabled.

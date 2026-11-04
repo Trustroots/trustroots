@@ -46,7 +46,7 @@ internal class MobileApiEditProfileRepository(
     }
 
     override fun updateSession(session: MemberSession): Boolean {
-        val changed = this.session.cookieHeader != session.cookieHeader ||
+        val changed = this.session.credentialKey != session.credentialKey ||
             this.session.member.username != session.member.username
         this.session = session
         return changed
@@ -147,7 +147,7 @@ internal class EditProfileViewModel(
     fun updateEnvironment(api: MobileApiClient, session: MemberSession) {
         val backendChanged = backendURL != api.backendURL
         val accountChanged = this.session.member.username != session.member.username
-        val credentialsChanged = this.session.cookieHeader != session.cookieHeader
+        val credentialsChanged = this.session.credentialKey != session.credentialKey
         repository.updateApi(api)
         repository.updateSession(session)
         if (!backendChanged && !accountChanged && !credentialsChanged) return

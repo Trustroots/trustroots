@@ -73,6 +73,7 @@ export default defineConfig({
       provider: 'v8',
       include: [
         'modules/*/server/**/*.{mjs,mts}',
+        'modules/mobile/server/**/*.cjs',
         'packages/analytics/server/**/*.mts',
         'packages/logger/**/*.mts',
       ],

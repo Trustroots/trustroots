@@ -213,6 +213,7 @@ interface MessagesController {
     res: ControllerResponse,
     next: ControllerNext,
     userId?: string,
+    markThreadRead?: boolean,
   ): unknown;
   markRead(req: ControllerRequest, res: ControllerResponse): unknown;
   messagesCount(req: ControllerRequest, res: ControllerResponse): unknown;
@@ -703,7 +704,13 @@ service.thread = function (req, res) {
 /**
  * Thread middleware
  */
-service.threadByUser = function (req, res, next, userId) {
+service.threadByUser = function (
+  req,
+  res,
+  next,
+  userId,
+  markThreadRead = false,
+) {
   const user = authenticatedUser(req);
   if (!user) {
     return errorService.sendForbidden(res);
@@ -755,16 +762,38 @@ service.threadByUser = function (req, res, next, userId) {
         );
       }
 
-      // Pass pagination data to construct link header
-      if (data.docs.length > 0) {
-        paginationService.setLinkHeader(
-          { query },
-          res as PaginatedResponse,
-          data.pages,
-        );
+      const continueWithMessages = () => {
+        if (data.docs!.length > 0) {
+          paginationService.setLinkHeader(
+            { query },
+            res as PaginatedResponse,
+            data.pages,
+          );
+        }
+        req.messages = data.docs!;
+        next();
+      };
+      if (!markThreadRead) {
+        return continueWithMessages();
       }
-      req.messages = data.docs;
-      next();
+      const receivedIds = data.docs
+        .filter(message => message.userTo?._id.equals(user._id))
+        .map(message => message._id);
+      if (receivedIds.length === 0) {
+        return continueWithMessages();
+      }
+      Promise.all([
+        Message.updateMany(
+          { _id: { $in: receivedIds }, userTo: user._id },
+          { $set: { read: true } },
+        ),
+        Thread.updateMany(
+          { userTo: user._id, message: { $in: receivedIds } },
+          { $set: { read: true } },
+        ),
+      ]).then(continueWithMessages, error =>
+        errorService.sendBadRequest(res, error),
+      );
     },
   );
 };

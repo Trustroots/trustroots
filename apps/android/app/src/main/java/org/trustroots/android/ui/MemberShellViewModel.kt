@@ -37,7 +37,7 @@ internal class MobileApiMemberShellRepository(
     override fun updateEnvironment(api: MobileApiClient, session: MemberSession): Boolean {
         val changed = this.api.backendURL != api.backendURL ||
             this.session.member.username != session.member.username ||
-            this.session.cookieHeader != session.cookieHeader
+            this.session.credentialKey != session.credentialKey
         this.api = api
         this.session = session
         return changed

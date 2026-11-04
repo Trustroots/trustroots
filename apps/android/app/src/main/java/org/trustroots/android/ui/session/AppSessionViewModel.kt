@@ -17,6 +17,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
+import org.trustroots.android.api.MobileApiException
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.api.SecureMobileSessionStore
 import org.trustroots.android.api.SecureResponseCache
@@ -52,14 +54,16 @@ internal sealed interface AppSessionEvent {
 internal data class AppSessionSource(
     val username: String,
     val cookieHeader: String,
+    val accessToken: String?,
     val backendURL: String,
 ) {
-    override fun toString(): String = "AppSessionSource(username=$username, backendURL=$backendURL, cookieHeader=[redacted])"
+    override fun toString(): String = "AppSessionSource(username=$username, backendURL=$backendURL, credentials=[redacted])"
 
     companion object {
         fun from(session: MemberSession, backendURL: String) = AppSessionSource(
             username = session.member.username,
             cookieHeader = session.cookieHeader,
+            accessToken = session.accessToken,
             backendURL = normaliseBackendURL(backendURL),
         )
     }
@@ -80,8 +84,21 @@ internal class AndroidAppSessionOperations(
     private val responseCache: SecureResponseCache,
     private val signInStoreHolder: SignInDestinationStoreHolder,
     private val shellGraphStore: MemberShellViewModelStoreOwner,
+    private val backendURL: String,
 ) : AppSessionOperations {
-    override suspend fun loadSession(): MemberSession? = sessionStore.load()
+    override suspend fun loadSession(): MemberSession? {
+        val stored = sessionStore.load() ?: return null
+        if (stored.refreshToken == null) return stored
+        return MobileApiClient(backendURL).refresh(stored).fold(
+            onSuccess = { refreshed -> sessionStore.save(refreshed); refreshed },
+            onFailure = { error ->
+                if ((error as? MobileApiException)?.isAuthenticationFailure == true) {
+                    sessionStore.clear()
+                    null
+                } else stored
+            },
+        )
+    }
     override fun saveSession(session: MemberSession) = sessionStore.save(session)
     override fun clearSession() = sessionStore.clear()
     override fun clearResponseCache(backendURL: String, username: String) =
@@ -184,6 +201,7 @@ internal class AppSessionViewModel(
         return current.takeIf {
             source.username == current.member.username &&
                 source.cookieHeader == current.cookieHeader &&
+                source.accessToken == current.accessToken &&
                 source.backendURL == activeBackendURL
         }
     }
