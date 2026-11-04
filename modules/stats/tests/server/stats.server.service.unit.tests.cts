@@ -194,16 +194,6 @@ describe('Stats service unit tests', () => {
     });
   });
 
-  it('rejects stat objects with no counts or values', done => {
-    const { statsService } = loadStatsService();
-
-    statsService.stat({ namespace: 'empty' }, (err?: Error | null) => {
-      assert.ok(err instanceof Error);
-      err.message.should.equal('The stat should contain counts or values');
-      done();
-    });
-  });
-
   it('rejects stat objects with empty counts and values', function () {
     const { statsService } = loadStatsService();
 

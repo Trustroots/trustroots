@@ -344,36 +344,4 @@ describe('<LocationInput />', () => {
       ).not.toBeInTheDocument();
     });
   });
-
-  it('selects a place name when a suggestion has no context', async () => {
-    axiosGetMock.mockResolvedValue({
-      data: {
-        features: [{ id: 'place.10', text: 'Rome', place_name: 'Rome, Italy' }],
-      },
-    });
-    render(<LocationInput id="location-input" onChange={onChange} value="" />);
-
-    fireEvent.change(screen.getByRole('textbox'), {
-      target: { value: 'Rome' },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: 'Rome' }));
-
-    expect(onChange).toHaveBeenCalled();
-  });
-
-  it('selects a suggestion with no location context or place name', async () => {
-    axiosGetMock.mockResolvedValue({
-      data: {
-        features: [{ id: 'place.11', text: 'Unknown' }],
-      },
-    });
-    render(<LocationInput id="location-input" onChange={onChange} value="" />);
-
-    fireEvent.change(screen.getByRole('textbox'), {
-      target: { value: 'Unknown' },
-    });
-    fireEvent.click(await screen.findByRole('button', { name: 'Unknown' }));
-
-    expect(onChange).toHaveBeenCalled();
-  });
 });

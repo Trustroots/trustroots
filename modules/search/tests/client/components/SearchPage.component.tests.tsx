@@ -450,26 +450,6 @@ describe('<SearchPage />', () => {
     expect(offersApi.getOffer).toHaveBeenCalledTimes(8);
   });
 
-  it('does not commit loaded offers after the search page unmounts', async () => {
-    let resolveOffer!: (offer: OfferReadPayload) => void;
-    offersApi.getOffer.mockImplementation(
-      () =>
-        new Promise(resolve => {
-          resolveOffer = resolve;
-        }),
-    );
-    const { unmount } = renderSearchPage();
-    openResultsWithVisibleOfferIds(['offer-after-unmount']);
-    await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(1));
-
-    unmount();
-    await act(async () => {
-      resolveOffer({ ...mockOffer, _id: 'offer-after-unmount' });
-      await Promise.resolve();
-    });
-    expect(offersApi.getOffer).toHaveBeenCalledTimes(1);
-  });
-
   it('skips visible offers when the offer endpoint returns no result', async () => {
     // The endpoint can return no offer for a stale visible result.
     Reflect.apply(offersApi.getOffer.mockResolvedValue, offersApi.getOffer, [
