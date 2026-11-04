@@ -29,9 +29,29 @@ const buttonLooks = {
 } satisfies Record<string, ButtonStyleProps>;
 
 const SelectedLanguage = styled.strong`
-  padding: 7px 13px;
-  font-size: 14px;
-  display: inline-block;
+  color: var(--tr-link-color);
+  background: var(--tr-gray-lighter);
+
+  &::after {
+    content: '✓';
+    margin-inline-start: auto;
+    padding-inline-start: 8px;
+  }
+`;
+
+const LanguageOption = styled.button`
+  color: var(--tr-text-color);
+  background: transparent;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--tr-gray-lighter);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--tr-link-color);
+    outline-offset: 2px;
+  }
 `;
 
 const LanguageList = styled.ul`
@@ -39,18 +59,28 @@ const LanguageList = styled.ul`
   padding: 0;
   list-style: none;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  grid-gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+  gap: 4px 12px;
 
-  @media (max-width: 480px) {
-    grid-template-columns: 100%;
+  li > * {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 44px;
+    height: 100%;
+    padding: 10px 12px;
+    border: 0;
+    border-radius: var(--bs-border-radius);
+    font-size: inherit;
+    line-height: 1.5;
+    text-align: start;
+    overflow-wrap: anywhere;
   }
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  max-width: 250px;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 `;
 
 /**
@@ -121,7 +151,7 @@ export default function LanguageSwitch({
       >
         {currentLanguage?.label ?? 'English'}
       </Button>
-      <Modal open={isModalVisible} onClose={onModalHide}>
+      <Modal open={isModalVisible} onClose={onModalHide} size="lg" scrollable>
         <ModalHeader closeLabel={t('Close')}>
           <ModalTitle>{t('Select a language')}</ModalTitle>
         </ModalHeader>
@@ -135,17 +165,24 @@ export default function LanguageSwitch({
                 setSearch(event.target.value)
               }
               placeholder={t('Search languages…')}
+              aria-label={t('Search languages…')}
             />
           )}
           <LanguageList>
             {filteredLocales.map(({ code, label }, index) => (
               <li key={`${code}-${label}-${index}`}>
                 {code === currentLanguageCode && (
-                  <SelectedLanguage lang={code}>{label}</SelectedLanguage>
+                  <SelectedLanguage
+                    lang={code}
+                    dir={i18n.dir(code)}
+                    aria-current="true"
+                  >
+                    {label}
+                  </SelectedLanguage>
                 )}
                 {code !== currentLanguageCode && (
-                  <Button
-                    variant="link"
+                  <LanguageOption
+                    type="button"
                     dir={i18n.dir(code)}
                     lang={code}
                     onClick={() => {
@@ -154,7 +191,7 @@ export default function LanguageSwitch({
                     }}
                   >
                     {label}
-                  </Button>
+                  </LanguageOption>
                 )}
               </li>
             ))}
