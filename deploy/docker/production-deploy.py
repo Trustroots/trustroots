@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Deploy and roll back app containers with prerequisite and session checks."""
 import argparse
+from datetime import datetime, timezone
 import fcntl
 import getpass
 import http.cookiejar
@@ -13,6 +14,7 @@ import tempfile
 import time
 import urllib.parse
 import urllib.request
+import uuid
 
 SERVICES = ('webapp', 'worker')
 
@@ -160,13 +162,109 @@ def save_state(path, images):
     os.replace(temporary, path)
 
 
+def event_time():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def save_event(path, event):
+    """Persist the receipt across process interruption and host restart."""
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', dir=path.parent, delete=False) as file:
+            temporary = file.name
+            json.dump(event, file)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary, path)
+        temporary = None
+        descriptor = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+    finally:
+        if temporary is not None:
+            os.unlink(temporary)
+
+
+def begin_event(args, images):
+    validate_images(images)
+    directory = args.compose.parent / '.trustroots-deployment-events'
+    directory.mkdir(mode=0o700, exist_ok=True)
+    # Persist the new directory entry as well as its contents.
+    descriptor = os.open(directory.parent, os.O_RDONLY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    identity = str(uuid.uuid4())
+    event = {'schemaVersion': 1, 'eventId': identity, 'action': args.action,
+             'origin': args.url, 'images': images, 'startedAt': event_time(),
+             'status': 'pending'}
+    path = directory / (identity + '.json')
+    save_event(path, event)
+    print('Deployment event: ' + identity, flush=True)
+    return path, event
+
+
+def complete_event(args, path, event):
+    # Receipt failures must not enter the deployment rollback handler.
+    try:
+        if image_ids(args) != event['images']:
+            raise RuntimeError('Running images changed')
+        commit = run(compose(args) + ['exec', '-T', 'webapp', 'node', '-e',
+                     'console.log(process.env.TRUSTROOTS_BUILD_COMMIT || "")'], timeout=15)
+        if not re.fullmatch(r'[0-9a-f]{40}', commit):
+            raise RuntimeError('Missing build commit')
+        completed = {**event, 'status': 'succeeded', 'buildCommit': commit,
+                     'readinessSucceededAt': event_time()}
+        save_event(path, completed)
+        print('Deployment success recorded: ' + event['eventId'])
+    except Exception:
+        # Docker and filesystem errors may contain private configuration.
+        print('WARNING: Success receipt incomplete for event ' + event['eventId'] +
+              '; use record-success to recheck and recover it. No rollback was requested.')
+
+
+def recover_event(args, username, password):
+    path = args.compose.parent / '.trustroots-deployment-events' / (args.event_id + '.json')
+    event = json.loads(path.read_text())
+    if event.get('eventId') != args.event_id or event.get('schemaVersion') != 1 or \
+            event.get('origin') != args.url or event.get('status') not in ('pending', 'succeeded'):
+        raise RuntimeError('Invalid deployment event or origin mismatch')
+    validate_images(event['images'])
+    if event['status'] == 'succeeded':
+        print('Deployment success already recorded: ' + args.event_id)
+        return
+    if image_ids(args) != event['images']:
+        raise RuntimeError('Running images do not match the pending deployment event')
+    verify(args, username, password)
+    complete_event(args, path, event)
+
+
+def fail_event(path, event):
+    try:
+        save_event(path, {**event, 'status': 'failed', 'failedAt': event_time()})
+    except Exception:
+        print('WARNING: Could not record failure for deployment event ' + event['eventId'])
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('action', choices=['preflight', 'deploy', 'rollback'])
+    parser.add_argument('action', choices=['preflight', 'deploy', 'rollback', 'record-success'])
+    parser.add_argument('--event-id', help='Existing pending UUID, required for record-success')
     parser.add_argument('--compose', type=Path, required=True)
     parser.add_argument('--media-mount', type=Path, required=True)
     parser.add_argument('--url', required=True, help='Canonical public HTTPS origin')
     args = parser.parse_args()
+    if args.action == 'record-success':
+        try:
+            if str(uuid.UUID(args.event_id)) != args.event_id:
+                raise ValueError()
+        except (ValueError, TypeError, AttributeError):
+            parser.error('record-success requires a canonical UUID --event-id')
+    elif args.event_id is not None:
+        parser.error('--event-id is only valid with record-success')
     args.compose = args.compose.resolve()
     args.media_mount = args.media_mount.resolve()
     parsed = urllib.parse.urlsplit(args.url)
@@ -183,11 +281,20 @@ def main():
         password = os.environ.get('TRUSTROOTS_DEPLOY_PASSWORD') or getpass.getpass('Verification account password: ')
         if not username or not password:
             raise RuntimeError('A verification account is required')
+        if args.action == 'record-success':
+            recover_event(args, username, password)
+            return
         if args.action == 'rollback':
             previous = json.loads(state.read_text())
             validate_images(previous)
-            replace(args, previous)
-            verify(args, username, password)
+            path, event = begin_event(args, previous)
+            try:
+                replace(args, previous)
+                verify(args, username, password)
+            except Exception:
+                fail_event(path, event)
+                raise
+            complete_event(args, path, event)
             print('Rollback verified.')
             return
         # Verify credentials and the existing deployment before changing anything.
@@ -203,14 +310,17 @@ def main():
         config = json.loads(run(compose(args) + ['config', '--format', 'json']))
         desired = {s: run(['docker', 'image', 'inspect', '--format', '{{.Id}}',
                           config['services'][s]['image']]) for s in SERVICES}
+        path, event = begin_event(args, desired)
         try:
             replace(args, desired)
             verify(args, username, password)
         except Exception:
+            fail_event(path, event)
             print('Deployment failed; restoring previous image IDs.')
             replace(args, previous)
             verify(args, username, password)
             raise RuntimeError('Deployment failed; previous images restored and verified') from None
+        complete_event(args, path, event)
         print('Deployment and login session verified.')
 
 
