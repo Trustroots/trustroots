@@ -17,6 +17,125 @@ import {
 } from '../../support/db.mts';
 
 test.describe.serial('auth email and token feature coverage', () => {
+  test('email change shows both addresses before confirmation on a narrow screen', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.email-confirm', [
+      'Valid confirmation token can be validated.',
+    ]);
+    const member = createUser();
+    await registerViaApi(request, member);
+    const token = await findActionToken(member.username, 'emailToken');
+    await updateUserByUsername(member.username, {
+      $set: { public: true, emailTemporary: 'new-address@example.org' },
+    });
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(`/confirm-email/${token}`);
+    await expect(
+      page.getByRole('heading', { name: 'Confirm your email change' }),
+    ).toBeVisible();
+    await expect(
+      page.getByText('Current email', { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByText(member.email, { exact: true })).toBeVisible();
+    await expect(page.getByText('New email', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('new-address@example.org', { exact: true }),
+    ).toBeVisible();
+    expect((await findUserByUsername(member.username))!.email).toBe(
+      member.email,
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: testInfo.outputPath('email-change-mobile.png'),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 1280, height: 1000 });
+    await page.screenshot({
+      path: testInfo.outputPath('email-change-desktop.png'),
+      fullPage: true,
+    });
+    await page.getByRole('button', { name: 'Confirm email change' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Email confirmed' }),
+    ).toBeVisible();
+    expect((await findUserByUsername(member.username))!.email).toBe(
+      'new-address@example.org',
+    );
+  });
+
+  test('email change can be cancelled from its link without signing in', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.email-confirm', [
+      'Valid confirmation token can be validated.',
+    ]);
+    const member = createUser();
+    await registerViaApi(request, member);
+    const token = await findActionToken(member.username, 'emailToken');
+    await updateUserByUsername(member.username, {
+      $set: { public: true, emailTemporary: 'cancelled@example.org' },
+    });
+    await page.goto(`/confirm-email/${token}`);
+    await page.getByRole('button', { name: 'Cancel email change' }).click();
+    await expect(
+      page.getByRole('heading', { name: 'Email change cancelled' }),
+    ).toBeVisible();
+    await expect(page.getByRole('status')).toContainText(member.email);
+    const stored = (await findUserByUsername(member.username))!;
+    expect(stored.email).toBe(member.email);
+    expect(stored.emailTemporary).toBeUndefined();
+    const session = await page.request.get('/api/auth/session');
+    expect(await session.json()).toEqual({ userId: null });
+    const confirm = await request.post(`/api/auth/confirm-email/${token}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
+    expect(confirm.status()).toBe(400);
+  });
+
+  test('email change can be cancelled from account settings', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'auth.email-confirm', [
+      'Valid confirmation token can be validated.',
+    ]);
+    const member = createUser();
+    await registerViaApi(request, member);
+    const token = await findActionToken(member.username, 'emailToken');
+    await updateUserByUsername(member.username, {
+      $set: { public: true, emailTemporary: 'cancelled@example.org' },
+    });
+    await signInViaApi(page, request, member);
+    await page.goto('/profile/edit/account');
+    await expect(
+      page.getByText('Pending email change: cancelled@example.org'),
+    ).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel email change' }).click();
+    await expect(
+      page.getByText(
+        'Email change cancelled. Your current email address is still active.',
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Resend confirmation' }),
+    ).toHaveCount(0);
+    await page.reload();
+    await expect(
+      page.getByRole('button', { name: 'Cancel email change' }),
+    ).toHaveCount(0);
+    const confirm = await request.post(`/api/auth/confirm-email/${token}`, {
+      headers: { 'X-Trustroots-Request': '1' },
+    });
+    expect(confirm.status()).toBe(400);
+  });
+
   test('signup validation reports available and unavailable usernames', async ({
     request,
   }, testInfo) => {

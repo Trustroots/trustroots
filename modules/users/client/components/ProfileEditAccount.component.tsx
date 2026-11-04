@@ -8,6 +8,7 @@ import {
   cancelProfileRemoval,
   getProfileRemovalStatus,
   changePassword,
+  cancelEmailChange,
   removeProfile,
   resendEmailConfirmation,
   update,
@@ -35,6 +36,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const { track } = useAnalytics();
   const [draftUser, setDraftUser] = useState({ ...user });
   const [emailMessage, setEmailMessage] = useState('');
+  const [isCancellingEmail, setIsCancellingEmail] = useState(false);
   const [usernameMessage, setUsernameMessage] = useState('');
   const [passwordMessage, setPasswordMessage] = useState('');
   const [removalMessage, setRemovalMessage] = useState('');
@@ -48,6 +50,10 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
   const [verifyPassword, setVerifyPassword] = useState('');
   const removalRef = useRef<HTMLDivElement>(null);
   const hash = useLocation({ select: location => location.hash });
+  const hasPendingEmail = Boolean(
+    draftUser.emailTemporary &&
+    (!draftUser.public || draftUser.emailTemporary !== user.email),
+  );
 
   useEffect(() => {
     // Wait until the app shell has finished resetting the page scroll position.
@@ -117,7 +123,7 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       track('profile_section_saved', { section: 'account' });
       setEmailMessage(
         t(
-          'We sent you an email to {{email}} with further instructions. Email change will not be active until that.',
+          'We sent a confirmation link to {{email}}. Your current email stays active until you confirm the change.',
           { email: savedUser.emailTemporary },
         ),
       );
@@ -157,6 +163,38 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
       });
       const { message } = readApiError(error);
       setUsernameMessage(message || t('Something went wrong'));
+    }
+  }
+
+  async function handleCancelEmailChange() {
+    setIsCancellingEmail(true);
+    setEmailMessage('');
+    try {
+      const { currentEmail } = await cancelEmailChange(
+        draftUser.emailTemporary!,
+      );
+      setDraftUser(previous => ({
+        ...previous,
+        email: currentEmail,
+        emailTemporary: undefined,
+      }));
+      setUser(current => ({
+        ...current,
+        email: currentEmail,
+        emailTemporary: undefined,
+      }));
+      setEmailMessage(
+        t(
+          'Email change cancelled. Your current email address is still active.',
+        ),
+      );
+    } catch (error: unknown) {
+      setEmailMessage(
+        readApiError(error).message ||
+          t('Unable to cancel the email change. Please try again.'),
+      );
+    } finally {
+      setIsCancellingEmail(false);
     }
   }
 
@@ -269,16 +307,43 @@ export default function ProfileEditAccount({ user }: ProfileEditAccountProps) {
                     }
                   />
                   {emailMessage && <p className="help-block">{emailMessage}</p>}
+                  {hasPendingEmail && (
+                    <p className="help-block">
+                      {t('Pending email change: {{email}}', {
+                        email: draftUser.emailTemporary,
+                      })}
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="form-group">
                 <div className="col-sm-push-3 col-sm-9">
-                  <Button intent="primary" type="submit">
+                  <Button
+                    type="submit"
+                    intent="primary"
+                    disabled={isCancellingEmail}
+                  >
                     {t('Change email')}
                   </Button>
-                  {draftUser.emailTemporary && (
-                    <Button type="button" onClick={handleResendConfirmation}>
+                  {hasPendingEmail && (
+                    <Button
+                      type="button"
+
+                      onClick={handleResendConfirmation}
+                      disabled={isCancellingEmail}
+                    >
                       {t('Resend confirmation')}
+                    </Button>
+                  )}
+                  {draftUser.public && hasPendingEmail && (
+                    <Button
+                      type="button"
+                      disabled={isCancellingEmail}
+                      onClick={handleCancelEmailChange}
+                    >
+                      {isCancellingEmail
+                        ? t('Cancelling…')
+                        : t('Cancel email change')}
                     </Button>
                   )}
                 </div>

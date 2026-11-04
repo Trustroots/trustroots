@@ -67,6 +67,26 @@ export interface ConfirmEmailResponse {
   profileMadePublic?: boolean;
 }
 
+export interface EmailConfirmationDetails {
+  currentEmail: string;
+  newEmail: string;
+  signup: boolean;
+}
+
+export async function cancelEmailChange(
+  token: string,
+): Promise<{ currentEmail: string }> {
+  const { data } = await axios.post(`/api/auth/confirm-email/${token}/cancel`);
+  return data;
+}
+
+export async function getEmailConfirmationDetails(
+  token: string,
+): Promise<EmailConfirmationDetails> {
+  const { data } = await axios.get(`/api/auth/confirm-email/${token}/details`);
+  return data;
+}
+
 export async function confirmEmail(
   token: string,
 ): Promise<ConfirmEmailResponse> {

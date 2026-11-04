@@ -16,6 +16,31 @@ function response<T>(data: T): AxiosResponse<T> {
 }
 
 describe('auth.api', () => {
+  it('cancels an email change using the confirmation token', async () => {
+    axiosMock.post.mockResolvedValue(
+      response({ currentEmail: 'old@example.org' }),
+    );
+    await expect(authApi.cancelEmailChange('opaque-token')).resolves.toEqual({
+      currentEmail: 'old@example.org',
+    });
+    expect(axiosMock.post).toHaveBeenCalledWith(
+      '/api/auth/confirm-email/opaque-token/cancel',
+    );
+  });
+  it('loads email confirmation details', async () => {
+    const details = {
+      currentEmail: 'old@example.org',
+      newEmail: 'new@example.org',
+      signup: false,
+    };
+    axiosMock.get.mockResolvedValue(response(details));
+    await expect(
+      authApi.getEmailConfirmationDetails('opaque-token'),
+    ).resolves.toEqual(details);
+    expect(axiosMock.get).toHaveBeenCalledWith(
+      '/api/auth/confirm-email/opaque-token/details',
+    );
+  });
   beforeEach(() => {
     axiosMock.post.mockReset();
     axiosMock.get.mockReset();
