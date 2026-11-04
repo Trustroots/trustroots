@@ -53,7 +53,7 @@ function categoryForPath(filePath: string): string {
   }
   if (
     /(^|\/)(tests?|__tests__|__mocks__|fixtures|jest)\//.test(filePath) ||
-    /\.(spec|tests?)\.[^/]+$/.test(filePath) ||
+    /\.(spec|tests?|stories)\.[^/]+$/.test(filePath) ||
     (platform &&
       (/(^|\/)(androidTest|[^/]*Tests)\//.test(filePath) ||
         /Tests\.(swift|m|mm)$/.test(filePath)))
