@@ -19,6 +19,41 @@ function isAddress(value: string): boolean {
   return /^[^\s@,<>]+@[^\s@,<>]+\.[^\s@,<>]+$/.test(value);
 }
 
+function validateLiveTransport(options: Config['mailer']['options']): void {
+  if (
+    options.jsonTransport ||
+    options.streamTransport ||
+    options.sendmail ||
+    ('SES' in options && options.SES) ||
+    typeof options.send === 'function'
+  ) {
+    throw new Error(
+      'Live mail requires an SMTP transport; non-SMTP transports are disabled.',
+    );
+  }
+
+  if (options.url !== undefined) {
+    try {
+      const url = new URL(options.url);
+      if (!['smtp:', 'smtps:'].includes(url.protocol) || !url.hostname) {
+        throw new Error();
+      }
+    } catch {
+      // A connection URL can contain credentials. Never include it in errors.
+      throw new Error(
+        'Live mail requires a valid smtp:// or smtps:// connection URL.',
+      );
+    }
+  } else if (
+    !options.host?.trim() &&
+    !(typeof options.service === 'string' && options.service.trim())
+  ) {
+    throw new Error(
+      'Live mail requires an explicit SMTP host, service or connection URL.',
+    );
+  }
+}
+
 /** Apply after deployment overrides so copied SMTP settings cannot bypass it. */
 export function applyMailSafety(
   config: Pick<Config, 'domain' | 'mailer' | 'supportInbox' | 'supportEmail'>,
@@ -45,6 +80,7 @@ export function applyMailSafety(
       throw new Error(
         'Live mail requires a production runtime and site domain without a non-production deployment tier.',
       );
+    validateLiveTransport(config.mailer.options);
     return 'live';
   }
 

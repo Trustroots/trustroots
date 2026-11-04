@@ -16,7 +16,12 @@ import './lib/mail-safety.test.mts';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 
-function load(environment: string, local?: string, skipLocal = false) {
+function load(
+  environment: string,
+  local?: string,
+  skipLocal = false,
+  mailEnvironment: Record<string, string | undefined> = {},
+) {
   const directory = mkdtempSync(join(tmpdir(), 'trustroots-config-'));
   try {
     const configDirectory = join(directory, 'config');
@@ -63,6 +68,7 @@ function load(environment: string, local?: string, skipLocal = false) {
           TRUSTROOTS_MAIL_MODE: undefined,
           TRUSTROOTS_MAIL_RECIPIENT_ALLOWLIST: undefined,
           TRUSTROOTS_SUPPORT_TEST_MAILBOX: undefined,
+          ...mailEnvironment,
         },
         encoding: 'utf8',
       },
@@ -72,7 +78,7 @@ function load(environment: string, local?: string, skipLocal = false) {
       .split('\n')
       .find(line => line.startsWith('CONFIG_RESULT='));
     assert.ok(output, result.stdout);
-    return JSON.parse(output.slice('CONFIG_RESULT='.length)) as {
+    const parsed = JSON.parse(output.slice('CONFIG_RESULT='.length)) as {
       environment: string;
       config: {
         app: { title: string; description: string };
@@ -91,6 +97,12 @@ function load(environment: string, local?: string, skipLocal = false) {
         db: { uri: string };
       };
       paths: string[];
+    };
+    return {
+      ...parsed,
+      mailStatus: result.stdout
+        .split('\n')
+        .find(line => line.startsWith('[Mail]')),
     };
   } finally {
     rmSync(directory, { recursive: true, force: true });
@@ -142,5 +154,34 @@ test('local configuration can be skipped and unknown environments use developmen
 
 test('environment configuration replaces nested defaults before local merging', () => {
   const result = load('development');
+  assert.deepEqual(result.config.mailer.options, { jsonTransport: true });
+});
+
+test('startup reports effective live mode after local SMTP overrides without logging credentials', () => {
+  const local =
+    "module.exports = { domain: 'www.trustroots.org', mailer: { options: { host: 'smtp.example.test', auth: { user: 'fictional-user', pass: 'fictional-secret' } } } };";
+  for (const mailEnvironment of [
+    {},
+    { TRUSTROOTS_DEPLOYMENT_TIER: 'production', TRUSTROOTS_MAIL_MODE: 'live' },
+  ]) {
+    const result = load('production', local, false, mailEnvironment);
+    assert.equal(result.mailStatus, '[Mail] mode=live');
+  }
+});
+
+test('startup makes intentional production capture visible and replaces inherited SMTP settings', () => {
+  const result = load(
+    'production',
+    "module.exports = { domain: 'www.trustroots.org', mailer: { options: { host: 'smtp.example.test' } } };",
+    false,
+    {
+      TRUSTROOTS_DEPLOYMENT_TIER: 'production',
+      TRUSTROOTS_MAIL_MODE: 'capture',
+    },
+  );
+  assert.equal(
+    result.mailStatus,
+    '[Mail] mode=capture; outgoing delivery disabled',
+  );
   assert.deepEqual(result.config.mailer.options, { jsonTransport: true });
 });

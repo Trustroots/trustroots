@@ -95,6 +95,12 @@ export interface Config {
     from: string;
     options: {
       service?: string | false;
+      host?: string;
+      port?: number;
+      secure?: boolean;
+      url?: string;
+      streamTransport?: boolean;
+      sendmail?: boolean;
       auth?: { user: string | false; pass: string | false };
       jsonTransport?: boolean;
       name?: string;
