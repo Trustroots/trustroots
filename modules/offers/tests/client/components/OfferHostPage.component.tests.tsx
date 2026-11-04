@@ -3,7 +3,6 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import OfferHostPage from '@/modules/offers/client/components/OfferHostPage.component';
-import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
@@ -14,23 +13,6 @@ const offersApiMock = jest.mocked(offersApi);
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
 );
-jest.mock('react-bootstrap', () => {
-  const ReactBootstrap =
-    jest.requireActual<typeof import('react-bootstrap')>('react-bootstrap');
-
-  return {
-    ...ReactBootstrap,
-    Tabs: (props: TabsProps) => (
-      <>
-        <ReactBootstrap.Tabs {...props} />
-        <button onClick={event => props.onSelect?.(null, event)} type="button">
-          Clear selected tab
-        </button>
-      </>
-    ),
-  };
-});
-
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock(
   '@/modules/offers/client/components/OfferLocationEditor.component',
@@ -141,16 +123,27 @@ describe('OfferHostPage', () => {
     expect(screen.getByDisplayValue('2')).toBeInTheDocument();
   });
 
-  it('keeps the active tab when selection is cleared', async () => {
+  it('moves between tabs with the arrow keys', async () => {
     render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
 
-    expect(await screen.findByText('Can you host?')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
+    const availability = await screen.findByRole('tab', {
+      name: 'Availability',
+    });
+    availability.focus();
+    fireEvent.keyDown(availability, { key: 'ArrowRight' });
 
-    expect(screen.getByRole('tab', { name: 'Availability' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    const description = screen.getByRole('tab', { name: 'Description' });
+    await waitFor(() => expect(description).toHaveFocus());
+    expect(description).toHaveAttribute('aria-selected', 'true');
+    expect(window.location.hash).toBe('#description');
+
+    // Left from the first tab wraps round to the last.
+    fireEvent.keyDown(description, { key: 'ArrowLeft' });
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Availability' }), {
+      key: 'ArrowLeft',
+    });
+    await waitFor(() => expect(window.location.hash).toBe('#location'));
+    expect(screen.getByRole('tab', { name: 'Location' })).toHaveFocus();
   });
 
   it('creates a new host offer when saving', async () => {

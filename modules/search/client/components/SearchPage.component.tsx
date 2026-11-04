@@ -532,9 +532,7 @@ export default function SearchPage({ user }: { user?: SearchUser | null }) {
               updateFilters({ seen: { months } });
             }}
             onPlaceSearch={onPlaceSearch}
-            onTabSelect={tab => {
-              if (tab === 'filters' || tab === 'results') setSidebarTab(tab);
-            }}
+            onTabSelect={setSidebarTab}
             onlineInPast6Months={onlineInPast6Months}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}

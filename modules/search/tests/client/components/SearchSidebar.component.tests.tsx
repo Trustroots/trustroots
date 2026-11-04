@@ -133,7 +133,7 @@ describe('<SearchSidebar />', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /^results$/i }));
 
-    expect(onTabSelect).toHaveBeenCalledWith('results', expect.anything());
+    expect(onTabSelect).toHaveBeenCalledWith('results');
   });
 
   it('shows offer results in the results tab', () => {

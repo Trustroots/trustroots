@@ -1159,7 +1159,7 @@ test.describe('rendered search map feature coverage', () => {
       sidebar.locator('.community-notes-sidebar-note').first(),
     ).toHaveCSS('background-color', 'rgb(255, 255, 255)');
     await expect(
-      page.locator('.search-sidebar-tabs .nav-link').first(),
+      page.locator('.search-sidebar-tabs').getByRole('tab').first(),
     ).toHaveCSS('color', 'rgb(51, 51, 51)');
 
     await sidebar.getByRole('button', { name: 'Reply' }).click();

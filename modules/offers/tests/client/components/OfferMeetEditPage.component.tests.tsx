@@ -6,7 +6,6 @@ import OfferMeetEditPage from '@/modules/offers/client/components/OfferMeetEditP
 import { fakeAnalytics } from '@/testutils/client/analytics.testutil';
 import * as offersApi from '@/modules/offers/client/api/offers.api';
 import type { OfferReadPayload } from '@/modules/offers/shared/offer';
-import type { TabsProps } from 'react-bootstrap';
 import type OfferLocationEditor from '@/modules/offers/client/components/OfferLocationEditor.component';
 
 const offersApiMock = jest.mocked(offersApi);
@@ -14,23 +13,6 @@ const offersApiMock = jest.mocked(offersApi);
 jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
 );
-jest.mock('react-bootstrap', () => {
-  const ReactBootstrap =
-    jest.requireActual<typeof import('react-bootstrap')>('react-bootstrap');
-
-  return {
-    ...ReactBootstrap,
-    Tabs: (props: TabsProps) => (
-      <>
-        <ReactBootstrap.Tabs {...props} />
-        <button onClick={event => props.onSelect?.(null, event)} type="button">
-          Clear selected tab
-        </button>
-      </>
-    ),
-  };
-});
-
 jest.mock('@/modules/offers/client/api/offers.api');
 jest.mock(
   '@/modules/offers/client/components/MeetsExplanation.component',
@@ -108,16 +90,24 @@ describe('OfferMeetEditPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('keeps the active tab when selection is cleared', async () => {
+  it('keeps the Location tab closed until the description is long enough', async () => {
     render(<OfferMeetEditPage />, { wrapper: analytics.wrapper });
 
     expect(await screen.findByText('What is this about?')).toBeVisible();
-    fireEvent.click(screen.getByRole('button', { name: 'Clear selected tab' }));
+    const location = screen.getByRole('tab', { name: 'Location' });
+    expect(location).toHaveAttribute('aria-disabled', 'true');
+    expect(location).toHaveAttribute('tabindex', '-1');
+    fireEvent.click(location);
 
-    expect(screen.getByRole('tab', { name: 'Details' })).toHaveAttribute(
-      'aria-selected',
-      'true',
-    );
+    const details = screen.getByRole('tab', { name: 'Details' });
+    expect(details).toHaveAttribute('aria-selected', 'true');
+
+    // Arrow keys skip the disabled tab; other keys are left alone.
+    details.focus();
+    fireEvent.keyDown(details, { key: 'ArrowRight' });
+    fireEvent.keyDown(details, { key: 'Enter' });
+    expect(details).toHaveFocus();
+    expect(details).toHaveAttribute('aria-selected', 'true');
   });
 
   it('creates a new meet offer after filling details', async () => {
