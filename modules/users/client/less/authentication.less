@@ -41,3 +41,95 @@
 .board-nordiclights .signup-button {
   background: rgba(73, 54, 76, 0.3);
 }
+
+.email-confirmation {
+  padding: 32px 16px 64px;
+
+  .email-confirmation-card {
+    max-width: 540px;
+    margin: 0 auto;
+    padding: 32px;
+    border: 1px solid #e2e9e6;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    text-align: center;
+  }
+
+  .email-confirmation-tree {
+    display: block;
+    margin: 0 auto 24px;
+    object-fit: contain;
+  }
+
+  h1 {
+    margin: 0 0 16px;
+    font-size: 28px;
+    line-height: 1.25;
+  }
+
+  p {
+    margin-bottom: 24px;
+    line-height: 1.6;
+  }
+
+  .email-confirmation-intro {
+    color: #555;
+    font-size: 18px;
+  }
+
+  .email-confirmation-addresses {
+    margin: 24px 0;
+    text-align: start;
+
+    > div {
+      padding: 16px 20px;
+      border: 1px solid #e2e9e6;
+      border-radius: 8px;
+    }
+
+    > div + div {
+      margin-top: 12px;
+    }
+
+    .email-confirmation-new {
+      border-color: @brand-primary;
+      background: #f0faf7;
+    }
+
+    dt {
+      margin-bottom: 4px;
+      color: #555;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    dd {
+      margin: 0;
+      font-size: 18px;
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .email-confirmation-address {
+    overflow-wrap: anywhere;
+  }
+
+  .email-confirmation-help {
+    margin: 20px 0 0;
+    color: #666;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    padding-top: 16px;
+
+    .email-confirmation-card {
+      padding: 24px 20px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+  }
+}

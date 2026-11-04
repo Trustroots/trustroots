@@ -20,6 +20,15 @@ interface RouteApplication {
 const defaultExport = function (app: RouteApplication) {
   // Confirm users email
   app
+    .route('/api/auth/cancel-email-change')
+    .post(userAuthentication.cancelEmailChange);
+  app
+    .route('/api/auth/confirm-email/:token/cancel')
+    .post(userAuthentication.cancelEmailChange);
+  app
+    .route('/api/auth/confirm-email/:token/details')
+    .get(userAuthentication.emailConfirmationDetails);
+  app
     .route('/api/auth/confirm-email/:token')
     .get(userAuthentication.validateEmailToken)
     .post(userAuthentication.confirmEmail);

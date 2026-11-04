@@ -81,6 +81,9 @@ function stubControllerDependencies(
  * sends a response, so callback-based controllers can be awaited.
  */
 interface AuthenticationResponseBody {
+  currentEmail?: string;
+  newEmail?: string;
+  signup?: boolean;
   message?: string;
   avatarSource?: string;
   password?: string;
@@ -350,6 +353,23 @@ describe('Authentication controller OAuth unit tests', () => {
       const res = deferredResponse();
       authController.resendConfirmation(
         { user: new User({ email: 'a@b.com' }) },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      responseField(res, 'message').should.equal('Already confirmed.');
+    });
+
+    it('does not resend to a pending address that is already confirmed', async () => {
+      const res = deferredResponse();
+      authController.resendConfirmation(
+        {
+          user: new User({
+            public: true,
+            email: 'confirmed@example.org',
+            emailTemporary: 'confirmed@example.org',
+          }),
+        },
         res,
       );
       await res.waitForResponse();
@@ -878,6 +898,199 @@ describe('Authentication controller OAuth unit tests', () => {
   });
 
   describe('confirmEmail', () => {
+    async function pendingChange(publicProfile = true) {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const member = await findUser(saved._id);
+      member.email = 'current@example.org';
+      member.emailTemporary = 'pending@example.org';
+      member.public = publicProfile;
+      member.emailToken = 'cancel-token';
+      member.emailTokenIssuedAt = new Date();
+      member.emailTokenExpires = new Date(Date.now() + 3600000);
+      await member.save();
+      return member;
+    }
+
+    for (const useToken of [true, false]) {
+      it(`cancels the matching pending change atomically (token: ${useToken})`, async () => {
+        const member = await pendingChange();
+        const res = Object.assign(deferredResponse(), {
+          set: sinon.stub().returnsThis(),
+        });
+        authController.cancelEmailChange(
+          useToken
+            ? { params: { token: 'cancel-token' } }
+            : { user: member, body: { newEmail: 'pending@example.org' } },
+          res,
+        );
+        await res.waitForResponse();
+        res.body!.should.deepEqual({ currentEmail: 'current@example.org' });
+        const reloaded = await findUser(member._id);
+        reloaded.email.should.equal('current@example.org');
+        const stored = await User.collection.findOne({ _id: member._id });
+        for (const field of [
+          'emailTemporary',
+          'emailToken',
+          'emailTokenIssuedAt',
+          'emailTokenExpires',
+        ])
+          should.not.exist(stored![field]);
+        const confirm = deferredResponse();
+        authController.confirmEmail(
+          { params: { token: 'cancel-token' } },
+          confirm,
+        );
+        await confirm.waitForResponse();
+        confirm.statusCode.should.equal(400);
+      });
+    }
+
+    it('rejects unauthenticated settings cancellation', async () => {
+      const res = Object.assign(deferredResponse(), {
+        set: sinon.stub().returnsThis(),
+      });
+      authController.cancelEmailChange({}, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(401);
+    });
+
+    for (const newEmail of [undefined, '', 42]) {
+      it(`rejects missing or malformed pending addresses (${newEmail})`, async () => {
+        const member = await pendingChange();
+        const res = Object.assign(deferredResponse(), {
+          set: sinon.stub().returnsThis(),
+        });
+        authController.cancelEmailChange(
+          { user: member, body: { newEmail } },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+      });
+    }
+
+    it('rejects signup, expired, superseded and other-account cancellation attempts', async () => {
+      const member = await pendingChange(false);
+      async function rejectCancellation(
+        req: Parameters<typeof authController.cancelEmailChange>[0],
+      ) {
+        const res = Object.assign(deferredResponse(), {
+          set: sinon.stub().returnsThis(),
+        });
+        authController.cancelEmailChange(req, res);
+        await res.waitForResponse();
+        res.statusCode.should.equal(409);
+      }
+      await rejectCancellation({ params: { token: 'cancel-token' } });
+      member.public = true;
+      member.emailTokenExpires = new Date(Date.now() - 1);
+      await member.save();
+      await rejectCancellation({ params: { token: 'cancel-token' } });
+      await rejectCancellation({ params: { token: 'superseded-token' } });
+      await rejectCancellation({
+        user: member,
+        body: { newEmail: 'older@example.org' },
+      });
+      const [other] = await utils.saveUsers(utils.generateUsers(1));
+      await rejectCancellation({
+        user: await findUser(other._id),
+        body: { newEmail: member.emailTemporary },
+      });
+      (await findUser(member._id)).emailTemporary!.should.equal(
+        'pending@example.org',
+      );
+    });
+
+    it('handles cancellation database errors', async () => {
+      sinon
+        .stub(User, 'findOneAndUpdate')
+        .rejects(new Error('database unavailable'));
+      const res = Object.assign(deferredResponse(), {
+        set: sinon.stub().returnsThis(),
+      });
+      authController.cancelEmailChange(
+        { params: { token: 'cancel-token' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(500);
+    });
+
+    for (const signup of [true, false]) {
+      it(`previews a valid confirmation without consuming it (signup: ${signup})`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await findUser(saved._id);
+        userDoc.email = 'previous@example.org';
+        userDoc.emailTemporary = 'new@example.org';
+        userDoc.public = !signup;
+        userDoc.emailToken = 'preview-token';
+        userDoc.emailTokenIssuedAt = new Date();
+        userDoc.emailTokenExpires = new Date(Date.now() + 3600000);
+        await userDoc.save();
+        const res = Object.assign(deferredResponse(), {
+          set: sinon.stub().returnsThis(),
+        });
+        authController.emailConfirmationDetails(
+          { params: { token: 'preview-token' } },
+          res,
+        );
+        await res.waitForResponse();
+        res.body!.should.deepEqual({
+          currentEmail: 'previous@example.org',
+          newEmail: 'new@example.org',
+          signup,
+        });
+        sinon.assert.calledWith(res.set, 'Cache-Control', 'no-store');
+        const reloaded = await findUser(saved._id);
+        reloaded.email.should.equal('previous@example.org');
+        reloaded.emailToken!.should.equal('preview-token');
+      });
+    }
+
+    it('rejects invalid and expired preview tokens without address details', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            emailTemporary: 'new@example.org',
+            emailToken: 'expired-preview',
+            emailTokenIssuedAt: new Date(Date.now() - 86400000),
+            emailTokenExpires: new Date(Date.now() - 1),
+          },
+        },
+      );
+      for (const token of ['missing-preview', 'expired-preview']) {
+        const res = Object.assign(deferredResponse(), {
+          set: sinon.stub().returnsThis(),
+        });
+        authController.emailConfirmationDetails({ params: { token } }, res);
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body!.should.deepEqual({
+          message: 'Email confirm token is invalid or has expired.',
+        });
+      }
+    });
+
+    it('handles preview database errors without returning addresses', async () => {
+      const query = User.findOne({});
+      sinon.stub(query, 'exec').rejects(new Error('database unavailable'));
+      sinon.stub(User, 'findOne').returns(query);
+      const res = Object.assign(deferredResponse(), {
+        set: sinon.stub().returnsThis(),
+      });
+      authController.emailConfirmationDetails(
+        { params: { token: 'preview-token' } },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(500);
+      res.body!.should.deepEqual({
+        message: 'Unable to load confirmation details.',
+      });
+    });
+
     it('redirects invalid email tokens to the invalid confirmation page', async () => {
       const res = deferredResponse();
       authController.validateEmailToken({ params: { token: 'missing' } }, res);

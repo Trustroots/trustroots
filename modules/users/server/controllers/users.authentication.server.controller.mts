@@ -88,6 +88,8 @@ interface AuthenticationController {
   signout(req: AuthRequest, res: AuthResponse, next: AuthNext): void;
   removeOAuthProvider(req: AuthRequest, res: AuthResponse): void;
   validateEmailToken(req: AuthRequest, res: AuthResponse): void;
+  emailConfirmationDetails(req: AuthRequest, res: AuthResponse): void;
+  cancelEmailChange(req: AuthRequest, res: AuthResponse): void;
   confirmEmail(req: AuthRequest, res: AuthResponse): void;
   resendConfirmation(req: AuthRequest, res: AuthResponse): void;
 }
@@ -526,8 +528,83 @@ service.removeOAuthProvider = function (req, res) {
 };
 
 /**
- * Confirm email GET from email token
+ * Cancel a pending change using its link or the signed-in account.
  */
+service.cancelEmailChange = function (req, res) {
+  res.set!('Cache-Control', 'no-store');
+  const token = req.params?.token;
+  if (!token && !req.user) {
+    res
+      .status(401)
+      .send({ message: 'Please sign in to cancel your email change.' });
+    return;
+  }
+  if (
+    !token &&
+    (typeof req.body?.newEmail !== 'string' || !req.body.newEmail)
+  ) {
+    res.status(400).send({ message: 'A pending email address is required.' });
+    return;
+  }
+  const query: QueryFilter<UserServerRecord> = token
+    ? emailConfirmationTokenQuery(String(token), new Date())
+    : { _id: req.user!._id, emailTemporary: String(req.body!.newEmail) };
+  User.findOneAndUpdate(
+    { ...query, public: true },
+    {
+      $unset: {
+        emailTemporary: 1,
+        emailToken: 1,
+        emailTokenIssuedAt: 1,
+        emailTokenExpires: 1,
+      },
+    },
+    { new: true },
+  ).then(
+    user => {
+      if (!user) {
+        return res.status(409).send({
+          message:
+            'This email change is no longer pending. Refresh the page to check your account.',
+        });
+      }
+      res.json({ currentEmail: user.email });
+    },
+    () =>
+      res.status(500).send({
+        message: 'Unable to cancel the email change. Please try again.',
+      }),
+  );
+};
+
+/** Read confirmation addresses without consuming the link. */
+service.emailConfirmationDetails = function (req, res) {
+  res.set!('Cache-Control', 'no-store');
+  User.findOne(
+    emailConfirmationTokenQuery(String(req.params!.token), new Date()),
+  )
+    .select('email emailTemporary public')
+    .then(
+      user => {
+        if (!user) {
+          return res.status(400).send({
+            message: 'Email confirm token is invalid or has expired.',
+          });
+        }
+        res.json({
+          currentEmail: user.email,
+          newEmail: user.emailTemporary,
+          signup: !user.public,
+        });
+      },
+      () =>
+        res
+          .status(500)
+          .send({ message: 'Unable to load confirmation details.' }),
+    );
+};
+
+/** Redirect an email link to the confirmation page. */
 service.validateEmailToken = function (req, res) {
   const now = new Date();
   User.findOne(
@@ -645,7 +722,10 @@ service.resendConfirmation = function (req, res) {
       2) user is changing email address
     In both cases they will have emailTemporary set
   */
-  if (!req.user.emailTemporary) {
+  if (
+    !req.user.emailTemporary ||
+    (req.user.public && req.user.emailTemporary === req.user.email)
+  ) {
     return res.status(400).send({
       message: 'Already confirmed.',
     });

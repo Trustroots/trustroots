@@ -88,6 +88,74 @@ function renderPage(overrides: Partial<UserProfile> = {}) {
 }
 
 describe('ProfileEditAccount', () => {
+  it.each([undefined, user.email])(
+    'hides resend for an already confirmed address (pending: %s)',
+    async emailTemporary => {
+      renderPage({ public: true, emailTemporary });
+      await waitFor(() => expect(getProfileRemovalStatus).toHaveBeenCalled());
+      expect(
+        screen.queryByRole('button', { name: 'Resend confirmation' }),
+      ).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Cancel email change' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it('allows an unverified signup to request a new link for the same address', async () => {
+    renderPage({ public: false, emailTemporary: user.email });
+    await waitFor(() => expect(getProfileRemovalStatus).toHaveBeenCalled());
+    expect(
+      screen.getByRole('button', { name: 'Resend confirmation' }),
+    ).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Cancel email change' }),
+    ).not.toBeInTheDocument();
+  });
+  it('cancels a pending change and removes the pending actions', async () => {
+    jest
+      .mocked(usersApi.cancelEmailChange)
+      .mockResolvedValue({ currentEmail: user.email! });
+    renderPage({ public: true, emailTemporary: 'pending@example.org' });
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Cancel email change' }),
+    );
+    expect(screen.getByRole('button', { name: 'Cancelling…' })).toBeDisabled();
+    expect(
+      await screen.findByText(
+        'Email change cancelled. Your current email address is still active.',
+      ),
+    ).toBeVisible();
+    expect(usersApi.cancelEmailChange).toHaveBeenCalledWith(
+      'pending@example.org',
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Resend confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Email Address')).toHaveValue(user.email);
+  });
+
+  it.each(['request failed', undefined])(
+    'keeps the pending change if cancellation fails (%s)',
+    async message => {
+      jest
+        .mocked(usersApi.cancelEmailChange)
+        .mockRejectedValue({ response: { data: { message } } });
+      renderPage({ public: true, emailTemporary: 'pending@example.org' });
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Cancel email change' }),
+      );
+      expect(
+        await screen.findByText(
+          message || 'Unable to cancel the email change. Please try again.',
+        ),
+      ).toBeVisible();
+      expect(
+        screen.getByRole('button', { name: 'Cancel email change' }),
+      ).toBeEnabled();
+    },
+  );
+
   beforeEach(() => {
     jest.clearAllMocks();
     getProfileRemovalStatus.mockResolvedValue({ pending: false });
@@ -177,7 +245,9 @@ describe('ProfileEditAccount', () => {
       );
     });
     expect(
-      await screen.findByText(/We sent you an email to new@example.test/),
+      await screen.findByText(
+        /We sent a confirmation link to new@example.test/,
+      ),
     ).toBeVisible();
     expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
       section: 'account',

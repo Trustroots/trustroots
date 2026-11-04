@@ -9,6 +9,7 @@ import {
   removeProfile,
   removeSocialAccount,
   resendEmailConfirmation,
+  cancelEmailChange,
   update,
   uploadAvatar,
 } from '@/modules/users/client/api/users.api';
@@ -109,6 +110,19 @@ describe('users api', () => {
 
     expect(axiosMock.post).toHaveBeenCalledWith(
       '/api/auth/resend-confirmation',
+    );
+  });
+
+  it('cancels only the displayed pending email change', async () => {
+    axiosMock.post.mockResolvedValueOnce(
+      response({ currentEmail: 'current@example.org' }),
+    );
+    await expect(cancelEmailChange('pending@example.org')).resolves.toEqual({
+      currentEmail: 'current@example.org',
+    });
+    expect(axiosMock.post).toHaveBeenCalledWith(
+      '/api/auth/cancel-email-change',
+      { newEmail: 'pending@example.org' },
     );
   });
 

@@ -71,6 +71,15 @@ export async function resendEmailConfirmation(): Promise<void> {
   await axios.post('/api/auth/resend-confirmation');
 }
 
+export async function cancelEmailChange(
+  newEmail: string,
+): Promise<{ currentEmail: string }> {
+  const { data } = await axios.post('/api/auth/cancel-email-change', {
+    newEmail,
+  });
+  return data;
+}
+
 export async function removeProfile(): Promise<ProfileRemovalResult> {
   const { data } = await axios.delete('/api/users');
   return data;

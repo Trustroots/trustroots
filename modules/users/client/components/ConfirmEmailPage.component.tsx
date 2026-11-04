@@ -1,50 +1,70 @@
-import React, { useState } from 'react';
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
-import { Button } from '@trustroots/ui/Button';
+import React, { useEffect, useState } from 'react';
 
+import { useNavigate, useParams } from '@tanstack/react-router';
+import { Button } from '@trustroots/ui/Button';
+import { Alert } from '@trustroots/ui/Alert';
 import {
   emailConfirmFailureReason,
   useAnalytics,
 } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
 import * as authApi from '@/modules/users/client/api/auth.api';
-import { getEmailFromToken } from '@/modules/users/client/utils/auth';
-import { Alert } from '@trustroots/ui/Alert';
 
 export default function ConfirmEmailPage() {
-  const { track } = useAnalytics();
   const { user, setUser } = useAuth() as {
     user: { email?: string } | null;
     setUser: (user: { _id: string; username: string; email?: string }) => void;
   };
   const { token } = useParams({ strict: false });
-  const { signup } = useSearch({ strict: false });
   const navigate = useNavigate();
+  const { track } = useAnalytics();
+  const [details, setDetails] =
+    useState<authApi.EmailConfirmationDetails | null>(null);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const email = getEmailFromToken(token || '');
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelledEmail, setCancelledEmail] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setDetails(null);
+    setError(false);
+    setSuccess(false);
+    setCancelledEmail(null);
+    setCancelError(false);
+    if (!token) {
+      setError(true);
+      return;
+    }
+    authApi.getEmailConfirmationDetails(token).then(
+      result => {
+        if (active) setDetails(result);
+      },
+      () => {
+        if (active) setError(true);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [token]);
 
   async function handleConfirmEmail(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isLoading || isCancelling) return;
     setIsLoading(true);
-    setSuccess(false);
-    setError(false);
-
     try {
       const response = await authApi.confirmEmail(token);
-
       setUser(response.user);
-      // Only the first confirmation, after signup, makes a profile public.
       track('email_confirmed', {
         kind: response.profileMadePublic ? 'signup' : 'change',
       });
-
       if (response.profileMadePublic) {
         void navigate({ to: '/welcome' });
         return;
       }
-
       setSuccess(true);
     } catch (error: unknown) {
       track('email_confirm_failed', {
@@ -56,105 +76,172 @@ export default function ConfirmEmailPage() {
     }
   }
 
-  return (
-    <section className="container container-spacer">
-      <form
-        className="form-horizontal"
-        noValidate
-        autoComplete="off"
-        onSubmit={handleConfirmEmail}
-      >
-        <fieldset>
-          <div className="row">
-            <div className="col-xs-12 text-center">
-              <img
-                className="hidden-xs"
-                src="/img/tree-color.svg"
-                alt="Trustroots"
-                width="120"
-                height="120"
-                aria-hidden="true"
-              />
-              <img
-                className="visible-xs-inline-block"
-                src="/img/tree-color.svg"
-                alt="Trustroots"
-                width="80"
-                height="80"
-                aria-hidden="true"
-              />
-              <br />
-              <br />
-            </div>
-          </div>
+  async function handleCancelEmailChange() {
+    setIsCancelling(true);
+    setCancelError(false);
+    try {
+      const result = await authApi.cancelEmailChange(token);
+      setCancelledEmail(result.currentEmail);
+    } catch {
+      setCancelError(true);
+    } finally {
+      setIsCancelling(false);
+    }
+  }
 
-          <div className="row">
-            <div className="col-xs-offset-2 col-xs-8 col-md-offset-4 col-md-4">
-              {!success && (
-                <div className="text-center form-group">
-                  {
-                    /* istanbul ignore next -- token decoding is covered by auth integration tests. */
-                    email && <h4>{email}</h4>
-                  }
-                  <p className="lead">
-                    {signup
-                      ? 'Confirm your email and make your profile visible to others.'
-                      : 'Confirm your email.'}
-                  </p>
-                  <Button
-                    intent="primary"
-                    size="lg"
-                    type="submit"
-                    disabled={isLoading || error}
-                  >
-                    Confirm
-                  </Button>
+  return (
+    <section className="container container-spacer email-confirmation">
+      <div
+        className="email-confirmation-card"
+        aria-labelledby="email-confirmation-title"
+      >
+        <img
+          src="/img/tree-color.svg"
+          alt=""
+          width="72"
+          height="80"
+          className="email-confirmation-tree"
+        />
+        <h1 id="email-confirmation-title">
+          {cancelledEmail
+            ? 'Email change cancelled'
+            : success
+              ? 'Email confirmed'
+              : details?.signup
+                ? 'Confirm your email'
+                : 'Confirm your email change'}
+        </h1>
+        {cancelledEmail ? (
+          <div role="status">
+            <p>
+              Your email change has been cancelled.{' '}
+              <strong className="email-confirmation-address">
+                {cancelledEmail}
+              </strong>{' '}
+              is still your active email address.
+            </p>
+            <p>The confirmation link can no longer be used.</p>
+            <Button
+              intent="primary"
+              size="lg"
+              className="tw:w-full"
+              render={<a href="/profile/edit/account" />}
+            >
+              Back to account settings
+            </Button>
+          </div>
+        ) : error ? (
+          <Alert intent="danger" role="alert">
+            <p>
+              <strong>We could not confirm your email.</strong>
+            </p>
+            <p>
+              The link may be invalid, expired or already used. If you just
+              confirmed, your email may already be updated.
+            </p>
+            {user ? (
+              <p>
+                Check your email or request a new confirmation in{' '}
+                <a href="/profile/edit/account">your settings</a>.
+              </p>
+            ) : (
+              <p>
+                <a href="/signin">Login first</a> to check your email or request
+                a new confirmation.
+              </p>
+            )}
+          </Alert>
+        ) : success ? (
+          <div role="status">
+            <p className="email-confirmation-intro">
+              Your email is now confirmed!
+            </p>
+            <p>
+              You can now use{' '}
+              <strong className="email-confirmation-address">
+                {details!.newEmail}
+              </strong>{' '}
+              to sign in and receive Trustroots notifications.
+            </p>
+            <Button
+              intent="primary"
+              size="lg"
+              className="tw:w-full"
+              render={<a href="/profile/edit/account" />}
+            >
+              Back to account settings
+            </Button>
+          </div>
+        ) : details ? (
+          <form
+            onSubmit={handleConfirmEmail}
+            aria-busy={isLoading || isCancelling}
+            aria-label="Email confirmation"
+          >
+            <p className="email-confirmation-intro">
+              {details.signup
+                ? 'One more step to join the community. Confirm your email to make your profile visible to other members.'
+                : 'Please check the addresses below before updating your account.'}
+            </p>
+            <dl className="email-confirmation-addresses">
+              {!details.signup && (
+                <div>
+                  <dt>Current email</dt>
+                  <dd>{details.currentEmail}</dd>
                 </div>
               )}
-              {error && (
-                <Alert className="tw:text-center" intent="danger" role="alert">
-                  <p>
-                    <strong>
-                      Email confirm token is invalid or has expired.
-                    </strong>
-                  </p>
-                  <p>
-                    Perhaps you already confirmed your email?
-                    {user && (
-                      <>
-                        {' '}
-                        Your current activated email is{' '}
-                        <strong>{user.email}</strong>
-                      </>
-                    )}
-                  </p>
-                  {user ? (
-                    <p>
-                      To send a new confirmation or change your email, navigate
-                      to <a href="/profile/edit/account">your settings</a>.
-                    </p>
-                  ) : (
-                    <p>
-                      <a href="/signin">Login first</a> to send a new
-                      confirmation or change your email.
-                    </p>
-                  )}
-                </Alert>
-              )}
-              {success && (
-                <Alert className="tw:text-center" intent="success" role="alert">
-                  <p>
-                    <strong>Your email is now confirmed!</strong>
-                  </p>
-                  <p>
-                    <a href="/profile/edit">Edit your profile</a>
-                  </p>
-                </Alert>
-              )}
-            </div>
-          </div>
-        </fieldset>
-      </form>
+              <div className="email-confirmation-new">
+                <dt>{details.signup ? 'Email address' : 'New email'}</dt>
+                <dd>{details.newEmail}</dd>
+              </div>
+            </dl>
+            <p>
+              {details.signup
+                ? 'This is where we will send your Trustroots notifications.'
+                : 'Once confirmed, your new email will replace your current address for signing in and receiving Trustroots notifications.'}
+            </p>
+            <Button
+              type="submit"
+              intent="primary"
+              size="lg"
+              className="tw:w-full"
+              disabled={isLoading || isCancelling}
+            >
+              {isLoading
+                ? 'Confirming…'
+                : details.signup
+                  ? 'Confirm email'
+                  : 'Confirm email change'}
+            </Button>
+            {!details.signup && (
+              <Button
+                type="button"
+                className="tw:mt-3 tw:w-full"
+                disabled={isLoading || isCancelling}
+                onClick={handleCancelEmailChange}
+              >
+                {isCancelling ? 'Cancelling…' : 'Cancel email change'}
+              </Button>
+            )}
+            {cancelError && (
+              <Alert intent="danger" role="alert">
+                Unable to cancel the email change. The link may have expired or
+                the change may already be complete. Check your account settings
+                or try again.
+              </Alert>
+            )}
+            {!details.signup && (
+              <p className="email-confirmation-help">
+                Need a different address?{' '}
+                <a href="/profile/edit/account">Go to account settings</a> to
+                check your email address.
+              </p>
+            )}
+          </form>
+        ) : (
+          <p role="status">Loading email details…</p>
+        )}
+      </div>
     </section>
   );
 }
