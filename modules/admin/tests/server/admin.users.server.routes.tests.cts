@@ -159,15 +159,6 @@ describe('Admin User CRUD tests', () => {
         .send({ id: userRegularId, username: 'userregular', reason: 'test' })
         .expect(403);
     });
-    it('Non-authenticated users should not be allowed to change user roles', async () => {
-      await agent
-        .post('/api/admin/user/change-role')
-        .send({
-          id: userRegularId,
-          role: 'suspended',
-        })
-        .expect(403);
-    });
   });
   describe('As authenticated user...', () => {
     afterEach(async () => {

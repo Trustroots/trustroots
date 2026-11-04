@@ -15,6 +15,8 @@
     "./Alert": "./src/components/Alert.tsx",
     "./Badge": "./src/components/Badge.tsx",
     "./Spinner": "./src/components/Spinner.tsx",
+    "./Tabs": "./src/components/Tabs.tsx",
+    "./ToggleGroup": "./src/components/ToggleGroup.tsx",
     "./intent": "./src/lib/intent.ts"
   },
   "imports": {

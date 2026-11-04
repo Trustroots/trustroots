@@ -1,9 +1,9 @@
 import { useLocation, useNavigate, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
 import { Alert } from '@trustroots/ui/Alert';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
+import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -195,17 +195,13 @@ export default function OfferHostPage({ user }: HostPageProps) {
           </Button>
         </div>
 
-        <Tabs
-          activeKey={activeTab}
-          className="offer-tabs"
-          id="offer-host-tabs"
-          onSelect={key => {
-            if (key !== null) {
-              selectTab(String(key));
-            }
-          }}
-        >
-          <Tab eventKey="availability" title="Availability">
+        <Tabs value={activeTab} onValueChange={selectTab}>
+          <TabsList variant="tabs" className="offer-tabs">
+            <Tab value="availability">Availability</Tab>
+            <Tab value="description">Description</Tab>
+            <Tab value="location">Location</Tab>
+          </TabsList>
+          <TabsPanel value="availability">
             {!hasLocation && (
               <Alert intent="info" role="status">
                 <a
@@ -375,8 +371,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
                 </p>
               </div>
             </div>
-          </Tab>
-          <Tab eventKey="description" title="Description">
+          </TabsPanel>
+          <TabsPanel value="description">
             {offer.status === 'no' && (
               <div className="panel panel-default">
                 <div className="panel-heading">
@@ -422,8 +418,8 @@ export default function OfferHostPage({ user }: HostPageProps) {
                 />
               </div>
             </div>
-          </Tab>
-          <Tab eventKey="location" title="Location">
+          </TabsPanel>
+          <TabsPanel value="location">
             <div id="location">
               {!hasLocation && (
                 <Alert intent="info" role="status">
@@ -473,7 +469,7 @@ export default function OfferHostPage({ user }: HostPageProps) {
                 }
               />
             </div>
-          </Tab>
+          </TabsPanel>
         </Tabs>
       </form>
     </section>

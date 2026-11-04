@@ -1,7 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useState } from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
 import { Button } from '@trustroots/ui/Button';
+import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
 import { useAnalytics } from '@trustroots/analytics/client';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -180,15 +180,14 @@ export default function OfferMeetEditPage() {
           Cancel
         </Button>
 
-        <Tabs
-          activeKey={activeTab}
-          className="offer-tabs"
-          id="offer-meet-tabs"
-          onSelect={key => {
-            if (key !== null) setActiveTab(Number(key));
-          }}
-        >
-          <Tab eventKey={0} title="Details">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList variant="tabs" className="offer-tabs">
+            <Tab value={0}>Details</Tab>
+            <Tab disabled={descriptionLength < MIN_DESCRIPTION} value={1}>
+              Location
+            </Tab>
+          </TabsList>
+          <TabsPanel value={0}>
             <div className="row">
               <div className="col-xs-12 col-sm-6 col-sm-push-6 text-center">
                 <MeetsExplanation />
@@ -255,12 +254,8 @@ export default function OfferMeetEditPage() {
                 </div>
               </div>
             </div>
-          </Tab>
-          <Tab
-            disabled={descriptionLength < MIN_DESCRIPTION}
-            eventKey={1}
-            title="Location"
-          >
+          </TabsPanel>
+          <TabsPanel value={1}>
             {!hasLocation && (
               <Alert intent="info" role="status">
                 Search for a place or move the map to set your meeting location.
@@ -271,7 +266,7 @@ export default function OfferMeetEditPage() {
               offerType="meet"
               onLocationChange={location => setOffer({ ...offer, location })}
             />
-          </Tab>
+          </TabsPanel>
         </Tabs>
 
         <div className="offer-meet-actions text-center">

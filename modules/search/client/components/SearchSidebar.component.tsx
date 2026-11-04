@@ -1,6 +1,6 @@
 import React from 'react';
-import { Tab, Tabs } from 'react-bootstrap';
 import { Button } from '@trustroots/ui/Button';
+import { Tab, Tabs, TabsList, TabsPanel } from '@trustroots/ui/Tabs';
 
 import SearchPlaceInput from './SearchPlaceInput.component';
 import SearchSidebarFilters from './SearchSidebarFilters.component';
@@ -33,7 +33,7 @@ interface SearchSidebarProps extends SearchSidebarResultsPassthrough {
       | import('../utils/location').MapPoint,
     type: 'center' | 'bounds',
   ) => void;
-  onTabSelect: (tab: string | null) => void;
+  onTabSelect: (tab: 'filters' | 'results') => void;
   onlineInPast6Months: boolean;
   onOnlineInPast6MonthsChange: () => void;
   searchQuery: string;
@@ -73,23 +73,20 @@ export default function SearchSidebar({
         />
       </div>
 
-      <Tabs
-        activeKey={activeTab}
-        className="search-sidebar-tabs"
-        id="search-sidebar-tabs"
-        justify
-        onSelect={onTabSelect}
-      >
-        <Tab
-          aria-label={`Search filters${
-            activeTab === 'filters' ? ' (active now)' : ''
-          }`}
-          eventKey="filters"
-          title={
+      <Tabs value={activeTab} onValueChange={onTabSelect}>
+        <TabsList variant="tabs" justified className="search-sidebar-tabs">
+          <Tab value="filters">
             <span>
               <i className="icon-sliders"></i> Filters
             </span>
-          }
+          </Tab>
+          <Tab value="results">Results</Tab>
+        </TabsList>
+        <TabsPanel
+          aria-label={`Search filters${
+            activeTab === 'filters' ? ' (active now)' : ''
+          }`}
+          value="filters"
         >
           <SearchSidebarFilters
             communityNotesEnabled={communityNotesEnabled}
@@ -100,16 +97,15 @@ export default function SearchSidebar({
             onlineInPast6Months={onlineInPast6Months}
             onOnlineInPast6MonthsChange={onOnlineInPast6MonthsChange}
           />
-        </Tab>
-        <Tab
+        </TabsPanel>
+        <TabsPanel
           aria-label={`Selected search results${
             activeTab === 'results' ? ' (active now)' : ''
           }`}
-          eventKey="results"
-          title="Results"
+          value="results"
         >
           <SearchSidebarResults {...resultsProps} />
-        </Tab>
+        </TabsPanel>
       </Tabs>
     </>
   );

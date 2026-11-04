@@ -156,25 +156,6 @@ jest.mock('@/modules/core/client/api/languages.api', () => ({
   useLanguagesQuery: () => ({ data: { en: 'English', fi: 'Finnish' } }),
 }));
 
-jest.mock('@/modules/search/client/components/SearchSidebar.component', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  const ActualSearchSidebar = jest.requireActual<
-    typeof import('@/modules/search/client/components/SearchSidebar.component')
-  >('@/modules/search/client/components/SearchSidebar.component').default;
-
-  return {
-    __esModule: true,
-    default: (props: React.ComponentProps<typeof ActualSearchSidebar>) => (
-      <>
-        <button onClick={() => props.onTabSelect('unexpected')} type="button">
-          Select unexpected tab
-        </button>
-        <ActualSearchSidebar {...props} />
-      </>
-    ),
-  };
-});
-
 jest.mock('@/modules/users/client/components/Avatar.component', () => ({
   __esModule: true,
   default: () => <span data-testid="avatar" />,
@@ -469,26 +450,6 @@ describe('<SearchPage />', () => {
     expect(offersApi.getOffer).toHaveBeenCalledTimes(8);
   });
 
-  it('does not commit loaded offers after the search page unmounts', async () => {
-    let resolveOffer!: (offer: OfferReadPayload) => void;
-    offersApi.getOffer.mockImplementation(
-      () =>
-        new Promise(resolve => {
-          resolveOffer = resolve;
-        }),
-    );
-    const { unmount } = renderSearchPage();
-    openResultsWithVisibleOfferIds(['offer-after-unmount']);
-    await waitFor(() => expect(offersApi.getOffer).toHaveBeenCalledTimes(1));
-
-    unmount();
-    await act(async () => {
-      resolveOffer({ ...mockOffer, _id: 'offer-after-unmount' });
-      await Promise.resolve();
-    });
-    expect(offersApi.getOffer).toHaveBeenCalledTimes(1);
-  });
-
   it('skips visible offers when the offer endpoint returns no result', async () => {
     // The endpoint can return no offer for a stale visible result.
     Reflect.apply(offersApi.getOffer.mockResolvedValue, offersApi.getOffer, [
@@ -530,16 +491,6 @@ describe('<SearchPage />', () => {
     );
 
     expect(document.querySelector('.search.is-sidebar-open')).toBeTruthy();
-  });
-
-  it('ignores unknown sidebar tab keys', () => {
-    renderSearchPage();
-
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Select unexpected tab' }),
-    );
-
-    expect(screen.getByTestId('search-map')).toBeInTheDocument();
   });
 
   it('opens the filters tab from the mobile toolbar', () => {

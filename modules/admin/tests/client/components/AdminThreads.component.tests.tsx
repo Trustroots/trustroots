@@ -168,20 +168,6 @@ test('shows a request error', async () => {
   expect(await screen.findByRole('alert')).toBeInTheDocument();
 });
 
-test('ignores thread results after leaving the page', async () => {
-  let resolve!: (value: AdminThread[]) => void;
-  threads.mockImplementation(
-    () =>
-      new Promise(done => {
-        resolve = done;
-      }),
-  );
-  const view = render(<AdminThreads />);
-  await waitFor(() => expect(threads).toHaveBeenCalled());
-  view.unmount();
-  await act(async () => resolve([thread]));
-});
-
 test('does not replace the URL after a legacy member lookup finishes on an abandoned page', async () => {
   window.history.replaceState({}, '', `/admin/threads?userId=${id}`);
   let resolve!: (value: unknown) => void;

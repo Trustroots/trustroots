@@ -2,45 +2,7 @@
 
 .create-experience-tabs {
   margin-top: @padding-base-horizontal;
-  .nav-pills {
-    margin-right: 1px;
-    > li {
-      clear: both;
-      width: 100%;
-      + li {
-        margin-left: 0;
-      }
-      > a {
-        color: @gray;
-        background: transparent;
-        font-style: italic;
-        padding: 3px 6px @padding-base-horizontal 6px;
-        cursor: default;
-        &:hover {
-          background: none;
-        }
-      }
-      &.active > a {
-        color: @brand-primary;
-        background: transparent;
-      }
-    }
-  }
   @media (min-width: @screen-xs-min) {
     margin-top: 0;
-    .nav-pills {
-      > li {
-        clear: none;
-        width: auto;
-        margin: 0;
-        &:not(:first-child) a:before {
-          display: list-item;
-          content: '—';
-          margin: 0 10px 0 0;
-          color: @gray-light;
-          float: left;
-        }
-      }
-    }
   }
 }
