@@ -932,16 +932,18 @@ describe('<Thread>', () => {
     beforeEach(() => {
       const messageFromOther = createMessage(otherUser);
       messageFromOther.content = 'Hi there from other user';
+      messageFromOther.created = '2026-01-01T10:00:00.000Z';
       const messageFromMe = createMessage(me);
       messageFromMe._id = 'my-message';
       messageFromMe.content = 'Hi there from me';
+      messageFromMe.created = '2026-01-01T11:00:00.000Z';
 
       api.messages.fetchMessages.mockResolvedValueOnce({
         messages: [messageFromOther, messageFromMe],
       });
     });
 
-    it('tracks a typed reply in an existing thread', async () => {
+    it('tracks a follow-up after an unanswered reply in an existing thread', async () => {
       api.messages.sendMessage.mockResolvedValueOnce({
         data: { ...createMessage(me), _id: 'typed-reply' },
       } as Awaited<ReturnType<typeof messagesAPI.sendMessage>>);
@@ -952,7 +954,7 @@ describe('<Thread>', () => {
 
       await waitFor(() =>
         expect(analytics.track).toHaveBeenCalledWith('message_sent', {
-          kind: 'reply',
+          kind: 'followup',
           via: 'editor',
         }),
       );

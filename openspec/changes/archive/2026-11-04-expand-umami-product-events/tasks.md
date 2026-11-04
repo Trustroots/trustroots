@@ -6,4 +6,4 @@
 - [x] Give every feature `*_failed` event a fixed `reason` from the HTTP status, with component tests for each reason.
 - [x] Enable Web Vitals collection on the Umami script tag, with a server route test.
 - [x] Document every event and the question it answers in `docs/analytics.md`, kept in step by a unit test, and update the sign-in end-to-end test for the renamed event and its `reason`.
-- [ ] Update living specifications and archive the change after merge.
+- [x] Update living specifications and archive the completed change.

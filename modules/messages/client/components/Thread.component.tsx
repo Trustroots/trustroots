@@ -363,9 +363,10 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
       // A reply answers the other member; a follow-up chases one's own
       // unanswered messages.
       track('message_sent', {
-        kind: messages.some(message => message.userFrom?._id !== user._id)
-          ? 'reply'
-          : 'followup',
+        kind:
+          messages[messages.length - 1].userFrom?._id !== user._id
+            ? 'reply'
+            : 'followup',
         via,
       });
     }

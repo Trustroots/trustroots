@@ -77,13 +77,7 @@ describe('SearchPlaceInput', () => {
       }),
     );
 
-    const rendered = render(
-      <SearchPlaceInput
-        onPlaceSearch={onPlaceSearch}
-        searchQuery="Paris"
-        setSearchQuery={setSearchQuery}
-      />,
-    );
+    const rendered = renderInput('Paris');
     await waitFor(() => {
       expect(locationApi.fetchLocationSuggestions).toHaveBeenCalledWith(
         'Paris',
