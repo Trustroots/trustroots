@@ -702,6 +702,9 @@ describe('Admin acquisition stories controller unit tests', () => {
       );
       should(res.body).not.have.property('email');
       should(sentToken).not.equal(oldToken);
+      Buffer.from(sentToken.slice(40), 'hex')
+        .toString('utf8')
+        .should.equal(fixture.email);
       send.calledOnce.should.equal(true);
       const updated = await User.findById(user._id).exec();
       should(updated?.public).equal(false);

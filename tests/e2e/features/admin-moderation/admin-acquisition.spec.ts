@@ -316,6 +316,12 @@ test.describe('admin acquisition feature coverage', () => {
         'emailToken',
       );
       expect(replacementToken).not.toBe(originalToken);
+      const confirmationPage = await context.newPage();
+      await confirmationPage.goto(`/confirm-email/${replacementToken}`);
+      await expect(
+        confirmationPage.getByText(originalEmail, { exact: true }),
+      ).toBeVisible();
+      await confirmationPage.close();
       const resentMember = await withE2eDb(db =>
         db.collection('users').findOne({ username: member.username }),
       );

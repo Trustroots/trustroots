@@ -2,6 +2,7 @@ import mongoose, { type Types } from 'mongoose';
 import crypto from 'node:crypto';
 import mail from '../../../core/server/services/email.server.service.mts';
 import { setEmailConfirmationToken } from '../../../users/server/services/email-confirmation.server.service.mts';
+import authenticationService from '../../../users/server/services/authentication.server.service.mts';
 import {
   getAdminIdentityIdentifiers,
   getUniqueAdminIdentityIdentifiers,
@@ -334,7 +335,10 @@ export const resendConfirmation = async (
     }
 
     const previousToken = user.emailToken;
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = authenticationService.generateEmailToken(
+      user,
+      crypto.randomBytes(20),
+    );
     setEmailConfirmationToken(user, token);
     const updated = await User.updateOne(
       {
