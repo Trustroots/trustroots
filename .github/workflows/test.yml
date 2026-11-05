@@ -666,8 +666,12 @@ jobs:
           path: coverage-report
       - name: Update pull request coverage comment
         if: github.event.pull_request.head.repo.full_name == github.repository
+        # The comment is informational; the coverage gate is the step below.
+        # A GitHub API blip (e.g. 503) must not fail the run.
+        continue-on-error: true
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         with:
+          retries: 3
           script: |
             const fs = require('fs');
             const marker = '<!-- trustroots-coverage-report -->';
