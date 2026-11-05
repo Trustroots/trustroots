@@ -3,7 +3,11 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 
 // Internal dependencies
-import { getAcquisitionStories } from '../api/acquisition-stories.api';
+import {
+  getAcquisitionStories,
+  resendAcquisitionStoryConfirmation,
+} from '../api/acquisition-stories.api';
+import { getErrorMessage } from '@/modules/core/client/api/http-client.js';
 import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
@@ -61,6 +65,7 @@ interface AcquisitionStory {
   hostingLocation?: number[];
   acquisitionStory?: string;
   public?: boolean;
+  emailConfirmed: boolean;
   restrictionStatuses?: RestrictionStatus[];
   restrictedMatches?: RestrictedMatch[];
   languages?: string[];
@@ -187,6 +192,12 @@ export default function AdminAcquisitionStories() {
   const viewerLanguages = user?.languages || [];
   const publicProfile = !hasRole('admin');
   const [stories, setStories] = useState<AcquisitionStory[]>([]);
+  const [sendingConfirmationIds, setSendingConfirmationIds] = useState<
+    Set<string>
+  >(() => new Set());
+  const [confirmationFeedback, setConfirmationFeedback] = useState<
+    Record<string, { kind: 'success' | 'error'; message: string }>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [profileVisibility, setProfileVisibility] =
@@ -237,6 +248,40 @@ export default function AdminAcquisitionStories() {
           ? 'descending'
           : 'ascending',
     }));
+  }
+
+  async function resendConfirmation(story: AcquisitionStory) {
+    setSendingConfirmationIds(current => new Set(current).add(story._id));
+    setConfirmationFeedback(current => {
+      const next = { ...current };
+      delete next[story._id];
+      return next;
+    });
+
+    try {
+      const { message } = await resendAcquisitionStoryConfirmation(story._id);
+      setConfirmationFeedback(current => ({
+        ...current,
+        [story._id]: {
+          kind: 'success',
+          message: message || 'Confirmation email sent.',
+        },
+      }));
+    } catch (error: unknown) {
+      setConfirmationFeedback(current => ({
+        ...current,
+        [story._id]: {
+          kind: 'error',
+          message: getErrorMessage(error, 'Could not send confirmation email.'),
+        },
+      }));
+    } finally {
+      setSendingConfirmationIds(current => {
+        const next = new Set(current);
+        next.delete(story._id);
+        return next;
+      });
+    }
   }
 
   return (
@@ -333,6 +378,10 @@ export default function AdminAcquisitionStories() {
                   tooltip="Whether the member's profile is visible to other members"
                 />
                 <StaticHeader
+                  label="Email confirmed"
+                  tooltip="Whether the member confirmed their signup email"
+                />
+                <StaticHeader
                   label="Restricted matches"
                   tooltip="Suspended or shadowbanned accounts with a matching username or email identifier"
                 />
@@ -413,6 +462,38 @@ export default function AdminAcquisitionStories() {
                   </td>
                   <td>{story.acquisitionStory}</td>
                   <td>{story.public === true ? 'Visible' : 'Hidden'}</td>
+                  <td>
+                    <span>
+                      {story.emailConfirmed === true
+                        ? 'Confirmed'
+                        : 'Not confirmed'}
+                    </span>
+                    {story.emailConfirmed === false && (
+                      <div>
+                        <Button
+                          disabled={sendingConfirmationIds.has(story._id)}
+                          onClick={() => resendConfirmation(story)}
+                          type="button"
+                        >
+                          {sendingConfirmationIds.has(story._id)
+                            ? 'Sending…'
+                            : 'Send confirmation'}
+                        </Button>
+                      </div>
+                    )}
+                    {confirmationFeedback[story._id] && (
+                      <p
+                        aria-live="polite"
+                        role={
+                          confirmationFeedback[story._id].kind === 'error'
+                            ? 'alert'
+                            : 'status'
+                        }
+                      >
+                        {confirmationFeedback[story._id].message}
+                      </p>
+                    )}
+                  </td>
                   <td>
                     {(story.restrictedMatches || []).map(match => (
                       <div key={match._id}>

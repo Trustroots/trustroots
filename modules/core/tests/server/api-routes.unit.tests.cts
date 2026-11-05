@@ -657,7 +657,10 @@ describe('API route registrations', () => {
       ],
       'support',
     );
-    const acquisitionStories = controller(['list'], 'adminAcquisitionStories');
+    const acquisitionStories = controller(
+      ['list', 'resendConfirmation'],
+      'adminAcquisitionStories',
+    );
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const usernameChanges = controller(['list'], 'adminUsernameChanges');
     const locationCorrections = controller(
@@ -739,6 +742,13 @@ describe('API route registrations', () => {
       auditLog.record,
       acquisitionStories.list,
     ]);
+    assertHandlers(
+      routeByPath(
+        routes,
+        '/api/admin/acquisition-stories/:memberId/resend-confirmation',
+      ).post,
+      [auditLog.record, acquisitionStories.resendConfirmation],
+    );
     assert.strictEqual(
       routes.some(
         route => route.path === '/api/admin/acquisition-stories/analysis',

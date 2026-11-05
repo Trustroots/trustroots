@@ -2,7 +2,9 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('./../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-require('should');
+const sinon: typeof import('sinon') = require('sinon');
+const mail: typeof import('../../../core/server/services/email.server.service.mts') = require('../../../core/server/services/email.server.service.mts');
+const should: typeof import('should') = require('should');
 
 type Credentials = { username: string; password: string };
 type AcquisitionStoryRow = {
@@ -55,6 +57,7 @@ describe('Admin acquisition stories CRUD tests', () => {
     });
     describe('As authenticated user...', () => {
       afterEach(async () => {
+        sinon.restore();
         await utils.signOut(agent);
       });
       it('non-admin users should not be allowed to read acquisition stories', async () => {
@@ -91,6 +94,48 @@ describe('Admin acquisition stories CRUD tests', () => {
           .set('X-Trustroots-Request', '1')
           .send({ id: target!._id, role: 'shadowban', action: 'remove' })
           .expect(403);
+      });
+      it('lets a greeter resend signup confirmation for an unconfirmed acquisition story', async () => {
+        const User = mongoose.model('User');
+        const target = await User.findOne({
+          acquisitionStory: acquisitionStories[2],
+        }).exec();
+        if (!target) throw new Error('Expected an acquisition-story member');
+        await User.updateOne(
+          { _id: target._id },
+          {
+            $set: {
+              public: false,
+              emailTemporary: 'signup-member@example.org',
+            },
+          },
+        );
+        await User.updateOne(
+          { username: credentialsRegular.username },
+          { $set: { roles: ['user', 'welcome-team'] } },
+        );
+        const send = sinon
+          .stub(mail, 'sendSignupEmailConfirmation')
+          .callsFake(
+            (
+              _user: Parameters<typeof mail.sendSignupEmailConfirmation>[0],
+              done: Parameters<typeof mail.sendSignupEmailConfirmation>[1],
+            ) => done(),
+          );
+        await utils.signIn(credentialsRegular, agent);
+
+        const { body }: { body: { message: string } } = await agent
+          .post(
+            `/api/admin/acquisition-stories/${target._id.toString()}/resend-confirmation`,
+          )
+          .set('X-Trustroots-Request', '1')
+          .expect(200);
+
+        body.message.should.equal('Sent confirmation email.');
+        send.calledOnce.should.equal(true);
+        const updated = await User.findById(target._id).exec();
+        should(updated?.public).equal(false);
+        should(updated?.emailTemporary).equal('signup-member@example.org');
       });
       it('admin users should be allowed to read acquisition stories', async () => {
         await utils.signIn(credentialsAdmin, agent);

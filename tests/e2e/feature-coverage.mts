@@ -3051,10 +3051,20 @@ const features = [
       ],
       apiRoutes: [
         apiRoute('POST', '/api/admin/acquisition-stories', source.adminServer),
+        apiRoute(
+          'POST',
+          '/api/admin/acquisition-stories/:memberId/resend-confirmation',
+          source.adminServer,
+        ),
       ],
     },
     requiredScenarios: [
       'Greeters can view stories without other administrator access.',
+      'Acquisition stories show whether signup email is confirmed.',
+      'Greeters can replace an unconfirmed signup link with a fresh link.',
+      'The old link is invalidated and the fresh link activates the account.',
+      'Confirmed members have no resend action and regular members are denied.',
+      'The acquisition story response contains no email addresses or tokens.',
       'Acquisition stories page loads.',
       'Acquisition stories query returns deterministic rows.',
       'Story rows show available member and hosting locations.',
