@@ -71,6 +71,11 @@ describe('Admin policy unit tests', () => {
       .sort((a, b) => a.resources.localeCompare(b.resources))
       .should.deepEqual([
         { resources: '/api/admin/acquisition-stories', permissions: ['post'] },
+        {
+          resources:
+            '/api/admin/acquisition-stories/:memberId/resend-confirmation',
+          permissions: ['post'],
+        },
         { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
           resources: '/api/admin/location-corrections/send',
@@ -85,6 +90,11 @@ describe('Admin policy unit tests', () => {
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/acquisition-stories');
+    policies[0].allows
+      .map(allow => allow.resources)
+      .should.containEql(
+        '/api/admin/acquisition-stories/:memberId/resend-confirmation',
+      );
     policies[0].allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/staff-blockers');

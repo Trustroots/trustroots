@@ -4,12 +4,17 @@
 const should: typeof import('should') = require('should');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon = require('sinon');
+const mail: typeof import('../../../core/server/services/email.server.service.mts') = require('../../../core/server/services/email.server.service.mts');
+const {
+  emailConfirmationTokenQuery,
+  setEmailConfirmationToken,
+}: typeof import('../../../users/server/services/email-confirmation.server.service.mts') = require('../../../users/server/services/email-confirmation.server.service.mts');
 
 type AcquisitionController =
   typeof import('../../server/controllers/admin.acquisition-stories.server.controller.mts');
 const adminAcquisitionStories: Pick<
   AcquisitionController,
-  'list'
+  'list' | 'resendConfirmation'
 > = require('./../../server/controllers/admin.acquisition-stories.server.controller.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 type OfferRecord =
@@ -22,6 +27,10 @@ type StoryFixture =
   import('../../../../testutils/common/data.common.testutil.mts').ServerUserFixture & {
     acquisitionStory?: string;
     emailTemporary?: string;
+    emailToken?: string;
+    emailTokenIssuedAt?: Date;
+    emailTokenExpires?: Date;
+    $locals?: { actionTokens?: Record<string, string> };
     locationFrom?: string;
     locationLiving?: string;
     member?: UserRecord['member'];
@@ -45,6 +54,7 @@ type AcquisitionStory = {
   circleCount: number;
   created?: Date;
   displayName?: string;
+  emailConfirmed: boolean;
   hostingLocation: number[] | null;
   languages: string[];
   locationFrom?: string;
@@ -55,7 +65,13 @@ type AcquisitionStory = {
   restrictedMatches: RestrictedMatch[];
   username: string;
 };
-type MockResponse = { body: unknown; send(body: unknown): MockResponse };
+type MockResponse = {
+  body: unknown;
+  statusCode: number;
+  send(body: unknown): MockResponse;
+  json(body: unknown): MockResponse;
+  status(code: number): MockResponse;
+};
 const Offer = mongoose.model<OfferRecord>('Offer');
 const User = mongoose.model<UserRecord>('User');
 const Message = mongoose.model<MessageRecord>('Message');
@@ -122,6 +138,8 @@ function isAcquisitionStory(value: unknown): value is AcquisitionStory {
     (value.welcomer === null || isWelcomer(value.welcomer)) &&
     'public' in value &&
     typeof value.public === 'boolean' &&
+    'emailConfirmed' in value &&
+    typeof value.emailConfirmed === 'boolean' &&
     'restrictionStatuses' in value &&
     Array.isArray(value.restrictionStatuses) &&
     'restrictedMatches' in value &&
@@ -165,8 +183,17 @@ function isRestrictedMatch(value: unknown): value is RestrictedMatch {
 function mockResponse(): MockResponse {
   const res: MockResponse = {
     body: null,
+    statusCode: 200,
     send(body) {
       res.body = body;
+      return res;
+    },
+    json(body) {
+      res.body = body;
+      return res;
+    },
+    status(code) {
+      res.statusCode = code;
       return res;
     },
   };
@@ -274,7 +301,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('breaks equal contact timestamps by message ID and ignores deleted senders', async () => {
-      const users = generateStoryUsers(3);
+      const users = generateStoryUsers(4);
       users[0].acquisitionStory = 'Another fictional recommendation.';
       users[1].roles = users[2].roles = ['user', 'welcome-team'];
       const saved = await utils.saveUsers(users);
@@ -393,7 +420,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
 
     it('returns acquisition stories for users who have one', async () => {
-      const users = generateStoryUsers(3);
+      const users = generateStoryUsers(4);
       users[0].acquisitionStory = 'Found via couch surfing';
       users[0].member = [{ tribe: new mongoose.Types.ObjectId() }];
       users[0].locationFrom = 'Fictional origin';
@@ -401,14 +428,19 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[0].public = true;
       users[1].acquisitionStory = 'Found through a fictional gathering';
       users[1].public = false;
-      users[2].acquisitionStory = '';
+      users[1].emailTemporary = users[1].email;
+      users[2].acquisitionStory = 'A confirmed private account.';
+      users[2].public = false;
+      users[2].emailTemporary = '';
+      users[3].acquisitionStory = '';
 
-      const [visibleUser, hiddenUser] = await utils.saveUsers(users);
+      const [visibleUser, hiddenUser, confirmedPrivateUser] =
+        await utils.saveUsers(users);
 
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
 
-      storyList(res).length.should.equal(2);
+      storyList(res).length.should.equal(3);
       const visibleStory = findStory(
         res,
         story => story.username === visibleUser.username,
@@ -417,17 +449,26 @@ describe('Admin acquisition stories controller unit tests', () => {
         res,
         story => story.username === hiddenUser.username,
       );
+      const confirmedPrivateStory = findStory(
+        res,
+        story => story.username === confirmedPrivateUser.username,
+      );
       should(visibleStory.acquisitionStory).equal('Found via couch surfing');
       visibleStory.circleCount.should.equal(1);
       should(visibleStory.locationFrom).equal('Fictional origin');
       should(visibleStory.locationLiving).equal('Fictional home');
       visibleStory.public.should.equal(true);
       hiddenStory.public.should.equal(false);
+      visibleStory.emailConfirmed.should.equal(true);
+      hiddenStory.emailConfirmed.should.equal(false);
+      confirmedPrivateStory.emailConfirmed.should.equal(true);
       should(visibleStory.hostingLocation).equal(null);
       should(visibleStory).not.have.property('member');
       visibleStory.restrictedMatches.should.deepEqual([]);
       should(visibleStory).not.have.property('email');
       should(visibleStory).not.have.property('emailTemporary');
+      should(hiddenStory).not.have.property('email');
+      should(hiddenStory).not.have.property('emailTemporary');
     });
 
     it('returns identifier matches but ignores exact and similar stories', async () => {
@@ -617,6 +658,136 @@ describe('Admin acquisition stories controller unit tests', () => {
       await adminAcquisitionStories.list({}, res);
 
       should(storyList(res)).eql([]);
+    });
+  });
+
+  describe('resendConfirmation', () => {
+    it('replaces the pending signup token and sends only the confirmation', async () => {
+      const [fixture] = generateStoryUsers(1);
+      fixture.email = 'signup-member@example.org';
+      fixture.acquisitionStory = 'A fictional introduction.';
+      fixture.public = false;
+      fixture.emailTemporary = fixture.email;
+      const oldToken = 'fictional-old-confirmation-token';
+      setEmailConfirmationToken(fixture, oldToken);
+      const [user] = await utils.saveUsers([fixture]);
+      let sentToken = '';
+      const send = sinon
+        .stub(mail, 'sendSignupEmailConfirmation')
+        .callsFake(
+          (
+            sentUser: Parameters<typeof mail.sendSignupEmailConfirmation>[0],
+            done: Parameters<typeof mail.sendSignupEmailConfirmation>[1],
+          ) => {
+            sentToken = String(
+              (
+                sentUser as {
+                  $locals?: { actionTokens?: Record<string, string> };
+                }
+              ).$locals?.actionTokens?.emailToken,
+            );
+            done();
+          },
+        );
+      const res = mockResponse();
+
+      await adminAcquisitionStories.resendConfirmation(
+        { params: { memberId: user._id.toString() } },
+        res,
+      );
+
+      res.statusCode.should.equal(200);
+      (res.body as { message: string }).message.should.equal(
+        'Sent confirmation email.',
+      );
+      should(res.body).not.have.property('email');
+      should(sentToken).not.equal(oldToken);
+      send.calledOnce.should.equal(true);
+      const updated = await User.findById(user._id).exec();
+      should(updated?.public).equal(false);
+      should(updated?.emailTemporary).equal(fixture.email);
+      should(
+        await User.findOne(emailConfirmationTokenQuery(oldToken)).exec(),
+      ).equal(null);
+      should(
+        await User.findOne(emailConfirmationTokenQuery(sentToken)).exec(),
+      ).not.equal(null);
+    });
+
+    it('rejects invalid and ineligible targets without sending', async () => {
+      const [fixture] = generateStoryUsers(1);
+      fixture.email = 'signup-member@example.org';
+      fixture.acquisitionStory = 'A fictional introduction.';
+      fixture.public = true;
+      fixture.emailTemporary = 'pending-change@example.test';
+      const [user] = await utils.saveUsers([fixture]);
+      const send = sinon.stub(mail, 'sendSignupEmailConfirmation');
+      const invalid = mockResponse();
+      await adminAcquisitionStories.resendConfirmation(
+        { params: { memberId: 'not-an-id' } },
+        invalid,
+      );
+      invalid.statusCode.should.equal(400);
+      const confirmed = mockResponse();
+      await adminAcquisitionStories.resendConfirmation(
+        { params: { memberId: user._id.toString() } },
+        confirmed,
+      );
+      confirmed.statusCode.should.equal(400);
+      send.called.should.equal(false);
+    });
+
+    it('does not overwrite an account changed before the atomic update', async () => {
+      const [fixture] = generateStoryUsers(1);
+      fixture.email = 'signup-member@example.org';
+      fixture.acquisitionStory = 'A fictional introduction.';
+      fixture.public = false;
+      fixture.emailTemporary = fixture.email;
+      setEmailConfirmationToken(fixture, 'fictional-current-token');
+      const [user] = await utils.saveUsers([fixture]);
+      const update = sinon.stub(User, 'updateOne').returns({
+        exec: async () => ({ modifiedCount: 0 }),
+      } as never);
+      const send = sinon.stub(mail, 'sendSignupEmailConfirmation');
+      const res = mockResponse();
+
+      await adminAcquisitionStories.resendConfirmation(
+        { params: { memberId: user._id.toString() } },
+        res,
+      );
+
+      update.calledOnce.should.equal(true);
+      res.statusCode.should.equal(400);
+      send.called.should.equal(false);
+    });
+
+    it('reports delivery failures without returning signup details', async () => {
+      const [fixture] = generateStoryUsers(1);
+      fixture.email = 'signup-member@example.org';
+      fixture.acquisitionStory = 'A fictional introduction.';
+      fixture.public = false;
+      fixture.emailTemporary = fixture.email;
+      const [user] = await utils.saveUsers([fixture]);
+      sinon
+        .stub(mail, 'sendSignupEmailConfirmation')
+        .callsFake(
+          (
+            _sentUser: Parameters<typeof mail.sendSignupEmailConfirmation>[0],
+            done: Parameters<typeof mail.sendSignupEmailConfirmation>[1],
+          ) => done(new Error('fictional failure')),
+        );
+      const res = mockResponse();
+
+      await adminAcquisitionStories.resendConfirmation(
+        { params: { memberId: user._id.toString() } },
+        res,
+      );
+
+      res.statusCode.should.equal(500);
+      (res.body as { message: string }).message.should.equal(
+        'Could not send the confirmation email. Please try again.',
+      );
+      should(res.body).not.have.property('email');
     });
   });
 });

@@ -8,7 +8,7 @@ import {
   registerViaApi,
   signInViaApi,
 } from '../../support/helpers.mts';
-import { withE2eDb } from '../../support/db.mts';
+import { findActionToken, withE2eDb } from '../../support/db.mts';
 
 interface AcquisitionMatch {
   username: string;
@@ -186,6 +186,182 @@ test.describe('admin acquisition feature coverage', () => {
         }),
       );
       await context.close();
+    }
+  });
+
+  test('greeters can resend signup confirmation for unconfirmed acquisition stories', async ({
+    browser,
+    baseURL,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.acquisition-stories', [
+      'Acquisition stories show whether signup email is confirmed.',
+      'Greeters can replace an unconfirmed signup link with a fresh link.',
+      'The old link is invalidated and the fresh link activates the account.',
+      'Confirmed members have no resend action and regular members are denied.',
+      'The acquisition story response contains no email addresses or tokens.',
+    ]);
+
+    const greeter = createUser();
+    const member = createUser();
+    const confirmed = createUser();
+    const regular = createUser();
+    const context = await createIsolatedContext(browser, baseURL);
+    const regularContext = await createIsolatedContext(browser, baseURL);
+    try {
+      for (const user of [greeter, member, confirmed]) {
+        await registerViaApi(context.request, user);
+      }
+      await registerViaApi(regularContext.request, regular);
+      await withE2eDb(async db => {
+        await db
+          .collection('users')
+          .updateOne(
+            { username: greeter.username },
+            { $set: { roles: ['user', 'welcome-team'], public: true } },
+          );
+        await db.collection('users').updateOne(
+          { username: member.username },
+          {
+            $set: {
+              acquisitionStory: 'A fictional referral.',
+              public: false,
+              emailTemporary: member.email,
+            },
+          },
+        );
+        await db.collection('users').updateOne(
+          { username: confirmed.username },
+          {
+            $set: {
+              acquisitionStory: 'A second fictional referral.',
+              public: true,
+            },
+            $unset: {
+              emailTemporary: '',
+              emailToken: '',
+              emailTokenExpires: '',
+            },
+          },
+        );
+      });
+      const memberId = await withE2eDb(async db =>
+        String(
+          (await db.collection('users').findOne({ username: member.username }))!
+            ._id,
+        ),
+      );
+      await signInViaApi(await context.newPage(), context.request, greeter);
+      const regularPage = await regularContext.newPage();
+      await signInViaApi(regularPage, regularContext.request, regular);
+
+      const listResponse = await context.request.post(
+        '/api/admin/acquisition-stories',
+        { headers: { 'X-Trustroots-Request': '1' } },
+      );
+      expect(listResponse.ok()).toBeTruthy();
+      const stories = (await listResponse.json()) as Array<{
+        _id: string;
+        username: string;
+        emailConfirmed: boolean;
+        [key: string]: unknown;
+      }>;
+      const pendingStory = stories.find(
+        story => story.username === member.username,
+      )!;
+      const confirmedStory = stories.find(
+        story => story.username === confirmed.username,
+      )!;
+      expect(pendingStory.emailConfirmed).toBe(false);
+      expect(confirmedStory.emailConfirmed).toBe(true);
+      expect(JSON.stringify(stories)).not.toContain(member.email);
+      expect(JSON.stringify(stories)).not.toContain(
+        await findActionToken(member.username, 'emailToken'),
+      );
+
+      const page = await context.newPage();
+      await page.goto('/admin/acquisition-stories');
+      const pendingRow = page.locator('tbody tr').filter({
+        has: page.locator(`a[href="/profile/${member.username}"]`),
+      });
+      const confirmedRow = page.locator('tbody tr').filter({
+        has: page.locator(`a[href="/profile/${confirmed.username}"]`),
+      });
+      await expect(
+        pendingRow.getByText('Not confirmed', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        confirmedRow.getByText('Confirmed', { exact: true }),
+      ).toBeVisible();
+      await expect(
+        confirmedRow.getByRole('button', { name: 'Send confirmation' }),
+      ).toHaveCount(0);
+      await page.screenshot({
+        path: testInfo.outputPath('acquisition-email-confirmation-status.png'),
+        fullPage: true,
+      });
+
+      const originalToken = await findActionToken(
+        member.username,
+        'emailToken',
+      );
+      const originalEmail = member.email;
+      await pendingRow
+        .getByRole('button', { name: 'Send confirmation' })
+        .click();
+      await expect(pendingRow.getByRole('status')).toHaveText(
+        'Sent confirmation email.',
+      );
+      const replacementToken = await findActionToken(
+        member.username,
+        'emailToken',
+      );
+      expect(replacementToken).not.toBe(originalToken);
+      const resentMember = await withE2eDb(db =>
+        db.collection('users').findOne({ username: member.username }),
+      );
+      expect(resentMember?.public).toBe(false);
+      expect(resentMember?.emailTemporary).toBe(originalEmail);
+      expect(resentMember?.emailTokenExpires).toBeInstanceOf(Date);
+      const remainingTokenLifetime =
+        resentMember!.emailTokenExpires!.getTime() - Date.now();
+      expect(remainingTokenLifetime).toBeGreaterThan(23 * 60 * 60 * 1000);
+      expect(remainingTokenLifetime).toBeLessThanOrEqual(24 * 60 * 60 * 1000);
+      const oldLink = await context.request.post(
+        `/api/auth/confirm-email/${originalToken}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
+      );
+      expect(oldLink.status()).toBe(400);
+      const confirmedResend = await context.request.post(
+        `/api/admin/acquisition-stories/${confirmedStory._id}/resend-confirmation`,
+        { headers: { 'X-Trustroots-Request': '1' } },
+      );
+      expect(confirmedResend.status()).toBe(400);
+      const newLink = await context.request.post(
+        `/api/auth/confirm-email/${replacementToken}`,
+        { headers: { 'X-Trustroots-Request': '1' } },
+      );
+      expect(newLink.ok()).toBeTruthy();
+
+      const denied = await regularContext.request.post(
+        `/api/admin/acquisition-stories/${memberId}/resend-confirmation`,
+        { headers: { 'X-Trustroots-Request': '1' } },
+      );
+      expect(denied.status()).toBe(403);
+    } finally {
+      await withE2eDb(db =>
+        db.collection('users').deleteMany({
+          username: {
+            $in: [
+              greeter.username,
+              member.username,
+              confirmed.username,
+              regular.username,
+            ],
+          },
+        }),
+      );
+      await context.close();
+      await regularContext.close();
     }
   });
 
@@ -464,7 +640,7 @@ test.describe('admin acquisition feature coverage', () => {
       await expect(
         contactedRow.getByRole('link', { name: 'Fictional Welcomer' }),
       ).toHaveAttribute('href', `/profile/${welcomer.username}`);
-      const contactTime = contactedRow.locator('td').nth(7).locator('time');
+      const contactTime = contactedRow.locator('td').nth(8).locator('time');
       await expect(contactTime).toHaveAttribute(
         'datetime',
         /\d{4}-\d{2}-\d{2}T/,

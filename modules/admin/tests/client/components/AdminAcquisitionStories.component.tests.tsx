@@ -36,6 +36,7 @@ type AcquisitionStoryFixture = {
   circleCount?: number;
   created?: string;
   displayName?: string;
+  emailConfirmed?: boolean;
   hostingLocation?: number[];
   locationFrom?: string;
   locationLiving?: string;
@@ -571,6 +572,142 @@ describe('<AdminAcquisitionStories />', () => {
       await screen.findByRole('link', { name: 'casey' }),
     ).toBeInTheDocument();
     expect(screen.getByRole('table')).toHaveTextContent('casey');
+  });
+
+  it('shows confirmation status and resends only for unconfirmed stories', async () => {
+    let resolveConfirmation: (value: { message: string }) => void = () => {};
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: 'confirmed-id',
+        username: 'confirmed-member',
+        emailConfirmed: true,
+      },
+      {
+        _id: 'unconfirmed-id',
+        username: 'unconfirmed-member',
+        emailConfirmed: false,
+        public: false,
+      },
+      { _id: 'missing-id', username: 'missing-status-member' },
+    ]);
+    mockedAcquisitionStoriesApi.resendAcquisitionStoryConfirmation.mockReturnValueOnce(
+      new Promise(resolve => {
+        resolveConfirmation = resolve;
+      }),
+    );
+
+    render(<AdminAcquisitionStories />);
+    await screen.findByRole('table');
+
+    const confirmedRow = screen
+      .getByRole('link', { name: 'confirmed-member' })
+      .closest('tr')!;
+    const unconfirmedRow = screen
+      .getByRole('link', { name: 'unconfirmed-member' })
+      .closest('tr')!;
+    const missingRow = screen
+      .getByRole('link', { name: 'missing-status-member' })
+      .closest('tr')!;
+
+    expect(within(confirmedRow).getByText('Confirmed')).toBeVisible();
+    expect(
+      within(confirmedRow).queryByRole('button', { name: 'Send confirmation' }),
+    ).not.toBeInTheDocument();
+    expect(within(unconfirmedRow).getByText('Not confirmed')).toBeVisible();
+    expect(within(missingRow).getByText('Not confirmed')).toBeVisible();
+    expect(
+      within(missingRow).queryByRole('button', { name: 'Send confirmation' }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(
+      within(unconfirmedRow).getByRole('button', { name: 'Send confirmation' }),
+    );
+    const sendingButton = within(unconfirmedRow).getByRole('button', {
+      name: 'Sending…',
+    });
+    expect(sendingButton).toBeDisabled();
+    expect(
+      mockedAcquisitionStoriesApi.resendAcquisitionStoryConfirmation,
+    ).toHaveBeenCalledWith('unconfirmed-id');
+
+    resolveConfirmation({ message: 'Confirmation email sent.' });
+    expect(await within(unconfirmedRow).findByRole('status')).toHaveTextContent(
+      'Confirmation email sent.',
+    );
+    expect(within(unconfirmedRow).getByText('Hidden')).toBeVisible();
+    expect(
+      within(unconfirmedRow).getByRole('button', {
+        name: 'Send confirmation',
+      }),
+    ).toBeEnabled();
+  });
+
+  it('shows the server error when resending a confirmation fails', async () => {
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: 'unconfirmed-id',
+        username: 'unconfirmed-member',
+        emailConfirmed: false,
+      },
+    ]);
+    mockedAcquisitionStoriesApi.resendAcquisitionStoryConfirmation.mockRejectedValueOnce(
+      { response: { data: { message: 'Could not send this confirmation.' } } },
+    );
+
+    render(<AdminAcquisitionStories />);
+    const row = (
+      await screen.findByRole('link', { name: 'unconfirmed-member' })
+    ).closest('tr')!;
+    fireEvent.click(
+      within(row).getByRole('button', { name: 'Send confirmation' }),
+    );
+
+    expect(await within(row).findByRole('alert')).toHaveTextContent(
+      'Could not send this confirmation.',
+    );
+    expect(
+      within(row).getByRole('button', { name: 'Send confirmation' }),
+    ).toBeEnabled();
+  });
+
+  it('uses a fallback message for empty success and network error responses', async () => {
+    mockedAcquisitionStoriesApi.getAcquisitionStories.mockResolvedValueOnce([
+      {
+        _id: 'empty-message-id',
+        username: 'empty-message-member',
+        emailConfirmed: false,
+      },
+      {
+        _id: 'network-error-id',
+        username: 'network-error-member',
+        emailConfirmed: false,
+      },
+    ]);
+    mockedAcquisitionStoriesApi.resendAcquisitionStoryConfirmation
+      .mockResolvedValueOnce({ message: '' })
+      .mockRejectedValueOnce(new Error('network failure'));
+
+    render(<AdminAcquisitionStories />);
+    const successRow = (
+      await screen.findByRole('link', { name: 'empty-message-member' })
+    ).closest('tr')!;
+    const errorRow = screen
+      .getByRole('link', { name: 'network-error-member' })
+      .closest('tr')!;
+
+    fireEvent.click(
+      within(successRow).getByRole('button', { name: 'Send confirmation' }),
+    );
+    expect(await within(successRow).findByRole('status')).toHaveTextContent(
+      'Confirmation email sent.',
+    );
+
+    fireEvent.click(
+      within(errorRow).getByRole('button', { name: 'Send confirmation' }),
+    );
+    expect(await within(errorRow).findByRole('alert')).toHaveTextContent(
+      'Could not send confirmation email.',
+    );
   });
 
   it('sorts stories by every table column', async () => {

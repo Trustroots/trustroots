@@ -68,6 +68,11 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/acquisition-stories',
           permissions: ['post'],
         },
+        {
+          resources:
+            '/api/admin/acquisition-stories/:memberId/resend-confirmation',
+          permissions: ['post'],
+        },
         { resources: '/api/admin/location-corrections', permissions: ['get'] },
         {
           resources: '/api/admin/location-corrections/send',
@@ -105,6 +110,11 @@ export const invokeRolesPolicies = () => {
         },
         {
           resources: '/api/admin/acquisition-stories',
+          permissions: ['post'],
+        },
+        {
+          resources:
+            '/api/admin/acquisition-stories/:memberId/resend-confirmation',
           permissions: ['post'],
         },
         { resources: '/api/admin/location-corrections', permissions: ['get'] },

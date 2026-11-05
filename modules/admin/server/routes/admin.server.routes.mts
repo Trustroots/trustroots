@@ -134,6 +134,10 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .post(adminAuditLog.record, adminAcquisitionStories.list);
   app
+    .route('/api/admin/acquisition-stories/:memberId/resend-confirmation')
+    .all(adminPolicy.isAllowed)
+    .post(adminAuditLog.record, adminAcquisitionStories.resendConfirmation);
+  app
     .route('/api/admin/location-corrections')
     .all(adminPolicy.isAllowed)
     .get(adminAuditLog.record, adminLocationCorrections.list);

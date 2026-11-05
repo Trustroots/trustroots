@@ -1,4 +1,7 @@
 import mongoose, { type Types } from 'mongoose';
+import crypto from 'node:crypto';
+import mail from '../../../core/server/services/email.server.service.mts';
+import { setEmailConfirmationToken } from '../../../users/server/services/email-confirmation.server.service.mts';
 import {
   getAdminIdentityIdentifiers,
   getUniqueAdminIdentityIdentifiers,
@@ -11,6 +14,10 @@ interface UserRecord {
   displayName?: string;
   email: string;
   emailTemporary: string;
+  emailToken?: string;
+  emailTokenIssuedAt?: Date;
+  emailTokenExpires?: Date;
+  $locals?: { actionTokens?: Record<string, string> };
   languages?: string[];
   locationFrom?: string;
   locationLiving?: string;
@@ -68,6 +75,7 @@ interface AcquisitionStory {
   circleCount: number;
   created?: Date;
   displayName?: string;
+  emailConfirmed: boolean;
   hostingLocation: number[] | null;
   locationFrom?: string;
   locationLiving?: string;
@@ -81,6 +89,16 @@ interface AcquisitionStory {
 
 interface SendResponse {
   send(body: unknown): unknown;
+}
+
+interface ResendResponse {
+  status(code: number): ResendResponse;
+  send(body: unknown): unknown;
+  json(body: unknown): unknown;
+}
+
+interface ResendRequest {
+  params?: { memberId?: unknown };
 }
 
 const Offer = mongoose.model<OfferRecord>('Offer');
@@ -175,6 +193,7 @@ function storyForList(
     circleCount: story.member.length,
     created: story.created,
     displayName: story.displayName,
+    emailConfirmed: Boolean(story.public || !story.emailTemporary),
     hostingLocation,
     locationFrom: story.locationFrom,
     locationLiving: story.locationLiving,
@@ -289,7 +308,73 @@ export const list = async (
   return res.send(results);
 };
 
-const defaultInterop = { list };
+/** @esmNamed */
+/** Issue a fresh signup confirmation for an acquisition-story member. */
+export const resendConfirmation = async (
+  req: ResendRequest,
+  res: ResendResponse,
+): Promise<unknown> => {
+  const userId = req.params?.memberId;
+  if (typeof userId !== 'string' || !/^[a-f\d]{24}$/i.test(userId)) {
+    return res.status(400).send({ message: 'Invalid account.' });
+  }
+
+  try {
+    const id = new mongoose.Types.ObjectId(String(userId));
+    const user = await User.findOne({
+      _id: id,
+      acquisitionStory: { $exists: true, $ne: '' },
+      public: false,
+      emailTemporary: { $type: 'string', $ne: '' },
+    }).exec();
+    if (!user) {
+      return res.status(400).send({
+        message: 'This account is no longer eligible for signup confirmation.',
+      });
+    }
+
+    const previousToken = user.emailToken;
+    const token = crypto.randomBytes(32).toString('hex');
+    setEmailConfirmationToken(user, token);
+    const updated = await User.updateOne(
+      {
+        _id: id,
+        acquisitionStory: { $exists: true, $ne: '' },
+        public: false,
+        emailTemporary: String(user.emailTemporary),
+        emailToken: previousToken ? String(previousToken) : { $in: ['', null] },
+      },
+      {
+        $set: {
+          emailToken: user.emailToken,
+          emailTokenIssuedAt: user.emailTokenIssuedAt,
+          emailTokenExpires: user.emailTokenExpires,
+        },
+      },
+    ).exec();
+    if (updated.modifiedCount !== 1) {
+      return res.status(400).send({
+        message:
+          'This account changed. Refresh the acquisition stories and try again.',
+      });
+    }
+
+    await new Promise<void>((resolve, reject) =>
+      mail.sendSignupEmailConfirmation(user, error =>
+        error ? reject(error) : resolve(),
+      ),
+    );
+    return res.json({
+      message: 'Sent confirmation email.',
+    });
+  } catch {
+    return res.status(500).send({
+      message: 'Could not send the confirmation email. Please try again.',
+    });
+  }
+};
+
+const defaultInterop = { list, resendConfirmation };
 export default defaultInterop;
 /** @commonjs */
 export { defaultInterop as 'module.exports' };
