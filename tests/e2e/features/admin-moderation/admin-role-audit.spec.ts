@@ -385,10 +385,19 @@ test.describe('admin role and audit feature coverage', () => {
     await page.goto(`/admin/user?id=${target._id}`);
     await assertMemberProfileCleanup(page, target);
     await page.getByRole('button', { name: 'Unshadowban' }).click();
+    // While the request is in flight the dialog button reads "Updating…", so
+    // the Unshadowban button count is briefly 0 before the role is written.
+    // Wait for the actual response instead.
+    const roleChange = page.waitForResponse(
+      response =>
+        response.url().includes('/api/admin/user/change-role') &&
+        response.request().method() === 'POST',
+    );
     await page
       .getByRole('dialog')
       .getByRole('button', { name: 'Unshadowban', exact: true })
       .click();
+    expect((await roleChange).status()).toBe(200);
     await expect(page.getByRole('button', { name: 'Unshadowban' })).toHaveCount(
       0,
     );
