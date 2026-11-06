@@ -8,6 +8,7 @@ import {
   getUserByUsername,
   setUserRole,
   deleteMember,
+  unsuspendMember,
   type UserSearchOptions,
 } from '@/modules/admin/client/api/users.api';
 
@@ -162,5 +163,18 @@ describe('admin users api', () => {
       reason: 'confirmed request',
       keywords: [],
     });
+  });
+});
+
+it('sends explicit unsuspension confirmation and the administrator reason', async () => {
+  const data = { changed: true, message: 'Member unsuspended.' };
+  axiosMock.post.mockResolvedValueOnce(response(data));
+  await expect(
+    unsuspendMember('member-1', 'A fictional review.'),
+  ).resolves.toEqual(data);
+  expect(axiosMock.post).toHaveBeenCalledWith('/api/admin/user/unsuspend', {
+    id: 'member-1',
+    reason: 'A fictional review.',
+    confirmed: true,
   });
 });

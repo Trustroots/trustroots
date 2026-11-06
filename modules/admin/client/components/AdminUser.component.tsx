@@ -26,6 +26,7 @@ import {
   deleteMember,
 } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
+import UnsuspendMember from './UnsuspendMember.component';
 import AdminNotes from './AdminNotes';
 import AdminReferenceVoteItem from './AdminReferenceVoteItem.component';
 import AdminUserResultsTable from './AdminUserResultsTable.component';
@@ -923,6 +924,15 @@ export class AdminUserContent extends Component<
                     <span className="admin-user-action-label">
                       Account access
                     </span>
+                    {isSuspended && (
+                      <UnsuspendMember
+                        member={user.profile}
+                        onRefresh={async () => {
+                          const refreshed = await getUser(user.profile._id);
+                          this.setState({ user: refreshed });
+                        }}
+                      />
+                    )}
                     {[
                       {
                         role: 'suspended',
