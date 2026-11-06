@@ -53,7 +53,7 @@ export async function unsuspendMember(
     });
   }
   try {
-    const member = await User.findById(id)
+    const member = await User.findById(new mongoose.Types.ObjectId(id))
       .select('username roles authVersion')
       .lean()
       .exec();
