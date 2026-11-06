@@ -94,6 +94,7 @@ interface SupportRequest {
     body?: unknown;
     idempotencyKey?: unknown;
     confirmUncertain?: unknown;
+    flagged?: unknown;
   };
   route: { path: string };
   user: {
@@ -213,7 +214,12 @@ async function audit(req: SupportRequest): Promise<void> {
       ),
       ...(req.query.q ? { hasSearch: true } : {}),
     },
-    body: req.body?.status ? { status: req.body.status } : {},
+    body: {
+      ...(req.body?.status ? { status: req.body.status } : {}),
+      ...(typeof req.body?.flagged === 'boolean'
+        ? { flagged: req.body.flagged }
+        : {}),
+    },
   }).save();
 }
 
@@ -666,7 +672,47 @@ export const member = handler(async (req, res) => {
   return res.json(memberPayload(result));
 });
 
+/** @esmNamed */
+export const flaggedMembers = handler(async (req, res) => {
+  const page = pageNumber(req.query);
+  const members = await User.find({ roles: 'flagged' })
+    .select('_id username displayName public roles')
+    .sort({ _id: 1 })
+    .skip((page - 1) * PAGE_SIZE)
+    .limit(PAGE_SIZE + 1)
+    .lean();
+  await audit(req);
+  return res.json({
+    items: members.slice(0, PAGE_SIZE),
+    page,
+    hasMore: members.length > PAGE_SIZE,
+  });
+});
+
+/** @esmNamed */
+export const setFlag = handler(async (req, res) => {
+  const id = objectId(req.params.memberId);
+  const flagged = req.body?.flagged;
+  if (typeof flagged !== 'boolean')
+    throw invalid('A boolean flag is required.');
+  await audit(req);
+  const result = await User.findByIdAndUpdate(
+    id,
+    flagged
+      ? { $addToSet: { roles: 'flagged' } }
+      : { $pull: { roles: 'flagged' } },
+    { returnDocument: 'after' },
+  )
+    .select('_id')
+    .lean();
+  if (!result)
+    throw Object.assign(new Error('Member not found.'), { status: 404 });
+  return res.json({ flagged });
+});
+
 const api = {
+  flaggedMembers,
+  setFlag,
   list,
   detail,
   setStatus,

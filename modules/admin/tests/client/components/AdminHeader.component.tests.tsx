@@ -35,6 +35,7 @@ describe('<AdminHeader />', () => {
         [
           'Support inbox',
           'Member search',
+          'Flagged members',
           'Staff blockers',
           'Location corrections',
         ],

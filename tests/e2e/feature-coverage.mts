@@ -3011,6 +3011,46 @@ const features = [
     ],
   },
   {
+    id: 'admin.flagged-members',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Support can flag profiles for internal moderation follow-up.',
+    roles: ['admin', 'support-team'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin.support.flagged',
+          '/admin/support/flagged',
+          source.adminClient,
+          { requiresAuth: true },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/admin/support-flagged-members',
+          source.adminServer,
+        ),
+        apiRoute(
+          'PATCH',
+          '/api/admin/support-members/:memberId/flag',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Support can flag and unflag members in internal profile views.',
+      'Support can find flagged members in a paginated list.',
+      'Flags grant no permissions and remain hidden from member-facing data.',
+    ],
+    relatedSpecs: [
+      spec(
+        'flagged-members.spec.js',
+        'support can flag, find and unflag members without changing their access',
+      ),
+    ],
+  },
+  {
     id: 'admin.audit-log',
     area: AREA.adminModeration,
     status: STATUS.active,
@@ -3060,7 +3100,7 @@ const features = [
       apiRoutes: [apiRoute('GET', '/api/admin/support', source.adminServer)],
     },
     requiredScenarios: [
-      'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
+      'Support can triage requests and inspect linked conversations and experiences without suspension authority.',
       'Support can search for a member from the top of the inbox.',
     ],
     relatedSpecs: [],

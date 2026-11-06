@@ -1,3 +1,4 @@
+import MemberFlag from './MemberFlag.component';
 import { useNavigate, useParams, useSearch } from '@tanstack/react-router';
 import React, { useEffect, useState } from 'react';
 import { plainText } from '../../../core/client/utils/filters';
@@ -454,7 +455,12 @@ function useResource<T>(path: string) {
       active = false;
     };
   }, [path, revision]);
-  return { data, failed, reload: () => setRevision(value => value + 1) };
+  return {
+    data,
+    setData,
+    failed,
+    reload: () => setRevision(value => value + 1),
+  };
 }
 
 function ResourceState({ failed }: { failed: boolean }) {
@@ -886,7 +892,11 @@ export function SupportMemberSearchPage() {
 }
 
 export function SupportMemberPage({ id }: { id: string }) {
-  const { data: member, failed } = useResource<SupportMember>(
+  const {
+    data: member,
+    setData,
+    failed,
+  } = useResource<SupportMember>(
     `/api/admin/support-members/${encodeURIComponent(id)}`,
   );
   const canOpenAdminUserPage = useAuth().hasRole('admin');
@@ -921,6 +931,10 @@ export function SupportMemberPage({ id }: { id: string }) {
               )}
             </h1>
             <UserState user={member} />
+            <MemberFlag
+              member={member}
+              onChanged={roles => setData({ ...member, roles })}
+            />
             {member.pendingDeletion && <p>Pending deletion</p>}
             <p>{member.email}</p>
             <p>{member.tagline}</p>

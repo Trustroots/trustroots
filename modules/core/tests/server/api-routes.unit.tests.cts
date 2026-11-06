@@ -653,6 +653,8 @@ describe('API route registrations', () => {
         'setStatus',
         'investigation',
         'searchMembers',
+        'flaggedMembers',
+        'setFlag',
         'member',
       ],
       'support',
@@ -730,6 +732,14 @@ describe('API route registrations', () => {
     assertHandlers(routeByPath(routes, '/api/admin/user/unsuspend').post, [
       unsuspension.unsuspendMember,
     ]);
+    assertHandlers(
+      routeByPath(routes, '/api/admin/support-flagged-members').get,
+      [support.flaggedMembers],
+    );
+    assertHandlers(
+      routeByPath(routes, '/api/admin/support-members/:memberId/flag').patch,
+      [support.setFlag],
+    );
     assertHandlers(routeByPath(routes, '/api/admin/support').get, [
       support.list,
     ]);

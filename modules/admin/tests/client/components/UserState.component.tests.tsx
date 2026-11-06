@@ -5,6 +5,14 @@ import '@testing-library/jest-dom';
 import UserState from '@/modules/admin/client/components/UserState.component';
 
 describe('<UserState />', () => {
+  it('labels flagged members for follow-up with a warning badge', () => {
+    render(<UserState user={{ roles: ['user', 'flagged'], public: true }} />);
+    expect(screen.getByText('Flagged for follow-up')).toHaveAttribute(
+      'data-intent',
+      'warning',
+    );
+    expect(screen.queryByText('Hidden profile')).not.toBeInTheDocument();
+  });
   it('displays the Greeters label', () => {
     render(<UserState user={{ roles: ['welcome-team'], public: true }} />);
     expect(screen.getByText('Greeter')).toBeInTheDocument();

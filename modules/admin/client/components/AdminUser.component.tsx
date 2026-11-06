@@ -1,3 +1,4 @@
+import MemberFlag from './MemberFlag.component';
 // External dependencies
 import get from 'lodash/get';
 import { formatRoleLabel } from '../utils/role-label';
@@ -100,6 +101,8 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 };
 
 const ROLE_DESCRIPTIONS: Record<string, string> = {
+  flagged:
+    'Internal moderation follow-up flag. Grants no permissions and does not restrict the account.',
   'welcome-team':
     'Greeters can view acquisition stories and see members who blocked their account.',
   admin: 'Full access to administration and moderation tools.',
@@ -908,6 +911,14 @@ export class AdminUserContent extends Component<
                   <strong>{profileLabel}</strong>
                 </h3>
 
+                <MemberFlag
+                  member={user.profile}
+                  onChanged={roles =>
+                    this.setState({
+                      user: { ...user, profile: { ...user.profile, roles } },
+                    })
+                  }
+                />
                 <div className="admin-user-actions">
                   {user.profile.username && !isSuspended && (
                     <Button
@@ -1090,7 +1101,8 @@ export class AdminUserContent extends Component<
                           >
                             {role === 'welcome-team' ||
                             role === 'volunteer' ||
-                            role === 'volunteer-alumni' ? (
+                            role === 'volunteer-alumni' ||
+                            role === 'flagged' ? (
                               <a
                                 href={`/admin/search-users?role=${encodeURIComponent(
                                   role,

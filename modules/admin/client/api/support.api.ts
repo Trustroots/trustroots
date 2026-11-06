@@ -133,3 +133,13 @@ export async function retryReply(
   );
   return data;
 }
+
+export async function setMemberFlag(
+  id: string,
+  flagged: boolean,
+): Promise<void> {
+  await http.patch(
+    `/api/admin/support-members/${encodeURIComponent(id)}/flag`,
+    { flagged },
+  );
+}

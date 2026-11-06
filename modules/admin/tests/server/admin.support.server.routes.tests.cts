@@ -11,7 +11,7 @@ import type {
 const mongoose: typeof import('mongoose') = require('mongoose');
 const request: typeof import('supertest') = require('supertest');
 const sinon: typeof import('sinon') = require('sinon');
-require('should');
+const should: typeof import('should') = require('should');
 const express: typeof import('../../../../config/lib/express.mjs') & {
   init(connection: import('mongoose').Connection): Promise<TestExpressApp>;
 } = require('../../../../config/lib/express.mjs');
@@ -88,6 +88,128 @@ describe('Support team access and investigation', () => {
       .set('X-Trustroots-Request', '1')
       .send({ status: value });
   }
+  it('flags and unflags profiles idempotently without changing account state', async () => {
+    const target = users[2];
+    const before = await User.findById(target._id).lean();
+    const path = `/api/admin/support-members/${target._id}/flag`;
+    for (const flagged of [true, true, false, false]) {
+      await agent
+        .patch(path)
+        .send({ flagged, roles: ['admin'], public: false })
+        .expect(200);
+      const saved = await User.findById(target._id).lean();
+      saved!.roles!.includes('flagged').should.equal(flagged);
+      saved!
+        .roles!.filter(role => role !== 'flagged')
+        .should.deepEqual(before!.roles);
+      (saved!.public === before!.public).should.be.true();
+      (saved!.newsletter === before!.newsletter).should.be.true();
+      (saved!.authVersion === before!.authVersion).should.be.true();
+    }
+    const audits = await AuditLog.find({
+      route: '/api/admin/support-members/:memberId/flag',
+    }).lean();
+    audits.length.should.equal(4);
+    const values = audits as unknown as { body: { flagged: boolean } }[];
+    values
+      .map(item => item.body.flagged)
+      .should.deepEqual([true, true, false, false]);
+    await utils.signOut(agent);
+    await utils.signIn(raw[3], agent);
+    await agent.patch(path).send({ flagged: true }).expect(200);
+    await agent
+      .post('/api/admin/users/by-role')
+      .send({ role: 'flagged' })
+      .expect(200);
+  });
+
+  it('lists flagged members on bounded stable pages without private content', async () => {
+    const fixtures = Array.from({ length: 51 }, (_, index) => ({
+      username: `flagged-fixture-${index}`,
+      email: `flagged-fixture-${index}@example.test`,
+      displayName: 'Fictional Member',
+      roles: ['user', 'flagged'],
+      public: true,
+    }));
+    await User.collection.insertMany(fixtures);
+    const first = await agent
+      .get('/api/admin/support-flagged-members')
+      .expect(200);
+    first.body.items.length.should.equal(50);
+    first.body.hasMore.should.equal(true);
+    first.body.items[0].username.should.equal('flagged-fixture-0');
+    Object.keys(first.body.items[0])
+      .sort()
+      .should.deepEqual(['_id', 'displayName', 'public', 'roles', 'username']);
+    const second = await agent
+      .get('/api/admin/support-flagged-members?page=2')
+      .expect(200);
+    second.body.items.length.should.equal(1);
+    second.body.items[0].username.should.equal('flagged-fixture-50');
+    second.body.hasMore.should.equal(false);
+    await User.updateOne(
+      { username: 'flagged-fixture-0' },
+      { $pull: { roles: 'flagged' } },
+    );
+    const changed = await agent
+      .get('/api/admin/support-flagged-members')
+      .expect(200);
+    changed.body.items[0].username.should.equal('flagged-fixture-1');
+    await agent
+      .get('/api/admin/support-flagged-members?page=1000000')
+      .expect(400);
+  });
+
+  it('rejects invalid flag inputs and missing accounts', async () => {
+    const path = `/api/admin/support-members/${users[2]._id}/flag`;
+    await agent.patch(path).set('X-Trustroots-Request', '1').expect(400);
+    for (const flagged of [undefined, null, 'true', 1, {}, []]) {
+      await agent.patch(path).send({ flagged }).expect(400);
+    }
+    await agent
+      .patch('/api/admin/support-members/invalid/flag')
+      .send({ flagged: true })
+      .expect(400);
+    await agent
+      .patch('/api/admin/support-members/000000000000000000000001/flag')
+      .send({ flagged: false })
+      .expect(404);
+    sinon
+      .stub(AuditLog.prototype, 'save')
+      .rejects(new Error('audit unavailable'));
+    await agent.patch(path).send({ flagged: true }).expect(500);
+    const saved = await User.findById(users[2]._id).lean();
+    saved!.roles!.includes('flagged').should.be.false();
+  });
+
+  it('denies flag APIs to visitors, regular members, greeters and flagged members', async () => {
+    const path = `/api/admin/support-members/${users[2]._id}/flag`;
+    await request(app).get('/api/admin/support-flagged-members').expect(403);
+    await request(app).patch(path).send({ flagged: true }).expect(403);
+    await utils.signOut(agent);
+    for (const roles of [
+      ['user'],
+      ['user', 'welcome-team'],
+      ['user', 'flagged'],
+    ]) {
+      await User.updateOne({ _id: users[2]._id }, { $set: { roles } });
+      await utils.signIn(raw[2], agent);
+      await agent.get('/api/admin/support-flagged-members').expect(403);
+      await agent.patch(path).send({ flagged: true }).expect(403);
+      await agent
+        .post('/api/admin/user/change-role')
+        .send({ id: users[2]._id, role: 'admin' })
+        .expect(403);
+      const profile = await agent
+        .get(`/api/users/${users[2].username}`)
+        .expect(200);
+      should.not.exist(profile.body.roles);
+      const shell = await agent.get('/').expect(200);
+      shell.text.should.not.containEql('"flagged"');
+      await utils.signOut(agent);
+    }
+  });
+
   it('triages requests, records access and keeps resolved investigations available', async () => {
     await Message.create([
       {
