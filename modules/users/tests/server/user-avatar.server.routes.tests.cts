@@ -29,7 +29,7 @@ describe('User Avatar CRUD tests', () => {
   const _users: AvatarFixture[] = utils.generateUsers(6);
 
   // "Gravatar" avatar user
-  // By default users get assigned 'gravatar' as source
+  // Existing Gravatar selection retained during the transition
   _users[0].public = true;
   _users[0].avatarSource = 'gravatar';
   _users[0].avatarUploaded = true; // Used to source switching test
@@ -141,6 +141,22 @@ describe('User Avatar CRUD tests', () => {
         res.text.should.equal(
           `Found. Redirecting to http://${config.domain}/uploads-profile/${localUser}/avatar/1024.jpg?`,
         );
+      });
+      it('rejects Gravatar overrides once the owner switches away', async () => {
+        await agent
+          .get(`/api/users/${gravatarUser}/avatar?source=gravatar`)
+          .expect(302);
+        await agent
+          .put('/api/users')
+          .send({ avatarSource: 'none' })
+          .expect(200);
+        await agent
+          .get(`/api/users/${gravatarUser}/avatar?source=gravatar`)
+          .expect(400);
+        const response = await agent
+          .get(`/api/users/${gravatarUser}/avatar`)
+          .expect(302);
+        response.headers.location.should.containEql('/img/avatar-1024.png');
       });
       it('Get Gravatar image', async () => {
         const { res } = (await agent

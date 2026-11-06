@@ -118,7 +118,7 @@ describe('ProfileEditPhoto', () => {
       'JPG, PNG or GIF. Maximum file size: 5 MB. Photos are automatically resized.',
     );
     expect(screen.getByLabelText('My own')).toBeChecked();
-    expect(screen.getByLabelText('Gravatar')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Gravatar')).not.toBeInTheDocument();
     expect(screen.getByLabelText('None')).toBeInTheDocument();
   });
 
@@ -224,21 +224,25 @@ describe('ProfileEditPhoto', () => {
     expect(await screen.findByText('Profile photo updated.')).toBeVisible();
   });
 
-  it('switches avatar source to gravatar', async () => {
-    updateUser.mockResolvedValue({ ...user, avatarSource: 'gravatar' });
-    renderPage({ avatarUploaded: true, avatarSource: 'local' });
+  it('retains an existing Gravatar selection until switching away', async () => {
+    updateUser.mockResolvedValue({ ...user, avatarSource: 'none' });
+    renderPage();
 
-    fireEvent.click(screen.getByLabelText('Gravatar'));
+    expect(screen.getByLabelText('Gravatar')).toBeChecked();
+    fireEvent.click(screen.getByLabelText('None'));
 
-    await waitFor(() => {
-      expect(usersApi.update).toHaveBeenCalledWith(
-        expect.objectContaining({ avatarSource: 'gravatar' }),
-      );
-    });
     expect(await screen.findByText('Profile photo updated.')).toBeVisible();
-    expect(analytics.track).toHaveBeenCalledWith('profile_section_saved', {
-      section: 'photo',
-    });
+    expect(screen.getByLabelText('None')).toBeChecked();
+    expect(screen.queryByLabelText('Gravatar')).not.toBeInTheDocument();
+    expect(usersApi.update).toHaveBeenCalledWith(
+      expect.objectContaining({ avatarSource: 'none' }),
+    );
+  });
+
+  it('does not offer Gravatar to a member without a photo', () => {
+    renderPage({ avatarSource: 'none' });
+    expect(screen.getByLabelText('None')).toBeChecked();
+    expect(screen.queryByLabelText('Gravatar')).not.toBeInTheDocument();
   });
 
   it('rejects files that exceed the upload limit', () => {

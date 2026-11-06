@@ -47,6 +47,7 @@ describe('<AdminHeader />', () => {
         [
           'Audit log',
           'Username changes',
+          'Gravatar',
           'Spam account cleanup',
           'Signup watchlist',
         ],

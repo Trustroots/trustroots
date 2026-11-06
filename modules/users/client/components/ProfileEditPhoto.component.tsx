@@ -103,7 +103,7 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
     };
   }
 
-  async function handleSourceChange(source: 'local' | 'gravatar' | 'none') {
+  async function handleSourceChange(source: 'local' | 'none') {
     const nextUser = { ...draftUser, avatarSource: source };
 
     try {
@@ -176,14 +176,12 @@ export default function ProfileEditPhoto({ user }: { user: UserProfile }) {
                       {t('My own')}
                     </label>
                   )}
-                  <label className="radio">
-                    <input
-                      type="radio"
-                      checked={draftUser.avatarSource === 'gravatar'}
-                      onChange={() => handleSourceChange('gravatar')}
-                    />
-                    {t('Gravatar')}
-                  </label>
+                  {draftUser.avatarSource === 'gravatar' && (
+                    <label className="radio">
+                      <input type="radio" checked disabled />
+                      {t('Gravatar')}
+                    </label>
+                  )}
                   <label className="radio">
                     <input
                       type="radio"

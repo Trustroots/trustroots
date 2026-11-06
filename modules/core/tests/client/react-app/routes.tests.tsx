@@ -540,6 +540,11 @@ describe('React route ownership', () => {
     });
     expect(adminRoute.render).toEqual(expect.any(Function));
 
+    expect(findRoute('/admin/gravatar')).toMatchObject({
+      path: '/admin/gravatar',
+      requiresAuth: true,
+      requiresRole: ['admin'],
+    });
     const usernameChangesRoute = findRoute('/admin/username-changes')!;
     expect(usernameChangesRoute).toMatchObject({
       footerVariant: 'admin',

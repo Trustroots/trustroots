@@ -663,6 +663,7 @@ describe('API route registrations', () => {
     );
     const auditLog = controller(['list', 'record', 'actors'], 'adminAuditLog');
     const usernameChanges = controller(['list'], 'adminUsernameChanges');
+    const gravatar = controller(['list'], 'adminGravatar');
     const locationCorrections = controller(
       ['list', 'send'],
       'adminLocationCorrections',
@@ -704,6 +705,7 @@ describe('API route registrations', () => {
         '../controllers/admin.acquisition-stories.server.controller':
           acquisitionStories,
         '../controllers/admin.audit-log.server.controller': auditLog,
+        '../controllers/admin.gravatar.server.controller': gravatar,
         '../controllers/admin.username-changes.server.controller':
           usernameChanges,
         '../controllers/admin.location-corrections.server.controller':
@@ -720,6 +722,9 @@ describe('API route registrations', () => {
       },
     );
 
+    assertHandlers(routeByPath(routes, '/api/admin/gravatar').get, [
+      gravatar.list,
+    ]);
     assertHandlers(routeByPath(routes, '/api/admin/support').get, [
       support.list,
     ]);

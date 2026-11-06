@@ -12,6 +12,7 @@ import {
   signInViaApi,
   waitForTribesList,
 } from '../../support/helpers.mts';
+import { updateUserByUsername } from '../../support/db.mts';
 import { stubStatisticsImages } from '../../support/statistics.mts';
 
 test.describe('authenticated member flows', () => {
@@ -247,6 +248,63 @@ test.describe('authenticated member flows', () => {
     } finally {
       await context.close();
     }
+  });
+
+  test('members cannot start using Gravatar', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Members cannot select Gravatar through photo settings or the profile API.',
+    ]);
+    await page.goto('/profile/edit/photo');
+    await expect(
+      page.getByRole('button', { name: 'Upload photo' }),
+    ).toBeVisible();
+    await expect(page.getByLabel('None', { exact: true })).toBeChecked();
+    await expect(page.getByLabel('Gravatar', { exact: true })).toHaveCount(0);
+    const rejected = await request.put('/api/users', {
+      data: { avatarSource: 'gravatar' },
+    });
+    expect(rejected.status()).toBe(400);
+    await page.reload();
+    await expect(page.getByLabel('None', { exact: true })).toBeChecked();
+  });
+
+  test('existing Gravatar members can switch away but cannot resume', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-photo', [
+      'Existing Gravatar members retain their images until switching away permanently.',
+    ]);
+    const member = createUser();
+    await registerViaApi(request, member);
+    await updateUserByUsername(member.username, {
+      $set: { avatarSource: 'gravatar' },
+    });
+    await signInViaApi(page, request, member);
+    await page.route('https://gravatar.com/**', route => route.abort());
+    await page.goto('/profile/edit/photo');
+    await expect(page.getByLabel('Gravatar', { exact: true })).toBeChecked();
+    await expect(page.getByLabel('Gravatar', { exact: true })).toBeDisabled();
+    const updated = await page.request.put('/api/users', {
+      data: {
+        tagline: 'A fictional transition note',
+        avatarSource: 'gravatar',
+      },
+    });
+    expect(updated.ok()).toBeTruthy();
+    expect((await updated.json()).avatarSource).toBe('gravatar');
+    await page.getByLabel('None', { exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('Profile photo updated.');
+    await expect(page.getByLabel('Gravatar', { exact: true })).toHaveCount(0);
+    await page.reload();
+    await expect(page.getByLabel('None', { exact: true })).toBeChecked();
+    const rejected = await page.request.put('/api/users', {
+      data: { avatarSource: 'gravatar' },
+    });
+    expect(rejected.status()).toBe(400);
   });
 
   test('profile edit "about" form is reachable', async ({ page }, testInfo) => {

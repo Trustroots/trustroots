@@ -65,6 +65,7 @@ export default function AdminHeader() {
       pages: [
         { path: 'audit-log', label: 'Audit log' },
         { path: 'username-changes', label: 'Username changes' },
+        { path: 'gravatar', label: 'Gravatar' },
         { path: 'spam-cleanup', label: 'Spam account cleanup' },
         { path: 'signup-review-rules', label: 'Signup watchlist' },
       ],

@@ -1463,6 +1463,8 @@ const features = [
     },
     requiredScenarios: [
       'Photo edit page is reachable.',
+      'Members cannot select Gravatar through photo settings or the profile API.',
+      'Existing Gravatar members retain their images until switching away permanently.',
       'Photo upload guidance shows the configured limit before selection.',
       'Oversized photo selections are rejected before upload.',
       'Valid upload succeeds through deterministic file processing.',
@@ -1474,6 +1476,11 @@ const features = [
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit photo page is reachable'),
+      spec('authenticated.spec.js', 'members cannot start using Gravatar'),
+      spec(
+        'authenticated.spec.js',
+        'existing Gravatar members can switch away but cannot resume',
+      ),
       spec(
         'authenticated.spec.js',
         'photo upload explains its limit before selection and rejects oversized files',
@@ -2975,6 +2982,31 @@ const features = [
       spec(
         'authenticated.spec.js',
         'regular members are turned away from admin tools',
+      ),
+    ],
+  },
+  {
+    id: 'admin.gravatar',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Administrators can inspect remaining Gravatar usage.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin.gravatar', '/admin/gravatar', source.adminClient, {
+          requiresAuth: true,
+        }),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/admin/gravatar', source.adminServer)],
+    },
+    requiredScenarios: [
+      'Administrators can count current Gravatar accounts and paginate member links.',
+      'Gravatar member data is restricted to administrators.',
+    ],
+    relatedSpecs: [
+      spec(
+        'admin-gravatar.spec.js',
+        'administrators can count and inspect Gravatar members',
       ),
     ],
   },

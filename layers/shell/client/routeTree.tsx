@@ -1,3 +1,4 @@
+import { Route as AdminGravatarRoute } from './routes/admin.gravatar';
 import type { ShellRoute } from './route-options';
 import { Route as rootRoute } from './routes/__root';
 import { Route as IndexRoute } from './routes/index';
@@ -151,6 +152,7 @@ const rootChildren = [
   AdminSpamCleanupRoute,
   AdminSignupReviewRulesRoute,
   AdminAcquisitionStoriesRoute,
+  AdminGravatarRoute,
   AdminStaffBlockersRoute,
   AdminLocationCorrectionsRoute,
   AdminMessagesRoute,

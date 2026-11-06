@@ -307,6 +307,15 @@ const getAvatar = (
 
   // Only authenticated user can define custom source
   if (req.query.source && isOwnProfile) {
+    if (
+      req.query.source === 'gravatar' &&
+      req.profile.avatarSource !== 'gravatar'
+    ) {
+      return res.status(400).send({
+        message:
+          'Gravatar can no longer be selected. Please upload a photo or choose no photo.',
+      });
+    }
     const validSources = (
       User.schema.path('avatarSource') as unknown as { enumValues: string[] }
     ).enumValues;
