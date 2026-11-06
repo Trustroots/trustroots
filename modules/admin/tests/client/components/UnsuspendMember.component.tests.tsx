@@ -83,9 +83,9 @@ it('keeps controls disabled until the action completes', async () => {
   await act(async () => resolve({ changed: true, message: 'Done' }));
   expect(refresh).toHaveBeenCalled();
 });
-it('shows an operation error and resets the reason when reopened', async () => {
-  unsuspend.mockRejectedValue(new Error('failed'));
-  const refresh = jest.fn();
+it('requires report refresh and a new confirmation after an operation error', async () => {
+  unsuspend.mockRejectedValue(new Error('conflict'));
+  const refresh = jest.fn().mockResolvedValue(undefined);
   render(<UnsuspendMember member={member} onRefresh={refresh} />);
   openDialog();
   fireEvent.change(screen.getByLabelText('Administrator reason'), {
@@ -100,6 +100,37 @@ it('shows an operation error and resets the reason when reopened', async () => {
   openDialog();
   expect(screen.getByLabelText('Administrator reason')).toHaveValue('');
   expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Refresh report' })).toBeEnabled();
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh report' }));
+  await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  expect(unsuspend).toHaveBeenCalledTimes(1);
+  openDialog();
+  fireEvent.change(screen.getByLabelText('Administrator reason'), {
+    target: { value: 'Reviewed the refreshed report.' },
+  });
+  fireEvent.click(confirmButton());
+  await waitFor(() => expect(unsuspend).toHaveBeenCalledTimes(2));
+});
+it('keeps the mutation locked when the required report refresh fails', async () => {
+  unsuspend.mockRejectedValue(new Error('uncertain failure'));
+  const refresh = jest.fn().mockRejectedValue(new Error('offline'));
+  render(<UnsuspendMember member={member} onRefresh={refresh} />);
+  openDialog();
+  fireEvent.change(screen.getByLabelText('Administrator reason'), {
+    target: { value: 'Review complete.' },
+  });
+  fireEvent.click(confirmButton());
+  await screen.findByRole('alert');
+  fireEvent.click(screen.getByRole('button', { name: 'Refresh report' }));
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'member report could not be refreshed',
+  );
+  expect(screen.getByRole('alert')).not.toHaveTextContent(
+    'suspension was removed',
+  );
+  expect(unsuspend).toHaveBeenCalledTimes(1);
+  expect(screen.getByRole('button', { name: 'Refresh report' })).toBeEnabled();
 });
 it('retries only refreshing after a successful unsuspension', async () => {
   unsuspend.mockResolvedValue({ changed: true, message: 'Done' });

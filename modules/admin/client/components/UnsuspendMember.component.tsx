@@ -20,10 +20,25 @@ export default function UnsuspendMember({
   const [reason, setReason] = useState('');
   const [pending, setPending] = useState(false);
   const [completed, setCompleted] = useState(false);
+  const [refreshRequired, setRefreshRequired] = useState(false);
   const [error, setError] = useState<'operation' | 'refresh' | null>(null);
   const invalidReason = !reason.trim() || reason.trim().length > 1000;
 
   async function confirm() {
+    if (refreshRequired) {
+      setPending(true);
+      setError(null);
+      try {
+        await onRefresh();
+        setRefreshRequired(false);
+        setOpen(false);
+      } catch {
+        setError('refresh');
+      } finally {
+        setPending(false);
+      }
+      return;
+    }
     let unsuspended = completed;
     setPending(true);
     setError(null);
@@ -36,6 +51,7 @@ export default function UnsuspendMember({
       await onRefresh();
       setOpen(false);
     } catch {
+      if (!unsuspended) setRefreshRequired(true);
       setError(unsuspended ? 'refresh' : 'operation');
     } finally {
       setPending(false);
@@ -49,7 +65,6 @@ export default function UnsuspendMember({
         onClick={() => {
           setReason('');
           setError(null);
-          setCompleted(false);
           setOpen(true);
         }}
       >
@@ -71,19 +86,20 @@ export default function UnsuspendMember({
             value={reason}
             required
             maxLength={1000}
-            disabled={pending || completed}
+            disabled={pending || completed || refreshRequired}
             onChange={event => setReason(event.target.value)}
           />
           {error === 'operation' && (
             <p role="alert">
-              Could not confirm unsuspension. Close this dialog and refresh the
-              member report before trying again.
+              Could not confirm unsuspension. Refresh the member report before
+              reviewing and confirming again.
             </p>
           )}
           {error === 'refresh' && (
             <p role="alert">
-              The suspension was removed, but the member report could not be
-              refreshed. Try refreshing the report again.
+              {refreshRequired
+                ? 'The member report could not be refreshed. Try refreshing the report again before confirming unsuspension.'
+                : 'The suspension was removed, but the member report could not be refreshed. Try refreshing the report again.'}
             </p>
           )}
           {pending && <p role="status">Updating member report…</p>}
@@ -98,10 +114,14 @@ export default function UnsuspendMember({
           </Button>
           <Button
             type="button"
-            disabled={pending || (!completed && invalidReason)}
+            disabled={
+              pending || (!completed && !refreshRequired && invalidReason)
+            }
             onClick={() => void confirm()}
           >
-            {completed ? 'Refresh report' : 'Confirm unsuspension'}
+            {completed || refreshRequired
+              ? 'Refresh report'
+              : 'Confirm unsuspension'}
           </Button>
         </ModalFooter>
       </Modal>
