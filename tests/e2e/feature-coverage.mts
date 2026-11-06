@@ -3351,6 +3351,36 @@ const features = [
     ],
   },
   {
+    id: 'admin.unsuspend-member',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Administrators can restore access after reviewing a suspension.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-user', '/admin/user', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [
+        apiRoute('POST', '/api/admin/user/unsuspend', source.adminServer),
+      ],
+    },
+    requiredScenarios: [
+      'Administrators can confirm unsuspension with a reason and refresh the report.',
+      'Audit history records the administrator, member, reason, timestamp and outcome.',
+      'Unsuspended members can sign in again with other account settings preserved.',
+    ],
+    relatedSpecs: [
+      spec(
+        'features/admin-moderation/admin-unsuspend.spec.ts',
+        'administrators can suspend, review and unsuspend a member who can sign in again',
+      ),
+    ],
+  },
+  {
     id: 'admin.user-deletion',
     area: AREA.adminModeration,
     status: STATUS.active,

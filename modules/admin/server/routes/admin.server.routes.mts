@@ -1,3 +1,4 @@
+import unsuspension from '../controllers/admin.unsuspend.server.controller.mts';
 import gravatar from '../controllers/admin.gravatar.server.controller.mts';
 import {
   diagnostics,
@@ -43,6 +44,10 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/user/unsuspend')
+    .all(adminPolicy.isAllowed)
+    .post(unsuspension.unsuspendMember);
   app
     .route('/api/admin/gravatar')
     .all(adminPolicy.isAllowed)

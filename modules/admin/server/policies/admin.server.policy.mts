@@ -149,6 +149,7 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/user',
           permissions: ['post'],
         },
+        { resources: '/api/admin/user/unsuspend', permissions: ['post'] },
         {
           resources: '/api/admin/user/delete',
           permissions: ['post'],

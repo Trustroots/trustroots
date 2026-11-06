@@ -78,3 +78,15 @@ export interface DeleteMemberResult {
   message: string;
   cleanupIncomplete: boolean;
 }
+
+export async function unsuspendMember(
+  id: string,
+  reason: string,
+): Promise<{ changed: boolean; message: string }> {
+  const { data } = await axios.post('/api/admin/user/unsuspend', {
+    id,
+    reason,
+    confirmed: true,
+  });
+  return data;
+}

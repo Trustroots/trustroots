@@ -1947,3 +1947,40 @@ describe('<AdminUser />', () => {
     );
   });
 });
+
+it('shows Unsuspend only for suspended members and refreshes after success', async () => {
+  const suspended = makeReportCard({
+    profile: {
+      _id: userId,
+      username: 'fictional-member',
+      displayName: 'Fictional Member',
+      roles: ['user', 'suspended', 'shadowban'],
+    },
+  });
+  const restored = makeReportCard({
+    profile: { ...suspended.profile, roles: ['user', 'shadowban'] },
+  });
+  mockedUsersApi.getUserByUsername.mockResolvedValueOnce(suspended);
+  mockedUsersApi.unsuspendMember.mockResolvedValue({
+    changed: true,
+    message: 'Member unsuspended.',
+  });
+  mockedUsersApi.getUser.mockResolvedValueOnce(restored);
+  render(<AdminUser username="fictional-member" />);
+  fireEvent.click(await screen.findByRole('button', { name: 'Unsuspend' }));
+  fireEvent.change(screen.getByLabelText('Administrator reason'), {
+    target: { value: 'Reviewed fictional suspension.' },
+  });
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Confirm unsuspension',
+    }),
+  );
+  await waitFor(() =>
+    expect(
+      screen.queryByRole('button', { name: 'Unsuspend' }),
+    ).not.toBeInTheDocument(),
+  );
+  expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId);
+  expect(screen.getByRole('button', { name: 'Unshadowban' })).toBeVisible();
+});
