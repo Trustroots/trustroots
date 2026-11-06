@@ -390,6 +390,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/gravatar',
+    requiresRole: ['admin'],
+    title: 'Admin - Gravatar usage',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/spam-cleanup',
     requiresRole: ['admin'],
     title: 'Admin - Spam account cleanup',

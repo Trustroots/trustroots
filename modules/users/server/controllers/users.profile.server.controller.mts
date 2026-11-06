@@ -151,6 +151,15 @@ service.update = function (req, res) {
     });
   }
   let authenticatedUser = req.user;
+  if (
+    req.body.avatarSource === 'gravatar' &&
+    authenticatedUser.avatarSource !== 'gravatar'
+  ) {
+    return res.status(400).send({
+      message:
+        'Gravatar can no longer be selected. Please upload a photo or choose no photo.',
+    });
+  }
   let usernameChange: UsernameHistoryRecord | undefined;
   const requestedEmail = req.body.email as string | undefined;
 

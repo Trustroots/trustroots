@@ -1,3 +1,4 @@
+import gravatar from '../controllers/admin.gravatar.server.controller.mts';
 import {
   diagnostics,
   recover,
@@ -42,6 +43,10 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/gravatar')
+    .all(adminPolicy.isAllowed)
+    .get(gravatar.list);
   app
     .route('/api/admin/signup-review-rules')
     .all(adminPolicy.isAllowed)

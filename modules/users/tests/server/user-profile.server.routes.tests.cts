@@ -439,6 +439,57 @@ describe('User profile CRUD tests', function () {
       .expect(400);
     malformed.body.message.should.equal('Please enter a valid last name.');
   });
+  it('rejects new Gravatar selections without changing the profile', async function () {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const rejected = await agent
+      .put('/api/users')
+      .send({
+        avatarSource: 'gravatar',
+        tagline: 'This must not be saved',
+      })
+      .expect(400);
+    rejected.body.message.should.containEql(
+      'Gravatar can no longer be selected',
+    );
+    const saved = await User.findById(user._id).exec();
+    should(saved!.get('avatarSource')).equal('none');
+    (saved!.get('tagline') || '').should.not.equal('This must not be saved');
+  });
+
+  for (const source of ['none', 'local']) {
+    it(`preserves existing Gravatar usage until switching to ${source}`, async function () {
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { avatarSource: 'gravatar' } },
+      );
+      await agent.post('/api/auth/signin').send(credentials).expect(200);
+      const unrelated = await agent
+        .put('/api/users')
+        .send({ tagline: 'A fictional note' })
+        .expect(200);
+      unrelated.body.avatarSource.should.equal('gravatar');
+      const retained = await agent
+        .put('/api/users')
+        .send({ avatarSource: 'gravatar' })
+        .expect(200);
+      retained.body.avatarSource.should.equal('gravatar');
+      const switched = await agent
+        .put('/api/users')
+        .send({ avatarSource: source })
+        .expect(200);
+      switched.body.avatarSource.should.equal(source);
+      await agent
+        .put('/api/users')
+        .send({ avatarSource: 'gravatar' })
+        .expect(400);
+      const unchanged = await agent
+        .put('/api/users')
+        .send({ tagline: 'Another fictional note' })
+        .expect(200);
+      unchanged.body.avatarSource.should.equal(source);
+    });
+  }
+
   it('persists language levels and preserves them for older clients', async function () {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     const saved = await agent

@@ -676,9 +676,10 @@ describe('Avatar controller unit tests', () => {
       res.redirectUrl.should.containEql('/img/avatar-128.png');
     });
 
-    it('redirects to a gravatar url when requested by the owner', async () => {
+    it('redirects to a gravatar url when retained by its current owner', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(user._id);
+      userDoc.avatarSource = 'gravatar';
       userDoc.emailHash = 'abc123';
       await userDoc.save();
       const res = deferredResponse();
@@ -692,6 +693,25 @@ describe('Avatar controller unit tests', () => {
       );
       await res.waitForResponse();
       res.redirectUrl.should.containEql('gravatar.com');
+    });
+
+    it('rejects a new Gravatar override from the owner', async () => {
+      const [user] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(user._id);
+      const res = deferredResponse();
+      avatarController.getAvatar(
+        {
+          user: userDoc,
+          profile: userDoc,
+          query: { source: 'gravatar', size: '128' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      responseMessage(res).should.containEql(
+        'Gravatar can no longer be selected',
+      );
     });
 
     it('uses the default avatar as the Gravatar fallback image', async () => {
