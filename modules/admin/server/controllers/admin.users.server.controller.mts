@@ -155,6 +155,7 @@ const DEFAULT_ADMIN_MEMBER_SORT = {
   direction: 'ascending',
 };
 const ADMIN_LISTABLE_ROLES = [
+  'flagged',
   'welcome-team',
   'support-team',
   'admin',

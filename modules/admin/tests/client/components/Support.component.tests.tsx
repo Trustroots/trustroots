@@ -30,6 +30,7 @@ jest.mock('../../../client/api/support.api', () => ({
   loadConversation: jest.fn(),
   sendReply: jest.fn(),
   retryReply: jest.fn(),
+  setMemberFlag: jest.fn(),
 }));
 jest.mock(
   '../../../client/components/AdminHeader.component',
@@ -1445,4 +1446,17 @@ test('filters from every status count while preserving search and category and r
       status,
     );
   }
+});
+
+test('updates the support profile status after flagging and unflagging', async () => {
+  load.mockResolvedValue({ ...member, roles: ['user'] });
+  jest.mocked(api.setMemberFlag).mockResolvedValue(undefined);
+  render(<SupportMemberPage id="target-1" />);
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Flag for follow-up' }),
+  );
+  expect(await screen.findByText('Flagged for follow-up')).toBeVisible();
+  fireEvent.click(screen.getByRole('button', { name: 'Remove flag' }));
+  await screen.findByRole('button', { name: 'Flag for follow-up' });
+  expect(screen.queryByText('Flagged for follow-up')).not.toBeInTheDocument();
 });

@@ -545,6 +545,11 @@ describe('React route ownership', () => {
       requiresAuth: true,
       requiresRole: ['admin'],
     });
+    expect(findRoute('/admin/support/flagged')).toMatchObject({
+      path: '/admin/support/flagged',
+      requiresAuth: true,
+      requiresRole: ['admin', 'support-team'],
+    });
     const usernameChangesRoute = findRoute('/admin/username-changes')!;
     expect(usernameChangesRoute).toMatchObject({
       footerVariant: 'admin',

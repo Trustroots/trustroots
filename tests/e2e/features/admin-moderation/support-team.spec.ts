@@ -16,7 +16,7 @@ test('support can triage a report and investigate only its verified member pair'
   baseURL,
 }, testInfo) => {
   annotateFeature(testInfo, 'admin.support-team', [
-    'Support can triage requests and inspect linked conversations and experiences without moderation authority.',
+    'Support can triage requests and inspect linked conversations and experiences without suspension authority.',
     'Support can search for a member from the top of the inbox.',
   ]);
   const context = await createIsolatedContext(browser, baseURL);

@@ -6,6 +6,7 @@ import { formatRoleLabel } from '../utils/role-label';
 
 // Restrictions are red and volunteer roles green; other team roles are grey.
 function getRoleIntent(role: string): BadgeProps['intent'] {
+  if (role === 'flagged') return 'warning';
   if (['suspended', 'shadowban'].includes(role)) return 'danger';
   if (['admin', 'volunteer', 'volunteer-alumni'].includes(role))
     return 'success';

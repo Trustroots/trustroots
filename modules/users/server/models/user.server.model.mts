@@ -331,6 +331,7 @@ const UserSchema = new Schema<
           'welcome-team',
           'support-team',
           'moderator',
+          'flagged',
           'shadowban',
           'suspended',
           'user',

@@ -53,6 +53,14 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .get(gravatar.list);
   app
+    .route('/api/admin/support-flagged-members')
+    .all(adminPolicy.isAllowed)
+    .get(support.flaggedMembers);
+  app
+    .route('/api/admin/support-members/:memberId/flag')
+    .all(adminPolicy.isAllowed)
+    .patch(support.setFlag);
+  app
     .route('/api/admin/signup-review-rules')
     .all(adminPolicy.isAllowed)
     .get(signupReviewRules.list)

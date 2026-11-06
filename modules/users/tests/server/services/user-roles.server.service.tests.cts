@@ -67,6 +67,14 @@ describe('Service: user-roles', function () {
         .should.be.true();
     });
 
+    it('does not restrict messaging or grant staff permissions for flagged users', () => {
+      const user = { roles: ['user', 'flagged'] };
+      userRoles.hasRestrictedMessagingRole(user).should.be.false();
+      userRoles
+        .hasAnyRole(user, ['admin', 'support-team', 'welcome-team'])
+        .should.be.false();
+    });
+
     it('returns false for regular users', function () {
       userRoles
         .hasRestrictedMessagingRole({ roles: ['user'] })

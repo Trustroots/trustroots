@@ -6,6 +6,7 @@ import {
   retryReply,
   sendReply,
   setStatus,
+  setMemberFlag,
 } from '../../../client/api/support.api';
 jest.mock('../../../../core/client/api/http-client', () => ({
   get: jest.fn(),
@@ -61,5 +62,18 @@ test('queues replies and retries uncertain delivery explicitly', async () => {
   expect(http.post).toHaveBeenLastCalledWith(
     '/api/admin/support/request%2F1/replies/reply%2F1/retry',
     { idempotencyKey: 'key-3' },
+  );
+});
+
+test('updates only the member follow-up flag', async () => {
+  await setMemberFlag('member/1', true);
+  expect(http.patch).toHaveBeenLastCalledWith(
+    '/api/admin/support-members/member%2F1/flag',
+    { flagged: true },
+  );
+  await setMemberFlag('member/1', false);
+  expect(http.patch).toHaveBeenLastCalledWith(
+    '/api/admin/support-members/member%2F1/flag',
+    { flagged: false },
   );
 });

@@ -69,10 +69,11 @@ function renderIndex(req: IndexRequest, res: CoreResponse) {
     // `sanitizeProfile` strips `roles` so they never leak for *other*
     // members, but the client needs the *current* user's own roles to drive
     // role based route guards (e.g. keeping non-admins out of admin pages).
-    // Exposing the authenticated user's own roles to their own browser is
-    // safe.
+    // Internal moderation flags are excluded from member-facing bootstrap data.
     if (req.user.roles) {
-      renderVars.user!.roles = req.user.roles;
+      renderVars.user!.roles = req.user.roles.filter(
+        role => role !== 'flagged',
+      );
     }
   }
 

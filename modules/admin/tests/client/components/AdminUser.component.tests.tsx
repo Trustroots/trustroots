@@ -1,3 +1,4 @@
+import * as supportApi from '@/modules/admin/client/api/support.api';
 import React from 'react';
 import {
   act,
@@ -17,6 +18,7 @@ import AdminUser, {
 import AdminUserResultsTable from '@/modules/admin/client/components/AdminUserResultsTable.component';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 
+jest.mock('@/modules/admin/client/api/support.api');
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
 );
@@ -1983,4 +1985,19 @@ it('shows Unsuspend only for suspended members and refreshes after success', asy
   );
   expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId);
   expect(screen.getByRole('button', { name: 'Unshadowban' })).toBeVisible();
+});
+
+it('updates the admin profile flag and links to the role list', async () => {
+  mockedUsersApi.getUserByUsername.mockResolvedValueOnce(makeReportCard());
+  jest.mocked(supportApi.setMemberFlag).mockResolvedValue(undefined);
+  window.history.pushState({}, '', '/admin/user/alice');
+  render(<AdminUser username="alice" />);
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Flag for follow-up' }),
+  );
+  expect(
+    await screen.findByRole('link', { name: 'Flagged for follow-up' }),
+  ).toHaveAttribute('href', '/admin/search-users?role=flagged');
+  fireEvent.click(screen.getByRole('button', { name: 'Remove flag' }));
+  await screen.findByRole('button', { name: 'Flag for follow-up' });
 });

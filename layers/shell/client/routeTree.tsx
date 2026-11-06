@@ -1,4 +1,5 @@
 import { Route as AdminGravatarRoute } from './routes/admin.gravatar';
+import { Route as FlaggedMembersRoute } from './routes/admin.support.flagged';
 import type { ShellRoute } from './route-options';
 import { Route as rootRoute } from './routes/__root';
 import { Route as IndexRoute } from './routes/index';
@@ -153,6 +154,7 @@ const rootChildren = [
   AdminSignupReviewRulesRoute,
   AdminAcquisitionStoriesRoute,
   AdminGravatarRoute,
+  FlaggedMembersRoute,
   AdminStaffBlockersRoute,
   AdminLocationCorrectionsRoute,
   AdminMessagesRoute,

@@ -69,6 +69,7 @@ const DEFAULT_MEMBER_LIST_SORT: MemberSort = {
 };
 
 const USER_LIST_ROLES = [
+  'flagged',
   'admin',
   'welcome-team',
   'support-team',
