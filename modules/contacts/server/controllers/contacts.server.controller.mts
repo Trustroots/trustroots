@@ -151,16 +151,12 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
   delete req.body.message;
 
   try {
-    const existingContactQuery = Contact.findOne({
+    const existingContact = await Contact.findOne({
       $or: [
         { userTo: friendUserId, userFrom: req.user._id },
         { userTo: req.user._id, userFrom: friendUserId },
       ],
     });
-    const existingContact = await (typeof existingContactQuery?.exec ===
-    'function'
-      ? existingContactQuery.exec()
-      : existingContactQuery);
     if (existingContact) {
       return res.status(409).json({
         message: errorService.getErrorMessageByKey('conflict'),

@@ -255,6 +255,24 @@ describe('Contacts controller unit tests', () => {
       contacts.length.should.equal(0);
     });
 
+    it('responds with 400 when the contact lookup fails before creation', async () => {
+      sinon
+        .stub(Contact, 'findOne')
+        .returns(
+          Promise.reject(new Error('lookup failed')) as unknown as ReturnType<
+            typeof Contact.findOne
+          >,
+        );
+
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2._id.toString() } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+    });
+
     it('cleans up the contact when email sending fails', async () => {
       sinon
         .stub(emailService, 'sendConfirmContact')
@@ -341,6 +359,20 @@ describe('Contacts controller unit tests', () => {
       res.statusCode.should.equal(200);
       res.body.confirmed!.should.be.true();
     });
+
+    it('confirms an unpopulated contact using its ObjectId fields', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: false,
+      }).save();
+
+      const { res } = await runHandler(res =>
+        contactsController.confirm({ user: user2, contact }, res),
+      );
+      res.statusCode.should.equal(200);
+      res.body.confirmed!.should.be.true();
+    });
   });
 
   describe('remove', () => {
@@ -413,6 +445,11 @@ describe('Contacts controller unit tests', () => {
       res.body.should.deepEqual(contacts);
     });
 
+    it('returns an empty object when no contacts list was loaded', async () => {
+      const { res } = await runHandler(res => contactsController.list({}, res));
+      res.body.should.deepEqual({});
+    });
+
     it('returns a single contact', async () => {
       const contact = new Contact({
         userFrom: user1._id,
@@ -422,6 +459,11 @@ describe('Contacts controller unit tests', () => {
         contactsController.get({ contact }, res),
       );
       res.body._id!.should.equal(contact._id);
+    });
+
+    it('returns an empty object when no single contact was loaded', async () => {
+      const { res } = await runHandler(res => contactsController.get({}, res));
+      res.body.should.deepEqual({});
     });
   });
 
@@ -685,6 +727,24 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts!.length.should.equal(2);
+    });
+
+    it('matches contacts when authenticated user is the receiving side', async () => {
+      await new Contact({
+        userFrom: user2._id,
+        userTo: user1._id,
+        confirmed: true,
+      }).save();
+
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
+        user: user1,
+        contacts: [{ user: { _id: user2._id } }],
+      };
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.filterByCommon(req, res, next),
+      );
+      nextCalled.should.be.true();
+      req.contacts!.length.should.equal(1);
     });
   });
 

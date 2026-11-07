@@ -313,6 +313,47 @@ describe('Reference thread controller unit tests', () => {
       responseBody(res).message!.should.equal('Thread does not exist.');
     });
 
+    it('rejects references when the user is not in the thread', async () => {
+      const [author, other, stranger] =
+        await utils.saveUsersWithCachedPasswords(
+          utils.generateUsersWithSharedPassword(3, { public: true }),
+        );
+      const threadModelWithCallbackFindOne = Thread as unknown as {
+        findOne(
+          query: object,
+          fields: string,
+        ): {
+          exec(): Promise<{
+            _id: import('mongoose').Types.ObjectId;
+            userFrom: import('mongoose').Types.ObjectId;
+            userTo: import('mongoose').Types.ObjectId;
+          } | null>;
+        };
+      };
+      sinon.stub(threadModelWithCallbackFindOne, 'findOne').returns({
+        exec: () =>
+          Promise.resolve({
+            _id: new mongoose.Types.ObjectId(),
+            userFrom: new mongoose.Types.ObjectId(author._id.toString()),
+            userTo: new mongoose.Types.ObjectId(other._id.toString()),
+          }),
+      });
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: stranger,
+          body: {
+            userTo: other._id.toString(),
+            reference: 'yes',
+          },
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(403);
+    });
+
     it('rejects references when the other person has not messaged you', async () => {
       const [author, other] = await utils.saveUsersWithCachedPasswords(
         utils.generateUsersWithSharedPassword(2, { public: true }),

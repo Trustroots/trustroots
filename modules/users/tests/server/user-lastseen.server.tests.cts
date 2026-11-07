@@ -16,6 +16,13 @@ interface LastSeenUserRecord extends UserRecord {
   seen?: Date;
   lastIpHash?: string;
 }
+interface LastSeenRequest {
+  get(name: string): string | undefined;
+  ip: string;
+}
+const lastSeen: {
+  getClientIpAddress(req: LastSeenRequest): string | undefined;
+} = require('./../../server/controllers/users.lastseen.server.controller.mjs');
 const User = mongoose.model<LastSeenUserRecord>('User');
 type LastSeenDocument = HydratedDocument<LastSeenUserRecord>;
 function findUser(
@@ -93,6 +100,15 @@ describe('User last seen CRUD tests', function () {
       await utils.signOut(agent);
     });
     afterEach(utils.clearDatabase);
+
+    it('uses the socket-derived request address when Passenger is unavailable', () => {
+      const req = {
+        get: () => undefined,
+        ip: '2001:db8::1',
+      };
+      lastSeen.getClientIpAddress(req)!.should.equal('2001:db8::1');
+    });
+
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics
       sinon.clock.tick(20);

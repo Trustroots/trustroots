@@ -339,6 +339,29 @@ describe('Service: email', function () {
     });
   });
 
+  it('omits the reactivation survey link when disabled', function (done) {
+    const service = loadEmailService({
+      '../../../../config/config': {
+        ...config,
+        surveyReactivateHosts: false,
+      },
+    });
+    const user = {
+      firstName: 'first',
+      lastName: 'last',
+      displayName: 'first last',
+      email: 'test@test.com',
+    };
+
+    service.sendReactivateHosts(user, function (err) {
+      if (err) return done(err);
+      jobs.length.should.equal(1);
+      job(0).data.html!.should.not.containEql('ideas.trustroots.org');
+      job(0).data.text.should.not.containEql('ideas.trustroots.org');
+      done();
+    });
+  });
+
   it('can send messages unread email', function (done) {
     const userFrom = {
       _id: 'from-user-id',
@@ -973,6 +996,23 @@ describe('Service: email', function () {
       { subject: 'test', name: 'test', email: 'test@test.com' },
       function (err) {
         err!.message.should.equal('render failed');
+        done();
+      },
+    );
+  });
+
+  it('passes render failures to renderEmailAndSend callbacks without scheduling jobs', function (done) {
+    const service = loadEmailService({
+      '../../../../config/lib/render': (templatePath, params, callback) =>
+        callback(new Error('render failed')),
+    });
+
+    service.renderEmailAndSend(
+      'reset-password',
+      { subject: 'test', name: 'test', email: 'test@test.com' },
+      function (err) {
+        err!.message.should.equal('render failed');
+        jobs.length.should.equal(0);
         done();
       },
     );

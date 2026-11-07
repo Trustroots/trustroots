@@ -1,4 +1,10 @@
 const sinon = require('sinon');
+const mongoose: typeof import('mongoose') = require('mongoose');
+type UserServerModel =
+  import('../../../users/server/models/user.server.types.mts').UserServerModel;
+type UserServerRecord =
+  import('../../../users/server/models/user.server.types.mts').UserServerRecord;
+const User = mongoose.model<UserServerRecord, UserServerModel>('User');
 const winston: typeof import('winston') = require('winston');
 const userProfile: typeof import('../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const languagesObject: Record<
@@ -176,6 +182,23 @@ describe('Controller: core', function () {
       res.rendered.should.equal('react-index.server.view.html');
     });
 
+    it('exposes a sanitized user profile when signed in', function () {
+      const res = mockResponse();
+      const user = new User({
+        username: 'alice',
+        email: 'alice@example.com',
+        firstName: 'Alice',
+        lastName: 'Example',
+        provider: 'local',
+      });
+      user.set('roles', undefined);
+      coreController.renderIndex({ path: '/', user }, res);
+      should(renderVars(res).user).deepEqual({
+        sanitized: true,
+        username: 'alice',
+      });
+    });
+
     it('exposes the current tribe when browsing a tribe page', function () {
       const tribe = { slug: 'test-tribe', label: 'Test Tribe' };
       const res = mockResponse();
@@ -250,6 +273,47 @@ describe('Controller: core', function () {
       } finally {
         winston.log = originalLog;
       }
+    });
+
+    function captureLogs(run: () => void): unknown[][] {
+      const originalLog = winston.log;
+      const calls: unknown[][] = [];
+      winston.log = ((...args: unknown[]) => {
+        calls.push(args);
+        return winston;
+      }) as unknown as typeof winston.log;
+      try {
+        run();
+      } finally {
+        winston.log = originalLog;
+      }
+      return calls.filter(
+        ([, event]) => event === 'CSP violation report #ljeanw',
+      );
+    }
+
+    // The logger redacts every `report` value, so the placeholder for a
+    // missing body is not visible; the warning itself is.
+    it('logs a redacted warning when no report body is present', function () {
+      const res = mockResponse();
+      const reports = captureLogs(() =>
+        coreController.receiveCSPViolationReport({ body: null }, res),
+      );
+      res.statusCode.should.equal(204);
+      should(reports).deepEqual([
+        ['warn', 'CSP violation report #ljeanw', { report: '[REDACTED]' }],
+      ]);
+    });
+
+    it('does not log reports in test mode', function () {
+      process.env.NODE_ENV = 'test';
+
+      const res = mockResponse();
+      const reports = captureLogs(() =>
+        coreController.receiveCSPViolationReport({ body: { foo: 'bar' } }, res),
+      );
+      res.statusCode.should.equal(204);
+      should(reports).deepEqual([]);
     });
   });
 

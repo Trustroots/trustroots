@@ -266,6 +266,11 @@ describe('Tribe CRUD tests', function () {
       .map((member: { username: string }) => member.username)
       .should.deepEqual(['eligiblecontact']);
   });
+
+  it('requires circle membership to list active members', async () => {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    await agent.get(`/api/tribes/${tribe.slug}/members`).expect(403);
+  });
   it('should be able to read tribes when logged in', function (done) {
     agent
       .post('/api/auth/signin')

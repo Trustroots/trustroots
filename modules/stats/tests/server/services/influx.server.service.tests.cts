@@ -413,6 +413,19 @@ describe('Service: influx', function () {
     }); // end of context 'invalid data'
 
     context('valid data', function () {
+      it('allows writeMeasurement success without a callback', function (done) {
+        influxService._writeMeasurement('test', { value: 1 }, { tag: 'tag' });
+
+        process.nextTick(function () {
+          try {
+            sinon.assert.calledOnce(writeMeasurementStub());
+            done();
+          } catch (err) {
+            done(err);
+          }
+        });
+      });
+
       it('propagates writeMeasurement client errors', function (done) {
         sinon.stub(influxService, '_getClient').callsFake(cb => {
           cb(new Error('client fail'));

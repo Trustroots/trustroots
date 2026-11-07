@@ -144,6 +144,20 @@ describe('Service: error', function () {
       };
       errorService.getErrorMessage(err).should.equal('Email is invalid.');
     });
+
+    it('returns the default message when there are no validation errors', function () {
+      const message = errorService.getErrorMessage({});
+      message.should.startWith('Snap! Something went wrong.');
+    });
+
+    it('falls back to the default message when validation errors have no message', function () {
+      const message = errorService.getErrorMessage({
+        errors: {
+          email: {},
+        },
+      });
+      message.should.startWith('Snap! Something went wrong.');
+    });
   });
 
   describe('errorResponse middleware', function () {
@@ -183,6 +197,12 @@ describe('Service: error', function () {
 
       statusCode(res).should.equal(422);
       jsonBody(res).message.should.equal('Boom');
+    });
+
+    it('uses the default message when err.message is empty', function () {
+      const res = mockResponse('application/json');
+      errorService.errorResponse({ message: '' }, {}, res);
+      jsonBody(res).message.should.startWith('Snap! Something went wrong.');
     });
 
     it('does not include the error object outside development mode', function () {

@@ -253,6 +253,25 @@ describe('Targeted request limit middleware', function () {
     res.statusCode.should.equal(503);
   });
 
+  it('skips limiting when a policy is disabled', async function () {
+    const middleware = loadMiddleware(
+      async () => {
+        throw new Error('should not consume');
+      },
+      () => '198.51.100.20',
+      { signin: { enabled: false } },
+    );
+    let proceeded = false;
+    await middleware.signin(
+      { body: { username: 'member' }, get: () => undefined, ip: '192.0.2.1' },
+      response(),
+      () => {
+        proceeded = true;
+      },
+    );
+    proceeded.should.be.true();
+  });
+
   it('ignores missing and malformed request identities', function () {
     const assert = require('assert/strict');
     assert.equal(getRequestIdentity({}, 'account'), undefined);
@@ -266,6 +285,21 @@ describe('Targeted request limit middleware', function () {
       undefined,
     );
     assert.equal(getRequestIdentity({}, 'unknown'), undefined);
+  });
+
+  it('fails closed when the policy window is invalid', async function () {
+    const middleware = loadMiddleware(
+      async () => {
+        throw new Error('should not consume');
+      },
+      () => '198.51.100.20',
+      { signin: { windowMs: 0 } },
+    );
+    const res = response();
+    await middleware.signin({ body: { username: 'member' } }, res, () => {
+      throw new Error('should not proceed');
+    });
+    res.statusCode.should.equal(503);
   });
 
   it('limits member actions without an IP dimension when IP limiting is disabled', async function () {
