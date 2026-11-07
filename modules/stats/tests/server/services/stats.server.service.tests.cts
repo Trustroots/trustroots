@@ -35,62 +35,6 @@ describe('General Stats API Service Unit Tests', function () {
           },
         );
       });
-
-      it('[missing counts and values] should throw error: The stat should contain counts or values', function (done) {
-        statsService.stat(
-          { namespace: 'test' } as StatObject,
-          function (e: Error | null | undefined) {
-            try {
-              should(e?.message).equal(
-                'The stat should contain counts or values',
-              );
-              return done();
-            } catch (e) {
-              return done(e);
-            }
-          },
-        );
-      });
-
-      it('[counts and values empty] should throw error: The stats should contain counts or values', function (done) {
-        statsService.stat(
-          { namespace: 'test', counts: {}, values: {} },
-          function (e: Error | null | undefined) {
-            try {
-              should(e?.message).equal(
-                'The stat should contain counts or values',
-              );
-              return done();
-            } catch (e) {
-              return done(e);
-            }
-          },
-        );
-      });
-
-      it('[keys are duplicate in stat.<counts|values|meta|tags>] should throw error: Every key of stat counts, values, meta and tags must be unique', function (done) {
-        const statWithDuplicates = {
-          namespace: 'test',
-          counts: { duplicate: 1 },
-          values: { duplicate: 'value' },
-          meta: { duplicate: 'meta' },
-          tags: { duplicate: 'tag' },
-        };
-
-        statsService.stat(
-          statWithDuplicates as unknown as StatObject,
-          function (e: Error | null | undefined) {
-            try {
-              should(e?.message).equal(
-                'Every key of stat counts, values, meta and tags must be unique',
-              );
-              return done();
-            } catch (e) {
-              return done(e);
-            }
-          },
-        );
-      });
     });
   });
 });

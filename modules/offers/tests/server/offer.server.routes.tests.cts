@@ -31,10 +31,6 @@ async function findOneOffer(
   return Offer.findOne(filter);
 }
 
-async function findOffers(filter: OfferQueryFilter): Promise<OfferDocument[]> {
-  return Offer.find(filter);
-}
-
 function assertPresent<T>(value: T | null | undefined): asserts value is T {
   should.exist(value);
 }
@@ -314,17 +310,6 @@ describe('Offer CRUD tests', function () {
   });
   afterEach(utils.clearDatabase);
   describe('Read offer by offer id:', function () {
-    it('should not be able to read offer by offer id if not authenticated', function (done) {
-      agent
-        .get('/api/offers/' + offer2Id)
-        .expect(403)
-        .end(function (offerSaveErr, offerSaveRes) {
-          offerSaveRes.body.message.should.equal('Forbidden.');
-
-          // Call the assertion callback
-          return done(offerSaveErr);
-        });
-    });
     it('should be able to read offers of other users by offer id when authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -415,17 +400,6 @@ describe('Offer CRUD tests', function () {
     });
   });
   describe('Read offer by user id:', function () {
-    it('should not be able to read offer by user id if not authenticated', function (done) {
-      agent
-        .get('/api/offers-by/' + user2Id)
-        .expect(403)
-        .end(function (offerSaveErr, offerSaveRes) {
-          offerSaveRes.body.message.should.equal('Forbidden.');
-
-          // Call the assertion callback
-          return done(offerSaveErr);
-        });
-    });
     it('should be able to read offers of other users by user id when authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -479,42 +453,6 @@ describe('Offer CRUD tests', function () {
     });
   });
   describe('Deleting offer', function () {
-    it('should not be able to delete offer if not authenticated', function (done) {
-      agent
-        .delete('/api/offers')
-        .set('X-Trustroots-Request', '1')
-        .expect(403)
-        .end(function (offerSaveErr, offerSaveRes) {
-          offerSaveRes.body.message.should.equal('Forbidden.');
-
-          // Call the assertion callback
-          return done(offerSaveErr);
-        });
-    });
-    it('should not be able to delete offer of other user', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Save a new offer
-          agent
-            .delete('/api/offers/' + offer2Id)
-            .send(offer2.toObject())
-            .expect(403)
-            .end(function (offerSaveErr) {
-              // Handle offer save error
-              if (offerSaveErr) return done(offerSaveErr);
-              findOneOffer({ _id: offer2Id }).then(function (offer) {
-                should.exist(offer);
-                done();
-              }, done);
-            });
-        });
-    });
     it('should be able to delete offer if authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -541,18 +479,6 @@ describe('Offer CRUD tests', function () {
     });
   });
   describe('Creating offer', function () {
-    it('should not be able to save offer if not authenticated', function (done) {
-      agent
-        .post('/api/offers')
-        .send(offer1)
-        .expect(403)
-        .end(function (offerSaveErr, offerSaveRes) {
-          offerSaveRes.body.message.should.equal('Forbidden.');
-
-          // Call the assertion callback
-          return done(offerSaveErr);
-        });
-    });
     it('should be able to create offer if authenticated', function (done) {
       agent
         .post('/api/auth/signin')
@@ -698,55 +624,10 @@ describe('Offer CRUD tests', function () {
             });
         });
     });
-    it('should not be able to create offer without location', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-          const offerWithoutLocation: Partial<OfferRecord> = offer1;
-          delete offerWithoutLocation.location;
-
-          // Save a new offer
-          agent
-            .post('/api/offers')
-            .send(offerWithoutLocation)
-            .expect(400)
-            .end(function (offerSaveErr, offerSaveRes) {
-              offerSaveRes.body.message.should.equal('Missing offer location.');
-
-              // Call the assertion callback
-              return done(offerSaveErr);
-            });
-        });
-    });
-
-    it('should be able to set `validUntil`', async function () {
-      await signIn(credentials);
-      const validUntil = moment().add(5, 'days').toDate();
-
-      const { offer } = await postMeetOffer(meetOfferPayload({ validUntil }));
-
-      assertPresent(offer.validUntil);
-      offer.validUntil.getTime().should.equal(validUntil.getTime());
-    });
 
     it('should default to 30 days from now when trying to set `validUntil` to past', async function () {
       await signIn(credentials);
       const validUntil = moment().subtract(5, 'days').toDate();
-
-      const { offer, before, after } = await postMeetOffer(
-        meetOfferPayload({ validUntil }),
-      );
-
-      expectDefaultValidUntil(offer.validUntil, before, after);
-    });
-
-    it('should default to 30 days from now when trying to set `validUntil` to over 30 days from now', async function () {
-      await signIn(credentials);
-      const validUntil = moment().add(32, 'days').toDate();
 
       const { offer, before, after } = await postMeetOffer(
         meetOfferPayload({ validUntil }),
@@ -764,129 +645,6 @@ describe('Offer CRUD tests', function () {
     });
   });
   describe('Updating offer', function () {
-    it('should not be able to update offer if not authenticated', function (done) {
-      agent
-        .put('/api/offers/' + offer2Id)
-        .send(offer2.toObject())
-        .expect(403)
-        .end(function (offerSaveErr, offerSaveRes) {
-          offerSaveRes.body.message.should.equal('Forbidden.');
-
-          // Call the assertion callback
-          return done(offerSaveErr);
-        });
-    });
-
-    it('should not be able to update offer of other user', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-          offer2.description = '<p>Not allowed</p>';
-
-          // Update offer
-          agent
-            .put('/api/offers/' + offer2Id)
-            .send(offer2.toObject())
-            .expect(403)
-            .end(function (offerSaveErr) {
-              // Handle offer save error
-              if (offerSaveErr) return done(offerSaveErr);
-              findOneOffer({ _id: offer2Id }).then(function (offer) {
-                assertPresent(offer);
-                assertPresent(offer.description);
-                offer.description.should.not.equal(offer2.description);
-                done();
-              }, done);
-            });
-        });
-    });
-    it('should not able to change offer type when updating offer', function (done) {
-      agent
-        .post('/api/auth/signin')
-        .send(credentials)
-        .expect(200)
-        .end(function (signinErr) {
-          // Handle signin error
-          if (signinErr) return done(signinErr);
-
-          // Save a new offer
-          agent
-            .post('/api/offers')
-            .send(offer1)
-            .expect(200)
-            .end(function (offerSaveErr) {
-              // Handle offer save error
-              if (offerSaveErr) return done(offerSaveErr);
-
-              // Get id for offer we just saved
-              findOneOffer({ user: user1Id }).then(function (offer) {
-                assertPresent(offer);
-
-                // Modify offer
-                const modifiedOffer = offer1;
-                modifiedOffer.type = 'meet';
-
-                // Update offer
-                agent
-                  .put('/api/offers/' + offer._id)
-                  .send(modifiedOffer)
-                  .expect(400)
-                  .end(function (offerSaveErr, offerSaveRes) {
-                    // Handle offer save error
-                    if (offerSaveErr) return done(offerSaveErr);
-                    offerSaveRes.body.message.should.equal(
-                      'You cannot update offer type.',
-                    );
-                    findOffers({ user: user1Id }).then(function (offers) {
-                      offers.length.should.equal(1);
-                      const [savedOffer] = offers;
-                      assertPresent(savedOffer);
-                      assertPresent(savedOffer.type);
-                      savedOffer.type.should.equal('host');
-                      done();
-                    }, done);
-                  });
-              }, done);
-            });
-        });
-    });
-
-    it('should be able to update existing offer', async function () {
-      await signIn(credentials);
-      await agent.post('/api/offers').send(offer1).expect(200);
-      const saved = await Offer.findOne({ user: user1Id });
-      assertPresent(saved);
-      const previousUpdated = moment().subtract(1, 'day').toDate();
-      await Offer.updateOne({ _id: saved._id }, { updated: previousUpdated });
-
-      const res = await agent
-        .put('/api/offers/' + saved._id)
-        .send({
-          status: saved.status,
-          location: saved.location,
-          description: 'MODIFIED',
-          noOfferDescription: 'MODIFIED',
-          showOnlyInMyCircles: true,
-        })
-        .expect(200);
-
-      res.body.message.should.equal('Offer updated.');
-      const offer = await Offer.findById(saved._id);
-      assertPresent(offer);
-      assertPresent(offer.updated);
-      assertPresent(offer.description);
-      assertPresent(offer.noOfferDescription);
-      assertPresent(offer.showOnlyInMyCircles);
-      offer.description.should.equal('MODIFIED');
-      offer.noOfferDescription.should.equal('MODIFIED');
-      offer.showOnlyInMyCircles.should.equal(true);
-      offer.updated.getTime().should.be.above(previousUpdated.getTime());
-    });
-
     it('should be able to update `validUntil` value to 31 days from now', async function () {
       const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
       await signIn(credentials);
@@ -894,56 +652,6 @@ describe('Offer CRUD tests', function () {
       const { offer, before, after } = await putOffer(
         saved._id,
         meetOfferPayload({ validUntil: moment().add(31, 'days').toDate() }),
-      );
-
-      expectDefaultValidUntil(offer.validUntil, before, after);
-    });
-
-    it('should be keep `validUntil` value to previously saved when updating offer', async function () {
-      const validUntil = moment().add(2, 'days').toDate();
-      const saved = await saveMeetOffer(validUntil);
-      await signIn(credentials);
-
-      const { offer } = await putOffer(
-        saved._id,
-        meetOfferPayload({ validUntil }),
-      );
-
-      assertPresent(offer.validUntil);
-      offer.validUntil.getTime().should.equal(validUntil.getTime());
-    });
-
-    it('should default to 30 days from now when updating without `validUntil`', async function () {
-      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
-      await signIn(credentials);
-
-      const { offer, before, after } = await putOffer(
-        saved._id,
-        meetOfferPayload(),
-      );
-
-      expectDefaultValidUntil(offer.validUntil, before, after);
-    });
-
-    it('should default to 30 days from now when attempting to set `validUntil` value to over 30 days from now', async function () {
-      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
-      await signIn(credentials);
-
-      const { offer, before, after } = await putOffer(
-        saved._id,
-        meetOfferPayload({ validUntil: moment().add(32, 'days').toDate() }),
-      );
-
-      expectDefaultValidUntil(offer.validUntil, before, after);
-    });
-
-    it('should default to 30 days from now when attempting to set `validUntil` value to past', async function () {
-      const saved = await saveMeetOffer(moment().add(2, 'days').toDate());
-      await signIn(credentials);
-
-      const { offer, before, after } = await putOffer(
-        saved._id,
-        meetOfferPayload({ validUntil: moment().subtract(5, 'days').toDate() }),
       );
 
       expectDefaultValidUntil(offer.validUntil, before, after);

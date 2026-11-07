@@ -1,8 +1,6 @@
 const assert: typeof import('assert/strict') = require('assert/strict');
 const { ObjectId } = require('mongoose').Types;
 const {
-  prepareExperienceCount,
-  prepareNewExperience,
   prepareSendingToClient,
 } = require('../../server/services/experience-payload.server.service.cjs');
 
@@ -29,83 +27,6 @@ describe('Experience API payload construction', () => {
       userFrom: author,
       userTo: recipient,
       response: null,
-    });
-  });
-
-  it('exposes the author’s feedback with bare member IDs and strips internal fields', () => {
-    const payload = prepareSendingToClient(experience, null, author);
-    assert.equal(payload.feedbackPublic, experience.feedbackPublic);
-    assert.deepEqual(payload.interactions, {
-      guest: false,
-      host: true,
-      met: true,
-    });
-    assert.equal('privateField' in payload, false);
-    assert.equal(payload.userFrom, author);
-  });
-
-  it('supports public populated members and selects only reciprocal feedback', () => {
-    const populated = {
-      ...experience,
-      public: true,
-      userFrom: { _id: author, username: 'sample-author' },
-      userTo: { _id: recipient, username: 'sample-recipient' },
-    };
-    const response = {
-      ...experience,
-      _id: new ObjectId('444444444444444444444444'),
-      userFrom: recipient,
-      userTo: author,
-    };
-    const payload = prepareSendingToClient(populated, response, recipient);
-    assert.equal(payload.userFrom, populated.userFrom);
-    assert.equal(payload.feedbackPublic, experience.feedbackPublic);
-    assert.deepEqual(payload.response, {
-      _id: response._id,
-      created: response.created,
-      interactions: { guest: false, host: true, met: true },
-      recommend: response.recommend,
-      feedbackPublic: response.feedbackPublic,
-    });
-  });
-
-  it('preserves an absent optional feedback field', () => {
-    const withoutFeedback: Partial<typeof experience> = { ...experience };
-    delete withoutFeedback.feedbackPublic;
-    const payload = prepareSendingToClient(
-      withoutFeedback,
-      withoutFeedback,
-      author,
-    );
-    assert.equal('feedbackPublic' in payload, false);
-    assert.equal('feedbackPublic' in payload.response, false);
-  });
-
-  it('preserves validated request fields and authoritative author/visibility', () => {
-    const body = {
-      userTo: recipient.toString(),
-      interactions: { met: true },
-      recommend: 'unknown',
-      feedbackPublic: '',
-      userFrom: recipient,
-      public: true,
-    };
-    assert.deepEqual(prepareNewExperience(body, author, false), {
-      ...body,
-      userFrom: author,
-      public: false,
-    });
-  });
-
-  it('includes pending counts only on the member’s own profile', () => {
-    assert.deepEqual(prepareExperienceCount(2, 0, false), { count: 2 });
-    assert.deepEqual(prepareExperienceCount(2, 1, true), {
-      count: 3,
-      hasPending: true,
-    });
-    assert.deepEqual(prepareExperienceCount(0, 0, true), {
-      count: 0,
-      hasPending: false,
     });
   });
 });

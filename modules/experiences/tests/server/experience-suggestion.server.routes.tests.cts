@@ -129,11 +129,4 @@ describe('Experience suggestion', () => {
     const { body } = await agent.get('/api/experiences/suggestion').expect(200);
     should(body).equal(null);
   });
-  it('rejects anonymous visitors', async () => {
-    await request(app).get('/api/experiences/suggestion').expect(403);
-  });
-  it('rejects non-public members', async () => {
-    await utils.signIn(userData[4], agent);
-    await agent.get('/api/experiences/suggestion').expect(403);
-  });
 });

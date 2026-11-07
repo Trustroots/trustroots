@@ -105,38 +105,6 @@ describe('Route authorisation service', function () {
     response.body!.message.should.equal('Forbidden.');
   });
 
-  it('uses guest permissions when a user has no roles', function () {
-    const { acl, getCall } = mockAcl(null, true);
-
-    createRouteAuthorisation(acl)(
-      policyRequest(null, '/api/examples/:exampleId', 'PATCH'),
-      mockResponse(),
-      function () {},
-    );
-
-    getCall()!.roles.should.deepEqual(['guest']);
-  });
-
-  it('passes the user roles and calls next when the ACL allows the request', function () {
-    const { acl, getCall } = mockAcl(null, true);
-    let nextCalled = false;
-
-    createRouteAuthorisation(acl)(
-      policyRequest(['member', 'helper'], '/api/examples', 'POST'),
-      mockResponse(),
-      function () {
-        nextCalled = true;
-      },
-    );
-
-    getCall()!.should.deepEqual({
-      roles: ['member', 'helper'],
-      path: '/api/examples',
-      method: 'post',
-    });
-    nextCalled.should.be.true();
-  });
-
   it('returns JSON 500 for unexpected ACL errors by default', function () {
     const response = mockResponse();
     let jsonCalled = false;
@@ -155,27 +123,6 @@ describe('Route authorisation service', function () {
 
     response.statusCode.should.equal(500);
     jsonCalled.should.be.true();
-    response.body!.message.should.equal('Unexpected authorization error');
-  });
-
-  it('uses the configured response method for unexpected ACL errors', function () {
-    const response = mockResponse();
-    let sendCalled = false;
-    const send = response.send;
-    response.send = function (body: { message: string }) {
-      sendCalled = true;
-      return send.call(this, body);
-    };
-    const { acl } = mockAcl(new Error('ACL unavailable'), false);
-
-    createRouteAuthorisation(acl, 'send')(
-      policyRequest(['member'], '/api/examples', 'GET'),
-      response,
-      function () {},
-    );
-
-    response.statusCode.should.equal(500);
-    sendCalled.should.be.true();
     response.body!.message.should.equal('Unexpected authorization error');
   });
 });

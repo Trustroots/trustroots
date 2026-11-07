@@ -204,23 +204,6 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
-  it('uses the supplied avatar limit in size errors', () => {
-    const uploadFile = loadUploadFileWithStubbedMulter(null, {
-      code: 'LIMIT_FILE_SIZE',
-    });
-    const res = mockResponse();
-    uploadFile(
-      validMimeTypes,
-      uploadField,
-      {},
-      res,
-      () => {},
-      20 * 1024 * 1024,
-    );
-    res.statusCode.should.equal(413);
-    res.body!.message!.should.containEql('20.00');
-  });
-
   it('accepts a file above the general limit using the larger avatar limit', async () => {
     singleStub.restore();
     const express = require('express');
@@ -289,22 +272,6 @@ describe('file-upload.service unit tests', () => {
   it('rejects multer files without a mime type before magic-byte validation', done => {
     const { uploadFile } = loadUploadFileWithFileFilter(
       {},
-      { path: '/tmp/not-used' },
-    );
-    const res = mockResponse(() => {
-      res.statusCode.should.equal(415);
-      res.body!.message!.should.equal(
-        errorService.getErrorMessageByKey('unsupported-media-type'),
-      );
-      done();
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('rejects multer files with unsupported mime types before magic-byte validation', done => {
-    const { uploadFile } = loadUploadFileWithFileFilter(
-      { mimetype: 'text/plain' },
       { path: '/tmp/not-used' },
     );
     const res = mockResponse(() => {

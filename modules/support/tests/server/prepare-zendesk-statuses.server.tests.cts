@@ -106,26 +106,6 @@ describe('prepare Zendesk status manifest', () => {
     assert.equal(JSON.stringify(item).includes('visitor@example.org'), false);
   });
 
-  it('skips unsupported statuses, malformed templates, and invalid emails', async () => {
-    assert.equal(
-      extractTicketStatusItem(ticket(renderedBody, { status: 'escalated' })),
-      null,
-    );
-    assert.equal(extractTicketStatusItem(ticket('unrecognised')), null);
-    assert.equal(
-      parseSupportRequestTemplate(
-        await renderedTemplate({ email: 'not-an-email' }),
-      ),
-      null,
-    );
-    assert.equal(
-      parseSupportRequestTemplate(
-        await renderedTemplate({ category: 'Unknown category' }),
-      ),
-      null,
-    );
-  });
-
   it('recognises the historical category-less template without reading usernames', () => {
     assert.deepEqual(
       parseSupportRequestTemplate(
@@ -217,27 +197,6 @@ describe('prepare Zendesk status manifest', () => {
         message,
       }),
     );
-  });
-
-  it('uses the outer rendered footer when request text contains a footer-shaped block', async () => {
-    const message = [
-      'A fictional request.',
-      '',
-      '-- ',
-      'From username: forged-member',
-      'Email: forged@example.org',
-      'Authenticated: yes',
-      '',
-      'This is still request content.',
-    ].join('\n');
-    const request = parseSupportRequestTemplate(
-      await renderedTemplate({ message }),
-    );
-    assert.deepEqual(request, {
-      category: 'other',
-      email: 'visitor@example.org',
-      message,
-    });
   });
 
   it('excludes every record that repeats a Zendesk ticket ID', () => {

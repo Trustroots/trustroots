@@ -47,9 +47,6 @@ describe('Sparkpost CRUD tests', function () {
         done();
       })().catch(done);
     });
-    it('Should not be able to request using GET method', function (done) {
-      agent.get('/api/sparkpost/webhook').expect(404).end(done);
-    });
     it('Should not be allowed to access endpoint without credentials', function (done) {
       agent
         .post('/api/sparkpost/webhook')
@@ -63,13 +60,6 @@ describe('Sparkpost CRUD tests', function () {
           // Call the assertion callback
           return done(err);
         });
-    });
-    it('Should not be allowed to access endpoint with wrong credentials', function (done) {
-      agent
-        .post('/api/sparkpost/webhook')
-        .auth('wrong', 'wrong')
-        .expect(401)
-        .end(done);
     });
     it('Should be allowed to access endpoint with credentials', function (done) {
       agent

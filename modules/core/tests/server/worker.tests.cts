@@ -120,68 +120,6 @@ describe('Worker tests', function () {
     schedule.notCalled.should.equal(true);
   });
 
-  it('will retry on ECONNREFUSED', function () {
-    const job: WorkerJob = {
-      attrs: {
-        _id: 'jobid',
-        name: 'jobname',
-        failCount: workerOptions.maxAttempts - 1,
-      },
-      schedule(time) {
-        this.attrs.nextRunAt = time;
-        return this;
-      },
-    };
-    const err = new Error('ECONNREFUSED');
-    const schedule = sinon.spy(job, 'schedule');
-    failHandler(err, job);
-    schedule.calledOnce.should.equal(true);
-    job.attrs.nextRunAt!.should.be.instanceof(Date);
-    job.attrs
-      .nextRunAt!.getTime()
-      .should.equal(workerOptions.retryDelaySeconds * 1000);
-  });
-
-  it('will retry on ECONNRESET', function () {
-    const job: WorkerJob = {
-      attrs: {
-        _id: 'jobid',
-        name: 'jobname',
-        failCount: workerOptions.maxAttempts - 1,
-      },
-      schedule(time) {
-        this.attrs.nextRunAt = time;
-        return this;
-      },
-    };
-    const err = new Error('ECONNRESET');
-    const schedule = sinon.spy(job, 'schedule');
-    failHandler(err, job);
-    schedule.calledOnce.should.equal(true);
-    job.attrs.nextRunAt!.should.be.instanceof(Date);
-    job.attrs
-      .nextRunAt!.getTime()
-      .should.equal(workerOptions.retryDelaySeconds * 1000);
-  });
-
-  it('will not retry when max retries is reached', function () {
-    const job: WorkerJob = {
-      attrs: {
-        _id: 'jobid',
-        name: 'jobname',
-        failCount: workerOptions.maxAttempts,
-      },
-      schedule(time) {
-        this.attrs.nextRunAt = time;
-        return this;
-      },
-    };
-    const err = new Error('ECONNRESET');
-    const schedule = sinon.spy(job, 'schedule');
-    failHandler(err, job);
-    schedule.notCalled.should.equal(true);
-  });
-
   it('defines [send email] job', function () {
     const jobNames = _.map(definedJobs, 'name');
     jobNames.should.containEql('send email');

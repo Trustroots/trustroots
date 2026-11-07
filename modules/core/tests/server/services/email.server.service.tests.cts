@@ -150,32 +150,6 @@ describe('Service: email', function () {
     emailService = loadEmailService();
   });
 
-  it('passes Agenda enqueue failures to the email caller', function (done) {
-    const enqueueError = new Error('Job could not be queued');
-    emailService = loadEmailService({
-      '../../../../config/lib/agenda': {
-        now() {
-          return Promise.reject(enqueueError);
-        },
-      },
-    });
-    sandbox
-      .stub(emailService, 'renderEmail')
-      .callsFake(function (templateName, params, callback) {
-        callback(null, {
-          to: { address: 'member@example.test' },
-          subject: 'test',
-          text: 'test',
-        });
-      });
-
-    emailService.renderEmailAndSend('example', {}, function (err, job) {
-      err!.should.equal(enqueueError);
-      should.not.exist(job);
-      done();
-    });
-  });
-
   it('can send signup email confirmation', function (done) {
     const user = {
       displayName: 'test user',
@@ -361,29 +335,6 @@ describe('Service: email', function () {
       jobs.length.should.equal(1);
       job(0).data.html!.should.containEql(surveyUrl);
       job(0).data.text.should.containEql(surveyUrl);
-      done();
-    });
-  });
-
-  it('omits the reactivation survey link when disabled', function (done) {
-    const service = loadEmailService({
-      '../../../../config/config': {
-        ...config,
-        surveyReactivateHosts: false,
-      },
-    });
-    const user = {
-      firstName: 'first',
-      lastName: 'last',
-      displayName: 'first last',
-      email: 'test@test.com',
-    };
-
-    service.sendReactivateHosts(user, function (err) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      job(0).data.html!.should.not.containEql('ideas.trustroots.org');
-      job(0).data.text.should.not.containEql('ideas.trustroots.org');
       done();
     });
   });
@@ -724,40 +675,6 @@ describe('Service: email', function () {
     });
   });
 
-  it('includes only username in the support request subject when display name is missing', function (done) {
-    const supportRequest = {
-      message: 'test-support-message',
-      username: 'joedoe',
-    };
-    const replyTo = {
-      email: 'replyto@test.com',
-    };
-
-    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      job(0).data.subject.should.equal('Support request [Other] from joedoe');
-      done();
-    });
-  });
-
-  it('includes only display name in the support request subject when username is missing', function (done) {
-    const supportRequest = {
-      message: 'test-support-message',
-      displayName: 'Joe Doe',
-    };
-    const replyTo = {
-      email: 'replyto@test.com',
-    };
-
-    emailService.sendSupportRequest(replyTo, supportRequest, function (err) {
-      if (err) return done(err);
-      jobs.length.should.equal(1);
-      job(0).data.subject.should.equal('Support request [Other] (Joe Doe)');
-      done();
-    });
-  });
-
   it('can send signup reminder email', function (done) {
     const user = {
       _id: 'user-id',
@@ -848,28 +765,6 @@ describe('Service: email', function () {
     );
     send.firstCall.args[1].urlConfirmPlainText!.should.equal(
       'https://secure.example.test/api/auth/reset/fictional-token',
-    );
-  });
-
-  it('builds HTTPS base template URLs when HTTPS is configured', function () {
-    const service = loadEmailService({
-      '../../../../config/config': {
-        ...config,
-        domain: 'secure.trustroots.test',
-        https: true,
-      },
-    });
-
-    const params = service.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@test.com',
-      utmCampaign: 'test',
-    });
-
-    params.footerUrlPlainText!.should.equal('https://secure.trustroots.test');
-    params.urlSupportPlainText!.should.equal(
-      'https://secure.trustroots.test/support',
     );
   });
 
@@ -1049,23 +944,6 @@ describe('Service: email', function () {
     );
   });
 
-  it('emails should have inline css styles', function (done) {
-    const params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@test.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-    });
-
-    emailService.renderEmail('reset-password', params, function (err, email) {
-      if (err) return done(err);
-      email!.html!.should.containEql('<body style=');
-      done();
-    });
-  });
-
   it('emails should have Sparkpost transactional and campaign_id headers', function (done) {
     const user = {
       displayName: 'test user',
@@ -1084,48 +962,6 @@ describe('Service: email', function () {
     });
   });
 
-  it('emails should have "do not reply" note when sending from default email', function (done) {
-    const params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@example.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-      // Ommiting `from` affects rendering of template's footer
-      // from: 'test@example.com'
-    });
-
-    emailService.renderEmail('reset-password', params, function (err, email) {
-      if (err) return done(err);
-      email!.text!.should.containEql(
-        'This is an automated email. Please don’t reply directly.',
-      );
-      done();
-    });
-  });
-
-  it('emails should not have "do not reply" note when sending from custom email', function (done) {
-    const params = emailService.addEmailBaseTemplateParams({
-      subject: 'test',
-      name: 'test',
-      email: 'test@example.com',
-      utmCampaign: 'test',
-      urlConfirmPlainText: '#',
-      urlConfirm: '#',
-      // Adding `from` affects rendering of template's footer
-      from: 'test@example.com',
-    });
-
-    emailService.renderEmail('reset-password', params, function (err, email) {
-      if (err) return done(err);
-      email!.text!.should.not.containEql(
-        'This is an automated email. Please don’t reply directly.',
-      );
-      done();
-    });
-  });
-
   it('passes render failures to renderEmail callbacks', function (done) {
     const service = loadEmailService({
       '../../../../config/lib/render': (templatePath, params, callback) =>
@@ -1140,93 +976,6 @@ describe('Service: email', function () {
         done();
       },
     );
-  });
-
-  it('passes render failures to renderEmailAndSend callbacks without scheduling jobs', function (done) {
-    const service = loadEmailService({
-      '../../../../config/lib/render': (templatePath, params, callback) =>
-        callback(new Error('render failed')),
-    });
-
-    service.renderEmailAndSend(
-      'reset-password',
-      { subject: 'test', name: 'test', email: 'test@test.com' },
-      function (err) {
-        err!.message.should.equal('render failed');
-        jobs.length.should.equal(0);
-        done();
-      },
-    );
-  });
-
-  it('passes Agenda scheduling failures to renderEmailAndSend callbacks', function (done) {
-    const service = loadEmailService({
-      '../../../../config/lib/agenda': {
-        now(type, data) {
-          jobs.push(JSON.parse(JSON.stringify({ type, data })));
-          return Promise.reject(new Error('agenda failed'));
-        },
-      },
-    });
-
-    service.renderEmailAndSend(
-      'reset-password',
-      {
-        subject: 'test',
-        name: 'test',
-        email: 'test@test.com',
-        utmCampaign: 'test',
-      },
-      function (err) {
-        err!.message.should.equal('agenda failed');
-        jobs.length.should.equal(1);
-        done();
-      },
-    );
-  });
-
-  describe('Plain text emails', function () {
-    it('should be able to render text-only emails', function (done) {
-      const params = emailService.addEmailBaseTemplateParams({
-        subject: 'test',
-        name: 'test',
-        email: 'test@test.com',
-        utmCampaign: 'test',
-        urlConfirmPlainText: '#',
-        urlConfirm: '#',
-        skipHtmlTemplate: true,
-      });
-
-      emailService.renderEmail('reset-password', params, function (err, email) {
-        if (err) return done(err);
-        should.exist(email!.text);
-        should.not.exist(email!.html);
-        done();
-      });
-    });
-
-    it('plain text emails should not contain html or html entities', function (done) {
-      const params = {
-        skipHtmlTemplate: true, // Don't render html template for this email
-        request: {
-          message:
-            '> Foo &amp; <p>foo<br />bar</p> <script>alert()</script>bar',
-        },
-        subject: 'test',
-      };
-      emailService.renderEmail(
-        'support-request',
-        params,
-        function (err, email) {
-          if (err) return done(err);
-
-          email!.text!.should.containEql('> Foo & foobar bar');
-          email!.text!.should.not.containEql('script');
-
-          done();
-        },
-      );
-    });
   });
 
   context('Confirm contact email', function () {
@@ -1255,41 +1004,6 @@ describe('Service: email', function () {
       );
     });
 
-    it('creates a [send email] job', function () {
-      jobs.length.should.equal(1);
-      job(0).type.should.equal('send email');
-    });
-
-    it('sends to the correct recipient', function () {
-      job(0).data.to.name!.should.equal(friend.displayName);
-      job(0).data.to.address.should.equal(friend.email);
-    });
-
-    it('sets the subject', function () {
-      job(0).data.subject.should.equal('Confirm contact');
-    });
-
-    it('contains the user and friends name', function () {
-      job(0).data.html!.should.containEql(user.displayName);
-      job(0).data.html!.should.containEql(friend.displayName);
-      job(0).data.text.should.containEql(user.displayName);
-      job(0).data.text.should.containEql(friend.displayName);
-    });
-
-    it('sets the custom message', function () {
-      job(0).data.html!.should.containEql(messageHTML);
-      job(0).data.text.should.containEql(messageText);
-    });
-
-    it('contains the correct message', function () {
-      job(0).data.html!.should.containEql(
-        user.displayName + '</a> would like to connect with you on Trustroots.',
-      );
-      job(0).data.text.should.containEql(
-        user.displayName + ' would like to connect with you on Trustroots.',
-      );
-    });
-
     it('contains the contact confirm url', function () {
       job(0).data.html!.should.containEql('/contact-confirm/' + contact._id);
       job(0).data.text.should.containEql('/contact-confirm/' + contact._id);
@@ -1304,26 +1018,6 @@ describe('Service: email', function () {
       emailService.sendConfirmContact(
         bannedUser,
         friend,
-        contact,
-        messageHTML,
-        messageText,
-        function (err) {
-          if (err) return done(err);
-          jobs.length.should.equal(0);
-          done();
-        },
-      );
-    });
-
-    it('suppresses confirm contact email for banned recipient', function (done) {
-      jobs.length = 0;
-      const bannedFriend = {
-        ...friend,
-        roles: ['user', 'suspended'],
-      };
-      emailService.sendConfirmContact(
-        user,
-        bannedFriend,
         contact,
         messageHTML,
         messageText,

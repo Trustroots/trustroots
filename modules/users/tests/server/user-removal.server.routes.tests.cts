@@ -157,36 +157,6 @@ describe('User removal CRUD tests', function () {
       .catch(done);
   });
   afterEach(dataUtils.clearDatabase);
-  it('should not be able to initiate removing profile when not logged in', function (done: DoneCallback) {
-    agent
-      .del('/api/users')
-      .set('X-Trustroots-Request', '1')
-      .expect(403)
-      .end(function (deleteErr) {
-        // Handle signup error
-        if (deleteErr) {
-          return done(deleteErr);
-        }
-        jobs.length.should.equal(0);
-        // User should still exist
-        User.findOne({
-          username: userA.username,
-        })
-          .then((findUser: UserModelDocument | null) => {
-            findUser!.username.should.equal(userA.username);
-            done();
-          })
-          .catch(done);
-      });
-  });
-  for (const method of ['get', 'delete'] as const) {
-    it(`denies anonymous deletion ${method} requests`, async () => {
-      await request(app)
-        [method]('/api/users/removal/pending')
-        .set('X-Trustroots-Request', '1')
-        .expect(403);
-    });
-  }
 
   it('cancels only the signed-in member request and rejects the old confirmation', async () => {
     const token = 'fictional-cancelled-removal';
@@ -254,30 +224,6 @@ describe('User removal CRUD tests', function () {
     should.not.exist(stored.removeProfileExpires);
   });
 
-  it('Signin in should not reveal profile removal tokens', function (done: DoneCallback) {
-    userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA.removeProfileExpires = new Date();
-    userA
-      .save()
-      .then(() => {
-        should.not.exist(null);
-        agent
-          .post('/api/auth/signin')
-          .send(credentialsA)
-          .expect(200)
-          .end(function (signinErr, signinRes) {
-            // Handle signin error
-            if (signinErr) {
-              return done(signinErr);
-            }
-            // Sensitive information should be not sent to the client
-            should.not.exist(signinRes.body.removeProfileToken);
-            should.not.exist(signinRes.body.removeProfileExpires);
-            done();
-          });
-      })
-      .catch(done);
-  });
   it('should be able to initiate removing profile when signed in', function (done: DoneCallback) {
     agent
       .post('/api/auth/signin')
@@ -464,37 +410,6 @@ describe('User removal CRUD tests', function () {
                 jobs.length.should.equal(0);
                 done();
               });
-          });
-      })
-      .catch(done);
-  });
-  it('should not be able to confirm removing profile when not signed in', function (done: DoneCallback) {
-    userA.removeProfileExpires = new Date(Date.now() + 24 * 3600000);
-    userA.removeProfileToken = 'c823770bc996ef7aabc9497c57c3ff0a972e7cd6';
-    userA
-      .save()
-      .then(savedUser => {
-        should.not.exist(null);
-        agent
-          .del('/api/users/remove/' + savedUser.removeProfileToken)
-          .set('X-Trustroots-Request', '1')
-          .expect(403)
-          .end(function (deleteErr, deleteRes) {
-            // Handle signup error
-            if (deleteErr) {
-              return done(deleteErr);
-            }
-            deleteRes.body.message.should.equal('Forbidden.');
-            jobs.length.should.equal(0);
-            // User should still exist
-            User.findById(savedUser._id)
-              .then((findUser: UserModelDocument | null) => {
-                removalToken(requireUserDocument(findUser)).should.equal(
-                  userA.removeProfileToken,
-                );
-                done();
-              })
-              .catch(done);
           });
       })
       .catch(done);

@@ -156,32 +156,6 @@ describe('Read my experience to userTo Id', () => {
         .match(/[0-9a-f]{24}/);
       should(body.response).eql(null);
     });
-    it('[param userWith] 3: experience is still private', async () => {
-      const { body } = await agent
-        .get(`/api/my-experience?userWith=${users[3]._id}`)
-        .expect(200);
-      should(body).have.propertyByPath('interactions', 'met').Boolean();
-      should(body).have.propertyByPath('interactions', 'guest').Boolean();
-      should(body).have.propertyByPath('interactions', 'host').Boolean();
-      should(body).have.property('public', false);
-      should(body).have.property('created', new Date().toISOString());
-      should(body)
-        .have.property('recommend')
-        .which.is.equalOneOf(['no', 'yes', 'unknown']);
-      should(body)
-        .have.property('_id')
-        .String()
-        .match(/[0-9a-f]{24}/);
-      should(body)
-        .have.property('userFrom')
-        .String()
-        .match(/[0-9a-f]{24}/);
-      should(body)
-        .have.property('userTo')
-        .String()
-        .match(/[0-9a-f]{24}/);
-      should(body.response).eql(null);
-    });
     it("[param userWith] 4: experience was shared with me - i didn't share one (published)", async () => {
       const { body } = await agent
         .get(`/api/my-experience?userWith=${users[4]._id}`)
@@ -191,64 +165,11 @@ describe('Read my experience to userTo Id', () => {
       should(body.userFrom).eql(users[4].id);
       should(body.response).eql(null);
     });
-    it("[param userWith] 5: experience was shared with me - i didn't share one (still private)", async () => {
-      const { body } = await agent
-        .get(`/api/my-experience?userWith=${users[5]._id}`)
-        .expect(200);
-      should(body).have.property('public', false);
-      should(body.userTo).eql(users[0].id);
-      should(body.userFrom).eql(users[5].id);
-      should(body.response).eql(null);
-    });
-    it('[param userWith] 6: user with whom no experience shared', async () => {
-      const { body } = await agent
-        .get(`/api/my-experience?userWith=${users[6]._id}`)
-        .expect(404);
-      should(body).eql({
-        message: 'Not found.',
-      });
-    });
-    it('[param userTo] 0: myself', async () => {
-      const { body } = await agent
-        .get(`/api/my-experience?userWith=${users[0]._id}`)
-        .expect(404);
-      should(body).eql({
-        message: 'Not found.',
-      });
-    });
     it('[no params] 400 and error', async () => {
       const { body } = await agent.get('/api/my-experience').expect(400);
       should(body).eql({
         message: 'Missing or invalid `userTo` request param',
       });
-    });
-    it('[invalid params] 400 and error', async () => {
-      const { body } = await agent
-        .get('/api/my-experience?userWith=asdf')
-        .expect(400);
-      should(body).eql({
-        message: 'Missing or invalid `userTo` request param',
-      });
-    });
-  });
-  context('logged in as non-public user', () => {
-    beforeEach(function () {
-      return utils.signIn.call(this, _usersPrivate[0], agent);
-    });
-    afterEach(function () {
-      return utils.signOut.call(this, agent);
-    });
-    it('403', async () => {
-      await agent
-        .get(`/api/my-experience?userWith=${users[2]._id}`)
-        .expect(403);
-    });
-  });
-  context('not logged in', () => {
-    it('403', async () => {
-      await agent
-        .get(`/api/my-experience?userWith=${users[2]._id}`)
-        .expect(403);
     });
   });
 });

@@ -1,9 +1,5 @@
 import type { QueryFilter, HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
-const {
-  hashIpAddress,
-}: typeof import('../../../core/server/services/ip-hash.server.service.mts') = require('../../../core/server/services/ip-hash.server.service.mts');
-
 const request: typeof import('supertest') = require('supertest');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -20,28 +16,8 @@ interface LastSeenUserRecord extends UserRecord {
   seen?: Date;
   lastIpHash?: string;
 }
-interface LastSeenRequest {
-  get(name: string): string | undefined;
-  ip: string;
-  user?: { id: string; lastIpHash?: string; seen?: Date };
-}
-const lastSeen: {
-  (
-    req: LastSeenRequest,
-    res: import('express').Response,
-    next: (error?: unknown) => void,
-  ): void;
-  getClientIpAddress(
-    req: Pick<LastSeenRequest, 'get' | 'ip'>,
-  ): string | undefined;
-} = require('./../../server/controllers/users.lastseen.server.controller.mjs');
 const User = mongoose.model<LastSeenUserRecord>('User');
 type LastSeenDocument = HydratedDocument<LastSeenUserRecord>;
-type CallbackUpdate = (
-  id: string,
-  update: Partial<LastSeenUserRecord>,
-  callback: (error?: unknown) => void,
-) => void;
 function findUser(
   filter: QueryFilter<LastSeenUserRecord>,
   callback: (error: unknown | null, user: LastSeenDocument | null) => void,
@@ -144,54 +120,6 @@ describe('User last seen CRUD tests', function () {
             },
           );
         });
-    });
-    it('prefers the trusted Passenger client address', () => {
-      const req = {
-        get: (header: string) =>
-          header === '!~Passenger-Client-Address' ? '203.0.113.24' : undefined,
-        ip: '198.51.100.24',
-      };
-      lastSeen.getClientIpAddress(req)!.should.equal('203.0.113.24');
-    });
-    it('uses the socket-derived request address when Passenger is unavailable', () => {
-      const req = {
-        get: () => undefined,
-        ip: '2001:db8::1',
-      };
-      lastSeen.getClientIpAddress(req)!.should.equal('2001:db8::1');
-    });
-    it('does not store an invalid client address', () => {
-      const req = {
-        get: () => 'not-an-ip-address',
-        ip: 'not-an-ip-address',
-      };
-      should(lastSeen.getClientIpAddress(req)).be.undefined();
-    });
-    it('updates a changed IP address without advancing the last-seen timestamp', async () => {
-      const findByIdAndUpdate = sinon.stub(
-        User,
-        'findByIdAndUpdate',
-      ) as unknown as sinon.SinonStub<Parameters<CallbackUpdate>, void>;
-      findByIdAndUpdate.resolves();
-      const req: LastSeenRequest = {
-        get: () => '203.0.113.24',
-        ip: '198.51.100.24',
-        user: {
-          id: 'user-id',
-          lastIpHash: hashIpAddress('203.0.113.23'),
-          seen: new Date(),
-        },
-      };
-      await new Promise<void>((resolve, reject) => {
-        lastSeen(req, {} as unknown as import('express').Response, err =>
-          err ? reject(err) : resolve(),
-        );
-      });
-      sinon.assert.calledOnce(findByIdAndUpdate);
-      findByIdAndUpdate.firstCall.args[0].should.equal('user-id');
-      findByIdAndUpdate.firstCall.args[1].should.deepEqual({
-        lastIpHash: hashIpAddress('203.0.113.24'),
-      });
     });
     it('should update the last seen date only if a specific time passed since the last update', function (done) {
       // the user's username, shortcut

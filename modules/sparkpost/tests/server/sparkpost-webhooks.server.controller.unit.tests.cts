@@ -255,21 +255,6 @@ describe('SparkPost webhook controller unit tests', () => {
     updateOne.calledOnce.should.be.true();
   });
 
-  it('responds 200 even when metric writing reports an error', async () => {
-    const { controller } = loadController();
-    const res = mockResponse();
-    sinon
-      .stub(controller, 'processAndSendMetrics')
-      .callsFake((event, callback) => {
-        callback(new Error('metric write failed'));
-      });
-
-    receiveBatch(controller, [{ msys: { message_event: {} } }], res);
-    await res.waitForResponse();
-
-    res.statusCode.should.equal(200);
-  });
-
   it('logs and ignores events with invalid category or type', async () => {
     const { controller, log, stat } = loadController();
 

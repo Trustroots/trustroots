@@ -77,7 +77,7 @@ const User = mongoose.model<UserRecord>('User');
 const Message = mongoose.model<MessageRecord>('Message');
 
 function generateStoryUsers(count: number): StoryFixture[] {
-  return utils.generateUsers(count).map(user => {
+  return utils.generateUsersWithSharedPassword(count).map(user => {
     if (!user || !('password' in user))
       throw new Error('Expected server user fixtures');
     return {
@@ -216,7 +216,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[2].roles = ['user', 'welcome-team'];
       users[3].roles = ['user', 'admin'];
       users[4].roles = ['user', 'welcome-team'];
-      const saved = await utils.saveUsers(users);
+      const saved = await utils.saveUsersWithCachedPasswords(users);
       const recipient = saved[0];
       const firstDate = new Date('2026-01-02T12:00:00Z');
       await Message.create([
@@ -304,7 +304,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       const users = generateStoryUsers(4);
       users[0].acquisitionStory = 'Another fictional recommendation.';
       users[1].roles = users[2].roles = ['user', 'welcome-team'];
-      const saved = await utils.saveUsers(users);
+      const saved = await utils.saveUsersWithCachedPasswords(users);
       const created = new Date('2026-01-01');
       await Message.create([
         {
@@ -404,7 +404,7 @@ describe('Admin acquisition stories controller unit tests', () => {
         user.roles = ['user', 'shadowban'];
         user.acquisitionStory = `Restricted member story ${index}.`;
       });
-      await utils.saveUsers(users);
+      await utils.saveUsersWithCachedPasswords(users);
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
       const expected = await User.find({ roles: 'shadowban' }).sort({
@@ -435,7 +435,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[3].acquisitionStory = '';
 
       const [visibleUser, hiddenUser, confirmedPrivateUser] =
-        await utils.saveUsers(users);
+        await utils.saveUsersWithCachedPasswords(users);
 
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
@@ -507,7 +507,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       users[5].roles = ['user', 'shadowban', 'suspended', 'volunteer'];
       users[5].acquisitionStory = 'Yet another unrelated source.';
 
-      await utils.saveUsers(users);
+      await utils.saveUsersWithCachedPasswords(users);
 
       const res = mockResponse();
       await adminAcquisitionStories.list({}, res);
@@ -568,7 +568,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     it('returns the latest hosting location with acquisition stories', async () => {
       const users = generateStoryUsers(1);
       users[0].acquisitionStory = 'Found through friends';
-      const [savedUser] = await utils.saveUsers(users);
+      const [savedUser] = await utils.saveUsersWithCachedPasswords(users);
       sinon.stub(Offer, 'find').returns({
         select: () => ({
           sort: () => ({
@@ -598,7 +598,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     it('falls back to a precise hosting location when no fuzzy value exists', async () => {
       const users = generateStoryUsers(1);
       users[0].acquisitionStory = 'Found through a gathering';
-      const [savedUser] = await utils.saveUsers(users);
+      const [savedUser] = await utils.saveUsersWithCachedPasswords(users);
       sinon.stub(Offer, 'find').returns({
         select: () => ({
           sort: () => ({
@@ -623,7 +623,7 @@ describe('Admin acquisition stories controller unit tests', () => {
     it('handles a missing hosting-offer result', async () => {
       const users = generateStoryUsers(1);
       users[0].acquisitionStory = 'Found through a cyclist';
-      await utils.saveUsers(users);
+      await utils.saveUsersWithCachedPasswords(users);
       sinon.stub(Offer, 'find').returns({
         select: () => ({
           sort: () => ({
@@ -670,7 +670,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       fixture.emailTemporary = fixture.email;
       const oldToken = 'fictional-old-confirmation-token';
       setEmailConfirmationToken(fixture, oldToken);
-      const [user] = await utils.saveUsers([fixture]);
+      const [user] = await utils.saveUsersWithCachedPasswords([fixture]);
       let sentToken = '';
       const send = sinon
         .stub(mail, 'sendSignupEmailConfirmation')
@@ -723,7 +723,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       fixture.acquisitionStory = 'A fictional introduction.';
       fixture.public = true;
       fixture.emailTemporary = 'pending-change@example.test';
-      const [user] = await utils.saveUsers([fixture]);
+      const [user] = await utils.saveUsersWithCachedPasswords([fixture]);
       const send = sinon.stub(mail, 'sendSignupEmailConfirmation');
       const invalid = mockResponse();
       await adminAcquisitionStories.resendConfirmation(
@@ -747,7 +747,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       fixture.public = false;
       fixture.emailTemporary = fixture.email;
       setEmailConfirmationToken(fixture, 'fictional-current-token');
-      const [user] = await utils.saveUsers([fixture]);
+      const [user] = await utils.saveUsersWithCachedPasswords([fixture]);
       const update = sinon.stub(User, 'updateOne').returns({
         exec: async () => ({ modifiedCount: 0 }),
       } as never);
@@ -770,7 +770,7 @@ describe('Admin acquisition stories controller unit tests', () => {
       fixture.acquisitionStory = 'A fictional introduction.';
       fixture.public = false;
       fixture.emailTemporary = fixture.email;
-      const [user] = await utils.saveUsers([fixture]);
+      const [user] = await utils.saveUsersWithCachedPasswords([fixture]);
       sinon
         .stub(mail, 'sendSignupEmailConfirmation')
         .callsFake(

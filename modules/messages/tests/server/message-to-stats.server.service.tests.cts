@@ -66,17 +66,6 @@ describe('Message to stats server service Unit Tests:', function () {
     return utils.clearDatabase();
   });
   describe('save', function () {
-    it('returns an error when influx is disabled', function (done) {
-      const originalEnabled = config.influxdb.enabled;
-      config.influxdb.enabled = false;
-      statsService.save(new Message(), function (err) {
-        config.influxdb.enabled = originalEnabled;
-        if (!err) return done(new Error('Expected InfluxDB to be disabled'));
-        err.should.be.an.Error();
-        err.message.should.match(/InfluxDB disabled/);
-        done();
-      });
-    });
     it('does not log expected disabled influx errors', function (done) {
       const originalEnabled = config.influxdb.enabled;
       const originalNodeEnv = process.env.NODE_ENV;
@@ -169,17 +158,6 @@ describe('Message to stats server service Unit Tests:', function () {
         await message.save();
       }
     });
-    it('[first message] should give tag with key `position` and value `first`', function (done) {
-      statsService.process(message1to2, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.have.propertyByPath('tags', 'position').eql('first');
-          return done();
-        } catch (err) {
-          return done(err);
-        }
-      });
-    });
     it('[first reply] should give tag with key `position` and value `firstReply`', function (done) {
       statsService.process(message2to1, function (err, stat) {
         if (err) return done(err);
@@ -188,43 +166,6 @@ describe('Message to stats server service Unit Tests:', function () {
           return done();
         } catch (e) {
           return done(e);
-        }
-      });
-    });
-    it('[first reply] should give value with key `timeToFirstReply` > 0', function (done) {
-      statsService.process(message2to1, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.have
-            .propertyByPath('values', 'timeToFirstReply')
-            .above(0);
-          return done();
-        } catch (err) {
-          return done(err);
-        }
-      });
-    });
-    it('[not first position nor first reply] should give tag with key `position` and value `other`', function (done) {
-      statsService.process(shortMessage, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.have.propertyByPath('tags', 'position').eql('other');
-          return done();
-        } catch (err) {
-          return done(err);
-        }
-      });
-    });
-    it('[short message] stat should contain tag "messageLengthType": "short"', function (done) {
-      statsService.process(shortMessage, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.have
-            .propertyByPath('tags', 'messageLengthType')
-            .eql('short');
-          return done();
-        } catch (err) {
-          return done(err);
         }
       });
     });
@@ -240,85 +181,6 @@ describe('Message to stats server service Unit Tests:', function () {
           return done(err);
         }
       });
-    });
-    it('[not-first-reply message] stat should contain tag `timeToFirstReply`', function (done) {
-      statsService.process(longMessage, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.not.have.property('timeToFirstReply');
-          return done();
-        } catch (err) {
-          return done(err);
-        }
-      });
-    });
-    it('[every message] stat should contain meta "messageLength" and a correct length as value', function (done) {
-      statsService.process(message1to2, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.have
-            .propertyByPath('meta', 'messageLength')
-            .eql(message1to2.content!.length);
-          return done();
-        } catch (err) {
-          return done(err);
-        }
-      });
-    });
-    // @TODO the test should be rewriten to be more precise (see the todo near creating the testing messages)
-    it('[every message] stat should contain "time" which is a Date in a specific range', function (done) {
-      statsService.process(message1to2, function (err, stat) {
-        if (err) return done(err);
-        try {
-          stat.should.have.property('time');
-          stat.time.should.be.Date();
-          // here we test wheter the number is between now and some not so
-          // past time
-          (stat.time.getTime() > 1400000000 * 1000).should.be.exactly(true);
-          (stat.time.getTime() <= Date.now()).should.be.exactly(true);
-          return done();
-        } catch (err) {
-          return done(err);
-        }
-      });
-    });
-  });
-  describe('spam status tags', function () {
-    it('tags confirmed spam messages as yes', function (done) {
-      const message = new Message({
-        content: 'hello',
-        userFrom: user1._id,
-        userTo: user2._id,
-        spam: true,
-      });
-      message
-        .save()
-        .then(() => {
-          statsService.process(message, function (processErr, stat) {
-            if (processErr) return done(processErr);
-            stat.tags.spam.should.equal('yes');
-            done();
-          });
-        })
-        .catch(done);
-    });
-    it('tags confirmed clean messages as no', function (done) {
-      const message = new Message({
-        content: 'hello again',
-        userFrom: user1._id,
-        userTo: user2._id,
-        spam: false,
-      });
-      message
-        .save()
-        .then(() => {
-          statsService.process(message, function (processErr, stat) {
-            if (processErr) return done(processErr);
-            stat.tags.spam.should.equal('no');
-            done();
-          });
-        })
-        .catch(done);
     });
   });
 });

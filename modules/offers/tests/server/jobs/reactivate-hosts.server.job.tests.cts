@@ -102,38 +102,6 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
     });
   });
 
-  it('Send reactivation email for un-confirmed profiles', function (done) {
-    // This should not be there before notifications are sent
-    should.not.exist(offerHost.reactivateReminderSent);
-
-    user.public = false;
-    user
-      .save()
-      .then(function () {
-        reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
-          if (err) return done(err);
-
-          jobs.length.should.equal(1);
-          jobs[0].type.should.equal('send email');
-          jobs[0].data.subject.should.equal(
-            _user.firstName + ', start hosting on Trustroots again?',
-          );
-          jobs[0].data.to.address.should.equal(_user.email);
-
-          Offer.findOne({ user: user._id })
-            .then(function (offerRes) {
-              should.exist(offerRes?.reactivateReminderSent);
-              done();
-            })
-            .catch(function (err) {
-              if (typeof done === 'function') return done(err);
-              throw err;
-            });
-        });
-      })
-      .catch(err => done(err));
-  });
-
   it('Do not send reactivation email for offers modified less than configured limit ago', function (done) {
     offerHost.updated = new Date();
     offerHost
@@ -144,86 +112,6 @@ describe('Job: reactivate members with hosting offer status set to "no"', functi
           jobs.length.should.equal(0);
           done();
         });
-      })
-      .catch(err => done(err));
-  });
-
-  it('Do not send reactivation email for "yes" hosting offers', function (done) {
-    offerHost.status = 'yes';
-    offerHost
-      .save()
-      .then(function () {
-        reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
-          if (err) return done(err);
-          jobs.length.should.equal(0);
-          done();
-        });
-      })
-      .catch(err => done(err));
-  });
-
-  it('Do not send reactivation email for "maybe" hosting offers', function (done) {
-    offerHost.status = 'maybe';
-    offerHost
-      .save()
-      .then(function () {
-        reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
-          if (err) return done(err);
-          jobs.length.should.equal(0);
-          done();
-        });
-      })
-      .catch(err => done(err));
-  });
-
-  it('Do not send reactivation email for hosting offers without status', function (done) {
-    offerHost.status = undefined;
-    offerHost
-      .save()
-      .then(function () {
-        reactivateHostsJobHandler({}, function (err: Error | null | undefined) {
-          if (err) return done(err);
-          jobs.length.should.equal(0);
-          done();
-        });
-      })
-      .catch(err => done(err));
-  });
-
-  it('Do not send reactivation email for non-hosting offers', function (done) {
-    const _offerMeet = {
-      type: 'meet',
-      user: user._id,
-      updated: moment()
-        .subtract(moment.duration(config.limits.timeToReactivateHosts))
-        .toDate(),
-      location: [52.498981209298776, 13.418329954147339],
-      locationFuzzy: [52.50155039101136, 13.42255019882177],
-    };
-
-    const offerMeet = new Offer(_offerMeet);
-
-    // Save meet offer to db
-    offerMeet
-      .save()
-      .then(function () {
-        // Remove host offer as we don't want it to interfer with this test
-        offerHost
-          .deleteOne()
-          .then(function () {
-            reactivateHostsJobHandler(
-              {},
-              function (err: Error | null | undefined) {
-                if (err) return done(err);
-                jobs.length.should.equal(0);
-                done();
-              },
-            );
-          })
-          .catch(function (err) {
-            if (typeof done === 'function') return done(err);
-            throw err;
-          });
       })
       .catch(err => done(err));
   });

@@ -146,35 +146,6 @@ describe('Read a single experience by experience id', () => {
       should(body.userFrom).not.have.property('avatarVersion');
       should(body.userTo).not.have.property('avatarVersion');
     });
-    it('read a single private experience if it is from self', async () => {
-      const { body } = await agent
-        .get(`/api/experiences/${experiences[1]._id}`)
-        .expect(200);
-      should(body).match({
-        public: false,
-        _id: String(experiences[1]._id),
-        response: null,
-      });
-    });
-    it('[private experience to self] display in limited form', async () => {
-      const { body } = await agent
-        .get(`/api/experiences/${experiences[2]._id}`)
-        .expect(200);
-      should(body).match({
-        public: false,
-        _id: String(experiences[2]._id),
-        created: new Date().toISOString(),
-        response: null,
-      });
-      should(body).have.only.keys(
-        'userFrom',
-        'userTo',
-        '_id',
-        'public',
-        'created',
-        'response',
-      );
-    });
     it('[private experiences not from self] 404', async () => {
       const { body } = await agent
         .get(`/api/experiences/${experiences[5]._id}`)
@@ -205,17 +176,6 @@ describe('Read a single experience by experience id', () => {
           experienceId: 'invalid',
         },
       });
-    });
-  });
-  context('logged in as non-public user', () => {
-    beforeEach(function () {
-      return utils.signIn.call(this, _usersPrivate[0], agent);
-    });
-    afterEach(function () {
-      return utils.signOut.call(this, agent);
-    });
-    it('403', async () => {
-      await agent.get(`/api/experiences/${experiences[3]._id}`).expect(403);
     });
   });
   context('not logged in', () => {

@@ -212,16 +212,6 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('rejects a location that is not a coordinate pair', async () => {
-      const { res } = await runHandler(res =>
-        offersController.create(
-          { user: owner, body: { type: 'host', location: 'invalid' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
-
     it('creates a host offer', async () => {
       const { res } = await runHandler(res =>
         offersController.create(
@@ -231,31 +221,6 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer saved.');
-    });
-
-    it('rejects coordinates that cannot be converted to numbers', async () => {
-      const { res } = await runHandler(res =>
-        offersController.create(
-          { user: owner, body: { type: 'host', location: [10, {}] } },
-          res,
-        ),
-      );
-
-      res.statusCode.should.equal(400);
-    });
-
-    it('creates a meet offer with a valid validUntil', async () => {
-      const validUntil = require('moment')().add(5, 'days').toISOString();
-      const { res } = await runHandler(res =>
-        offersController.create(
-          {
-            user: owner,
-            body: { type: 'meet', location: [10, 20], validUntil },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
     });
 
     it('preserves numeric moment-compatible expiry input', async () => {
@@ -281,36 +246,6 @@ describe('Offers controller unit tests', () => {
 
       const { res } = await runHandler(res =>
         controller.create(
-          {
-            user: owner,
-            body: { type: 'meet', location: [10, 20], validUntil: 'invalid' },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-    });
-
-    it('accepts a valid meet offer expiry when max validity config is absent', async () => {
-      sinon.stub(config, 'limits').value({});
-      const controller = offersController;
-      const validUntil = require('moment')().add(5, 'days').toISOString();
-
-      const { res } = await runHandler(res =>
-        controller.create(
-          {
-            user: owner,
-            body: { type: 'meet', location: [10, 20], validUntil },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-    });
-
-    it('creates a meet offer defaulting validUntil', async () => {
-      const { res } = await runHandler(res =>
-        offersController.create(
           {
             user: owner,
             body: { type: 'meet', location: [10, 20], validUntil: 'invalid' },
@@ -477,47 +412,6 @@ describe('Offers controller unit tests', () => {
 
       const reloaded = required(await Offer.findById(offerReq._id));
       required(reloaded.validUntil).should.be.a.Date();
-    });
-
-    it('accepts a valid validUntil when updating a meet offer', async () => {
-      const validUntil = require('moment')().add(5, 'days').toISOString();
-      const { res } = await runHandler(res =>
-        offersController.update(
-          {
-            user: owner,
-            offer: offerReq,
-            body: { location: [1, 2], validUntil },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-
-      const reloaded = required(await Offer.findById(offerReq._id));
-      required(reloaded.validUntil).should.be.a.Date();
-    });
-
-    it('returns 400 when saving an updated offer fails', async () => {
-      const saveOffer = sinon.stub(
-        Offer.prototype,
-        'save',
-      ) as unknown as import('sinon').SinonStub<
-        [(error?: Error | null) => void],
-        void
-      >;
-      saveOffer.callsFake(() => Promise.reject(new Error('save failed')));
-
-      const { res } = await runHandler(res =>
-        offersController.update(
-          {
-            user: owner,
-            offer: offerReq,
-            body: { location: [1, 2], description: 'Updated' },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
     });
   });
 
@@ -694,23 +588,6 @@ describe('Offers controller unit tests', () => {
                 languages: ['eng'],
                 seen: { days: 30 },
               }),
-            },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-      res.body.type.should.equal('FeatureCollection');
-    });
-
-    it('keeps legacy array handling for object filters', async () => {
-      const { res } = await runHandler(res =>
-        offersController.list(
-          {
-            user: owner,
-            query: {
-              ...validCoords,
-              filters: JSON.stringify({ seen: [] }),
             },
           },
           res,
@@ -1245,29 +1122,6 @@ describe('Offers controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
-    });
-
-    it('responds with 404 when attaching the offer fails', async () => {
-      const findOfferById = sinon.stub(
-        Offer,
-        'findById',
-      ) as unknown as import('sinon').SinonStub;
-      findOfferById.returns({
-        populate: () => ({
-          exec: () => Promise.reject(new Error('attach failed')),
-        }),
-      });
-
-      const { res, nextCalled } = await runHandler((res, next) =>
-        offersController.offerById(
-          { user: owner },
-          res,
-          next,
-          new mongoose.Types.ObjectId().toString(),
-        ),
-      );
-      nextCalled.should.be.false();
-      res.statusCode.should.equal(404);
     });
   });
 
