@@ -20,6 +20,7 @@ const sinon: typeof import('sinon') = require('sinon');
 const referenceController: typeof import('./../../server/controllers/reference-thread.server.controller.mjs') = require('./../../server/controllers/reference-thread.server.controller.mjs');
 const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 require('should');
 
 const ReferenceThread = mongoose.model<
@@ -106,6 +107,22 @@ function deferredResponse(): DeferredResponse {
     },
   };
   return res;
+}
+
+type LogEntry = { level: string; message: string; detail?: unknown };
+function loadControllerWithLog(logged: LogEntry[]): ReferenceController {
+  return proxyquire<ReferenceController>(
+    require.resolve('./../../server/controllers/reference-thread.server.controller.mts'),
+    {
+      './../../../../config/lib/logger.mjs': (
+        level: string,
+        message: string,
+        detail?: unknown,
+      ) => {
+        logged.push({ level, message, detail });
+      },
+    },
+  );
 }
 
 async function createThreadWithMessage(
@@ -225,6 +242,29 @@ describe('Reference thread controller unit tests', () => {
       responseBody(res).allowCreatingReference!.should.be.true();
     });
 
+    it('does not allow creating a reference when the other person has not messaged you', async () => {
+      const [author, other, third] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(3, { public: true }),
+      );
+      await createThreadWithMessage(author, other, true);
+      await createThreadWithMessage(third, author, false);
+
+      const res = deferredResponse();
+      controller.readReferenceThreadById(
+        { user: author },
+        res,
+        () => {},
+        other._id.toString(),
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(404);
+      responseBody(res).should.eql({
+        message: 'Not found.',
+        allowCreatingReference: false,
+      });
+    });
+
     it('passes message lookup errors to next when no reference exists', async () => {
       const [author, other] = await utils.saveUsersWithCachedPasswords(
         utils.generateUsersWithSharedPassword(2, { public: true }),
@@ -294,6 +334,7 @@ describe('Reference thread controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      responseBody(res).message!.should.equal('Cannot interpret id.');
     });
 
     it('rejects references for non-existing threads', async () => {
@@ -352,6 +393,7 @@ describe('Reference thread controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+      responseBody(res).message!.should.equal('Forbidden.');
     });
 
     it('rejects references when the other person has not messaged you', async () => {
@@ -373,8 +415,9 @@ describe('Reference thread controller unit tests', () => {
         updated: Date.now(),
       }).save();
 
+      const logged: LogEntry[] = [];
       const res = deferredResponse();
-      controller.createReferenceThread(
+      loadControllerWithLog(logged).createReferenceThread(
         {
           user: author,
           body: { userTo: other._id.toString(), feedback: 'Great guest' },
@@ -383,6 +426,16 @@ describe('Reference thread controller unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+      responseBody(res).message!.should.equal(
+        'Referenced person has not sent messages to you.',
+      );
+      logged.should.eql([
+        {
+          level: 'error',
+          message: 'Thread reference: Not allowed per message rules. #158472',
+          detail: { error: null },
+        },
+      ]);
     });
 
     it('rejects references when the message lookup fails', async () => {
@@ -397,8 +450,9 @@ describe('Reference thread controller unit tests', () => {
         exec: () => Promise.reject(new Error('message lookup failed')),
       });
 
+      const logged: LogEntry[] = [];
       const res = deferredResponse();
-      controller.createReferenceThread(
+      loadControllerWithLog(logged).createReferenceThread(
         {
           user: author,
           body: { userTo: other._id.toString(), reference: 'yes' },
@@ -411,6 +465,13 @@ describe('Reference thread controller unit tests', () => {
       responseBody(res).message!.should.equal(
         'Referenced person has not sent messages to you.',
       );
+      logged.length.should.equal(1);
+      logged[0].level.should.equal('error');
+      logged[0].message.should.equal(
+        'Thread reference: Not allowed per message rules. #158472',
+      );
+      const detail = logged[0].detail as { error: Error };
+      detail.error.message.should.equal('message lookup failed');
     });
 
     it('rejects references when the referenced user disappears after lookup', async () => {
@@ -438,6 +499,145 @@ describe('Reference thread controller unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(400);
       responseBody(res).message!.should.be.a.String();
+    });
+
+    it('rejects references from unpublished users without creating anything', async () => {
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: false }),
+      );
+      await createThreadWithMessage(author, other, false);
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'yes' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(403);
+      responseBody(res).message!.should.equal('Forbidden.');
+      (await ReferenceThread.countDocuments()).should.equal(0);
+    });
+
+    it('treats a thread query without exec as a missing thread when it resolves empty', async () => {
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      const threadModelWithExecOnly = Thread as unknown as {
+        findOne(query: object, fields: string): { exec(): Promise<null> };
+      };
+      sinon.stub(threadModelWithExecOnly, 'findOne').returns({
+        exec: () => Promise.resolve(null),
+      });
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'yes' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+      responseBody(res).message!.should.equal('Thread does not exist.');
+    });
+
+    it('accepts a message lookup that resolves without a query object', async () => {
+      sinon
+        .stub(statService, 'stat')
+        .callsFake((_data, callback) => callback?.());
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      const { message } = await createThreadWithMessage(author, other, false);
+      sinon
+        .stub(
+          Message as unknown as { findOne(query: object): unknown },
+          'findOne',
+        )
+        .resolves(message);
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'yes' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(200);
+      responseBody(res).userTo!.toString().should.equal(other._id.toString());
+    });
+
+    it('reports the genders of both people in the thread reference stat', async () => {
+      const stat = sinon
+        .stub(statService, 'stat')
+        .callsFake((_data, callback) => callback?.());
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      author.set('gender', 'female');
+      await User.updateOne({ _id: other._id }, { gender: 'male' });
+      await createThreadWithMessage(author, other, false);
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'no' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      stat.calledOnce.should.be.true();
+      stat.firstCall.args[0].should.eql({
+        namespace: 'threadReference',
+        counts: { count: 1 },
+        tags: {
+          reference: 'no',
+          reporterGender: 'female',
+          reporteeGender: 'male',
+        },
+      });
+    });
+
+    it('reports unknown genders in the thread reference stat', async () => {
+      const stat = sinon
+        .stub(statService, 'stat')
+        .callsFake((_data, callback) => callback?.());
+      const [author, other] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(2, { public: true }),
+      );
+      await createThreadWithMessage(author, other, false);
+
+      const res = deferredResponse();
+      controller.createReferenceThread(
+        {
+          user: author,
+          body: { userTo: other._id.toString(), reference: 'yes' },
+        },
+        res,
+      );
+      await res.waitForResponse();
+
+      stat.calledOnce.should.be.true();
+      stat.firstCall.args[0].should.eql({
+        namespace: 'threadReference',
+        counts: { count: 1 },
+        tags: {
+          reference: 'yes',
+          reporterGender: 'unknown',
+          reporteeGender: 'unknown',
+        },
+      });
     });
 
     it('creates a reference thread when messaging rules allow it', async () => {
