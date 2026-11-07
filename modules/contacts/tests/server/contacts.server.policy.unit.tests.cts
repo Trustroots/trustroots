@@ -53,12 +53,37 @@ describe('Contacts policy unit tests', () => {
     policy.invokeRolesPolicies();
 
     mockAcl.allow.calledOnce.should.be.true();
-    const policies = mockAcl.allow.firstCall.args[0];
-    policies[0].roles.should.deepEqual(['admin']);
-    policies[1].roles.should.deepEqual(['user']);
-    policies[1].allows
-      .map((allow: { resources: string }) => allow.resources)
-      .should.containEql('/api/contacts/:listUserId/common');
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          { resources: '/api/contact', permissions: [] },
+          { resources: '/api/contact-by/:contactUserId', permissions: ['get'] },
+          { resources: '/api/contact/:contactId', permissions: ['get'] },
+          { resources: '/api/contacts/:listUserId', permissions: ['get'] },
+          {
+            resources: '/api/contacts/:listUserId/common',
+            permissions: ['get'],
+          },
+        ],
+      },
+      {
+        roles: ['user'],
+        allows: [
+          { resources: '/api/contact', permissions: ['post'] },
+          { resources: '/api/contact-by/:contactUserId', permissions: ['get'] },
+          {
+            resources: '/api/contact/:contactId',
+            permissions: ['get', 'put'],
+          },
+          { resources: '/api/contacts/:listUserId', permissions: ['get'] },
+          {
+            resources: '/api/contacts/:listUserId/common',
+            permissions: ['get'],
+          },
+        ],
+      },
+    ]);
   });
 
   it('allows contact parties to manipulate their connection', () => {
@@ -137,6 +162,7 @@ describe('Contacts policy unit tests', () => {
     );
 
     res.statusCode.should.equal(403);
+    res.body!.should.deepEqual({ message: 'Forbidden.' });
     nextCalled.should.be.false();
     done();
   });

@@ -197,7 +197,7 @@ describe('Contacts controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(409);
-      res.body.confirmed!.should.be.false();
+      res.body.should.deepEqual({ message: 'Conflict.', confirmed: false });
     });
 
     it('creates a contact and sends email', async () => {
@@ -217,6 +217,150 @@ describe('Contacts controller unit tests', () => {
       res.body.message!.should.match(/email was sent/);
     });
 
+    it('resolves once the confirmation email has been sent', async () => {
+      let body: unknown;
+      const res = {
+        status: () => res,
+        send: (sent: unknown) => {
+          body = sent;
+          return res;
+        },
+        json: () => res,
+      };
+
+      await contactsController.add(
+        { user: user1, body: { friendUserId: user2.id } },
+        res as unknown as Parameters<typeof contactsController.add>[1],
+      );
+
+      body!.should.deepEqual({ message: 'An email was sent to your contact.' });
+      (await Contact.countDocuments()).should.equal(1);
+    });
+
+    it('passes the sanitised message and the recipient to the email', async () => {
+      const email = sinon.spy(emailService, 'sendConfirmContact');
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          {
+            user: user1,
+            body: {
+              friendUserId: user2.id,
+              message: '<b>Hi</b> friend<script>alert(1)</script>',
+            },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+
+      email.calledOnce.should.be.true();
+      const [sender, friend, , html, plain] = email.firstCall
+        .args as unknown as [
+        unknown,
+        { _id: { equals(id: unknown): boolean }; email: string },
+        unknown,
+        string,
+        string,
+      ];
+      should(sender).equal(user1);
+      friend._id.equals(user2._id).should.be.true();
+      friend.email.should.equal(user2.email);
+      should(html).equal('<b>Hi</b> friend');
+      should(plain).equal('Hi friend');
+      // Only the fields the email needs are loaded
+      should(
+        (friend as unknown as { username?: string }).username,
+      ).be.undefined();
+    });
+
+    for (const message of [undefined, '']) {
+      it(`sends no message text to the email when the message is ${JSON.stringify(message)}`, async () => {
+        const email = sinon.spy(emailService, 'sendConfirmContact');
+        await runHandler(res =>
+          contactsController.add(
+            { user: user1, body: { friendUserId: user2.id, message } },
+            res,
+          ),
+        );
+
+        email.calledOnce.should.be.true();
+        should(email.firstCall.args[3]).equal(false);
+        should(email.firstCall.args[4]).equal(false);
+      });
+    }
+
+    it('wraps long plain text messages at 80 columns', async () => {
+      const email = sinon.spy(emailService, 'sendConfirmContact');
+      const message = `<p>${'word '.repeat(40).trim()}</p>`;
+      await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2.id, message } },
+          res,
+        ),
+      );
+
+      const plain = email.firstCall.args[4] as string;
+      plain.split('\n').length.should.equal(3);
+      Math.max(...plain.split('\n').map(line => line.length)).should.be.below(
+        81,
+      );
+    });
+
+    it('does not read the message back from the request body', async () => {
+      const body: Record<string, unknown> = {
+        friendUserId: user2.id,
+        message: 'Hello',
+      };
+      await runHandler(res =>
+        contactsController.add({ user: user1, body }, res),
+      );
+      body.should.not.have.property('message');
+    });
+
+    it('accepts a sender document without a blocked list', async () => {
+      sinon.stub(emailService, 'sendConfirmContact').callsArgWith(5, null);
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          {
+            user: { _id: user1._id, roles: ['user'] },
+            body: { friendUserId: user2.id },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      (await Contact.countDocuments({ userFrom: user1._id })).should.equal(1);
+    });
+
+    it('accepts a recipient document without a blocked list', async () => {
+      sinon.stub(emailService, 'sendConfirmContact').callsArgWith(5, null);
+      sinon
+        .stub(mongoose.model('User'), 'findOne')
+        .resolves({ _id: user2._id, email: user2.email, roles: ['user'] });
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          { user: user1, body: { friendUserId: user2.id } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      (await Contact.countDocuments({ userFrom: user1._id })).should.equal(1);
+    });
+
+    it('responds with 400 for a recipient that does not exist', async () => {
+      const { res } = await runHandler(res =>
+        contactsController.add(
+          {
+            user: user1,
+            body: { friendUserId: new mongoose.Types.ObjectId().toString() },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(400);
+      (await Contact.countDocuments()).should.equal(0);
+    });
+
     it('hides requests from a shadowbanned sender without saving a contact', async () => {
       user1.roles = ['user', 'shadowban'];
       await user1.save();
@@ -229,6 +373,9 @@ describe('Contacts controller unit tests', () => {
       );
 
       res.statusCode.should.equal(200);
+      res.body.should.deepEqual({
+        message: 'An email was sent to your contact.',
+      });
       const contacts = await Contact.find({
         userFrom: user1._id,
         userTo: user2._id,
@@ -302,6 +449,35 @@ describe('Contacts controller unit tests', () => {
       );
 
       res.statusCode.should.equal(403);
+    });
+
+    it('responds with 403 and does not confirm when no user is signed in', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: false,
+      }).save();
+      const populated = await Contact.findById(contact._id).populate(
+        'userTo userFrom',
+      );
+      const res = {
+        statusCode: 200,
+        status(code: number) {
+          res.statusCode = code;
+          return res;
+        },
+        send: () => res,
+        json: () => res,
+      };
+
+      await contactsController.confirm(
+        { contact: populated },
+        res as unknown as Parameters<typeof contactsController.confirm>[1],
+      );
+
+      res.statusCode.should.equal(403);
+      const stored = await Contact.findById(contact._id);
+      stored!.confirmed.should.be.false();
     });
 
     it('responds with 403 when the user is not the receiver', async () => {
@@ -414,6 +590,52 @@ describe('Contacts controller unit tests', () => {
         (err === null || err === undefined).should.be.true();
         done();
       });
+    });
+
+    it('removes contacts on either side and works without a callback', async () => {
+      const [user3] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
+      );
+      await Contact.insertMany([
+        { userFrom: user1._id, userTo: user2._id, confirmed: true },
+        { userFrom: user3._id, userTo: user1._id, confirmed: true },
+        { userFrom: user2._id, userTo: user3._id, confirmed: true },
+      ]);
+      const unhandled = sinon.stub();
+      process.on('unhandledRejection', unhandled);
+      try {
+        contactsController.removeAllByUserId(user1._id);
+        for (let i = 0; i < 100; i++) {
+          if ((await Contact.countDocuments()) === 1) break;
+          await new Promise(resolve => setTimeout(resolve, 10));
+        }
+        await new Promise(resolve => setTimeout(resolve, 50));
+        const left = await Contact.find();
+        left.length.should.equal(1);
+        left[0].userFrom.equals(user2._id).should.be.true();
+        unhandled.called.should.be.false();
+      } finally {
+        process.off('unhandledRejection', unhandled);
+      }
+    });
+
+    it('ignores delete errors when no callback was given', async () => {
+      const model = Contact as unknown as {
+        deleteMany: () => { exec: () => Promise<never> };
+      };
+      const deleteMany = sinon.stub(model, 'deleteMany').returns({
+        exec: () => Promise.reject(new Error('delete failed')),
+      });
+      const unhandled = sinon.stub();
+      process.on('unhandledRejection', unhandled);
+      try {
+        contactsController.removeAllByUserId(user1._id);
+        await new Promise(resolve => setTimeout(resolve, 50));
+        deleteMany.calledOnce.should.be.true();
+        unhandled.called.should.be.false();
+      } finally {
+        process.off('unhandledRejection', unhandled);
+      }
     });
 
     it('passes delete errors to the callback', done => {
@@ -662,10 +884,30 @@ describe('Contacts controller unit tests', () => {
 
   describe('filterByCommon', () => {
     it('calls next when contacts have not been attached', async () => {
+      const find = sinon.spy(Contact, 'find');
+      const req: { user: UserDocument; contacts?: ContactRequestEntry[] } = {
+        user: user1,
+      };
       const { nextCalled } = await runHandler((res, next) =>
-        contactsController.filterByCommon({ user: user1 }, res, next),
+        contactsController.filterByCommon(req, res, next),
       );
       nextCalled.should.be.true();
+      should(req.contacts).be.undefined();
+      find.called.should.be.false();
+    });
+
+    it('leaves an empty contacts list untouched without querying', async () => {
+      const find = sinon.spy(Contact, 'find');
+      const req: { user: UserDocument; contacts: ContactRequestEntry[] } = {
+        user: user1,
+        contacts: [],
+      };
+      const { nextCalled } = await runHandler((res, next) =>
+        contactsController.filterByCommon(req, res, next),
+      );
+      nextCalled.should.be.true();
+      req.contacts.should.deepEqual([]);
+      find.called.should.be.false();
     });
 
     it('returns an empty list when the user has no confirmed contacts', async () => {
@@ -781,6 +1023,98 @@ describe('Contacts controller unit tests', () => {
       );
       nextCalled.should.be.true();
       req.contacts!.length.should.equal(1);
+    });
+
+    it('includes unconfirmed contacts only in the own list', async () => {
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: false,
+      }).save();
+
+      const own: { user: UserDocument; contacts?: ContactRequestEntry[] } = {
+        user: user1,
+      };
+      await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          own,
+          res,
+          next,
+          user1._id.toString(),
+        ),
+      );
+      own.contacts!.should.have.length(1);
+      (own.contacts![0] as unknown as { _id: unknown })._id!.should.deepEqual(
+        contact._id,
+      );
+
+      const other: { user: UserDocument; contacts?: ContactRequestEntry[] } = {
+        user: user2,
+      };
+      await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          other,
+          res,
+          next,
+          user1._id.toString(),
+        ),
+      );
+      other.contacts!.should.have.length(0);
+
+      const anonymous: { contacts?: ContactRequestEntry[] } = {};
+      await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          anonymous as { user: UserDocument },
+          res,
+          next,
+          user1._id.toString(),
+        ),
+      );
+      anonymous.contacts!.should.have.length(0);
+    });
+
+    it('lists the contact fields and the other member with their locations', async () => {
+      await mongoose
+        .model('User')
+        .updateOne(
+          { _id: user2._id },
+          { locationFrom: 'Berlin', locationLiving: 'Hamburg' },
+        );
+      const contact = await new Contact({
+        userFrom: user1._id,
+        userTo: user2._id,
+        confirmed: true,
+      }).save();
+
+      const req: { user: UserDocument; contacts?: ContactRequestEntry[] } = {
+        user: user1,
+      };
+      await runHandler((res, next) =>
+        contactsController.contactListByUser(
+          req,
+          res,
+          next,
+          user1._id.toString(),
+        ),
+      );
+
+      req.contacts!.should.have.length(1);
+      const item = req.contacts![0] as unknown as {
+        _id: unknown;
+        confirmed: boolean;
+        created: Date;
+        userFrom: unknown;
+        userTo: unknown;
+        user: Record<string, unknown>;
+      };
+      item._id!.should.deepEqual(contact._id);
+      item.confirmed.should.be.true();
+      item.created.getTime().should.equal(contact.created.getTime());
+      item.userFrom!.should.deepEqual(user1._id);
+      item.userTo!.should.deepEqual(user2._id);
+      item.user._id!.should.deepEqual(user2._id);
+      item.user.locationFrom!.should.equal('Berlin');
+      item.user.locationLiving!.should.equal('Hamburg');
     });
 
     it('omits existing contacts with restricted members', async () => {
