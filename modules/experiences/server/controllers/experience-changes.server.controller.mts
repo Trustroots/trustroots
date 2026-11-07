@@ -304,10 +304,8 @@ const submit: Handler<
           .json({ message: 'Only the author can propose an edit.' });
       }
       const proposed = validateEdit(request.body);
-      if (
-        !proposed ||
-        bodyKeys(request.body).some(key => !['kind', 'proposed'].includes(key))
-      ) {
+      // validateEdit already rejects bodies with keys other than kind/proposed.
+      if (!proposed) {
         return response
           .status(400)
           .json({ message: 'Invalid change request.' });

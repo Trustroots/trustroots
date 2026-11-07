@@ -64,6 +64,36 @@ describe('Experiences policy unit tests', () => {
       .should.containEql('/api/experiences/suggestion');
   });
 
+  it('grants exactly the experience routes and methods to users and admins', async () => {
+    policyModule.default.invokeRolesPolicies();
+    const acl = policyModule._acl;
+    const grants: Record<string, string[]> = {
+      '/api/experiences': ['get', 'post'],
+      '/api/experiences/count': ['get'],
+      '/api/experiences/suggestion': ['get'],
+      '/api/experiences/reply-recipient/:recipientUsername': ['get'],
+      '/api/my-experience': ['get'],
+      '/api/experiences/:experienceId': ['get'],
+      '/api/experiences/:id/change-access': ['get'],
+      '/api/experiences/:id/change-requests': ['post'],
+      '/api/experiences/:id/change-requests/mine': ['get'],
+    };
+    for (const [resource, allowed] of Object.entries(grants)) {
+      for (const method of ['get', 'post', 'put', 'delete']) {
+        const expected = allowed.includes(method);
+        should(await acl.areAnyRolesAllowed(['user'], resource, method)).equal(
+          expected,
+        );
+        should(await acl.areAnyRolesAllowed(['admin'], resource, method)).equal(
+          expected,
+        );
+        should(await acl.areAnyRolesAllowed(['guest'], resource, method)).equal(
+          false,
+        );
+      }
+    }
+  });
+
   it('calls next when ACL allows a public user', async () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.resolves(true);
@@ -211,6 +241,7 @@ describe('Experiences policy unit tests', () => {
     );
 
     response.statusCode.should.equal(403);
+    response.body!.should.deepEqual({ message: 'Forbidden.' });
     mockAcl.areAnyRolesAllowed.called.should.be.false();
 
     await policy.isAllowedChange(
@@ -224,6 +255,32 @@ describe('Experiences policy unit tests', () => {
     );
 
     response.statusCode.should.equal(403);
+  });
+
+  it('checks guest permissions for a signed-in user without roles', async () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.resolves(false);
+    const response = mockResponse();
+
+    await policy.isAllowedChange(
+      {
+        user: { _id: { valueOf: () => 'user-id' } },
+        route: { path: '/api/experiences/:id/change-requests' },
+        method: 'POST',
+      },
+      response,
+      () => {},
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledOnceWithExactly(
+        ['guest'],
+        '/api/experiences/:id/change-requests',
+        'post',
+      )
+      .should.be.true();
+    response.statusCode.should.equal(403);
+    response.body!.should.deepEqual({ message: 'Forbidden.' });
   });
 
   it('passes change-request ACL errors to next', async () => {
