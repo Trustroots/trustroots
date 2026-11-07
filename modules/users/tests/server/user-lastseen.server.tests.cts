@@ -109,6 +109,14 @@ describe('User last seen CRUD tests', function () {
       lastSeen.getClientIpAddress(req)!.should.equal('2001:db8::1');
     });
 
+    it('does not store an invalid client address', () => {
+      const req = {
+        get: () => 'not-an-ip-address',
+        ip: 'not-an-ip-address',
+      };
+      should(lastSeen.getClientIpAddress(req)).be.undefined();
+    });
+
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics
       sinon.clock.tick(20);
