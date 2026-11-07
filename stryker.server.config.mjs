@@ -1,4 +1,5 @@
 // Mutation testing for the server Vitest suite. See docs/mutation-testing.md.
+import serverScope from './scripts/mutation/server-scope.cts';
 
 /** @type {import('@stryker-mutator/api/core').PartialStrykerOptions} */
 export default {
@@ -14,21 +15,9 @@ export default {
     // Server tests reach code over HTTP and the job queue, not just imports.
     related: false,
   },
-  // Mutate exactly what the server coverage report measures.
-  mutate: [
-    'modules/*/server/**/*.{mjs,mts}',
-    'packages/analytics/server/**/*.mts',
-    'packages/logger/**/*.mts',
-    '!modules/*/tests/**',
-    '!**/node_modules/**',
-    '!modules/*/server/**/*.model.{mjs,mts}',
-    '!modules/*/server/models/**',
-    '!modules/core/server/jobs/send-push-message.server.job.mjs',
-    '!modules/users/server/jobs/user-welcome-sequence-*.server.job.{mjs,mts}',
-    // Its guard stops rm -rf on the working directory. With the guard mutated
-    // away, its own test deletes the Stryker sandbox and breaks every worker.
-    '!modules/core/server/services/file-removal.server.service.mts',
-  ],
+  // Mutate exactly what the server coverage report measures; the list and
+  // its exclusions live with the CI scope planner so they can't drift.
+  mutate: serverScope.mutatePatterns,
   // Ansible vault files are not JavaScript, whatever their extension.
   ignorePatterns: [
     '/deploy/files/secrets',

@@ -212,9 +212,12 @@ jobs:
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
-          # Coverage is reported for information only.
           NODE_ENV=test pnpm run test:coverage:client:ci
           exit_code="$?"
+          if [ "$exit_code" -eq 0 ]; then
+            pnpm run coverage:check --scope=client
+            exit_code="$?"
+          fi
           set -e
           finished_at="$(date +%s%3N)"
           duration_ms="$((finished_at - started_at))"
@@ -225,7 +228,7 @@ jobs:
             message="Client coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="pnpm run test:coverage:client:ci" \
+          COMMAND="pnpm run test:coverage:client:ci && pnpm run coverage:check --scope=client" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
@@ -311,9 +314,12 @@ jobs:
           started_at="$(date +%s%3N)"
           exit_code=0
           set +e
-          # Coverage is reported for information; the mutation job is the gate.
           pnpm run test:coverage:server:parallel
           exit_code="$?"
+          if [ "$exit_code" -eq 0 ]; then
+            pnpm run coverage:check --scope=server --require-full
+            exit_code="$?"
+          fi
           set -e
           finished_at="$(date +%s%3N)"
           duration_ms="$((finished_at - started_at))"
@@ -324,7 +330,7 @@ jobs:
             message="Server coverage failed."
           fi
           STATUS="$status" EXIT_CODE="$exit_code" DURATION_MS="$duration_ms" MESSAGE="$message" \
-          COMMAND="pnpm run test:coverage:server:parallel" \
+          COMMAND="pnpm run test:coverage:server:parallel && pnpm run coverage:check --scope=server --require-full" \
           node - <<'NODE'
           const fs = require('fs');
           const status = {
@@ -702,76 +708,9 @@ jobs:
                 body,
               });
             }
-
-  mutation:
-    # Full server mutation runs take hours, so pull requests mutate only the
-    # server source files they change and hold them to the committed floor.
-    needs: changes
-    if: >
-      github.event_name == 'pull_request' &&
-      always() && !cancelled() && needs.changes.outputs.run-code != 'false'
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    permissions:
-      contents: read
-    env:
-      CI: true
-      NODE_ENV: test
-      DB_1_PORT_27017_TCP_ADDR: 127.0.0.1
-      TRUSTROOTS_SKIP_LOCAL_CONFIG: true
-      TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK: true
-      TRUSTROOTS_FILE_MAGIC_FALLBACK: true
-    services:
-      mongodb:
-        image: mongo:4.4
-        ports:
-          - 27017:27017
-        options: >-
-          --tmpfs /data/db
-          --health-cmd "mongo --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 12
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
-      - name: Use Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: '.nvmrc'
-          cache: pnpm
-      - name: List changed server source files
-        id: files
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          # Same exclusions as the mutate list in stryker.server.config.mjs.
-          files="$(git diff --name-only --diff-filter=AM "$BASE_SHA"...HEAD \
-            | grep -E '^modules/[^/]+/server/.*\.m[jt]s$' \
-            | grep -vE '/models/|\.model\.m[jt]s$|send-push-message\.server\.job\.mjs$|user-welcome-sequence-.*\.server\.job\.m[jt]s$|file-removal\.server\.service\.mts$' \
-            | paste -sd, - || true)"
-          echo "files=$files" >> "$GITHUB_OUTPUT"
-          echo "Changed server source files: ${files:-none}"
-      - name: Install dependencies
-        if: steps.files.outputs.files != ''
-        run: pnpm install --frozen-lockfile --prefer-offline
-      - name: Mutation-test changed server files
-        if: steps.files.outputs.files != ''
-        env:
-          FILES: ${{ steps.files.outputs.files }}
-        run: pnpm run test:mutation:server --mutate "$FILES" --concurrency 2
-      - name: Check the mutation score floor
-        if: steps.files.outputs.files != ''
-        run: pnpm run mutation:check --scope=server
-      - name: Upload mutation report
-        if: always() && steps.files.outputs.files != ''
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: mutation-report
-          path: reports/stryker/server.html
-          if-no-files-found: ignore
+      - name: Require full client and server coverage
+        if: needs.changes.outputs.run-code != 'false'
+        run: node scripts/coverage/check-coverage.cts --require-full
 
   pages:
     if: >

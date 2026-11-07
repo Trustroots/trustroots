@@ -1,0 +1,153 @@
+name: Mutation
+
+# Stryker mutation testing for the server suite, in addition to the 100%
+# coverage gates in test.yml: coverage says the tests run the code, mutation
+# says they would notice it change. See docs/mutation-testing.md.
+#
+# Pull requests mutate the server code their changes can affect, worked out
+# by scripts/mutation/server-scope.cts:
+#
+# - changed server source files themselves;
+# - for a changed, added or deleted server test file, every server source
+#   file of that test's module, plus the server source it imports directly
+#   (old and new version), so deleting or weakening a test re-runs the
+#   mutants it used to kill;
+# - for shared test infrastructure (testutils/server, the Vitest and Stryker
+#   server configs, the mutation scripts and floors), the whole server.
+#
+# The weekly and manual runs mutate the whole server. They catch anything the
+# mapping misses, such as a test that reaches another module only over HTTP,
+# and they refresh the incremental caches that let pull requests re-test only
+# the mutants their changes touch.
+
+on:
+  pull_request:
+    branches: [main, 'codex/**', 'chore/**']
+    types: [opened, synchronize, reopened]
+  schedule:
+    - cron: '17 2 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/ci-changes.yml
+
+  plan:
+    needs: changes
+    if: always() && !cancelled() && needs.changes.outputs.run-code != 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      shards: ${{ steps.plan.outputs.shards }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+      - name: Plan mutation shards
+        id: plan
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ -n "$BASE_SHA" ]; then
+            shards="$(node scripts/mutation/server-scope.cts --base="$BASE_SHA")"
+          else
+            shards="$(node scripts/mutation/server-scope.cts --full)"
+          fi
+          echo "shards=$shards" >> "$GITHUB_OUTPUT"
+          node -e '
+            for (const shard of JSON.parse(process.argv[1])) {
+              console.log(`${shard.name}: ${shard.files.length} files`);
+              for (const reason of shard.reasons) console.log(`  ${reason}`);
+            }
+          ' "$shards"
+
+  mutate:
+    name: Mutate ${{ matrix.shard.name }}
+    needs: plan
+    if: always() && !cancelled() && needs.plan.outputs.shards != '' && needs.plan.outputs.shards != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.plan.outputs.shards) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    env:
+      CI: true
+      NODE_ENV: test
+      DB_1_PORT_27017_TCP_ADDR: 127.0.0.1
+      TRUSTROOTS_SKIP_LOCAL_CONFIG: true
+      TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK: true
+      TRUSTROOTS_FILE_MAGIC_FALLBACK: true
+    services:
+      mongodb:
+        image: mongo:4.4
+        ports:
+          - 27017:27017
+        options: >-
+          --tmpfs /data/db
+          --health-cmd "mongo --quiet --eval 'quit(db.adminCommand({ping:1}).ok ? 0 : 1)'"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - name: Use Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline
+      # Stryker re-tests only mutants whose code or covering tests changed
+      # since the cached run: the latest weekly run on main, or an earlier
+      # run of this pull request.
+      - name: Restore incremental mutation results
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: reports/stryker/server-incremental.json
+          key: stryker-server-v1-${{ matrix.shard.name }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: stryker-server-v1-${{ matrix.shard.name }}-
+      - name: Mutation-test ${{ matrix.shard.name }}
+        env:
+          FILES: ${{ join(matrix.shard.files, ',') }}
+        run: pnpm run test:mutation:server --mutate "$FILES" --concurrency 3
+      - name: Check the mutation score floor
+        run: pnpm run mutation:check --scope=server --shard=${{ matrix.shard.name }}
+      - name: Upload mutation report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: mutation-report-${{ matrix.shard.name }}
+          path: |
+            reports/stryker/server.html
+            reports/stryker/server.json
+          if-no-files-found: ignore
+
+  # One stable check for branch protection, whatever the shards were.
+  mutation:
+    needs: [plan, mutate]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every planned shard to pass
+        env:
+          PLAN: ${{ needs.plan.result }}
+          MUTATE: ${{ needs.mutate.result }}
+        run: |
+          echo "plan: $PLAN, mutate: $MUTATE"
+          case "$PLAN" in success|skipped) ;; *) exit 1 ;; esac
+          case "$MUTATE" in success|skipped) ;; *) exit 1 ;; esac

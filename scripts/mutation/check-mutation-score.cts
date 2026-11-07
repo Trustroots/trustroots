@@ -5,7 +5,10 @@
 // (killed or timed out) over every valid mutant (detected, survived or not
 // covered). Static and ignored mutants and compile errors don't count.
 //
-//   node scripts/mutation/check-mutation-score.cts [--scope=server] [--report=path]
+// A suite's floor is either one number or { default, shards }, where shards
+// holds a floor per module (the shard names of scripts/mutation/server-scope.cts).
+//
+//   node scripts/mutation/check-mutation-score.cts [--scope=server] [--shard=name] [--report=path]
 //   node scripts/mutation/check-mutation-score.cts --summary   (prints counts only)
 
 const fs = require('fs') as typeof import('node:fs');
@@ -35,6 +38,7 @@ const option = (name: string): string | undefined =>
   args.find(arg => arg.startsWith(`--${name}=`))?.split('=')[1];
 const scope = option('scope');
 const reportOverride = option('report');
+const shard = option('shard');
 const summaryOnly = args.includes('--summary');
 
 function isSuite(value: string): value is Suite {
@@ -72,9 +76,21 @@ function score(counts: Counts): number {
   return valid === 0 ? 100 : (detected / valid) * 100;
 }
 
-const floors = JSON.parse(fs.readFileSync(baselinePath, 'utf8')) as Partial<
-  Record<Suite, number>
->;
+type Floor = number | { default: number; shards?: Record<string, number> };
+const floorEntries = JSON.parse(
+  fs.readFileSync(baselinePath, 'utf8'),
+) as Partial<Record<Suite, Floor>>;
+if (shard && !scope) {
+  console.error('--shard needs --scope.');
+  process.exit(1);
+}
+function floorFor(entry: Floor | undefined): number | undefined {
+  if (entry === undefined || typeof entry === 'number') return entry;
+  return (shard && entry.shards?.[shard]) ?? entry.default;
+}
+const floors = Object.fromEntries(
+  suites.map(suite => [suite, floorFor(floorEntries[suite])]),
+) as Partial<Record<Suite, number>>;
 // Without --scope, check every suite that has a floor.
 const selected =
   scope && isSuite(scope)
@@ -100,7 +116,8 @@ for (const suite of selected) {
     JSON.parse(fs.readFileSync(reportPath, 'utf8')) as MutationReport,
   );
   const value = score(counts);
-  const line = `${suite} mutation score ${value.toFixed(2)}% (killed ${counts.Killed}, timeout ${counts.Timeout}, survived ${counts.Survived}, no coverage ${counts.NoCoverage}, ignored ${counts.Ignored})`;
+  const label = shard ? `${suite} (${shard})` : suite;
+  const line = `${label} mutation score ${value.toFixed(2)}% (killed ${counts.Killed}, timeout ${counts.Timeout}, survived ${counts.Survived}, no coverage ${counts.NoCoverage}, ignored ${counts.Ignored})`;
   if (summaryOnly) {
     console.log(line);
   } else if (value < (floors[suite] ?? 0)) {

@@ -7,10 +7,38 @@ and reruns the tests. A mutant is killed when a test fails, and survives when
 every test still passes. The mutation score is the share of mutants the tests
 detect (killed or timed out) out of all mutants that ran.
 
-The server suite is the gate. Pull requests run Stryker on the server source
-files they add or change, and CI fails if the score for those files is below
-the floor in `tooling/baselines/mutation.json`. Coverage is still collected and
-reported, but it no longer fails a run.
+Mutation testing runs alongside the coverage gates, not instead of them: CI
+still requires 100% client and server coverage. Coverage says every path is
+run; the mutation score says the tests would notice it change. Only the server
+suite is mutation-tested in CI.
+
+## What CI mutates
+
+The `Mutation` workflow (`.github/workflows/mutation.yml`) asks
+`scripts/mutation/server-scope.cts` which server source a pull request can
+affect:
+
+- a changed server source file is mutated itself;
+- a changed, added or deleted server test (anything under
+  `modules/<name>/tests/server/`) mutates every server source file of
+  `<name>`, plus the server source in other modules or packages that the test
+  imports directly, in its old or new version. Deleting or weakening a test
+  therefore re-runs the mutants it used to kill, even when no source changed;
+- a change to shared test infrastructure (`testutils/server/`, the Vitest and
+  Stryker server configs, `scripts/mutation/`, `tooling/stryker/`, the floors)
+  mutates the whole server.
+
+Each module is a shard, run in parallel and checked against its own floor in
+`tooling/baselines/mutation.json` (`server.shards`, falling back to
+`server.default`). Shards reuse the incremental results cached by the last run,
+so only mutants whose code or covering tests changed are re-tested.
+
+The mapping can miss a test that reaches another module only over HTTP. The
+weekly run (and any manual run of the workflow) mutates the whole server, which
+catches those and refreshes the caches.
+
+Run `node scripts/mutation/server-scope.cts --base=origin/main` to see what CI
+would mutate for your branch.
 
 ## Running it
 
@@ -50,8 +78,17 @@ configure the client and Nostranslation Jest suites. They have no floor yet.
 
 ## When the gate fails
 
-Open the HTML report from the CI artifact (`mutation-report`) and look at the
-surviving mutants in your files. Each one is a change to your code that no
-test noticed. Add or tighten an assertion so a test fails for it. If a mutant
-cannot change behaviour (an equivalent mutant), say so in the pull request.
-Raise the floor when the measured score goes up; lower it only with a reason.
+Open the HTML report from the CI artifact (`mutation-report-<shard>`) and look
+at the surviving mutants. Each one is a change to the code that no test
+noticed. Add or tighten an assertion so a test fails for it.
+
+If a mutant cannot change behaviour (an equivalent mutant), disable it where
+it is, for that mutator only, with the reason:
+
+```js
+// Stryker disable next-line StringLiteral: the label is only logged
+logger.info('cleanup finished');
+```
+
+Never disable a whole file or every mutator on a line to make the score.
+Raise a floor when the measured score goes up; lower it only with a reason.

@@ -12,7 +12,7 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 - `pnpm check:affected`: For changes confined to module workspace packages, Turborepo runs lint and client tests for affected modules and their dependents, then the repository-wide typecheck. Changes outside those packages (including `layers/shell`) or unavailable Git comparison fall back to full `pnpm check`. Compares committed, staged, unstaged and non-ignored untracked changes against the merge base with `origin/main` (override with `TURBO_SCM_BASE`). Each module is a workspace package, so `pnpm --filter @trustroots/<module> run lint` (also `test:client`, `test:server`) works on one module. After changing links between modules, run `pnpm modules:update-baseline` and `pnpm modules:update-packages`. CI still runs the full suite. Run `pnpm test:affected` for the affected-check runner's regression tests.
 - `pnpm test:server`: the Vitest/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
 - `pnpm test:e2e`: the Playwright end-to-end suite.
-- `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `tooling/baselines/coverage.json` (information only).
+- `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `tooling/baselines/coverage.json`.
 - `pnpm test:mutation:server` and `pnpm mutation:check`: Stryker mutation runs and the comparison against the floors in `tooling/baselines/mutation.json`.
 - `pnpm build`: the production client build.
 - `pnpm reformat-files <files>`: run Prettier on the given files.
@@ -77,13 +77,14 @@ operation to a sub-agent when possible so the primary agent can continue useful
 work. Do not use delegation to bypass a permission decision that must be made by
 the user.
 
-The test gate is the Stryker mutation score, not line coverage: on pull
-requests, CI mutates the server source files you change and fails if their
-score is below the floor in `tooling/baselines/mutation.json`. Coverage is still
-reported, for information. Write tests that assert on behaviour so they kill
-mutants; a test that only executes code adds coverage but no protection. Do not
-lower the mutation floor without a clear reason. See
-`docs/mutation-testing.md`.
+Both server and client test coverage are currently at 100%; keep them at this
+level. Do not lower coverage thresholds or baselines without a clear reason.
+Coverage only says the tests run the code, so the server suite also has a
+Stryker mutation gate: on pull requests CI mutates the server code your
+changes can affect (changed source, and the module of any changed server test)
+and fails if the score is below the floor in `tooling/baselines/mutation.json`.
+Write tests that assert on behaviour so they kill mutants. Do not lower a
+mutation floor without a clear reason. See `docs/mutation-testing.md`.
 
 Try not to reduce the number of end-to-end tests. The current baseline on main
 is 167 e2e tests; if removing one, replace it with equivalent coverage unless

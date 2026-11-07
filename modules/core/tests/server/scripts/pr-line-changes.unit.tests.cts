@@ -36,7 +36,6 @@ interface WorkflowStep {
   with?: Record<string, unknown>;
   uses?: string;
   if?: string;
-  run?: string;
 }
 
 interface WorkflowFile {
@@ -490,13 +489,7 @@ describe('PR line-change summaries', () => {
       fs.readFileSync(path.join(root, '.github/workflows/test.yml'), 'utf8'),
     ) as WorkflowFile;
     assert.doesNotMatch(tests.jobs['coverage-summary'].if, /run-code/);
-    // Coverage is information only; the mutation job is the gate.
-    assert.ok(
-      tests.jobs['coverage-summary'].steps.every(
-        step => !step.run?.includes('--require-full'),
-      ),
-    );
-    assert.match(tests.jobs.mutation.if!, /run-code/);
+    assert.match(tests.jobs['coverage-summary'].steps.at(-1)!.if!, /run-code/);
   });
 
   it('skips closed PRs and heads changed during backfill', async () => {
