@@ -127,6 +127,82 @@ describe('Stats service unit tests', () => {
     });
   });
 
+  it('records an explicit count when only the count is given', () => {
+    const { influxService, statsService } = loadStatsService();
+
+    statsService.count('unitCount', 5);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: { count: 5 },
+    });
+  });
+
+  it('records a count stat with time and no callback', () => {
+    const { influxService, statsService } = loadStatsService();
+    const time = new Date('2026-06-06T10:00:00.000Z');
+
+    statsService.count('unitCount', 2, time);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitCount',
+      counts: { count: 2 },
+      time,
+    });
+  });
+
+  it('records a value stat with time and no callback', () => {
+    const { influxService, statsService } = loadStatsService();
+    const time = new Date('2026-06-06T10:00:00.000Z');
+
+    statsService.value('unitValue', 12, time);
+
+    influxService.stat.firstCall.args[0].should.deepEqual({
+      namespace: 'unitValue',
+      values: { value: 12 },
+      time,
+    });
+  });
+
+  it('keeps accepting telemetry after the backend throws repeatedly', () => {
+    const backend = sinon.stub(influxService, 'stat').throws(new Error('down'));
+    for (let i = 0; i < 40; i += 1) {
+      statsService.stat({ namespace: 'outage', counts: { count: 1 } });
+    }
+    backend.callCount.should.equal(40);
+  });
+
+  it('rejects counts and values when only some are numbers', () => {
+    const { statsService } = loadStatsService();
+
+    (() => {
+      statsService._validateStat({
+        namespace: 'mixed',
+        counts: { a: 1 },
+        values: { b: '2' },
+      });
+    }).should.throw('Each of counts and values should be a number');
+  });
+
+  it('does not treat a function as the shorthand callback unless it is the last of two or three arguments', () => {
+    const { influxService, statsService } = loadStatsService();
+    const fn = sinon.spy();
+    const cb = sinon.spy();
+
+    // function in the count slot with an explicit (undefined) time
+    statsService.count('unitCount', fn, undefined);
+    // function in the time slot with an explicit callback after it
+    statsService.count('unitCount', 2, fn, cb);
+    statsService.value('unitValue', 2, fn, cb);
+
+    influxService.stat.called.should.be.false();
+    cb.callCount.should.equal(2);
+    cb.args.forEach((args: unknown[]) => {
+      assert.ok(args[0] instanceof Error);
+    });
+    fn.called.should.be.false();
+  });
+
   it('records a value stat', done => {
     const { influxService, statsService } = loadStatsService();
 

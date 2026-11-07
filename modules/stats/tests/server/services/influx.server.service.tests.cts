@@ -213,6 +213,64 @@ describe('Service: influx', function () {
         );
       });
 
+      it('rejects a non-string truthy measurementName', function (done) {
+        influxService._writeMeasurement(
+          123 as unknown as string,
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            try {
+              err!.message.should.equal(
+                'InfluxDB Service: no `measurementName` defined. #ghi3kH',
+              );
+              sinon.assert.notCalled(writeMeasurementStub());
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('logs each validation failure as an error with its message', function (done) {
+        const originalEnv = process.env.NODE_ENV;
+        process.env.NODE_ENV = 'development';
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+
+        service._writeMeasurement('m', null, {}, function () {
+          service._writeMeasurement('m', {}, null, function () {
+            service._writeMeasurement('m', { time: 'x' }, {}, function () {
+              service._writeMeasurement(null, {}, {}, function () {
+                process.env.NODE_ENV = originalEnv;
+                try {
+                  logger.args
+                    .map(a => [a[0], a[1]])
+                    .should.deepEqual([
+                      [
+                        'error',
+                        'InfluxDB Service: no `fields` defined. #ghugGJ',
+                      ],
+                      ['error', 'InfluxDB Service: no `tags` defined. #ghj3ig'],
+                      [
+                        'error',
+                        'InfluxDB Service: expected `fields.time` to be `Date` object. #f93jkh',
+                      ],
+                      [
+                        'error',
+                        'InfluxDB Service: no `measurementName` defined. #ghi3kH',
+                      ],
+                    ]);
+                  return done();
+                } catch (e) {
+                  return done(e);
+                }
+              });
+            });
+          });
+        });
+      });
+
       it('logs validation failures outside test mode', function (done) {
         const originalEnv = process.env.NODE_ENV;
         process.env.NODE_ENV = 'development';
@@ -413,17 +471,67 @@ describe('Service: influx', function () {
     }); // end of context 'invalid data'
 
     context('valid data', function () {
-      it('allows writeMeasurement success without a callback', function (done) {
+      it('allows writeMeasurement success without a callback', function () {
+        // A hand-rolled thenable lets us see synchronously whether the success
+        // handler throws, instead of relying on an unhandled rejection.
+        let thrown: unknown;
+        writeMeasurementStub().returns({
+          then(onFulfilled: () => void) {
+            try {
+              onFulfilled();
+            } catch (err) {
+              thrown = err;
+            }
+            return { catch() {} };
+          },
+        } as unknown as Promise<void>);
+
         influxService._writeMeasurement('test', { value: 1 }, { tag: 'tag' });
 
-        process.nextTick(function () {
+        sinon.assert.calledOnce(writeMeasurementStub());
+        should.not.exist(thrown);
+      });
+
+      it('calls back once without an error after a successful write', function (done) {
+        const callback = sinon.spy();
+
+        influxService._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          callback,
+        );
+
+        setImmediate(function () {
           try {
-            sinon.assert.calledOnce(writeMeasurementStub());
+            sinon.assert.calledOnce(callback);
+            callback.firstCall.args.should.deepEqual([]);
             done();
           } catch (err) {
             done(err);
           }
         });
+      });
+
+      it('writes the messages namespace as messageSent and other namespaces unchanged', function (done) {
+        influxService.stat(
+          { namespace: 'messages', counts: { sent: 1 } },
+          function () {
+            influxService.stat(
+              { namespace: 'other', counts: { sent: 1 } },
+              function () {
+                try {
+                  writeMeasurementStub()
+                    .args.map(a => a[0])
+                    .should.deepEqual(['messageSent', 'other']);
+                  done();
+                } catch (err) {
+                  done(err);
+                }
+              },
+            );
+          },
+        );
       });
 
       it('propagates writeMeasurement client errors', function (done) {
@@ -458,6 +566,50 @@ describe('Service: influx', function () {
         );
       });
 
+      it('calls back without throwing when no client and no error are returned', function (done) {
+        sinon.stub(influxService, '_getClient').callsFake(cb => {
+          cb(null);
+        });
+
+        influxService._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            try {
+              should.not.exist(err);
+              sinon.assert.notCalled(writeMeasurementStub());
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
+      it('does not log writeMeasurement promise rejections in test mode', function (done) {
+        const logger = sinon.stub();
+        const service = loadInfluxServiceWithLogger(logger);
+        writeMeasurementStub().returns(
+          Promise.reject(new Error('write failed')),
+        );
+
+        service._writeMeasurement(
+          'test',
+          { value: 1 },
+          { tag: 'tag' },
+          function (err) {
+            try {
+              err!.message.should.equal('write failed');
+              sinon.assert.notCalled(logger);
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          },
+        );
+      });
+
       it('logs writeMeasurement promise rejections outside test mode', function (done) {
         const originalEnv = process.env.NODE_ENV;
         process.env.NODE_ENV = 'development';
@@ -477,9 +629,15 @@ describe('Service: influx', function () {
             try {
               err!.message.should.equal('write failed');
               sinon.assert.calledOnce(logger);
+              logger.firstCall.args[0].should.equal('error');
               logger.firstCall.args[1].should.equal(
                 'InfluxDB Service: Error while writing to InfluxDB #fj38hh',
               );
+              logger.firstCall.args[2].should.containEql({
+                measurement: 'test',
+                fields: { value: 1 },
+                tags: { tag: 'tag' },
+              });
               done();
             } catch (e) {
               done(e);

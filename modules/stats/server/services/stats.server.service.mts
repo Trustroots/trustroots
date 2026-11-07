@@ -129,13 +129,11 @@ function validateStat(stat: StatObject) {
   }
 
   // We must have at least one of `counts` or `values`, or both
-  const isCountsAndValuesMissing =
-    _.isUndefined(stat.counts) && _.isUndefined(stat.values);
   // @TODO check that they are plain objects or undefined with _.isPlainObject()
-  // counts or values have to contain at least 1 property
+  // counts or values have to contain at least 1 property (this also covers both being missing)
   const isCountsAndValuesEmpty =
     _.keys(stat.counts).length + _.keys(stat.values).length === 0;
-  if (isCountsAndValuesMissing || isCountsAndValuesEmpty) {
+  if (isCountsAndValuesEmpty) {
     // error
     throw new Error('The stat should contain counts or values');
   }
@@ -146,6 +144,7 @@ function validateStat(stat: StatObject) {
   function areKeysUnique(...objects: unknown[]) {
     // keys is an array of arrays of keys of all objects passed as arguments
     // to the function
+    // Stryker disable next-line ArrayDeclaration: _.union ignores non-array arguments, so a stray string element never changes the union
     const keys: string[][] = [];
     let keyLength = 0;
     for (const object of objects) {
