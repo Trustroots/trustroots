@@ -324,6 +324,166 @@ describe('SparkPost webhook controller unit tests', () => {
     should.not.exist(stat.firstCall.args[0].time);
   });
 
+  it('rejects batches that are not a non-empty array', async () => {
+    const { controller } = loadController();
+    for (const body of [undefined, {}, [], 'events']) {
+      const res = mockResponse();
+      receiveBatch(controller, body, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      should(res.body).deepEqual({ message: 'Bad request.' });
+    }
+  });
+
+  it('ignores events without a msys payload without logging or sending metrics', async () => {
+    const { controller, log, stat } = loadController();
+
+    for (const event of [{}, { msys: {} }]) {
+      should.not.exist(await processEvent(controller, event));
+    }
+
+    stat.called.should.be.false();
+    log.called.should.be.false();
+  });
+
+  const eventCategories = [
+    'message_event',
+    'relay_event',
+    'track_event',
+    'gen_event',
+    'unsubscribe_event',
+  ];
+  const eventTypes = [
+    'injection',
+    'delivery',
+    'policy_Rejection',
+    'delay',
+    'bounce',
+    'out_of_band',
+    'spam_complaint',
+    'generation_failure',
+    'generation_rejection',
+    'policy_rejection',
+    'sms_status',
+    'link_unsubscribe',
+    'list_unsubscribe',
+    'relay_delivery',
+    'relay_injection',
+    'relay_rejection',
+    'relay_tempfail',
+    'relay_permfail',
+    'open',
+    'click',
+  ];
+
+  for (const category of eventCategories) {
+    it(`sends metrics for the ${category} category`, async () => {
+      const { controller, stat } = loadController();
+
+      should.not.exist(
+        await processEvent(controller, {
+          msys: { [category]: { type: 'open' } },
+        }),
+      );
+
+      stat.calledOnce.should.be.true();
+      stat.firstCall.args[0].tags!.should.deepEqual({
+        category,
+        type: 'open',
+      });
+    });
+  }
+
+  for (const type of eventTypes) {
+    it(`sends metrics for the ${type} type`, async () => {
+      const { controller, stat } = loadController();
+
+      should.not.exist(
+        await processEvent(controller, {
+          msys: { message_event: { type } },
+        }),
+      );
+
+      stat.calledOnce.should.be.true();
+      stat.firstCall.args[0].tags!.should.deepEqual({
+        category: 'message_event',
+        type,
+      });
+    });
+  }
+
+  it('logs the category and type of events it cannot validate', async () => {
+    const { controller, log } = loadController();
+
+    await processEvent(controller, {
+      msys: { unknown_event: { type: 'unknown-type' } },
+    });
+
+    (log.firstCall.args as unknown[])
+      .slice(0, 3)
+      .should.eql([
+        'error',
+        'Could not validate SparkPost event webhook.',
+        { type: 'unknown-type', category: 'unknown_event' },
+      ]);
+  });
+
+  it('ignores a valid category with an unknown type and the reverse', async () => {
+    const { controller, stat } = loadController();
+
+    await processEvent(controller, {
+      msys: { message_event: { type: 'unknown-type' } },
+    });
+    await processEvent(controller, {
+      msys: { unknown_event: { type: 'open' } },
+    });
+
+    stat.called.should.be.false();
+  });
+
+  it('truncates long campaign ids at a word boundary within 255 characters', async () => {
+    const { controller, stat } = loadController();
+
+    await processEvent(controller, {
+      msys: {
+        message_event: { campaign_id: 'abcd '.repeat(100), type: 'delivery' },
+      },
+    });
+
+    should(stat.firstCall.args[0].meta!.campaignId).equal(
+      `${'abcd-'.repeat(50)}abcd`,
+    );
+  });
+
+  it('leaves the campaign id empty when it is not a string', async () => {
+    const { controller, stat } = loadController();
+
+    await processEvent(controller, {
+      msys: { message_event: { campaign_id: 12345, type: 'delivery' } },
+    });
+    await processEvent(controller, {
+      msys: { message_event: { type: 'open' } },
+    });
+
+    stat.callCount.should.equal(2);
+    for (const call of stat.getCalls()) {
+      should(call.args[0].meta!.campaignId).equal('');
+    }
+  });
+
+  it('accepts three-letter country codes but not longer ones', async () => {
+    const { controller, stat } = loadController();
+
+    for (const country of ['usa', 'usaa']) {
+      await processEvent(controller, {
+        msys: { message_event: { geo_ip: { country }, type: 'delivery' } },
+      });
+    }
+
+    should(stat.getCall(0).args[0].meta!.country).equal('USA');
+    should(stat.getCall(1).args[0].meta!.country).equal('');
+  });
+
   it('denies webhook auth when credentials are missing', () => {
     const { controller } = loadController();
     const res = mockResponse();

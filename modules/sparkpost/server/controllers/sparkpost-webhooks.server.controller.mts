@@ -189,10 +189,12 @@ service.processAndSendMetrics = function (event, callback) {
 
   // Add campaign id to meta if present
   const campaignId = _.get(event, 'msys.' + eventCategory + '.campaign_id');
-  if (_.isString(campaignId) && campaignId.length > 0) {
+  // Stryker disable next-line ConditionalExpression: speakingurl returns an empty string for non-strings, which is also the default
+  if (_.isString(campaignId)) {
     // "Slugify" `campaignId` to ensure we don't get any carbage
     // Allows only `A-Za-z0-9_-`
     meta.campaignId = speakingurl(campaignId, {
+      // Stryker disable next-line StringLiteral: speakingurl falls back to its default '-' separator when given an empty one
       separator: '-',
       // char that replaces the whitespaces
       maintainCase: false,
@@ -203,7 +205,7 @@ service.processAndSendMetrics = function (event, callback) {
 
   // Add country if present
   const country = _.get(event, 'msys.' + eventCategory + '.geo_ip.country');
-  if (_.isString(country) && country.length > 0 && country.length <= 3) {
+  if (_.isString(country) && country.length <= 3) {
     meta.country = country.replace(/\W/g, '').toUpperCase();
   }
   const statObj: StatObject = {
@@ -232,6 +234,7 @@ service.basicAuthenticate = function (req, res, next) {
   // Get the basic auth credentials from the request.
   // The Authorization header is parsed and if the header is invalid,
   // undefined is returned, otherwise an object with name and pass properties.
+  // Stryker disable next-line StringLiteral: any non-credential string, like the empty one, parses to undefined and is denied identically
   const credentials = parseBasicAuth(req.headers.authorization || '');
   const enabled = _.get(config, 'sparkpostWebhook.enabled');
 
