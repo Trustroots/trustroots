@@ -124,7 +124,7 @@ const parseStatisticsCount: typeof import('../../server/controllers/parse-statis
 const statService =
   require('./../../../stats/server/services/stats.server.service.mts') as StatsService;
 const utils = require('../../../../testutils/server/data.server.testutil');
-require('should');
+const should: typeof import('should') = require('should');
 
 type StatisticsUser = Omit<UserRecord, 'additionalProvidersData'> & {
   additionalProvidersData?: Record<
@@ -829,6 +829,416 @@ describe('Statistics controller unit tests', () => {
     });
   });
 
+  describe('query filters and ordering', () => {
+    const DAY = 24 * 60 * 60 * 1000;
+
+    function result<T>(run: (callback: Callback<T>) => void): Promise<T> {
+      return new Promise<T>((resolve, reject) => {
+        run((err, value) => (err ? reject(err) : resolve(value as T)));
+      });
+    }
+
+    async function saveUsers(count: number) {
+      return (await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(count),
+      )) as Array<{ _id: import('mongoose').Types.ObjectId }>;
+    }
+
+    const externalSites: Array<{
+      site: string;
+      matching: Record<string, unknown>;
+      empty?: Record<string, unknown>;
+    }> = [
+      {
+        site: 'couchers',
+        matching: { extSitesCouchers: 'https://couchers.org/user/1' },
+        empty: { extSitesCouchers: '' },
+      },
+      {
+        site: 'bewelcome',
+        matching: { extSitesBW: 'https://bewelcome.org/member/1' },
+        empty: { extSitesBW: '' },
+      },
+      {
+        site: 'couchsurfing',
+        matching: { extSitesCS: 'https://couchsurfing.com/1' },
+        empty: { extSitesCS: '' },
+      },
+      {
+        site: 'warmshowers',
+        matching: { extSitesWS: 'https://warmshowers.org/1' },
+        empty: { extSitesWS: '' },
+      },
+      {
+        site: 'facebook',
+        matching: { 'additionalProvidersData.facebook': { id: '1' } },
+      },
+      {
+        site: 'twitter',
+        matching: { 'additionalProvidersData.twitter': { id: '1' } },
+      },
+      {
+        site: 'github',
+        matching: { 'additionalProvidersData.github': { id: '1' } },
+      },
+      {
+        site: 'nostr',
+        matching: { nostrNpub: 'npub1qqqqqqqq' },
+        empty: { nostrNpub: '' },
+      },
+    ];
+
+    externalSites.forEach(({ site, matching, empty }) => {
+      it(`counts only public users with ${site} filled in`, async () => {
+        const users = await saveUsers(5);
+        await User.updateMany(
+          { _id: { $in: users.map(user => user._id) } },
+          { $set: { public: true } },
+        );
+        await User.updateOne({ _id: users[0]._id }, {
+          $set: matching,
+        } as import('mongoose').UpdateQuery<StatisticsUser>);
+        await User.updateOne({ _id: users[1]._id }, {
+          // Distinct values keep unique indexes (nostrNpub) happy
+          $set: {
+            ...Object.fromEntries(
+              Object.entries(matching).map(([key, value]) => [
+                key,
+                typeof value === 'string' ? `${value}-2` : value,
+              ]),
+            ),
+            public: false,
+          },
+        } as import('mongoose').UpdateQuery<StatisticsUser>);
+        if (empty) {
+          await User.updateOne({ _id: users[2]._id }, {
+            $set: empty,
+          } as import('mongoose').UpdateQuery<StatisticsUser>);
+        }
+
+        const count = await result<number>(callback =>
+          statistics.getExternalSiteCount(site, callback),
+        );
+
+        count.should.equal(1);
+      });
+    });
+
+    it('counts only public users, and only public subscribers', async () => {
+      const users = await saveUsers(4);
+      await User.updateOne(
+        { _id: users[0]._id },
+        { $set: { public: true, newsletter: true } },
+      );
+      await User.updateOne(
+        { _id: users[1]._id },
+        { $set: { public: true, newsletter: false } },
+      );
+      await User.updateOne(
+        { _id: users[2]._id },
+        { $set: { public: false, newsletter: true } },
+      );
+      await User.updateOne(
+        { _id: users[3]._id },
+        { $set: { public: false, newsletter: false } },
+      );
+
+      (
+        await result<number>(callback => statistics.getUsersCount(callback))
+      ).should.equal(2);
+      (
+        await result<number>(callback =>
+          statistics.getNewsletterSubscriptionsCount(callback),
+        )
+      ).should.equal(1);
+    });
+
+    it('counts unexpired meet offers and ignores host offers', async () => {
+      const [saved] = await saveUsers(1);
+      const offer = (extra: Record<string, unknown>) =>
+        new Offer({
+          location: [1, 2],
+          user: saved._id,
+          ...extra,
+        }).save();
+      await offer({ type: 'meet' });
+      await offer({ type: 'meet', validUntil: new Date(Date.now() + DAY) });
+      await offer({ type: 'meet', validUntil: new Date(Date.now() - DAY) });
+      await offer({ type: 'host', status: 'yes' });
+
+      (
+        await result<number>(callback =>
+          statistics.getMeetOffersCount(callback),
+        )
+      ).should.equal(2);
+    });
+
+    it('counts host offers per status and ignores meet offers', async () => {
+      const [saved] = await saveUsers(1);
+      const offer = (extra: Record<string, unknown>) =>
+        new Offer({
+          location: [1, 2],
+          user: saved._id,
+          ...extra,
+        }).save();
+      await offer({ type: 'host', status: 'yes' });
+      await offer({ type: 'host', status: 'yes' });
+      await offer({ type: 'host', status: 'maybe' });
+      await offer({ type: 'host', status: 'no' });
+      await offer({ type: 'host', status: 'no' });
+      await offer({ type: 'host', status: 'no' });
+      await offer({ type: 'meet' });
+
+      (
+        await result<HostingResult>(callback =>
+          statistics.getHostOffersCount(callback),
+        )
+      ).should.deepEqual({ yes: 2, maybe: 1, no: 3 });
+    });
+
+    it('returns zeroed host counters when the aggregation yields nothing', async () => {
+      typedStub<[unknown]>(Offer, 'aggregate').resolves(undefined);
+
+      (
+        await result<HostingResult>(callback =>
+          statistics.getHostOffersCount(callback),
+        )
+      ).should.deepEqual({ yes: 0, maybe: 0, no: 0 });
+    });
+
+    it('counts only users seen within the period', async () => {
+      const users = await saveUsers(4);
+      await User.updateOne(
+        { _id: users[0]._id },
+        { $set: { seen: new Date() } },
+      );
+      await User.updateOne(
+        { _id: users[1]._id },
+        { $set: { seen: new Date(Date.now() - 3 * DAY) } },
+      );
+      await User.updateOne(
+        { _id: users[2]._id },
+        { $set: { seen: new Date(Date.now() - 20 * DAY) } },
+      );
+      await User.updateOne({ _id: users[3]._id }, { $unset: { seen: 1 } });
+
+      (
+        await result<number>(callback =>
+          statistics.getLastSeenStatistic({ days: 7 }, callback),
+        )
+      ).should.equal(2);
+      (
+        await result<number>(callback =>
+          statistics.getLastSeenStatistic({ days: 30 }, callback),
+        )
+      ).should.equal(3);
+    });
+
+    it('returns the most spoken languages first, up to the limit', async () => {
+      const users = await saveUsers(3);
+      await User.updateOne(
+        { _id: users[0]._id },
+        { $set: { languages: ['eng', 'fin', 'deu'] } },
+      );
+      await User.updateOne(
+        { _id: users[1]._id },
+        { $set: { languages: ['eng', 'fin'] } },
+      );
+      await User.updateOne(
+        { _id: users[2]._id },
+        { $set: { languages: ['eng'] } },
+      );
+
+      (
+        await result<LanguageResult>(callback =>
+          statistics.getUserLanguagesCount(2, callback),
+        )
+      ).should.deepEqual([
+        { _id: 'eng', count: 3 },
+        { _id: 'fin', count: 2 },
+      ]);
+      (
+        await result<LanguageResult>(callback =>
+          statistics.getUserLanguagesCount(10, callback),
+        )
+      ).should.deepEqual([
+        { _id: 'eng', count: 3 },
+        { _id: 'fin', count: 2 },
+        { _id: 'deu', count: 1 },
+      ]);
+    });
+
+    it('splits recent experiences by recommendation and ignores removed ones', async () => {
+      const users = await saveUsers(4);
+      const old = new Date(Date.now() - 91 * DAY);
+      const since = new Date(Date.now() - 90 * DAY);
+      const met = { met: true, guest: false, host: false };
+      await Experience.create([
+        {
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          public: true,
+          recommend: 'yes',
+          created: old,
+          interactions: met,
+        },
+        {
+          userFrom: users[0]._id,
+          userTo: users[2]._id,
+          public: true,
+          recommend: 'yes',
+          interactions: met,
+        },
+        {
+          userFrom: users[0]._id,
+          userTo: users[3]._id,
+          public: true,
+          recommend: 'no',
+          created: old,
+          interactions: met,
+        },
+        {
+          userFrom: users[1]._id,
+          userTo: users[2]._id,
+          public: true,
+          recommend: 'no',
+          interactions: met,
+        },
+        {
+          userFrom: users[1]._id,
+          userTo: users[3]._id,
+          public: true,
+          recommend: 'yes',
+          removedAt: new Date(),
+          interactions: met,
+        },
+      ]);
+
+      (
+        await result<CountResult>(callback =>
+          statistics.getExperienceStatistics(since, callback),
+        )
+      ).should.deepEqual({
+        total: 4,
+        recommended: 2,
+        notRecommended: 2,
+        recent: { total: 2, recommended: 1, notRecommended: 1 },
+        realLifeConnections: { total: 2, recent: 1 },
+      });
+    });
+
+    it('counts each pair of members once as a real-life connection', async () => {
+      const users = await saveUsers(4);
+      const old = new Date(Date.now() - 91 * DAY);
+      const since = new Date(Date.now() - 90 * DAY);
+      const experiences = [];
+      for (let from = 0; from < 4; from += 1) {
+        for (let to = 0; to < 4; to += 1) {
+          if (from === to) continue;
+          // The pair (0, 1) only has old experiences, the others a recent one
+          const isOldPair = from + to === 1;
+          experiences.push({
+            userFrom: users[from]._id,
+            userTo: users[to]._id,
+            public: true,
+            recommend: 'yes' as const,
+            created: isOldPair || (from === 2 && to === 3) ? old : new Date(),
+            interactions: { met: true, guest: false, host: false },
+          });
+        }
+      }
+      await Experience.create(experiences);
+
+      (
+        await result<CountResult>(callback =>
+          statistics.getExperienceStatistics(since, callback),
+        )
+      ).realLifeConnections.should.deepEqual({ total: 6, recent: 5 });
+    });
+
+    it('uses the latest feedback per pair, breaking ties by insertion order', async () => {
+      const users = await saveUsers(2);
+      const created = new Date();
+      await MessageStat.create({
+        firstMessageUserFrom: users[0]._id,
+        firstMessageUserTo: users[1]._id,
+        firstMessageCreated: created,
+        firstReplyCreated: created,
+      });
+      for (const reference of ['yes', 'no'] as const) {
+        await ReferenceThread.create({
+          thread: new mongoose.Types.ObjectId(),
+          userFrom: users[0]._id,
+          userTo: users[1]._id,
+          reference,
+          created,
+        });
+      }
+
+      const counts = await result<InteractionResult>(callback =>
+        statistics.getMessageInteractionStatistics(
+          new Date(Date.now() - DAY),
+          callback,
+        ),
+      );
+
+      counts.should.deepEqual({
+        total: 1,
+        positive: 0,
+        negative: 1,
+        recent: { total: 1, positive: 0, negative: 1 },
+      });
+    });
+
+    it('splits recent feedback and matches it only to threads between the same members', async () => {
+      const users = await saveUsers(4);
+      const old = new Date(Date.now() - 91 * DAY);
+      const since = new Date(Date.now() - 90 * DAY);
+      const stat = (from: number, to: number) => ({
+        firstMessageUserFrom: users[from]._id,
+        firstMessageUserTo: users[to]._id,
+        firstMessageCreated: old,
+        firstReplyCreated: old,
+      });
+      const feedback = (
+        from: number,
+        to: number,
+        reference: 'yes' | 'no',
+        created: Date,
+      ) => ({
+        thread: new mongoose.Types.ObjectId(),
+        userFrom: users[from]._id,
+        userTo: users[to]._id,
+        reference,
+        created,
+      });
+      // Replied threads: 0 -> 1 and 3 -> 2. Threads 0 -> 2 and 3 -> 1 only
+      // share one member with the feedback below
+      await MessageStat.create([stat(0, 1), stat(3, 2)]);
+      await ReferenceThread.create([
+        feedback(0, 1, 'yes', new Date()),
+        feedback(1, 0, 'no', old),
+        feedback(2, 3, 'no', new Date()),
+        feedback(3, 2, 'yes', old),
+        feedback(0, 2, 'yes', new Date()),
+        feedback(2, 1, 'no', new Date()),
+        feedback(1, 3, 'yes', new Date()),
+        feedback(3, 0, 'no', new Date()),
+      ]);
+
+      const counts = await result<InteractionResult>(callback =>
+        statistics.getMessageInteractionStatistics(since, callback),
+      );
+
+      counts.should.deepEqual({
+        total: 2,
+        positive: 2,
+        negative: 2,
+        recent: { total: 0, positive: 1, negative: 1 },
+      });
+    });
+  });
+
   describe('getPublicStatistics', () => {
     it('returns aggregated public statistics', async () => {
       const res = deferredResponse();
@@ -1002,6 +1412,90 @@ describe('Statistics controller unit tests', () => {
       refreshedResponse.statusCode.should.equal(200);
     });
 
+    it('serves the cache until exactly one hour after it was filled', async () => {
+      const start = Date.now();
+      const now = sinon.stub(Date, 'now').returns(start);
+      const first = deferredResponse();
+      statistics.getPublicStatistics({}, first);
+      await first.waitForResponse();
+
+      const getUsersCount = sinon.spy(statistics, 'getUsersCount');
+      now.returns(start + 60 * 60 * 1000 - 1);
+      const cached = deferredResponse();
+      statistics.getPublicStatistics({}, cached);
+      await cached.waitForResponse();
+      getUsersCount.called.should.be.false();
+
+      now.returns(start + 60 * 60 * 1000);
+      const refreshed = deferredResponse();
+      statistics.getPublicStatistics({}, refreshed);
+      await refreshed.waitForResponse();
+      getUsersCount.calledOnce.should.be.true();
+      refreshed.headers['cache-control'].should.equal('public, max-age=3600');
+    });
+
+    it('computes percentages from the member total', async () => {
+      sinon.stub(statistics, 'getUsersCount').callsFake(cb => cb(null, 8));
+      sinon
+        .stub(statistics, 'getNewsletterSubscriptionsCount')
+        .callsFake(cb => cb(null, 2));
+      sinon
+        .stub(statistics, 'getExternalSiteCount')
+        .callsFake((site, cb) => cb(null, 1));
+      sinon
+        .stub(statistics, 'getHostOffersCount')
+        .callsFake(cb => cb(null, { yes: 1, maybe: 2, no: 4 }));
+
+      const res = deferredResponse();
+      statistics.getPublicStatistics({}, res);
+      await res.waitForResponse();
+
+      res.body.newsletter.should.deepEqual({ count: 2, percentage: 25 });
+      res.body.connections[0].should.deepEqual({
+        network: 'bewelcome',
+        count: 1,
+        percentage: 12.5,
+      });
+      res.body.hosting.should.deepEqual({
+        total: 3,
+        percentage: 38,
+        yes: 1,
+        yesPercentage: 33,
+        maybe: 2,
+        maybePercentage: 67,
+      });
+    });
+
+    it('responds with the validation message when collecting fails', async () => {
+      sinon
+        .stub(statistics, 'getNewsletterSubscriptionsCount')
+        .callsFake(cb => {
+          cb(
+            Object.assign(new Error('boom'), {
+              errors: { field: { message: 'Field is invalid.' } },
+            }),
+          );
+        });
+      const failing = deferredResponse();
+      statistics.getPublicStatistics({}, failing);
+      await failing.waitForResponse();
+      failing.statusCode.should.equal(400);
+      failing.body.message.should.equal('Field is invalid.');
+      failing.headers['cache-control'].should.equal('no-store');
+    });
+
+    it('responds with the default message for errors without details', async () => {
+      sinon.stub(statistics, 'getUsersCount').callsFake(cb => {
+        cb(new Error('statistics unavailable'));
+      });
+      const failing = deferredResponse();
+      statistics.getPublicStatistics({}, failing);
+      await failing.waitForResponse();
+      failing.body.message.should.equal(
+        'Snap! Something went wrong. If this keeps happening, please contact us.',
+      );
+    });
+
     it('returns zeroed hosting stats when there are no host offers', async () => {
       const res = deferredResponse();
       statistics.getPublicStatistics({}, res);
@@ -1082,6 +1576,90 @@ describe('Statistics controller unit tests', () => {
       stat.firstCall.args[0].tags.deviceYearClass.should.equal('unknown');
       stat.firstCall.args[0].meta.os.should.equal('android');
       stat.firstCall.args[0].meta.expoVersion.should.equal('unknown');
+    });
+
+    it('rejects a missing or non-object stats payload with an explanation', async () => {
+      const stat = sinon.stub(statService, 'stat');
+      const inherited = Object.assign(
+        Object.create({ stats: { version: '1.0.0' } }),
+        { collection: 'mobileAppInit' },
+      );
+      const bodies: object[] = [
+        { collection: 'mobileAppInit' },
+        { collection: 'mobileAppInit', stats: undefined },
+        { collection: 'mobileAppInit', stats: null },
+        { collection: 'mobileAppInit', stats: '1.0.0' },
+        inherited,
+      ];
+      for (const body of bodies) {
+        const res = deferredResponse();
+        statistics.collectStatistics({ body }, res);
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal('Missing or invalid `stats`.');
+        res.headers['x-tr-update-needed'].should.equal(
+          'You should update Trustroots app or otherwise it will not continue functioning.',
+        );
+      }
+      stat.called.should.be.false();
+    });
+
+    it('rejects an invalid collection with an explanation', async () => {
+      sinon.stub(statService, 'stat');
+      for (const collection of ['invalid', '', undefined, null]) {
+        const res = deferredResponse();
+        statistics.collectStatistics(
+          { body: { collection, stats: { version: '1.0.0' } } },
+          res,
+        );
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body.message.should.equal('Missing or invalid `collection`.');
+      }
+    });
+
+    it('records every submitted stat and defaults the missing ones to unknown', async () => {
+      const stat = sinon.stub(statService, 'stat').callsFake((stats, cb) => {
+        cb();
+      });
+      const full = deferredResponse();
+      statistics.collectStatistics(
+        {
+          body: {
+            collection: 'mobileAppInit',
+            stats: {
+              version: '2.3.4',
+              deviceYearClass: 2012,
+              os: 'android',
+              expoVersion: '49.0.0',
+            },
+          },
+        },
+        full,
+      );
+      await full.waitForResponse();
+      const empty = deferredResponse();
+      statistics.collectStatistics(
+        { body: { collection: 'mobileAppInit', stats: {} } },
+        empty,
+      );
+      await empty.waitForResponse();
+
+      stat.firstCall.args[0].should.deepEqual({
+        namespace: 'mobileAppInit',
+        counts: { count: 1 },
+        tags: { version: '2.3.4', deviceYearClass: '2012' },
+        meta: { os: 'android', expoVersion: '49.0.0' },
+      });
+      stat.secondCall.args[0].should.deepEqual({
+        namespace: 'mobileAppInit',
+        counts: { count: 1 },
+        tags: { version: 'unknown', deviceYearClass: 'unknown' },
+        meta: { os: 'unknown', expoVersion: 'unknown' },
+      });
+      empty.statusCode.should.equal(200);
+      empty.body.message.should.equal('OK');
+      should(empty.headers['x-tr-update-needed']).be.undefined();
     });
 
     it('asks outdated mobile apps to update', async () => {
