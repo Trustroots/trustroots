@@ -10,7 +10,6 @@ import type {
  * Module dependencies.
  */
 const acl = memoryPolicy();
-const authoriseRoute = createRouteAuthorisation(acl, 'send');
 /**
  * Invoke Tribes Permissions
  */
@@ -70,7 +69,7 @@ function invokeRolesPolicies() {
  * Check If Tribes Policy Allows
  */
 function isAllowed(req: PolicyRequest, res: PolicyResponse, next: PolicyNext) {
-  return authoriseRoute(req, res, next);
+  return createRouteAuthorisation(acl, 'send')(req, res, next);
 }
 const service = {
   invokeRolesPolicies,
