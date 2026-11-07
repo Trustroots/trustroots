@@ -86,7 +86,7 @@ if (shard && !scope) {
 }
 function floorFor(entry: Floor | undefined): number | undefined {
   if (entry === undefined || typeof entry === 'number') return entry;
-  return (shard && entry.shards?.[shard]) ?? entry.default;
+  return (shard ? entry.shards?.[shard] : undefined) ?? entry.default;
 }
 const floors = Object.fromEntries(
   suites.map(suite => [suite, floorFor(floorEntries[suite])]),

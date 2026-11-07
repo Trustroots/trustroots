@@ -43,8 +43,9 @@ export default {
       ...sourceChecks,
     ],
     // A mutant that breaks a request handler leaves each covering test waiting
-    // for its timeout. Fail those fast: no server test needs 3s on its own.
-    testTimeout: 3000,
+    // for its timeout. Fail those fast: no server test needs 3s on its own,
+    // though the shared CI runners are about twice as slow as a laptop.
+    testTimeout: process.env.CI ? 6000 : 3000,
     sequence: { ...config.test?.sequence, sequencer: UnitFirstSequencer },
   },
 };

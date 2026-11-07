@@ -363,7 +363,9 @@ describe('Statistics controller unit tests', () => {
       const now = new Date('2026-10-21T12:00:00.000Z');
       const dayStart = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const users = await utils.saveUsers(utils.generateUsers(5));
+      const users = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(5),
+      );
       const userDates = [
         now,
         dayStart,
@@ -434,7 +436,9 @@ describe('Statistics controller unit tests', () => {
 
   describe('getMessageInteractionStatistics', () => {
     it('counts only replied threads and the latest eligible feedback', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(4));
+      const users = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(4),
+      );
       const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
       const recentDate = new Date();
       const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
@@ -537,7 +541,9 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('counts users connected to github', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const [saved] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
       const userDoc = required(
         (await User.findById(saved._id)) as
           import('mongoose').HydratedDocument<StatisticsUser> | null,
@@ -565,7 +571,9 @@ describe('Statistics controller unit tests', () => {
       'nostr',
     ].forEach(site => {
       it(`counts users connected to ${site}`, async () => {
-        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const [saved] = await utils.saveUsersWithCachedPasswords(
+          utils.generateUsersWithSharedPassword(1),
+        );
         const userDoc = required(
           (await User.findById(saved._id)) as
             import('mongoose').HydratedDocument<StatisticsUser> | null,
@@ -625,7 +633,9 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('counts meet offers', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const [saved] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
       await new Offer({
         type: 'meet',
         location: [1, 2],
@@ -642,7 +652,9 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('counts users seen recently', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const [saved] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
       const userDoc = required(
         (await User.findById(saved._id)) as
           import('mongoose').HydratedDocument<StatisticsUser> | null,
@@ -674,7 +686,9 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('returns top spoken languages', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const [saved] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
       const userDoc = required(
         (await User.findById(saved._id)) as
           import('mongoose').HydratedDocument<StatisticsUser> | null,
@@ -692,7 +706,9 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('counts only positive experiences as real-life connections', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(4));
+      const users = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(4),
+      );
       const oldDate = new Date(Date.now() - 91 * 24 * 60 * 60 * 1000);
       const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
@@ -764,7 +780,9 @@ describe('Statistics controller unit tests', () => {
     });
 
     it('groups host offers by status', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const [saved] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
       await new Offer({
         type: 'host',
         status: 'yes',
