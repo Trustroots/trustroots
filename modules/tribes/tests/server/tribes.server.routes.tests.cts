@@ -267,6 +267,137 @@ describe('Tribe CRUD tests', function () {
       .should.deepEqual(['eligiblecontact']);
   });
 
+  const circleFixture = (
+    username: string,
+    attributes: Partial<UserRecord> & Record<string, unknown> = {},
+  ) => ({
+    ..._user,
+    username,
+    email: `${username}@example.com`,
+    displayName: `Member ${username}`,
+    password: 'M3@n.jsI$Aw3$0m3',
+    public: true,
+    member: [{ tribe: tribe._id }],
+    seen: new Date(),
+    ...attributes,
+  });
+  const usernames = (members: { username: string }[]) =>
+    members.map(member => member.username);
+
+  it('lists confirmed contacts in either direction ordered by name', async () => {
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const [fromViewer, toViewer, unconfirmed, otherA, otherB] =
+      await utils.saveUsersWithCachedPasswords([
+        circleFixture('fromviewer', { displayName: 'A From viewer' }),
+        circleFixture('toviewer', { displayName: 'B To viewer' }),
+        circleFixture('unconfirmed'),
+        circleFixture('othera'),
+        circleFixture('otherb'),
+      ]);
+    await Contact.create([
+      { userFrom: user._id, userTo: fromViewer._id, confirmed: true },
+      { userFrom: toViewer._id, userTo: user._id, confirmed: true },
+      { userFrom: user._id, userTo: unconfirmed._id, confirmed: false },
+      { userFrom: otherA._id, userTo: otherB._id, confirmed: true },
+    ]);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    usernames(response.body.contacts).should.deepEqual([
+      'fromviewer',
+      'toviewer',
+    ]);
+  });
+
+  it('lists only public recommending experiences, newest first', async () => {
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const [older, newer, notRecommending, privateExperience, forOther, other] =
+      await utils.saveUsersWithCachedPasswords([
+        circleFixture('older'),
+        circleFixture('newer'),
+        circleFixture('notrecommending'),
+        circleFixture('privateexperience'),
+        circleFixture('forother'),
+        circleFixture('other'),
+      ]);
+    await Experience.create([
+      {
+        userFrom: older._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes',
+        created: new Date('2021-01-01'),
+      },
+      {
+        userFrom: newer._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes',
+        created: new Date('2024-01-01'),
+      },
+      {
+        userFrom: notRecommending._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'no',
+      },
+      {
+        userFrom: privateExperience._id,
+        userTo: user._id,
+        public: false,
+        recommend: 'yes',
+      },
+      {
+        userFrom: forOther._id,
+        userTo: other._id,
+        public: true,
+        recommend: 'yes',
+      },
+    ]);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    usernames(response.body.recommenders).should.deepEqual(['newer', 'older']);
+  });
+
+  it('limits active members to the eight most recently seen', async () => {
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const now = Date.now();
+    // Saved oldest first so insertion order differs from the expected order.
+    await utils.saveUsersWithCachedPasswords(
+      Array.from({ length: 9 }, (_, index) =>
+        circleFixture(`active${index}`, {
+          seen: new Date(now - (9 - index) * 60 * 1000),
+        }),
+      ),
+    );
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    usernames(response.body.active).should.deepEqual([
+      'active8',
+      'active7',
+      'active6',
+      'active5',
+      'active4',
+      'active3',
+      'active2',
+      'active1',
+    ]);
+  });
+
+  it('does not serve non-public circles by slug', async () => {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent.get(`/api/tribes/${tribeNonPublic.slug}`);
+    response.body.should.not.have.property('label');
+  });
+
   it('requires circle membership to list active members', async () => {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     await agent.get(`/api/tribes/${tribe.slug}/members`).expect(403);

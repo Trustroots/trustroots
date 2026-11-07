@@ -173,6 +173,7 @@ service.listTribes = function (req, res) {
     .then(docs =>
       Tribe.countDocuments(query).then(total => {
         const pages = Math.ceil(total / limit);
+        // Stryker disable next-line ConditionalExpression,EqualityOperator: setLinkHeader repeats the same page < pageCount check itself, so calling it on the last page (or with NaN pages) sets no header either way
         if (pages > page) {
           paginationService.setLinkHeader(req, res, pages, { relative: true });
         }
@@ -247,6 +248,7 @@ async function listCircleContacts(req: MemberRequest): Promise<MemberView[]> {
       },
     },
     { $group: { _id: '$userId' } },
+    // Stryker disable next-line ArrayDeclaration: a stray string in an $nin list over ObjectId fields never matches, so no input can tell it from the empty list
     ...visibleMemberStages(req, [], { 'user.displayName': 1, 'user._id': 1 }),
   ])
     .option({ maxTimeMS: DISCOVERY_QUERY_TIMEOUT_MS })
@@ -263,12 +265,14 @@ async function listCircleRecommenders(
       $match: {
         userTo: selfId,
         userFrom: {
+          // Stryker disable next-line ArrayDeclaration: only a pre-filter; the later user match excludes the viewer, blocked users and contacts again, so the result is identical
           $nin: [selfId, ...(req.user.blocked || []), ...excludedIDs],
         },
         public: true,
         recommend: 'yes',
       },
     },
+    // Stryker disable next-line UnaryOperator: the unique (userFrom, userTo) index leaves one experience per recommender, so $first is the same under either sort direction
     { $sort: { created: -1 } },
     { $group: { _id: '$userFrom', created: { $first: '$created' } } },
     ...visibleMemberStages(req, excludedIDs, { created: -1, _id: 1 }),
