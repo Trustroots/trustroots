@@ -65,6 +65,7 @@ function fallbackMessageId() {
 
 function headerText(value: unknown): string {
   if (typeof value === 'string') return value;
+  // Stryker disable next-line StringLiteral: mailparser only yields an array for repeated headers with non-empty values, so any separator gives a non-empty text that is neither "no" nor a structured value
   if (Array.isArray(value)) return value.join(', ');
   return String((value as { value?: unknown } | null | undefined)?.value ?? '');
 }
@@ -79,19 +80,21 @@ export async function parseSupportMailSource(
     maxHtmlLengthToParse: maxLength,
   });
   const attachments: ParsedSupportMail['attachments'] = [];
+  // Stryker disable next-line StringLiteral: mailparser always emits a text part, which replaces this initial value
   let body = '';
   let deliveryStatusPart = '';
   parser.on('data', (part: AttachmentStream | MessageText) => {
     if (part.type === 'attachment') {
       const metadata = {
         filename: part.filename?.slice(0, 255),
-        contentType: part.contentType?.slice(0, 120),
+        contentType: part.contentType.slice(0, 120),
         size: part.size,
       };
       attachments.push(metadata);
       if (part.contentType.toLowerCase() === 'message/delivery-status') {
         let collected = 0;
         part.content.on('data', (chunk: Buffer) => {
+          // Stryker disable next-line ConditionalExpression,EqualityOperator: at the cap the slice below is empty, so skipping or not appending changes nothing
           if (collected >= 65536) return;
           const safeChunk = chunk.subarray(0, 65536 - collected);
           deliveryStatusPart += safeChunk.toString('utf8');
@@ -101,6 +104,7 @@ export async function parseSupportMailSource(
       part.content.resume();
       part.content.once('end', () => {
         metadata.size = part.size;
+        // Stryker disable next-line OptionalChaining: mailparser only clears release after it has been called, and this is the only call
         part.release?.();
       });
     } else {
@@ -115,14 +119,18 @@ export async function parseSupportMailSource(
   const contentTypeHeader = headers.get('content-type');
   const contentType = headerText(contentTypeHeader);
   const reportType =
+    // Stryker disable next-line LogicalOperator: a header without a report-type parameter gives "undefined" or "", and neither equals "delivery-status", the only value reportType is compared with
     contentTypeHeader &&
+    // Stryker disable next-line ConditionalExpression: mailparser parses Content-Type into an object (or an array of them), never a string
     typeof contentTypeHeader === 'object' &&
     'params' in contentTypeHeader &&
     contentTypeHeader.params &&
+    // Stryker disable next-line ConditionalExpression: mailparser always gives Content-Type params as an object
     typeof contentTypeHeader.params === 'object' &&
     'report-type' in contentTypeHeader.params
       ? String(contentTypeHeader.params['report-type'])
-      : '';
+      : // Stryker disable next-line StringLiteral: reportType is only compared with "delivery-status"
+        '';
   const from = parser.from?.value.find(address => address.address)?.address;
   const deliveryAction = deliveryStatusPart
     .match(/^Action:\s*(failed|delayed|delivered)\s*$/im)?.[1]
@@ -133,13 +141,14 @@ export async function parseSupportMailSource(
     )?.[1],
   );
   const referenceHeader = parser.references;
-  const references = (
-    referenceHeader ? ([] as string[]).concat(referenceHeader) : []
-  )
-    .map(reference => normaliseMessageId(reference))
-    .filter((reference): reference is string => Boolean(reference));
+  const references =
+    // Stryker disable next-line ArrayDeclaration: any placeholder entry fails normaliseMessageId (no "@") and is filtered out
+    (referenceHeader ? ([] as string[]).concat(referenceHeader) : [])
+      .map(reference => normaliseMessageId(reference))
+      .filter((reference): reference is string => Boolean(reference));
   return {
     body,
+    // Stryker disable next-line MethodExpression: mailparser already returns trimmed addresses
     sender: from?.trim(),
     subject: parser.subject,
     messageId: normaliseMessageId(parser.messageId),
@@ -150,6 +159,7 @@ export async function parseSupportMailSource(
       (Boolean(autoSubmitted) && autoSubmitted.toLowerCase() !== 'no') ||
       (/multipart\/report/i.test(contentType) &&
         reportType.toLowerCase() === 'delivery-status') ||
+      // Stryker disable next-line StringLiteral: a non-empty placeholder cannot match the anchored postmaster/mailer-daemon pattern either
       /^(postmaster|mailer-daemon)@/i.test(from || ''),
     ...(deliveryAction && { deliveryStatus: deliveryAction }),
     ...(reportedMessageId && { reportedMessageId }),
@@ -170,22 +180,33 @@ async function findThread(references: string[], inReplyTo?: string) {
     if (exactInitial.length === 1) return exactInitial[0];
     const exactReply = await SupportMessage.findOne({
       messageId: inReplyTo,
-    }).select('request');
+    }).select(
+      // Stryker disable next-line StringLiteral: the projection only trims the fields read
+      'request',
+    );
     if (exactReply) return SupportRequest.findById(exactReply.request);
+    // Stryker disable next-line EqualityOperator: a single match returned above, so `>= 1` and `> 1` agree here
     if (exactInitial.length > 1) return undefined;
   }
+  // Stryker disable next-line ConditionalExpression: an empty $in below matches nothing, which also ends in undefined
   if (!references.length) return undefined;
 
   const matchingRequests = await SupportRequest.find({
     initialMessageId: { $in: references },
   })
-    .select('_id')
+    .select(
+      // Stryker disable next-line StringLiteral: the projection only trims the fields read
+      '_id',
+    )
     .limit(3)
     .lean();
   const matchingReplies = await SupportMessage.find({
     messageId: { $in: references },
   })
-    .select('request')
+    .select(
+      // Stryker disable next-line StringLiteral: the projection only trims the fields read
+      'request',
+    )
     .limit(3)
     .lean();
   const requestIds = new Set([
@@ -197,6 +218,7 @@ async function findThread(references: string[], inReplyTo?: string) {
 }
 
 function addressFromEnvelope(envelope?: MessageEnvelopeObject) {
+  // Stryker disable next-line OptionalChaining: the found address is a non-empty string, and a missing one short-circuits the whole chain
   return envelope?.from?.find(address => address.address)?.address?.trim();
 }
 
@@ -221,32 +243,47 @@ function attachmentMetadata(structure?: MessageStructureObject) {
 }
 
 function headerValue(headers: Buffer | undefined, name: string) {
+  // Stryker disable next-line StringLiteral: a non-empty placeholder normalises to undefined, and processMail then retries the envelope value
   if (!headers) return '';
   const raw = headers.toString('utf8');
   const match = raw.match(
     new RegExp(`^${name}:\\s*(.+(?:\\r?\\n[ \\t].+)*)`, 'im'),
   );
-  return match?.[1].replace(/\r?\n[ \t]+/g, ' ').trim() || '';
+  return (
+    // Stryker disable next-line MethodExpression: trim only matters for an empty header, whose placeholder normalises to undefined and falls back to the envelope in processMail
+    match?.[1]
+      .replace(
+        // Stryker disable next-line Regex: any leftover fold whitespace makes an id invalid, as a space does
+        /\r?\n[ \t]+/g,
+        ' ',
+      )
+      .trim() ||
+    // Stryker disable next-line StringLiteral: a non-empty placeholder normalises to undefined, and processMail then retries the envelope value
+    ''
+  );
 }
 
 function limitStoredBody(value: string) {
   const maxBytes = config.supportInbox.imap.maxStoredBodyBytes;
+  // Stryker disable next-line StringLiteral: Buffer.byteLength treats an unknown encoding as UTF-8
   if (Buffer.byteLength(value, 'utf8') <= maxBytes) {
     return { body: value, truncated: false };
   }
   const note = `\n[Message text truncated after ${Math.floor(maxBytes / 1024 / 1024)} MiB]`;
+  // Stryker disable next-line StringLiteral: Buffer.byteLength treats an unknown encoding as UTF-8
   const contentLimit = Math.max(0, maxBytes - Buffer.byteLength(note, 'utf8'));
   let lower = 0;
   let upper = value.length;
   while (lower < upper) {
     const middle = Math.ceil((lower + upper) / 2);
+    // Stryker disable next-line StringLiteral: Buffer.byteLength treats an unknown encoding as UTF-8
     if (Buffer.byteLength(value.slice(0, middle), 'utf8') <= contentLimit) {
       lower = middle;
     } else {
       upper = middle - 1;
     }
   }
-  if (lower > 0 && /[\uD800-\uDBFF]/.test(value.charAt(lower - 1))) lower -= 1;
+  if (/[\uD800-\uDBFF]/.test(value.charAt(lower - 1))) lower -= 1;
   return { body: `${value.slice(0, lower)}${note}`, truncated: true };
 }
 
@@ -271,6 +308,7 @@ async function processMail(
       parsed.inReplyTo,
       ...parsed.references,
     ].filter((value): value is string => Boolean(value));
+    // Stryker disable next-line ConditionalExpression: an empty $in below matches nothing, which also returns
     if (!referencedIds.length) return;
     const outbound = await SupportMessage.findOne({
       direction: 'outbound',
@@ -312,10 +350,8 @@ async function processMail(
   if (!sender || sender === config.supportInbox.fromAddress.toLowerCase())
     return;
   const references = parsed.references;
-  const thread = await findThread(
-    references,
-    parsed.inReplyTo || normaliseMessageId(envelope?.inReplyTo),
-  );
+  const inReplyTo = parsed.inReplyTo || normaliseMessageId(envelope?.inReplyTo);
+  const thread = await findThread(references, inReplyTo);
   // Thread headers are untrusted. Never attach mail from a different sender to
   // a request simply because it knows a Message-ID.
   const matchingThread =
@@ -324,6 +360,7 @@ async function processMail(
   const bounded = oversized
     ? {
         body: '[Message exceeds configured size limit; content omitted]',
+        // Stryker disable next-line BooleanLiteral: `truncated` below is `oversized || bounded.truncated`
         truncated: true,
       }
     : limitStoredBody(parsed.body.trim() || '[Message body unavailable]');
@@ -370,9 +407,7 @@ async function processMail(
     emailFrom: sender,
     emailTo: config.supportInbox.fromAddress,
     messageId: storedMessageId,
-    ...((parsed.inReplyTo || normaliseMessageId(envelope?.inReplyTo)) && {
-      inReplyTo: parsed.inReplyTo || normaliseMessageId(envelope?.inReplyTo),
-    }),
+    ...(inReplyTo && { inReplyTo }),
     references,
     inboundKey,
     deliveryState: 'received',
@@ -534,22 +569,20 @@ export async function pollSupportMailbox(
           internalDate && !Number.isNaN(internalDate.getTime())
             ? internalDate
             : undefined;
-        if (
-          rescanThroughUid !== undefined &&
-          item.uid <= rescanThroughUid &&
-          (!receivedAt || receivedAt < cursor.cutoverAt)
-        ) {
+        const withinRescan = item.uid <= (rescanThroughUid ?? -Infinity);
+        const reachesBoundary = item.uid >= (rescanThroughUid ?? Infinity);
+        if (withinRescan && (!receivedAt || receivedAt < cursor.cutoverAt)) {
           await SupportMailboxCursor.updateOne(
             { _id: 'support-inbox', uidValidity },
             {
               $max: { lastUid: item.uid },
               $set: { updatedAt: new Date() },
-              ...(item.uid >= rescanThroughUid && {
+              ...(reachesBoundary && {
                 $unset: { rescanThroughUid: 1 },
               }),
             },
           );
-          if (item.uid >= rescanThroughUid) rescanThroughUid = undefined;
+          if (reachesBoundary) rescanThroughUid = undefined;
           lastUid = item.uid;
           processed += 1;
           await touchAgendaJob(job);
@@ -560,6 +593,7 @@ export async function pollSupportMailbox(
         let parsed: ParsedSupportMail;
         if (oversized) {
           parsed = {
+            // Stryker disable next-line StringLiteral: oversized messages store a fixed notice instead of the body
             body: '',
             sender: addressFromEnvelope(item.envelope),
             subject: item.envelope?.subject,
@@ -577,13 +611,16 @@ export async function pollSupportMailbox(
                 ) || [],
             attachments: attachmentMetadata(item.bodyStructure),
             automated:
+              // Stryker disable next-line Regex: `.+` and `.` accept the same inputs here, and the sibling mutants of this pattern are killed by the automated-mail tests
               /^\s*auto-submitted:\s*(?!no\s*$).+/im.test(
+                // Stryker disable next-line StringLiteral: a non-empty placeholder cannot match the header pattern either
                 item.headers?.toString('utf8') || '',
               ) ||
               /multipart\/report\s*;\s*report-type\s*=\s*delivery-status/i.test(
                 headerValue(item.headers, 'CONTENT-TYPE'),
               ) ||
               /^(postmaster|mailer-daemon)@/i.test(
+                // Stryker disable next-line StringLiteral: a non-empty placeholder cannot match the anchored pattern either
                 addressFromEnvelope(item.envelope) || '',
               ),
           };
@@ -614,15 +651,12 @@ export async function pollSupportMailbox(
           {
             $max: { lastUid: item.uid },
             $set: { updatedAt: new Date() },
-            ...(rescanThroughUid !== undefined &&
-              item.uid >= rescanThroughUid && {
-                $unset: { rescanThroughUid: 1 },
-              }),
+            ...(reachesBoundary && {
+              $unset: { rescanThroughUid: 1 },
+            }),
           },
         );
-        if (rescanThroughUid !== undefined && item.uid >= rescanThroughUid) {
-          rescanThroughUid = undefined;
-        }
+        if (reachesBoundary) rescanThroughUid = undefined;
         lastUid = item.uid;
         processed += 1;
         await touchAgendaJob(job);
