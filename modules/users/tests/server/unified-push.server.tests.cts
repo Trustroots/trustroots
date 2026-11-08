@@ -57,6 +57,23 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     config.webPush = originalConfiguration;
     await utils.clearDatabase();
   });
+  it('exposes the service and controller from a fresh module load', function () {
+    const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
+    const keysOf = (path: string) =>
+      Object.keys(mockModule<object>(require.resolve(path), {}));
+    keysOf(
+      '../../server/services/unified-push.server.service.mts',
+    ).should.deepEqual([
+      'pushConfiguration',
+      'validRegistration',
+      'register',
+      'unregister',
+      'notifyUnread',
+    ]);
+    keysOf(
+      '../../server/controllers/users.unified-push.server.controller.mts',
+    ).should.deepEqual(['configuration', 'add', 'remove']);
+  });
   it('reports configuration and rejects registration when disabled', async function () {
     config.webPush.privateKey = '';
     const settings = await agent.get('/api/users/unified-push').expect(200);

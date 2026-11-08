@@ -77,44 +77,56 @@ const noProfileUserId = { valueOf: () => 'anonymous-test-user' };
 describe('Users policy unit tests', () => {
   afterEach(() => sinon.restore());
 
-  it('registers admin routes without granting any method', () => {
+  const grants: [string, string[]][] = [
+    ['/api/users', ['get', 'put', 'delete']],
+    ['/api/users/export', ['get']],
+    ['/api/users/removal/pending', ['get', 'delete']],
+    ['/api/users/remove/:token', ['delete']],
+    ['/api/users/:username', ['get']],
+    ['/api/users/:avatarUserId/avatar', ['get']],
+    ['/api/users-avatar', ['post']],
+    ['/api/users/mini/:userId', ['get']],
+    ['/api/users/password', ['post']],
+    ['/api/users/accounts/:provider', ['delete']],
+    ['/api/users/memberships', ['get']],
+    ['/api/users/memberships/:tribeId', ['post', 'delete']],
+    ['/api/users/push/registrations', ['post']],
+    ['/api/users/push/registrations/:token', ['delete']],
+    ['/api/users/unified-push', ['get', 'post', 'delete']],
+    ['/api/blocked-users', ['get']],
+    ['/api/blocked-users/:username', ['put', 'delete']],
+  ];
+
+  // Assert inside a test: grants registered from a hook are credited to no
+  // test, so their mutants would never run.
+  it('registers admin routes without methods and the member grants', () => {
     const { policy, mockAcl } = loadPolicy();
     policy.invokeRolesPolicies();
-    mockAcl.allow.firstCall.args[0][0].should.deepEqual({
-      roles: ['admin'],
-      allows: [
-        '/api/users',
-        '/api/users/:username',
-        '/api/users/avatar',
-        '/api/users/mini/:userId',
-        '/api/users/password',
-        '/api/users/accounts/:provider',
-        '/api/users/memberships',
-        '/api/users/memberships/:tribeId',
-      ].map(resources => ({ resources, permissions: [] })),
-    });
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          '/api/users',
+          '/api/users/:username',
+          '/api/users/avatar',
+          '/api/users/mini/:userId',
+          '/api/users/password',
+          '/api/users/accounts/:provider',
+          '/api/users/memberships',
+          '/api/users/memberships/:tribeId',
+        ].map(resources => ({ resources, permissions: [] })),
+      },
+      {
+        roles: ['user'],
+        allows: grants.map(([resources, permissions]) => ({
+          resources,
+          permissions,
+        })),
+      },
+    ]);
   });
 
   describe('grants for signed-in users', () => {
-    const grants: [string, string[]][] = [
-      ['/api/users', ['get', 'put', 'delete']],
-      ['/api/users/export', ['get']],
-      ['/api/users/removal/pending', ['get', 'delete']],
-      ['/api/users/remove/:token', ['delete']],
-      ['/api/users/:username', ['get']],
-      ['/api/users/:avatarUserId/avatar', ['get']],
-      ['/api/users-avatar', ['post']],
-      ['/api/users/mini/:userId', ['get']],
-      ['/api/users/password', ['post']],
-      ['/api/users/accounts/:provider', ['delete']],
-      ['/api/users/memberships', ['get']],
-      ['/api/users/memberships/:tribeId', ['post', 'delete']],
-      ['/api/users/push/registrations', ['post']],
-      ['/api/users/push/registrations/:token', ['delete']],
-      ['/api/users/unified-push', ['get', 'post', 'delete']],
-      ['/api/blocked-users', ['get']],
-      ['/api/blocked-users/:username', ['put', 'delete']],
-    ];
     const decide = (roles: string[], path: string, method: string) => {
       const res = mockResponse();
       let status = 0;
