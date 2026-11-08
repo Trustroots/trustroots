@@ -134,11 +134,10 @@ describe('Historical support report linking', () => {
   });
 
   it('requires an existing administrator', async () => {
-    for (const actor of [
-      reporter,
-      new mongoose.Types.ObjectId(),
-      admin.toString().replace(/.$/, '0'),
-    ]) {
+    // An id one hex digit away from the administrator's, never equal to it.
+    const id = admin.toString();
+    const nearAdmin = id.slice(0, -1) + (id.endsWith('0') ? '1' : '0');
+    for (const actor of [reporter, new mongoose.Types.ObjectId(), nearAdmin]) {
       await assert.rejects(
         linkHistoricalReport(mapping, actor, true),
         NOT_ADMIN,
