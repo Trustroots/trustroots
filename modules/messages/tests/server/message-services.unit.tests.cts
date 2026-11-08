@@ -12,6 +12,7 @@ const config: TestConfigModule = require('./../../../../config/config.mts');
 const winston: typeof import('winston') = require('winston');
 const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
 const sinon: typeof import('sinon') = require('sinon');
+const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 
 type TestQueryResult<T> = {
   sort(): TestQueryResult<T>;
@@ -563,11 +564,17 @@ describe('Message server services unit tests', function () {
 
     it('returns read errors from formatted message stats', function (done) {
       const error = new Error('find failed');
-      const { service } = loadMessageStatService();
-      sinon.stub(service, 'readMessageStatsOfUser').callsArgWith(2, error);
+      const { statFind } = loadMessageStatService();
+      statFind.returns(queryResult([], error) as never);
+      // A fresh copy, loaded inside this test, so it covers the service object.
+      const service: typeof import('./../../server/services/message-stat.server.service.mts') =
+        mockModule(
+          require.resolve('./../../server/services/message-stat.server.service.mts'),
+          {},
+        );
 
       service.readFormattedMessageStatsOfUser(
-        'user-id',
+        new mongoose.Types.ObjectId(),
         new Date('2026-02-01T00:00:00Z').getTime(),
         function (err?: Error | null) {
           try {

@@ -149,8 +149,8 @@ describe('Location corrections controller', () => {
 
     it('separates offer ids and coordinates in the candidate key', () => {
       assert.notEqual(
-        candidateKey('u', [{ _id: 'a', location: [1.2, 3] }]),
-        candidateKey('u', [{ _id: 'a', location: [1, 23] }]),
+        candidateKey('u', [{ _id: 'a', location: [1.2, 34] }]),
+        candidateKey('u', [{ _id: 'a', location: [1.23, 4] }]),
       );
     });
 
@@ -167,8 +167,9 @@ describe('Location corrections controller', () => {
   it('lists maybe hosts with offers ordered by id', async () => {
     const high = new mongoose.Types.ObjectId('ffffffffffffffffffffffff');
     const low = new mongoose.Types.ObjectId('000000000000000000000001');
+    // Offers at the same point come back from the geo index in insertion order.
     await addOffer(member, nearby, { _id: high, status: 'maybe' });
-    await addOffer(member, exact, { _id: low });
+    await addOffer(member, nearby, { _id: low });
     const result = await list();
     assert.equal(result.statusCode, 200);
     assert.equal(result.body.length, 1);
@@ -247,9 +248,12 @@ describe('Location corrections controller', () => {
       assert.equal(result.statusCode, 400, JSON.stringify(body).slice(0, 80));
       assert.deepEqual(result.body, { message: 'Invalid correction message.' });
     }
-    const blank = await send({ userId, key, content: ' ' });
-    assert.equal(blank.statusCode, 400);
-    assert.deepEqual(blank.body, { message: 'Please write a message.' });
+    // A link without an address is dropped, leaving only a blank line.
+    for (const blank of [' ', '<a>x</a><br>']) {
+      const result = await send({ userId, key, content: blank });
+      assert.equal(result.statusCode, 400, blank);
+      assert.deepEqual(result.body, { message: 'Please write a message.' });
+    }
   });
 
   it('explains why a sender cannot send', async () => {

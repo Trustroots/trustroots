@@ -340,17 +340,19 @@ describe('Admin messages controller unit tests', () => {
     should(responseBody(response).message).equal(message);
   });
 
-  it('rejects missing warning content', async () => {
-    const res = mockResponse();
-    await adminMessages.sendScammerWarning(
-      { body: { username: 'scammer' } },
-      res,
-    );
-    const response = await res.waitForResponse();
+  // A link without an address is dropped, leaving only a blank line.
+  for (const content of [undefined, '<a>x</a><br>'])
+    it(`rejects warning content without text: ${content}`, async () => {
+      const res = mockResponse();
+      await adminMessages.sendScammerWarning(
+        { body: { username: 'scammer', content } },
+        res,
+      );
+      const response = await res.waitForResponse();
 
-    response.statusCode.should.equal(400);
-    should(responseBody(response).message).equal('Please write a message.');
-  });
+      response.statusCode.should.equal(400);
+      should(responseBody(response).message).equal('Please write a message.');
+    });
 
   it('returns the validation error when warning recipient lookup is invalid', async () => {
     const res = mockResponse();

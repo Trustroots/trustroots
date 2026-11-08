@@ -5,26 +5,28 @@ const sinon: typeof import('sinon') = require('sinon');
 const assert: typeof import('node:assert').strict =
   require('node:assert').strict;
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 
 type Handler = (
   request: unknown,
   response: unknown,
   next: (error?: unknown) => void,
 ) => Promise<unknown>;
-// Load the controller on first use, inside a test, so that test covers (and
-// can kill) mutants in its module-level constants.
-const controller = new Proxy(
-  {} as Record<
-    'findExperiences' | 'issueLink' | 'listRequests' | 'decide',
-    Handler
-  >,
-  {
-    get: (_target, key) =>
-      require('../../server/controllers/admin.experience-changes.server.controller.mts')[
-        key
-      ],
-  },
-);
+type Handlers = Record<
+  'findExperiences' | 'issueLink' | 'listRequests' | 'decide',
+  Handler
+>;
+// Each test loads a fresh copy on first use, so every test covers (and can
+// kill) mutants in the module-level constants and the default export.
+type Loaded = Handlers & { default: Handlers };
+let loaded: Loaded | undefined;
+const controller = new Proxy({} as Handlers, {
+  get: (_target, key: keyof Handlers) =>
+    (loaded ??= mockModule<Loaded>(
+      require.resolve('../../server/controllers/admin.experience-changes.server.controller.mts'),
+      {},
+    ))[key],
+});
 
 type Body = Record<string, unknown> & { message?: string };
 type Result = { statusCode: number; body: unknown; error?: unknown };
@@ -55,6 +57,7 @@ describe('Admin Experience changes controller', () => {
   });
 
   afterEach(async () => {
+    loaded = undefined;
     sinon.restore();
     await utils.clearDatabase();
   });
@@ -99,6 +102,20 @@ describe('Admin Experience changes controller', () => {
     );
     return result;
   }
+
+  it('exports its handlers as the default service too, for the routes', () => {
+    const names = [
+      'findExperiences',
+      'issueLink',
+      'listRequests',
+      'decide',
+    ] as const;
+    const handlers = names.map(name => controller[name]);
+    assert.deepEqual(
+      names.map(name => loaded!.default[name]),
+      handlers,
+    );
+  });
 
   describe('finding Experiences', () => {
     it('trims the username and lists only the member’s active Experiences, newest first, with public profile fields', async () => {

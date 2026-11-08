@@ -238,7 +238,8 @@ async function findCandidates(
     }),
   );
   const contacted = candidates.length
-    ? await Message.find({
+    ? // Stryker disable next-line ObjectLiteral: the filter only limits what is loaded; coverage is keyed by recipient and read for candidates only, and other messages carry no correction offers
+      await Message.find({
         userTo: { $in: candidates.map(candidate => candidate.userId) },
         locationCorrectionOffers: { $exists: true, $ne: [] },
       })

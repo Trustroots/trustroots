@@ -140,7 +140,6 @@ export const sendScammerWarning = async (
 ): Promise<unknown> => {
   const content: unknown = _.get(req, ['body', 'content']);
   const cleanContent: string = textService.html(_.toString(content));
-  // Stryker disable next-line LogicalOperator: html() already returns '' for content without text, so either check alone decides
   if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }
