@@ -215,6 +215,85 @@ describe('Accepted support email activity reconciliation', () => {
     );
   });
 
+  it('does not attempt a request write once the request moved on', async () => {
+    for (const variant of ['revision', 'activity'] as const) {
+      const report = await request('closed');
+      const message = await accepted(report._id);
+      await Request.updateOne(
+        { _id: report._id },
+        {
+          $set:
+            variant === 'revision'
+              ? { statusRevision: 5 }
+              : { lastActivityAt: new Date('2025-01-03T00:00:00Z') },
+        },
+      );
+      const spy = sinon.spy(Request, 'updateOne');
+      await applyActivity(message._id);
+      assert.equal(spy.callCount, 0);
+      spy.restore();
+    }
+  });
+
+  it('does not treat a different revision with the accepted timestamp as its own write', async () => {
+    const report = await request('closed');
+    const message = await accepted(report._id);
+    await Request.updateOne(
+      { _id: report._id },
+      { $set: { statusRevision: 5, lastActivityAt: acceptedAt } },
+    );
+    await applyActivity(message._id);
+    assert.equal(
+      (await Message.findById(message._id).lean())?.requestRevision,
+      0,
+    );
+  });
+
+  it('records a skip, not an application, for a revisionless message and a request without revision', async () => {
+    const report = await request('closed');
+    const message = await accepted(report._id);
+    await Message.updateOne(
+      { _id: message._id },
+      { $unset: { requestRevision: 1, requestActivityAt: 1 } },
+    );
+    await Request.updateOne(
+      { _id: report._id },
+      { $unset: { statusRevision: 1, lastActivityAt: 1 } },
+    );
+    await applyActivity(message._id);
+    const saved = await Request.findById(report._id).lean();
+    assert.equal(saved?.status, 'closed');
+    assert.equal(saved?.statusRevision, undefined);
+    assert.equal(saved?.lastActivityAt, undefined);
+    assert.ok((await Message.findById(message._id).lean())?.activityAppliedAt);
+  });
+
+  it('trusts an acknowledged request write without re-reading the request', async () => {
+    const report = await request();
+    const message = await accepted(report._id);
+    sinon.stub(Request, 'updateOne').resolves({
+      acknowledged: true,
+      matchedCount: 1,
+      modifiedCount: 1,
+      upsertedCount: 0,
+      upsertedId: null,
+    } as never);
+    await applyActivity(message._id);
+    assert.equal(
+      (await Message.findById(message._id).lean())?.requestRevision,
+      1,
+    );
+  });
+
+  it('stamps the status change time when a reply reopens a closed request', async () => {
+    const report = await request('closed');
+    const message = await accepted(report._id);
+    await applyActivity(message._id);
+    const saved = await Request.findById(report._id).lean();
+    assert.equal(saved?.status, 'pending');
+    assert.equal(saved?.statusChangedAt?.getTime(), acceptedAt.getTime());
+  });
+
   it('re-reads a lost CAS race and distinguishes its own write from other activity', async () => {
     for (const variant of ['own-write', 'manual-change', 'deleted'] as const) {
       const report = await request();

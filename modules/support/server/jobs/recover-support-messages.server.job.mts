@@ -20,7 +20,10 @@ export async function recoverSupportMessages(
       deliveryState: 'accepted',
       activityAppliedAt: { $exists: false },
     })
-      .select('_id')
+      .select(
+        // Stryker disable next-line StringLiteral: an empty projection returns whole documents, and only _id is read from the result, so no input can tell them apart
+        '_id',
+      )
       .limit(100)
       .lean();
     for (const message of acceptedWithoutActivity) {
@@ -48,7 +51,10 @@ export async function recoverSupportMessages(
       deliveryState: 'queued',
       createdAt: { $lt: queuedBefore },
     })
-      .select('_id')
+      .select(
+        // Stryker disable next-line StringLiteral: an empty projection returns whole documents, and only _id is read from the result, so no input can tell them apart
+        '_id',
+      )
       .limit(100)
       .lean();
     const agendaModule = await import('../../../../config/lib/agenda.mjs');

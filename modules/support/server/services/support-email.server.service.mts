@@ -53,8 +53,7 @@ function cleanBody(value: unknown): string {
 }
 
 function messageId() {
-  const domain =
-    config.supportInbox.fromAddress.split('@').at(-1) || 'localhost';
+  const domain = config.supportInbox.fromAddress.split('@').at(-1);
   if (!validator.isEmail(config.supportInbox.fromAddress)) {
     throw new SupportEmailError(
       'disabled',
@@ -99,7 +98,7 @@ async function queueForRequest(
   ensureEnabled();
   const body = cleanBody(rawBody);
   const idempotencyKey =
-    typeof rawIdempotencyKey === 'string' && rawIdempotencyKey.trim()
+    typeof rawIdempotencyKey === 'string'
       ? rawIdempotencyKey.trim()
       : undefined;
   if (!idempotencyKey) {
@@ -155,9 +154,7 @@ async function queueForRequest(
     emailFrom: config.supportInbox.fromAddress,
     emailTo: request.email,
     messageId: messageId(),
-    ...((latest?.messageId || request.initialMessageId) && {
-      inReplyTo: latest?.messageId || request.initialMessageId,
-    }),
+    inReplyTo: latest?.messageId || request.initialMessageId,
     references,
     idempotencyKey,
     idempotencyKeys: [idempotencyKey],
