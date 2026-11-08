@@ -2255,7 +2255,7 @@ describe('Messages controller unit tests', () => {
             ),
         );
         entry.args[0].should.equal('error');
-        (entry.args[2] as object).should.have.property('error');
+        ((entry.args as unknown[])[2] as object).should.have.property('error');
       });
 
       it('tells the sender when the recipient does not exist', async () => {
@@ -2364,7 +2364,7 @@ describe('Messages controller unit tests', () => {
         );
         const pair = await seedThread(
           receiver,
-          sender,
+          sender as unknown as UserDocument,
           'Started by them',
           true,
           new Date('2020-01-02'),

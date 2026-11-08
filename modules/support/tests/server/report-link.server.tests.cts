@@ -7,8 +7,20 @@ const {
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 
 const User = mongoose.model('User');
-const SupportRequest = mongoose.model('SupportRequest');
-const AuditLog = mongoose.model('AuditLog');
+type ObjectId = import('mongoose').Types.ObjectId;
+interface SupportRequestFields {
+  reportedUser?: ObjectId;
+  linkageEvidence?: string;
+  [field: string]: unknown;
+}
+interface AuditLogFields {
+  user?: ObjectId;
+  route?: string;
+  body?: unknown;
+  [field: string]: unknown;
+}
+const SupportRequest = mongoose.model<SupportRequestFields>('SupportRequest');
+const AuditLog = mongoose.model<AuditLogFields>('AuditLog');
 
 const sent = new Date('2025-03-01T00:00:00Z');
 const evidence = 'Verified immutable ID in archived correspondence.';
@@ -22,11 +34,11 @@ const LINKED_ELSEWHERE =
   /^Error: The report is already linked to another member\.$/;
 
 describe('Historical support report linking', () => {
-  let admin: mongoose.Types.ObjectId;
-  let reporter: mongoose.Types.ObjectId;
-  let target: mongoose.Types.ObjectId;
-  let other: mongoose.Types.ObjectId;
-  let report: mongoose.Types.ObjectId;
+  let admin: ObjectId;
+  let reporter: ObjectId;
+  let target: ObjectId;
+  let other: ObjectId;
+  let report: ObjectId;
   let mapping: { requestId: string; reportedUserId: string; evidence: string };
 
   beforeEach(async () => {

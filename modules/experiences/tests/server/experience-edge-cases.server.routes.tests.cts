@@ -219,7 +219,7 @@ describe('Experience route edge cases', () => {
 
   describe('read many', () => {
     it('lists newest Experiences first with member details', async () => {
-      users[1].gender = 'female';
+      (users[1] as UserDocument & { gender?: string }).gender = 'female';
       await users[1].save();
       const older = await shared(users[1], users[0], {
         created: new Date('2024-01-01'),
@@ -235,7 +235,7 @@ describe('Experience route edge cases', () => {
         .should.deepEqual([String(newer._id), String(older._id)]);
       const author = body[1].userFrom;
       author.gender.should.equal('female');
-      author.created.should.equal(users[1].created.toISOString());
+      author.created.should.equal(users[1].created!.toISOString());
     });
   });
 });

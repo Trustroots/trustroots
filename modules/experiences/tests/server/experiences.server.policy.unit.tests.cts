@@ -272,7 +272,7 @@ describe('Experiences policy unit tests', () => {
       () => {},
     );
 
-    mockAcl.areAnyRolesAllowed
+    (mockAcl.areAnyRolesAllowed as import('sinon').SinonStub)
       .calledOnceWithExactly(
         ['guest'],
         '/api/experiences/:id/change-requests',

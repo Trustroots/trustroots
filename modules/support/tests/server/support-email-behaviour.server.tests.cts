@@ -8,7 +8,18 @@ const utils: typeof import('../../../../testutils/server/data.server.testutil.mt
 
 const { SupportEmailError } = emailService;
 const SupportRequest = mongoose.model('SupportRequest');
-const SupportMessage = mongoose.model('SupportMessage');
+interface SupportMessageFields {
+  deliveryState?: string;
+  errorCode?: string;
+  acceptedAt?: Date;
+  requestActivityAt?: Date;
+  activityAppliedAt?: Date;
+  requestRevision?: number;
+  idempotencyKeys?: string[];
+  [field: string]: unknown;
+}
+type ObjectId = import('mongoose').Types.ObjectId;
+const SupportMessage = mongoose.model<SupportMessageFields>('SupportMessage');
 const originalInbox = { ...config.supportInbox };
 const actor = {
   _id: new mongoose.Types.ObjectId(),
@@ -74,7 +85,7 @@ describe('Support email service behaviour', () => {
     });
   }
 
-  async function state(id: mongoose.Types.ObjectId) {
+  async function state(id: ObjectId) {
     const found = await SupportMessage.findById(id).lean();
     assert.ok(found);
     return found;

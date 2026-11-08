@@ -6,8 +6,24 @@ const winston: typeof import('winston') = require('winston');
 const sendJob: typeof import('../../server/jobs/send-support-message.server.job.mts') = require('../../server/jobs/send-support-message.server.job.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 
-const SupportRequest = mongoose.model('SupportRequest');
-const SupportMessage = mongoose.model('SupportMessage');
+interface SupportMessageFields {
+  deliveryState?: string;
+  errorCode?: string;
+  attempts?: number;
+  lastAttemptAt?: Date;
+  acceptedAt?: Date;
+  requestActivityAt?: Date;
+  activityAppliedAt?: Date;
+  [field: string]: unknown;
+}
+interface SupportRequestFields {
+  status?: string;
+  statusRevision?: number;
+  [field: string]: unknown;
+}
+type ObjectId = import('mongoose').Types.ObjectId;
+const SupportRequest = mongoose.model<SupportRequestFields>('SupportRequest');
+const SupportMessage = mongoose.model<SupportMessageFields>('SupportMessage');
 const originalMailerOptions = config.mailer.options;
 const originalInbox = { ...config.supportInbox };
 
@@ -32,17 +48,17 @@ function transport(
   const sent: SentMail[] = [];
   config.mailer.options = {
     send: (
-      mail: { data: SentMail },
+      mail: { data: object },
       callback: (error?: Error | null, info?: unknown) => void,
     ) => {
-      sent.push(mail.data);
+      sent.push(mail.data as SentMail);
       callback(null, info);
     },
     close: () => {
       closes.count += 1;
       if (closes.fail) throw new Error('Close failed');
     },
-  };
+  } as typeof config.mailer.options;
   return { sent, closes };
 }
 
@@ -54,7 +70,7 @@ function failingTransport(error: Error) {
 }
 
 describe('Support message send job', () => {
-  let requestId: mongoose.Types.ObjectId;
+  let requestId: ObjectId;
 
   async function message(patch: Record<string, unknown> = {}) {
     return SupportMessage.create({
@@ -71,7 +87,7 @@ describe('Support message send job', () => {
     });
   }
 
-  async function saved(id: mongoose.Types.ObjectId) {
+  async function saved(id: ObjectId) {
     const found = await SupportMessage.findById(id).lean();
     assert.ok(found);
     return found;
@@ -422,7 +438,7 @@ describe('Support message send job', () => {
       const uncertain = await saved(reply._id);
       assert.equal(uncertain.deliveryState, 'uncertain');
       assert.equal(uncertain.errorCode, undefined);
-      assert.deepEqual(log.args[0][2], {
+      assert.deepEqual((log.args[0] as unknown[])[2], {
         messageId: String(reply._id),
         errorCode: 'uncertain',
       });

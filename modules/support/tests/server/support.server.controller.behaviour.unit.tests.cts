@@ -262,7 +262,10 @@ describe('Support controller behaviour', () => {
         const res = await submit({ message: 'Hi', email: 'guest@example.org' });
         assert.equal(res.statusCode, 200);
         assert.deepEqual(res.body, { message: 'Support request sent.' });
-        const stored = await SupportRequest.findOne().lean();
+        const stored = await SupportRequest.findOne().lean<{
+          _id: unknown;
+          email?: string;
+        }>();
         assert.equal(stored?.email, 'guest@example.org');
         const ack = await mongoose
           .model('SupportMessage')

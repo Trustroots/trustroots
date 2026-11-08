@@ -9,7 +9,14 @@ const agenda: typeof import('../../../../config/lib/agenda.mjs').default = requi
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 
 const SupportRequest = mongoose.model('SupportRequest');
-const SupportMessage = mongoose.model('SupportMessage');
+interface SupportMessageFields {
+  deliveryState?: string;
+  errorCode?: string;
+  activityAppliedAt?: Date;
+  [field: string]: unknown;
+}
+type ObjectId = import('mongoose').Types.ObjectId;
+const SupportMessage = mongoose.model<SupportMessageFields>('SupportMessage');
 
 const minutesAgo = (minutes: number) =>
   new Date(Date.now() - minutes * 60 * 1000);
@@ -40,7 +47,7 @@ function stubJobs() {
 }
 
 describe('Support message recovery job', () => {
-  let requestId: mongoose.Types.ObjectId;
+  let requestId: ObjectId;
 
   async function message(patch: Record<string, unknown>) {
     return SupportMessage.create({

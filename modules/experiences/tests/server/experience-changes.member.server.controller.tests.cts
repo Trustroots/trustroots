@@ -18,6 +18,21 @@ const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
 const ExperienceChangeLink = mongoose.model('ExperienceChangeLink');
 const ExperienceChangeRequest = mongoose.model('ExperienceChangeRequest');
 
+interface StoredChangeRequest {
+  _id: unknown;
+  kind: string;
+  createdAt: Date;
+  requester: unknown;
+  linkIssuedBy: unknown;
+  experience: unknown;
+  proposed?: {
+    feedbackPublic?: string;
+    recommend?: string;
+    interactions?: unknown;
+  };
+  original?: { feedbackPublic: string };
+}
+
 type MemberRequest = Parameters<typeof memberChanges.submit>[0];
 
 interface Outcome {
@@ -409,7 +424,8 @@ describe('Experience member change controller', () => {
         body: { kind: 'edit', proposed: VALID_EDIT },
       });
       out.status!.should.equal(201);
-      const stored = await ExperienceChangeRequest.findOne().lean();
+      const stored =
+        await ExperienceChangeRequest.findOne().lean<StoredChangeRequest>();
       out.body!.should.deepEqual({
         _id: stored!._id,
         kind: 'edit',
@@ -440,7 +456,8 @@ describe('Experience member change controller', () => {
         },
       });
       out.status!.should.equal(201);
-      const stored = await ExperienceChangeRequest.findOne().lean();
+      const stored =
+        await ExperienceChangeRequest.findOne().lean<StoredChangeRequest>();
       stored!.original!.feedbackPublic.should.equal('');
       stored!.proposed!.feedbackPublic!.should.equal('Bold words');
     });
@@ -517,7 +534,8 @@ describe('Experience member change controller', () => {
             },
           });
           out.status!.should.equal(201, `${recommend} ${only}`);
-          const stored = await ExperienceChangeRequest.findOne().lean();
+          const stored =
+            await ExperienceChangeRequest.findOne().lean<StoredChangeRequest>();
           should(stored!.proposed!.recommend).equal(recommend);
           should(stored!.proposed!.interactions).deepEqual(interactions);
           await ExperienceChangeRequest.deleteMany();
@@ -560,7 +578,8 @@ describe('Experience member change controller', () => {
         body: { kind: 'remove' },
       });
       ok.status!.should.equal(201);
-      const stored = await ExperienceChangeRequest.findOne().lean();
+      const stored =
+        await ExperienceChangeRequest.findOne().lean<StoredChangeRequest>();
       should(stored!.kind).equal('remove');
       should(stored!.requester).deepEqual(recipient._id);
       should(stored!.proposed?.feedbackPublic).be.undefined();
