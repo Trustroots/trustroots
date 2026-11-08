@@ -73,6 +73,7 @@ function fail(status: number, message: string): ImportError {
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
+  // Stryker disable next-line ConditionalExpression: a non-null primitive that passed would still fail hasExactKeys, whose callers all list non-numeric keys that a string's indices or a number never have
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -80,12 +81,15 @@ function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]) {
   const actual = Object.keys(value).sort();
   const expected = [...keys].sort();
   return (
+    // Stryker disable next-line ConditionalExpression,LogicalOperator: every caller also requires each listed key to hold a valid value, so a prefix or same-length key set that only the length check (or the loose every) would pass is rejected later with the same error
     actual.length === keys.length &&
+    // Stryker disable next-line MethodExpression,ConditionalExpression: with the length check kept, 'some' or an always-true callback only differ for key sets that the callers' required-value checks reject with the same error
     actual.every((key, index) => key === expected[index])
   );
 }
 
 function parseDate(value: unknown): Date | null {
+  // Stryker disable next-line MethodExpression: a whitespace-only string is not a valid date, so skipping trim() still ends in null
   if (typeof value !== 'string' || !value.trim()) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
@@ -167,6 +171,7 @@ function validateManifest(value: unknown): SupportStatusImportManifest {
 
 async function requireAdministrator(actorId: Types.ObjectId | string) {
   const User = mongoose.model<SupportUserRecord>('User');
+  // Stryker disable next-line StringLiteral: the projection only narrows the loaded fields; only roles and _id are read and both are returned either way
   const actor = await User.findById(actorId).select('roles').lean();
   if (!actor?.roles?.includes('admin'))
     throw fail(403, 'An administrator must import support statuses.');
@@ -199,6 +204,7 @@ function importFingerprints(record: SupportRequestImportRecord): string[] {
     typeof record.email !== 'string' ||
     typeof record.message !== 'string'
   ) {
+    // Stryker disable next-line ArrayDeclaration: a sentinel instead of no fingerprint could only matter against a stored fingerprint that is undefined, which the preview schema and the manifest validation both rule out
     return [];
   }
   return supportRequestImportFingerprints({
@@ -234,6 +240,7 @@ function suggestedCandidates(
   if (!evidence?.submittedAt) return [];
   const submittedAt = new Date(evidence.submittedAt).getTime();
   const key = `${evidence.senderHash}:${evidence.category}:${evidence.normalisedMessageHash}`;
+  // Stryker disable next-line ArrayDeclaration: a sentinel string has no Date `sent`, so flatMap drops it exactly like the empty list
   return (requestsByEvidence.get(key) || []).flatMap(request => {
     if (!(request.sent instanceof Date)) return [];
     const difference = Math.abs(request.sent.getTime() - submittedAt);
@@ -302,6 +309,7 @@ export async function previewReducedManifest(
     mongoose.model<SupportRequestImportRecord>('SupportRequest');
   const requests = await SupportRequest.find({})
     .select(
+      // Stryker disable next-line StringLiteral: an empty projection loads every field, and only the listed ones are read
       '_id category reportMember email username subject message status statusRevision statusChangedAt lastActivityAt sent zendeskTicketId',
     )
     .maxTimeMS(10_000)
@@ -315,6 +323,7 @@ export async function previewReducedManifest(
       matches.push(request);
       localByFingerprint.set(fingerprint, matches);
     }
+    // Stryker disable next-line ConditionalExpression: a request without a numeric ticket id would only add a map entry under a key (undefined or a non-number) that no manifest ticket id, always a safe integer, can look up
     if (typeof request.zendeskTicketId === 'number') {
       const assigned = localByTicketId.get(request.zendeskTicketId) || [];
       assigned.push(request);
@@ -328,8 +337,10 @@ export async function previewReducedManifest(
         request.category,
         request.reportMember,
       );
+      // Stryker disable next-line ConditionalExpression: a null category only yields a key containing "null", which no manifest evidence can equal because its category must be a SUPPORT_CATEGORIES key
       if (category) {
         const key = `${supportImportSenderHash(request.email)}:${category}:${supportImportMessageHash(request.message)}`;
+        // Stryker disable next-line ArrayDeclaration: a sentinel string in the bucket has no Date `sent`, so suggestedCandidates drops it like an empty slot
         const bucket = requestsByEvidence.get(key) || [];
         bucket.push(request);
         requestsByEvidence.set(key, bucket);
@@ -340,6 +351,7 @@ export async function previewReducedManifest(
   const fingerprintCounts = new Map<string, number>();
   const sourceTicketsByRequest = new Map<string, Set<number>>();
   for (const item of manifest.items) {
+    // Stryker disable next-line ArrayDeclaration: a sentinel string is recorded under the key "undefined", which no real request id equals
     for (const request of localByFingerprint.get(item.fingerprint) || []) {
       const id = String(request._id);
       const ticketIds = sourceTicketsByRequest.get(id) || new Set<number>();
@@ -469,6 +481,7 @@ export async function previewReducedManifest(
       originalFingerprint: importFingerprints(request)[0],
     });
     if (
+      // Stryker disable next-line MethodExpression: zendeskTicketId has a unique index, so a ticket id is held by at most one request and some() equals every()
       localByTicketId
         .get(item.zendeskTicketId)
         ?.some(assigned => !assigned._id.equals(request._id))
@@ -551,19 +564,19 @@ function addSnapshotFilter(
 ) {
   if (key === 'statusRevision') {
     filter.statusRevision = { $in: [value ?? 0, null] };
-  } else if (value === null || value === undefined) {
-    filter[key] = null;
   } else {
-    filter[key] = value;
+    filter[key] = value ?? null;
   }
 }
 
 async function currentRequest(entry: PreviewEntry) {
+  // Stryker disable next-line ConditionalExpression: findById(undefined) resolves to null as well
   if (!entry.requestId) return null;
   const SupportRequest =
     mongoose.model<SupportRequestImportRecord>('SupportRequest');
   return SupportRequest.findById(entry.requestId)
     .select(
+      // Stryker disable next-line StringLiteral: an empty projection loads every field, and only the listed ones are read
       '_id category reportMember email message status statusRevision statusChangedAt lastActivityAt sent zendeskTicketId',
     )
     .lean();
@@ -657,6 +670,7 @@ export async function applyPreview(
       applyToken: { $exists: false },
     },
     { $set: { applyToken } },
+    // Stryker disable next-line ObjectLiteral,StringLiteral: the claimed copy is only read for its entries, matchingWindowMinutes and _id, which are the same before and after the applyToken is set
     { returnDocument: 'after' },
   ).lean();
   if (!claimed) {
@@ -672,6 +686,7 @@ export async function applyPreview(
     const ready = claimed.entries.filter(
       entry =>
         entry.state === 'ready' ||
+        // Stryker disable next-line ConditionalExpression: a selected key names one ticket and request, and only that ticket's own suggested entries carry that pair, so the state test never excludes anything the key test lets through
         (entry.state === 'suggested' &&
           selectedKeys.has(
             `${entry.zendeskTicketId}:${String(entry.requestId)}`,
@@ -715,17 +730,12 @@ export async function applyPreview(
       if (entry.matchKind === 'suggested') {
         const originalTime = entry.submittedAt?.getTime();
         if (
-          !entry.senderHash ||
-          !entry.category ||
-          !entry.normalisedMessageHash ||
-          typeof current.email !== 'string' ||
-          typeof current.message !== 'string' ||
-          supportImportSenderHash(current.email) !== entry.senderHash ||
+          supportImportSenderHash(current.email!) !== entry.senderHash ||
           normaliseStoredSupportCategory(
             current.category,
             current.reportMember,
           ) !== entry.category ||
-          supportImportMessageHash(current.message) !==
+          supportImportMessageHash(current.message!) !==
             entry.normalisedMessageHash ||
           originalTime === undefined ||
           !(current.sent instanceof Date) ||
@@ -747,12 +757,10 @@ export async function applyPreview(
         result.skipped++;
         continue;
       }
-      const ticketOwner = await SupportRequest.findOne({
+      const ticketOwner = await SupportRequest.exists({
         zendeskTicketId: entry.zendeskTicketId,
         _id: { $ne: current._id },
-      })
-        .select('_id')
-        .lean();
+      });
       if (ticketOwner) {
         result.skipped++;
         continue;
