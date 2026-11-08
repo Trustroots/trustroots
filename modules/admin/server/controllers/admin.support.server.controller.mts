@@ -207,7 +207,9 @@ async function audit(req: SupportRequest): Promise<void> {
     params: req.params,
     query: {
       ...Object.fromEntries(
+        // Stryker disable next-line MethodExpression: saving the audit entry drops keys whose value is undefined
         ['status', 'category', 'page']
+          // Stryker disable next-line ConditionalExpression: saving the audit entry drops keys whose value is undefined
           .filter(key => req.query[key] !== undefined)
           .map(key => [key, req.query[key]]),
       ),

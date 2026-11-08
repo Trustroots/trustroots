@@ -276,48 +276,38 @@ describe('Admin support controller unit tests', () => {
         sent: new Date(),
       });
 
-      (await listIds({ q: 'alpha' })).should.deepEqual([String(subject._id)]);
-      (await listIds({ q: '  bravo  ' })).should.deepEqual([
-        String(message._id),
-      ]);
-      (await listIds({ q: 'charlie' })).should.deepEqual([
-        String(username._id),
-      ]);
-      (await listIds({ q: 'delta-member' })).should.deepEqual([
-        String(email._id),
-      ]);
-      (await listIds({ q: 'echo' })).should.deepEqual([String(replied._id)]);
-      (await listIds({ q: String(byId._id) })).should.deepEqual([
-        String(byId._id),
-      ]);
-      (await listIds({ q: '1000' })).should.deepEqual([String(ticket._id)]);
-      (await listIds({ q: '1e3' })).should.deepEqual([]);
-      (await listIds({ q: `z${byId._id}` })).should.deepEqual([]);
-      (await listIds({ q: `${byId._id}z` })).should.deepEqual([]);
+      const id = (doc?: { _id: unknown }) => (doc ? [String(doc._id)] : []);
+      for (const [q, expected] of [
+        ['alpha', subject],
+        ['  bravo  ', message],
+        ['charlie', username],
+        ['delta-member', email],
+        ['echo', replied],
+        [String(byId._id), byId],
+        ['1000', ticket],
+        ['1e3'],
+        [`z${byId._id}`],
+        [`${byId._id}z`],
+      ] as Array<[string, { _id: unknown }?]>)
+        (await listIds({ q })).should.deepEqual(id(expected));
       (await listIds({ q: '   ' })).length.should.equal(8);
     });
 
     it('orders by latest activity then newest id and returns only list fields', async () => {
-      const a = await SupportRequest.create({
-        message: 'a',
-        sent: new Date('2026-01-01T00:00:00Z'),
-        lastActivityAt: new Date('2026-03-01T00:00:00Z'),
-        status: 'resolved',
-      });
-      const b = await SupportRequest.create({
-        message: 'b',
-        sent: new Date('2026-02-01T00:00:00Z'),
-      });
-      const c = await SupportRequest.create({
-        message: 'c',
-        sent: new Date('2026-01-15T00:00:00Z'),
-        status: 'hold',
-      });
-      const d = await SupportRequest.create({
-        message: 'd',
-        sent: new Date('2026-01-15T00:00:00Z'),
-        status: 'pending',
-      });
+      const [a, b, c, d] = await SupportRequest.create([
+        {
+          message: 'a',
+          sent: new Date('2026-01-01T00:00:00Z'),
+          lastActivityAt: new Date('2026-03-01T00:00:00Z'),
+          status: 'resolved',
+        },
+        { message: 'b', sent: new Date('2026-02-01T00:00:00Z') },
+        ...['hold', 'pending'].map(status => ({
+          message: status,
+          sent: new Date('2026-01-15T00:00:00Z'),
+          status,
+        })),
+      ]);
 
       const res = await call(controller.list, { query: { status: 'all' } });
       const { items } = plain<ListBody>(res);
@@ -558,10 +548,14 @@ describe('Admin support controller unit tests', () => {
         ),
       ]);
 
+      // Without the ordering index the scan returns insertion order, so only
+      // the explicit sort gives the oldest-first page.
+      const index = { request: 1, createdAt: 1, _id: 1 } as const;
+      await SupportMessage.collection.dropIndex('request_1_createdAt_1__id_1');
       const first = plain<PagedBody>(
         await call(controller.conversation, {
           params: { requestId: String(report._id) },
-        }),
+        }).finally(() => SupportMessage.collection.createIndex(index)),
       );
       first.items.length.should.equal(50);
       first.hasMore.should.equal(false);
@@ -829,17 +823,15 @@ describe('Admin support controller unit tests', () => {
     });
 
     it('adds text matches by relevance after indexed matches, up to one page', async () => {
+      // Insertion order and the index order of the terms both put the
+      // weaker match first; only sorting by relevance puts it last.
       await User.collection.insertMany([
-        rawMember('fictional-b', {
-          tagline: 'zebrafish and a long tagline with many other words in it',
-        }),
-        rawMember('fictional-a', {
-          tagline: 'zebrafish zebrafish zebrafish',
-        }),
+        rawMember('fictional-low', { tagline: 'alphafish' }),
+        rawMember('fictional-high', { firstName: 'zebrafish' }),
       ]);
-      (await searchNames('zebrafish')).should.deepEqual([
-        'fictional-a',
-        'fictional-b',
+      (await searchNames('alphafish zebrafish')).should.deepEqual([
+        'fictional-high',
+        'fictional-low',
       ]);
 
       await User.collection.insertMany([

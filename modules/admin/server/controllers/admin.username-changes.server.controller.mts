@@ -73,14 +73,11 @@ export const list = async (
 
   // The first $match only narrows the documents scanned: the $match after
   // $unwind decides which changes are listed, so loosening it changes nothing.
-  // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
   const hasNoHistory = {
     $or: [
-      // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
       {
         usernameHistory: { $exists: false },
       },
-      // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
       {
         usernameHistory: { $size: 0 },
       },
@@ -99,14 +96,11 @@ export const list = async (
   ];
   const pipeline: PipelineStage[] = [
     {
-      // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
       $match: {
         $or: [
-          // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
           { 'usernameHistory.changedAt': dateCriteria },
-          // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
           {
-            // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
+            // Stryker disable next-line ObjectLiteral: without history the listed change is dated by usernameUpdated, which the $match after $unwind checks again
             $and: [{ usernameUpdated: dateCriteria }, hasNoHistory],
           },
         ],

@@ -130,7 +130,12 @@ describe('Admin dashboard with stored data', () => {
       .reverse()
       .slice(0, 10);
 
-    const body = await getDashboard();
+    // The { reference, created } index already returns newest first; without
+    // it, storage order is oldest first, so only the query's sort orders them.
+    await ReferenceThread.collection.dropIndex('reference_1_created_-1');
+    const body = await getDashboard().finally(() =>
+      ReferenceThread.createIndexes(),
+    );
 
     body.threadVotes
       .map(vote => vote._id)

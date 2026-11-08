@@ -189,6 +189,7 @@ export async function events(
     );
   }
   const to = new Date(Math.min(Date.parse(day) + DAY, now.getTime()));
+  // Stryker disable next-line ArrayDeclaration: events is always replaced with the mapped provider events before the result is returned
   const result: SparkpostEvents = { date: day, capped: false, events: [] };
   if (typeof cursor !== 'string' || cursor.length > 2048)
     throw new DiagnosticInputError('Invalid event page.');

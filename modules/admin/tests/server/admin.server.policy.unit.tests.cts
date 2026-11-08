@@ -84,38 +84,26 @@ describe('Admin policy unit tests', () => {
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ]);
     policies[0].roles.should.deepEqual(['admin']);
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/hackerspaces/signer');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/acquisition-stories');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql(
-        '/api/admin/acquisition-stories/:memberId/resend-confirmation',
-      );
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/staff-blockers');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/dashboard');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/reference-threads');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/newsletter-subscribers/audience');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/newsletter-subscribers');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/newsletter-subscribers/circle');
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/admin/newsletter-subscribers/split');
+    const adminResources = policies[0].allows.map(allow => allow.resources);
+    for (const resource of [
+      'hackerspaces/signer',
+      'acquisition-stories',
+      'acquisition-stories/:memberId/resend-confirmation',
+      'staff-blockers',
+      'dashboard',
+      'reference-threads',
+      'newsletter-subscribers/audience',
+      'newsletter-subscribers',
+      'newsletter-subscribers/circle',
+      'newsletter-subscribers/split',
+    ]) {
+      adminResources.should.containEql(`/api/admin/${resource}`);
+    }
+    // The CommonJS interop object exposes the same two functions.
+    Object.keys(policy.default).should.deepEqual([
+      'invokeRolesPolicies',
+      'isAllowed',
+    ]);
   });
 
   it('limits Experience change operations to administrators and support', async () => {
@@ -231,12 +219,8 @@ describe('Admin policy unit tests', () => {
 
     for (const [role, grants] of Object.entries(expected)) {
       it(`lets ${role} reach exactly its admin routes`, () => {
-        // A fresh copy builds its exports under this test, with its own ACL.
-        const policyPath =
-          require.resolve('../../server/policies/admin.server.policy.mts');
-        delete require.cache[policyPath];
         // require() returns the CommonJS interop object.
-        const policy: PolicyModule['default'] = require(policyPath);
+        const policy: PolicyModule['default'] = require('../../server/policies/admin.server.policy.mts');
         policy.invokeRolesPolicies();
         const allowed: string[] = [];
         for (const path of paths) {

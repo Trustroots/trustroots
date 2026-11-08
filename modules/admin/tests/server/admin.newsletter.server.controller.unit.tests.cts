@@ -8,23 +8,18 @@ const utils: typeof import('../../../../testutils/server/data.server.testutil.mt
 type Request = Record<string, unknown>;
 type Result = { statusCode: number; body: unknown };
 type Handler = (req: Request, res: unknown) => Promise<unknown>;
-// Every property read evaluates a fresh copy of the module inside the running
-// test, so mutants in module-level constants take effect too.
-function freshModule<T>(file: string): T {
-  return new Proxy({} as Record<string | symbol, unknown>, {
-    get(_target, key) {
-      delete require.cache[file];
-      return (require(file) as Record<string | symbol, unknown>)[key];
-    },
-  }) as T;
-}
 type Upload = (req: unknown, res: unknown, next: () => void) => void;
-const controller: Record<
+// Loaded lazily, inside the first test that runs, so Stryker credits the
+// module-level constants to that test instead of ignoring them as static.
+const controller = new Proxy({} as Record<string, unknown>, {
+  get: (_target, key: string) =>
+    require('../../server/controllers/admin.newsletter.server.controller.mts')[
+      key
+    ],
+}) as unknown as Record<
   'list' | 'listCircleMembers' | 'audience' | 'splitSubscribers',
   Handler
-> & { uploadSubscribersCsv: Upload } = freshModule(
-  require.resolve('../../server/controllers/admin.newsletter.server.controller.mts'),
-);
+> & { uploadSubscribersCsv: Upload };
 
 async function call(handler: Handler, req: Request): Promise<Result> {
   const result: Result = { statusCode: 200, body: undefined };
@@ -86,52 +81,169 @@ describe('Admin newsletter controller audiences', () => {
     return (result.body as { message: string }).message;
   };
 
-  it('includes subscribers whose profile deletion request has expired', async () => {
+  const { Readable }: typeof import('node:stream') = require('node:stream');
+  type Received = {
+    passed: boolean;
+    result: Result;
+    file?: { buffer: Buffer };
+  };
+  function upload(field: string, filename: string, content: string) {
+    const boundary = '----fictional-boundary';
+    const body = [
+      `--${boundary}`,
+      `Content-Disposition: form-data; name="${field}"; filename="${filename}"`,
+      'Content-Type: text/plain',
+      '',
+      content,
+      `--${boundary}--`,
+      '',
+    ].join('\r\n');
+    const req = Object.assign(Readable.from([body]), {
+      method: 'POST',
+      headers: {
+        'content-type': `multipart/form-data; boundary=${boundary}`,
+        'content-length': String(Buffer.byteLength(body)),
+      },
+    }) as unknown as { file?: Received['file'] };
+    return new Promise<Received>(resolve => {
+      const result: Result = { statusCode: 200, body: undefined };
+      const res = {
+        status(code: number) {
+          result.statusCode = code;
+          return res;
+        },
+        send(sent: unknown) {
+          result.body = sent;
+          resolve({ passed: false, result });
+          return res;
+        },
+      };
+      controller.uploadSubscribersCsv(req, res, () =>
+        resolve({ passed: true, result, file: req.file }),
+      );
+    });
+  }
+  type Split = {
+    totalEmailCount: number;
+    subscribedContent: string;
+    unsubscribedContent: string;
+    outputFormat: string;
+  };
+  const split = async (content: string, originalname = 'recipients.csv') =>
+    (
+      await call(controller.splitSubscribers, {
+        file: { buffer: Buffer.from(content), originalname },
+      })
+    ).body as Split;
+
+  // Keep this first: the module-level CSV columns, file types and upload
+  // limit only take effect in the test that loads the controller.
+  it('applies the CSV columns and the recipient upload rules', async () => {
     await addUser({
       email: 'expired@example.test',
+      firstName: ' Padded ',
       removeProfileToken: 'fictional-token',
       removeProfileExpires: new Date(Date.now() - 86400000),
     });
-    const result = await call(controller.list, {});
-    assert.match(String(result.body), /expired@example\.test/);
+    assert.equal(
+      (await call(controller.list, {})).body,
+      `Email Address,First Name,Last Name\nexpired@example.test,Padded,Member${seq}`,
+    );
+    assert.equal(
+      (await split('a@example.test')).unsubscribedContent,
+      'Email Address,First Name,Last Name,Reason\na@example.test,,,Email not found',
+    );
+    for (const [name, format] of [
+      ['list.jsonl', 'jsonl'],
+      ['list.NDJSON', 'ndjson'],
+    ]) {
+      const body = await split('{"email":" Spaced@example.test "}', name);
+      assert.equal(body.outputFormat, format);
+      assert.match(body.unsubscribedContent, /"spaced@example\.test"/);
+    }
+    for (const name of ['list.csv', 'list.jsonl', 'list.ndjson']) {
+      const received = await upload('newsletterCsv', name, 'a@example.test');
+      assert.equal(received.passed, true, name);
+      assert.equal(received.file!.buffer.toString(), 'a@example.test');
+    }
+    const {
+      maxUploadSize,
+    }: { maxUploadSize: number } = require('../../../../config/config.mts');
+    for (const [field, name, content, statusCode] of [
+      ['newsletterCsv', 'list.txt', 'a@example.test', 415],
+      ['other', 'list.csv', 'a@example.test', 400],
+      ['newsletterCsv', 'list.csv', 'x'.repeat(maxUploadSize + 1), 413],
+    ] as const) {
+      const { result } = await upload(field, name, content);
+      assert.equal(result.statusCode, statusCode, name);
+    }
   });
 
   describe('criteria validation', () => {
-    it('rejects unknown sources and requires text for origin matching', async () => {
-      assert.equal(
-        await rejection({ sources: ['living', 'bogus'], locationText: 'x' }),
-        'Choose valid newsletter location sources.',
-      );
-      assert.equal(
-        await rejection({ sources: ['from'] }),
-        'Enter a location for living or origin matching.',
-      );
+    const hex = String(circle);
+    const ids = Array.from({ length: 101 }, () =>
+      String(new mongoose.Types.ObjectId()),
+    );
+    const hosting = (fields: Record<string, unknown>) => ({
+      sources: ['hosting'],
+      latitude: 1,
+      longitude: 1,
+      radiusKm: 10,
+      ...fields,
     });
 
-    it('rejects blank or out-of-range coordinates and accepts the boundaries', async () => {
+    it('rejects invalid sources, coordinates, radii and circles', async () => {
       const coordinates =
         'Enter valid latitude and longitude for hosting matching.';
-      for (const [latitude, longitude] of [
-        ['', 10],
-        [null, 10],
-        [10, ''],
-        [10, null],
-        [-90.5, 10],
-        [90.5, 10],
-        [10, -180.5],
-        [10, 180.5],
-      ]) {
-        assert.equal(
-          await rejection({
-            sources: ['hosting'],
-            latitude,
-            longitude,
-            radiusKm: 10,
-          }),
+      const radius = 'Enter a hosting radius between 0 and 500 kilometres.';
+      const circles = 'Choose valid newsletter circles.';
+      for (const [body, message] of [
+        [
+          { sources: ['living', 'bogus'], locationText: 'x' },
+          'Choose valid newsletter location sources.',
+        ],
+        [
+          { sources: ['from'] },
+          'Enter a location for living or origin matching.',
+        ],
+        ...[
+          ['', 10],
+          [null, 10],
+          [10, ''],
+          [10, null],
+          [-90.5, 10],
+          [90.5, 10],
+          [10, -180.5],
+          [10, 180.5],
+        ].map(([latitude, longitude]) => [
+          hosting({ latitude, longitude }),
           coordinates,
-          `${latitude},${longitude}`,
-        );
+        ]),
+        ...['abc', 0, -1, 500.5].map(radiusKm => [
+          hosting({ radiusKm }),
+          radius,
+        ]),
+        [{ circleIds: ids }, circles],
+        ...[
+          { id: hex },
+          { id: hex, toHexString: 'not a function' },
+          { id: new Uint8Array(12), toHexString: () => hex },
+          5,
+          null,
+        ].map(value => [{ circleIds: [value] }, circles]),
+      ] as [Record<string, unknown>, string][]) {
+        assert.equal(await rejection(body), message, JSON.stringify(body));
       }
+    });
+
+    it('accepts the boundaries and ObjectId-like circles with a string id and a hex method', async () => {
+      await addUser({ member: [{ tribe: circle }] });
+      assert.equal(await count(hosting({ radiusKm: 500 })), 0);
+      assert.equal(await count({ circleIds: ids.slice(0, 100) }), 0);
+      assert.equal(
+        await count({ circleIds: [{ id: hex, toHexString: () => hex }] }),
+        1,
+      );
       for (const [latitude, longitude] of [
         [-90, 0],
         [90, 0],
@@ -141,74 +253,11 @@ describe('Admin newsletter controller audiences', () => {
         // The offer query passes [latitude, longitude] where MongoDB expects
         // [longitude, latitude], so ±180 longitude fails there, after
         // validation has accepted it.
-        const passed = await audience({
-          sources: ['hosting'],
-          latitude,
-          longitude,
-          radiusKm: 10,
-        }).then(
+        const passed = await audience(hosting({ latitude, longitude })).then(
           result => result.statusCode !== 400,
           (error: Error) => /out of bounds/.test(error.message),
         );
         assert(passed, `${latitude},${longitude}`);
-      }
-    });
-
-    it('rejects invalid radii and accepts the maximum', async () => {
-      for (const radiusKm of ['abc', 0, -1, 500.5]) {
-        assert.equal(
-          await rejection({
-            sources: ['hosting'],
-            latitude: 1,
-            longitude: 1,
-            radiusKm,
-          }),
-          'Enter a hosting radius between 0 and 500 kilometres.',
-          String(radiusKm),
-        );
-      }
-      assert.equal(
-        await count({
-          sources: ['hosting'],
-          latitude: 1,
-          longitude: 1,
-          radiusKm: 500,
-        }),
-        0,
-      );
-    });
-
-    it('accepts up to 100 circles and rejects more', async () => {
-      const ids = Array.from({ length: 101 }, () =>
-        String(new mongoose.Types.ObjectId()),
-      );
-      assert.equal(await count({ circleIds: ids.slice(0, 100) }), 0);
-      assert.equal(
-        await rejection({ circleIds: ids }),
-        'Choose valid newsletter circles.',
-      );
-    });
-
-    it('accepts ObjectId-like circle values only with a string or Buffer id and a hex method', async () => {
-      const hex = String(circle);
-      await addUser({ member: [{ tribe: circle }] });
-      assert.equal(
-        await count({
-          circleIds: [{ id: hex, toHexString: () => hex }],
-        }),
-        1,
-      );
-      for (const value of [
-        { id: hex },
-        { id: hex, toHexString: 'not a function' },
-        { id: new Uint8Array(12), toHexString: () => hex },
-        5,
-        null,
-      ]) {
-        assert.equal(
-          await rejection({ circleIds: [value] }),
-          'Choose valid newsletter circles.',
-        );
       }
     });
   });
@@ -267,7 +316,7 @@ describe('Admin newsletter controller audiences', () => {
 
   describe('circle member export', () => {
     it('rejects a missing query', async () => {
-      for (const req of [{}, { query: undefined }]) {
+      for (const req of [undefined, {}, { query: undefined }] as Request[]) {
         const result = await call(controller.listCircleMembers, req);
         assert.equal(result.statusCode, 400);
       }
@@ -286,183 +335,58 @@ describe('Admin newsletter controller audiences', () => {
         member: [{ tribe: circle }],
       });
       await addUser({ email: 'outsider@example.test' });
-      const subscribers = String(
-        (
-          await call(controller.listCircleMembers, {
-            query: { circleId: String(circle) },
-          })
-        ).body,
-      );
-      assert.match(subscribers, /sub@example\.test/);
-      assert.doesNotMatch(subscribers, /nonews|private|outsider/);
-      const everyone = String(
-        (
-          await call(controller.listCircleMembers, {
-            query: {
-              circleId: String(circle),
-              onlyNewsletterCircleMembers: 'false',
-            },
-          })
-        ).body,
-      );
-      assert.match(everyone, /sub@example\.test/);
-      assert.match(everyone, /nonews@example\.test/);
-      assert.doesNotMatch(everyone, /private|outsider/);
-    });
-  });
-
-  describe('receiving recipient uploads', () => {
-    const { Readable }: typeof import('node:stream') = require('node:stream');
-    type Received = {
-      passed: boolean;
-      result: Result;
-      file?: { buffer: Buffer; originalname: string };
-    };
-
-    function upload(field: string, filename: string, content: string) {
-      const boundary = '----fictional-boundary';
-      const body = [
-        `--${boundary}`,
-        `Content-Disposition: form-data; name="${field}"; filename="${filename}"`,
-        'Content-Type: text/plain',
-        '',
-        content,
-        `--${boundary}--`,
-        '',
-      ].join('\r\n');
-      const req = Object.assign(Readable.from([body]), {
-        method: 'POST',
-        headers: {
-          'content-type': `multipart/form-data; boundary=${boundary}`,
-          'content-length': String(Buffer.byteLength(body)),
-        },
-      }) as unknown as { file?: Received['file'] };
-      return new Promise<Received>(resolve => {
-        const result: Result = { statusCode: 200, body: undefined };
-        const res = {
-          status(code: number) {
-            result.statusCode = code;
-            return res;
-          },
-          send(sent: unknown) {
-            result.body = sent;
-            resolve({ passed: false, result });
-            return res;
-          },
-        };
-        controller.uploadSubscribersCsv(req, res, () =>
-          resolve({ passed: true, result, file: req.file }),
-        );
-      });
-    }
-
-    it('accepts CSV and JSON lines files in the newsletterCsv field', async () => {
-      for (const name of ['list.csv', 'list.jsonl', 'list.ndjson']) {
-        const received = await upload('newsletterCsv', name, 'a@example.test');
-        assert.equal(received.passed, true, name);
-        assert.equal(received.file!.buffer.toString(), 'a@example.test');
-      }
-    });
-
-    it('rejects other file types and fields', async () => {
-      const typed = await upload('newsletterCsv', 'list.txt', 'a@example.test');
-      assert.equal(typed.result.statusCode, 415);
-      const field = await upload('other', 'list.csv', 'a@example.test');
-      assert.equal(field.result.statusCode, 400);
-      assert.deepEqual(field.result.body, {
-        message: 'Missing "newsletterCsv" field from the API call.',
-      });
-    });
-
-    it('limits the upload size', async () => {
-      const config: {
-        maxUploadSize: number;
-      } = require('../../../../config/config.mts');
-      const received = await upload(
-        'newsletterCsv',
-        'list.csv',
-        'x'.repeat(config.maxUploadSize + 1),
-      );
-      assert.equal(received.result.statusCode, 413);
-    });
-
-    it('reads JSON lines from .ndjson uploads', async () => {
-      const result = await call(controller.splitSubscribers, {
-        file: {
-          buffer: Buffer.from('{"email":"a@example.test"}'),
-          originalname: 'list.NDJSON',
-        },
-      });
+      const members = async (query: Request) =>
+        String(
+          (
+            await call(controller.listCircleMembers, {
+              query: { circleId: String(circle), ...query },
+            })
+          ).body,
+        ).replace(/@example\.test,Fictional,Member\d+/g, '');
       assert.equal(
-        (result.body as { outputFormat: string }).outputFormat,
-        'ndjson',
+        await members({}),
+        'Email Address,First Name,Last Name\nsub',
+      );
+      assert.equal(
+        await members({ onlyNewsletterCircleMembers: 'false' }),
+        'Email Address,First Name,Last Name\nsub\nnonews',
       );
     });
   });
 
   describe('splitting uploaded recipients', () => {
-    const split = (content: string, originalname = 'recipients.csv') =>
-      call(controller.splitSubscribers, {
-        file: { buffer: Buffer.from(content), originalname },
+    it('answers 422 without an uploaded file', async () => {
+      assert.deepEqual(await call(controller.splitSubscribers, {}), {
+        statusCode: 422,
+        body: { message: 'Unprocessable Entity.' },
       });
-    type Split = {
-      totalEmailCount: number;
-      subscribedContent: string;
-      unsubscribedContent: string;
-    };
+    });
 
-    it('reads the first CSV field, honouring quotes, escaped quotes and later columns', async () => {
-      const result = await split(
+    it('reads the first CSV field, skipping an email header, and normalises it', async () => {
+      const body = await split(
         [
+          'email@example.test',
           'alice@example.test,Alice',
           '"x,y@example.test",quoted comma',
           '"a""b@example.test",escaped quote',
           'ab@example.test',
           'myemail@example.test',
+          ' <Carol@Example.test> ',
+          'a<b@example.test',
+          'c>d@example.test',
+          'bad address@example.test',
+          'trailing@example.test extra',
         ].join('\n'),
       );
-      const body = result.body as Split;
       // a"b and ab are different addresses; CSV output strips the quote.
-      assert.equal(body.totalEmailCount, 5);
+      assert.equal(body.totalEmailCount, 8);
       assert.equal(
         body.unsubscribedContent,
         [
           'Email Address,First Name,Last Name,Reason',
-          'alice@example.test,,,Email not found',
-          'xy@example.test,,,Email not found',
-          'ab@example.test,,,Email not found',
-          'ab@example.test,,,Email not found',
-          'myemail@example.test,,,Email not found',
-        ].join('\n'),
-      );
-    });
-
-    it('skips a first line that mentions email as a header', async () => {
-      const body = (await split('email@example.test\nbob@example.test'))
-        .body as Split;
-      assert.equal(body.totalEmailCount, 1);
-      assert.match(body.unsubscribedContent, /bob@example\.test/);
-    });
-
-    it('normalises angle brackets, case and spacing but keeps inner brackets', async () => {
-      const body = (
-        await split(
-          [
-            ' <Alice@Example.test> ',
-            'a<b@example.test',
-            'c>d@example.test',
-            'bad address@example.test',
-            'trailing@example.test extra',
-          ].join('\n'),
-        )
-      ).body as Split;
-      assert.equal(
-        body.unsubscribedContent,
-        [
-          'Email Address,First Name,Last Name,Reason',
-          'alice@example.test,,,Email not found',
-          'a<b@example.test,,,Email not found',
-          'c>d@example.test,,,Email not found',
+          ...['alice', 'xy', 'ab', 'ab', 'myemail', 'carol', 'a<b', 'c>d'].map(
+            local => `${local}@example.test,,,Email not found`,
+          ),
         ].join('\n'),
       );
     });
@@ -476,16 +400,14 @@ describe('Admin newsletter controller audiences', () => {
         roles: ['user'],
       });
       await addUser({ email: 'named@example.test', newsletter: false });
-      const body = (
-        await split(
-          [
-            '{"email":"bare@example.test"}',
-            '{"email":"named@example.test"}',
-            '{"email":"missing@example.test"}',
-          ].join('\n'),
-          'recipients.jsonl',
-        )
-      ).body as Split;
+      const body = await split(
+        [
+          '{"email":"bare@example.test"}',
+          '{"email":"named@example.test"}',
+          '{"email":"missing@example.test"}',
+        ].join('\n'),
+        'recipients.jsonl',
+      );
       assert.equal(
         body.subscribedContent,
         JSON.stringify({

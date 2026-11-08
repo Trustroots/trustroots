@@ -31,91 +31,54 @@ function mockResponse(): MockResponse {
 describe('Admin username changes controller', () => {
   afterEach(() => sinon.restore());
 
-  it('accepts numeric and numeric-string page values', async () => {
-    const aggregate = { exec: sinon.stub().resolves([]) };
-    sinon
-      .stub(User, 'aggregate')
-      .returns(aggregate as unknown as ReturnType<typeof User.aggregate>);
+  const invalid = { message: 'Invalid username change filters.' };
+  const largest = Math.floor(Number.MAX_SAFE_INTEGER / 50);
+  async function list(page: unknown) {
     const res = mockResponse();
+    await controller.list({ query: { page, range: 'all' } }, res);
+    return res;
+  }
 
-    await controller.list({ query: { page: 2, range: 'all' } }, res);
-
-    assert.strictEqual(res.statusCode, 200);
-    assert.strictEqual((res.body as { page: number }).page, 2);
-    sinon.assert.calledOnce(User.aggregate as sinon.SinonStub);
-    sinon.assert.calledOnce(aggregate.exec);
-
-    const stringPageResponse = mockResponse();
-    await controller.list(
-      { query: { page: '3', range: 'all' } },
-      stringPageResponse,
-    );
-    assert.strictEqual(stringPageResponse.statusCode, 200);
-    assert.strictEqual((stringPageResponse.body as { page: number }).page, 3);
-    sinon.assert.calledTwice(aggregate.exec);
+  it('accepts positive safe pages given as numbers or plain digits', async () => {
+    for (const [page, expected] of [
+      [2, 2],
+      ['3', 3],
+      ['10', 10],
+      [largest, largest],
+    ]) {
+      const res = await list(page);
+      assert.deepStrictEqual(
+        [res.statusCode, (res.body as { page: number }).page],
+        [200, expected],
+      );
+    }
   });
 
-  it('rejects malformed, zero, unsafe, and non-numeric page values', async () => {
-    for (const page of [null, 'not-a-page', '0', '9007199254740992', 0, 1.5]) {
-      const res = mockResponse();
-
-      await controller.list({ query: { page } }, res);
-
-      assert.strictEqual(res.statusCode, 400);
-      assert.strictEqual(
-        (res.body as { message: string }).message,
-        'Invalid username change filters.',
-      );
+  it('rejects every other page value', async () => {
+    for (const page of [
+      ...[null, 'not-a-page', '0', '9007199254740992', 0, 1.5, largest + 1],
+      ...[['2'], '1e3', ' 2', '2 '],
+    ]) {
+      const res = await list(page);
+      assert.deepStrictEqual([res.statusCode, res.body], [400, invalid]);
     }
   });
 
   it('returns an error response when the aggregation fails', async () => {
-    const aggregate = {
+    sinon.stub(User, 'aggregate').returns({
       exec: sinon.stub().rejects(new Error('aggregate failed')),
-    };
-    sinon
-      .stub(User, 'aggregate')
-      .returns(aggregate as unknown as ReturnType<typeof User.aggregate>);
+    } as unknown as ReturnType<typeof User.aggregate>);
     const res = mockResponse();
-
     await controller.list({ query: {} }, res);
-
-    assert.strictEqual(res.statusCode, 400);
-    const body = res.body as { message: string };
-    assert.strictEqual(
-      body.message,
-      'Snap! Something went wrong. If this keeps happening, please contact us.',
-    );
-    sinon.assert.calledOnce(aggregate.exec);
-  });
-
-  it('rejects page strings that are not plain digits', async () => {
-    for (const page of [['2'], '1e3', ' 2', '2 ']) {
-      const res = mockResponse();
-      await controller.list({ query: { page } }, res);
-      assert.deepStrictEqual(
-        { status: res.statusCode, body: res.body },
-        { status: 400, body: { message: 'Invalid username change filters.' } },
-      );
-    }
-  });
-
-  it('accepts multi-digit pages up to the largest safe offset', async () => {
-    const largest = Math.floor(Number.MAX_SAFE_INTEGER / 50);
-    for (const [page, expected] of [
-      ['10', 10],
-      [largest, largest],
-    ] as const) {
-      const res = mockResponse();
-      await controller.list({ query: { page } }, res);
-      assert.strictEqual(res.statusCode, 200);
-      assert.strictEqual((res.body as { page: number }).page, expected);
-    }
-    const res = mockResponse();
-    await controller.list({ query: { page: largest + 1 } }, res);
     assert.deepStrictEqual(
-      { status: res.statusCode, body: res.body },
-      { status: 400, body: { message: 'Invalid username change filters.' } },
+      [res.statusCode, res.body],
+      [
+        400,
+        {
+          message:
+            'Snap! Something went wrong. If this keeps happening, please contact us.',
+        },
+      ],
     );
   });
 });
@@ -162,6 +125,13 @@ describe('Admin username changes controller with stored members', () => {
       email: 'legacy-name@example.test',
       displayName: 'Legacy Name',
       usernameUpdated: legacyDate,
+    });
+    // A null history is neither missing nor empty, so the pre-filter skips it.
+    await users.insertOne({
+      username: 'null-history',
+      email: 'null-history@example.test',
+      usernameHistory: null,
+      usernameUpdated: recent,
     });
     // Neither a recent history entry nor a fallback without history.
     await users.insertOne({

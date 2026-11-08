@@ -69,51 +69,28 @@ describe('Admin threads controller unit tests', () => {
         { length: 4 },
         () => new mongoose.Types.ObjectId(),
       );
-      const [older, newer] = await Thread.insertMany([
-        {
-          userFrom: user,
-          userTo: partnerA,
-          updated: new Date('2026-09-01T00:00:00Z'),
-        },
-        {
-          userFrom: partnerB,
-          userTo: user,
-          updated: new Date('2026-10-01T00:00:00Z'),
-        },
-        {
-          userFrom: stranger,
-          userTo: partnerA,
-          updated: new Date('2026-11-01T00:00:00Z'),
-        },
-      ]);
-      await mongoose.connection.collection('messages').insertMany([
-        {
-          userFrom: user,
-          userTo: partnerA,
-          created: new Date('2026-08-10T00:00:00Z'),
-        },
-        {
-          userFrom: partnerA,
-          userTo: user,
-          created: new Date('2026-08-20T00:00:00Z'),
-        },
-        {
-          userFrom: partnerB,
-          userTo: user,
-          created: new Date('2026-09-15T00:00:00Z'),
-        },
-        // Messages that share only one side with a thread pair
-        {
-          userFrom: stranger,
-          userTo: partnerA,
-          created: new Date('2020-01-01T00:00:00Z'),
-        },
-        {
-          userFrom: stranger,
-          userTo: user,
-          created: new Date('2030-01-01T00:00:00Z'),
-        },
-      ]);
+      const pair = (userFrom: unknown, userTo: unknown, date: string) => ({
+        userFrom,
+        userTo,
+        date: new Date(date + 'T00:00:00Z'),
+      });
+      const [older, newer] = await Thread.insertMany(
+        [
+          pair(user, partnerA, '2026-09-01'),
+          pair(partnerB, user, '2026-10-01'),
+          pair(stranger, partnerA, '2026-11-01'),
+        ].map(({ date, ...thread }) => ({ ...thread, updated: date })),
+      );
+      await mongoose.connection.collection('messages').insertMany(
+        [
+          pair(user, partnerA, '2026-08-10'),
+          pair(partnerA, user, '2026-08-20'),
+          pair(partnerB, user, '2026-09-15'),
+          // Messages that share only one side with a thread pair
+          pair(stranger, partnerA, '2020-01-01'),
+          pair(stranger, user, '2030-01-01'),
+        ].map(({ date, ...message }) => ({ ...message, created: date })),
+      );
 
       const res = mockResponse();
       adminThreads.getThreads({ body: { userId: user.toString() } }, res);
@@ -126,20 +103,15 @@ describe('Admin threads controller unit tests', () => {
         lastMessage: Date | null;
       }>;
       threads
-        .map(thread => thread._id.toString())
-        .should.deepEqual([newer._id.toString(), older._id.toString()]);
-      threads[0]
-        .firstMessage!.toISOString()
-        .should.equal('2026-09-15T00:00:00.000Z');
-      threads[0]
-        .lastMessage!.toISOString()
-        .should.equal('2026-09-15T00:00:00.000Z');
-      threads[1]
-        .firstMessage!.toISOString()
-        .should.equal('2026-08-10T00:00:00.000Z');
-      threads[1]
-        .lastMessage!.toISOString()
-        .should.equal('2026-08-20T00:00:00.000Z');
+        .map(({ _id, firstMessage, lastMessage }) => [
+          String(_id),
+          firstMessage!.toISOString().slice(0, 10),
+          lastMessage!.toISOString().slice(0, 10),
+        ])
+        .should.deepEqual([
+          [String(newer._id), '2026-09-15', '2026-09-15'],
+          [String(older._id), '2026-08-10', '2026-08-20'],
+        ]);
     });
 
     it('returns threads where the user is only the recipient', async () => {

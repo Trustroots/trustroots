@@ -366,6 +366,7 @@ function buildAudienceQuery(
       },
     });
   }
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: without sources hostingUserIds is null, so this adds only $or: [], which Mongoose's cast deletes
   if (criteria.sources.length > 0) {
     const locationMatches: Record<string, unknown>[] = [];
     if (criteria.sources.includes('living')) {
@@ -384,6 +385,7 @@ function buildAudienceQuery(
         ),
       });
     }
+    // Stryker disable next-line ConditionalExpression: Mongoose casts $in: null to [null], and no member has a null _id
     if (hostingUserIds) {
       locationMatches.push({
         _id: {
@@ -464,6 +466,7 @@ function parseFirstCsvField(line: string): string {
     }
     value += character;
   }
+  // Stryker disable next-line MethodExpression: the header test ignores spaces, normaliseEmail trims, and a blank field is quoted, so its trimmed-line fallback holds a space and fails the address check
   return value.trim();
 }
 function extractEmailsFromCsv(csvText: string): string[] {
@@ -472,6 +475,7 @@ function extractEmailsFromCsv(csvText: string): string[] {
   const emails: string[] = [];
   const seenEmails = new Set<string>();
   lines.forEach((line, lineIndex) => {
+    // Stryker disable next-line MethodExpression: parseFirstCsvField trims the field and normaliseEmail trims the fallback, so outer whitespace never reaches an address
     const trimmedLine = line.trim();
     const firstField = parseFirstCsvField(trimmedLine);
     if (lineIndex === 0 && /email/i.test(firstField)) {

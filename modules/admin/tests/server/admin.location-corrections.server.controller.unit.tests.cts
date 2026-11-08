@@ -29,19 +29,14 @@ type Controller = {
     ): number;
   };
 };
-// Every property read evaluates a fresh copy of the module inside the running
-// test, so mutants in module-level constants take effect too.
-function freshModule<T>(file: string): T {
-  return new Proxy({} as Record<string | symbol, unknown>, {
-    get(_target, key) {
-      delete require.cache[file];
-      return (require(file) as Record<string | symbol, unknown>)[key];
-    },
-  }) as T;
-}
-const controller: Controller = freshModule(
-  require.resolve('../../server/controllers/admin.location-corrections.server.controller.mts'),
-);
+// Load the controller on first use, inside a test, so that test covers (and
+// can kill) mutants in its module-level constants.
+const controller = new Proxy({} as Controller, {
+  get: (_target, key) =>
+    require('../../server/controllers/admin.location-corrections.server.controller.mts')[
+      key
+    ],
+});
 
 const exact = [48.6908333333, 9.14055555556];
 const nearby = [48.691, 9.141];
@@ -121,6 +116,10 @@ describe('Location corrections controller', () => {
     await controller.send({ user, body }, res);
     return captured as { statusCode: number; body: Body };
   }
+
+  const content = 'Please check your location.';
+  const sendTo = (candidate: Candidate, userId = candidate.userId) =>
+    send({ userId, key: candidate.key, content });
 
   describe('classification helpers', () => {
     const classifyLocation = (location: unknown) =>
@@ -306,12 +305,7 @@ describe('Location corrections controller', () => {
     const candidate = (await list()).body.find(
       item => item.userId === String(member._id),
     )!;
-    const payload = {
-      userId: candidate.userId,
-      key: candidate.key,
-      content: 'Please check your location.',
-    };
-    const result = await send(payload);
+    const result = await sendTo(candidate);
     assert.equal(result.statusCode, 200);
     assert.equal(result.body.sent, true);
     const message = await Message.findById(result.body.messageId).lean<{
@@ -320,11 +314,11 @@ describe('Location corrections controller', () => {
       created?: Date;
       notificationCount?: number;
     }>();
-    assert(message);
-    assert.equal(message.read, false);
-    assert.equal(message.shadowHidden, false);
-    assert(message.created instanceof Date);
-    assert.equal(message.notificationCount, 0);
+    assert.deepEqual(
+      [message!.read, message!.shadowHidden, message!.notificationCount],
+      [false, false, 0],
+    );
+    assert(message!.created instanceof Date);
     const thread = await Thread.findById(existing._id).lean<{
       message: unknown;
     }>();
@@ -338,7 +332,7 @@ describe('Location corrections controller', () => {
     sinon.assert.calledOnce(save);
 
     // A retry reports the earlier message while other members stay queued.
-    const retry = await send(payload);
+    const retry = await sendTo(candidate);
     assert.equal(retry.statusCode, 200);
     assert.deepEqual(retry.body, {
       sent: false,
@@ -351,11 +345,7 @@ describe('Location corrections controller', () => {
     await addOffer(member, exact);
     await addOffer(other, nearby);
     for (const candidate of (await list()).body) {
-      const result = await send({
-        userId: candidate.userId,
-        key: candidate.key,
-        content: 'Please check your location.',
-      });
+      const result = await sendTo(candidate);
       assert.equal(result.statusCode, 200);
       assert.equal(
         await Thread.countDocuments({ message: String(result.body.messageId) }),
@@ -364,60 +354,17 @@ describe('Location corrections controller', () => {
     }
   });
 
-  it('refuses a key that belongs to a different member', async () => {
+  it('refuses a key of another member, or a stale key of a queued one', async () => {
     await addOffer(member, exact);
     const [candidate] = (await list()).body;
-    const result = await send({
-      userId: String(other._id),
-      key: candidate.key,
-      content: 'Please check your location.',
-    });
-    assert.equal(result.statusCode, 409);
-    assert.deepEqual(result.body, {
-      sent: false,
-      message: 'The candidate has changed. Refresh the queue.',
-    });
+    const changed = 'The candidate has changed. Refresh the queue.';
+    const foreign = await sendTo(candidate, String(other._id));
+    assert.equal(foreign.statusCode, 409);
+    assert.deepEqual(foreign.body, { sent: false, message: changed });
+    const stale = await sendTo({ ...candidate, key: 'b'.repeat(64) });
+    assert.equal(stale.statusCode, 409);
+    assert.deepEqual(stale.body, { message: changed });
     assert.equal(await Message.countDocuments(), 0);
-  });
-
-  it('refuses a stale key for a member who is still queued', async () => {
-    await addOffer(member, exact);
-    const result = await send({
-      userId: String(member._id),
-      key: 'b'.repeat(64),
-      content: 'Please check your location.',
-    });
-    assert.equal(result.statusCode, 409);
-    assert.deepEqual(result.body, {
-      message: 'The candidate has changed. Refresh the queue.',
-    });
-  });
-
-  it('fails when a thread update fails for a reason other than a duplicate', async () => {
-    await addOffer(member, exact);
-    const [candidate] = (await list()).body;
-    const original = Thread.updateOne;
-    let first = true;
-    sinon.stub(Thread, 'updateOne').callsFake((...args: unknown[]) => {
-      if (first) {
-        first = false;
-        return {
-          exec: async () => {
-            throw Object.assign(new Error('validation failed'), { code: 121 });
-          },
-        } as unknown as ReturnType<typeof Thread.updateOne>;
-      }
-      return Reflect.apply(original, Thread, args);
-    });
-    const result = await send({
-      userId: candidate.userId,
-      key: candidate.key,
-      content: 'Please check your location.',
-    });
-    assert.equal(result.statusCode, 500);
-    assert.deepEqual(result.body, {
-      message: 'Could not send the correction message.',
-    });
   });
 
   // Stores the message, then fails as a concurrent or broken write would.
@@ -435,20 +382,37 @@ describe('Location corrections controller', () => {
     );
   }
 
-  it('fails when message storage fails for a reason other than a duplicate', async () => {
-    await addOffer(member, exact);
-    const [candidate] = (await list()).body;
-    storeThenThrow(new Error('write concern failed'));
-    const result = await send({
-      userId: candidate.userId,
-      key: candidate.key,
-      content: 'Please check your location.',
+  const failures: Array<[string, () => void]> = [
+    [
+      'a thread update',
+      () => {
+        const original = Thread.updateOne;
+        const error = Object.assign(new Error('invalid'), { code: 121 });
+        sinon
+          .stub(Thread, 'updateOne')
+          .callsFake((...args: unknown[]) =>
+            Reflect.apply(original, Thread, args),
+          )
+          .onFirstCall()
+          .returns({ exec: () => Promise.reject(error) } as never);
+      },
+    ],
+    [
+      'message storage',
+      () => storeThenThrow(new Error('write concern failed')),
+    ],
+  ];
+  for (const [name, fail] of failures)
+    it(`fails when ${name} fails for a reason other than a duplicate`, async () => {
+      await addOffer(member, exact);
+      const [candidate] = (await list()).body;
+      fail();
+      const result = await sendTo(candidate);
+      assert.equal(result.statusCode, 500);
+      assert.deepEqual(result.body, {
+        message: 'Could not send the correction message.',
+      });
     });
-    assert.equal(result.statusCode, 500);
-    assert.deepEqual(result.body, {
-      message: 'Could not send the correction message.',
-    });
-  });
 
   it('does not count stats again when a concurrent send stored the message', async () => {
     const save = sinon.stub(messageToStats, 'save');
@@ -457,11 +421,7 @@ describe('Location corrections controller', () => {
     storeThenThrow(
       Object.assign(new Error('concurrent insert'), { code: 11000 }),
     );
-    const result = await send({
-      userId: candidate.userId,
-      key: candidate.key,
-      content: 'Please check your location.',
-    });
+    const result = await sendTo(candidate);
     assert.equal(result.statusCode, 200);
     assert.equal(result.body.sent, false);
     sinon.assert.notCalled(save);

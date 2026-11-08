@@ -176,30 +176,19 @@ describe('Admin circles controller image publication', () => {
     assert.equal(res.body.description, description);
   });
 
-  it('logs and reports unexpected failures', async () => {
-    query.exec.rejects(failure);
-    await controller.list({}, res);
-    assert.equal(res.statusCode, 400);
-    sinon.assert.calledOnceWithExactly(
-      log,
-      'error',
-      'Failed to process circle administration request.',
-      { error: failure },
-    );
-  });
-
-  it('logs failures that are not objects', async () => {
-    query.exec.callsFake(() => Promise.reject('fictional failure'));
-    await controller.list({}, res);
-    assert.equal(res.statusCode, 400);
-    assert.equal(typeof res.body.message, 'string');
-    sinon.assert.calledOnceWithExactly(
-      log,
-      'error',
-      'Failed to process circle administration request.',
-      { error: 'fictional failure' },
-    );
-  });
+  for (const error of [failure, 'fictional failure'])
+    it(`logs and reports the unexpected failure ${error}`, async () => {
+      query.exec.callsFake(() => Promise.reject(error));
+      await controller.list({}, res);
+      assert.equal(res.statusCode, 400);
+      assert.equal(typeof res.body.message, 'string');
+      sinon.assert.calledOnceWithExactly(
+        log,
+        'error',
+        'Failed to process circle administration request.',
+        { error },
+      );
+    });
 
   it('rejects unsafe slugs before touching the image store', async () => {
     for (const slug of ['walkers/../../outside', 'walkers.', '-walkers']) {
@@ -287,19 +276,18 @@ describe('Admin circles controller image publication', () => {
   });
 
   it('accepts images at exactly the pixel limit and reports larger ones', async () => {
-    image.metadata.resolves({ width: 10_000, height: 5_000 });
-    await controller.create(
-      { body: { label: 'Walkers' }, file: upload.file },
-      res,
-    );
-    assert.equal(res.statusCode, 201);
-    image.metadata.resolves({ width: 10_000, height: 5_001 });
-    res = response();
-    await controller.create(
-      { body: { label: 'Walkers' }, file: upload.file },
-      res,
-    );
-    assert.equal(res.statusCode, 400);
+    for (const [height, statusCode] of [
+      [5_000, 201],
+      [5_001, 400],
+    ]) {
+      image.metadata.resolves({ width: 10_000, height });
+      res = response();
+      await controller.create(
+        { body: { label: 'Walkers' }, file: upload.file },
+        res,
+      );
+      assert.equal(res.statusCode, statusCode);
+    }
     assert.deepEqual(res.body, {
       message:
         'Upload a valid JPEG, PNG, or GIF image with no more than 50 million pixels.',
@@ -389,32 +377,20 @@ describe('Admin circles controller image publication', () => {
         .toBuffer();
       assert(canonical.equals(expectedCanonical), 'canonical quality 85');
       const size = { width: 120, height: 120, fit: 'cover' as const };
-      const jpg = await realFs.promises.readFile(
-        path.join(directory, 'walkers', '120x120.jpg'),
-      );
-      const webp = await realFs.promises.readFile(
-        path.join(directory, 'walkers', '120x120.webp'),
-      );
-      assert.equal((await realSharp(jpg).metadata()).format, 'jpeg');
-      assert.equal((await realSharp(webp).metadata()).format, 'webp');
-      assert(
-        jpg.equals(
-          await realSharp(canonical)
-            .resize(size)
-            .jpeg({ quality: 72 })
-            .toBuffer(),
-        ),
-        'jpeg variant quality 72',
-      );
-      assert(
-        webp.equals(
-          await realSharp(canonical)
-            .resize(size)
-            .webp({ quality: 72 })
-            .toBuffer(),
-        ),
-        'webp variant quality 72',
-      );
+      for (const [extension, format] of [
+        ['jpg', 'jpeg'],
+        ['webp', 'webp'],
+      ] as const) {
+        const variant = await realFs.promises.readFile(
+          path.join(directory, 'walkers', `120x120.${extension}`),
+        );
+        assert.equal((await realSharp(variant).metadata()).format, format);
+        const expected = await realSharp(canonical)
+          .resize(size)
+          [format]({ quality: 72 })
+          .toBuffer();
+        assert(variant.equals(expected), `${format} variant quality 72`);
+      }
       const leftovers = (await realFs.promises.readdir(directory)).filter(
         name => name.startsWith('.staging'),
       );

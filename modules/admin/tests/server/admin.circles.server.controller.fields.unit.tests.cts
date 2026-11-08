@@ -2,20 +2,17 @@ const mongoose: typeof import('mongoose') = require('mongoose');
 const assert: typeof import('node:assert').strict =
   require('node:assert').strict;
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
-// Every property read evaluates a fresh copy of the module inside the running
-// test, so mutants in module-level constants take effect too.
-function freshModule<T>(file: string): T {
-  return new Proxy({} as Record<string | symbol, unknown>, {
-    get(_target, key) {
-      delete require.cache[file];
-      return (require(file) as Record<string | symbol, unknown>)[key];
-    },
-  }) as T;
-}
-const controller: typeof import('../../server/controllers/admin.circles.server.controller.mts').default =
-  freshModule(
-    require.resolve('../../server/controllers/admin.circles.server.controller.mts'),
-  );
+// Load the controller on first use, inside the test, so the test covers (and
+// can kill) mutants in its module-level field list.
+const controller = new Proxy(
+  {} as typeof import('../../server/controllers/admin.circles.server.controller.mts').default,
+  {
+    get: (_target, key) =>
+      require('../../server/controllers/admin.circles.server.controller.mts')[
+        key
+      ],
+  },
+);
 
 function response() {
   const captured: { statusCode: number; body: unknown } = {

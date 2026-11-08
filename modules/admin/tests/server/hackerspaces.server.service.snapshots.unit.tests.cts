@@ -64,39 +64,36 @@ describe('SpaceAPI Collector snapshots', () => {
       [1, -180],
       [1, 180],
     ]) {
-      const entry = located(lat, lon);
-      assert.equal(entry.eligible, true, `${lat},${lon}`);
-      assert.equal(entry.latitude, lat);
-      assert.equal(entry.longitude, lon);
-    }
-    for (const [lat, lon] of [
-      [-90.5, 1],
-      [90.5, 1],
-      [1, -180.5],
-      [1, 180.5],
-    ]) {
-      assert.equal(located(lat, lon).eligible, false, `${lat},${lon}`);
+      const { eligible, latitude, longitude } = located(lat, lon);
+      assert.deepEqual([eligible, latitude, longitude], [true, lat, lon]);
+      // Half a degree further out on the same axis is out of range.
+      const [outLat, outLon] = [lat, lon].map(value =>
+        Math.abs(value) > 1 ? value + Math.sign(value) * 0.5 : value,
+      );
+      assert.equal(located(outLat, outLon).eligible, false, `${lat},${lon}`);
     }
   });
 
-  it('returns the last-seen date when present and null otherwise', () => {
-    assert.equal(
-      service.normaliseCollectorEntry({ lastSeen: 1760000000 }, 'now').lastSeen,
-      1760000000,
-    );
-    assert.equal(service.normaliseCollectorEntry({}, 'now').lastSeen, null);
-  });
-
-  it('fills defaults for missing source details', () => {
+  it('fills defaults for missing source details and last-seen dates', () => {
     const entry = service.normaliseCollectorEntry(
       { data: { location: { country: 'Example Country' } } },
       'now',
     );
-    assert.equal(entry.name, '');
-    assert.equal(entry.description, '');
-    assert.equal(entry.open, '');
-    assert.equal(entry.spaceType, 'hackerspace');
+    assert.deepEqual(
+      [
+        entry.name,
+        entry.description,
+        entry.open,
+        entry.spaceType,
+        entry.lastSeen,
+      ],
+      ['', '', '', 'hackerspace', null],
+    );
     assert.deepEqual(entry.addressParts, ['', '', '', '', 'Example Country']);
+    assert.equal(
+      service.normaliseCollectorEntry({ lastSeen: 1760000000 }, 'now').lastSeen,
+      1760000000,
+    );
   });
 
   it('joins every address part and ignores non-boolean open states', () => {

@@ -146,60 +146,24 @@ describe('Email recovery service', () => {
       assert.equal((await recovery.recoveryDay(utcDay(today))).page, 1);
     });
 
-    it('accepts recovery pages from 1 to 1000', async () => {
+    it('accepts recovery and account pages from 1 to 1000', async () => {
       const day = utcDay(Date.now() - 2 * DAY);
-      for (const page of ['0', '1.5', '1001', 'x']) {
-        await assert.rejects(recovery.recoveryDay(day, page), {
-          message: 'Invalid recovery page.',
-        });
-      }
-      assert.equal((await recovery.recoveryDay(day, '1000')).page, 1000);
-    });
-
-    it('accepts account pages from 1 to 1000', async () => {
       const from = new Date(Date.now() - 2 * DAY).toISOString();
       const to = new Date(Date.now() - DAY).toISOString();
-      for (const page of ['0', '1.5', '1001', 'x']) {
-        await assert.rejects(recovery.recoveryAccounts(from, to, page), {
-          message: 'Invalid account page.',
-        });
+      for (const [list, message] of [
+        [(page: string) => recovery.recoveryDay(day, page), 'recovery'],
+        [
+          (page: string) => recovery.recoveryAccounts(from, to, page),
+          'account',
+        ],
+      ] as const) {
+        for (const page of ['0', '1.5', '1001', 'x']) {
+          await assert.rejects(list(page), {
+            message: `Invalid ${message} page.`,
+          });
+        }
+        assert.equal((await list('1000')).page, 1000);
       }
-      assert.equal(
-        (await recovery.recoveryAccounts(from, to, '1000')).page,
-        1000,
-      );
-    });
-  });
-
-  describe('restricted members', () => {
-    // The restricted roles are listed when the module loads, so load a
-    // fresh copy.
-    function freshRecovery(): typeof recovery {
-      const path =
-        require.resolve('../../server/services/email-recovery.server.service.mts');
-      delete require.cache[path];
-      return require(path);
-    }
-
-    it('lists no suspended or shadowbanned signups', async () => {
-      const day = utcDay(Date.now() - 2 * DAY);
-      const created = new Date(Date.parse(day) + 3600000);
-      const pendingMember = await insertMember({
-        created,
-        emailTemporary: 'pending-open@example.test',
-      });
-      for (const role of ['suspended', 'shadowban']) {
-        await insertMember({
-          created,
-          emailTemporary: `pending-${role}@example.test`,
-          roles: ['user', role],
-        });
-      }
-      const listed = await freshRecovery().recoveryDay(day);
-      assert.deepEqual(
-        listed.candidates.map(candidate => candidate.username),
-        [pendingMember.username],
-      );
     });
   });
 
@@ -213,11 +177,13 @@ describe('Email recovery service', () => {
         created: at(10),
         emailTemporary: 'pending-signup@example.test',
       });
-      await insertMember({
-        created: at(9),
-        emailTemporary: 'suspended@example.test',
-        roles: ['user', 'suspended'],
-      });
+      for (const role of ['suspended', 'shadowban']) {
+        await insertMember({
+          created: at(9),
+          emailTemporary: `${role}@example.test`,
+          roles: ['user', role],
+        });
+      }
       await insertMessage({
         userFrom: sender._id,
         userTo: recipient._id,
@@ -287,22 +253,40 @@ describe('Email recovery service', () => {
       });
     });
 
-    it('pages 50 candidates at a time', async () => {
+    it('pages 50 candidates and accounts at a time', async () => {
       const day = utcDay(Date.now() - 2 * DAY);
+      const from = new Date(Date.parse(day) - DAY).toISOString();
+      const to = new Date(Date.parse(day) + DAY).toISOString();
       for (let index = 0; index < 51; index += 1) {
         await insertMember({
           created: new Date(Date.parse(day) + index * MINUTE),
           emailTemporary: `pending${index}@example.test`,
         });
       }
-      const first = await recovery.recoveryDay(day);
-      assert.equal(first.candidates.length, 50);
-      assert.equal(first.more, true);
-      const second = await recovery.recoveryDay(day, '2');
-      assert.equal(second.candidates.length, 1);
-      assert.equal(second.more, false);
-      await users().deleteOne({ username: second.candidates[0].username });
-      assert.equal((await recovery.recoveryDay(day)).more, false);
+      // [candidates on page 1, more, candidates on page 2, more] per list.
+      const pages = async () => {
+        const shapes = [];
+        for (const list of [
+          (page?: string) => recovery.recoveryDay(day, page),
+          (page?: string) => recovery.recoveryAccounts(from, to, page),
+        ]) {
+          for (const { candidates, more } of [await list(), await list('2')])
+            shapes.push(candidates.length, more);
+        }
+        return shapes;
+      };
+      assert.deepEqual(await pages(), [50, true, 1, false, 50, true, 1, false]);
+      await users().deleteOne({ username: `rawmember${serial}` });
+      assert.deepEqual(await pages(), [
+        50,
+        false,
+        0,
+        false,
+        50,
+        false,
+        0,
+        false,
+      ]);
     });
 
     it('does not page over confirmed members or read messages', async () => {
@@ -331,38 +315,23 @@ describe('Email recovery service', () => {
       'signup:' + index.toString(16).padStart(24, '0');
     const actor = new mongoose.Types.ObjectId();
 
-    it('requires between 1 and 50 distinct string keys', async () => {
-      for (const keys of [
-        key(1),
-        [],
-        Array.from({ length: 51 }, (_, index) => key(index)),
-        [key(1), 5],
-        [key(1), key(1)],
-      ]) {
-        await assert.rejects(recovery.queueRecovery(date, keys, actor), {
-          message: 'Select between 1 and 50 distinct recovery emails.',
+    it('checks the day, then 1 to 50 distinct string keys, then live mail', async () => {
+      const keys = (length: number) =>
+        Array.from({ length }, (_, index) => key(index));
+      const selection = 'Select between 1 and 50 distinct recovery emails.';
+      for (const [day, selected, message] of [
+        ['bad', [key(1)], 'Choose a valid past or current UTC day.'],
+        [date, key(1), selection],
+        [date, [], selection],
+        [date, keys(51), selection],
+        [date, [key(1), 5], selection],
+        [date, [key(1), key(1)], selection],
+        [date, keys(50), 'Recovery requires live production email sending.'],
+      ] as const) {
+        await assert.rejects(recovery.queueRecovery(day, selected, actor), {
+          message,
         });
       }
-      await assert.rejects(
-        recovery.queueRecovery(
-          date,
-          Array.from({ length: 50 }, (_, index) => key(index)),
-          actor,
-        ),
-        { message: 'Recovery requires live production email sending.' },
-      );
-    });
-
-    it('checks the day before anything else', async () => {
-      await assert.rejects(recovery.queueRecovery('bad', [key(1)], actor), {
-        message: 'Choose a valid past or current UTC day.',
-      });
-    });
-
-    it('refuses mail that is not sent live', async () => {
-      await assert.rejects(recovery.queueRecovery(date, [key(1)], actor), {
-        message: 'Recovery requires live production email sending.',
-      });
     });
 
     it('requires a 24-character hexadecimal ID', async () => {
@@ -597,14 +566,16 @@ describe('Email recovery service', () => {
       assert.equal(send.callCount, 0);
     });
 
-    it('allows blocks between other members', async () => {
+    it('allows blocks between other members and a missing block list', async () => {
       live();
       stubUnread();
-      await users().updateMany(
-        { _id: { $in: [sender._id, recipient._id] } },
-        { $set: { blocked: [bystander._id] } },
-      );
-      assert.equal(await queue(new Date(Date.now() - 3600000)), queued);
+      for (const blocked of [[bystander._id], null]) {
+        await users().updateMany(
+          { _id: { $in: [sender._id, recipient._id] } },
+          { $set: { blocked } },
+        );
+        assert.equal(await queue(new Date(Date.now() - 3600000)), queued);
+      }
     });
 
     it('allows up to 50 unread messages in the conversation', async () => {
@@ -701,24 +672,6 @@ describe('Email recovery service', () => {
           },
         ],
       });
-    });
-
-    it('pages 50 accounts at a time', async () => {
-      for (let index = 0; index < 51; index += 1) {
-        await insertMember({ created: new Date(base + index * MINUTE) });
-      }
-      const first = await recovery.recoveryAccounts(from, to);
-      assert.equal(first.candidates.length, 50);
-      assert.equal(first.more, true);
-      const second = await recovery.recoveryAccounts(from, to, '2');
-      assert.equal(second.candidates.length, 1);
-      assert.equal(second.more, false);
-      await users().deleteOne({ username: second.candidates[0].username });
-      assert.equal((await recovery.recoveryAccounts(from, to)).more, false);
-      assert.deepEqual(
-        (await recovery.recoveryAccounts(from, to, '2')).candidates,
-        [],
-      );
     });
   });
 });

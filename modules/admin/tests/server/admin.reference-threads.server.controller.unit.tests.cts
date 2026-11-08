@@ -254,10 +254,15 @@ describe('Admin reference threads controller unit tests', () => {
         reference(a, c, 'yes', '2026-10-04T00:00:00Z'),
         reference(b, c, 'no', '2026-10-02T00:00:00Z'),
       ]);
+      // The { reference, created } index would return newest first unsorted.
+      await ReferenceThread.init();
+      await ReferenceThread.collection.dropIndex('reference_1_created_-1');
 
       const res = mockResponse();
       adminReferenceThreads.list({}, res);
-      const response = await res.waitForResponse();
+      const response = await res
+        .waitForResponse()
+        .finally(() => ReferenceThread.createIndexes());
       response.statusCode.should.equal(200);
       const body = JSON.parse(JSON.stringify(response.body));
 

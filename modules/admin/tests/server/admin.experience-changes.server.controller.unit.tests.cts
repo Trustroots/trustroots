@@ -11,21 +11,19 @@ type Handler = (
   response: unknown,
   next: (error?: unknown) => void,
 ) => Promise<unknown>;
-// Every property read evaluates a fresh copy of the module inside the running
-// test, so mutants in module-level constants take effect too.
-function freshModule<T>(file: string): T {
-  return new Proxy({} as Record<string | symbol, unknown>, {
-    get(_target, key) {
-      delete require.cache[file];
-      return (require(file) as Record<string | symbol, unknown>)[key];
-    },
-  }) as T;
-}
-const controller: Record<
-  'findExperiences' | 'issueLink' | 'listRequests' | 'decide',
-  Handler
-> = freshModule(
-  require.resolve('../../server/controllers/admin.experience-changes.server.controller.mts'),
+// Load the controller on first use, inside a test, so that test covers (and
+// can kill) mutants in its module-level constants.
+const controller = new Proxy(
+  {} as Record<
+    'findExperiences' | 'issueLink' | 'listRequests' | 'decide',
+    Handler
+  >,
+  {
+    get: (_target, key) =>
+      require('../../server/controllers/admin.experience-changes.server.controller.mts')[
+        key
+      ],
+  },
 );
 
 type Body = Record<string, unknown> & { message?: string };
@@ -189,28 +187,22 @@ describe('Admin Experience changes controller', () => {
 
     it('explains invalid, missing and unrelated targets', async () => {
       const id = String(experience._id);
-      const invalid = await call(controller.issueLink, {
-        params: { id },
-        body: { memberId: 'not-an-id' },
-      });
-      assert.equal(invalid.statusCode, 400);
-      assert.deepEqual(invalid.body, {
-        message: 'Invalid Experience or member.',
-      });
-      const missing = await call(controller.issueLink, {
-        params: { id: String(new mongoose.Types.ObjectId()) },
-        body: { memberId: String(author._id) },
-      });
-      assert.equal(missing.statusCode, 404);
-      assert.deepEqual(missing.body, { message: 'Experience not found.' });
-      const unrelated = await call(controller.issueLink, {
-        params: { id },
-        body: { memberId: String(other._id) },
-      });
-      assert.equal(unrelated.statusCode, 400);
-      assert.deepEqual(unrelated.body, {
-        message: 'Member is not part of this Experience.',
-      });
+      for (const [target, memberId, statusCode, message] of [
+        [id, 'not-an-id', 400, 'Invalid Experience or member.'],
+        [
+          String(new mongoose.Types.ObjectId()),
+          String(author._id),
+          404,
+          'Experience not found.',
+        ],
+        [id, String(other._id), 400, 'Member is not part of this Experience.'],
+      ] as const) {
+        const result = await call(controller.issueLink, {
+          params: { id: target },
+          body: { memberId },
+        });
+        assert.deepEqual(result, { statusCode, body: { message } });
+      }
     });
 
     it('refuses a support member a link for their own Experience', async () => {

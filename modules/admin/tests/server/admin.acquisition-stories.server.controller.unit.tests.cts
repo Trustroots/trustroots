@@ -807,8 +807,8 @@ describe('Admin acquisition stories controller edge cases', () => {
       users[0].username = 'sharedclue';
       users[0].roles = ['user', 'shadowban'];
       users[0].acquisitionStory = 'A restricted member story.';
-      // Shares the identifier, but is not restricted.
-      users[1].username = 'sharedcluefriend';
+      // Part of the story's identifier, but not restricted.
+      users[1].username = 'cluecopy';
       users[2].username = 'sharedcluecopy';
       users[2].acquisitionStory = 'An active member story.';
       await utils.saveUsersWithCachedPasswords(users);

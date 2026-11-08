@@ -35,6 +35,7 @@ type Populated = { _id: string; username: string; displayName: string };
 
 const INVALID_ID = errorService.getErrorMessageByKey('invalid-id');
 const NOT_FOUND = errorService.getErrorMessageByKey('not-found');
+const error = new Error('lookup failed');
 const DEFAULT_ERROR =
   'Snap! Something went wrong. If this keeps happening, please contact us.';
 
@@ -298,26 +299,6 @@ describe('Admin users controller with stored members', () => {
         .potentialMatches.map(match => [match.username, match.matchReasons])
         .should.deepEqual([['river-stone2', ['Username identifier']]]);
     });
-
-    it('logs and reports failures to load a member', async () => {
-      const logged: LogEntry[] = [];
-      const controller = loadWithLogger(logged);
-      const error = new Error('lookup failed');
-      sinon.stub(User, 'findById').throws(error);
-      const res = mockResponse();
-      await controller.getUser(
-        { body: { id: new mongoose.Types.ObjectId().toString() } },
-        res,
-      );
-      expectMessage(res, 400, DEFAULT_ERROR);
-      should(logged).deepEqual([
-        {
-          level: 'error',
-          message: 'Failed to load member in admin tool. #ggi323',
-          detail: { error },
-        },
-      ]);
-    });
   });
 
   describe('findPotentialMatches', () => {
@@ -500,26 +481,6 @@ describe('Admin users controller with stored members', () => {
           ['staff-c', []],
         ]);
     });
-
-    it('logs failures to load blockers', async () => {
-      const logged: LogEntry[] = [];
-      const controller = loadWithLogger(logged);
-      const error = new Error('lookup failed');
-      sinon.stub(User, 'find').throws(error);
-      const res = mockResponse();
-      await controller.listStaffBlockers(
-        { user: { _id: new mongoose.Types.ObjectId(), roles: ['admin'] } },
-        res,
-      );
-      expectMessage(res, 400, DEFAULT_ERROR);
-      should(logged).deepEqual([
-        {
-          level: 'error',
-          message: 'Failed to load members who blocked staff.',
-          detail: { error },
-        },
-      ]);
-    });
   });
 
   describe('changeRole', () => {
@@ -562,63 +523,28 @@ describe('Admin users controller with stored members', () => {
     });
 
     it('replaces only the conflicting role and describes the change', async () => {
-      const cases: Array<
-        [string[], string, string | undefined, string[], string]
-      > = [
-        [
-          ['user', 'volunteer-alumni', 'welcome-team'],
-          'volunteer',
-          undefined,
-          ['user', 'welcome-team', 'volunteer'],
-          'User made into volunteer.',
-        ],
-        [
-          ['user', 'volunteer'],
-          'volunteer-alumni',
-          'add',
-          ['user', 'volunteer-alumni'],
-          'User made into volunteer-alumni.',
-        ],
-        [
-          ['user', 'suspended', 'volunteer'],
-          'shadowban',
-          'add',
-          ['user', 'volunteer', 'shadowban'],
-          'User shadowbanned.',
-        ],
-        [
-          ['user', 'volunteer-alumni', 'shadowban'],
-          'support-team',
-          'add',
-          ['user', 'volunteer-alumni', 'shadowban', 'support-team'],
-          'Role "support-team" added.',
-        ],
-        [
-          ['user', 'volunteer', 'suspended'],
-          'welcome-team',
-          'add',
-          ['user', 'volunteer', 'suspended', 'welcome-team'],
-          'Role "welcome-team" added.',
-        ],
-        [
-          ['user', 'welcome-team'],
-          'welcome-team',
-          'remove',
-          ['user'],
-          'Role "welcome-team" removed.',
-        ],
-        [
-          ['user', 'shadowban'],
-          'shadowban',
-          'remove',
-          ['user'],
-          'User unshadowbanned.',
-        ],
-      ];
-      for (const [roles, role, verb, expected, message] of cases) {
-        const { res, saved, note } = await change(roles, role, verb);
+      // Roles besides 'user' before | role | action | roles after | note
+      for (const line of [
+        'volunteer-alumni welcome-team | volunteer | - | welcome-team volunteer | User made into volunteer.',
+        'volunteer | volunteer-alumni | add | volunteer-alumni | User made into volunteer-alumni.',
+        'suspended volunteer | shadowban | add | volunteer shadowban | User shadowbanned.',
+        'volunteer-alumni shadowban | support-team | add | volunteer-alumni shadowban support-team | Role "support-team" added.',
+        'volunteer suspended | welcome-team | add | volunteer suspended welcome-team | Role "welcome-team" added.',
+        'welcome-team | welcome-team | remove |  | Role "welcome-team" removed.',
+        'shadowban | shadowban | remove |  | User unshadowbanned.',
+      ]) {
+        const [before, role, verb, after, message] = line.split(' | ');
+        const roles = (list: string) => [
+          'user',
+          ...list.split(' ').filter(Boolean),
+        ];
+        const { res, saved, note } = await change(
+          roles(before),
+          role,
+          verb === '-' ? undefined : verb,
+        );
         should(res.body).deepEqual({ message: 'Role changed.' });
-        saved.roles.should.deepEqual(expected);
+        saved.roles.should.deepEqual(roles(after));
         saved.authVersion!.should.equal(1);
         saved.public!.should.equal(true);
         saved.newsletter!.should.equal(true);
@@ -670,30 +596,6 @@ describe('Admin users controller with stored members', () => {
         stub.restore();
       }
     });
-
-    it('logs failures to change a role', async () => {
-      const logged: LogEntry[] = [];
-      const controller = loadWithLogger(logged);
-      const member = await insertUser();
-      const error = new Error('save failed');
-      sinon.stub(AdminNote.prototype, 'save').rejects(error);
-      const res = mockResponse();
-      await controller.changeRole(
-        {
-          body: { id: String(member._id), role: 'welcome-team' },
-          user: adminUser,
-        },
-        res,
-      );
-      expectMessage(res, 400, DEFAULT_ERROR);
-      should(logged).deepEqual([
-        {
-          level: 'error',
-          message: 'Failed to update member in admin tool. #ggi323',
-          detail: { error },
-        },
-      ]);
-    });
   });
 
   describe('usernameToUserId', () => {
@@ -710,6 +612,9 @@ describe('Admin users controller with stored members', () => {
 
     it('accepts usernames up to the account identifier limit', async () => {
       await insertUser();
+      // An account without a username must not match a missing one.
+      await User.collection.insertOne({ email: 'nameless@example.test' });
+      should((await resolve(undefined)).req.userIdFromUsername).be.undefined();
       const longest = await resolve('x'.repeat(320));
       longest.nextCalled.should.equal(true);
       should(longest.req.userIdFromUsername).be.undefined();
@@ -718,5 +623,105 @@ describe('Admin users controller with stored members', () => {
       tooLong.nextCalled.should.equal(false);
       expectMessage(tooLong.res, 400, 'Invalid username.');
     });
+  });
+
+  // Each call loads a fresh copy of the controller inside the running test, so
+  // these tests also cover (and can kill) mutants in its module-level values.
+  describe('with a fresh copy of the controller', () => {
+    it('lists, profiles and matches members with the documented fields', async () => {
+      const controller = loadWithLogger([]);
+      const listed = ['_id', 'created', 'displayName', 'email'];
+      listed.push('emailTemporary', 'lastIpHash', 'public', 'roles');
+      listed.push('removeProfileExpires', 'removeProfileToken');
+      listed.push('resetPasswordExpires', 'resetPasswordToken', 'username');
+      const fields = {
+        lastIpHash: 'a'.repeat(64),
+        removeProfileExpires: new Date(),
+        removeProfileToken: 'remove',
+        resetPasswordExpires: new Date(),
+        resetPasswordToken: 'reset',
+      };
+      const suspended = await insertUser({
+        ...fields,
+        username: 'fieldfox',
+        roles: ['user', 'suspended'],
+      });
+      await insertUser({ ...fields, username: 'fieldfox-2' });
+      const res = mockResponse();
+      await controller.searchUsers({ body: { search: 'fieldfox' } }, res);
+      const list = plain<{ users: ListedUser[]; sort: unknown }>(res);
+      should(list.sort).deepEqual({
+        column: 'username',
+        direction: 'ascending',
+      });
+      list.users
+        .map(user => user.username)
+        .should.deepEqual(['fieldfox', 'fieldfox-2']);
+      for (const user of list.users)
+        Object.keys(user).sort().should.deepEqual(listed.sort());
+
+      const profile = mockResponse();
+      await controller.getUser(
+        { body: { id: String(suspended._id) } },
+        profile,
+      );
+      const body = plain<
+        Record<string, unknown> & { potentialMatches: Match[] }
+      >(profile);
+      const none = {
+        total: 0,
+        positive: 0,
+        negative: 0,
+        neutral: 0,
+        unpublished: 0,
+      };
+      should(body.experiencesReceived).deepEqual(none);
+      should(body.experiencesWritten).deepEqual(none);
+      Object.keys(body.potentialMatches[0])
+        .sort()
+        .should.deepEqual(
+          [...listed, 'acquisitionStory', 'matchReasons'].sort(),
+        );
+    });
+
+    const adminUser = { _id: new mongoose.Types.ObjectId(), roles: ['admin'] };
+    for (const [name, message, fail, request] of [
+      [
+        'getUser',
+        'Failed to load member in admin tool. #ggi323',
+        () => sinon.stub(User, 'findById').throws(error),
+        async () => ({ body: { id: String(new mongoose.Types.ObjectId()) } }),
+      ],
+      [
+        'listStaffBlockers',
+        'Failed to load members who blocked staff.',
+        () => sinon.stub(User, 'find').throws(error),
+        async () => ({ user: adminUser }),
+      ],
+      [
+        'changeRole',
+        'Failed to update member in admin tool. #ggi323',
+        () => sinon.stub(AdminNote.prototype, 'save').rejects(error),
+        async () => ({
+          body: { id: String((await insertUser())._id), role: 'welcome-team' },
+          user: adminUser,
+        }),
+      ],
+    ] as const) {
+      it(`${name} logs and reports failures`, async () => {
+        const logged: LogEntry[] = [];
+        const controller = loadWithLogger(logged);
+        const req = await request();
+        fail();
+        const res = mockResponse();
+        await (
+          controller[name] as (req: unknown, res: unknown) => Promise<unknown>
+        )(req, res);
+        expectMessage(res, 400, DEFAULT_ERROR);
+        should(logged).deepEqual([
+          { level: 'error', message, detail: { error } },
+        ]);
+      });
+    }
   });
 });

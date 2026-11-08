@@ -114,20 +114,16 @@ describe('SparkPost diagnostics service', () => {
       assert.equal(get.callCount, 0);
     });
 
-    it('counts whole UTC days up to now and reports provider complaints', async () => {
+    it('counts whole UTC days up to now and reads provider metrics', async () => {
       await mongoose.connection.collection('users').insertMany([
-        // Early on the first day of the period.
-        {
-          username: 'early',
-          email: 'early@example.test',
-          created: new Date('2026-10-25T01:00:00Z'),
-        },
-        // Later today, after `now`.
-        {
-          username: 'later',
-          email: 'later@example.test',
-          created: new Date('2026-10-31T13:00:00Z'),
-        },
+        // Early on the first day of the period, and later today after `now`.
+        ...['2026-10-25T01:00:00Z', '2026-10-31T13:00:00Z'].map(
+          (created, index) => ({
+            username: `member${index}`,
+            email: `member${index}@example.test`,
+            created: new Date(created),
+          }),
+        ),
       ]);
       get.resolves({
         data: {
@@ -143,42 +139,15 @@ describe('SparkPost diagnostics service', () => {
           ],
         },
       });
-      const { rows } = await diagnostics.overview(7, now);
-      assert.equal(rows[6].date, '2026-10-25');
-      assert.equal(rows[6].signups, 1);
-      assert.equal(rows[0].date, '2026-10-31');
-      assert.equal(rows[0].signups, 0);
-      assert.equal(rows[1].complaints, 2);
-    });
-  });
-
-  describe('provider response schemas', () => {
-    // The schemas are built when the module loads, so load a fresh copy.
-    function freshDiagnostics(): typeof diagnostics {
-      const path =
-        require.resolve('../../server/services/sparkpost.server.service.mts');
-      delete require.cache[path];
-      return require(path);
-    }
-    const now = new Date('2026-10-31T12:00:00.000Z');
-
-    it('reads provider metrics', async () => {
-      get.resolves({
-        data: {
-          results: [
-            {
-              ts: '2026-10-30T00:00:00Z',
-              count_sent: 5,
-              count_delivered: 4,
-              count_bounce: 1,
-              count_unique_confirmed_opened: 3,
-              count_spam_complaint: 2,
-            },
-          ],
-        },
-      });
-      const { provider, rows } = await freshDiagnostics().overview(7, now);
+      const { provider, rows } = await diagnostics.overview(7, now);
       assert.equal(provider, 'ready');
+      assert.deepEqual(
+        [rows[6], rows[0]].map(row => [row.date, row.signups]),
+        [
+          ['2026-10-25', 1],
+          ['2026-10-31', 0],
+        ],
+      );
       assert.deepEqual(rows[1], {
         date: '2026-10-30',
         signups: 0,
@@ -190,81 +159,34 @@ describe('SparkPost diagnostics service', () => {
         complaints: 2,
       });
     });
-
-    it('fills in missing event fields and pages up to 100 events', async () => {
-      get.resolves({
-        data: {
-          results: [{ timestamp: '2026-10-30T13:00:00Z', type: 'open' }],
-        },
-      });
-      const fresh = freshDiagnostics();
-      assert.deepEqual(await fresh.events('2026-10-30', now), {
-        date: '2026-10-30',
-        capped: false,
-        events: [
-          {
-            timestamp: '2026-10-30T13:00:00Z',
-            type: 'open',
-            campaign: '',
-            recipientDomain: '',
-            messageId: '',
-            subject: '',
-            recipient: '',
-          },
-        ],
-      });
-      get.resolves({
-        data: {
-          results: Array.from({ length: 101 }, () => ({
-            timestamp: '2026-10-30T13:00:00Z',
-            type: 'open',
-          })),
-        },
-      });
-      await assert.rejects(fresh.events('2026-10-30', now));
-    });
   });
 
   describe('events', () => {
     const now = new Date('2026-10-31T12:00:00.000Z');
 
-    it('matches each event to exactly one current account', async () => {
+    it('matches each event to exactly one current account and fills in missing fields', async () => {
       const created = new Date('2026-01-01T00:00:00.000Z');
-      await mongoose.connection.collection('users').insertMany([
-        {
-          username: 'publicmember',
-          email: 'public@example.test',
+      await mongoose.connection.collection('users').insertMany(
+        [
+          ['publicmember', 'public@example.test', undefined, true],
+          // No pending address at all.
+          ['privatemember', 'private@example.test', undefined, false],
+          ['sharedemail', 'shared@example.test', undefined, true],
+          [
+            'sharedtemporary',
+            'other@example.test',
+            'shared@example.test',
+            false,
+          ],
+          ['nopending', 'unrelated@example.test', '', true],
+        ].map(([username, email, emailTemporary, isPublic]) => ({
+          username,
+          email,
+          ...(emailTemporary === undefined ? {} : { emailTemporary }),
           created,
-          public: true,
-        },
-        // No pending address at all.
-        {
-          username: 'privatemember',
-          email: 'private@example.test',
-          created,
-          public: false,
-        },
-        {
-          username: 'sharedemail',
-          email: 'shared@example.test',
-          created,
-          public: true,
-        },
-        {
-          username: 'sharedtemporary',
-          email: 'other@example.test',
-          emailTemporary: 'shared@example.test',
-          created,
-          public: false,
-        },
-        {
-          username: 'nopending',
-          email: 'unrelated@example.test',
-          emailTemporary: '',
-          created,
-          public: true,
-        },
-      ]);
+          public: isPublic,
+        })),
+      );
       const event = (rcpt: string) => ({
         timestamp: '2026-10-30T12:00:00Z',
         type: 'delivery',
@@ -293,50 +215,35 @@ describe('SparkPost diagnostics service', () => {
         to: '2026-10-31T00:00:00.000Z',
         per_page: '100',
       });
-      const account = (username: string, isPublic: boolean) => ({
-        username,
-        created: created.toISOString(),
-        public: isPublic,
+      const row = (
+        recipient: string,
+        username?: string,
+        isPublic?: boolean,
+      ) => ({
+        timestamp: '2026-10-30T12:00:00Z',
+        type: 'delivery',
+        campaign: 'confirm-email',
+        recipientDomain: 'example.test',
+        messageId: 'fictional-message',
+        subject: 'Fictional subject',
+        recipient,
+        ...(username
+          ? {
+              account: {
+                username,
+                created: created.toISOString(),
+                public: isPublic,
+              },
+            }
+          : {}),
       });
       assert.deepEqual(result, {
         date: '2026-10-30',
         capped: false,
         events: [
-          {
-            ...event('Public@Example.test'),
-            campaign_id: undefined,
-            recipient_domain: undefined,
-            message_id: undefined,
-            rcpt_to: undefined,
-            campaign: 'confirm-email',
-            recipientDomain: 'example.test',
-            messageId: 'fictional-message',
-            recipient: 'Public@Example.test',
-            account: account('publicmember', true),
-          },
-          {
-            ...event('private@example.test'),
-            campaign_id: undefined,
-            recipient_domain: undefined,
-            message_id: undefined,
-            rcpt_to: undefined,
-            campaign: 'confirm-email',
-            recipientDomain: 'example.test',
-            messageId: 'fictional-message',
-            recipient: 'private@example.test',
-            account: account('privatemember', false),
-          },
-          {
-            ...event('shared@example.test'),
-            campaign_id: undefined,
-            recipient_domain: undefined,
-            message_id: undefined,
-            rcpt_to: undefined,
-            campaign: 'confirm-email',
-            recipientDomain: 'example.test',
-            messageId: 'fictional-message',
-            recipient: 'shared@example.test',
-          },
+          row('Public@Example.test', 'publicmember', true),
+          row('private@example.test', 'privatemember', false),
+          row('shared@example.test'),
           {
             timestamp: '2026-10-30T13:00:00Z',
             type: 'open',
@@ -346,11 +253,7 @@ describe('SparkPost diagnostics service', () => {
             subject: '',
             recipient: '',
           },
-        ].map(row =>
-          Object.fromEntries(
-            Object.entries(row).filter(([, value]) => value !== undefined),
-          ),
-        ),
+        ],
       });
     });
 
@@ -371,10 +274,20 @@ describe('SparkPost diagnostics service', () => {
       assert.equal(get.firstCall.args[1].params.cursor, cursor);
       await assert.rejects(
         diagnostics.events('2026-10-30', now, cursor + 'c'),
-        {
-          message: 'Invalid event page.',
-        },
+        { message: 'Invalid event page.' },
       );
+    });
+
+    it('refuses provider pages of more than 100 events', async () => {
+      get.resolves({
+        data: {
+          results: Array.from({ length: 101 }, () => ({
+            timestamp: '2026-10-30T13:00:00Z',
+            type: 'open',
+          })),
+        },
+      });
+      await assert.rejects(diagnostics.events('2026-10-30', now));
     });
 
     it('refuses blank keys and unknown regions before calling the provider', async () => {

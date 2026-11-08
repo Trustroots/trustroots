@@ -183,6 +183,7 @@ function isChangeableRole(value: unknown): value is AdminChangeableRole {
 
 // Everything that's needed for `AdminSearchUsers.component.js` and `UserState.component.js`
 const USER_LIST_FIELDS = [
+  // Stryker disable next-line StringLiteral: Mongoose selects _id unless a projection excludes it
   '_id',
   'created',
   'displayName',
@@ -843,6 +844,7 @@ export const changeRole = async (
         ? current.roles
         : { $exists: false };
       const update: UpdateQuery<UserRecord> = { $set: { roles: nextRoles } };
+      // Stryker disable next-line ConditionalExpression: validation only lets 'add' through for 'suspended', so `action === 'add'` is always true here
       if (action === 'add' && role === 'suspended') {
         update.$set = { ...update.$set, newsletter: false, public: false };
       }
@@ -866,16 +868,19 @@ export const changeRole = async (
     }.`;
 
     // If adding role 'volunteer-alumni', remove 'volunteer' role
+    // Stryker disable next-line ConditionalExpression: validation only lets 'add' through for 'volunteer-alumni', so `action === 'add'` is always true here
     if (action === 'add' && role === 'volunteer-alumni') {
       roleChangeMessage = 'User made into volunteer-alumni.';
     }
 
     // If adding role 'volunteer', remove 'volunteer-alumni' role
+    // Stryker disable next-line ConditionalExpression: validation only lets 'add' through for 'volunteer', so `action === 'add'` is always true here
     if (action === 'add' && role === 'volunteer') {
       roleChangeMessage = 'User made into volunteer.';
     }
 
     // If adding role 'shadowban', remove 'suspended' role
+    // Stryker disable next-line ConditionalExpression: on removal the next check overwrites this message, so `action === 'add'` decides nothing
     if (action === 'add' && role === 'shadowban') {
       roleChangeMessage = 'User shadowbanned.';
     }
@@ -885,6 +890,7 @@ export const changeRole = async (
     }
 
     // If adding role 'suspended', remove 'shadowban' role
+    // Stryker disable next-line ConditionalExpression: validation only lets 'add' through for 'suspended', so `action === 'add'` is always true here
     if (action === 'add' && role === 'suspended') {
       roleChangeMessage = 'User suspended.';
     }
@@ -923,12 +929,11 @@ export const usernameToUserId = async (
   }
 
   // Get userID based on provided username
-  // Stryker disable next-line ConditionalExpression: an empty or missing username matches no account
   if (username) {
-    const user = await User.findOne({ username }).setOptions({
-      // Stryker disable next-line BooleanLiteral: username is checked to be a string above, so there is no query operator to sanitise
-      sanitizeFilter: true,
-    });
+    const user = await User.findOne({ username }).setOptions(
+      // Stryker disable next-line ObjectLiteral,BooleanLiteral: username is checked to be a string above, so there is no query operator to sanitise
+      { sanitizeFilter: true },
+    );
 
     if (user) {
       req.userIdFromUsername = user._id;

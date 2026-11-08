@@ -79,6 +79,7 @@ async function findScammerRecipients(
     error.statusCode = 400;
     throw error;
   }
+  // Stryker disable next-line MethodExpression: the username path has trim: true, which Mongoose also applies to query values
   const scammer = await User.findOne({ username: username.trim() }).exec();
   if (!scammer) {
     const error: WarningError = new Error('Member does not exist.');
@@ -237,6 +238,7 @@ export const sendScammerWarning = async (
         ];
       });
       try {
+        // Stryker disable next-line ObjectLiteral,BooleanLiteral: an ordered batch stops at a duplicate key (11000), and the catch then reruns every idempotent update unordered
         await Thread.bulkWrite(updates, { ordered: false });
       } catch (error) {
         if (

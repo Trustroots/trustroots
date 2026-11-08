@@ -314,26 +314,20 @@ describe('Admin notes controller unit tests', () => {
         utils.generateUsersWithSharedPassword(1),
       );
       const target = new mongoose.Types.ObjectId();
-      await AdminNote.create([
-        {
+      await AdminNote.create(
+        (
+          [
+            [target, 'older'],
+            [new mongoose.Types.ObjectId(), 'other user'],
+            [target, 'newer'],
+          ] as const
+        ).map(([user, note], day) => ({
           admin: admin._id,
-          user: target,
-          note: 'older',
-          date: new Date('2026-01-01T00:00:00Z'),
-        },
-        {
-          admin: admin._id,
-          user: new mongoose.Types.ObjectId(),
-          note: 'other user',
-          date: new Date('2026-01-02T00:00:00Z'),
-        },
-        {
-          admin: admin._id,
-          user: target,
-          note: 'newer',
-          date: new Date('2026-01-03T00:00:00Z'),
-        },
-      ]);
+          user,
+          note,
+          date: new Date(Date.UTC(2026, 0, day + 1)),
+        })),
+      );
 
       const res = await getNotesFor(target.toString());
 
