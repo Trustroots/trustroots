@@ -284,7 +284,10 @@ describe('Targeted request limit middleware', function () {
       getRequestIdentity({ params: { token: 123 } }, 'token'),
       undefined,
     );
-    assert.equal(getRequestIdentity({}, 'unknown'), undefined);
+    assert.equal(
+      getRequestIdentity({ params: { token: 'Token-Value' } }, 'unknown'),
+      undefined,
+    );
   });
 
   it('fails closed when the policy window is invalid', async function () {
