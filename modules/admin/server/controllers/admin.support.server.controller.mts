@@ -205,14 +205,17 @@ async function audit(req: SupportRequest): Promise<void> {
     user: req.user._id,
     route: req.route.path,
     params: req.params,
+    // A comment inside the method chain below is not a leading comment, so
+    // Stryker would not read it there.
+    // Stryker disable ConditionalExpression: saving the audit entry drops keys whose value is undefined
     query: {
       ...Object.fromEntries(
         // Stryker disable next-line MethodExpression: saving the audit entry drops keys whose value is undefined
         ['status', 'category', 'page']
-          // Stryker disable next-line ConditionalExpression: saving the audit entry drops keys whose value is undefined
           .filter(key => req.query[key] !== undefined)
           .map(key => [key, req.query[key]]),
       ),
+      // Stryker restore ConditionalExpression
       ...(req.query.q ? { hasSearch: true } : {}),
     },
     body: {

@@ -188,6 +188,7 @@ async function acquireSlugLock(slug: string) {
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'EEXIST') throw err;
       const age = await lockAge(file);
+      // Stryker disable next-line ConditionalExpression: `null > lockStaleMs` is false, so dropping the null check changes nothing
       if (age !== null && age > lockStaleMs) {
         await removeIfExists(file);
         continue;
