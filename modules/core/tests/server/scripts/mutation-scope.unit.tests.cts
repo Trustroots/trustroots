@@ -276,6 +276,54 @@ describe('mutation scope', () => {
     );
   });
 
+  it('splits a large module into shards of at most four source files', () => {
+    const sources = [
+      'a.server.service',
+      'b.server.service',
+      'c.server.service',
+      'd.server.service',
+      'e.server.service',
+      'f.server.service',
+      'g.server.service',
+      'h.server.service',
+      'i.server.service',
+    ].map(name => `modules/users/server/services/${name}.mts`);
+    // A CommonJS shim stays in the shard of the source it re-exports.
+    const shim = 'modules/users/server/services/d.server.service.mjs';
+    const shards = planFull(
+      [...sources, shim, 'modules/core/server/core.server.routes.mts'],
+      'full run',
+    );
+
+    assert.deepStrictEqual(names(shards), [
+      'core',
+      'users-1',
+      'users-2',
+      'users-3',
+    ]);
+    assert.deepStrictEqual(shards[1].files, [
+      ...sources.slice(0, 3),
+      shim,
+      sources[3],
+    ]);
+    assert.deepStrictEqual(shards[2].files, sources.slice(4, 8));
+    assert.deepStrictEqual(shards[3].files, sources.slice(8));
+    for (const shard of shards)
+      assert.deepStrictEqual(shard.reasons, ['full run']);
+
+    const scoped = planScope({
+      changes: [
+        { status: 'M', path: 'modules/users/tests/server/x.tests.cts' },
+      ],
+      files: sources,
+      read: () => undefined,
+    });
+    assert.deepStrictEqual(names(scoped), ['users-1', 'users-2', 'users-3']);
+    assert.deepStrictEqual(scoped[2].reasons, [
+      'server test changed: modules/users/tests/server/x.tests.cts',
+    ]);
+  });
+
   it('finds relative require, import and dynamic import specifiers', () => {
     assert.deepStrictEqual(
       relativeImports(

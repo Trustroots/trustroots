@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 // Decides which server source a mutation run should mutate, split into one
-// shard per module so CI can run them in parallel.
+// shard per module (large modules into several) so CI can run them in
+// parallel.
 //
 // Pull requests are mapped from their changed files:
 //
@@ -148,6 +149,37 @@ function importedSources(
   return found;
 }
 
+// A CI job has a time limit, and Stryker only saves its incremental results
+// when a run finishes, so a module whose run takes longer than the limit would
+// never get a result. Large modules are split into shards of at most this many
+// source files (a CommonJS .mjs shim counts with the .mts it re-exports).
+const MAX_SOURCES_PER_SHARD = 4;
+
+function splitShard(shard: Shard): Shard[] {
+  const sources = new Map<string, string[]>();
+  for (const file of shard.files) {
+    const stem = file.replace(/\.m[jt]s$/, '');
+    sources.set(stem, [...(sources.get(stem) ?? []), file]);
+  }
+  const groups = [...sources.values()];
+  if (groups.length <= MAX_SOURCES_PER_SHARD) return [shard];
+  const parts: Shard[] = [];
+  for (let start = 0; start < groups.length; start += MAX_SOURCES_PER_SHARD) {
+    parts.push({
+      name: `${shard.name}-${parts.length + 1}`,
+      files: groups.slice(start, start + MAX_SOURCES_PER_SHARD).flat(),
+      reasons: shard.reasons,
+    });
+  }
+  return parts;
+}
+
+function finish(shards: Shard[]): Shard[] {
+  return shards
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .flatMap(splitShard);
+}
+
 function planFull(files: string[], reason: string): Shard[] {
   const shards = new Map<string, Shard>();
   for (const file of files.filter(isMutable).sort()) {
@@ -156,7 +188,7 @@ function planFull(files: string[], reason: string): Shard[] {
     shard.files.push(file);
     shards.set(name, shard);
   }
-  return [...shards.values()].sort((a, b) => a.name.localeCompare(b.name));
+  return finish([...shards.values()]);
 }
 
 function planScope({ changes, files, read }: ScopeInput): Shard[] {
@@ -207,13 +239,13 @@ function planScope({ changes, files, read }: ScopeInput): Shard[] {
     }
   }
 
-  return [...shards.entries()]
-    .map(([name, shard]) => ({
+  return finish(
+    [...shards.entries()].map(([name, shard]) => ({
       name,
       files: [...shard.files].sort(),
       reasons: [...shard.reasons].sort(),
-    }))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    })),
+  );
 }
 
 function git(args: string[]): string {

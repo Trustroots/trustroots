@@ -6,7 +6,8 @@
 // covered). Static and ignored mutants and compile errors don't count.
 //
 // A suite's floor is either one number or { default, shards }, where shards
-// holds a floor per module (the shard names of scripts/mutation/server-scope.cts).
+// holds a floor per module (the shard names of scripts/mutation/server-scope.cts;
+// the parts of a split module share its floor).
 //
 //   node scripts/mutation/check-mutation-score.cts [--scope=server] [--shard=name] [--report=path]
 //   node scripts/mutation/check-mutation-score.cts --summary   (prints counts only)
@@ -86,7 +87,13 @@ if (shard && !scope) {
 }
 function floorFor(entry: Floor | undefined): number | undefined {
   if (entry === undefined || typeof entry === 'number') return entry;
-  return (shard ? entry.shards?.[shard] : undefined) ?? entry.default;
+  // A large module is split into shards named <module>-1, <module>-2, …;
+  // they share the module's floor.
+  const module = shard?.replace(/-\d+$/, '');
+  return (
+    (shard ? (entry.shards?.[shard] ?? entry.shards?.[module!]) : undefined) ??
+    entry.default
+  );
 }
 const floors = Object.fromEntries(
   suites.map(suite => [suite, floorFor(floorEntries[suite])]),

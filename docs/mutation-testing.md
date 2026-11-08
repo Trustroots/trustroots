@@ -30,7 +30,9 @@ affect:
 
 Each module is a shard, run in parallel and checked against its own floor in
 `tooling/baselines/mutation.json` (`server.shards`, falling back to
-`server.default`). Shards reuse the incremental results cached by the last run,
+`server.default`). A module with more than four source files is split into
+shards of four (`users-1`, `users-2`, …) that share its floor: a CI job has a
+time limit, and Stryker only saves its results when a run finishes. Shards reuse the incremental results cached by the last run,
 so only mutants whose code or covering tests changed are re-tested.
 
 The mapping can miss a test that reaches another module only over HTTP. The
