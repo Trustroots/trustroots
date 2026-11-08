@@ -65,7 +65,6 @@ function fallbackMessageId() {
 
 function headerText(value: unknown): string {
   if (typeof value === 'string') return value;
-  // Stryker disable next-line StringLiteral: mailparser only yields an array for repeated headers with non-empty values, so any separator gives a non-empty text that is neither "no" nor a structured value
   if (Array.isArray(value)) return value.join(', ');
   return String((value as { value?: unknown } | null | undefined)?.value ?? '');
 }
@@ -570,8 +569,10 @@ export async function pollSupportMailbox(
             ? internalDate
             : undefined;
         const withinRescan =
+          // Stryker disable next-line ConditionalExpression: with `rescanThroughUid !== undefined` forced true, an undefined boundary gives `item.uid <= undefined`, which is false just like the guarded expression
           rescanThroughUid !== undefined && item.uid <= rescanThroughUid;
         const reachesBoundary =
+          // Stryker disable next-line ConditionalExpression: with `rescanThroughUid !== undefined` forced true, an undefined boundary gives `item.uid >= undefined`, which is false just like the guarded expression
           rescanThroughUid !== undefined && item.uid >= rescanThroughUid;
         if (withinRescan && (!receivedAt || receivedAt < cursor.cutoverAt)) {
           await SupportMailboxCursor.updateOne(

@@ -23,38 +23,33 @@ const SupportRequest = mongoose.model('SupportRequest');
 const originalInbox = { ...config.supportInbox };
 
 type Body = Record<string, unknown>;
-type Reply = { statusCode: number; body: unknown; ended: Promise<void> };
+
+type Reply = {
+  statusCode: number;
+  body: unknown;
+  status(code: number): Reply;
+  send(body: unknown): Reply;
+  json(body: unknown): Reply;
+};
 
 function reply() {
-  let end!: () => void;
-  const result: Reply & {
-    status(code: number): typeof result;
-    send(body: unknown): typeof result;
-    json(body: unknown): typeof result;
-  } = {
+  const result: Reply = {
     statusCode: 200,
     body: undefined,
-    ended: new Promise<void>(resolve => {
-      end = resolve;
-    }),
     status(code) {
       result.statusCode = code;
       return result;
     },
     send(body) {
       result.body = body;
-      end();
       return result;
     },
-    json(body) {
-      result.body = body;
-      end();
-      return result;
-    },
+    json: body => result.send(body),
   };
   return result;
 }
 
+const GUEST = { message: 'Hi', email: 'guest@example.org' };
 const member = () => ({
   _id: new mongoose.Types.ObjectId(),
   username: 'reporter',
@@ -105,12 +100,17 @@ describe('Support controller behaviour', () => {
     return res;
   }
 
+  /** Asserts the response status code and its `{ message }` body. */
+  function answered(res: Reply, statusCode: number, message: string) {
+    assert.deepEqual(
+      { statusCode: res.statusCode, body: res.body },
+      { statusCode, body: { message } },
+    );
+  }
+
   it('explains why an unknown category was rejected', async () => {
     const res = await submit({ category: 'nonsense' });
-    assert.equal(res.statusCode, 400);
-    assert.deepEqual(res.body, {
-      message: 'Please select a valid support category.',
-    });
+    answered(res, 400, 'Please select a valid support category.');
   });
 
   it('keeps the whitespace of free text fields', async () => {
@@ -126,16 +126,16 @@ describe('Support controller behaviour', () => {
   });
 
   it('passes no build metadata when the app has none', async () => {
-    await submit({ message: 'Hi', email: 'guest@example.org' });
+    await submit(GUEST);
     assert.equal(email.firstCall.args[1].build, false);
-    await submit({ message: 'Hi', email: 'guest@example.org' }, undefined, {
+    await submit(GUEST, undefined, {
       app: { locals: { appSettings: {} } },
     });
     assert.equal(email.secondCall.args[1].build, false);
   });
 
   it('records the request in the stats with a count of one', async () => {
-    await submit({ message: 'Hi', email: 'guest@example.org' });
+    await submit(GUEST);
     assert.deepEqual(stat.firstCall.args[0], {
       namespace: 'supportRequest',
       counts: { count: 1 },
@@ -150,75 +150,52 @@ describe('Support controller behaviour', () => {
   });
 
   describe('reporting a member', () => {
-    function findMember(result: unknown) {
-      return sinon.stub(User, 'findOne').returns({
-        select: sinon.stub().resolves(result),
-      } as never);
+    function findMember(select: () => Promise<unknown>) {
+      return sinon.stub(User, 'findOne').returns({ select } as never);
     }
+    const report = (reportMember: unknown, reporter = member()) =>
+      submit(
+        { category: 'reportMember', reportMember, message: 'Hi' },
+        reporter,
+      );
+    const OTHER = 'Select another existing member to report.';
 
     it('requires the signed-in reporter to name a member', async () => {
-      const find = findMember(null);
+      const find = findMember(async () => null);
       for (const reportMember of [5, true, ['someone'], '', '   \n']) {
-        const res = await submit(
-          { category: 'reportMember', reportMember, message: 'Hi' },
-          member(),
-        );
-        assert.equal(res.statusCode, 400, JSON.stringify(reportMember));
-        assert.deepEqual(res.body, { message: 'Select a member to report.' });
+        const res = await report(reportMember);
+        answered(res, 400, 'Select a member to report.');
       }
       assert.equal(find.callCount, 0);
       assert.equal(saved.length, 0);
     });
 
     it('looks the member up by trimmed lowercase username', async () => {
-      const target = { _id: new mongoose.Types.ObjectId() };
-      const find = findMember({ ...target, equals: () => false });
-      const res = await submit(
-        { category: 'reportMember', reportMember: ' SomeOne ', message: 'Hi' },
-        member(),
-      );
-      assert.equal(res.statusCode, 200);
+      const target = {
+        _id: new mongoose.Types.ObjectId(),
+        equals: () => false,
+      };
+      const find = findMember(async () => target);
+      assert.equal((await report(' SomeOne ')).statusCode, 200);
       assert.deepEqual(find.firstCall.args[0], { username: 'someone' });
     });
 
     it('reports a failed member lookup as a server error', async () => {
-      sinon.stub(User, 'findOne').returns({
-        select: sinon.stub().rejects(new Error('lookup failed')),
-      } as never);
-      const res = await submit(
-        { category: 'reportMember', reportMember: 'someone', message: 'Hi' },
-        member(),
-      );
-      assert.equal(res.statusCode, 500);
-      assert.deepEqual(res.body, {
-        message: 'Unable to verify the reported member.',
-      });
+      findMember(sinon.stub().rejects(new Error('lookup failed')));
+      const res = await report('someone');
+      answered(res, 500, 'Unable to verify the reported member.');
       assert.equal(saved.length, 0);
     });
 
     it('rejects unknown members and the reporter themselves', async () => {
       const reporter = member();
-      findMember(null);
-      const unknown = await submit(
-        { category: 'reportMember', reportMember: 'ghost', message: 'Hi' },
-        reporter,
-      );
-      assert.equal(unknown.statusCode, 400);
-      assert.deepEqual(unknown.body, {
-        message: 'Select another existing member to report.',
-      });
+      findMember(async () => null);
+      const unknown = await report('ghost', reporter);
+      answered(unknown, 400, OTHER);
       sinon.restore();
-      sinon
-        .stub(User, 'findOne')
-        .returns({ select: async () => ({ _id: reporter._id }) } as never);
-      const self = await submit(
-        { category: 'reportMember', reportMember: 'reporter', message: 'Hi' },
-        reporter,
-      );
-      assert.equal(self.statusCode, 400);
-      assert.deepEqual(self.body, {
-        message: 'Select another existing member to report.',
-      });
+      findMember(async () => ({ _id: reporter._id }));
+      const self = await report('reporter', reporter);
+      answered(self, 400, OTHER);
     });
   });
 
@@ -234,11 +211,12 @@ describe('Support controller behaviour', () => {
         .rejects(new Error('database down'));
       const logged = sinon.stub(winston.Logger.prototype, 'log');
       const sent = sinon.stub(emailService, 'sendSupportRequest');
-      const res = await submit({ message: 'Hi', email: 'guest@example.org' });
-      assert.equal(res.statusCode, 503);
-      assert.deepEqual(res.body, {
-        message: 'Unable to save your support request. Please try again.',
-      });
+      const res = await submit(GUEST);
+      answered(
+        res,
+        503,
+        'Unable to save your support request. Please try again.',
+      );
       assert.ok(
         logged.calledWith(
           'error',
@@ -259,9 +237,8 @@ describe('Support controller behaviour', () => {
       });
 
       it('queues an acknowledgement and confirms the request', async () => {
-        const res = await submit({ message: 'Hi', email: 'guest@example.org' });
-        assert.equal(res.statusCode, 200);
-        assert.deepEqual(res.body, { message: 'Support request sent.' });
+        const res = await submit(GUEST);
+        answered(res, 200, 'Support request sent.');
         const stored = await SupportRequest.findOne().lean<{
           _id: unknown;
           email?: string;
@@ -278,8 +255,7 @@ describe('Support controller behaviour', () => {
 
       it('confirms a request without a usable email address without acknowledging it', async () => {
         const res = await submit({ message: 'Hi', email: 'not an email' });
-        assert.equal(res.statusCode, 200);
-        assert.deepEqual(res.body, { message: 'Support request sent.' });
+        answered(res, 200, 'Support request sent.');
         assert.equal(
           await mongoose.model('SupportMessage').countDocuments(),
           0,
@@ -290,12 +266,12 @@ describe('Support controller behaviour', () => {
 
     it('answers 503 when the acknowledgement cannot be queued', async () => {
       // The stubbed save stores nothing, so queueing the acknowledgement fails.
-      const res = await submit({ message: 'Hi', email: 'guest@example.org' });
-      assert.equal(res.statusCode, 503);
-      assert.deepEqual(res.body, {
-        message:
-          'Your request was saved but its acknowledgement could not be queued. Please contact support if necessary.',
-      });
+      const res = await submit(GUEST);
+      answered(
+        res,
+        503,
+        'Your request was saved but its acknowledgement could not be queued. Please contact support if necessary.',
+      );
       assert.ok(
         log.calledWith('error', 'Unable to queue support acknowledgement.'),
       );
@@ -308,11 +284,12 @@ describe('Support controller behaviour', () => {
     email.callsFake((_replyTo, _data, callback) =>
       callback(new Error('SMTP down')),
     );
-    const res = await submit({ message: 'Hi', email: 'guest@example.org' });
-    assert.equal(res.statusCode, 400);
-    assert.deepEqual(res.body, {
-      message: 'Failure while sending your support request. Please try again.',
-    });
+    const res = await submit(GUEST);
+    answered(
+      res,
+      400,
+      'Failure while sending your support request. Please try again.',
+    );
     assert.ok(
       log.calledWith(
         'error',

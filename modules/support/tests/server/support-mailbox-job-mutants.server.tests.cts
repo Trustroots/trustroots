@@ -29,6 +29,8 @@ const ORIGINAL_INBOX = {
 const CUTOVER_AT = new Date('2025-02-01T00:00:00.000Z');
 const FRESH = new Date('2025-03-01T00:00:00.000Z');
 const OLD = new Date('2025-01-01T00:00:00.000Z');
+const ITEM_DATE = '2025-02-15T00:00:00.000Z';
+const COMPLETED = 'Support mailbox poll completed #hK4tPq';
 
 function mimeMail(
   overrides: {
@@ -56,6 +58,23 @@ function mimeMail(
   ].join('\r\n');
 }
 
+const REPORT_HEAD = ['From: Visitor <visitor@example.org>', 'Subject: Report'];
+const DSN_TYPE = 'multipart/report; report-type=delivery-status';
+const TEXT_PART = 'Content-Type: text/plain\r\n\r\nA fictional report.';
+const statusPart = (body: string) =>
+  `Content-Type: message/delivery-status\r\n\r\n${body}`;
+
+/** A multipart message with boundary "b" built from whole parts. */
+function multipart(contentType: string, parts: string[], head = REPORT_HEAD) {
+  return [
+    ...head,
+    `Content-Type: ${contentType}; boundary="b"`,
+    '',
+    ...parts.flatMap(part => ['--b', part]),
+    '--b--',
+  ].join('\r\n');
+}
+
 async function parse(source: string | string[]) {
   return parseSupportMailSource(
     Readable.from(Array.isArray(source) ? source : [source]),
@@ -77,12 +96,43 @@ function item(overrides: Record<string, unknown> = {}) {
     uid: 11,
     size: 200,
     envelope: envelope(),
-    internalDate: new Date('2025-02-15T00:00:00.000Z'),
+    internalDate: new Date(ITEM_DATE),
     bodyStructure: { type: 'text/plain', childNodes: [] },
     headers: Buffer.from(''),
     ...overrides,
   };
 }
+
+/** A fetched item with this envelope Message-ID. */
+function itemWithId(
+  messageId: string,
+  overrides: Record<string, unknown> = {},
+) {
+  return item({ ...overrides, envelope: envelope({ messageId }) });
+}
+
+/** Matching fetched items (from UID 11) and sources for these messages. */
+function mails(
+  ...messages: Array<
+    [messageId: string, headers?: string[], envelopeExtra?: object]
+  >
+) {
+  return {
+    fetched: messages.map(([messageId, , envelopeExtra], index) =>
+      item({
+        uid: 11 + index,
+        envelope: envelope({ messageId, ...envelopeExtra }),
+      }),
+    ),
+    sources: messages.map(([messageId, headers]) =>
+      mimeMail({ messageId, headers }),
+    ),
+  };
+}
+
+const IN_REPLY_TO_ROOT = ['In-Reply-To: <root@example.org>'];
+const seedThread = (extra: Record<string, unknown> = {}) =>
+  seedRequest({ initialMessageId: '<root@example.org>', ...extra });
 
 /** A fetched item whose size exceeds the 1000 byte limit: no download. */
 function oversizedItem(overrides: Record<string, unknown> = {}) {
@@ -168,12 +218,23 @@ function stubLog() {
   >;
 }
 
+function loggedCompleted(
+  log: ReturnType<typeof stubLog>,
+  details: unknown = sinon.match.any,
+) {
+  return log.calledWith('info', COMPLETED, details);
+}
+
 async function poll(touch: () => Promise<void> = async () => undefined) {
   await new Promise<void>((resolve, reject) => {
     pollSupportMailbox({ attrs: {}, touch } as never, error =>
       error ? reject(error) : resolve(),
     );
   });
+}
+
+function pollFailsWith(error: Error, touch?: () => Promise<void>) {
+  return assert.rejects(poll(touch), caught => caught === error);
 }
 
 async function seedCursor(extra: Record<string, unknown> = {}) {
@@ -184,6 +245,14 @@ async function seedCursor(extra: Record<string, unknown> = {}) {
     cutoverAt: CUTOVER_AT,
     ...extra,
   });
+}
+
+/** Seeds the default cursor, mocks the mailbox and runs one poll. */
+async function pollWith(options: MockOptions = {}) {
+  await seedCursor();
+  const mock = mockMailbox(options);
+  await poll();
+  return mock;
 }
 
 async function seedRequest(extra: Record<string, unknown> = {}) {
@@ -198,9 +267,28 @@ async function seedRequest(extra: Record<string, unknown> = {}) {
   } as never)) as unknown as Doc;
 }
 
-async function requestFor(initialMessageId: string) {
-  return SupportRequest.findOne({ initialMessageId }).lean();
+function outbound(
+  request: Doc,
+  messageId: string,
+  extra: Record<string, unknown> = {},
+) {
+  return SupportMessage.create({
+    request: request._id,
+    direction: 'outbound',
+    body: 'A fictional reply.',
+    messageId,
+    deliveryState: 'accepted',
+    ...extra,
+  } as never);
 }
+
+const requestFor = (initialMessageId: string) =>
+  SupportRequest.findOne({ initialMessageId }).lean();
+const firstRequest = () => SupportRequest.findOne().lean();
+const messageCount = (filter: Record<string, unknown> = {}) =>
+  SupportMessage.countDocuments(filter);
+const cursorDoc = (id = 'support-inbox') => Cursor.findById(id).lean();
+const iso = (date: unknown) => (date as Date).toISOString();
 
 describe('support mailbox job mutation hardening', () => {
   before(async () => {
@@ -225,62 +313,35 @@ describe('support mailbox job mutation hardening', () => {
   });
 
   describe('parsing a downloaded message', () => {
-    it('only treats an Auto-Submitted value other than "no" as automated', async () => {
-      assert.equal(
-        (await parse(mimeMail({ headers: ['Auto-Submitted: no'] }))).automated,
-        false,
-      );
-      assert.equal(
-        (await parse(mimeMail({ headers: ['Auto-Submitted: No'] }))).automated,
-        false,
-      );
-      assert.equal(
-        (await parse(mimeMail({ headers: ['Auto-Submitted: auto-replied'] })))
-          .automated,
-        true,
-      );
-    });
-
-    it('treats a delivery-status multipart/report as automated, but not other reports or parameters', async () => {
-      const report = (contentType: string) =>
+    it('detects automated mail from Auto-Submitted, delivery-status reports and daemon senders', async () => {
+      const cases: Array<[string, boolean]> = [
+        // Only an Auto-Submitted value other than "no" counts.
+        [mimeMail({ headers: ['Auto-Submitted: no'] }), false],
+        [mimeMail({ headers: ['Auto-Submitted: No'] }), false],
+        [mimeMail({ headers: ['Auto-Submitted: auto-replied'] }), true],
+        // Only a delivery-status multipart/report counts.
+        [multipart(DSN_TYPE, [TEXT_PART]), true],
         [
-          'From: Visitor <visitor@example.org>',
-          'Subject: Report',
-          `Content-Type: ${contentType}; boundary="b"`,
-          '',
-          '--b',
-          'Content-Type: text/plain',
-          '',
-          'A fictional report.',
-          '--b--',
-        ].join('\r\n');
-      assert.equal(
-        (await parse(report('multipart/report; report-type=delivery-status')))
-          .automated,
-        true,
-      );
-      assert.equal(
-        (
-          await parse(
-            report('multipart/report; report-type=disposition-notification'),
-          )
-        ).automated,
-        false,
-      );
-      assert.equal((await parse(report('multipart/report'))).automated, false);
-      assert.equal(
-        (await parse(report('multipart/mixed; report-type=delivery-status')))
-          .automated,
-        false,
-      );
-    });
-
-    it('treats only postmaster and mailer-daemon senders as automated', async () => {
-      const from = async (address: string) =>
-        (await parse(mimeMail({ from: address }))).automated;
-      assert.equal(await from('postmaster@example.org'), true);
-      assert.equal(await from('MAILER-DAEMON@example.org'), true);
-      assert.equal(await from('notpostmaster@example.org'), false);
+          multipart('multipart/report; report-type=disposition-notification', [
+            TEXT_PART,
+          ]),
+          false,
+        ],
+        [multipart('multipart/report', [TEXT_PART]), false],
+        [
+          multipart('multipart/mixed; report-type=delivery-status', [
+            TEXT_PART,
+          ]),
+          false,
+        ],
+        // Only postmaster and mailer-daemon senders count.
+        [mimeMail({ from: 'postmaster@example.org' }), true],
+        [mimeMail({ from: 'MAILER-DAEMON@example.org' }), true],
+        [mimeMail({ from: 'notpostmaster@example.org' }), false],
+      ];
+      for (const [source, automated] of cases) {
+        assert.equal((await parse(source)).automated, automated, source);
+      }
     });
 
     it('takes the sender from the first From address and ignores a From without one', async () => {
@@ -303,94 +364,44 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('reads the reported Message-ID only from a whole Original-Message-ID line', async () => {
-      const dsn = (statusPart: string) =>
-        [
-          'From: Visitor <visitor@example.org>',
-          'Subject: Report',
-          'Content-Type: multipart/report; report-type=delivery-status; boundary="b"',
-          '',
-          '--b',
-          'Content-Type: text/plain',
-          '',
-          'A fictional report.',
-          '--b',
-          'Content-Type: message/delivery-status',
-          '',
-          statusPart,
-          '--b--',
-        ].join('\r\n');
-      assert.equal(
-        (
-          await parse(
-            dsn(
-              'Action: failed\r\nX-Original-Message-ID: <prefixed@example.org>',
-            ),
-          )
-        ).reportedMessageId,
-        undefined,
-      );
-      assert.equal(
-        (
-          await parse(
-            dsn(
-              'Action: failed\r\nOriginal-Message-ID: <trailing@example.org> junk',
-            ),
-          )
-        ).reportedMessageId,
-        undefined,
-      );
-      const spaced = await parse(
-        dsn(
-          'Original-Message-ID:   <spaced@example.org>   \r\nAction: failed\r\nX-End: 1',
-        ),
+      const dsn = (status: string) =>
+        parse(multipart(DSN_TYPE, [TEXT_PART, statusPart(status)]));
+      for (const status of [
+        'Action: failed\r\nX-Original-Message-ID: <prefixed@example.org>',
+        'Action: failed\r\nOriginal-Message-ID: <trailing@example.org> junk',
+      ]) {
+        assert.equal((await dsn(status)).reportedMessageId, undefined);
+      }
+      const spaced = await dsn(
+        'Original-Message-ID:   <spaced@example.org>   \r\nAction: failed\r\nX-End: 1',
       );
       assert.equal(spaced.reportedMessageId, '<spaced@example.org>');
       assert.equal(spaced.deliveryStatus, 'failed');
     });
 
     it('stops collecting a delivery status after 64 KiB and ignores other attachments', async () => {
-      const padding = (bytes: number) =>
-        `${'X-Pad: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n'.repeat(Math.ceil(bytes / 72))}`;
-      const head = [
-        'From: Visitor <visitor@example.org>',
-        'Subject: Report',
-        'Content-Type: multipart/report; report-type=delivery-status; boundary="b"',
-        '',
-        '--b',
-        'Content-Type: text/plain',
-        '',
-        'A fictional report.',
-        '--b',
-        'Content-Type: message/delivery-status',
-        '',
-      ].join('\r\n');
+      const padding = `${'X-Pad: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n'.repeat(Math.ceil(72_000 / 72))}`;
       // Small input chunks reach the collector as several output chunks, one
       // of which crosses the 64 KiB cap.
-      const parsed = await parse(
-        `${head}\r\n${padding(72_000)}Action: failed\r\n--b--\r\n`.match(
-          /[\s\S]{1,4096}/g,
-        ) as string[],
-      );
+      const source = `${multipart(DSN_TYPE, [TEXT_PART, statusPart(`${padding}Action: failed`)])}\r\n`;
+      const parsed = await parse(source.match(/[\s\S]{1,4096}/g) as string[]);
       assert.equal(parsed.deliveryStatus, undefined);
 
       const other = await parse(
-        [
-          'From: Visitor <visitor@example.org>',
-          'Subject: Not a report',
-          'Content-Type: multipart/mixed; boundary="b"',
-          '',
-          '--b',
-          'Content-Type: text/plain',
-          '',
-          'A fictional note.',
-          '--b',
-          'Content-Type: text/plain; name="notes.txt"',
-          'Content-Disposition: attachment; filename="notes.txt"',
-          '',
-          'Action: failed',
-          'Original-Message-ID: <not-a-report@example.org>',
-          '--b--',
-        ].join('\r\n'),
+        multipart(
+          'multipart/mixed',
+          [
+            'Content-Type: text/plain\r\n\r\nA fictional note.',
+            [
+              'Content-Type: text/plain; name="notes.txt"',
+              'Content-Disposition: attachment; filename="notes.txt"',
+              '',
+              'Action: failed',
+              'Original-Message-ID: <not-a-report@example.org>',
+            ].join('\r\n'),
+          ],
+          [REPORT_HEAD[0], 'Subject: Not a report'],
+        ),
       );
       assert.equal(other.deliveryStatus, undefined);
       assert.equal(other.reportedMessageId, undefined);
@@ -398,19 +409,19 @@ describe('support mailbox job mutation hardening', () => {
 
     it('keeps attachment metadata within its limits and leaves the body empty without a text part', async () => {
       const parsed = await parse(
-        [
-          'From: Visitor <visitor@example.org>',
-          'Subject: Only an attachment',
-          'Content-Type: multipart/mixed; boundary="b"',
-          '',
-          '--b',
-          `Content-Type: application/x-${'t'.repeat(200)}; name="${'f'.repeat(300)}.bin"`,
-          `Content-Disposition: attachment; filename="${'f'.repeat(300)}.bin"`,
-          'Content-Transfer-Encoding: base64',
-          '',
-          'cHJpdmF0ZS1jb250ZW50',
-          '--b--',
-        ].join('\r\n'),
+        multipart(
+          'multipart/mixed',
+          [
+            [
+              `Content-Type: application/x-${'t'.repeat(200)}; name="${'f'.repeat(300)}.bin"`,
+              `Content-Disposition: attachment; filename="${'f'.repeat(300)}.bin"`,
+              'Content-Transfer-Encoding: base64',
+              '',
+              'cHJpdmF0ZS1jb250ZW50',
+            ].join('\r\n'),
+          ],
+          [REPORT_HEAD[0], 'Subject: Only an attachment'],
+        ),
       );
       assert.equal(parsed.body, '');
       assert.equal(parsed.attachments.length, 1);
@@ -424,18 +435,17 @@ describe('support mailbox job mutation hardening', () => {
     it('does not connect unless both the support inbox and the mailbox are enabled', async () => {
       const mock = mockMailbox();
       const imap = config.supportInbox.imap;
-      config.supportInbox = {
-        ...config.supportInbox,
-        enabled: true,
-        imap: { ...imap, enabled: false },
-      };
-      await poll();
-      config.supportInbox = {
-        ...config.supportInbox,
-        enabled: false,
-        imap: { ...imap, enabled: true },
-      };
-      await poll();
+      for (const [enabled, imapEnabled] of [
+        [true, false],
+        [false, true],
+      ]) {
+        config.supportInbox = {
+          ...config.supportInbox,
+          enabled,
+          imap: { ...imap, enabled: imapEnabled },
+        };
+        await poll();
+      }
       assert.equal(mock.connect.called, false);
     });
 
@@ -455,7 +465,7 @@ describe('support mailbox job mutation hardening', () => {
         void mock.client().emit('error', error);
         return { content: Readable.from([mimeMail()]) };
       }) as never);
-      await assert.rejects(poll(), caught => caught === error);
+      await pollFailsWith(error);
       assert.equal(mock.close.callCount, 1);
       assert.equal(await SupportRequest.countDocuments(), 0);
     });
@@ -480,7 +490,7 @@ describe('support mailbox job mutation hardening', () => {
       mock.logout.callsFake((async () => {
         void mock.client().emit('error', error);
       }) as never);
-      await assert.rejects(poll(), caught => caught === error);
+      await pollFailsWith(error);
     });
 
     it('stops its heartbeat and fails the poll when the heartbeat cannot renew the lock', async () => {
@@ -513,20 +523,15 @@ describe('support mailbox job mutation hardening', () => {
         renewing = false;
         return { content: Readable.from([mimeMail()]) };
       }) as never);
-      await assert.rejects(
-        poll(async () => {
-          if (renewing) throw error;
-        }),
-        caught => caught === error,
-      );
+      await pollFailsWith(error, async () => {
+        if (renewing) throw error;
+      });
       assert.equal(await SupportRequest.countDocuments(), 0);
       assert.deepEqual(cleared, [handle]);
     });
 
-    it('connects over verified TLS with the configured credentials and no client logging', async () => {
-      await seedCursor();
-      const mock = mockMailbox();
-      await poll();
+    it('connects over verified TLS without client logging and requests the next UID range with the fields it reads', async () => {
+      const mock = await pollWith({ fetched: [item()] });
       const { host, port, user, password } = config.supportInbox.imap;
       assert.deepEqual(mock.client().options, {
         host,
@@ -536,12 +541,6 @@ describe('support mailbox job mutation hardening', () => {
         auth: { user, pass: password },
         logger: false,
       });
-    });
-
-    it('requests the next UID range with the fields the importer reads', async () => {
-      await seedCursor();
-      const mock = mockMailbox({ fetched: [item()] });
-      await poll();
       assert.deepEqual(mock.fetch.firstCall.args, [
         '11:*',
         {
@@ -567,11 +566,9 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('downloads a message whose size is exactly the limit instead of treating it as oversized', async () => {
-      await seedCursor();
-      const mock = mockMailbox({ fetched: [item({ size: 1000 })] });
-      await poll();
+      const mock = await pollWith({ fetched: [item({ size: 1000 })] });
       assert.equal(mock.download.callCount, 1);
-      const request = await SupportRequest.findOne().lean();
+      const request = await firstRequest();
       assert.equal(request?.oversized, false);
       assert.equal(
         request?.message,
@@ -591,7 +588,7 @@ describe('support mailbox job mutation hardening', () => {
           yield item({ uid: 12 });
         },
       });
-      await assert.rejects(poll(), caught => caught === error);
+      await pollFailsWith(error);
       assert.equal(resumed, false);
       assert.equal(await SupportRequest.countDocuments(), 0);
     });
@@ -605,35 +602,30 @@ describe('support mailbox job mutation hardening', () => {
           mock.client().emit('error', error);
         },
       });
-      await assert.rejects(poll(), caught => caught === error);
+      await pollFailsWith(error);
       assert.equal(mock.download.called, false);
       assert.equal(await SupportRequest.countDocuments(), 0);
-      assert.equal(
-        (await Cursor.findById('support-inbox').lean())?.lastUid,
-        10,
-      );
+      assert.equal((await cursorDoc())?.lastUid, 10);
     });
   });
 
   describe('rescanning after a UIDVALIDITY change', () => {
     // UIDNEXT 6 puts the rescan boundary at UID 5.
-    const sourceFor = (uid: number) =>
-      mimeMail({ messageId: `<rescan-${uid}@example.org>` });
     const rescanItem = (uid: number, internalDate: Date | undefined) =>
-      item({
-        uid,
-        internalDate,
-        envelope: envelope({ messageId: `<rescan-${uid}@example.org>` }),
-      });
-
-    async function rescan(items: Array<[number, Date | undefined]>) {
-      // Inserted first, so a cursor update that lost its filter would hit it.
-      await Cursor.create({
+      itemWithId(`<rescan-${uid}@example.org>`, { uid, internalDate });
+    const seedOtherCursor = () =>
+      Cursor.create({
         _id: 'other-cursor',
         uidValidity: '42',
         lastUid: 1,
         cutoverAt: CUTOVER_AT,
       });
+    const importedIds = async () =>
+      (await SupportRequest.find().lean()).map(r => r.initialMessageId).sort();
+
+    async function rescan(items: Array<[number, Date | undefined]>) {
+      // Inserted first, so a cursor update that lost its filter would hit it.
+      await seedOtherCursor();
       await seedCursor({ updatedAt: OLD });
       const mock = mockMailbox({
         uidValidity: '99',
@@ -641,11 +633,13 @@ describe('support mailbox job mutation hardening', () => {
         fetched: items.map(([uid, date]) => rescanItem(uid, date)),
       });
       mock.download.callsFake((async (uid: number) => ({
-        content: Readable.from([sourceFor(uid)]),
+        content: Readable.from([
+          mimeMail({ messageId: `<rescan-${uid}@example.org>` }),
+        ]),
       })) as never);
       await poll();
-      const cursor = await Cursor.findById('support-inbox').lean();
-      const other = await Cursor.findById('other-cursor').lean();
+      const cursor = await cursorDoc();
+      const other = await cursorDoc('other-cursor');
       assert.equal(other?.uidValidity, '42');
       assert.equal(other?.lastUid, 1);
       assert.equal(other?.rescanThroughUid, undefined);
@@ -708,16 +702,23 @@ describe('support mailbox job mutation hardening', () => {
         rescanThroughUid: 5,
         imported: ['<rescan-2@example.org>', '<rescan-3@example.org>'],
       },
+      {
+        name: 'keeps skipping old messages after importing a fresh one below the boundary',
+        items: [
+          [3, FRESH],
+          [4, OLD],
+        ],
+        lastUid: 4,
+        rescanThroughUid: 5,
+        imported: ['<rescan-3@example.org>'],
+      },
     ];
     for (const scenario of scenarios) {
       it(scenario.name, async () => {
         const cursor = await rescan(scenario.items);
         assert.equal(cursor?.lastUid, scenario.lastUid);
         assert.equal(cursor?.rescanThroughUid, scenario.rescanThroughUid);
-        const imported = (await SupportRequest.find().lean())
-          .map(request => request.initialMessageId)
-          .sort();
-        assert.deepEqual(imported, [...scenario.imported].sort());
+        assert.deepEqual(await importedIds(), [...scenario.imported].sort());
       });
     }
 
@@ -726,10 +727,7 @@ describe('support mailbox job mutation hardening', () => {
         [5, OLD],
         [4, OLD],
       ]);
-      assert.deepEqual(
-        (await SupportRequest.find().lean()).map(r => r.initialMessageId),
-        ['<rescan-4@example.org>'],
-      );
+      assert.deepEqual(await importedIds(), ['<rescan-4@example.org>']);
 
       await utils.clearDatabase();
       sinon.restore();
@@ -737,56 +735,32 @@ describe('support mailbox job mutation hardening', () => {
         [5, FRESH],
         [4, OLD],
       ]);
-      assert.deepEqual(
-        (await SupportRequest.find().lean())
-          .map(r => r.initialMessageId)
-          .sort(),
-        ['<rescan-4@example.org>', '<rescan-5@example.org>'],
-      );
+      assert.deepEqual(await importedIds(), [
+        '<rescan-4@example.org>',
+        '<rescan-5@example.org>',
+      ]);
     });
 
     it('records a skipped message in the cursor without a UIDVALIDITY change', async () => {
-      await Cursor.create({
-        _id: 'other-cursor',
-        uidValidity: '42',
-        lastUid: 1,
-        cutoverAt: CUTOVER_AT,
-      });
+      await seedOtherCursor();
       await seedCursor({ lastUid: 0, rescanThroughUid: 5, updatedAt: OLD });
       mockMailbox({ fetched: [rescanItem(2, OLD)] });
       await poll();
-      const cursor = await Cursor.findById('support-inbox').lean();
+      const cursor = await cursorDoc();
       assert.equal(cursor?.lastUid, 2);
       assert.equal(cursor?.rescanThroughUid, 5);
       assert.ok((cursor?.updatedAt as Date).getTime() > FRESH.getTime());
-      assert.equal((await Cursor.findById('other-cursor').lean())?.lastUid, 1);
+      assert.equal((await cursorDoc('other-cursor'))?.lastUid, 1);
     });
 
-    it('keeps skipping old messages after importing a fresh one below the boundary', async () => {
-      await rescan([
-        [3, FRESH],
-        [4, OLD],
-      ]);
-      assert.deepEqual(
-        (await SupportRequest.find().lean()).map(r => r.initialMessageId),
-        ['<rescan-3@example.org>'],
-      );
-    });
-
-    it('stamps the cursor when it imports a message', async () => {
+    it('imports an old message when no rescan is pending and stamps the cursor', async () => {
       await seedCursor({ updatedAt: OLD });
-      mockMailbox({ fetched: [item()] });
-      await poll();
-      const cursor = await Cursor.findById('support-inbox').lean();
-      assert.equal(cursor?.lastUid, 11);
-      assert.ok((cursor?.updatedAt as Date).getTime() > FRESH.getTime());
-    });
-
-    it('imports an old message when no rescan is pending', async () => {
-      await seedCursor();
       mockMailbox({ fetched: [item({ internalDate: OLD })] });
       await poll();
       assert.equal(await SupportRequest.countDocuments(), 1);
+      const cursor = await cursorDoc();
+      assert.equal(cursor?.lastUid, 11);
+      assert.ok((cursor?.updatedAt as Date).getTime() > FRESH.getTime());
     });
 
     it('counts rescanned and imported messages as processed', async () => {
@@ -795,36 +769,21 @@ describe('support mailbox job mutation hardening', () => {
         [1, OLD],
         [3, FRESH],
       ]);
-      assert.ok(
-        log.calledWith(
-          'info',
-          'Support mailbox poll completed #hK4tPq',
-          sinon.match({ processed: 2 }),
-        ),
-      );
+      assert.ok(loggedCompleted(log, sinon.match({ processed: 2 })));
     });
   });
 
   describe('messages above the size limit', () => {
     it('normalises Message-IDs from the envelope strictly', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [
-          oversizedItem({
-            uid: 11,
-            envelope: envelope({ messageId: '  <spaced@example.org>  ' }),
-          }),
-          oversizedItem({
-            uid: 12,
-            envelope: envelope({ messageId: 'x<inner@example.org' }),
-          }),
-          oversizedItem({
-            uid: 13,
-            envelope: envelope({ messageId: 'inner@example.org>y' }),
-          }),
-        ],
+          '  <spaced@example.org>  ',
+          'x<inner@example.org',
+          'inner@example.org>y',
+        ].map((messageId, index) =>
+          oversizedItem({ uid: 11 + index, envelope: envelope({ messageId }) }),
+        ),
       });
-      await poll();
       const requests = await SupportRequest.find().sort({ _id: 1 }).lean();
       assert.deepEqual(
         requests.map(request => request.initialMessageId),
@@ -837,8 +796,7 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('records attachment metadata for attachment and named parts only, within limits', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [
           oversizedItem({
             bodyStructure: {
@@ -878,40 +836,29 @@ describe('support mailbox job mutation hardening', () => {
           }),
         ],
       });
-      await poll();
-      const request = await SupportRequest.findOne().lean();
-      const attachments = (
-        request?.initialAttachments as Array<{
-          filename?: string;
-          contentType?: string;
-          size?: number;
-        }>
-      ).map(({ filename, contentType, size }) => ({
-        filename:
-          filename?.length && filename.length > 20 ? filename.length : filename,
-        contentType:
-          contentType && contentType.length > 20
-            ? contentType.length
-            : contentType,
-        size,
-      }));
+      const request = await firstRequest();
+      const attachments = (request?.initialAttachments as Doc[]).map(
+        ({ filename, contentType, size }) => ({ filename, contentType, size }),
+      );
       assert.deepEqual(attachments, [
         { filename: undefined, contentType: 'application/pdf', size: 5 },
         { filename: undefined, contentType: 'application/zip', size: 6 },
-        { filename: 255, contentType: 'image/png', size: 7 },
-        { filename: 'short.bin', contentType: 120, size: 9 },
+        { filename: 'n'.repeat(255), contentType: 'image/png', size: 7 },
+        {
+          filename: 'short.bin',
+          contentType: `application/x-${'t'.repeat(106)}`,
+          size: 9,
+        },
       ]);
     });
 
     it('has no attachments and no references when the server sent neither structure nor headers', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [
           oversizedItem({ bodyStructure: undefined, headers: Buffer.from('') }),
         ],
       });
-      await poll();
-      const request = await SupportRequest.findOne().lean();
+      const request = await firstRequest();
       assert.deepEqual(request?.initialAttachments, []);
       assert.deepEqual(request?.initialReferences, []);
       assert.equal(request?.oversized, true);
@@ -919,8 +866,7 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('keeps only valid References ids from the headers, across folded lines', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [
           oversizedItem({
             headers: Buffer.from(
@@ -929,43 +875,32 @@ describe('support mailbox job mutation hardening', () => {
           }),
         ],
       });
-      await poll();
-      const request = await SupportRequest.findOne().lean();
-      assert.deepEqual(request?.initialReferences, [
+      assert.deepEqual((await firstRequest())?.initialReferences, [
         '<valid@example.org>',
         '<folded@example.org>',
       ]);
     });
 
-    it('takes the subject from the envelope on one line', async () => {
-      await seedCursor();
-      mockMailbox({
-        fetched: [
-          oversizedItem({
-            envelope: envelope({ subject: 'First line\r\n\r\nSecond line' }),
-          }),
-        ],
-      });
-      await poll();
-      assert.equal(
-        (await SupportRequest.findOne().lean())?.subject,
+    const subjects: Array<[string, string, string]> = [
+      [
+        'takes the subject from the envelope on one line',
+        'First line\r\n\r\nSecond line',
         'First line Second line',
-      );
-    });
-
-    it('cuts a very long subject to 998 characters', async () => {
-      await seedCursor();
-      mockMailbox({
-        fetched: [
-          oversizedItem({ envelope: envelope({ subject: 'S'.repeat(1200) }) }),
-        ],
+      ],
+      [
+        'cuts a very long subject to 998 characters',
+        'S'.repeat(1200),
+        'S'.repeat(998),
+      ],
+    ];
+    for (const [name, subject, expected] of subjects) {
+      it(name, async () => {
+        await pollWith({
+          fetched: [oversizedItem({ envelope: envelope({ subject }) })],
+        });
+        assert.equal((await firstRequest())?.subject, expected);
       });
-      await poll();
-      assert.equal(
-        String((await SupportRequest.findOne().lean())?.subject).length,
-        998,
-      );
-    });
+    }
 
     describe('automated mail', () => {
       const automated: Array<[string, string, Record<string, unknown>?]> = [
@@ -995,8 +930,7 @@ describe('support mailbox job mutation hardening', () => {
       ];
       for (const [label, headers, envelopeOverrides] of automated) {
         it(`skips a message with ${label}`, async () => {
-          await seedCursor();
-          const mock = mockMailbox({
+          const mock = await pollWith({
             fetched: [
               oversizedItem({
                 headers: Buffer.from(`${headers}\r\n`),
@@ -1004,58 +938,52 @@ describe('support mailbox job mutation hardening', () => {
               }),
             ],
           });
-          await poll();
           assert.equal(await SupportRequest.countDocuments(), 0);
           assert.equal(mock.download.called, false);
-          assert.equal(
-            (await Cursor.findById('support-inbox').lean())?.lastUid,
-            11,
-          );
+          assert.equal((await cursorDoc())?.lastUid, 11);
         });
       }
 
-      const manual: Array<
-        [string, Buffer | undefined, Record<string, unknown>?]
-      > = [
+      const manual: Array<[string, string | undefined, string?]> = [
         ['no headers', undefined],
         [
           'an Auto-Submitted value of "no" without a space',
-          Buffer.from('Auto-Submitted:no'),
+          'Auto-Submitted:no',
         ],
         [
           'an Auto-Submitted value of "no" with trailing spaces',
-          Buffer.from('Auto-Submitted:no   '),
+          'Auto-Submitted:no   ',
         ],
         [
           'an Auto-Submitted value of "no" then a newline',
-          Buffer.from('Auto-Submitted:no\r\n'),
+          'Auto-Submitted:no\r\n',
         ],
-        ['an empty Auto-Submitted header', Buffer.from('Auto-Submitted:')],
+        ['an empty Auto-Submitted header', 'Auto-Submitted:'],
         [
           'a prefixed X-Auto-Submitted header',
-          Buffer.from('X-Auto-Submitted: auto-generated\r\n'),
+          'X-Auto-Submitted: auto-generated\r\n',
         ],
         [
           'a multipart/report that is not a delivery status',
-          Buffer.from(
-            'Content-Type: multipart/report; report-type=disposition-notification\r\n',
-          ),
+          'Content-Type: multipart/report; report-type=disposition-notification\r\n',
         ],
         [
           'a sender that merely ends in postmaster',
-          Buffer.from(''),
-          { from: [{ address: 'notpostmaster@example.org' }] },
+          '',
+          'notpostmaster@example.org',
         ],
       ];
-      for (const [label, headers, envelopeOverrides] of manual) {
+      for (const [label, headers, from] of manual) {
         it(`imports a message with ${label}`, async () => {
-          await seedCursor();
-          mockMailbox({
+          await pollWith({
             fetched: [
-              oversizedItem({ headers, envelope: envelope(envelopeOverrides) }),
+              oversizedItem({
+                headers:
+                  headers === undefined ? undefined : Buffer.from(headers),
+                envelope: envelope(from ? { from: [{ address: from }] } : {}),
+              }),
             ],
           });
-          await poll();
           assert.equal(await SupportRequest.countDocuments(), 1);
         });
       }
@@ -1063,14 +991,9 @@ describe('support mailbox job mutation hardening', () => {
 
     describe('thread headers', () => {
       async function replies(items: Array<Record<string, unknown>>) {
-        const thread = await seedRequest({
-          initialMessageId: '<root@example.org>',
-        });
-        await seedCursor();
-        mockMailbox({ fetched: items });
-        await poll();
+        const thread = await seedThread();
+        await pollWith({ fetched: items });
         return {
-          thread,
           attached: (await SupportMessage.find({ request: thread._id }).lean())
             .map(message => message.inboundKey)
             .sort(),
@@ -1081,36 +1004,27 @@ describe('support mailbox job mutation hardening', () => {
             .sort(),
         };
       }
-      const reply = (uid: number, overrides: Record<string, unknown>) =>
+      const reply = (uid: number, headers?: string, inReplyTo?: string) =>
         oversizedItem({
           uid,
-          ...overrides,
+          headers: headers === undefined ? undefined : Buffer.from(headers),
           envelope: envelope({
             messageId: `<thread-${uid}@example.org>`,
-            ...(overrides.envelope as object | undefined),
+            ...(inReplyTo && { inReplyTo }),
           }),
         });
 
       it('finds the In-Reply-To in the headers, the envelope, or neither', async () => {
         const result = await replies([
-          reply(11, {
-            headers: undefined,
-            envelope: { inReplyTo: '<root@example.org>' },
-          }),
-          reply(12, {
-            headers: Buffer.from('Subject: x\r\n'),
-            envelope: { inReplyTo: '<root@example.org>' },
-          }),
-          reply(13, {
-            headers: Buffer.from(
-              'Subject: x\r\nin-reply-to: <root@example.org>\r\n',
-            ),
-          }),
-          reply(14, {
-            headers: Buffer.from('In-Reply-To: <root@example.org>\r\n'),
-            envelope: { inReplyTo: '<other@example.org>' },
-          }),
-          reply(15, { headers: Buffer.from('Subject: x\r\n') }),
+          reply(11, undefined, '<root@example.org>'),
+          reply(12, 'Subject: x\r\n', '<root@example.org>'),
+          reply(13, 'Subject: x\r\nin-reply-to: <root@example.org>\r\n'),
+          reply(
+            14,
+            'In-Reply-To: <root@example.org>\r\n',
+            '<other@example.org>',
+          ),
+          reply(15, 'Subject: x\r\n'),
         ]);
         assert.deepEqual(result.attached, [
           '<thread-11@example.org>',
@@ -1123,9 +1037,7 @@ describe('support mailbox job mutation hardening', () => {
 
       it('does not join a folded header value into a new Message-ID', async () => {
         const result = await replies([
-          reply(11, {
-            headers: Buffer.from('In-Reply-To: <root@exam\r\n ple.org>\r\n'),
-          }),
+          reply(11, 'In-Reply-To: <root@exam\r\n ple.org>\r\n'),
         ]);
         assert.deepEqual(result.attached, []);
         assert.deepEqual(result.created, ['<thread-11@example.org>']);
@@ -1133,10 +1045,7 @@ describe('support mailbox job mutation hardening', () => {
 
       it('falls back to the envelope when the In-Reply-To header is empty', async () => {
         const result = await replies([
-          reply(11, {
-            headers: Buffer.from('In-Reply-To: \r\n\r\n'),
-            envelope: { inReplyTo: '<root@example.org>' },
-          }),
+          reply(11, 'In-Reply-To: \r\n\r\n', '<root@example.org>'),
         ]);
         assert.deepEqual(result.attached, ['<thread-11@example.org>']);
       });
@@ -1147,82 +1056,90 @@ describe('support mailbox job mutation hardening', () => {
     const NOTE = '\n[Message text truncated after 0 MiB]';
     const NOTE_BYTES = Buffer.byteLength(NOTE);
 
-    async function importBody(body: string, maxStoredBodyBytes?: number) {
-      await seedCursor();
-      mockMailbox({
-        maxStoredBodyBytes,
-        fetched: [item()],
-        sources: [mimeMail({ body })],
+    const cases: Array<{
+      name: string;
+      body: string;
+      limit?: number;
+      message: string;
+      truncated?: boolean;
+      oversized?: boolean;
+    }> = [
+      {
+        name: 'trims the text',
+        body: '  \r\n\r\n   padded text  \r\n',
+        message: 'padded text',
+      },
+      {
+        name: 'replaces a blank body with a placeholder',
+        body: '   \r\n  ',
+        message: '[Message body unavailable]',
+      },
+      {
+        name: 'stores a message that is exactly at the byte limit untruncated',
+        body: 'B'.repeat(50),
+        limit: 50,
+        message: 'B'.repeat(50),
+        truncated: false,
+        oversized: false,
+      },
+      {
+        name: 'cuts the text to the byte limit, leaving room for the truncation note',
+        body: 'B'.repeat(200),
+        limit: NOTE_BYTES + 20,
+        message: `${'B'.repeat(20)}${NOTE}`,
+        truncated: true,
+      },
+      {
+        name: 'never splits a surrogate pair when cutting',
+        body: `${'A'.repeat(40)}😀${'more '.repeat(30)}`,
+        limit: NOTE_BYTES + 43,
+        message: `${'A'.repeat(40)}${NOTE}`,
+      },
+      {
+        name: 'keeps a complete emoji that fits before the limit',
+        body: `😀${'C'.repeat(100)}`,
+        limit: NOTE_BYTES + 20,
+        message: `😀${'C'.repeat(16)}${NOTE}`,
+      },
+      {
+        name: 'keeps only the truncation note when the limit leaves no room for text',
+        body: 'B'.repeat(200),
+        limit: 10,
+        message: NOTE,
+      },
+    ];
+    for (const { name, body, limit, ...expected } of cases) {
+      it(name, async () => {
+        await pollWith({
+          maxStoredBodyBytes: limit,
+          fetched: [item()],
+          sources: [mimeMail({ body })],
+        });
+        const request = await firstRequest();
+        assert.equal(request?.message, expected.message);
+        if ('truncated' in expected) {
+          assert.equal(request?.truncated, expected.truncated);
+        }
+        if ('oversized' in expected) {
+          assert.equal(request?.oversized, expected.oversized);
+        }
       });
-      await poll();
-      return (await SupportRequest.findOne().lean()) as Doc;
     }
-
-    it('trims the text and replaces a blank body with a placeholder', async () => {
-      assert.equal(
-        (await importBody('  \r\n\r\n   padded text  \r\n')).message,
-        'padded text',
-      );
-      await utils.clearDatabase();
-      sinon.restore();
-      await Cursor.deleteMany({});
-      assert.equal(
-        (await importBody('   \r\n  ')).message,
-        '[Message body unavailable]',
-      );
-    });
-
-    it('stores a message that is exactly at the byte limit untruncated', async () => {
-      const request = await importBody('B'.repeat(50), 50);
-      assert.equal(request.message, 'B'.repeat(50));
-      assert.equal(request.truncated, false);
-      assert.equal(request.oversized, false);
-    });
-
-    it('cuts the text to the byte limit, leaving room for the truncation note', async () => {
-      const request = await importBody('B'.repeat(200), NOTE_BYTES + 20);
-      assert.equal(request.message, `${'B'.repeat(20)}${NOTE}`);
-      assert.equal(request.truncated, true);
-    });
-
-    it('never splits a surrogate pair when cutting', async () => {
-      const request = await importBody(
-        `${'A'.repeat(40)}😀${'more '.repeat(30)}`,
-        NOTE_BYTES + 43,
-      );
-      assert.equal(request.message, `${'A'.repeat(40)}${NOTE}`);
-    });
-
-    it('keeps a complete emoji that fits before the limit', async () => {
-      const request = await importBody(`😀${'C'.repeat(100)}`, NOTE_BYTES + 20);
-      assert.equal(request.message, `😀${'C'.repeat(16)}${NOTE}`);
-    });
-
-    it('keeps only the truncation note when the limit leaves no room for text', async () => {
-      const request = await importBody('B'.repeat(200), 10);
-      assert.equal(request.message, NOTE);
-    });
   });
 
   describe('senders and thread lookup', () => {
     it('ignores mail from the support address itself, in any case', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fromAddress: 'Support@Trustroots.org',
         fetched: [item({ envelope: envelope({ from: [] }) })],
         sources: [mimeMail({ from: 'Support <support@trustroots.org>' })],
       });
-      await poll();
       assert.equal(await SupportRequest.countDocuments(), 0);
-      assert.equal(
-        (await Cursor.findById('support-inbox').lean())?.lastUid,
-        11,
-      );
+      assert.equal((await cursorDoc())?.lastUid, 11);
     });
 
     it('ignores mail whose envelope address is the padded support address', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [
           oversizedItem({
             envelope: envelope({
@@ -1231,28 +1148,22 @@ describe('support mailbox job mutation hardening', () => {
           }),
         ],
       });
-      await poll();
       assert.equal(await SupportRequest.countDocuments(), 0);
     });
 
     it('prefers the From address over the envelope and trims envelope addresses', async () => {
-      await seedCursor();
-      mockMailbox({
+      const fromItem = (uid: number, name: string, address: string) =>
+        item({
+          uid,
+          envelope: envelope({
+            messageId: `<from-${name}@example.org>`,
+            from: [{ address }],
+          }),
+        });
+      await pollWith({
         fetched: [
-          item({
-            uid: 11,
-            envelope: envelope({
-              messageId: '<from-one@example.org>',
-              from: [{ address: 'envelope@example.org' }],
-            }),
-          }),
-          item({
-            uid: 12,
-            envelope: envelope({
-              messageId: '<from-two@example.org>',
-              from: [{ address: '  spaced@example.org  ' }],
-            }),
-          }),
+          fromItem(11, 'one', 'envelope@example.org'),
+          fromItem(12, 'two', '  spaced@example.org  '),
         ],
         sources: [
           mimeMail({
@@ -1265,7 +1176,6 @@ describe('support mailbox job mutation hardening', () => {
           }),
         ],
       });
-      await poll();
       assert.equal(
         (await requestFor('<from-one@example.org>'))?.email,
         'header@example.org',
@@ -1277,34 +1187,27 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('ignores an envelope without a From list when the message has no sender either', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [item({ envelope: { messageId: '<no-from@example.org>' } })],
         sources: [mimeMail({ from: 'undisclosed-recipients:;' })],
       });
-      await poll();
       assert.equal(await SupportRequest.countDocuments(), 0);
     });
 
     it('imports a message without an envelope, Message-ID, subject or thread headers', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [item({ envelope: undefined })],
         sources: [mimeMail({ subject: null, messageId: null })],
       });
-      await poll();
-      const request = await SupportRequest.findOne().lean();
+      const request = await firstRequest();
       assert.equal(request?.subject, 'Email support request');
       assert.equal(request?.initialMessageId, undefined);
       assert.equal(request?.initialInboundKey, 'imap:42:11');
     });
 
     it('attaches a reply found through References when there is no envelope, and stores no In-Reply-To', async () => {
-      await seedCursor();
-      const thread = await seedRequest({
-        initialMessageId: '<root@example.org>',
-      });
-      mockMailbox({
+      const thread = await seedThread();
+      await pollWith({
         fetched: [item({ envelope: undefined })],
         sources: [
           mimeMail({
@@ -1313,7 +1216,6 @@ describe('support mailbox job mutation hardening', () => {
           }),
         ],
       });
-      await poll();
       const reply = await SupportMessage.findOne({
         request: thread._id,
       }).lean();
@@ -1323,44 +1225,19 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('stores the In-Reply-To from the message, else from the envelope, and the incoming Message-ID', async () => {
-      await seedCursor();
-      const thread = await seedRequest({
-        initialMessageId: '<root@example.org>',
-      });
-      await SupportMessage.create({
-        request: thread._id,
-        direction: 'outbound',
-        body: 'A fictional earlier reply.',
-        messageId: '<earlier@example.org>',
-        deliveryState: 'accepted',
-      } as never);
-      const replyItem = (uid: number, inReplyTo?: string) =>
-        item({
-          uid,
-          envelope: envelope({
-            messageId: `<store-${uid}@example.org>`,
-            ...(inReplyTo && { inReplyTo }),
-          }),
-        });
-      mockMailbox({
-        fetched: [
-          replyItem(11),
-          replyItem(12, '<root@example.org>'),
-          replyItem(13, '<elsewhere@example.org>'),
-        ],
-        sources: [
-          mimeMail({
-            headers: ['In-Reply-To: <root@example.org>'],
-            messageId: '<store-11@example.org>',
-          }),
-          mimeMail({ messageId: '<store-12@example.org>' }),
-          mimeMail({
-            headers: ['In-Reply-To: <root@example.org>'],
-            messageId: '<store-13@example.org>',
-          }),
-        ],
-      });
-      await poll();
+      const thread = await seedThread();
+      await outbound(thread, '<earlier@example.org>');
+      await pollWith(
+        mails(
+          ['<store-11@example.org>', IN_REPLY_TO_ROOT],
+          ['<store-12@example.org>', [], { inReplyTo: '<root@example.org>' }],
+          [
+            '<store-13@example.org>',
+            IN_REPLY_TO_ROOT,
+            { inReplyTo: '<elsewhere@example.org>' },
+          ],
+        ),
+      );
       const stored = await SupportMessage.find({ direction: 'inbound' })
         .sort({ inboundKey: 1 })
         .lean();
@@ -1375,21 +1252,12 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('uses the domain after the last @ of the support address for fallback Message-IDs', async () => {
-      await seedCursor();
-      const thread = await seedRequest({
-        initialMessageId: '<root@example.org>',
-      });
-      mockMailbox({
+      const thread = await seedThread();
+      await pollWith({
         fromAddress: 'ops@desk@example.net',
-        fetched: [item({ envelope: envelope({ messageId: 'not-an-id' }) })],
-        sources: [
-          mimeMail({
-            headers: ['In-Reply-To: <root@example.org>'],
-            messageId: null,
-          }),
-        ],
+        fetched: [itemWithId('not-an-id')],
+        sources: [mimeMail({ headers: IN_REPLY_TO_ROOT, messageId: null })],
       });
-      await poll();
       const reply = await SupportMessage.findOne({
         request: thread._id,
       }).lean();
@@ -1397,63 +1265,32 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('does not attach a fresh message to a request that has no initial Message-ID', async () => {
-      await seedCursor();
       const unrelated = await seedRequest();
-      mockMailbox({ fetched: [item()] });
-      await poll();
+      await pollWith({ fetched: [item()] });
       assert.equal(await SupportRequest.countDocuments(), 2);
-      assert.equal(
-        await SupportMessage.countDocuments({ request: unrelated._id }),
-        0,
-      );
+      assert.equal(await messageCount({ request: unrelated._id }), 0);
     });
 
     it('does not attach a reply to a request just because other messages exist', async () => {
-      await seedCursor();
-      const thread = await seedRequest({
-        initialMessageId: '<root@example.org>',
-      });
-      await SupportMessage.create({
-        request: thread._id,
-        direction: 'outbound',
-        body: 'A fictional earlier reply.',
-        messageId: '<earlier@example.org>',
-        deliveryState: 'accepted',
-      } as never);
-      mockMailbox({
-        fetched: [
-          item({
-            uid: 11,
-            envelope: envelope({ messageId: '<unknown-in-reply@example.org>' }),
-          }),
-          item({
-            uid: 12,
-            envelope: envelope({
-              messageId: '<unknown-reference@example.org>',
-            }),
-          }),
-        ],
-        sources: [
-          mimeMail({
-            headers: ['In-Reply-To: <unknown@example.org>'],
-            messageId: '<unknown-in-reply@example.org>',
-          }),
-          mimeMail({
-            headers: ['References: <unknown@example.org>'],
-            messageId: '<unknown-reference@example.org>',
-          }),
-        ],
-      });
-      await poll();
-      assert.equal(await SupportRequest.countDocuments(), 3);
-      assert.equal(
-        await SupportMessage.countDocuments({ direction: 'inbound' }),
-        0,
+      const thread = await seedThread();
+      await outbound(thread, '<earlier@example.org>');
+      await pollWith(
+        mails(
+          [
+            '<unknown-in-reply@example.org>',
+            ['In-Reply-To: <unknown@example.org>'],
+          ],
+          [
+            '<unknown-reference@example.org>',
+            ['References: <unknown@example.org>'],
+          ],
+        ),
       );
+      assert.equal(await SupportRequest.countDocuments(), 3);
+      assert.equal(await messageCount({ direction: 'inbound' }), 0);
     });
 
     it('falls back to References only when the In-Reply-To matches no request', async () => {
-      await seedCursor();
       const first = await seedRequest({
         initialMessageId: '<shared@example.org>',
       });
@@ -1461,48 +1298,25 @@ describe('support mailbox job mutation hardening', () => {
       const unique = await seedRequest({
         initialMessageId: '<unique@example.org>',
       });
-      mockMailbox({
-        fetched: [
-          item({
-            uid: 11,
-            envelope: envelope({ messageId: '<ambiguous-first@example.org>' }),
-          }),
-          item({
-            uid: 12,
-            envelope: envelope({ messageId: '<unknown-first@example.org>' }),
-          }),
-        ],
-        sources: [
-          mimeMail({
-            headers: [
-              'In-Reply-To: <shared@example.org>',
-              'References: <unique@example.org>',
-            ],
-            messageId: '<ambiguous-first@example.org>',
-          }),
-          mimeMail({
-            headers: [
-              'In-Reply-To: <unknown@example.org>',
-              'References: <unique@example.org>',
-            ],
-            messageId: '<unknown-first@example.org>',
-          }),
-        ],
-      });
-      await poll();
-      assert.equal(
-        await SupportMessage.countDocuments({ request: unique._id }),
-        1,
+      const references = 'References: <unique@example.org>';
+      await pollWith(
+        mails(
+          [
+            '<ambiguous-first@example.org>',
+            ['In-Reply-To: <shared@example.org>', references],
+          ],
+          [
+            '<unknown-first@example.org>',
+            ['In-Reply-To: <unknown@example.org>', references],
+          ],
+        ),
       );
-      assert.equal(
-        await SupportMessage.countDocuments({ request: first._id }),
-        0,
-      );
+      assert.equal(await messageCount({ request: unique._id }), 1);
+      assert.equal(await messageCount({ request: first._id }), 0);
       assert.ok(await requestFor('<ambiguous-first@example.org>'));
     });
 
     it('does not attach mail to a request that has no email address', async () => {
-      await seedCursor();
       await SupportRequest.collection.insertOne({
         category: 'other',
         message: 'A legacy request without an address.',
@@ -1511,74 +1325,40 @@ describe('support mailbox job mutation hardening', () => {
         statusRevision: 0,
         sent: new Date('2024-01-01T00:00:00.000Z'),
       });
-      mockMailbox({
+      await pollWith({
         fetched: [item()],
         sources: [mimeMail({ headers: ['In-Reply-To: <legacy@example.org>'] })],
       });
-      await poll();
       assert.equal(await SupportRequest.countDocuments(), 2);
       assert.equal(await SupportMessage.countDocuments(), 0);
     });
 
     it('uses the message subject over the envelope subject', async () => {
-      await seedCursor();
-      mockMailbox({
+      await pollWith({
         fetched: [
           item({ envelope: envelope({ subject: 'Envelope subject' }) }),
         ],
         sources: [mimeMail({ subject: 'Message subject' })],
       });
-      await poll();
-      assert.equal(
-        (await SupportRequest.findOne().lean())?.subject,
-        'Message subject',
-      );
+      assert.equal((await firstRequest())?.subject, 'Message subject');
     });
   });
 
   describe('activity on a reopened thread', () => {
-    const replyOptions = (messageId: string, source?: string) => ({
-      fetched: [item({ envelope: envelope({ messageId }) })],
-      sources: [
-        source ??
-          mimeMail({
-            headers: ['In-Reply-To: <root@example.org>'],
-            messageId,
-          }),
-      ],
-    });
+    const pollReply = (messageId: string) =>
+      pollWith(mails([messageId, IN_REPLY_TO_ROOT]));
 
     it('reopens a closed thread, stamps its status change and leaves other records alone', async () => {
-      await seedCursor();
-      const other = await seedRequest({
-        status: 'closed',
-        statusChangedAt: OLD,
-      });
-      const otherMessage = await SupportMessage.create({
-        request: other._id,
-        direction: 'outbound',
-        body: 'A fictional unrelated reply.',
-        messageId: '<unrelated@example.org>',
-        deliveryState: 'accepted',
-      } as never);
-      const thread = await seedRequest({
-        status: 'closed',
-        statusChangedAt: OLD,
-        initialMessageId: '<root@example.org>',
-      });
-      mockMailbox(replyOptions('<reopen@example.org>'));
-      await poll();
+      const closed = { status: 'closed', statusChangedAt: OLD };
+      const other = await seedRequest(closed);
+      const otherMessage = await outbound(other, '<unrelated@example.org>');
+      const thread = await seedThread(closed);
+      await pollReply('<reopen@example.org>');
       const reopened = await SupportRequest.findById(thread._id).lean();
       assert.equal(reopened?.status, 'open');
       assert.equal(reopened?.statusRevision, 1);
-      assert.equal(
-        (reopened?.statusChangedAt as Date).toISOString(),
-        '2025-02-15T00:00:00.000Z',
-      );
-      assert.equal(
-        (reopened?.lastActivityAt as Date).toISOString(),
-        '2025-02-15T00:00:00.000Z',
-      );
+      assert.equal(iso(reopened?.statusChangedAt), ITEM_DATE);
+      assert.equal(iso(reopened?.lastActivityAt), ITEM_DATE);
       const untouched = await SupportRequest.findById(other._id).lean();
       assert.equal(untouched?.status, 'closed');
       assert.equal(untouched?.statusRevision, 0);
@@ -1590,68 +1370,41 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('keeps the status change time of a thread that is already open', async () => {
-      await seedCursor();
-      const thread = await seedRequest({
-        status: 'open',
-        statusChangedAt: OLD,
-        initialMessageId: '<root@example.org>',
-      });
-      mockMailbox(replyOptions('<already-open@example.org>'));
-      await poll();
+      const thread = await seedThread({ status: 'open', statusChangedAt: OLD });
+      await pollReply('<already-open@example.org>');
       const updated = await SupportRequest.findById(thread._id).lean();
-      assert.equal(
-        (updated?.statusChangedAt as Date).toISOString(),
-        OLD.toISOString(),
-      );
-      assert.equal(
-        (updated?.lastActivityAt as Date).toISOString(),
-        '2025-02-15T00:00:00.000Z',
-      );
+      assert.equal(iso(updated?.statusChangedAt), OLD.toISOString());
+      assert.equal(iso(updated?.lastActivityAt), ITEM_DATE);
       assert.equal(updated?.statusRevision, 1);
     });
 
-    it('does not apply the activity of an already applied replay again', async () => {
-      await seedCursor();
-      const thread = await seedRequest({ status: 'closed' });
-      await SupportMessage.create({
-        request: thread._id,
+    /** Stores an inbound reply as if an earlier poll had imported it. */
+    const replayed = (request: unknown, id: string, extra = {}) =>
+      SupportMessage.create({
+        request,
         direction: 'inbound',
-        body: 'A fictional applied reply.',
-        messageId: '<applied@example.org>',
-        inboundKey: '<applied@example.org>',
+        body: 'A fictional replayed reply.',
+        messageId: id,
+        inboundKey: id,
         deliveryState: 'received',
         requestRevision: 0,
-        activityAppliedAt: OLD,
+        ...extra,
       } as never);
-      mockMailbox({
-        fetched: [
-          item({ envelope: envelope({ messageId: '<applied@example.org>' }) }),
-        ],
+
+    it('does not apply the activity of an already applied replay again', async () => {
+      const thread = await seedRequest({ status: 'closed' });
+      await replayed(thread._id, '<applied@example.org>', {
+        activityAppliedAt: OLD,
       });
-      await poll();
+      await pollWith({ fetched: [itemWithId('<applied@example.org>')] });
       const unchanged = await SupportRequest.findById(thread._id).lean();
       assert.equal(unchanged?.status, 'closed');
       assert.equal(unchanged?.statusRevision, 0);
     });
 
     it('marks a replay applied even when its request is gone', async () => {
-      await seedCursor();
-      const missing = new mongoose.Types.ObjectId();
-      await SupportMessage.create({
-        request: missing,
-        direction: 'inbound',
-        body: 'A fictional orphaned reply.',
-        messageId: '<orphan@example.org>',
-        inboundKey: '<orphan@example.org>',
-        deliveryState: 'received',
-        requestRevision: 0,
-      } as never);
-      mockMailbox({
-        fetched: [
-          item({ envelope: envelope({ messageId: '<orphan@example.org>' }) }),
-        ],
-      });
-      await poll();
+      await replayed(new mongoose.Types.ObjectId(), '<orphan@example.org>');
+      await pollWith({ fetched: [itemWithId('<orphan@example.org>')] });
       const message = await SupportMessage.findOne({
         inboundKey: '<orphan@example.org>',
       }).lean();
@@ -1659,7 +1412,6 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('leaves a request without a revision alone when replaying a legacy message', async () => {
-      await seedCursor();
       const legacy = await SupportRequest.collection.insertOne({
         category: 'other',
         email: 'visitor@example.org',
@@ -1678,14 +1430,7 @@ describe('support mailbox job mutation hardening', () => {
         deliveryState: 'received',
         attempts: 0,
       });
-      mockMailbox({
-        fetched: [
-          item({
-            envelope: envelope({ messageId: '<legacy-reply@example.org>' }),
-          }),
-        ],
-      });
-      await poll();
+      await pollWith({ fetched: [itemWithId('<legacy-reply@example.org>')] });
       assert.equal(
         (await SupportRequest.collection.findOne({ _id: legacy.insertedId }))
           ?.status,
@@ -1695,57 +1440,40 @@ describe('support mailbox job mutation hardening', () => {
   });
 
   describe('delivery status reports', () => {
-    const dsn = (originalId?: string, messageId = '<dsn@example.org>') =>
-      [
-        'From: Mail Delivery Subsystem <mailer-daemon@example.org>',
-        'To: support@trustroots.org',
-        'Subject: Delivery Status Notification',
-        `Message-ID: ${messageId}`,
-        'MIME-Version: 1.0',
-        'Content-Type: multipart/report; report-type=delivery-status; boundary="b"',
-        '',
-        '--b',
-        'Content-Type: text/plain',
-        '',
-        'Delivery failed.',
-        '--b',
-        'Content-Type: message/delivery-status',
-        '',
-        'Action: failed',
-        ...(originalId ? [`Original-Message-ID: ${originalId}`] : []),
-        '--b--',
-      ].join('\r\n');
-    const outbound = (request: Doc, messageId: string, extra = {}) =>
-      SupportMessage.create({
-        request: request._id,
-        direction: 'outbound',
-        body: 'A fictional reply.',
-        messageId,
-        deliveryState: 'accepted',
-        attempts: 1,
-        ...extra,
-      } as never);
-
-    async function bounce(source: string, internalDate?: Date) {
-      mockMailbox({
-        fetched: [
-          item({
-            internalDate,
-            envelope: envelope({ messageId: '<dsn@example.org>' }),
-          }),
+    const dsn = (originalId?: string) =>
+      multipart(
+        DSN_TYPE,
+        [
+          'Content-Type: text/plain\r\n\r\nDelivery failed.',
+          statusPart(
+            [
+              'Action: failed',
+              ...(originalId ? [`Original-Message-ID: ${originalId}`] : []),
+            ].join('\r\n'),
+          ),
         ],
+        [
+          'From: Mail Delivery Subsystem <mailer-daemon@example.org>',
+          'To: support@trustroots.org',
+          'Subject: Delivery Status Notification',
+          'Message-ID: <dsn@example.org>',
+          'MIME-Version: 1.0',
+        ],
+      );
+    const accepted = (request: Doc, messageId: string, extra = {}) =>
+      outbound(request, messageId, { attempts: 1, ...extra });
+    const bounce = (source: string, internalDate?: Date) =>
+      pollWith({
+        fetched: [itemWithId('<dsn@example.org>', { internalDate })],
         sources: [source],
       });
-      await poll();
-    }
 
     it('fails only the referenced accepted message and reopens only its request', async () => {
-      await seedCursor();
       const bystander = await seedRequest({
         status: 'pending',
         statusRevision: 4,
       });
-      const bystanderMessage = await outbound(
+      const bystanderMessage = await accepted(
         bystander,
         '<bystander@example.org>',
       );
@@ -1755,7 +1483,7 @@ describe('support mailbox job mutation hardening', () => {
         statusRevision: 3,
         lastActivityAt: acceptedAt,
       });
-      const bounced = await outbound(request, '<bounced@example.org>', {
+      const bounced = await accepted(request, '<bounced@example.org>', {
         acceptedAt,
         requestRevision: 3,
       });
@@ -1768,14 +1496,8 @@ describe('support mailbox job mutation hardening', () => {
       const reopened = await SupportRequest.findById(request._id).lean();
       assert.equal(reopened?.status, 'open');
       assert.equal(reopened?.statusRevision, 4);
-      assert.equal(
-        (reopened?.statusChangedAt as Date).toISOString(),
-        bouncedAt.toISOString(),
-      );
-      assert.equal(
-        (reopened?.lastActivityAt as Date).toISOString(),
-        bouncedAt.toISOString(),
-      );
+      assert.equal(iso(reopened?.statusChangedAt), bouncedAt.toISOString());
+      assert.equal(iso(reopened?.lastActivityAt), bouncedAt.toISOString());
       assert.equal(
         (await SupportMessage.findById(bystanderMessage._id).lean())
           ?.deliveryState,
@@ -1787,9 +1509,8 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('does not fail an accepted message the report does not reference', async () => {
-      await seedCursor();
       const request = await seedRequest({ status: 'pending' });
-      const message = await outbound(request, '<known@example.org>');
+      const message = await accepted(request, '<known@example.org>');
       await bounce(dsn('<different@example.org>'));
       assert.equal(
         (await SupportMessage.findById(message._id).lean())?.deliveryState,
@@ -1802,7 +1523,6 @@ describe('support mailbox job mutation hardening', () => {
     });
 
     it('does not match an accepted message that has no Message-ID when the report names none', async () => {
-      await seedCursor();
       const request = await seedRequest({ status: 'pending' });
       const inserted = await SupportMessage.collection.insertOne({
         request: request._id,
@@ -1820,6 +1540,7 @@ describe('support mailbox job mutation hardening', () => {
       );
     });
   });
+
   describe('logging', () => {
     it('logs the cutover and the completed poll with their counts', async () => {
       const log = stubLog();
@@ -1835,36 +1556,16 @@ describe('support mailbox job mutation hardening', () => {
 
       await Cursor.updateOne(
         { _id: 'support-inbox' },
-        { $set: { lastUid: 10 } },
+        { $set: { lastUid: 10, uidValidity: '77' } },
       );
       sinon.restore();
       const completed = stubLog();
       mockMailbox({
         uidValidity: '77',
-        fetched: [
-          item({ envelope: envelope({ messageId: '<log-one@example.org>' }) }),
-          item({
-            uid: 12,
-            envelope: envelope({ messageId: '<log-two@example.org>' }),
-          }),
-        ],
-        sources: [
-          mimeMail({ messageId: '<log-one@example.org>' }),
-          mimeMail({ messageId: '<log-two@example.org>' }),
-        ],
+        ...mails(['<log-one@example.org>'], ['<log-two@example.org>']),
       });
-      await Cursor.updateOne(
-        { _id: 'support-inbox' },
-        { $set: { uidValidity: '77' } },
-      );
       await poll();
-      assert.ok(
-        completed.calledWith(
-          'info',
-          'Support mailbox poll completed #hK4tPq',
-          sinon.match({ processed: 2 }),
-        ),
-      );
+      assert.ok(loggedCompleted(completed, sinon.match({ processed: 2 })));
     });
 
     const failures: Array<[string, unknown, string]> = [
@@ -1879,7 +1580,7 @@ describe('support mailbox job mutation hardening', () => {
         const log = stubLog();
         const error = Object.assign(new Error('synthetic failure'), { code });
         mockMailbox({ fetched: [item()] }).download.rejects(error);
-        await assert.rejects(poll(), caught => caught === error);
+        await pollFailsWith(error);
         assert.ok(
           log.calledWith(
             'error',
@@ -1887,61 +1588,32 @@ describe('support mailbox job mutation hardening', () => {
             sinon.match({ errorCode: expected }),
           ),
         );
-        assert.equal(
-          log.calledWith(
-            'info',
-            'Support mailbox poll completed #hK4tPq',
-            sinon.match.any,
-          ),
-          false,
-        );
+        assert.equal(loggedCompleted(log), false);
       });
     }
 
-    it('does not report a poll as completed when the connection fails while renewing the lock', async () => {
-      await seedCursor();
-      const log = stubLog();
-      const error = new Error('synthetic renewal failure');
-      const mock = mockMailbox({ fetched: [item()] });
-      await assert.rejects(
-        poll(async () => {
+    const renewalFailures: Array<[string, MockOptions]> = [
+      ['while renewing the lock', { fetched: [item()] }],
+      [
+        'after skipping a rescanned message',
+        {
+          uidValidity: '99',
+          uidNext: 6,
+          fetched: [item({ uid: 1, internalDate: OLD })],
+        },
+      ],
+    ];
+    for (const [label, options] of renewalFailures) {
+      it(`does not report a poll as completed when the connection fails ${label}`, async () => {
+        await seedCursor();
+        const log = stubLog();
+        const error = new Error('synthetic renewal failure');
+        const mock = mockMailbox(options);
+        await pollFailsWith(error, async () => {
           mock.client().emit('error', error);
-        }),
-        caught => caught === error,
-      );
-      assert.equal(
-        log.calledWith(
-          'info',
-          'Support mailbox poll completed #hK4tPq',
-          sinon.match.any,
-        ),
-        false,
-      );
-    });
-
-    it('does not report a poll as completed when the connection fails after skipping a rescanned message', async () => {
-      await seedCursor();
-      const log = stubLog();
-      const error = new Error('synthetic renewal failure');
-      const mock = mockMailbox({
-        uidValidity: '99',
-        uidNext: 6,
-        fetched: [item({ uid: 1, internalDate: OLD })],
+        });
+        assert.equal(loggedCompleted(log), false);
       });
-      await assert.rejects(
-        poll(async () => {
-          mock.client().emit('error', error);
-        }),
-        caught => caught === error,
-      );
-      assert.equal(
-        log.calledWith(
-          'info',
-          'Support mailbox poll completed #hK4tPq',
-          sinon.match.any,
-        ),
-        false,
-      );
-    });
+    }
   });
 });

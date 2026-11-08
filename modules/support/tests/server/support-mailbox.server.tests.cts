@@ -554,11 +554,10 @@ describe('support mailbox polling', () => {
     assert.equal(parsed.automated, false);
     assert.deepEqual(parsed.references, []);
 
+    // Joined without a separator, the repeated values would read "no".
     const repeatedHeaders = await parseSupportMailSource(
       Readable.from([
-        mimeMail({
-          headers: 'Auto-Submitted: no\r\nAuto-Submitted: auto-generated',
-        }),
+        mimeMail({ headers: 'Auto-Submitted: n\r\nAuto-Submitted: o' }),
       ]),
       1000,
     );

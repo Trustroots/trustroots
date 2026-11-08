@@ -154,6 +154,7 @@ async function queueForRequest(
     emailFrom: config.supportInbox.fromAddress,
     emailTo: request.email,
     messageId: messageId(),
+    // Stryker disable next-line ConditionalExpression: forcing the id test true only adds `inReplyTo: undefined` when neither id exists, and Mongoose neither stores nor returns an undefined path
     ...((latest?.messageId || request.initialMessageId) && {
       inReplyTo: latest?.messageId || request.initialMessageId,
     }),

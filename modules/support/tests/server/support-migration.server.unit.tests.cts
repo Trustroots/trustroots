@@ -32,70 +32,41 @@ describe('support inbox compatibility migration', () => {
   // Raw documents, so that schema defaults cannot hide the legacy shapes.
   // resolved: 1, 2. No status: 3, 4, 5. No lastActivityAt: 2, 3, 4, 7.
   // No usable category: 2, 3, 4, 6, 7, 8.
+  const messages = 'one two three four five six seven eight'.split(' ');
   const legacyRequests: RawSupportRequest[] = [
     {
-      _id: ids[0]!,
       category: 'other',
       status: 'resolved',
       statusRevision: 3,
       lastActivityAt: sentAt(11),
-      sent: sentAt(1),
-      message: 'one',
     },
+    { reportMember: 'fictional-target', status: 'resolved' },
+    { category: '', reportMember: '   ' },
+    { category: null, reportMember: 7 },
     {
-      _id: ids[1]!,
-      reportMember: 'fictional-target',
-      status: 'resolved',
-      sent: sentAt(2),
-      message: 'two',
-    },
-    {
-      _id: ids[2]!,
-      category: '',
-      reportMember: '   ',
-      sent: sentAt(3),
-      message: 'three',
-    },
-    {
-      _id: ids[3]!,
-      category: null,
-      reportMember: 7,
-      sent: sentAt(4),
-      message: 'four',
-    },
-    {
-      _id: ids[4]!,
       category: 'account',
       reportMember: 'ignored-because-category-exists',
       lastActivityAt: sentAt(15),
-      sent: sentAt(5),
-      message: 'five',
     },
+    { reportMember: '', status: 'open', lastActivityAt: sentAt(16) },
+    { category: '', status: 'open', statusRevision: 0 },
     {
-      _id: ids[5]!,
-      reportMember: '',
-      status: 'open',
-      lastActivityAt: sentAt(16),
-      sent: sentAt(6),
-      message: 'six',
-    },
-    {
-      _id: ids[6]!,
-      category: '',
-      status: 'open',
-      statusRevision: 0,
-      sent: sentAt(7),
-      message: 'seven',
-    },
-    {
-      _id: ids[7]!,
       reportMember: '  padded-target  ',
       status: 'open',
       lastActivityAt: sentAt(18),
-      sent: sentAt(8),
-      message: 'eight',
     },
-  ];
+  ].map((fields, index) => ({
+    _id: ids[index]!,
+    sent: sentAt(index + 1),
+    message: messages[index]!,
+    ...fields,
+  }));
+  const SUMMARY = {
+    resolved: 2,
+    missing: 3,
+    missingActivity: 4,
+    missingCategory: 6,
+  };
 
   beforeEach(async () => {
     await collection().insertMany(legacyRequests);
@@ -115,10 +86,7 @@ describe('support inbox compatibility migration', () => {
 
   it('counts what needs migrating without changing anything by default', async () => {
     assert.deepEqual(await freshService().migrateSupportInbox(), {
-      resolved: 2,
-      missing: 3,
-      missingActivity: 4,
-      missingCategory: 6,
+      ...SUMMARY,
       applied: false,
     });
     assert.deepEqual(await collection().find({}).sort({ sent: 1 }).toArray(), [
@@ -128,10 +96,7 @@ describe('support inbox compatibility migration', () => {
 
   it('migrates statuses, activity, revisions and categories when applied', async () => {
     assert.deepEqual(await freshService().migrateSupportInbox(true), {
-      resolved: 2,
-      missing: 3,
-      missingActivity: 4,
-      missingCategory: 6,
+      ...SUMMARY,
       applied: true,
     });
     const requests = await stored();
@@ -143,29 +108,13 @@ describe('support inbox compatibility migration', () => {
     );
     assert.deepEqual(
       byIndex.map(request => request.category),
-      [
-        'other',
-        'reportMember',
-        'other',
-        'other',
-        'account',
-        'other',
-        'other',
-        'reportMember',
-      ],
+      'other reportMember other other account other other reportMember'.split(
+        ' ',
+      ),
     );
     assert.deepEqual(
       byIndex.map(request => request.lastActivityAt),
-      [
-        sentAt(11),
-        sentAt(2),
-        sentAt(3),
-        sentAt(4),
-        sentAt(15),
-        sentAt(16),
-        sentAt(7),
-        sentAt(18),
-      ],
+      [11, 2, 3, 4, 15, 16, 7, 18].map(sentAt),
     );
     assert.deepEqual(
       byIndex.map(request => request.statusRevision),

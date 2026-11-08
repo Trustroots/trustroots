@@ -33,6 +33,14 @@ const NO_PAIR =
 const LINKED_ELSEWHERE =
   /^Error: The report is already linked to another member\.$/;
 
+const createReport = (patch: Record<string, unknown>) =>
+  SupportRequest.create({
+    category: 'reportMember',
+    sent: new Date('2025-03-02T00:00:00Z'),
+    message: 'Fictional historical report',
+    ...patch,
+  });
+
 describe('Historical support report linking', () => {
   let admin: ObjectId;
   let reporter: ObjectId;
@@ -55,13 +63,7 @@ describe('Historical support report linking', () => {
       { _id: { $in: [reporter, other] } },
       { $set: { created: new Date('2020-01-01T00:00:00Z') } },
     );
-    const created = await SupportRequest.create({
-      category: 'reportMember',
-      user: reporter,
-      sent: new Date('2025-03-02T00:00:00Z'),
-      message: 'Fictional historical report',
-    });
-    report = created._id;
+    report = (await createReport({ user: reporter }))._id;
     mapping = {
       requestId: report.toString(),
       reportedUserId: target.toString(),
@@ -74,9 +76,15 @@ describe('Historical support report linking', () => {
     await utils.clearDatabase();
   });
 
-  async function reportedUser(id = report) {
-    return (await SupportRequest.findById(id).lean())?.reportedUser;
-  }
+  const apply = (patch: Record<string, unknown> = {}, actor: unknown = admin) =>
+    linkHistoricalReport(
+      { ...mapping, ...patch } as never,
+      actor as never,
+      true,
+    );
+
+  const saved = (id = report) => SupportRequest.findById(id).lean();
+  const reportedUser = async (id = report) => (await saved(id))?.reportedUser;
 
   it('rejects malformed identifiers and evidence with a descriptive error', async () => {
     const valid = target.toString();
@@ -90,32 +98,11 @@ describe('Historical support report linking', () => {
       undefined,
     ];
     for (const value of bad) {
-      await assert.rejects(
-        linkHistoricalReport(
-          { ...mapping, requestId: value as string },
-          admin,
-          true,
-        ),
-        MISSING_FIELDS,
-      );
-      await assert.rejects(
-        linkHistoricalReport(
-          { ...mapping, reportedUserId: value as string },
-          admin,
-          true,
-        ),
-        MISSING_FIELDS,
-      );
+      await assert.rejects(apply({ requestId: value }), MISSING_FIELDS);
+      await assert.rejects(apply({ reportedUserId: value }), MISSING_FIELDS);
     }
     for (const value of [123, '', '   \n\t', undefined, null]) {
-      await assert.rejects(
-        linkHistoricalReport(
-          { ...mapping, evidence: value as unknown as string },
-          admin,
-          true,
-        ),
-        MISSING_FIELDS,
-      );
+      await assert.rejects(apply({ evidence: value }), MISSING_FIELDS);
     }
     assert.equal(await reportedUser(), undefined);
     assert.equal(await AuditLog.countDocuments(), 0);
@@ -138,65 +125,36 @@ describe('Historical support report linking', () => {
     const id = admin.toString();
     const nearAdmin = id.slice(0, -1) + (id.endsWith('0') ? '1' : '0');
     for (const actor of [reporter, new mongoose.Types.ObjectId(), nearAdmin]) {
-      await assert.rejects(
-        linkHistoricalReport(mapping, actor, true),
-        NOT_ADMIN,
-      );
+      await assert.rejects(apply({}, actor), NOT_ADMIN);
     }
     assert.equal(await reportedUser(), undefined);
   });
 
   it('rejects reports without a verifiable reporter and reported member pair', async () => {
-    const created = (patch: Record<string, unknown>) =>
-      SupportRequest.create({
-        category: 'reportMember',
-        user: reporter,
-        sent: new Date('2025-03-02T00:00:00Z'),
-        message: 'Fictional historical report',
-        ...patch,
-      });
+    const created = async (patch: Record<string, unknown>) =>
+      (await createReport({ user: reporter, ...patch }))._id.toString();
+    const newId = () => new mongoose.Types.ObjectId().toString();
+    const targetId = target.toString();
     const cases: Array<[string, string, string]> = [
-      [
-        'missing report',
-        new mongoose.Types.ObjectId().toString(),
-        target.toString(),
-      ],
-      [
-        'wrong category',
-        (await created({ category: 'other' }))._id.toString(),
-        target.toString(),
-      ],
-      [
-        'no reporter',
-        (await created({ user: undefined }))._id.toString(),
-        target.toString(),
-      ],
-      [
-        'missing target',
-        report.toString(),
-        new mongoose.Types.ObjectId().toString(),
-      ],
+      ['missing report', newId(), targetId],
+      ['wrong category', await created({ category: 'other' }), targetId],
+      ['no reporter', await created({ user: undefined }), targetId],
+      ['missing target', report.toString(), newId()],
       ['reporter is target', report.toString(), reporter.toString()],
       [
         'target joined after the report',
-        (
-          await created({ sent: new Date('2025-02-28T23:59:59.999Z') })
-        )._id.toString(),
-        target.toString(),
+        await created({ sent: new Date('2025-02-28T23:59:59.999Z') }),
+        targetId,
       ],
       [
         'reporter no longer exists',
-        (await created({ user: new mongoose.Types.ObjectId() }))._id.toString(),
-        target.toString(),
+        await created({ user: new mongoose.Types.ObjectId() }),
+        targetId,
       ],
     ];
     for (const [name, requestId, reportedUserId] of cases) {
       await assert.rejects(
-        linkHistoricalReport(
-          { requestId, reportedUserId, evidence },
-          admin,
-          true,
-        ),
+        apply({ requestId, reportedUserId, evidence }),
         NO_PAIR,
         name,
       );
@@ -205,17 +163,8 @@ describe('Historical support report linking', () => {
   });
 
   it('accepts a target created at the very moment of the report', async () => {
-    const exact = await SupportRequest.create({
-      category: 'reportMember',
-      user: reporter,
-      sent,
-      message: 'Fictional historical report',
-    });
-    await linkHistoricalReport(
-      { ...mapping, requestId: exact._id.toString() },
-      admin,
-      true,
-    );
+    const exact = await createReport({ user: reporter, sent });
+    await apply({ requestId: exact._id.toString() });
     assert.equal(String(await reportedUser(exact._id)), target.toString());
   });
 
@@ -224,10 +173,7 @@ describe('Historical support report linking', () => {
       { _id: report },
       { $set: { reportedUser: other } },
     );
-    await assert.rejects(
-      linkHistoricalReport(mapping, admin, true),
-      LINKED_ELSEWHERE,
-    );
+    await assert.rejects(apply(), LINKED_ELSEWHERE);
     assert.equal(String(await reportedUser()), other.toString());
     assert.equal(await AuditLog.countDocuments(), 0);
   });
@@ -244,28 +190,21 @@ describe('Historical support report linking', () => {
   });
 
   it('links the report, stores trimmed evidence and audits the mapping', async () => {
-    const other = await SupportRequest.create({
+    const unrelated = await SupportRequest.create({
       category: 'reportMember',
       user: reporter,
       message: 'Fictional unrelated report',
     });
-    const result = await linkHistoricalReport(
-      { ...mapping, evidence: `  ${evidence}\n` },
-      admin,
-      true,
-    );
+    const result = await apply({ evidence: `  ${evidence}\n` });
     assert.deepEqual(result, {
       requestId: mapping.requestId,
       reportedUserId: mapping.reportedUserId,
       applied: true,
     });
-    const saved = await SupportRequest.findById(report).lean();
-    assert.equal(String(saved?.reportedUser), target.toString());
-    assert.equal(saved?.linkageEvidence, evidence);
-    assert.equal(
-      (await SupportRequest.findById(other._id).lean())?.reportedUser,
-      undefined,
-    );
+    const linked = await saved();
+    assert.equal(String(linked?.reportedUser), target.toString());
+    assert.equal(linked?.linkageEvidence, evidence);
+    assert.equal(await reportedUser(unrelated._id), undefined);
     const logs = await AuditLog.find().lean();
     assert.equal(logs.length, 1);
     assert.equal(String(logs[0].user), admin.toString());
@@ -274,15 +213,11 @@ describe('Historical support report linking', () => {
   });
 
   it('refreshes the evidence when the same member is linked again', async () => {
-    await linkHistoricalReport(mapping, admin, true);
-    await linkHistoricalReport(
-      { ...mapping, evidence: 'Second verified source.' },
-      admin,
-      true,
-    );
-    const saved = await SupportRequest.findById(report).lean();
-    assert.equal(String(saved?.reportedUser), target.toString());
-    assert.equal(saved?.linkageEvidence, 'Second verified source.');
+    await apply();
+    await apply({ evidence: 'Second verified source.' });
+    const linked = await saved();
+    assert.equal(String(linked?.reportedUser), target.toString());
+    assert.equal(linked?.linkageEvidence, 'Second verified source.');
   });
 
   it('does not overwrite a link written by someone else after the check', async () => {
@@ -294,9 +229,9 @@ describe('Historical support report linking', () => {
       );
       return (create as (...a: unknown[]) => unknown)(...args);
     }) as never);
-    await linkHistoricalReport(mapping, admin, true);
-    const saved = await SupportRequest.findById(report).lean();
-    assert.equal(String(saved?.reportedUser), other.toString());
-    assert.equal(saved?.linkageEvidence, undefined);
+    await apply();
+    const linked = await saved();
+    assert.equal(String(linked?.reportedUser), other.toString());
+    assert.equal(linked?.linkageEvidence, undefined);
   });
 });

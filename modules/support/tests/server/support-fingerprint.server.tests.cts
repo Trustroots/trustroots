@@ -11,19 +11,16 @@ const {
 
 const sha256 = (value: string) =>
   createHash('sha256').update(value, 'utf8').digest('hex');
+const fingerprintOf = (message: string) =>
+  sha256(JSON.stringify(['other', 'a@b.org', message]));
 
 describe('Support fingerprints', () => {
   describe('stored category normalisation', () => {
-    it('defaults a missing category to other', () => {
+    it('defaults a missing category to other unless a member is named', () => {
       for (const category of [undefined, null, '']) {
         assert.equal(normaliseStoredSupportCategory(category), 'other');
         assert.equal(normaliseStoredSupportCategory(category, '  '), 'other');
         assert.equal(normaliseStoredSupportCategory(category, 5), 'other');
-      }
-    });
-
-    it('infers a member report from a reported member name', () => {
-      for (const category of [undefined, null, '']) {
         assert.equal(
           normaliseStoredSupportCategory(category, ' someone '),
           'reportMember',
@@ -33,120 +30,80 @@ describe('Support fingerprints', () => {
 
     it('keeps known categories and rejects unknown ones', () => {
       assert.equal(normaliseStoredSupportCategory('reportBug'), 'reportBug');
-      assert.equal(normaliseStoredSupportCategory('unknown'), null);
-      assert.equal(normaliseStoredSupportCategory('toString'), null);
-      assert.equal(normaliseStoredSupportCategory(5), null);
-      assert.equal(
-        normaliseStoredSupportCategory({ toString: () => 'other' }),
-        null,
-      );
-    });
-  });
-
-  describe('request fingerprint', () => {
-    it('hashes the category, normalised email and normalised message', () => {
-      const expected = sha256(
-        JSON.stringify(['other', 'a@b.org', 'Hi\nthere']),
-      );
-      assert.equal(
-        supportRequestFingerprint({
-          category: 'other',
-          email: ' A@B.ORG\n',
-          message: '\n Hi\r\nthere \n',
-        }),
-        expected,
-      );
-    });
-
-    it('keeps non-ASCII text intact', () => {
-      assert.equal(
-        supportRequestFingerprint({
-          category: 'other',
-          email: 'a@b.org',
-          message: 'héllo ✓',
-        }),
-        sha256(JSON.stringify(['other', 'a@b.org', 'héllo ✓'])),
-      );
-    });
-  });
-
-  describe('import message normalisation', () => {
-    it('decodes the escaped HTML characters', () => {
-      assert.equal(
-        normaliseSupportImportMessage('&amp; &LT; &gt; &quot; &#39; &apos;'),
-        "& < > \" ' '",
-      );
-    });
-
-    it('decodes numeric entities within the Unicode range', () => {
-      assert.equal(normaliseSupportImportMessage('&#65;&#x42;&#X43;'), 'ABC');
-      assert.equal(normaliseSupportImportMessage('&#0;'), '\u0000');
-      assert.equal(
-        normaliseSupportImportMessage('&#1114111;'),
-        String.fromCodePoint(0x10ffff),
-      );
-      assert.equal(
-        normaliseSupportImportMessage('&#x10ffff;'),
-        String.fromCodePoint(0x10ffff),
-      );
-    });
-
-    it('leaves out-of-range numeric entities alone', () => {
-      for (const entity of [
-        '&#1114112;',
-        '&#x110000;',
-        `&#${'9'.repeat(400)};`,
+      for (const category of [
+        'unknown',
+        'toString',
+        5,
+        { toString: () => 'other' },
       ]) {
-        assert.equal(normaliseSupportImportMessage(entity), entity);
+        assert.equal(normaliseStoredSupportCategory(category), null);
       }
     });
-
-    it('trims surrounding blank lines', () => {
-      assert.equal(normaliseSupportImportMessage('\n\n hello \n\n'), 'hello');
-    });
-
-    it('normalises line endings, spacing and blank lines', () => {
-      assert.equal(
-        normaliseSupportImportMessage(
-          '  one \t two \r\nthree\rfour\n\n\n\nfive  ',
-        ),
-        'one two\nthree\nfour\n\nfive',
-      );
-    });
-
-    it('expands bare web addresses but not emails, phone numbers, mentions or hashtags', () => {
-      assert.equal(
-        normaliseSupportImportMessage('see www.example.org now'),
-        'see http://www.example.org now',
-      );
-      assert.equal(
-        normaliseSupportImportMessage(
-          'a@example.org +1 415 555 2671 @someone #topic',
-        ),
-        'a@example.org +1 415 555 2671 @someone #topic',
-      );
-    });
-
-    it('does not strip the protocol from explicit addresses', () => {
-      assert.equal(
-        normaliseSupportImportMessage('https://www.example.org/a'),
-        'https://www.example.org/a',
-      );
-    });
   });
 
-  describe('import hashes', () => {
-    it('hashes the sender by trimmed lowercase email', () => {
-      assert.equal(supportImportSenderHash(' A@B.ORG '), sha256('a@b.org'));
-    });
+  it('fingerprints a request by category, normalised email and message, keeping non-ASCII text', () => {
+    assert.equal(
+      supportRequestFingerprint({
+        category: 'other',
+        email: ' A@B.ORG\n',
+        message: '\n Hi\r\nthere \n',
+      }),
+      fingerprintOf('Hi\nthere'),
+    );
+    assert.equal(
+      supportRequestFingerprint({
+        category: 'other',
+        email: 'a@b.org',
+        message: 'héllo ✓',
+      }),
+      fingerprintOf('héllo ✓'),
+    );
+  });
 
-    it('hashes the normalised message', () => {
-      assert.equal(
-        supportImportMessageHash('Hi &amp;\r\nyou  '),
-        sha256('Hi &\nyou'),
-      );
-      assert.equal(supportImportMessageHash('héllo ✓'), sha256('héllo ✓'));
-    });
+  it('normalises imported messages', () => {
+    const max = String.fromCodePoint(0x10ffff);
+    for (const [name, input, expected] of [
+      ['escaped HTML', '&amp; &LT; &gt; &quot; &#39; &apos;', "& < > \" ' '"],
+      ['numeric entities', '&#65;&#x42;&#X43;', 'ABC'],
+      ['the lowest code point', '&#0;', '\u0000'],
+      ['the highest decimal code point', '&#1114111;', max],
+      ['the highest hex code point', '&#x10ffff;', max],
+      ['an out-of-range decimal', '&#1114112;', '&#1114112;'],
+      ['an out-of-range hex', '&#x110000;', '&#x110000;'],
+      ['a huge entity', `&#${'9'.repeat(400)};`, `&#${'9'.repeat(400)};`],
+      ['surrounding blank lines', '\n\n hello \n\n', 'hello'],
+      [
+        'line endings, spacing and blank lines',
+        '  one \t two \r\nthree\rfour\n\n\n\nfive  ',
+        'one two\nthree\nfour\n\nfive',
+      ],
+      [
+        'a bare web address',
+        'see www.example.org now',
+        'see http://www.example.org now',
+      ],
+      [
+        'emails, phone numbers, mentions and hashtags',
+        'a@example.org +1 415 555 2671 @someone #topic',
+        'a@example.org +1 415 555 2671 @someone #topic',
+      ],
+      [
+        'an explicit address',
+        'https://www.example.org/a',
+        'https://www.example.org/a',
+      ],
+    ]) {
+      assert.equal(normaliseSupportImportMessage(input!), expected, name);
+    }
+  });
+
+  it('hashes the import sender by trimmed lowercase email and the normalised message', () => {
+    assert.equal(supportImportSenderHash(' A@B.ORG '), sha256('a@b.org'));
+    assert.equal(
+      supportImportMessageHash('Hi &amp;\r\nyou  '),
+      sha256('Hi &\nyou'),
+    );
+    assert.equal(supportImportMessageHash('héllo ✓'), sha256('héllo ✓'));
   });
 
   describe('import fingerprint alternatives', () => {
@@ -174,12 +131,10 @@ describe('Support fingerprints', () => {
     });
 
     it('deduplicates identical renderings', () => {
+      const plain = { category: 'other' as const, email: 'a@example.org' };
       assert.equal(
-        supportRequestImportFingerprints({
-          category: 'other',
-          email: 'a@example.org',
-          message: 'plain text',
-        }).length,
+        supportRequestImportFingerprints({ ...plain, message: 'plain text' })
+          .length,
         1,
       );
     });

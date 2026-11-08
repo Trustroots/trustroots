@@ -39,6 +39,8 @@ interface AuditFixture {
   body: unknown;
 }
 
+type Rec = Record<string, unknown>;
+
 const SupportRequest = mongoose.model<SupportRequestFixture>('SupportRequest');
 const AuditLog = mongoose.model<AuditFixture>('AuditLog');
 const User = mongoose.model('User');
@@ -46,21 +48,15 @@ const PreviewModel = mongoose.model<SupportStatusImportPreviewRecord>(
   'SupportStatusImportPreview',
 );
 
-const MANIFEST_ERROR = {
-  status: 400,
-  message: 'Invalid support status manifest.',
-};
-const SELECTION_ERROR = {
-  status: 400,
-  message: 'Invalid support status selection.',
-};
-const ONE_TO_ONE = {
-  status: 400,
-  message: 'Support status selections must be one-to-one.',
-};
-const NOT_SUGGESTED = {
-  status: 400,
-  message: 'Selected support request is not a suggested match.',
+const badRequest = (message: string) => ({ status: 400, message });
+const MANIFEST_ERROR = badRequest('Invalid support status manifest.');
+const ONE_TO_ONE = badRequest('Support status selections must be one-to-one.');
+const NOT_SUGGESTED = badRequest(
+  'Selected support request is not a suggested match.',
+);
+const CLAIM_LOST = {
+  status: 409,
+  message: 'Support status preview is already being applied.',
 };
 const SUGGESTION_REASON =
   'same sender, same category, submitted within the selected window, equivalent message after formatting normalisation';
@@ -68,6 +64,21 @@ const HEX64 = 'a'.repeat(64);
 const UPDATED_AT = '2025-01-01T00:00:00.000Z';
 const EXPORTED_AT = '2025-06-01T00:00:00.000Z';
 const MINUTE = 60_000;
+const CHANGED_AT = new Date('2024-02-01T00:00:00.000Z');
+const ACTIVITY_AT = new Date('2024-03-01T00:00:00.000Z');
+const LATER = new Date('2024-06-01');
+
+const outcome = (applied: number, alreadyApplied: number, skipped: number) => ({
+  applied,
+  alreadyApplied,
+  skipped,
+});
+const counts = (
+  [total, eligible, suggested, alreadyApplied, skipped]: number[],
+  skippedByReason: Rec = {},
+) => ({ total, eligible, suggested, alreadyApplied, skipped, skippedByReason });
+const set = (field: string, value: unknown) => ({ $set: { [field]: value } });
+const unset = (field: string) => ({ $unset: { [field]: '' } });
 
 describe('conservative support status import: behaviour guards', () => {
   let adminId: Types.ObjectId;
@@ -78,6 +89,9 @@ describe('conservative support status import: behaviour guards', () => {
     message: 'A fictional request for help.',
   };
   const sent = new Date('2024-01-01T00:00:00.000Z');
+  const at = (offset: number) => new Date(sent.getTime() + offset);
+  const fingerprint = (fields: Rec) =>
+    supportRequestFingerprint({ ...input, ...fields });
 
   beforeEach(async () => {
     const generated = utils.generateUsersWithSharedPassword(1);
@@ -96,104 +110,132 @@ describe('conservative support status import: behaviour guards', () => {
     await utils.clearDatabase();
   });
 
-  function item(overrides: Record<string, unknown> = {}) {
-    return {
-      zendeskTicketId: 789,
-      status: 'pending',
-      updatedAt: UPDATED_AT,
-      fingerprint: supportRequestFingerprint(input),
-      ...overrides,
-    };
-  }
+  const item = (overrides: Rec = {}) => ({
+    zendeskTicketId: 789,
+    status: 'pending',
+    updatedAt: UPDATED_AT,
+    fingerprint: supportRequestFingerprint(input),
+    ...overrides,
+  });
+  const v1 = (itemOverrides: Rec = {}, overrides: Rec = {}) => ({
+    version: 1,
+    exportedAt: EXPORTED_AT,
+    items: [item(itemOverrides)],
+    ...overrides,
+  });
+  const v1Items = (...items: unknown[]) => v1({}, { items });
+  const v2 = (items: unknown[], overrides: Rec = {}) => ({
+    version: 2,
+    exportedAt: EXPORTED_AT,
+    items,
+    ...overrides,
+  });
 
-  function v1(
-    itemOverrides: Record<string, unknown> = {},
-    overrides: Record<string, unknown> = {},
-  ) {
-    return {
-      version: 1,
-      exportedAt: EXPORTED_AT,
-      items: [item(itemOverrides)],
-      ...overrides,
-    };
-  }
-
-  function evidence(
-    message: string,
-    submittedAt: Date | null = sent,
-    overrides: Record<string, unknown> = {},
-  ) {
-    return {
-      senderHash: supportImportSenderHash(input.email),
-      category: 'other',
-      submittedAt: submittedAt === null ? null : submittedAt.toISOString(),
-      normalisedMessageHash: supportImportMessageHash(message),
-      ...overrides,
-    };
-  }
+  const evidence = (message: string, submittedAt: Date | null = sent) => ({
+    senderHash: supportImportSenderHash(input.email),
+    category: 'other',
+    submittedAt: submittedAt === null ? null : submittedAt.toISOString(),
+    normalisedMessageHash: supportImportMessageHash(message),
+  });
 
   /** A v2 item whose fingerprint matches nothing, so only evidence can match it. */
-  function evidenceItem(
+  const evidenceItem = (
     zendeskTicketId: number,
     message: string,
     submittedAt: Date | null = sent,
-    overrides: Record<string, unknown> = {},
-  ) {
-    return item({
+  ) =>
+    item({
       zendeskTicketId,
-      fingerprint: supportRequestFingerprint({
-        ...input,
+      fingerprint: fingerprint({
         message: `Source text of ticket ${zendeskTicketId}.`,
       }),
       evidence: evidence(message, submittedAt),
-      ...overrides,
     });
-  }
 
-  function v2(items: unknown[], overrides: Record<string, unknown> = {}) {
-    return { version: 2, exportedAt: EXPORTED_AT, items, ...overrides };
-  }
+  /** A v2 manifest whose one item only the fixture request can match, by evidence. */
+  const suggestion = (ticket = 893, submittedAt: Date | null = sent) =>
+    v2([evidenceItem(ticket, input.message, submittedAt)]);
+
+  const preview = (source: unknown, window?: string) =>
+    previewReducedManifest(source, adminId, window);
+  const apply = (target: { previewId: string }, selections?: unknown) =>
+    applyPreview(target.previewId, adminId, selections as never);
+  const tamper = (target: { previewId: string }, change: object) =>
+    PreviewModel.updateOne({ _id: target.previewId }, change);
 
   async function stored(previewId: string) {
     return (await PreviewModel.findById(previewId).lean())!;
+  }
+
+  async function storedMeta(previewId: string) {
+    return (await stored(previewId)) as {
+      applyToken?: string;
+      appliedAt?: Date;
+      result?: unknown;
+    };
   }
 
   async function storedRequest(id: Types.ObjectId = supportRequest._id) {
     return (await SupportRequest.findById(id).lean())!;
   }
 
-  async function createRequest(
-    message: string,
-    fields: Record<string, unknown> = {},
-  ) {
-    return SupportRequest.create({
+  /** Updates the fixture request through mongoose. */
+  const update = (change: Rec) =>
+    SupportRequest.updateOne({ _id: supportRequest._id }, change);
+
+  /** Updates the fixture request in the raw collection, bypassing mongoose. */
+  const rawUpdate = (change: Rec) =>
+    SupportRequest.collection.updateOne({ _id: supportRequest._id }, change);
+
+  const createRequest = (message: string, fields: Rec = {}) =>
+    SupportRequest.create({
       ...input,
       message,
       status: 'open',
       sent,
       ...fields,
     });
+
+  const auditFor = (route: string) => AuditLog.findOne({ route }).lean();
+
+  async function entryStates(previewId: string) {
+    return (await stored(previewId)).entries.map(entry => [
+      entry.zendeskTicketId,
+      entry.state,
+      entry.reason,
+    ]);
   }
 
-  function auditFor(route: string) {
-    return AuditLog.findOne({ route }).lean();
+  /** The request snapshot a stored entry carries, with dates as epoch ms. */
+  async function snapshot(previewId: string) {
+    const [entry] = (await stored(previewId)).entries;
+    return [
+      entry?.currentStatus,
+      entry?.statusRevision,
+      entry?.statusChangedAt?.getTime(),
+      entry?.lastActivityAt?.getTime(),
+      entry?.sent?.getTime(),
+      entry?.currentTicketId,
+    ];
   }
 
   describe('manifest validation', () => {
-    const v2Item = (evidenceOverrides: Record<string, unknown> = {}) =>
-      item({
-        evidence: {
-          senderHash: HEX64,
-          category: 'other',
-          submittedAt: UPDATED_AT,
-          normalisedMessageHash: HEX64,
-          ...evidenceOverrides,
-        },
-      });
+    const validEvidence = {
+      senderHash: HEX64,
+      category: 'other',
+      submittedAt: UPDATED_AT,
+      normalisedMessageHash: HEX64,
+    };
+    const v2Item = (evidenceOverrides: Rec = {}) =>
+      item({ evidence: { ...validEvidence, ...evidenceOverrides } });
+    const ev = (evidenceOverrides: Rec) => v2([v2Item(evidenceOverrides)]);
+    const sender = (senderHash: unknown) => ev({ senderHash });
+    const msg = (normalisedMessageHash: unknown) =>
+      ev({ normalisedMessageHash });
+    const wrap = (evidenceValue: unknown) =>
+      v2([item({ evidence: evidenceValue })]);
 
-    it('rejects every malformed manifest with a 400', async () => {
-      const decorate = (value: Record<string, unknown>) =>
-        Object.assign([], value);
+    it('rejects every malformed manifest and v2 evidence with a 400', async () => {
       const cases: Array<[string, unknown]> = [
         ['a string', 'manifest'],
         ['an array', []],
@@ -210,12 +252,12 @@ describe('conservative support status import: behaviour guards', () => {
         ['a null updatedAt', v1({ updatedAt: null })],
         ['an object updatedAt', v1({ updatedAt: {} })],
         ['an unparseable updatedAt', v1({ updatedAt: 'yesterday' })],
-        ['a non-object item (number)', v1({}, { items: [5] })],
-        ['a null item', v1({}, { items: [null] })],
-        ['a string item', v1({}, { items: ['item'] })],
+        ['a non-object item (number)', v1Items(5)],
+        ['a null item', v1Items(null)],
+        ['a string item', v1Items('item')],
         [
-          'an array item carrying the right keys',
-          v1({}, { items: [decorate(item())] }),
+          'an array item with the right keys',
+          v1Items(Object.assign([], item())),
         ],
         ['an extra item key', v1({ extra: 1 })],
         [
@@ -239,165 +281,89 @@ describe('conservative support status import: behaviour guards', () => {
         ['v2 items without evidence', v2([item()])],
         ['an unknown version with v2 items', v2([v2Item()], { version: 3 })],
         ['version zero with v2 items', v2([v2Item()], { version: 0 })],
-      ];
-      for (const [label, source] of cases) {
-        await assert.rejects(
-          previewReducedManifest(source, adminId),
-          MANIFEST_ERROR,
-          label,
-        );
-      }
-      assert.equal(await PreviewModel.countDocuments(), 0);
-    });
-
-    it('rejects malformed v2 evidence with a 400', async () => {
-      const wrap = (evidenceValue: unknown) =>
-        v2([item({ evidence: evidenceValue })]);
-      const valid = {
-        senderHash: HEX64,
-        category: 'other',
-        submittedAt: UPDATED_AT,
-        normalisedMessageHash: HEX64,
-      };
-      const cases: Array<[string, unknown]> = [
         ['null evidence', wrap(null)],
         ['numeric evidence', wrap(5)],
         ['string evidence', wrap('evidence')],
-        [
-          'array evidence carrying the right keys',
-          wrap(Object.assign([], valid)),
-        ],
-        ['an extra evidence key', wrap({ ...valid, extra: 1 })],
+        ['array evidence', wrap(Object.assign([], validEvidence))],
+        ['an extra evidence key', wrap({ ...validEvidence, extra: 1 })],
         [
           'a missing evidence key',
           wrap({ senderHash: HEX64, category: 'other', submittedAt: null }),
         ],
-        ['a numeric senderHash', v2([v2Item({ senderHash: 5 })])],
-        ['an array senderHash', v2([v2Item({ senderHash: [HEX64] })])],
-        ['a short senderHash', v2([v2Item({ senderHash: 'a'.repeat(63) })])],
-        ['a prefixed senderHash', v2([v2Item({ senderHash: `g${HEX64}` })])],
-        ['a suffixed senderHash', v2([v2Item({ senderHash: `${HEX64}g` })])],
-        [
-          'a numeric normalisedMessageHash',
-          v2([v2Item({ normalisedMessageHash: 5 })]),
-        ],
-        [
-          'an array normalisedMessageHash',
-          v2([v2Item({ normalisedMessageHash: [HEX64] })]),
-        ],
-        [
-          'a prefixed normalisedMessageHash',
-          v2([v2Item({ normalisedMessageHash: `g${HEX64}` })]),
-        ],
-        [
-          'a suffixed normalisedMessageHash',
-          v2([v2Item({ normalisedMessageHash: `${HEX64}g` })]),
-        ],
-        ['an unknown category', v2([v2Item({ category: 'nonsense' })])],
-        ['an inherited category', v2([v2Item({ category: 'toString' })])],
-        ['an array category', v2([v2Item({ category: ['other'] })])],
-        ['a numeric category', v2([v2Item({ category: 5 })])],
-        ['an unparseable submittedAt', v2([v2Item({ submittedAt: 'later' })])],
-        ['a numeric submittedAt', v2([v2Item({ submittedAt: 1_735_689_600 })])],
-        ['an undefined submittedAt', v2([v2Item({ submittedAt: undefined })])],
+        ['a numeric senderHash', sender(5)],
+        ['an array senderHash', sender([HEX64])],
+        ['a short senderHash', sender('a'.repeat(63))],
+        ['a prefixed senderHash', sender(`g${HEX64}`)],
+        ['a suffixed senderHash', sender(`${HEX64}g`)],
+        ['a numeric normalisedMessageHash', msg(5)],
+        ['an array normalisedMessageHash', msg([HEX64])],
+        ['a prefixed normalisedMessageHash', msg(`g${HEX64}`)],
+        ['a suffixed normalisedMessageHash', msg(`${HEX64}g`)],
+        ['an unknown category', ev({ category: 'nonsense' })],
+        ['an inherited category', ev({ category: 'toString' })],
+        ['an array category', ev({ category: ['other'] })],
+        ['a numeric category', ev({ category: 5 })],
+        ['an unparseable submittedAt', ev({ submittedAt: 'later' })],
+        ['a numeric submittedAt', ev({ submittedAt: 1_735_689_600 })],
+        ['an undefined submittedAt', ev({ submittedAt: undefined })],
       ];
       for (const [label, source] of cases) {
-        await assert.rejects(
-          previewReducedManifest(source, adminId),
-          MANIFEST_ERROR,
-          label,
-        );
+        await assert.rejects(preview(source), MANIFEST_ERROR, label);
       }
+      assert.equal(await PreviewModel.countDocuments(), 0);
     });
 
     it('accepts the smallest ticket id, null submission times and the item limit', async () => {
-      const smallest = await previewReducedManifest(
-        v1({ zendeskTicketId: 1 }),
-        adminId,
-      );
+      const smallest = await preview(v1({ zendeskTicketId: 1 }));
       assert.equal(smallest.counts.eligible, 1);
       assert.equal(smallest.changes[0]?.zendeskTicketId, 1);
-
-      const nullTime = await previewReducedManifest(
-        v2([evidenceItem(5, input.message, null)]),
-        adminId,
-      );
+      const nullTime = await preview(suggestion(5, null));
       assert.equal(nullTime.counts.skippedByReason['no-match'], 1);
-
-      const full = await previewReducedManifest(
-        v1(
-          {},
-          {
-            items: Array.from({ length: 10_000 }, (_, index) =>
-              item({ zendeskTicketId: index + 1 }),
-            ),
-          },
-        ),
-        adminId,
+      const tickets = Array.from({ length: 10_000 }, (_, index) => index + 1);
+      const full = await preview(
+        v1Items(...tickets.map(zendeskTicketId => item({ zendeskTicketId }))),
       );
       assert.equal(full.counts.total, 10_000);
     });
   });
 
-  describe('administrator checks', () => {
+  it('answers 403 for unknown users, users without roles and non-admins', async () => {
     const FORBIDDEN = {
       status: 403,
       message: 'An administrator must import support statuses.',
     };
-
-    it('answers 403 for unknown users, users without roles and non-admins', async () => {
-      await assert.rejects(
-        previewReducedManifest(v1(), new mongoose.Types.ObjectId()),
-        FORBIDDEN,
-      );
-      const [member] = await utils.saveUsers(
-        utils.generateUsersWithSharedPassword(1),
-      );
-      await assert.rejects(
-        previewReducedManifest(v1(), member!._id),
-        FORBIDDEN,
-      );
-      await User.collection.updateOne(
-        { _id: member!._id },
-        { $unset: { roles: '' } },
-      );
-      await assert.rejects(
-        previewReducedManifest(v1(), member!._id),
-        FORBIDDEN,
-      );
-      const preview = await previewReducedManifest(v1(), adminId);
-      await assert.rejects(
-        applyPreview(preview.previewId, member!._id),
-        FORBIDDEN,
-      );
-      await assert.rejects(
-        applyPreview(preview.previewId, new mongoose.Types.ObjectId()),
-        FORBIDDEN,
-      );
-    });
+    const stranger = new mongoose.Types.ObjectId();
+    await assert.rejects(previewReducedManifest(v1(), stranger), FORBIDDEN);
+    const [member] = await utils.saveUsers(
+      utils.generateUsersWithSharedPassword(1),
+    );
+    await assert.rejects(previewReducedManifest(v1(), member!._id), FORBIDDEN);
+    await User.collection.updateOne({ _id: member!._id }, unset('roles'));
+    await assert.rejects(previewReducedManifest(v1(), member!._id), FORBIDDEN);
+    const { previewId } = await preview(v1());
+    await assert.rejects(applyPreview(previewId, member!._id), FORBIDDEN);
+    await assert.rejects(applyPreview(previewId, stranger), FORBIDDEN);
   });
 
   describe('preview', () => {
     it('keeps a preview for exactly thirty minutes', async () => {
-      // The lifetime is a module constant: load a fresh copy under this test.
-      const servicePath =
-        require.resolve('../../server/services/status-import.server.service.mts');
-      delete require.cache[servicePath];
-      const fresh: typeof import('../../server/services/status-import.server.service.mts') = require(
-        servicePath,
-      );
-      const preview = await fresh.previewReducedManifest(v1(), adminId);
-      const doc = await stored(preview.previewId);
+      // The lifetime is a module constant: import a fresh ESM instance under
+      // this test (deleting require.cache does not re-evaluate the .mts module).
+      const specifier = `../../server/services/status-import.server.service.mts?ttl=${Date.now()}`;
+      const fresh: typeof import('../../server/services/status-import.server.service.mts') =
+        await import(specifier);
+      const result = await fresh.previewReducedManifest(v1(), adminId);
+      const doc = await stored(result.previewId);
       assert.equal(
         doc.expiresAt.getTime() - doc.createdAt.getTime(),
         30 * MINUTE,
       );
-      assert.equal(preview.expiresAt, doc.expiresAt.toISOString());
+      assert.equal(result.expiresAt, doc.expiresAt.toISOString());
     });
 
     it('describes an exact change completely', async () => {
-      const preview = await previewReducedManifest(v1(), adminId);
-      assert.deepEqual(preview.changes, [
+      const result = await preview(v1());
+      assert.deepEqual(result.changes, [
         {
           requestId: String(supportRequest._id),
           zendeskTicketId: 789,
@@ -408,16 +374,9 @@ describe('conservative support status import: behaviour guards', () => {
           reason: 'exact request fingerprint',
         },
       ]);
-      assert.deepEqual(preview.matchReviews, []);
-      assert.deepEqual(preview.counts, {
-        total: 1,
-        eligible: 1,
-        suggested: 0,
-        alreadyApplied: 0,
-        skipped: 0,
-        skippedByReason: {},
-      });
-      const [entry] = (await stored(preview.previewId)).entries;
+      assert.deepEqual(result.matchReviews, []);
+      assert.deepEqual(result.counts, counts([1, 1, 0, 0, 0]));
+      const [entry] = (await stored(result.previewId)).entries;
       assert.equal(entry?.state, 'ready');
       assert.equal(String(entry?.requestId), String(supportRequest._id));
       assert.equal(
@@ -427,66 +386,38 @@ describe('conservative support status import: behaviour guards', () => {
     });
 
     it('does not fail on legacy requests without a stored message', async () => {
-      await SupportRequest.collection.updateOne(
-        { _id: supportRequest._id },
-        { $unset: { message: '' } },
-      );
-      const preview = await previewReducedManifest(
-        v2([evidenceItem(5, input.message)]),
-        adminId,
-      );
-      assert.equal(preview.counts.skippedByReason['no-match'], 1);
+      await rawUpdate(unset('message'));
+      const result = await preview(suggestion(5));
+      assert.equal(result.counts.skippedByReason['no-match'], 1);
     });
 
     it('treats activity exactly at the imported time as not newer, and anything later as newer', async () => {
       const updatedAt = new Date(UPDATED_AT);
       for (const field of ['lastActivityAt', 'statusChangedAt', 'sent']) {
-        await SupportRequest.collection.updateOne(
-          { _id: supportRequest._id },
-          { $set: { [field]: updatedAt } },
-        );
-        const atBoundary = await previewReducedManifest(v1(), adminId);
-        assert.equal(atBoundary.counts.eligible, 1, field);
-
-        await SupportRequest.collection.updateOne(
-          { _id: supportRequest._id },
-          { $set: { [field]: new Date(updatedAt.getTime() + 1) } },
-        );
-        const later = await previewReducedManifest(v1(), adminId);
-        assert.equal(
-          later.counts.skippedByReason['newer-local-activity'],
-          1,
-          field,
-        );
-        await SupportRequest.collection.updateOne(
-          { _id: supportRequest._id },
-          { $set: { [field]: sent } },
-        );
+        await rawUpdate(set(field, updatedAt));
+        assert.equal((await preview(v1())).counts.eligible, 1, field);
+        await rawUpdate(set(field, new Date(updatedAt.getTime() + 1)));
+        const { counts: later } = await preview(v1());
+        assert.equal(later.skippedByReason['newer-local-activity'], 1, field);
+        await rawUpdate(set(field, sent));
       }
     });
 
     it('treats a matching ticket id with a different status as a change, not as applied', async () => {
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { zendeskTicketId: 789 } },
-      );
-      const preview = await previewReducedManifest(v1(), adminId);
-      assert.equal(preview.counts.eligible, 1);
-      assert.equal(preview.counts.alreadyApplied, 0);
-      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-        applied: 1,
-        alreadyApplied: 0,
-        skipped: 0,
-      });
+      await update(set('zendeskTicketId', 789));
+      const result = await preview(v1());
+      assert.equal(result.counts.eligible, 1);
+      assert.equal(result.counts.alreadyApplied, 0);
+      assert.deepEqual(await apply(result), outcome(1, 0, 0));
       assert.equal((await storedRequest()).status, 'pending');
     });
 
     it('records the audit trail without personal data', async () => {
-      const scenario = await mixedScenario();
-      const preview = await previewReducedManifest(scenario.manifest, adminId);
+      const { manifest } = await mixedScenario();
+      const result = await preview(manifest);
       const log = await auditFor('support-status-import/preview');
       assert.equal(String(log?.user), String(adminId));
-      assert.deepEqual(log?.params, { previewId: preview.previewId });
+      assert.deepEqual(log?.params, { previewId: result.previewId });
       assert.deepEqual(log?.body, {
         total: 7,
         eligible: 1,
@@ -498,10 +429,7 @@ describe('conservative support status import: behaviour guards', () => {
 
   describe('suggested matches', () => {
     it('describes a candidate completely, omitting absent optional fields', async () => {
-      const preview = await previewReducedManifest(
-        v2([evidenceItem(893, input.message)]),
-        adminId,
-      );
+      const result = await preview(suggestion());
       const candidate = {
         requestId: String(supportRequest._id),
         category: 'other',
@@ -514,7 +442,7 @@ describe('conservative support status import: behaviour guards', () => {
         currentStatus: 'open',
         importedStatus: 'pending',
       };
-      assert.deepEqual(preview.matchReviews, [
+      assert.deepEqual(result.matchReviews, [
         {
           zendeskTicketId: 893,
           category: 'other',
@@ -523,44 +451,29 @@ describe('conservative support status import: behaviour guards', () => {
           candidates: [candidate],
         },
       ]);
-      assert.deepEqual(preview.counts, {
-        total: 1,
-        eligible: 0,
-        suggested: 1,
-        alreadyApplied: 0,
-        skipped: 0,
-        skippedByReason: {},
-      });
-
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { username: 'fictional-name', subject: 'Fictional subject' } },
-      );
-      const withDetails = await previewReducedManifest(
-        v2([evidenceItem(893, input.message)]),
-        adminId,
-      );
+      assert.deepEqual(result.counts, counts([1, 0, 1, 0, 0]));
+      const details = { username: 'fictional-name', subject: 'Fictional' };
+      await update({ $set: details });
+      const withDetails = await preview(suggestion());
       assert.deepEqual(withDetails.matchReviews[0]?.candidates, [
         {
           ...candidate,
-          senderUsername: 'fictional-name',
-          subject: 'Fictional subject',
+          senderUsername: details.username,
+          subject: 'Fictional',
         },
       ]);
     });
 
     it('stores the evidence and a snapshot of each suggested candidate', async () => {
-      const statusChangedAt = new Date('2024-02-01T00:00:00.000Z');
-      const lastActivityAt = new Date('2024-03-01T00:00:00.000Z');
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { statusChangedAt, lastActivityAt, statusRevision: 4 } },
-      );
-      const preview = await previewReducedManifest(
-        v2([evidenceItem(893, input.message)]),
-        adminId,
-      );
-      const [entry] = (await stored(preview.previewId)).entries;
+      await update({
+        $set: {
+          statusChangedAt: CHANGED_AT,
+          lastActivityAt: ACTIVITY_AT,
+          statusRevision: 4,
+        },
+      });
+      const result = await preview(suggestion());
+      const [entry] = (await stored(result.previewId)).entries;
       assert.equal(entry?.state, 'suggested');
       assert.equal(entry?.matchKind, 'suggested');
       assert.equal(entry?.reason, undefined);
@@ -576,108 +489,64 @@ describe('conservative support status import: behaviour guards', () => {
         entry?.originalFingerprint,
         supportRequestFingerprint(input),
       );
-      assert.equal(entry?.currentStatus, 'open');
-      assert.equal(entry?.statusRevision, 4);
-      assert.equal(
-        entry?.statusChangedAt?.getTime(),
-        statusChangedAt.getTime(),
-      );
-      assert.equal(entry?.lastActivityAt?.getTime(), lastActivityAt.getTime());
-      assert.equal(entry?.sent?.getTime(), sent.getTime());
-      assert.equal(entry?.currentTicketId, null);
+      assert.deepEqual(await snapshot(result.previewId), [
+        'open',
+        4,
+        CHANGED_AT.getTime(),
+        ACTIVITY_AT.getTime(),
+        sent.getTime(),
+        null,
+      ]);
     });
 
     it('keeps the matching window inclusive and reports whole seconds', async () => {
-      const atWindow = await previewReducedManifest(
-        v2([evidenceItem(1, input.message, new Date(sent.getTime() - MINUTE))]),
-        adminId,
-      );
+      const atWindow = await preview(suggestion(1, at(-MINUTE)));
       assert.equal(atWindow.counts.suggested, 1);
-      assert.equal(
-        atWindow.matchReviews[0]?.candidates[0]?.timeDifferenceSeconds,
-        60,
-      );
-
-      const beyond = await previewReducedManifest(
-        v2([
-          evidenceItem(2, input.message, new Date(sent.getTime() - MINUTE - 1)),
-        ]),
-        adminId,
-      );
+      const [review] = atWindow.matchReviews;
+      assert.equal(review?.candidates[0]?.timeDifferenceSeconds, 60);
+      const beyond = await preview(suggestion(2, at(-MINUTE - 1)));
       assert.equal(beyond.counts.suggested, 0);
-
-      const wide = await previewReducedManifest(
-        v2([
-          evidenceItem(3, input.message, new Date(sent.getTime() + 125_500)),
-        ]),
-        adminId,
-        '5',
-      );
-      assert.equal(
-        wide.matchReviews[0]?.candidates[0]?.timeDifferenceSeconds,
-        125,
-      );
+      const wide = await preview(suggestion(3, at(125_500)), '5');
+      const [wideReview] = wide.matchReviews;
+      assert.equal(wideReview?.candidates[0]?.timeDifferenceSeconds, 125);
     });
 
     it('only suggests requests that are free to take the ticket', async () => {
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { zendeskTicketId: 111 } },
-      );
-      const otherTicket = await previewReducedManifest(
-        v2([evidenceItem(5, input.message)]),
-        adminId,
-      );
+      await update(set('zendeskTicketId', 111));
+      const otherTicket = await preview(suggestion(5));
       assert.equal(otherTicket.counts.suggested, 0);
       assert.equal(otherTicket.counts.skippedByReason['no-match'], 1);
-
-      await SupportRequest.collection.updateOne(
-        { _id: supportRequest._id },
-        { $set: { zendeskTicketId: null } },
-      );
-      const explicitNull = await previewReducedManifest(
-        v2([evidenceItem(5, input.message)]),
-        adminId,
-      );
-      assert.equal(explicitNull.counts.suggested, 1);
+      await rawUpdate(set('zendeskTicketId', null));
+      assert.equal((await preview(suggestion(5))).counts.suggested, 1);
     });
 
     it('does not suggest a request that another item already matches exactly', async () => {
-      const preview = await previewReducedManifest(
+      const result = await preview(
         v2([
           item({ evidence: evidence(input.message, null) }),
           evidenceItem(790, input.message),
         ]),
-        adminId,
       );
-      assert.equal(preview.counts.eligible, 1);
-      assert.equal(preview.counts.suggested, 0);
-      assert.equal(preview.counts.skippedByReason['no-match'], 1);
-      assert.deepEqual(
-        (await stored(preview.previewId)).entries.map(entry => [
-          entry.zendeskTicketId,
-          entry.state,
-          entry.reason,
-        ]),
-        [
-          [789, 'ready', undefined],
-          [790, 'skipped', 'no-match'],
-        ],
-      );
+      assert.equal(result.counts.eligible, 1);
+      assert.equal(result.counts.suggested, 0);
+      assert.equal(result.counts.skippedByReason['no-match'], 1);
+      assert.deepEqual(await entryStates(result.previewId), [
+        [789, 'ready', undefined],
+        [790, 'skipped', 'no-match'],
+      ]);
     });
 
     it('lets two items suggest the same request but never accepts it twice', async () => {
-      const preview = await previewReducedManifest(
+      const result = await preview(
         v2([
           evidenceItem(801, input.message),
           evidenceItem(802, input.message),
         ]),
-        adminId,
       );
-      assert.equal(preview.counts.suggested, 2);
+      assert.equal(result.counts.suggested, 2);
       const requestId = String(supportRequest._id);
       await assert.rejects(
-        applyPreview(preview.previewId, adminId, [
+        apply(result, [
           { zendeskTicketId: 801, requestId },
           { zendeskTicketId: 802, requestId },
         ]),
@@ -699,14 +568,11 @@ describe('conservative support status import: behaviour guards', () => {
     const conflicted = await createRequest('Request five', {
       zendeskTicketId: 999,
     });
-    const own = (request: SupportRequestFixture, ticket: number) =>
+    const own = ({ message }: SupportRequestFixture, zendeskTicketId: number) =>
       item({
-        zendeskTicketId: ticket,
-        fingerprint: supportRequestFingerprint({
-          ...input,
-          message: request.message,
-        }),
-        evidence: evidence(request.message, null),
+        zendeskTicketId,
+        fingerprint: fingerprint({ message }),
+        evidence: evidence(message, null),
       });
     return {
       alreadyApplied,
@@ -729,153 +595,93 @@ describe('conservative support status import: behaviour guards', () => {
   describe('apply', () => {
     it('applies the exact matches, leaves unresolved suggestions and reports every outcome', async () => {
       const scenario = await mixedScenario();
-      const preview = await previewReducedManifest(scenario.manifest, adminId);
-      assert.deepEqual(preview.counts, {
-        total: 7,
-        eligible: 1,
-        suggested: 2,
-        alreadyApplied: 1,
-        skipped: 3,
-        skippedByReason: { 'ticket-id-conflict': 1, 'no-match': 2 },
-      });
+      const result = await preview(scenario.manifest);
       assert.deepEqual(
-        (await stored(preview.previewId)).entries.map(entry => [
-          entry.zendeskTicketId,
-          entry.state,
-          entry.reason,
-        ]),
-        [
-          [701, 'alreadyApplied', undefined],
-          [702, 'ready', undefined],
-          [703, 'suggested', undefined],
-          [704, 'suggested', undefined],
-          [705, 'skipped', 'ticket-id-conflict'],
-          [706, 'skipped', 'no-match'],
-          [707, 'skipped', 'no-match'],
-        ],
+        result.counts,
+        counts([7, 1, 2, 1, 3], { 'ticket-id-conflict': 1, 'no-match': 2 }),
       );
-      const result = await applyPreview(preview.previewId, adminId);
-      assert.deepEqual(result, { applied: 1, alreadyApplied: 1, skipped: 5 });
+      assert.deepEqual(await entryStates(result.previewId), [
+        [701, 'alreadyApplied', undefined],
+        [702, 'ready', undefined],
+        [703, 'suggested', undefined],
+        [704, 'suggested', undefined],
+        [705, 'skipped', 'ticket-id-conflict'],
+        [706, 'skipped', 'no-match'],
+        [707, 'skipped', 'no-match'],
+      ]);
+      assert.deepEqual(await apply(result), outcome(1, 1, 5));
       const log = await auditFor('support-status-import/apply');
       assert.equal(String(log?.user), String(adminId));
-      assert.deepEqual(log?.params, { previewId: preview.previewId });
+      assert.deepEqual(log?.params, { previewId: result.previewId });
       assert.deepEqual(log?.body, { eligible: 1, selectedSuggestions: 0 });
-      assert.equal(
-        (await storedRequest(scenario.ready._id)).zendeskTicketId,
-        702,
-      );
-      assert.equal(
-        (await storedRequest(scenario.suggestedA._id)).status,
-        'open',
-      );
+      const ready = await storedRequest(scenario.ready._id);
+      assert.equal(ready.zendeskTicketId, 702);
+      const suggestedA = await storedRequest(scenario.suggestedA._id);
+      assert.equal(suggestedA.status, 'open');
     });
 
     it('applies a selected suggestion next to the exact matches', async () => {
       const scenario = await mixedScenario();
-      const preview = await previewReducedManifest(scenario.manifest, adminId);
-      const result = await applyPreview(preview.previewId, adminId, [
+      const result = await preview(scenario.manifest);
+      const applied = await apply(result, [
         { zendeskTicketId: 703, requestId: String(scenario.suggestedA._id) },
       ]);
-      assert.deepEqual(result, { applied: 2, alreadyApplied: 1, skipped: 4 });
+      assert.deepEqual(applied, outcome(2, 1, 4));
       const log = await auditFor('support-status-import/apply');
       assert.deepEqual(log?.body, { eligible: 2, selectedSuggestions: 1 });
       const updated = await storedRequest(scenario.suggestedA._id);
       assert.equal(updated.status, 'pending');
       assert.equal(updated.zendeskTicketId, 703);
-      assert.equal(
-        (await storedRequest(scenario.suggestedB._id)).zendeskTicketId,
-        undefined,
-      );
-      assert.deepEqual((await stored(preview.previewId)).result, result);
+      const other = await storedRequest(scenario.suggestedB._id);
+      assert.equal(other.zendeskTicketId, undefined);
+      assert.deepEqual((await stored(result.previewId)).result, applied);
     });
 
-    it('rejects selections that overlap exact matches or are not suggestions', async () => {
+    it('rejects selections that overlap exact matches, repeat, or are not suggestions', async () => {
       const scenario = await mixedScenario();
-      const preview = await previewReducedManifest(scenario.manifest, adminId);
-      const id = (request: SupportRequestFixture) => String(request._id);
-      const rejected: Array<
-        [string, number, string, { status: number; message: string }]
-      > = [
+      const result = await preview(scenario.manifest);
+      const id = (request: { _id: Types.ObjectId }) => String(request._id);
+      const pick = (zendeskTicketId: number, requestId: string) => ({
+        zendeskTicketId,
+        requestId,
+      });
+      const [a, b] = [id(scenario.suggestedA), id(scenario.suggestedB)];
+      const unrelated = id({ _id: new mongoose.Types.ObjectId() });
+      const rejected: Array<[string, unknown[], object]> = [
+        ['ticket of an applied match', [pick(701, a)], ONE_TO_ONE],
+        ['ticket of a ready match', [pick(702, a)], ONE_TO_ONE],
         [
-          'ticket of an already applied match',
-          701,
-          id(scenario.suggestedA),
+          'request of an applied match',
+          [pick(703, id(scenario.alreadyApplied))],
           ONE_TO_ONE,
         ],
-        ['ticket of a ready match', 702, id(scenario.suggestedA), ONE_TO_ONE],
         [
-          'request of an already applied match',
-          703,
-          id(scenario.alreadyApplied),
+          'request of a ready match',
+          [pick(703, id(scenario.ready))],
           ONE_TO_ONE,
         ],
-        ['request of a ready match', 703, id(scenario.ready), ONE_TO_ONE],
-        [
-          'a ticket without suggestions',
-          999_999,
-          id(scenario.suggestedA),
-          NOT_SUGGESTED,
-        ],
-        [
-          'another ticket’s candidate',
-          703,
-          id(scenario.suggestedB),
-          NOT_SUGGESTED,
-        ],
-        [
-          'an unrelated request',
-          703,
-          String(new mongoose.Types.ObjectId()),
-          NOT_SUGGESTED,
-        ],
+        ['a ticket selected twice', [pick(703, a), pick(703, b)], ONE_TO_ONE],
+        ['a request selected twice', [pick(703, a), pick(704, a)], ONE_TO_ONE],
+        ['a ticket without suggestions', [pick(999_999, a)], NOT_SUGGESTED],
+        ['another ticket’s candidate', [pick(703, b)], NOT_SUGGESTED],
+        ['an unrelated request', [pick(703, unrelated)], NOT_SUGGESTED],
         [
           'a skipped entry that names a request',
-          705,
-          id(scenario.conflicted),
+          [pick(705, id(scenario.conflicted))],
           NOT_SUGGESTED,
         ],
       ];
-      for (const [label, zendeskTicketId, requestId, expected] of rejected) {
-        await assert.rejects(
-          applyPreview(preview.previewId, adminId, [
-            { zendeskTicketId, requestId },
-          ]),
-          expected,
-          label,
-        );
+      for (const [label, selections, expected] of rejected) {
+        await assert.rejects(apply(result, selections), expected, label);
       }
       // Rejected selections never claim the preview.
-      assert.equal((await stored(preview.previewId)).result, undefined);
-      assert.equal(
-        ((await stored(preview.previewId)) as { applyToken?: string })
-          .applyToken,
-        undefined,
-      );
-    });
-
-    it('rejects a ticket or a request selected twice', async () => {
-      const scenario = await mixedScenario();
-      const preview = await previewReducedManifest(scenario.manifest, adminId);
-      const a = String(scenario.suggestedA._id);
-      const b = String(scenario.suggestedB._id);
-      await assert.rejects(
-        applyPreview(preview.previewId, adminId, [
-          { zendeskTicketId: 703, requestId: a },
-          { zendeskTicketId: 703, requestId: b },
-        ]),
-        ONE_TO_ONE,
-      );
-      await assert.rejects(
-        applyPreview(preview.previewId, adminId, [
-          { zendeskTicketId: 703, requestId: a },
-          { zendeskTicketId: 704, requestId: a },
-        ]),
-        ONE_TO_ONE,
-      );
+      const meta = await storedMeta(result.previewId);
+      assert.equal(meta.result, undefined);
+      assert.equal(meta.applyToken, undefined);
     });
 
     it('rejects malformed selections and previews', async () => {
-      const preview = await previewReducedManifest(v1(), adminId);
+      const result = await preview(v1());
       const requestId = String(new mongoose.Types.ObjectId());
       const valid = { zendeskTicketId: 5, requestId };
       const selections: Array<[string, unknown]> = [
@@ -893,25 +699,20 @@ describe('conservative support status import: behaviour guards', () => {
         ['a suffixed request id', [{ ...valid, requestId: `${requestId}x` }]],
         ['a short request id', [{ ...valid, requestId: requestId.slice(1) }]],
       ];
+      const badSelection = badRequest('Invalid support status selection.');
       for (const [label, selection] of selections) {
-        await assert.rejects(
-          applyPreview(preview.previewId, adminId, selection as never),
-          SELECTION_ERROR,
-          label,
-        );
+        await assert.rejects(apply(result, selection), badSelection, label);
       }
-      const INVALID_PREVIEW = {
-        status: 400,
-        message: 'Invalid support status preview.',
-      };
+      const { previewId } = result;
+      const badPreview = badRequest('Invalid support status preview.');
       for (const bad of [
-        `x${preview.previewId}`,
-        `${preview.previewId}x`,
-        preview.previewId.slice(1),
-        '',
+        `x${previewId}`,
+        `${previewId}x`,
+        previewId.slice(1),
       ]) {
-        await assert.rejects(applyPreview(bad, adminId), INVALID_PREVIEW, bad);
+        await assert.rejects(applyPreview(bad, adminId), badPreview, bad);
       }
+      await assert.rejects(applyPreview('', adminId), badPreview);
       await assert.rejects(
         applyPreview(String(new mongoose.Types.ObjectId()), adminId),
         { status: 404, message: 'Support status preview not found.' },
@@ -919,27 +720,19 @@ describe('conservative support status import: behaviour guards', () => {
     });
 
     it('answers a replayed apply with the saved result, whatever is sent with it', async () => {
-      const preview = await previewReducedManifest(v1(), adminId);
-      const first = await applyPreview(preview.previewId, adminId);
-      assert.deepEqual(
-        await applyPreview(preview.previewId, adminId, [
-          { bad: true },
-        ] as never),
-        first,
-      );
+      const result = await preview(v1());
+      const first = await apply(result);
+      assert.deepEqual(await apply(result, [{ bad: true }]), first);
       assert.equal((await storedRequest()).statusRevision, 1);
     });
 
     it('rejects an expired preview at the exact expiry time', async () => {
-      const preview = await previewReducedManifest(v1(), adminId);
+      const result = await preview(v1());
       const expiresAt = new Date('2030-01-01T00:00:00.000Z');
-      await PreviewModel.updateOne(
-        { _id: preview.previewId },
-        { $set: { expiresAt } },
-      );
+      await tamper(result, { $set: { expiresAt } });
       const clock = sinon.useFakeTimers({ now: expiresAt, toFake: ['Date'] });
       try {
-        await assert.rejects(applyPreview(preview.previewId, adminId), {
+        await assert.rejects(apply(result), {
           status: 410,
           message: 'Support status preview has expired.',
         });
@@ -949,33 +742,23 @@ describe('conservative support status import: behaviour guards', () => {
     });
 
     it('reports every stored outcome of a preview with only skipped entries', async () => {
-      const duplicateTickets = await previewReducedManifest(
-        v1({}, { items: [item(), item({ status: 'solved' })] }),
-        adminId,
+      const dupTickets = await preview(
+        v1Items(item(), item({ status: 'solved' })),
       );
-      const duplicateFingerprints = await previewReducedManifest(
-        v1({}, { items: [item(), item({ zendeskTicketId: 790 })] }),
-        adminId,
+      const dupPrints = await preview(
+        v1Items(item(), item({ zendeskTicketId: 790 })),
       );
-      const noMatch = await previewReducedManifest(
-        v1({ fingerprint: 'f'.repeat(64) }),
-        adminId,
-      );
+      const noMatch = await preview(v1({ fingerprint: 'f'.repeat(64) }));
       await createRequest(input.message, { sent: new Date('2024-01-02') });
-      const ambiguous = await previewReducedManifest(v1(), adminId);
+      const ambiguous = await preview(v1());
       const cases: Array<[string, typeof noMatch, string, number]> = [
-        ['duplicate ticket ids', duplicateTickets, 'duplicate-ticket-id', 2],
-        [
-          'duplicate fingerprints',
-          duplicateFingerprints,
-          'duplicate-fingerprint',
-          2,
-        ],
+        ['duplicate ticket ids', dupTickets, 'duplicate-ticket-id', 2],
+        ['duplicate fingerprints', dupPrints, 'duplicate-fingerprint', 2],
         ['no match', noMatch, 'no-match', 1],
         ['an ambiguous match', ambiguous, 'ambiguous-match', 1],
       ];
-      for (const [label, preview, reason, count] of cases) {
-        const { entries } = await stored(preview.previewId);
+      for (const [label, result, reason, count] of cases) {
+        const { entries } = await stored(result.previewId);
         assert.equal(entries.length, count, label);
         assert.ok(
           entries.every(
@@ -983,174 +766,113 @@ describe('conservative support status import: behaviour guards', () => {
           ),
           label,
         );
-        assert.deepEqual(
-          await applyPreview(preview.previewId, adminId),
-          { applied: 0, alreadyApplied: 0, skipped: count },
-          label,
-        );
+        assert.deepEqual(await apply(result), outcome(0, 0, count), label);
       }
     });
 
     it('stores the request with every skip that matched one', async () => {
       // A request holding another ticket, and a ticket held by another request.
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { zendeskTicketId: 123 } },
-      );
-      const heldByRequest = await previewReducedManifest(v1(), adminId);
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $unset: { zendeskTicketId: '' } },
-      );
+      await update(set('zendeskTicketId', 123));
+      const heldByRequest = await preview(v1());
+      await update(unset('zendeskTicketId'));
       await createRequest('Another request', { zendeskTicketId: 789 });
-      const heldByOther = await previewReducedManifest(v1(), adminId);
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { lastActivityAt: new Date('2026-01-01') } },
-      );
+      const heldByOther = await preview(v1());
+      await update(set('lastActivityAt', new Date('2026-01-01')));
       await SupportRequest.deleteMany({ _id: { $ne: supportRequest._id } });
-      const newer = await previewReducedManifest(v1(), adminId);
+      const newer = await preview(v1());
 
-      for (const [preview, reason] of [
+      for (const [result, reason] of [
         [heldByRequest, 'ticket-id-conflict'],
         [heldByOther, 'ticket-id-conflict'],
         [newer, 'newer-local-activity'],
       ] as const) {
-        const { entries } = await stored(preview.previewId);
+        const { entries } = await stored(result.previewId);
         assert.equal(entries.length, 1, reason);
         assert.equal(entries[0]?.state, 'skipped');
         assert.equal(entries[0]?.reason, reason);
         assert.equal(String(entries[0]?.requestId), String(supportRequest._id));
-        assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-          applied: 0,
-          alreadyApplied: 0,
-          skipped: 1,
-        });
+        assert.deepEqual(await apply(result), outcome(0, 0, 1));
       }
     });
 
     it('stores skipped entries for sources that target one request twice', async () => {
       const message = 'Please help with a & b.';
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { message } },
-      );
-      const preview = await previewReducedManifest(
-        v1(
-          {},
-          {
-            items: [
-              item({
-                fingerprint: supportRequestFingerprint({ ...input, message }),
-              }),
-              item({
-                zendeskTicketId: 790,
-                fingerprint: supportRequestFingerprint({
-                  ...input,
-                  message: 'Please help with a &amp; b.',
-                }),
-              }),
-            ],
-          },
+      await update(set('message', message));
+      const result = await preview(
+        v1Items(
+          item({ fingerprint: fingerprint({ message }) }),
+          item({
+            zendeskTicketId: 790,
+            fingerprint: fingerprint({
+              message: 'Please help with a &amp; b.',
+            }),
+          }),
         ),
-        adminId,
       );
-      const { entries } = await stored(preview.previewId);
+      const { entries } = await stored(result.previewId);
+      const ambiguous = ['skipped', 'ambiguous-source-match'];
       assert.deepEqual(
         entries.map(entry => [entry.state, entry.reason]),
-        [
-          ['skipped', 'ambiguous-source-match'],
-          ['skipped', 'ambiguous-source-match'],
-        ],
+        [ambiguous, ambiguous],
       );
-      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-        applied: 0,
-        alreadyApplied: 0,
-        skipped: 2,
-      });
+      assert.deepEqual(await apply(result), outcome(0, 0, 2));
     });
 
     it('counts a request that already has the imported state when applying', async () => {
-      await SupportRequest.updateOne(
-        { _id: supportRequest._id },
-        { $set: { status: 'pending', zendeskTicketId: 789 } },
-      );
-      const preview = await previewReducedManifest(v1(), adminId);
-      const [entry] = (await stored(preview.previewId)).entries;
+      await update({ $set: { status: 'pending', zendeskTicketId: 789 } });
+      const result = await preview(v1());
+      const [entry] = (await stored(result.previewId)).entries;
       assert.equal(entry?.state, 'alreadyApplied');
-      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-        applied: 0,
-        alreadyApplied: 1,
-        skipped: 0,
-      });
+      assert.deepEqual(await apply(result), outcome(0, 1, 0));
     });
 
-    it('applies requests whose every snapshot field is set', async () => {
-      const statusChangedAt = new Date('2024-02-01T00:00:00.000Z');
-      const lastActivityAt = new Date('2024-03-01T00:00:00.000Z');
+    /** Replaces the fixture with a member report and previews its import. */
+    async function reportMemberPreview(fields: Rec = {}) {
       await SupportRequest.deleteMany({});
-      const request = await SupportRequest.create({
-        ...input,
+      const request = await createRequest(input.message, {
         category: 'reportMember',
         reportMember: 'fictional-target',
-        status: 'open',
+        ...fields,
+      });
+      const result = await preview(
+        v1({ fingerprint: fingerprint({ category: 'reportMember' }) }),
+      );
+      return { request, result };
+    }
+
+    it('applies requests whose every snapshot field is set', async () => {
+      const { request, result } = await reportMemberPreview({
         statusRevision: 3,
-        statusChangedAt,
-        lastActivityAt,
+        statusChangedAt: CHANGED_AT,
+        lastActivityAt: ACTIVITY_AT,
         zendeskTicketId: 789,
-        sent,
       });
-      const preview = await previewReducedManifest(
-        v1(
-          {},
-          {
-            items: [
-              item({
-                fingerprint: supportRequestFingerprint({
-                  ...input,
-                  category: 'reportMember',
-                }),
-              }),
-            ],
-          },
-        ),
-        adminId,
-      );
-      const [entry] = (await stored(preview.previewId)).entries;
-      assert.equal(entry?.currentStatus, 'open');
-      assert.equal(entry?.statusRevision, 3);
-      assert.equal(
-        entry?.statusChangedAt?.getTime(),
-        statusChangedAt.getTime(),
-      );
-      assert.equal(entry?.lastActivityAt?.getTime(), lastActivityAt.getTime());
-      assert.equal(entry?.sent?.getTime(), sent.getTime());
-      assert.equal(entry?.currentTicketId, 789);
-      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-        applied: 1,
-        alreadyApplied: 0,
-        skipped: 0,
-      });
+      assert.deepEqual(await snapshot(result.previewId), [
+        'open',
+        3,
+        CHANGED_AT.getTime(),
+        ACTIVITY_AT.getTime(),
+        sent.getTime(),
+        789,
+      ]);
+      assert.deepEqual(await apply(result), outcome(1, 0, 0));
       const updated = await storedRequest(request._id);
       assert.equal(updated.status, 'pending');
       assert.equal(updated.statusRevision, 4);
       assert.equal(updated.zendeskTicketId, 789);
       assert.equal(updated.reportMember, 'fictional-target');
-      assert.ok(updated.statusChangedAt! > statusChangedAt);
-      assert.equal(updated.lastActivityAt?.getTime(), lastActivityAt.getTime());
+      assert.ok(updated.statusChangedAt! > CHANGED_AT);
+      assert.equal(updated.lastActivityAt?.getTime(), ACTIVITY_AT.getTime());
+    });
+
+    it('keeps the reported member in the write guard', async () => {
+      const { result } = await reportMemberPreview();
+      assert.deepEqual(await apply(result), outcome(1, 0, 0));
     });
 
     it('applies a legacy request that has no revision yet', async () => {
-      await SupportRequest.collection.updateOne(
-        { _id: supportRequest._id },
-        { $unset: { statusRevision: '' } },
-      );
-      const preview = await previewReducedManifest(v1(), adminId);
-      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-        applied: 1,
-        alreadyApplied: 0,
-        skipped: 0,
-      });
+      await rawUpdate(unset('statusRevision'));
+      assert.deepEqual(await apply(await preview(v1())), outcome(1, 0, 0));
       assert.equal((await storedRequest()).statusRevision, 1);
     });
 
@@ -1161,15 +883,11 @@ describe('conservative support status import: behaviour guards', () => {
         ['pending', false],
         ['open', false],
       ] as const) {
-        await SupportRequest.updateOne(
-          { _id: supportRequest._id },
-          {
-            $set: { status: status === 'open' ? 'new' : 'open' },
-            $unset: { zendeskTicketId: '', statusChangedAt: '' },
-          },
-        );
-        const preview = await previewReducedManifest(v1({ status }), adminId);
-        await applyPreview(preview.previewId, adminId);
+        await update({
+          $set: { status: status === 'open' ? 'new' : 'open' },
+          $unset: { zendeskTicketId: '', statusChangedAt: '' },
+        });
+        await apply(await preview(v1({ status })));
         const updated = await storedRequest();
         assert.equal(updated.status, status);
         assert.equal(
@@ -1180,32 +898,33 @@ describe('conservative support status import: behaviour guards', () => {
       }
     });
 
+    /** Recreates the only request with these fields and previews its import. */
+    async function freshPreview(fields: Rec) {
+      sinon.restore();
+      await SupportRequest.deleteMany({});
+      const request = await createRequest(input.message, fields);
+      return { request, result: await preview(v1()) };
+    }
+
     it('never writes when the request changed after the preview', async () => {
-      const changes: Array<[string, Record<string, unknown>]> = [
-        ['status', { status: 'solved' }],
-        ['statusRevision', { statusRevision: 4 }],
-        ['statusChangedAt', { statusChangedAt: new Date('2024-06-01') }],
-        ['lastActivityAt', { lastActivityAt: new Date('2024-06-01') }],
-        ['sent', { sent: new Date('2024-06-01') }],
-        ['zendeskTicketId', { zendeskTicketId: 555 }],
+      const changes: Array<[string, unknown]> = [
+        ['status', 'solved'],
+        ['statusRevision', 4],
+        ['statusChangedAt', LATER],
+        ['lastActivityAt', LATER],
+        ['sent', LATER],
+        ['zendeskTicketId', 555],
       ];
-      for (const [field, change] of changes) {
-        sinon.restore();
-        await SupportRequest.deleteMany({});
-        const request = await createRequest(input.message, {
-          statusChangedAt: new Date('2024-02-01'),
+      for (const [field, value] of changes) {
+        const { request, result } = await freshPreview({
+          statusChangedAt: CHANGED_AT,
         });
-        const preview = await previewReducedManifest(v1(), adminId);
         await SupportRequest.collection.updateOne(
           { _id: request._id },
-          { $set: change },
+          set(field, value),
         );
         const updateOne = sinon.spy(SupportRequest, 'updateOne');
-        assert.deepEqual(
-          await applyPreview(preview.previewId, adminId),
-          { applied: 0, alreadyApplied: 0, skipped: 1 },
-          field,
-        );
+        assert.deepEqual(await apply(result), outcome(0, 0, 1), field);
         assert.equal(updateOne.called, false, field);
       }
     });
@@ -1214,31 +933,26 @@ describe('conservative support status import: behaviour guards', () => {
       const original = {
         status: 'open',
         statusRevision: 2,
-        statusChangedAt: new Date('2024-02-01'),
-        lastActivityAt: new Date('2024-03-01'),
+        statusChangedAt: CHANGED_AT,
+        lastActivityAt: ACTIVITY_AT,
         zendeskTicketId: 789,
       };
-      const changes: Array<[string, Record<string, unknown>]> = [
-        ['status', { $set: { status: 'solved' } }],
-        ['statusRevision', { $set: { statusRevision: 9 } }],
-        [
-          'statusChangedAt',
-          { $set: { statusChangedAt: new Date('2024-06-01') } },
-        ],
-        ['statusChangedAt removed', { $unset: { statusChangedAt: '' } }],
-        [
-          'lastActivityAt',
-          { $set: { lastActivityAt: new Date('2024-06-01') } },
-        ],
-        ['lastActivityAt removed', { $unset: { lastActivityAt: '' } }],
-        ['sent', { $set: { sent: new Date('2024-06-01') } }],
-        ['zendeskTicketId removed', { $unset: { zendeskTicketId: '' } }],
+      // Fields that were empty at preview time stay guarded as empty.
+      const changes: Array<[string, Rec, Rec]> = [
+        ['status', original, set('status', 'solved')],
+        ['statusRevision', original, set('statusRevision', 9)],
+        ['statusChangedAt', original, set('statusChangedAt', LATER)],
+        ['statusChangedAt removed', original, unset('statusChangedAt')],
+        ['lastActivityAt', original, set('lastActivityAt', LATER)],
+        ['lastActivityAt removed', original, unset('lastActivityAt')],
+        ['sent', original, set('sent', LATER)],
+        ['zendeskTicketId removed', original, unset('zendeskTicketId')],
+        ['empty lastActivityAt', {}, set('lastActivityAt', LATER)],
+        ['empty statusChangedAt', {}, set('statusChangedAt', LATER)],
+        ['empty zendeskTicketId', {}, set('zendeskTicketId', 555)],
       ];
-      for (const [label, change] of changes) {
-        sinon.restore();
-        await SupportRequest.deleteMany({});
-        const request = await createRequest(input.message, original);
-        const preview = await previewReducedManifest(v1(), adminId);
+      for (const [label, fields, change] of changes) {
+        const { request, result } = await freshPreview(fields);
         const realUpdateOne = SupportRequest.updateOne.bind(SupportRequest);
         sinon.stub(SupportRequest, 'updateOne').callsFake((async (
           ...args: Parameters<typeof SupportRequest.updateOne>
@@ -1249,120 +963,46 @@ describe('conservative support status import: behaviour guards', () => {
           );
           return realUpdateOne(...args);
         }) as never);
-        assert.deepEqual(
-          await applyPreview(preview.previewId, adminId),
-          { applied: 0, alreadyApplied: 0, skipped: 1 },
-          label,
-        );
+        assert.deepEqual(await apply(result), outcome(0, 0, 1), label);
       }
-      // Fields that were empty at preview time stay guarded as empty.
-      for (const [label, change] of [
-        ['lastActivityAt', { lastActivityAt: new Date('2024-06-01') }],
-        ['statusChangedAt', { statusChangedAt: new Date('2024-06-01') }],
-        ['zendeskTicketId', { zendeskTicketId: 555 }],
-      ] as const) {
-        sinon.restore();
-        await SupportRequest.deleteMany({});
-        const request = await createRequest(input.message);
-        const preview = await previewReducedManifest(v1(), adminId);
-        const realUpdateOne = SupportRequest.updateOne.bind(SupportRequest);
-        sinon.stub(SupportRequest, 'updateOne').callsFake((async (
-          ...args: Parameters<typeof SupportRequest.updateOne>
-        ) => {
-          await SupportRequest.collection.updateOne(
-            { _id: request._id },
-            { $set: change },
-          );
-          return realUpdateOne(...args);
-        }) as never);
-        assert.deepEqual(
-          await applyPreview(preview.previewId, adminId),
-          { applied: 0, alreadyApplied: 0, skipped: 1 },
-          label,
-        );
-      }
-    });
-
-    it('keeps the reported member in the write guard', async () => {
-      await SupportRequest.deleteMany({});
-      await SupportRequest.create({
-        ...input,
-        category: 'reportMember',
-        reportMember: 'fictional-target',
-        status: 'open',
-        sent,
-      });
-      const preview = await previewReducedManifest(
-        v1(
-          {},
-          {
-            items: [
-              item({
-                fingerprint: supportRequestFingerprint({
-                  ...input,
-                  category: 'reportMember',
-                }),
-              }),
-            ],
-          },
-        ),
-        adminId,
-      );
-      assert.deepEqual(await applyPreview(preview.previewId, adminId), {
-        applied: 1,
-        alreadyApplied: 0,
-        skipped: 0,
-      });
     });
 
     describe('suggested matches are rechecked at apply time', () => {
       async function suggested(itemSent: Date = sent, window?: string) {
-        const preview = await previewReducedManifest(
-          v2([evidenceItem(893, input.message, itemSent)]),
-          adminId,
-          window,
-        );
-        assert.equal(preview.counts.suggested, 1);
-        return preview;
+        const result = await preview(suggestion(893, itemSent), window);
+        assert.equal(result.counts.suggested, 1);
+        return result;
       }
-      const select = (preview: { previewId: string }) =>
-        applyPreview(preview.previewId, adminId, [
+      const select = (target: { previewId: string }) =>
+        apply(target, [
           { zendeskTicketId: 893, requestId: String(supportRequest._id) },
         ]);
-      const skippedOnce = { applied: 0, alreadyApplied: 0, skipped: 1 };
 
       it('skips when any stored piece of evidence is missing or differs', async () => {
-        const tampering: Array<[string, Record<string, unknown>]> = [
-          ['no senderHash', { $unset: { 'entries.0.senderHash': '' } }],
-          ['no category', { $unset: { 'entries.0.category': '' } }],
+        const tampering: Array<[string, Rec]> = [
+          ['no senderHash', unset('entries.0.senderHash')],
+          ['no category', unset('entries.0.category')],
           [
             'no normalisedMessageHash',
-            { $unset: { 'entries.0.normalisedMessageHash': '' } },
+            unset('entries.0.normalisedMessageHash'),
           ],
-          ['no submittedAt', { $unset: { 'entries.0.submittedAt': '' } }],
-          [
-            'another senderHash',
-            { $set: { 'entries.0.senderHash': 'f'.repeat(64) } },
-          ],
-          ['another category', { $set: { 'entries.0.category': 'account' } }],
+          ['no submittedAt', unset('entries.0.submittedAt')],
+          ['another senderHash', set('entries.0.senderHash', 'f'.repeat(64))],
+          ['another category', set('entries.0.category', 'account')],
           [
             'another message hash',
-            { $set: { 'entries.0.normalisedMessageHash': 'e'.repeat(64) } },
+            set('entries.0.normalisedMessageHash', 'e'.repeat(64)),
           ],
           [
             'a submission time outside the window',
-            {
-              $set: {
-                'entries.0.submittedAt': new Date(sent.getTime() - MINUTE - 1),
-              },
-            },
+            set('entries.0.submittedAt', at(-MINUTE - 1)),
           ],
         ];
-        for (const [label, update] of tampering) {
+        for (const [label, change] of tampering) {
           sinon.restore();
-          const preview = await suggested();
-          await PreviewModel.updateOne({ _id: preview.previewId }, update);
-          assert.deepEqual(await select(preview), skippedOnce, label);
+          const result = await suggested();
+          await tamper(result, change);
+          assert.deepEqual(await select(result), outcome(0, 0, 1), label);
           const unchanged = await storedRequest();
           assert.equal(unchanged.status, 'open', label);
           assert.equal(unchanged.zendeskTicketId, undefined, label);
@@ -1370,71 +1010,41 @@ describe('conservative support status import: behaviour guards', () => {
       });
 
       it('applies a submission time exactly at the window and skips one just beyond', async () => {
-        const atWindow = await suggested(new Date(sent.getTime() + MINUTE));
-        assert.deepEqual(await select(atWindow), {
-          applied: 1,
-          alreadyApplied: 0,
-          skipped: 0,
-        });
-        await SupportRequest.updateOne(
-          { _id: supportRequest._id },
-          { $set: { status: 'open' }, $unset: { zendeskTicketId: '' } },
-        );
-        const beyond = await suggested(new Date(sent.getTime() + MINUTE));
-        await PreviewModel.updateOne(
-          { _id: beyond.previewId },
-          {
-            $set: {
-              'entries.0.submittedAt': new Date(sent.getTime() + MINUTE + 1),
-            },
-          },
-        );
-        assert.deepEqual(await select(beyond), skippedOnce);
+        const atWindow = await suggested(at(MINUTE));
+        assert.deepEqual(await select(atWindow), outcome(1, 0, 0));
+        await update({ ...set('status', 'open'), ...unset('zendeskTicketId') });
+        const beyond = await suggested(at(MINUTE));
+        await tamper(beyond, set('entries.0.submittedAt', at(MINUTE + 1)));
+        assert.deepEqual(await select(beyond), outcome(0, 0, 1));
       });
 
       it('enforces the stored window, and one minute for legacy previews', async () => {
-        const wide = await suggested(
-          new Date(sent.getTime() - 2 * MINUTE),
-          '5',
-        );
-        await PreviewModel.updateOne(
-          { _id: wide.previewId },
-          { $set: { matchingWindowMinutes: 1 } },
-        );
-        assert.deepEqual(await select(wide), skippedOnce);
+        const wide = await suggested(at(-2 * MINUTE), '5');
+        await tamper(wide, set('matchingWindowMinutes', 1));
+        assert.deepEqual(await select(wide), outcome(0, 0, 1));
 
-        const legacy = await suggested(
-          new Date(sent.getTime() - 2 * MINUTE),
-          '5',
-        );
-        await PreviewModel.updateOne(
-          { _id: legacy.previewId },
-          { $unset: { matchingWindowMinutes: 1 } },
-        );
-        assert.deepEqual(await select(legacy), skippedOnce);
+        const legacy = await suggested(at(-2 * MINUTE), '5');
+        await tamper(legacy, { $unset: { matchingWindowMinutes: 1 } });
+        assert.deepEqual(await select(legacy), outcome(0, 0, 1));
 
-        const intact = await suggested(
-          new Date(sent.getTime() - 2 * MINUTE),
-          '5',
-        );
+        const intact = await suggested(at(-2 * MINUTE), '5');
         assert.equal((await stored(intact.previewId)).matchingWindowMinutes, 5);
-        assert.deepEqual(await select(intact), {
-          applied: 1,
-          alreadyApplied: 0,
-          skipped: 0,
-        });
+        assert.deepEqual(await select(intact), outcome(1, 0, 0));
       });
     });
 
     describe('failures', () => {
+      const failAudit = (error: Error) =>
+        sinon.stub(AuditLog.prototype, 'save').rejects(error);
+      const claimedElsewhere = (target: { previewId: string }) =>
+        tamper(target, set('applyToken', 'another-apply'));
+
       it('never leaks the detail of a storage failure, whatever its status', async () => {
         for (const status of [500, 503, undefined]) {
           sinon.restore();
-          const preview = await previewReducedManifest(v1(), adminId);
-          sinon
-            .stub(AuditLog.prototype, 'save')
-            .rejects(Object.assign(new Error('private detail'), { status }));
-          await assert.rejects(applyPreview(preview.previewId, adminId), {
+          const result = await preview(v1());
+          failAudit(Object.assign(new Error('private detail'), { status }));
+          await assert.rejects(apply(result), {
             status: 500,
             message: 'Unable to apply support status import.',
           });
@@ -1442,68 +1052,41 @@ describe('conservative support status import: behaviour guards', () => {
       });
 
       it('releases only its own claim after a failure', async () => {
-        const other = await previewReducedManifest(v1(), adminId);
-        await PreviewModel.updateOne(
-          { _id: other.previewId },
-          { $set: { applyToken: 'another-apply' } },
-        );
-        const own = await previewReducedManifest(v1(), adminId);
-        sinon
-          .stub(AuditLog.prototype, 'save')
-          .rejects(new Error('private detail'));
-        await assert.rejects(applyPreview(own.previewId, adminId), {
-          status: 500,
-        });
-        assert.equal(
-          ((await stored(other.previewId)) as { applyToken?: string })
-            .applyToken,
-          'another-apply',
-        );
-        assert.equal(
-          ((await stored(own.previewId)) as { applyToken?: string }).applyToken,
-          undefined,
-        );
+        const other = await preview(v1());
+        await claimedElsewhere(other);
+        const own = await preview(v1());
+        failAudit(new Error('private detail'));
+        await assert.rejects(apply(own), { status: 500 });
+        const otherMeta = await storedMeta(other.previewId);
+        assert.equal(otherMeta.applyToken, 'another-apply');
+        assert.equal((await storedMeta(own.previewId)).applyToken, undefined);
       });
 
       it('completes and releases only its own preview', async () => {
-        const other = await previewReducedManifest(v1(), adminId);
-        const own = await previewReducedManifest(v1(), adminId);
-        const result = await applyPreview(own.previewId, adminId);
-        assert.deepEqual(result, { applied: 1, alreadyApplied: 0, skipped: 0 });
-        const done = (await stored(own.previewId)) as {
-          applyToken?: string;
-          appliedAt?: Date;
-          result?: unknown;
-        };
+        const other = await preview(v1());
+        const own = await preview(v1());
+        const result = await apply(own);
+        assert.deepEqual(result, outcome(1, 0, 0));
+        const done = await storedMeta(own.previewId);
         assert.deepEqual(done.result, result);
         assert.equal(done.applyToken, undefined);
         assert.ok(done.appliedAt instanceof Date);
-        const untouched = (await stored(other.previewId)) as {
-          applyToken?: string;
-          appliedAt?: Date;
-          result?: unknown;
-        };
+        const untouched = await storedMeta(other.previewId);
         assert.equal(untouched.result, undefined);
         assert.equal(untouched.appliedAt, undefined);
         assert.equal(untouched.applyToken, undefined);
       });
 
       it('does not hand out another preview’s result when the claim is lost', async () => {
-        const finished = await previewReducedManifest(v1(), adminId);
-        const busy = await previewReducedManifest(v1(), adminId);
-        await applyPreview(finished.previewId, adminId);
-        await PreviewModel.updateOne(
-          { _id: busy.previewId },
-          { $set: { applyToken: 'another-apply' } },
-        );
-        await assert.rejects(applyPreview(busy.previewId, adminId), {
-          status: 409,
-          message: 'Support status preview is already being applied.',
-        });
+        const finished = await preview(v1());
+        const busy = await preview(v1());
+        await apply(finished);
+        await claimedElsewhere(busy);
+        await assert.rejects(apply(busy), CLAIM_LOST);
       });
 
       it('reports a conflict when the preview disappears while its claim is lost', async () => {
-        const preview = await previewReducedManifest(v1(), adminId);
+        const result = await preview(v1());
         let reads = 0;
         const originalFindOne = PreviewModel.findOne.bind(PreviewModel);
         sinon.stub(PreviewModel, 'findOne').callsFake(((...args: unknown[]) => {
@@ -1516,10 +1099,7 @@ describe('conservative support status import: behaviour guards', () => {
         sinon.stub(PreviewModel, 'findOneAndUpdate').returns({
           lean: async () => null,
         } as never);
-        await assert.rejects(applyPreview(preview.previewId, adminId), {
-          status: 409,
-          message: 'Support status preview is already being applied.',
-        });
+        await assert.rejects(apply(result), CLAIM_LOST);
       });
     });
   });
