@@ -46,6 +46,43 @@ describe('Text processor tests', function () {
         const testString = textService.html('<a>http://trustroots.org</a>');
         testString.should.equal('');
       });
+
+      it('removes links whose text is only whitespace', function () {
+        textService
+          .html('foo <a href="http://trustroots.org"> </a> bar')
+          .should.equal('foo  bar');
+      });
+
+      it('links email addresses and phone numbers', function () {
+        textService
+          .html('mail member@example.org or call (555) 666-7777')
+          .should.equal(
+            'mail <a href="mailto:member@example.org">member@example.org</a> or call <a href="tel:5556667777">(555) 666-7777</a>',
+          );
+      });
+
+      it('shortens long link text in the middle', function () {
+        const path = 'a'.repeat(200);
+        textService
+          .html(`https://example.org/${path}`)
+          .should.equal(
+            `<a href="https://example.org/${path}">example.org/${'a'.repeat(62)}…${'a'.repeat(73)}</a>`,
+          );
+      });
+    });
+
+    describe('Whitespace from editors', function () {
+      it('turns non-breaking spaces and empty paragraphs into spaces and trims the ends', function () {
+        textService
+          .html('  <b>a</b>&nbsp;<i>b</i><p><br></p><u>c</u>  ')
+          .should.equal('<b>a</b> <i>b</i> <u>c</u>');
+      });
+
+      it('returns an empty string for empty or editor-empty content', function () {
+        textService.html('').should.equal('');
+        textService.html(null).should.equal('');
+        textService.html(' &nbsp; <p><br></p> ').should.equal('');
+      });
     });
   });
 
@@ -55,6 +92,20 @@ describe('Text processor tests', function () {
       const htmlOutput =
         'Foofoofoofoofoofoolinku with paramsh1h2h3h4h5h6 unclosed tagfoo\nbar';
       testString.should.equal(htmlOutput);
+    });
+
+    it('turns self-closing and spaced line breaks into newlines', function () {
+      textService.plainText('a<br/>b<br />c<BR>d').should.equal('a\nb\nc\nd');
+    });
+
+    it('replaces each whitespace character with a space only when asked', function () {
+      textService.plainText('a\tb<br>c', true).should.equal('a b c');
+      textService.plainText('a\tb<br>c').should.equal('a\tb\nc');
+    });
+
+    it('returns an empty string for empty values', function () {
+      textService.plainText('').should.equal('');
+      textService.plainText(undefined).should.equal('');
     });
   });
 
@@ -79,6 +130,20 @@ describe('Text processor tests', function () {
           '<p>Use <a href="mailto:member@example.org">this address</a> or <a href="https://example.org/profile">my page</a>.</p>',
         )
         .should.equal('Use  or .');
+    });
+
+    it('removes http, ftp and protocol-relative links but keeps site-relative ones', function () {
+      textService
+        .stripContactDetails(
+          '<a href="http://example.org">site</a>|<a href="ftp://example.org">files</a>|<a href="tel:5556667777">phone</a>|<a href="//example.org">relative</a>|<a href="/go?to=https://example.org">my page</a>',
+        )
+        .should.equal('||||my page');
+    });
+
+    it('keeps text of other tags even when they carry a link-like href', function () {
+      textService
+        .stripContactDetails('<b href="https://example.org">bold</b>')
+        .should.equal('bold');
     });
   });
 });

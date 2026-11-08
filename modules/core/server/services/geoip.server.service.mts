@@ -53,7 +53,10 @@ export function createGeoipLookup(
   const ready = databasePath
     ? Promise.resolve()
         .then(() => open(databasePath))
-        .catch(() => null)
+        .catch(
+          // Stryker disable next-line ArrowFunction: an undefined reader is rejected by the same !reader check as null
+          () => null,
+        )
     : Promise.resolve(null);
   return async (
     address: string | undefined,
@@ -62,6 +65,7 @@ export function createGeoipLookup(
     const parsed = ipaddr.process(address);
     if (parsed.range() !== 'unicast') return null;
     const reader = await ready;
+    // Stryker disable next-line ConditionalExpression: without the guard reader.get throws inside the try below, which also returns null
     if (!reader) return null;
     try {
       return approximateViewport(reader.get(parsed.toString()));

@@ -428,6 +428,45 @@ describe('Core CRUD tests', function () {
         },
       );
     });
+    it('should return empty names for stored note ids, which also decode to hex', function (done) {
+      const nip19: typeof import('nostr-tools/nip19') = require('nostr-tools/nip19');
+      createNostrUser(
+        { nostrNpub: nip19.noteEncode('ab'.repeat(32)) },
+        function (saveErr) {
+          if (saveErr) return done(saveErr);
+          expectEmptyNames('nostruser', done);
+        },
+      );
+    });
+    it('should return empty names for stored npubs of the wrong length', function (done) {
+      const nip19: typeof import('nostr-tools/nip19') = require('nostr-tools/nip19');
+      createNostrUser(
+        {
+          nostrNpub: nip19.encodeBytes('npub', new Uint8Array(33).fill(0xab)),
+        },
+        function (saveErr) {
+          if (saveErr) return done(saveErr);
+          expectEmptyNames('nostruser', done);
+        },
+      );
+    });
+    it('should return the stored npub as lowercase hex', async function () {
+      const nip19: typeof import('nostr-tools/nip19') = require('nostr-tools/nip19');
+      await utils
+        .createTestUser({
+          firstName: 'Nostr',
+          lastName: 'User',
+          email: 'nostruser@example.com',
+          username: 'nostruser',
+          password: 'M3@n.jsI$Aw3$0m3',
+          nostrNpub: nip19.npubEncode('ab'.repeat(32)),
+        })
+        .save();
+      const res = await agent
+        .get('/.well-known/nostr.json?name=nostruser')
+        .expect(200);
+      res.body.should.deepEqual({ names: { nostruser: 'ab'.repeat(32) } });
+    });
   });
   describe('Nostr author visibility API', function () {
     const validNpub =
@@ -518,6 +557,57 @@ describe('Core CRUD tests', function () {
             });
         },
       );
+    });
+    it('excludes suspended author keys', function (done) {
+      createNostrUser({ roles: ['user', 'suspended'] }, function (saveErr) {
+        if (saveErr) return done(saveErr);
+        agent
+          .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+          .expect(200)
+          .end(function (err, res) {
+            if (err) return done(err);
+            res.body.should.deepEqual({
+              linkedPubkeys: [validNpubHex],
+              pubkeys: [],
+            });
+            return done();
+          });
+      });
+    });
+    it('matches author keys case-insensitively and answers in lowercase', async function () {
+      const nip19: typeof import('nostr-tools/nip19') = require('nostr-tools/nip19');
+      await utils
+        .createTestUser({
+          firstName: 'Nostr',
+          lastName: 'User',
+          email: 'nostruser@example.com',
+          username: 'nostruser',
+          password: 'M3@n.jsI$Aw3$0m3',
+          nostrNpub: nip19.npubEncode('ab'.repeat(32)),
+        })
+        .save();
+      const res = await agent
+        .get('/api/nostr/author-visibility?pubkey=' + 'AB'.repeat(32))
+        .expect(200);
+      res.body.should.deepEqual({
+        linkedPubkeys: ['ab'.repeat(32)],
+        pubkeys: ['ab'.repeat(32)],
+      });
+    });
+    it('rejects a batch when any author key is malformed', async function () {
+      const valid = '11'.repeat(32);
+      for (const query of [
+        `pubkey=${valid}&pubkey=invalid`,
+        `pubkey=x${valid}`,
+        `pubkey=${valid}x`,
+        `pubkey[0][0]=${valid}`,
+        '',
+      ]) {
+        const res = await agent
+          .get('/api/nostr/author-visibility?' + query)
+          .expect(400);
+        res.body.error.should.equal('One to 100 valid public keys required.');
+      }
     });
     it('rejects invalid author key batches', function (done) {
       agent

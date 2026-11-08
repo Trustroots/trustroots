@@ -491,4 +491,124 @@ describe('file-upload.service unit tests', () => {
 
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
+
+  function detectedStatus(bytes: Buffer, allowed: string[]): Promise<number> {
+    const filePath = writeTempFile(bytes);
+    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
+    return new Promise(resolve => {
+      const res = mockResponse(() => resolve(res.statusCode));
+      uploadFile(allowed, uploadField, {}, res, () => resolve(200));
+    });
+  }
+
+  const webp = Buffer.concat([
+    Buffer.from('RIFF', 'ascii'),
+    Buffer.from([0x24, 0, 0, 0]),
+    Buffer.from('WEBPVP8 ', 'ascii'),
+    Buffer.alloc(32),
+  ]);
+
+  it('only treats the full JPEG and PNG signatures as images', async () => {
+    for (const bytes of [
+      [0xff, 0xd8, 0x00, 0x00],
+      [0xff, 0x00, 0xff, 0x00],
+      [0x00, 0xd8, 0xff, 0x00],
+      [0x00, 0x00, 0xff, 0x00],
+    ]) {
+      (await detectedStatus(Buffer.from(bytes), ['image/jpeg'])).should.equal(
+        415,
+      );
+    }
+    (
+      await detectedStatus(Buffer.from([0x89, 0x50, 0x4e, 0x58]), ['image/png'])
+    ).should.equal(415);
+    (
+      await detectedStatus(Buffer.from('\x00PNG', 'latin1'), ['image/png'])
+    ).should.equal(415);
+  });
+
+  it('recognises SVG documents with or without an XML declaration', async () => {
+    const svg = ['image/svg+xml'];
+    for (const text of [
+      '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
+      '  \n<svg></svg>',
+      '<?xml version="1.0"?>\n<svg></svg>',
+      '<?xml?><svg></svg>',
+    ]) {
+      (await detectedStatus(Buffer.from(text, 'utf8'), svg)).should.equal(
+        200,
+        text,
+      );
+    }
+    for (const text of [
+      'Sample text document',
+      'Notes about <svg> files',
+      'Notes <?xml?><svg></svg>',
+    ]) {
+      (await detectedStatus(Buffer.from(text, 'utf8'), svg)).should.equal(
+        415,
+        text,
+      );
+    }
+  });
+
+  it('reports unrecognised content as a generic binary', async () => {
+    (
+      await detectedStatus(Buffer.from('Sample text document'), [
+        'application/octet-stream',
+      ])
+    ).should.equal(200);
+  });
+
+  it('uses the file-type detector unless the fallback is requested', async () => {
+    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    (await detectedStatus(webp, ['image/webp'])).should.equal(200);
+    process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'false';
+    (await detectedStatus(webp, ['image/webp'])).should.equal(200);
+    process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+    (await detectedStatus(webp, ['image/webp'])).should.equal(415);
+  });
+
+  it('falls back to its own detector for content file-type does not know', async () => {
+    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+    (
+      await detectedStatus(Buffer.from('<svg></svg>', 'utf8'), [
+        'image/svg+xml',
+      ])
+    ).should.equal(200);
+  });
+
+  it('rejects declared MIME types outside the allowed list before reading the file', done => {
+    const { uploadFile } = loadUploadFileWithFileFilter(
+      { mimetype: 'text/plain' },
+      { path: '/tmp/not-used' },
+    );
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(415);
+      res.body!.message!.should.equal(
+        errorService.getErrorMessageByKey('unsupported-media-type'),
+      );
+      done();
+    });
+    uploadFile(validMimeTypes, uploadField, {}, res, () =>
+      done(new Error('Unexpected accepted file')),
+    );
+  });
+
+  it('exposes uploadFile to CommonJS callers of the TypeScript module', done => {
+    // Load a fresh copy: the interop object is built when the module loads.
+    const source =
+      require.resolve('../../../server/services/file-upload.service.mts');
+    delete require.cache[source];
+    const commonjs: typeof uploadService = require(source);
+    loadUploadFileWithStubbedMulter(null, { code: 'LIMIT_UNEXPECTED_FILE' });
+    const res = mockResponse(() => {
+      res.statusCode.should.equal(400);
+      res.body!.message!.should.equal(
+        'Missing "avatar" field from the API call.',
+      );
+      done();
+    });
+    commonjs.uploadFile(validMimeTypes, uploadField, {}, res, () => {});
+  });
 });

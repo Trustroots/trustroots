@@ -26,6 +26,9 @@ describe('Approximate map location lookup', function () {
     assert.equal(geoip.approximateViewport(record(0, 0, 1000))!.zoom, 4);
     assert.equal(geoip.approximateViewport(record(90, 180, 20000))!.zoom, 0);
     assert.equal(geoip.approximateViewport(record(-90, -180))!.latitude, -85);
+    // A degree of longitude shrinks with latitude, so the same radius needs a wider view.
+    assert.equal(geoip.approximateViewport(record(60, 0, 1000))!.zoom, 3);
+    assert.equal(geoip.approximateViewport(record(0, 0, 20040))!.zoom, 0);
   });
 
   it('ignores absent, invalid and incomplete lookup data', function () {

@@ -122,6 +122,9 @@ describe('Service: error', function () {
       errorService
         .getErrorMessageByKey('suspended')
         .should.equal('Your account has been suspended.');
+      errorService
+        .getErrorMessageByKey('unprocessable-entity')
+        .should.equal('Unprocessable Entity.');
     });
 
     it('returns the default message for an unknown key', function () {
@@ -148,6 +151,17 @@ describe('Service: error', function () {
     it('returns the default message when there are no validation errors', function () {
       const message = errorService.getErrorMessage({});
       message.should.startWith('Snap! Something went wrong.');
+    });
+
+    it('keeps an earlier validation message when a later error has none', function () {
+      errorService
+        .getErrorMessage({
+          errors: {
+            email: { message: 'Email is invalid.' },
+            username: {},
+          },
+        })
+        .should.equal('Email is invalid.');
     });
 
     it('falls back to the default message when validation errors have no message', function () {

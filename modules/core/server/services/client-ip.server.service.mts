@@ -11,6 +11,7 @@ export function getClientIpAddress(req: ClientIpRequest): string | undefined {
   const passengerClientAddress = req.get('!~Passenger-Client-Address');
   const clientIpAddress = passengerClientAddress || req.ip;
 
+  // Stryker disable next-line StringLiteral: any non-IP fallback string makes isIP return 0, same as ''
   return net.isIP(clientIpAddress ?? '') ? clientIpAddress : undefined;
 }
 

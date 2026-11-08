@@ -66,11 +66,6 @@ export function html(value: unknown): string {
   // @link https://lodash.com/docs/4.17.4#toString
   let content = _.toString(value);
 
-  // Don't bother with empty strings
-  if (!content) {
-    return '';
-  }
-
   // Replace "&nbsp;", "<p><br></p>" and trim
   // This will catch most of the actually empty strings
   content = content
@@ -111,6 +106,7 @@ export function html(value: unknown): string {
     },
     // Don't add target="_blank" because of rel-noopener attack.
     // @link https://mathiasbynens.github.io/rel-noopener/
+    // Stryker disable next-line BooleanLiteral: sanitizeOptions below drops target and rel from links anyway
     newWindow: false,
   });
 
@@ -144,11 +140,6 @@ export function plainText(value: unknown, cleanWhitespace?: boolean): string {
   // @link https://lodash.com/docs/4.17.4#toString
   let content = _.toString(value);
 
-  // Don't bother with empty strings
-  if (!content) {
-    return '';
-  }
-
   // Replace HTML breaklines
   content = content.replace(/<br\s*[/]?>/gi, '\n');
 
@@ -159,6 +150,7 @@ export function plainText(value: unknown, cleanWhitespace?: boolean): string {
    */
   content = he.decode(content);
   content = sanitizeHtml(content, {
+    // Stryker disable next-line ArrayDeclaration: a tag name with spaces never parses, so the list still allows nothing
     allowedTags: [],
   });
   content = he.decode(content);
@@ -188,15 +180,13 @@ export function stripContactDetails(value: unknown): string {
       return (
         frame.tag === 'a' &&
         /^(?:(?:https?|s?ftp|mailto|tel):|\/\/)/i.test(
+          // Stryker disable next-line StringLiteral: any fallback without a scheme or // prefix fails the test, like ''
           _.get(frame, 'attribs.href', ''),
         )
       );
     },
   });
   content = plainText(content);
-  if (!content) {
-    return '';
-  }
   return Autolinker.link(content, {
     email: true,
     hashtag: false,

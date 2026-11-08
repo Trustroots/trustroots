@@ -17,6 +17,7 @@ const languagesArray: Array<{
 }> = require('../../../../config/languages/languages-array.json');
 const deprecatedLanguages: Set<string> = require('./../../../../config/languages/deprecated.mts');
 
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 require('should');
 const should: typeof import('should') = require('should');
 
@@ -160,6 +161,13 @@ describe('Controller: core', function () {
     sinon.restore();
   });
   describe('renderIndex', function () {
+    it('renders anonymous visitors with only an empty user', function () {
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
+      res.rendered.should.equal('react-index.server.view.html');
+      assert.deepStrictEqual(renderVars(res), { user: null });
+    });
+
     it('marks the signup page as an invite', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/signup' }, res);
@@ -335,6 +343,15 @@ describe('Controller: core', function () {
       should(findLanguage(res, 'grc').deprecated).be.false();
       should(findLanguage(res, 'lat').deprecated).be.false();
       should(findLanguage(res, 'lim').label).equal('Limburgish');
+    });
+
+    it('returns the languages object without a query or request', function () {
+      const withoutQuery = mockResponse();
+      coreController.getLanguages({}, withoutQuery);
+      languageObject(withoutQuery).should.deepEqual(languagesObject);
+      const withoutRequest = mockResponse();
+      coreController.getLanguages(undefined, withoutRequest);
+      languageObject(withoutRequest).should.deepEqual(languagesObject);
     });
 
     it('returns the languages object by default', function () {

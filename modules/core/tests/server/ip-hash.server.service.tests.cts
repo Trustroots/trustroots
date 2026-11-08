@@ -50,5 +50,13 @@ describe('IP equality identifiers', () => {
       () => hashIpAddress('203.0.113.10', 'short'),
       /at least 32 bytes/,
     );
+    assert.throws(
+      () => hashIpAddress('203.0.113.10', 'x'.repeat(31)),
+      /at least 32 bytes/,
+    );
+    assert.match(
+      hashIpAddress('203.0.113.10', 'x'.repeat(32))!,
+      /^[0-9a-f]{64}$/,
+    );
   });
 });

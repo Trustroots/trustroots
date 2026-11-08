@@ -51,4 +51,12 @@ describe('Map default location endpoint', function () {
     });
     assert.equal(response.headers['cache-control'], 'private, no-store');
   });
+
+  it('rejects anonymous visitors with an explanation', async function () {
+    const response = await request(app(false))
+      .get('/api/map-default-location')
+      .expect(401);
+    assert.deepEqual(response.body, { message: 'Authentication required.' });
+    assert.equal(response.headers['cache-control'], 'private, no-store');
+  });
 });

@@ -94,14 +94,17 @@ export const uploadFile = (
       // Browsers send application/octet-stream when File.type is empty.
       // Let the content detector below validate these files by their bytes.
       if (
+        // Stryker disable next-line ConditionalExpression: a missing mimetype is never in the list, so the check below rejects it too
         !file.mimetype ||
         (!validMimeTypes.includes(file.mimetype) &&
           file.mimetype !== 'application/octet-stream')
       ) {
         const err: Error & { code?: string } = new Error(
+          // Stryker disable next-line StringLiteral: the response maps this error by its code, the message is never shown
           'Please upload a file that is in correct format.',
         );
         err.code = 'UNSUPPORTED_MEDIA_TYPE';
+        // Stryker disable next-line BooleanLiteral: Multer rejects the file whenever an error is passed, whatever the flag
         return callback(err, false);
       }
       callback(null, true);
@@ -133,7 +136,7 @@ export const uploadFile = (
         errorStatus = 400;
       } else {
         // Any other error
-        errorMessage = errorService.getErrorMessageByKey('default');
+        errorMessage = errorService.getErrorMessageByKey();
         errorStatus = 400;
       }
       return res.status(errorStatus).send({
