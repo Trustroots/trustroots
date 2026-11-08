@@ -50,7 +50,7 @@ describe('Admin dashboard with stored data', () => {
     return {
       _id: String(user._id),
       username: user.username,
-      displayName: user.displayName,
+      displayName: String(user.displayName),
     };
   }
 
@@ -147,10 +147,14 @@ describe('Admin dashboard with stored data', () => {
     body.negativeExperiences.forEach((experience, position) => {
       const stored = listedExperiences[position];
       experience.userFrom.should.deepEqual(
-        publicUser(users.findIndex(u => u._id.equals(stored.userFrom))),
+        publicUser(
+          users.findIndex(u => u._id.equals(stored.userFrom as ObjectId)),
+        ),
       );
       experience.userTo.should.deepEqual(
-        publicUser(users.findIndex(u => u._id.equals(stored.userTo))),
+        publicUser(
+          users.findIndex(u => u._id.equals(stored.userTo as ObjectId)),
+        ),
       );
     });
   });

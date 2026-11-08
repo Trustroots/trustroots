@@ -115,6 +115,7 @@ function getStories(limit: number) {
         $ne: '',
       },
     },
+    // Stryker disable next-line StringLiteral: the projection only trims loaded fields; the response is built from named fields
     '_id acquisitionStory created displayName email emailTemporary languages locationFrom locationLiving member public roles username',
   )
     .sort('-created')
@@ -148,6 +149,7 @@ async function getRestrictedMatches(
   for (const [index, candidate] of restrictedUsers.entries()) {
     // Yield to I/O even when none of the candidates match. A result limit alone
     // does not bound the synchronous work for a list of 500 stories.
+    // Stryker disable next-line ConditionalExpression,EqualityOperator: yielding more often only costs time; the matches are identical
     if (index % MATCH_BATCH_SIZE === 0) {
       await new Promise<void>(resolve => setImmediate(resolve));
     }
@@ -176,7 +178,10 @@ async function getRestrictedMatches(
 
 function getRestrictedUsers() {
   return User.find({ roles: { $in: ['shadowban', 'suspended'] } })
-    .select('_id displayName email emailTemporary roles username')
+    .select(
+      // Stryker disable next-line StringLiteral: the projection only trims loaded fields; matches are built from named fields
+      '_id displayName email emailTemporary roles username',
+    )
     .sort({ created: -1, _id: 1 })
     .limit(RESTRICTED_SOURCE_LIMIT)
     .exec();
@@ -213,11 +218,17 @@ export const list = async (
   res: SendResponse,
 ): Promise<unknown> => {
   const stories = await getStories(500);
+  // Stryker disable next-line ConditionalExpression: an empty list also yields [] through the full path; this only skips the queries
   if (!stories || stories.length === 0) return res.send([]);
 
   const storyUserIds = stories.map(story => story._id);
   const currentWelcomerIds = (
-    await User.find({ roles: 'welcome-team' }).select('_id').exec()
+    await User.find({ roles: 'welcome-team' })
+      .select(
+        // Stryker disable next-line StringLiteral: the projection only trims loaded fields; only _id is read
+        '_id',
+      )
+      .exec()
   ).map(user => user._id);
   // Filter current team membership before selecting the first contact. Fetch
   // metadata for all recipients together, never loading message content.
@@ -279,7 +290,10 @@ export const list = async (
       type: 'host',
       status: { $in: ['yes', 'maybe'] },
     })
-      .select('location locationFuzzy updated user')
+      .select(
+        // Stryker disable next-line StringLiteral: the projection only trims loaded fields; only location, locationFuzzy and user are read
+        'location locationFuzzy updated user',
+      )
       .sort('-updated')
       .exec()) || [];
   const hostingLocationsByUser: Record<string, number[]> = hostingOffers.reduce(

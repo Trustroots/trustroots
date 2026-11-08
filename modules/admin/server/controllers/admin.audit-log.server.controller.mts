@@ -100,10 +100,15 @@ export const list = async (
     const criteria: Record<string, unknown> = {};
     if (username || team) {
       const actorCriteria: Record<string, unknown> = {};
-      if (username)
-        actorCriteria.username = String(username).trim().toLowerCase();
+      // The username schema path lowercases and trims query values itself.
+      if (username) actorCriteria.username = String(username);
       if (team) actorCriteria.roles = String(team);
-      const actors = await User.find(actorCriteria).select('_id').lean();
+      const actors = await User.find(actorCriteria)
+        .select(
+          // Stryker disable next-line StringLiteral: only the always-present _id of each actor is read
+          '_id',
+        )
+        .lean();
       criteria.user = { $in: actors.map(actor => actor._id) };
     }
     const items = await AuditLog.find(criteria)
@@ -113,7 +118,6 @@ export const list = async (
       .populate({
         path: 'user',
         select: 'username displayName roles',
-        model: 'User',
       })
       .exec();
     return res.json(items || []);

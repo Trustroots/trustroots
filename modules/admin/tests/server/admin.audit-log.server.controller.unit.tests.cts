@@ -11,10 +11,11 @@ type AuditLogController =
   typeof import('../../server/controllers/admin.audit-log.server.controller.mts');
 const adminAuditLog: Pick<
   AuditLogController,
-  'record' | 'list'
+  'record' | 'list' | 'actors'
 > = require('./../../server/controllers/admin.audit-log.server.controller.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 const should: typeof import('should') = require('should');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 
 type AuditLogRecord = {
   body: Record<string, unknown>;
@@ -290,6 +291,131 @@ describe('Admin audit log controller unit tests', () => {
       adminAuditLog.list({}, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+  });
+
+  describe('behaviour against stored data', () => {
+    it('logs a failed save with the error', async () => {
+      const logged: Array<{ level: string; message: string; detail: unknown }> =
+        [];
+      const controller: Pick<AuditLogController, 'record'> = proxyquire(
+        require.resolve('./../../server/controllers/admin.audit-log.server.controller.mts'),
+        {
+          './../../../../config/lib/logger.mjs': (
+            level: string,
+            message: string,
+            detail: unknown,
+          ) => {
+            logged.push({ level, message, detail });
+          },
+        },
+      );
+      const error = new Error('save failed');
+      sinon.stub(AuditLog.prototype, 'save').rejects(error);
+
+      await new Promise<void>(resolve => {
+        controller.record(
+          {
+            body: {},
+            params: {},
+            query: {},
+            route: { path: '/api/admin/users' },
+            user: { _id: new mongoose.Types.ObjectId() },
+            get: () => null,
+            ip: '127.0.0.1',
+          },
+          {},
+          () => resolve(),
+        );
+      });
+
+      should(logged).deepEqual([
+        {
+          level: 'error',
+          message: 'Failed storing audit log item to the DB. #fi2fb2',
+          detail: { error },
+        },
+      ]);
+    });
+
+    it('rejects invalid filters with a message', async () => {
+      for (const query of [{ team: null }, { team: 'unknown' }]) {
+        const res = mockResponse();
+        await adminAuditLog.list({ query: query as { team?: unknown } }, res);
+        res.statusCode.should.equal(400);
+        should(res.body).deepEqual({ message: 'Invalid audit log filters.' });
+      }
+    });
+
+    it('filters by the support team', async () => {
+      const members = utils.generateUsersWithSharedPassword(2);
+      members[0].roles = ['user', 'support-team'];
+      const [supporter, other] =
+        await utils.saveUsersWithCachedPasswords(members);
+      await AuditLog.create([
+        { user: supporter._id, route: '/a' },
+        { user: other._id, route: '/b' },
+      ]);
+
+      const res = mockResponse();
+      await adminAuditLog.list({ query: { team: 'support-team' } }, res);
+
+      res.statusCode.should.equal(200);
+      (res.body as Array<{ route: string }>)
+        .map(item => item.route)
+        .should.deepEqual(['/a']);
+    });
+
+    it('lists entries of deleted actors without filters, newest id first on equal dates', async () => {
+      const [user] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
+      const date = new Date('2026-10-01T00:00:00Z');
+      const deletedActor = new mongoose.Types.ObjectId();
+      await AuditLog.collection.insertMany([
+        { user: user._id, route: '/first', date },
+        { user: deletedActor, route: '/second', date },
+        { user: user._id, route: '/third', date },
+      ]);
+
+      const res = mockResponse();
+      await adminAuditLog.list({ query: {} }, res);
+
+      const items = JSON.parse(JSON.stringify(res.body)) as Array<{
+        route: string;
+        user: unknown;
+      }>;
+      items
+        .map(item => item.route)
+        .should.deepEqual(['/third', '/second', '/first']);
+      should(items[1].user).be.null();
+      should(items[0].user).deepEqual({
+        _id: user._id.toString(),
+        displayName: user.displayName,
+        roles: ['user'],
+        username: user.username,
+      });
+    });
+
+    it('reports failed lookups with the generic error message', async () => {
+      stubFind(async () => {
+        throw new Error('lookup failed');
+      });
+      const listRes = mockResponse();
+      await adminAuditLog.list({}, listRes);
+      should(listRes.body).deepEqual({
+        message:
+          'Snap! Something went wrong. If this keeps happening, please contact us.',
+      });
+
+      sinon.stub(AuditLog, 'distinct').rejects(new Error('distinct failed'));
+      const actorsRes = mockResponse();
+      await adminAuditLog.actors({}, actorsRes);
+      actorsRes.statusCode.should.equal(400);
+      should(actorsRes.body).deepEqual({
+        message:
+          'Snap! Something went wrong. If this keeps happening, please contact us.',
+      });
     });
   });
 });

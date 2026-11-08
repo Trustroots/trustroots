@@ -794,3 +794,242 @@ describe('Admin acquisition stories controller unit tests', () => {
     });
   });
 });
+
+describe('Admin acquisition stories controller edge cases', () => {
+  afterEach(() => {
+    sinon.restore();
+    return utils.clearDatabase();
+  });
+
+  describe('list', () => {
+    it('matches only other restricted members', async () => {
+      const users = generateStoryUsers(3);
+      users[0].username = 'sharedclue';
+      users[0].roles = ['user', 'shadowban'];
+      users[0].acquisitionStory = 'A restricted member story.';
+      // Shares the identifier, but is not restricted.
+      users[1].username = 'sharedcluefriend';
+      users[2].username = 'sharedcluecopy';
+      users[2].acquisitionStory = 'An active member story.';
+      await utils.saveUsersWithCachedPasswords(users);
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      findStory(
+        res,
+        story => story.username === 'sharedclue',
+      ).restrictedMatches.should.deepEqual([]);
+      findStory(res, story => story.username === 'sharedcluecopy')
+        .restrictedMatches.map(match => match.username)
+        .should.deepEqual(['sharedclue']);
+    });
+
+    it('lists no languages when a story has none', async () => {
+      const story = {
+        _id: new mongoose.Types.ObjectId(),
+        roles: ['user'],
+        username: 'nolanguages',
+        email: 'nolanguages@example.test',
+        emailTemporary: '',
+        member: [],
+        acquisitionStory: 'A fictional source.',
+      };
+      const find = sinon.stub(User, 'find');
+      find.onFirstCall().returns({
+        sort: () => ({ limit: () => ({ exec: async () => [story] }) }),
+      });
+      find.onSecondCall().returns({ select: () => ({ exec: async () => [] }) });
+      find.onThirdCall().returns({
+        select: () => ({
+          sort: () => ({ limit: () => ({ exec: async () => [] }) }),
+        }),
+      });
+      sinon.stub(Offer, 'find').returns({
+        select: () => ({ sort: () => ({ exec: async () => [] }) }),
+      });
+      sinon.stub(Message, 'aggregate').returns({ exec: async () => [] });
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      storyList(res)[0].languages.should.deepEqual([]);
+    });
+
+    it('ignores a sender who left the welcome team after the team was read', async () => {
+      const users = generateStoryUsers(2);
+      users[0].acquisitionStory = 'A fictional recommendation.';
+      const [recipient, former] =
+        await utils.saveUsersWithCachedPasswords(users);
+      await Message.create({
+        userFrom: former._id,
+        userTo: recipient._id,
+        content: 'Welcome.',
+      });
+      const find = User.find;
+      sinon.stub(User, 'find').callsFake(function (
+        this: typeof User,
+        ...args: Parameters<typeof User.find>
+      ) {
+        if (
+          (args[0] as { roles?: unknown } | undefined)?.roles === 'welcome-team'
+        ) {
+          return {
+            select: () => ({ exec: async () => [{ _id: former._id }] }),
+          } as never;
+        }
+        return find.apply(this, args);
+      });
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      should(storyList(res)[0].welcomer).equal(null);
+    });
+
+    it('locates only available hosting offers', async () => {
+      const users = generateStoryUsers(4);
+      users.forEach((user, index) => {
+        user.acquisitionStory = `Story ${index}.`;
+      });
+      const saved = await utils.saveUsersWithCachedPasswords(users);
+      await Offer.create(
+        (
+          [
+            ['host', 'yes'],
+            ['host', 'maybe'],
+            ['host', 'no'],
+            ['meet', 'yes'],
+          ] as const
+        ).map(([type, status], index) => ({
+          user: saved[index]._id,
+          type,
+          status,
+          location: [52.5, 13.4],
+        })),
+      );
+      const res = mockResponse();
+      await adminAcquisitionStories.list({}, res);
+      const located = Object.fromEntries(
+        storyList(res).map(story => [
+          story.username,
+          story.hostingLocation !== null,
+        ]),
+      );
+      located.should.deepEqual({
+        [saved[0].username]: true,
+        [saved[1].username]: true,
+        [saved[2].username]: false,
+        [saved[3].username]: false,
+      });
+    });
+  });
+
+  describe('resendConfirmation', () => {
+    async function resend(params?: { memberId?: unknown }) {
+      const res = mockResponse();
+      await adminAcquisitionStories.resendConfirmation(
+        params === undefined ? {} : { params },
+        res,
+      );
+      return { statusCode: res.statusCode, body: res.body };
+    }
+    async function pendingMember(overrides: Partial<StoryFixture> = {}) {
+      const [fixture] = generateStoryUsers(1);
+      fixture.acquisitionStory = 'A fictional introduction.';
+      fixture.public = false;
+      fixture.emailTemporary = fixture.email;
+      const [user] = await utils.saveUsersWithCachedPasswords([
+        { ...fixture, ...overrides },
+      ]);
+      return user;
+    }
+    const invalidAccount = {
+      statusCode: 400,
+      body: { message: 'Invalid account.' },
+    };
+    const ineligible = {
+      statusCode: 400,
+      body: {
+        message: 'This account is no longer eligible for signup confirmation.',
+      },
+    };
+    const changed = {
+      statusCode: 400,
+      body: {
+        message:
+          'This account changed. Refresh the acquisition stories and try again.',
+      },
+    };
+    const sent = {
+      statusCode: 200,
+      body: { message: 'Sent confirmation email.' },
+    };
+    function stubSend() {
+      return sinon
+        .stub(mail, 'sendSignupEmailConfirmation')
+        .callsFake(
+          (
+            _user: Parameters<typeof mail.sendSignupEmailConfirmation>[0],
+            done: Parameters<typeof mail.sendSignupEmailConfirmation>[1],
+          ) => done(),
+        );
+    }
+
+    it('rejects malformed member IDs', async () => {
+      const user = await pendingMember();
+      const send = stubSend();
+      const id = user._id.toString();
+      should(await resend()).deepEqual(invalidAccount);
+      for (const memberId of [[id], 'x' + id, id + 'x']) {
+        should(await resend({ memberId })).deepEqual(invalidAccount);
+      }
+      send.called.should.equal(false);
+    });
+
+    it('refuses members without a story or a pending address', async () => {
+      const send = stubSend();
+      for (const overrides of [
+        { acquisitionStory: '' },
+        { emailTemporary: '' },
+      ]) {
+        const user = await pendingMember(overrides);
+        should(await resend({ memberId: user._id.toString() })).deepEqual(
+          ineligible,
+        );
+      }
+      send.called.should.equal(false);
+    });
+
+    it('replaces an empty previous token', async () => {
+      const user = await pendingMember();
+      await User.collection.updateOne(
+        { _id: user._id },
+        { $set: { emailToken: '' } },
+      );
+      const send = stubSend();
+      should(await resend({ memberId: user._id.toString() })).deepEqual(sent);
+      send.calledOnce.should.equal(true);
+    });
+
+    it('does not send when the story is removed during the resend', async () => {
+      const user = await pendingMember();
+      const findOne = User.findOne;
+      sinon.stub(User, 'findOne').callsFake(function (
+        this: typeof User,
+        ...args: Parameters<typeof User.findOne>
+      ) {
+        const query = findOne.apply(this, args);
+        return {
+          exec: async () => {
+            const found = await query.exec();
+            await User.collection.updateOne(
+              { _id: user._id },
+              { $set: { acquisitionStory: '' } },
+            );
+            return found;
+          },
+        } as never;
+      });
+      const send = stubSend();
+      should(await resend({ memberId: user._id.toString() })).deepEqual(
+        changed,
+      );
+      send.called.should.equal(false);
+    });
+  });
+});

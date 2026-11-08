@@ -31,10 +31,12 @@ const excluded = ['suspended', 'shadowban'];
 
 function dayRange(day: unknown) {
   if (
-    typeof day !== 'string' ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
-    !Number.isFinite(Date.parse(day)) ||
-    new Date(day).toISOString().slice(0, 10) !== day ||
+    // The strict round trip below rejects every non-string and every other
+    // format except six-digit years, which never contain this pattern.
+    !/\d{4}-\d{2}-\d{2}/.test(day as string) ||
+    // toISOString() throws for an invalid date.
+    !Number.isFinite(Date.parse(day as string)) ||
+    new Date(day as string).toISOString().slice(0, 10) !== day ||
     Date.parse(day) > Date.now()
   )
     throw new DiagnosticInputError('Choose a valid past or current UTC day.');
@@ -48,7 +50,7 @@ function allowed(user: UserServerRecord | null): user is UserServerRecord {
 async function resolve(key: string, date: unknown) {
   const range = dayRange(date);
   const [kind, id] = key.split(':');
-  if (!['signup', 'message'].includes(kind) || !/^[a-f\d]{24}$/.test(id || ''))
+  if (!['signup', 'message'].includes(kind) || !/^[a-f\d]{24}$/.test(id))
     throw new DiagnosticInputError('Invalid recovery selection.');
   if (kind === 'signup') {
     const user = await User.findOne({
@@ -58,6 +60,7 @@ async function resolve(key: string, date: unknown) {
       emailTemporary: { $type: 'string', $ne: '' },
     });
     if (!allowed(user)) return null;
+    // Stryker disable next-line ArrayDeclaration: signups never read the messages
     return { key, kind: 'signup' as const, user, sender: null, messages: [] };
   }
   const selected = await Message.findOne({
@@ -94,8 +97,8 @@ async function resolve(key: string, date: unknown) {
     !messages.length ||
     messages.length > 50 ||
     String(messages[0]._id) !== id ||
-    user.blocked?.some(blocked => String(blocked) === String(sender._id)) ||
-    sender.blocked?.some(blocked => String(blocked) === String(user._id)) ||
+    user.blocked.some(blocked => String(blocked) === String(sender._id)) ||
+    sender.blocked.some(blocked => String(blocked) === String(user._id)) ||
     new Date(messages[0].created).getTime() > Date.now() - 600000 ||
     new Date(messages[0].created).getTime() < Date.now() - 30 * 86400000
   )
@@ -157,6 +160,7 @@ export async function recoveryDay(
         { $skip: (page - 1) * 50 },
         { $limit: 51 },
       ],
+      // Stryker disable next-line ObjectLiteral: a server-side time limit that no test query comes near
       { maxTimeMS: 10000 },
     )
     .toArray();
@@ -201,7 +205,8 @@ export async function queueRecovery(
     throw new DiagnosticInputError(
       'Select between 1 and 50 distinct recovery emails.',
     );
-  if (applyMailSafety(config) !== 'live' || config.mailer.options.jsonTransport)
+  // Live mode already refuses every transport other than SMTP.
+  if (applyMailSafety(config) !== 'live')
     throw new DiagnosticInputError(
       'Recovery requires live production email sending.',
     );

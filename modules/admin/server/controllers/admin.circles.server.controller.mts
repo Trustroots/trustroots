@@ -46,11 +46,12 @@ const lockWaitMs = 30_000;
 const lockStaleMs = 120_000;
 const lockRetryMs = 25;
 
-function validationError(field: string, message: string) {
-  const error = Object.assign(new Error(message), {
-    errors: { [field]: { message } },
+// Shaped like a Mongoose validation error so errorService reads the message.
+// Clients only ever see the message, so no field name is recorded.
+function validationError(message: string) {
+  return Object.assign(new Error(message), {
+    errors: { circle: { message } },
   });
-  return error;
 }
 
 function parseBoolean(value: unknown, fallback: boolean | undefined) {
@@ -67,7 +68,7 @@ function blankToUndefined(value: unknown) {
 
 function assertColour(color: unknown): asserts color is string {
   if (typeof color !== 'string' || !/^[0-9a-fA-F]{6}$/.test(color)) {
-    throw validationError('color', 'Please choose a valid colour.');
+    throw validationError('Please choose a valid colour.');
   }
 }
 
@@ -78,16 +79,13 @@ function assertDescription(
     typeof description !== 'string' ||
     description.length > descriptionLimit
   ) {
-    throw validationError(
-      'description',
-      'Please keep the description under 4000 characters.',
-    );
+    throw validationError('Please keep the description under 4000 characters.');
   }
 }
 
 function assertSlug(slug: string | undefined): asserts slug is string {
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug || '')) {
-    throw validationError('slug', 'Circle slug is not safe for image storage.');
+  if (typeof slug !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    throw validationError('Circle slug is not safe for image storage.');
   }
 }
 
@@ -99,7 +97,6 @@ function invalidCircleImageError(err: unknown) {
 
 function invalidCircleImage() {
   return validationError(
-    'image',
     'Upload a valid JPEG, PNG, or GIF image with no more than 50 million pixels.',
   );
 }
@@ -197,7 +194,6 @@ async function acquireSlugLock(slug: string) {
       }
       if (Date.now() >= deadline) {
         throw validationError(
-          'image',
           'Another update of this circle image is in progress.',
         );
       }
@@ -215,8 +211,7 @@ async function restorePrevious(state: PublicationState) {
   if (state.hadVariants) await moveAside(state.variantsBackup, state.variants);
 }
 
-async function processCircleImage(filePath: string, slug: string | undefined) {
-  assertSlug(slug);
+async function processCircleImage(filePath: string, slug: string) {
   const inputOptions = {
     animated: false,
     limitInputPixels: maxImagePixels,
@@ -228,11 +223,7 @@ async function processCircleImage(filePath: string, slug: string | undefined) {
     if (invalidCircleImageError(err)) throw invalidCircleImage();
     throw err;
   }
-  if (
-    metadata.width &&
-    metadata.height &&
-    metadata.width * metadata.height > maxImagePixels
-  ) {
+  if ((metadata.width ?? 0) * (metadata.height ?? 0) > maxImagePixels) {
     throw invalidCircleImage();
   }
   const staging = path.join(
@@ -246,6 +237,7 @@ async function processCircleImage(filePath: string, slug: string | undefined) {
     canonicalBackup: path.join(staging, 'previous-canonical.jpg'),
     variantsBackup: path.join(staging, 'previous-variants'),
     hadCanonical: false,
+    // Stryker disable next-line BooleanLiteral: hadVariants is always reassigned before restorePrevious (the only reader) can run
     hadVariants: false,
   };
   let swapped = false;
@@ -325,15 +317,18 @@ async function saveCircle(
   filePath?: string,
 ) {
   let release = async () => {};
+  let upload: { filePath: string; slug: string } | undefined;
   if (filePath) {
-    assertSlug(circle.slug);
-    release = await acquireSlugLock(circle.slug);
+    const slug = circle.slug;
+    assertSlug(slug);
+    release = await acquireSlugLock(slug);
+    upload = { filePath, slug };
   }
   let publication: Awaited<ReturnType<typeof processCircleImage>> | undefined;
   let saved = false;
   try {
-    if (filePath) {
-      publication = await processCircleImage(filePath, circle.slug);
+    if (upload) {
+      publication = await processCircleImage(upload.filePath, upload.slug);
       circle.image = true;
     }
     // create/update already validated this document. Revalidation can regenerate

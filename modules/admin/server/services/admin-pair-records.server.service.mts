@@ -10,7 +10,6 @@ type PairFilter = {
 type PopulateOptions = {
   path: 'userFrom' | 'userTo';
   select: 'username displayName';
-  model: 'User';
 };
 
 type PairQuery<T> = {
@@ -48,11 +47,9 @@ export function findPairRecords<T>(
     .populate({
       path: 'userFrom',
       select: 'username displayName',
-      model: 'User',
     })
     .populate({
       path: 'userTo',
       select: 'username displayName',
-      model: 'User',
     });
 }

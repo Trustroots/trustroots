@@ -8,6 +8,7 @@ const adminReferenceThreads: Pick<
   'list'
 > = require('./../../server/controllers/admin.reference-threads.server.controller.mts');
 const should: typeof import('should') = require('should');
+const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
 
 type ReferenceThreadRecord =
   import('../../../../testutils/server/model-contracts.mts').ReferenceThreadRecord;
@@ -225,5 +226,89 @@ describe('Admin reference threads controller unit tests', () => {
     should(objectBody(response).message).startWith(
       'Snap! Something went wrong.',
     );
+  });
+
+  describe('with stored references', () => {
+    afterEach(utils.clearDatabase);
+
+    it('lists negative references newest first with minimal user profiles', async () => {
+      const users = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(3),
+      );
+      const [a, b, c] = users.map(user => user._id);
+      const reference = (
+        userFrom: typeof a,
+        userTo: typeof a,
+        value: 'yes' | 'no',
+        created: string,
+      ) => ({
+        thread: new mongoose.Types.ObjectId(),
+        userFrom,
+        userTo,
+        reference: value,
+        created: new Date(created),
+      });
+      await ReferenceThread.insertMany([
+        reference(a, b, 'no', '2026-10-01T00:00:00Z'),
+        reference(c, b, 'no', '2026-10-03T00:00:00Z'),
+        reference(a, c, 'yes', '2026-10-04T00:00:00Z'),
+        reference(b, c, 'no', '2026-10-02T00:00:00Z'),
+      ]);
+
+      const res = mockResponse();
+      adminReferenceThreads.list({}, res);
+      const response = await res.waitForResponse();
+      response.statusCode.should.equal(200);
+      const body = JSON.parse(JSON.stringify(response.body));
+
+      body.items
+        .map((item: { created: string; reference: string }) => [
+          item.created,
+          item.reference,
+        ])
+        .should.deepEqual([
+          ['2026-10-03T00:00:00.000Z', 'no'],
+          ['2026-10-02T00:00:00.000Z', 'no'],
+          ['2026-10-01T00:00:00.000Z', 'no'],
+        ]);
+      const profile = (user: (typeof users)[number]) => ({
+        _id: user._id.toString(),
+        displayName: user.displayName,
+        username: user.username,
+      });
+      should(body.items[0].userFrom).deepEqual(profile(users[2]));
+      should(body.items[0].userTo).deepEqual(profile(users[1]));
+
+      should(body.topNegativeRecipients).deepEqual([
+        { count: 2, user: profile(users[1]) },
+        { count: 1, user: profile(users[2]) },
+      ]);
+    });
+
+    it('skips recipient groups without a user id', async () => {
+      const recipient = new mongoose.Types.ObjectId();
+      const negative = (userTo?: typeof recipient) => ({
+        thread: new mongoose.Types.ObjectId(),
+        userFrom: new mongoose.Types.ObjectId(),
+        ...(userTo ? { userTo } : {}),
+        reference: 'no',
+        created: new Date(),
+      });
+      await ReferenceThread.collection.insertMany([
+        negative(),
+        negative(recipient),
+        negative(recipient),
+      ]);
+
+      const res = mockResponse();
+      adminReferenceThreads.list({}, res);
+      const response = await res.waitForResponse();
+
+      response.statusCode.should.equal(200);
+      should(objectBody(response).topNegativeRecipients).deepEqual([
+        { count: 2, user: recipient },
+        { count: 1, user: null },
+      ]);
+    });
   });
 });

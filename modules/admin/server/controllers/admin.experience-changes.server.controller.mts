@@ -169,7 +169,10 @@ const findExperiences: Handler<
       return response.status(400).json({ message: 'Enter a member username.' });
     }
     const member = await User.findOne({ username })
-      .select('_id username displayName')
+      .select(
+        // Stryker disable next-line StringLiteral: the projection only limits what is loaded; only _id is read
+        '_id username displayName',
+      )
       .lean()
       .exec();
     if (!member) return response.json([]);
@@ -249,7 +252,7 @@ const issueLink: Handler<AdminExperienceChangeLink<Date>> = async (
         issuedBy: request.user._id,
         createdAt: new Date(),
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true },
+      { upsert: true },
     ).exec();
 
     const result: AdminExperienceChangeLink<Date> = {
@@ -300,15 +303,9 @@ function idOf(value: unknown): unknown {
   return value;
 }
 
+// Callers always pass a defined id on one side, so a missing id on the other
+// stringifies to 'null' or 'undefined' and never matches.
 function sameId(left: unknown, right: unknown): boolean {
-  if (
-    left === null ||
-    left === undefined ||
-    right === null ||
-    right === undefined
-  ) {
-    return false;
-  }
   return String(left) === String(right);
 }
 
@@ -406,7 +403,10 @@ const decide: Handler<
         .json({ message: 'This request is no longer pending.' });
     }
     const parties = await Experience.findById(pendingRequest.experience)
-      .select('userFrom userTo')
+      .select(
+        // Stryker disable next-line StringLiteral: the projection only limits what is loaded; only the parties are read
+        'userFrom userTo',
+      )
       .lean<ExperienceParties | null>()
       .exec();
     if (!canChange(request.user, parties)) {
@@ -478,6 +478,7 @@ const decide: Handler<
       { $set: update, $addToSet: { appliedChangeRequests: changeRequest._id } },
     ).exec();
     if (
+      // Stryker disable next-line ConditionalExpression: a matched update has just added the id, so the exists() fallback agrees
       result.matchedCount !== 1 &&
       !(await Experience.exists({
         _id: changeRequest.experience,

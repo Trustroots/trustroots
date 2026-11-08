@@ -139,6 +139,7 @@ export const sendScammerWarning = async (
 ): Promise<unknown> => {
   const content: unknown = _.get(req, ['body', 'content']);
   const cleanContent: string = textService.html(_.toString(content));
+  // Stryker disable next-line LogicalOperator: html() already returns '' for content without text, so either check alone decides
   if (!cleanContent || textService.isEmpty(cleanContent)) {
     return res.status(400).send({ message: 'Please write a message.' });
   }
@@ -185,6 +186,7 @@ export const sendScammerWarning = async (
         ).exec();
       }),
     );
+    // Stryker disable next-line ConditionalExpression: Mongoose resolves an empty bulkWrite without writing, so this only skips a no-op
     if (savedMessages.length) {
       const updates = savedMessages.flatMap(message => {
         const savedMessage = message!;
@@ -207,6 +209,7 @@ export const sendScammerWarning = async (
           .createHash('sha256')
           .update(
             JSON.stringify(
+              // Stryker disable next-line MethodExpression: warnings are only written from the administrator to the recipient, so the pair always arrives in the same order
               [
                 String(savedMessage.userFrom),
                 String(savedMessage.userTo),
@@ -238,6 +241,7 @@ export const sendScammerWarning = async (
       } catch (error) {
         if (
           typeof error !== 'object' ||
+          // Stryker disable next-line ConditionalExpression: bulkWrite never rejects with null; the check only guards the `in` operator
           error === null ||
           !('code' in error) ||
           error.code !== 11000

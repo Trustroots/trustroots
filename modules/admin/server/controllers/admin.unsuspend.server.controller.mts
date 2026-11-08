@@ -54,7 +54,10 @@ export async function unsuspendMember(
   }
   try {
     const member = await User.findById(new mongoose.Types.ObjectId(id))
-      .select('username roles authVersion')
+      .select(
+        // Stryker disable next-line StringLiteral: the projection only trims loaded fields; every field read here is loaded either way
+        'username roles authVersion',
+      )
       .lean()
       .exec();
     if (!member) return res.status(404).send({ message: 'Member not found.' });

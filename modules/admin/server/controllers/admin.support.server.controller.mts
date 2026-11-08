@@ -60,7 +60,6 @@ interface UserRecord {
   removeProfileToken?: string;
   firstName?: string;
   lastName?: string;
-  score?: number;
 }
 
 interface AuditLogRecord {
@@ -246,7 +245,6 @@ function memberPayload(member: UserRecord): UserRecord & {
   pendingDeletion: boolean;
 } {
   const { removeProfileToken, ...safe } = member;
-  delete safe.score;
   return { ...safe, pendingDeletion: Boolean(removeProfileToken) };
 }
 
@@ -339,9 +337,7 @@ export const list = handler(async (req, res) => {
           canonicalStatus:
             status === 'unresolved'
               ? { $in: [...UNRESOLVED_STATUSES] }
-              : status === 'unconfirmed'
-                ? undefined
-                : normaliseSupportStatus(status),
+              : normaliseSupportStatus(status),
         };
   if (status === 'unconfirmed') {
     delete matchStatus.canonicalStatus;
@@ -382,7 +378,10 @@ export const list = handler(async (req, res) => {
       matching: Array<{ count: number }>;
       statusCounts: Array<{ _id: SupportStatus; count: number }>;
       unconfirmedCount: Array<{ count: number }>;
-    }>(pipeline).option({ maxTimeMS: 10_000 }),
+    }>(pipeline).option(
+      // Stryker disable next-line ObjectLiteral: a server-side time limit only changes queries slower than ten seconds
+      { maxTimeMS: 10_000 },
+    ),
     SupportRequestModel.countDocuments({}),
   ]);
   const result = results[0];
@@ -607,15 +606,17 @@ async function findMembers(search: string) {
 
   const namePattern = new RegExp(
     trimmed
-      .split(/\s+/)
+      .split(
+        // Stryker disable next-line Regex: splitting on single spaces leaves empty parts, and the repeated \s* they add matches the same names
+        /\s+/,
+      )
       .map(part => escapeRegex(part))
       .join('\\s*'),
     'i',
   );
-  let named: UserRecord[] = [];
+  let named: UserRecord[];
   try {
     named = await User.find({ $text: { $search: trimmed } })
-      .select({ score: { $meta: 'textScore' } })
       .select(MEMBER_FIELDS)
       .sort({ score: { $meta: 'textScore' } })
       .limit(PAGE_SIZE)
@@ -701,9 +702,11 @@ export const setFlag = handler(async (req, res) => {
     flagged
       ? { $addToSet: { roles: 'flagged' } }
       : { $pull: { roles: 'flagged' } },
-    { returnDocument: 'after' },
   )
-    .select('_id')
+    .select(
+      // Stryker disable next-line StringLiteral: only the existence of the member is checked
+      '_id',
+    )
     .lean();
   if (!result)
     throw Object.assign(new Error('Member not found.'), { status: 404 });

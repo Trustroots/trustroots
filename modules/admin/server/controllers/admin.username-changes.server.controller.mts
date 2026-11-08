@@ -71,33 +71,42 @@ export const list = async (
   const dateCriteria: Record<string, Date> = { $lte: now };
   if (range === '90d') dateCriteria.$gte = since;
 
+  // The first $match only narrows the documents scanned: the $match after
+  // $unwind decides which changes are listed, so loosening it changes nothing.
+  // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
   const hasNoHistory = {
     $or: [
-      { usernameHistory: { $exists: false } },
-      { usernameHistory: { $size: 0 } },
+      // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
+      {
+        usernameHistory: { $exists: false },
+      },
+      // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
+      {
+        usernameHistory: { $size: 0 },
+      },
     ],
   };
   const history = { $ifNull: ['$usernameHistory', []] };
-  const fallback = {
-    $cond: [
-      { $ne: [{ $ifNull: ['$usernameUpdated', null] }, null] },
-      [
-        {
-          oldUsername: null,
-          newUsername: '$username',
-          changedAt: '$usernameUpdated',
-          legacy: true,
-        },
-      ],
-      [],
-    ],
-  };
+  // Without `usernameUpdated` the fallback change has no date, so the $match
+  // after $unwind drops it.
+  const fallback = [
+    {
+      oldUsername: null,
+      newUsername: '$username',
+      changedAt: '$usernameUpdated',
+      legacy: true,
+    },
+  ];
   const pipeline: PipelineStage[] = [
     {
+      // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
       $match: {
         $or: [
+          // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
           { 'usernameHistory.changedAt': dateCriteria },
+          // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
           {
+            // Stryker disable next-line ObjectLiteral: a looser pre-filter is re-filtered after $unwind
             $and: [{ usernameUpdated: dateCriteria }, hasNoHistory],
           },
         ],

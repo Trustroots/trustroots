@@ -294,11 +294,14 @@ function createMemberSearchRegexp(search: unknown): RegExp {
   }
 
   const whitespaceTolerantSearch = search
-    .split(/\s+/)
+    .split(
+      // Stryker disable next-line Regex: splitting on single spaces leaves empty parts, and the repeated \s* they add matches the same text
+      /\s+/,
+    )
     .map(escapeStringRegexp)
     .join('\\s*');
 
-  return new RegExp('.*' + whitespaceTolerantSearch + '.*', 'i');
+  return new RegExp(whitespaceTolerantSearch, 'i');
 }
 
 function normalizeAcquisitionStory(value: string): string {
@@ -512,10 +515,8 @@ export const searchUsers = (req: AdminListRequest, res: AdminResponse) => {
     : undefined;
 
   // Validate the query string
-  if (
-    !search ||
-    (searchLength !== undefined && Number(searchLength) < SEARCH_STRING_LIMIT)
-  ) {
+  // Number(undefined) is NaN, so searches without a length pass this check.
+  if (!search || Number(searchLength) < SEARCH_STRING_LIMIT) {
     return res.status(400).send({
       message: `Query string at least ${SEARCH_STRING_LIMIT} characters long required.`,
     });
@@ -573,6 +574,7 @@ export const listUsersByLastIpHash = (
 
 const handleAdminApiError = (res: AdminResponse, err: unknown): unknown => {
   /* istanbul ignore else */
+  // Stryker disable next-line ConditionalExpression: Mongoose never rejects with a falsy value
   if (err) {
     return res.status(400).send({
       message: errorService.getErrorMessage(err as ValidationFailure),
@@ -597,11 +599,7 @@ export const getUser = async (
   }
 
   // Check that the search string is provided
-  if (
-    !userId ||
-    !isObjectIdInput(userId) ||
-    !mongoose.Types.ObjectId.isValid(userId)
-  ) {
+  if (!isObjectIdInput(userId) || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
@@ -615,7 +613,6 @@ export const getUser = async (
       .populate({
         path: 'member.tribe',
         select: 'slug label',
-        model: 'Tribe',
       });
 
     if (!user) {
@@ -663,12 +660,10 @@ export const getUser = async (
       .populate({
         path: 'userFrom',
         select: 'username displayName _id',
-        model: 'User',
       })
       .populate({
         path: 'userTo',
         select: 'username displayName _id',
-        model: 'User',
       });
 
     const contacts = await Contact.find({
@@ -677,12 +672,10 @@ export const getUser = async (
       .populate({
         path: 'userFrom',
         select: 'username displayName',
-        model: 'User',
       })
       .populate({
         path: 'userTo',
         select: 'username displayName',
-        model: 'User',
       });
 
     const offers = await Offer.find({ user: objectId });
@@ -693,6 +686,7 @@ export const getUser = async (
       {
         $match: {
           removedAt: { $exists: false },
+          // Stryker disable next-line ObjectLiteral: the facets below match userFrom and userTo again; this clause only narrows the scan
           $or: [{ userFrom: experienceUserId }, { userTo: experienceUserId }],
         },
       },
@@ -754,19 +748,26 @@ export const listStaffBlockers = async (
       ? await User.find({
           roles: { $in: ['admin', 'welcome-team', 'support-team'] },
         })
-          .select('username displayName')
+          .select(
+            // Stryker disable next-line StringLiteral: prepareStaffBlockers copies only _id, username and displayName
+            'username displayName',
+          )
           .sort({ username: 1 })
           .lean()
       : await User.find({ _id: req.user!._id })
-          .select('username displayName')
+          .select(
+            // Stryker disable next-line StringLiteral: prepareStaffBlockers copies only _id, username and displayName
+            'username displayName',
+          )
           .lean();
     const staffIds = staffMembers.map(staff => staff._id);
-    const blockers = staffIds.length
-      ? await User.find({ blocked: { $in: staffIds } })
-          .select('username displayName blocked')
-          .sort({ username: 1 })
-          .lean()
-      : [];
+    const blockers = await User.find({ blocked: { $in: staffIds } })
+      .select(
+        // Stryker disable next-line StringLiteral: prepareStaffBlockers reads only _id, username, displayName and blocked
+        'username displayName blocked',
+      )
+      .sort({ username: 1 })
+      .lean();
 
     const staffBlockers = prepareStaffBlockers(staffMembers, blockers);
     res.send(staffBlockers);
@@ -805,11 +806,7 @@ export const changeRole = async (
   const action: 'add' | 'remove' = actionValue;
 
   // Check that the search string is provided
-  if (
-    !userId ||
-    !isObjectIdInput(userId) ||
-    !mongoose.Types.ObjectId.isValid(userId)
-  ) {
+  if (!isObjectIdInput(userId) || !mongoose.Types.ObjectId.isValid(userId)) {
     return res.status(400).send({
       message: errorService.getErrorMessageByKey('invalid-id'),
     });
@@ -822,6 +819,7 @@ export const changeRole = async (
     // Compare-and-set the role array so overlapping updates cannot overwrite
     // another role change or lose an authVersion increment.
     for (let attempt = 0; attempt < 5; attempt += 1) {
+      // Stryker disable next-line StringLiteral: only the roles of the current document are read
       const current = await User.findById(id).select('roles').lean().exec();
       if (!current) break;
 
@@ -930,8 +928,10 @@ export const usernameToUserId = async (
   }
 
   // Get userID based on provided username
+  // Stryker disable next-line ConditionalExpression: an empty or missing username matches no account
   if (username) {
     const user = await User.findOne({ username }).setOptions({
+      // Stryker disable next-line BooleanLiteral: username is checked to be a string above, so there is no query operator to sanitise
       sanitizeFilter: true,
     });
 

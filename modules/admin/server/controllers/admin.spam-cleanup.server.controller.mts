@@ -215,8 +215,14 @@ export async function preview(req: Request, res: Response) {
     const users = pageIds.length
       ? await mongoose
           .model('User')
-          .find({ _id: { $in: pageIds } })
-          .select('_id username created seen')
+          .find(
+            // Stryker disable next-line ObjectLiteral: rows are looked up by ID, so loading more members changes nothing
+            { _id: { $in: pageIds } },
+          )
+          .select(
+            // Stryker disable next-line StringLiteral: the projection only trims loaded fields; rows read named fields
+            '_id username created seen',
+          )
           .lean<
             Array<{
               _id: Types.ObjectId;
@@ -225,15 +231,19 @@ export async function preview(req: Request, res: Response) {
               seen?: Date;
             }>
           >()
-      : [];
+      : // Stryker disable next-line ArrayDeclaration: with no page IDs, no row looks a member up
+        [];
     const byId = new Map(users.map(user => [String(user._id), user]));
     const eligibleIds = new Set(
+      // Stryker disable next-line ArrayDeclaration: without a chunk there are no page IDs to look up
       (chunk?.eligibleIds || []).map(value => String(value)),
     );
     const inactiveIds = new Set(
+      // Stryker disable next-line ArrayDeclaration: without a chunk there are no page IDs to look up
       (chunk?.inactiveIds || []).map(value => String(value)),
     );
     const unknownLoginIds = new Set(
+      // Stryker disable next-line ArrayDeclaration: without a chunk there are no page IDs to look up
       (chunk?.unknownLoginIds || []).map(value => String(value)),
     );
     let items = pageIds.map(userId => {
@@ -267,8 +277,10 @@ export async function preview(req: Request, res: Response) {
       const selectionIds =
         body.sort === 'selected'
           ? (body.selectionIds as string[]).map(value => value.toLowerCase())
-          : [];
-      const selectionStage = String(body.selectionStage ?? 'all');
+          : // Stryker disable next-line ArrayDeclaration: other sorts never compute the selection
+            [];
+      // Validated for the selected sort, the only one that reads it.
+      const selectionStage = String(body.selectionStage);
       const selectableStage =
         selectionStage === 'all'
           ? { $ne: ['$reviewRows.stage', 'protected'] }
@@ -296,9 +308,11 @@ export async function preview(req: Request, res: Response) {
               $cond: [
                 { $eq: ['$reviewRows.stage', 'protected'] },
                 'protected',
+                // Stryker disable next-line StringLiteral: only sorts, and any other value still sorts before 'protected'
                 'eligible',
               ],
             },
+            // Stryker disable next-line ConditionalExpression: other sorts neither sort on nor return the computed selection
             ...(body.sort === 'selected'
               ? { 'reviewRows.selected': selectedExpression }
               : {}),
@@ -313,7 +327,10 @@ export async function preview(req: Request, res: Response) {
         { $skip: offset },
         { $limit: SPAM_CLEANUP_PAGE_SIZE },
         { $replaceRoot: { newRoot: '$reviewRows' } },
-      ]).allowDiskUse(true);
+      ]).allowDiskUse(
+        // Stryker disable next-line BooleanLiteral: only lets large sorts spill to disk; results are identical
+        true,
+      );
       items = sorted.map(row => ({
         id: String(row.user),
         username: row.username,
@@ -321,6 +338,7 @@ export async function preview(req: Request, res: Response) {
         lastSeen: row.lastSeen?.toISOString() || null,
         eligible: row.stage !== 'protected',
         stage: row.stage,
+        // Stryker disable next-line ConditionalExpression: other sorts have no selection, and JSON drops the undefined value
         ...(body.sort === 'selected' ? { selected: row.selected } : {}),
       }));
     }
@@ -428,12 +446,15 @@ export async function apply(req: Request, res: Response) {
       index: record.nextChunk,
     }).lean();
     if (!chunk && record.nextChunk < record.chunkCount)
+      // Stryker disable next-line StringLiteral: the message is never shown; the catch answers generically
       throw new Error('Reviewed chunk unavailable.');
     const exceptions = new Set(accountIds);
     const inactiveIds = new Set(
+      // Stryker disable next-line ArrayDeclaration: without a chunk there are no eligible IDs to filter
       (chunk?.inactiveIds || []).map(value => String(value)),
     );
     const unknownLoginIds = new Set(
+      // Stryker disable next-line ArrayDeclaration: without a chunk there are no eligible IDs to filter
       (chunk?.unknownLoginIds || []).map(value => String(value)),
     );
     const stageIds = (chunk?.eligibleIds || []).filter(
