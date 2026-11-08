@@ -23,6 +23,7 @@ function getClientIpAddress(req: Request): string | undefined {
   // visitor address. Do not trust ordinary forwarding headers from clients.
   const passengerClientAddress = req.get('!~Passenger-Client-Address');
   const clientIpAddress = passengerClientAddress || req.ip;
+  // Stryker disable next-line ConditionalExpression: net.isIP() returns 0 for any non-string, so the typeof guard is redundant; this also ignores the whole-condition mutant starting here, which the invalid-address test would kill
   return typeof clientIpAddress === 'string' && net.isIP(clientIpAddress)
     ? clientIpAddress
     : undefined;

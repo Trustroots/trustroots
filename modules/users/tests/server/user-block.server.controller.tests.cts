@@ -1,17 +1,26 @@
 /**
- * Unit tests for the user block controller error and guard branches.
+ * Unit tests for the user block controller.
  *
- * The happy paths are covered by `user-block.server.routes.tests.js`; here we
- * call the controller functions directly so we can exercise the validation
- * guards, the "nothing updated" responses, and the catch blocks that are hard
- * to reach through the HTTP routes.
+ * The controller is loaded through `mock-module` with a recording logger, so
+ * each test checks the response, the stored block list and the log calls.
  */
 const mongoose: typeof import('mongoose') = require('mongoose');
-
-const blockController = require('./../../server/controllers/users.block.server.controller.mjs');
-const errorService: typeof import('../../../core/server/services/error.server.service.mjs').default = require('./../../../core/server/services/error.server.service.mjs');
+const mockModule: typeof import('./../../../../testutils/server/mock-module.mts').default = require('./../../../../testutils/server/mock-module');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
+
+type Id = import('mongoose').Types.ObjectId | string;
+interface BlockRequest {
+  user: { _id: Id };
+  profile?: { _id: Id; username?: string };
+  params?: { username?: string };
+}
+type Handler = (req: BlockRequest, res: MockResponse) => Promise<unknown>;
+interface BlockController {
+  getBlockedUsers: Handler;
+  blockUser: Handler;
+  unblockUser: Handler;
+}
 
 interface MockResponse {
   statusCode: number;
@@ -20,7 +29,25 @@ interface MockResponse {
   send(body: unknown): this;
 }
 
-function mockResponse(): MockResponse {
+const User = mongoose.model<{ blocked: Id[] }>('User');
+const message = (text: string) => ({ message: text });
+const invalidId = message('Cannot interpret id.');
+const notFound = message('Not found.');
+const failed = message(
+  (
+    require('./../../../core/server/services/error.server.service.mjs') as typeof import('../../../core/server/services/error.server.service.mjs').default
+  ).getErrorMessageByKey('default'),
+);
+
+async function call(handler: keyof BlockController, req: BlockRequest) {
+  const logged: unknown[][] = [];
+  const controller = mockModule<BlockController>(
+    require.resolve('./../../server/controllers/users.block.server.controller.mts'),
+    {
+      './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+        logged.push(args),
+    },
+  );
   const res: MockResponse = {
     statusCode: 200,
     body: null,
@@ -33,173 +60,113 @@ function mockResponse(): MockResponse {
       return res;
     },
   };
-
-  return res;
+  await controller[handler](req, res);
+  return { response: [res.statusCode, res.body], logged };
 }
 
-function messageBody(res: MockResponse): string {
-  if (
-    typeof res.body !== 'object' ||
-    res.body === null ||
-    !('message' in res.body) ||
-    typeof res.body.message !== 'string'
-  ) {
-    throw new Error('Expected a message response');
-  }
-  return res.body.message;
-}
+const errorLog = (logged: unknown[][]) => {
+  logged.at(-1)![0]!.should.equal('error');
+  logged.at(-1)![1]!.should.be.instanceOf(Error);
+  return logged.slice(0, -1);
+};
 
 describe('User block controller unit tests', () => {
   afterEach(utils.clearDatabase);
 
-  describe('getBlockedUsers', () => {
-    it('sends the populated blocked list', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
+  const missingId = new mongoose.Types.ObjectId();
+  const other = { _id: new mongoose.Types.ObjectId(), username: 'someone' };
 
-      const res = mockResponse();
-      await blockController.getBlockedUsers({ user: { _id: user._id } }, res);
+  it('sends the blocked list with only public name fields', async () => {
+    const [user, blocked] = await utils.saveUsers(utils.generateUsers(2));
+    await User.updateOne({ _id: user._id }, { blocked: [blocked._id] });
 
-      res.statusCode.should.equal(200);
-      if (!Array.isArray(res.body))
-        throw new Error('Expected an array response');
-      res.body.length.should.equal(0);
+    const { response, logged } = await call('getBlockedUsers', {
+      user: { _id: user._id },
     });
 
-    it('responds with 400 when the lookup fails', async () => {
-      // A non-existent user id resolves to `null`, so reading `.blocked`
-      // throws and the catch block is exercised.
-      const res = mockResponse();
-      await blockController.getBlockedUsers(
-        { user: { _id: new mongoose.Types.ObjectId() } },
-        res,
-      );
-
-      res.statusCode.should.equal(400);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('default'),
-      );
-    });
+    response[0]!.should.equal(200);
+    JSON.parse(JSON.stringify(response[1])).should.eql([
+      {
+        _id: blocked._id.toString(),
+        username: blocked.username,
+        displayName: blocked.displayName,
+      },
+    ]);
+    logged.should.eql([]);
   });
 
-  describe('blockUser', () => {
-    it('responds with 400 when no profile is provided', async () => {
-      const res = mockResponse();
-      await blockController.blockUser(
-        { user: { _id: new mongoose.Types.ObjectId() } },
-        res,
-      );
-
-      res.statusCode.should.equal(400);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('invalid-id'),
-      );
+  it('responds with 400 and logs when the blocked list lookup fails', async () => {
+    const { response, logged } = await call('getBlockedUsers', {
+      user: { _id: missingId },
     });
-
-    it('responds with 400 when trying to block yourself', async () => {
-      const id = new mongoose.Types.ObjectId();
-      const res = mockResponse();
-      await blockController.blockUser(
-        { user: { _id: id }, profile: { _id: id } },
-        res,
-      );
-
-      res.statusCode.should.equal(400);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('invalid-id'),
-      );
-    });
-
-    it('responds with 404 when the logged in user no longer exists', async () => {
-      const res = mockResponse();
-      await blockController.blockUser(
-        {
-          user: { _id: new mongoose.Types.ObjectId() },
-          profile: {
-            _id: new mongoose.Types.ObjectId(),
-            username: 'someone',
-          },
-        },
-        res,
-      );
-
-      res.statusCode.should.equal(404);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('not-found'),
-      );
-    });
-
-    it('responds with 400 when the update throws', async () => {
-      const res = mockResponse();
-      await blockController.blockUser(
-        {
-          user: { _id: 'not-a-valid-object-id' },
-          profile: {
-            _id: new mongoose.Types.ObjectId(),
-            username: 'someone',
-          },
-        },
-        res,
-      );
-
-      res.statusCode.should.equal(400);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('default'),
-      );
-    });
+    response.should.eql([400, failed]);
+    errorLog(logged).should.eql([]);
   });
 
-  describe('unblockUser', () => {
-    it('responds with 400 when no profile is provided', async () => {
-      const res = mockResponse();
-      await blockController.unblockUser(
-        { user: { _id: new mongoose.Types.ObjectId() }, params: {} },
-        res,
-      );
+  it('rejects a missing profile or blocking yourself', async () => {
+    for (const [handler, req] of [
+      ['blockUser', { user: { _id: missingId } }],
+      ['blockUser', { user: { _id: missingId }, profile: { _id: missingId } }],
+      ['unblockUser', { user: { _id: missingId }, params: {} }],
+    ] as Array<[keyof BlockController, BlockRequest]>) {
+      (await call(handler, req)).should.eql({
+        response: [400, invalidId],
+        logged: [],
+      });
+    }
+  });
 
-      res.statusCode.should.equal(400);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('invalid-id'),
-      );
+  it('blocks and unblocks a member', async () => {
+    const [user, target] = await utils.saveUsers(utils.generateUsers(2));
+    const profile = { _id: target._id, username: target.username };
+    const params = { username: 'requested-name' };
+    const stored = async () =>
+      (await User.findById(user._id))!.blocked.map(String);
+
+    (await call('blockUser', { user, profile })).should.eql({
+      response: [200, `${target.username} added to block list.`],
+      logged: [['info', `${user._id} blocking ${target._id}`]],
     });
+    (await stored()).should.eql([target._id.toString()]);
 
-    it('responds with 404 when nothing was unblocked', async () => {
-      const res = mockResponse();
-      await blockController.unblockUser(
-        {
-          user: { _id: new mongoose.Types.ObjectId() },
-          profile: {
-            _id: new mongoose.Types.ObjectId(),
-            username: 'someone',
-          },
-          params: { username: 'someone' },
-        },
-        res,
-      );
-
-      res.statusCode.should.equal(404);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('not-found'),
-      );
+    (await call('unblockUser', { user, profile, params })).should.eql({
+      response: [200, message(`${target.username} removed from block list.`)],
+      logged: [['info', `${user._id} unblocking requested-name:${target._id}`]],
     });
+    (await stored()).should.eql([]);
 
-    it('responds with 400 when the update throws', async () => {
-      const res = mockResponse();
-      await blockController.unblockUser(
-        {
-          user: { _id: 'not-a-valid-object-id' },
-          profile: {
-            _id: new mongoose.Types.ObjectId(),
-            username: 'someone',
-          },
-          params: { username: 'someone' },
-        },
-        res,
-      );
+    // Nothing left to unblock: matched but not modified.
+    (await call('unblockUser', { user, profile, params })).response.should.eql([
+      404,
+      notFound,
+    ]);
+  });
 
-      res.statusCode.should.equal(400);
-      messageBody(res).should.equal(
-        errorService.getErrorMessageByKey('default'),
-      );
-    });
+  it('responds with 404 when the logged in user no longer exists', async () => {
+    const params = { username: 'someone' };
+    (
+      await call('blockUser', { user: { _id: missingId }, profile: other })
+    ).response.should.eql([404, notFound]);
+    (
+      await call('unblockUser', {
+        user: { _id: missingId },
+        profile: other,
+        params,
+      })
+    ).response.should.eql([404, notFound]);
+  });
+
+  it('responds with 400 and logs when the update throws', async () => {
+    const user = { _id: 'not-a-valid-object-id' };
+    const params = { username: 'someone' };
+    for (const handler of ['blockUser', 'unblockUser'] as const) {
+      const { response, logged } = await call(handler, {
+        user,
+        profile: other,
+        params,
+      });
+      response.should.eql([400, failed]);
+      errorLog(logged).length.should.equal(1);
+    }
   });
 });

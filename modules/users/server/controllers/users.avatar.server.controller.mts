@@ -132,6 +132,7 @@ const avatarUpload = (req: AvatarUploadRequest, res: AvatarResponse): void => {
         ).exec();
         if (currentUser?.avatarVersion === processedAvatar.version) {
           if (
+            // Stryker disable next-line ConditionalExpression: the pattern test already rejects undefined and '' ("undefined" is not 32 hex chars); this also ignores the whole-condition mutants starting here, which the "does not remove the unsafe or current previous version" tests would kill
             previousVersion &&
             avatarVersionPattern.test(previousVersion) &&
             previousVersion !== processedAvatar.version
@@ -189,6 +190,7 @@ function getLocalAvatarUrl(
     // 32 is the smallest and 2048 biggest file size we're generating.
     const fileSize = Math.min(Math.max(size, 32), 2048);
     const domain = `${config.https ? 'https' : 'http'}://${config.domain}`;
+    // Stryker disable next-line StringLiteral: any fallback without 32 hex chars fails the pattern, as undefined ("undefined") would
     const version = avatarVersionPattern.test(user.avatarVersion || '')
       ? `${user.avatarVersion}/`
       : '';
@@ -282,6 +284,7 @@ const getAvatar = (
       )}`,
     });
   }
+  // Stryker disable next-line StringLiteral: parseInt of '' and of any non-numeric fallback are both NaN, so the default size applies
   const size = parseInt(req.query.size || '', 10) || defaultSize;
   const defaultAvatarUrl = getDefaultAvatarUrl(size);
   if (!req.profile) {
@@ -291,6 +294,7 @@ const getAvatar = (
   const isBannedProfile =
     req.profile.roles.includes('suspended') ||
     req.profile.roles.includes('shadowban');
+  // Stryker disable next-line ArrayDeclaration: a non-ObjectId placeholder never equals the viewer's ObjectId string
   const isBlockedByProfile = (req.profile.blocked || []).some(
     blockedUserId => blockedUserId.toString() === req.user._id.toString(),
   );
@@ -360,6 +364,7 @@ const userForAvatarByUserId = async (
     'blocked',
     'emailHash',
     // MD5 hashed email to use with Gravatars
+    // Stryker disable next-line StringLiteral: `id` is a virtual; MongoDB returns `_id` with any inclusive projection
     'id',
     'public',
     'roles',

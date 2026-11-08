@@ -145,88 +145,98 @@ describe('User last seen CRUD tests', function () {
           );
         });
     });
-    it('should update the last seen date only if a specific time passed since the last update', function (done) {
-      // the user's username, shortcut
-      const username = _confirmedUser.username;
-
-      // how long should we wait between updates on minimum
-      const minutesToUpdate = {
-        minutes: 1,
-      }; // 1 minute
-
+    it('should update the last seen date only after the configured interval', async function () {
       sinon
         .stub(config.limits, 'timeToUpdateLastSeenUser')
-        .value(minutesToUpdate);
-      const timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
+        .value({ minutes: 1 });
+      const seenAfterRequest = async (tick: number) => {
+        sinon.clock.tick(tick);
+        await agent.get('/api/messages').expect(200);
+        const user = await User.findOne({ username: _confirmedUser.username });
+        assertUser(user);
+        return user.seen;
+      };
       const originalTime = new Date();
-      // update for the first time, OK
-      agent
-        .get('/api/messages')
-        .expect(200)
-        .end(function () {
-          // read user from database
-          findUser(
-            {
-              username,
-            },
-            function (err, user) {
-              try {
-                if (err) throw err;
-                assertUser(user);
-                should(user.seen).eql(originalTime);
 
-                // now wait almost for the time to update
-                sinon.clock.tick(timeToUpdate - 1);
-                agent
-                  .get('/api/messages')
-                  .expect(200)
-                  .end(function () {
-                    // and the User.seen should not be updated (too early)
-                    findUser(
-                      {
-                        username,
-                      },
-                      function (err, user) {
-                        try {
-                          if (err) throw err;
-                          assertUser(user);
-                          should(user.seen).eql(originalTime);
+      should(await seenAfterRequest(0)).eql(originalTime);
+      // Exactly the interval is not enough; one more millisecond is.
+      should(await seenAfterRequest(60 * 1000)).eql(originalTime);
+      should(await seenAfterRequest(1)).eql(new Date());
+    });
+  });
+});
 
-                          // now wait for another 2 milliseconds
-                          sinon.clock.tick(2);
-                          agent
-                            .get('/api/messages')
-                            .expect(200)
-                            .end(function () {
-                              // and the User.seen should be updated now
-                              findUser(
-                                {
-                                  username,
-                                },
-                                function (err, user) {
-                                  if (err) return done(err);
-                                  try {
-                                    assertUser(user);
-                                    should(user.seen).eql(new Date());
-                                    return done();
-                                  } catch (error) {
-                                    return done(error);
-                                  }
-                                },
-                              );
-                            });
-                        } catch (err) {
-                          return done(err);
-                        }
-                      },
-                    );
-                  });
-              } catch (err) {
-                return done(err);
-              }
-            },
-          );
-        });
+describe('Last seen middleware', function () {
+  type Middleware = (
+    req: object,
+    res: object,
+    next: (error?: unknown) => void,
+  ) => void;
+  const middleware = lastSeen as unknown as Middleware;
+  const {
+    hashIpAddress,
+  }: typeof import('../../../core/server/services/ip-hash.server.service.mts') = require('../../../core/server/services/ip-hash.server.service.mts');
+  const now = new Date('2026-01-02T03:04:05.000Z');
+  const interval = moment
+    .duration(config.limits.timeToUpdateLastSeenUser)
+    .asMilliseconds();
+  const ip = '192.0.2.1';
+  const otherIp = '192.0.2.2';
+
+  beforeEach(() => sinon.useFakeTimers({ now, toFake: ['Date'] }));
+  afterEach(() => sinon.restore());
+
+  const cases: Array<
+    [string, { seenAgo?: number; ip: string } | null, object | null]
+  > = [
+    ['skips anonymous requests', null, null],
+    [
+      'skips a recent visit from the same address',
+      { seenAgo: interval, ip },
+      null,
+    ],
+    [
+      'skips a recent visit without a valid address',
+      { seenAgo: 0, ip: 'not-an-ip' },
+      null,
+    ],
+    [
+      'stores a changed address without touching seen',
+      { seenAgo: 0, ip: otherIp },
+      { lastIpHash: hashIpAddress(otherIp) },
+    ],
+    [
+      'updates seen after the interval',
+      { seenAgo: interval + 1, ip },
+      { seen: now },
+    ],
+    [
+      'stores both on a first visit',
+      { ip: otherIp },
+      { seen: now, lastIpHash: hashIpAddress(otherIp) },
+    ],
+  ];
+  cases.forEach(([name, visit, update]) => {
+    it(name, async () => {
+      const findByIdAndUpdate = sinon
+        .stub(User, 'findByIdAndUpdate')
+        .resolves(null);
+      const user = visit && {
+        id: 'member-id',
+        lastIpHash: hashIpAddress(ip),
+        seen:
+          visit.seenAgo === undefined
+            ? undefined
+            : new Date(now.getTime() - visit.seenAgo),
+      };
+      const error = await new Promise(resolve =>
+        middleware({ user, get: () => undefined, ip: visit?.ip }, {}, resolve),
+      );
+      should(error).be.undefined();
+      // Serialised, because the fake-timer Date has its own prototype.
+      JSON.stringify(findByIdAndUpdate.args).should.equal(
+        JSON.stringify(update ? [['member-id', update]] : []),
+      );
     });
   });
 });

@@ -10,6 +10,7 @@ config.files.server.models.forEach(modelPath =>
   require(path.resolve(modelPath)),
 );
 const mongoose: typeof import('mongoose') = require('mongoose');
+const mockModule: typeof import('./../../../../../testutils/server/mock-module.mts').default = require('./../../../../../testutils/server/mock-module');
 
 type ExportRecord = Record<string, unknown>;
 interface ExportProfile {
@@ -159,7 +160,7 @@ function responseBody(response: MockResponse): ExportBody {
 
 describe('Member data export controller', () => {
   const user = { _id: 'member-id', username: 'member' };
-  const exportedAt = new Date('2026-10-14T09:31:00.000Z');
+  const exportedAt = new Date('2026-01-02T03:04:00.000Z');
 
   afterEach(() => sinon.restore());
 
@@ -204,12 +205,12 @@ describe('Member data export controller', () => {
 
     response.contentType!.should.equal('application/json');
     response.filename!.should.equal(
-      'trustroots-data-member-20261014-0931.json',
+      'trustroots-data-member-20260102-0304.json',
     );
     responseBody(response).should.containEql({
       format: 'trustroots-data-export',
       version: 1,
-      exportedAt: '2026-10-14T09:31:00.000Z',
+      exportedAt: '2026-01-02T03:04:00.000Z',
       profile: {
         username: user.username,
         displayName: 'Member Example',
@@ -242,51 +243,27 @@ describe('Member data export controller', () => {
     });
   });
 
-  it('names the file with a lowercase username and UTC time', async () => {
-    sinon.useFakeTimers(exportedAt);
-    const controller = loadController({
-      profile: (req, res, next) => next(),
-      contacts: (req, res, next) => next(),
-    });
-    const response = mockResponse();
-
-    await controller.download(
-      { user: { ...user, username: 'Good.Name-1' } },
-      response,
-      sinon.stub(),
+  it('names the file with a safe lowercase username and the UTC time', () => {
+    // Loaded fresh so the module-level username pattern runs inside the test.
+    const { buildExportFilename } = mockModule<typeof controller>(
+      require.resolve('./../../../server/controllers/users.export.server.controller.mts'),
+      {},
     );
-
-    response.filename!.should.equal(
-      'trustroots-data-good.name-1-20261014-0931.json',
-    );
-  });
-
-  it('omits a username that is not safe in a filename', async () => {
-    sinon.useFakeTimers(exportedAt);
-    const controller = loadController({
-      profile: (req, res, next) => next(),
-      contacts: (req, res, next) => next(),
-    });
-    const response = mockResponse();
-
-    await controller.download(
-      { user: { ...user, username: '../etc' } },
-      response,
-      sinon.stub(),
-    );
-
-    response.filename!.should.equal('trustroots-data-20261014-0931.json');
-
-    const missingUsername = mockResponse();
-    await controller.download(
-      { user: { ...user, username: '' } },
-      missingUsername,
-      sinon.stub(),
-    );
-
-    missingUsername.filename!.should.equal(
-      'trustroots-data-20261014-0931.json',
-    );
+    const named = (name: string) =>
+      `trustroots-data-${name}-20260102-0304.json`;
+    const unnamed = 'trustroots-data-20260102-0304.json';
+    for (const [username, filename] of [
+      ['Good.Name-1', named('good.name-1')],
+      ['abc', named('abc')],
+      ['..a', named('..a')],
+      ['#abc', unnamed],
+      ['abc#', unnamed],
+      ['../etc', unnamed],
+      ['...', unnamed],
+      ['', unnamed],
+    ]) {
+      buildExportFilename(username!, exportedAt).should.equal(filename);
+    }
   });
 
   it('returns empty lists when the member has no extra records', async () => {
@@ -299,6 +276,8 @@ describe('Member data export controller', () => {
     await controller.download({ user: { ...user } }, response, sinon.stub());
 
     const body = responseBody(response);
+    body.profile.should.deepEqual({});
+    body.contacts.should.deepEqual([]);
     body.circles.should.deepEqual([]);
     body.hostingOffers.should.deepEqual([]);
     body.messages.should.deepEqual([]);
@@ -337,9 +316,19 @@ describe('Member data export controller', () => {
         },
       ]);
     controller.circlesFromProfile(null).should.deepEqual([]);
+    controller
+      .circlesFromProfile(
+        Object.assign(() => {}, {
+          member: [{ tribe: 'circle-1' }],
+        }) as unknown as ExportProfile,
+      )
+      .should.deepEqual([]);
   });
 
   it('exports messages and experiences the member wrote', async () => {
+    // Function values are not records, even with record-like properties.
+    const recipientFunction = Object.assign(() => {}, { _id: 'recipient-4' });
+    const interactionsFunction = Object.assign(() => {}, { met: true });
     const messageModel = mongoose.model<ExportRecord>('Message');
     const messageQuery = resolvableQuery(messageModel, [
       {
@@ -369,6 +358,7 @@ describe('Member data export controller', () => {
         read: true,
         userTo: { _id: 'recipient-3' },
       },
+      { _id: 'message-4', userTo: recipientFunction },
     ]);
     const experienceModel = mongoose.model<ExportRecord>('Experience');
     const experienceQuery = resolvableQuery(experienceModel, [
@@ -389,6 +379,8 @@ describe('Member data export controller', () => {
         recommend: 'unknown',
         userTo: null,
       },
+      { _id: 'experience-3', interactions: null },
+      { _id: 'experience-4', interactions: interactionsFunction },
     ]);
     const findMessages = sinon
       .stub(messageModel, 'find')
@@ -406,10 +398,10 @@ describe('Member data export controller', () => {
     assert.deepEqual(findExperiences.getCall(0).args.at(0), {
       userFrom: user._id,
     });
-    messageQuery.sort.calledWith({ created: 1 }).should.be.true();
-    messageQuery.populate
-      .calledWith('userTo', 'username displayName')
-      .should.be.true();
+    for (const query of [messageQuery, experienceQuery]) {
+      query.sort.args.should.eql([[{ created: 1 }]]);
+      query.populate.args.should.eql([['userTo', 'username displayName']]);
+    }
     messages.should.deepEqual([
       {
         _id: 'message-1',
@@ -436,7 +428,15 @@ describe('Member data export controller', () => {
         read: true,
         userTo: { _id: 'recipient-3' },
       },
+      {
+        _id: 'message-4',
+        created: undefined,
+        content: undefined,
+        read: undefined,
+        userTo: recipientFunction,
+      },
     ]);
+    messages[3]!.userTo!.should.equal(recipientFunction);
     experiences.should.deepEqual([
       {
         _id: 'experience-1',
@@ -456,6 +456,14 @@ describe('Member data export controller', () => {
         recommend: 'unknown',
         userTo: null,
       },
+      ...['experience-3', 'experience-4'].map(_id => ({
+        _id,
+        created: undefined,
+        public: undefined,
+        interactions: { met: false, guest: false, host: false },
+        recommend: undefined,
+        userTo: null,
+      })),
     ]);
   });
 
@@ -560,18 +568,20 @@ describe('Member data export controller', () => {
   });
 
   it('passes contact middleware response errors without a message to the error handler', async () => {
-    const next = sinon.stub();
-    const controller = loadController({
-      profile: (_req, _response, callback) => callback(),
-      contacts: (_req, response) => {
-        response.status(403).send({});
-      },
-    });
+    for (const body of [{}, null, 'Forbidden']) {
+      sinon.restore();
+      const next = sinon.stub();
+      const controller = loadController({
+        profile: (_req, _response, callback) => callback(),
+        contacts: (_req, response) => {
+          response.status(403).send(body);
+        },
+      });
 
-    await controller.download({ user: { ...user } }, mockResponse(), next);
+      await controller.download({ user: { ...user } }, mockResponse(), next);
 
-    const error = next.firstCall.args[0] as Error & { statusCode: number };
-    assert.equal(error.message, '');
-    assert.equal(error.statusCode, 403);
+      const error = next.firstCall.args[0] as Error & { statusCode: number };
+      assert.deepEqual([error.message, error.statusCode], ['', 403]);
+    }
   });
 });
