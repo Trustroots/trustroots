@@ -389,23 +389,27 @@ describe('Email recovery service', () => {
     });
 
     it('audits each request and records each outcome against its own claim', async () => {
-      const failing = await pending();
+      // The failing claim sits between two working ones, so a claim update
+      // that lost its key filter would mark the wrong claim.
       const working = await pending();
+      const failing = await pending();
+      const later = await pending();
       live();
       stubSignup(user => user.username === failing.user.username);
       const actor = new mongoose.Types.ObjectId();
       assert.deepEqual(
         await recovery.queueRecovery(
           failing.date,
-          [failing.key, working.key],
+          [working.key, failing.key, later.key],
           actor,
         ),
         [
+          { key: working.key, status: 'Queued for delivery' },
           {
             key: failing.key,
             status: 'Not confirmed queued; inspect before retrying',
           },
-          { key: working.key, status: 'Queued for delivery' },
+          { key: later.key, status: 'Queued for delivery' },
         ],
       );
       const statuses = Object.fromEntries(
@@ -415,8 +419,9 @@ describe('Email recovery service', () => {
         ]),
       );
       assert.deepEqual(statuses, {
-        [failing.key]: 'uncertain',
         [working.key]: 'queued',
+        [failing.key]: 'uncertain',
+        [later.key]: 'queued',
       });
       const audits = await mongoose
         .model<{
@@ -433,7 +438,7 @@ describe('Email recovery service', () => {
           route: audit.route,
           body: audit.body,
         })),
-        [failing, working].map(({ key }) => ({
+        [working, failing, later].map(({ key }) => ({
           user: String(actor),
           route: 'sparkpost/recovery',
           body: { key, date: failing.date },
