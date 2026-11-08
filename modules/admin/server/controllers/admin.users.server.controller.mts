@@ -572,15 +572,10 @@ export const listUsersByLastIpHash = (
   return sendMemberList(req, res, { lastIpHash: ipHash });
 };
 
-const handleAdminApiError = (res: AdminResponse, err: unknown): unknown => {
-  /* istanbul ignore else */
-  // Stryker disable next-line ConditionalExpression: Mongoose never rejects with a falsy value
-  if (err) {
-    return res.status(400).send({
-      message: errorService.getErrorMessage(err as ValidationFailure),
-    });
-  }
-};
+const handleAdminApiError = (res: AdminResponse, err: unknown): unknown =>
+  res.status(400).send({
+    message: errorService.getErrorMessage(err as ValidationFailure),
+  });
 
 /**
  * This middleware sends response with an array of found users

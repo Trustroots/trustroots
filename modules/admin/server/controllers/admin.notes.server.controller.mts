@@ -91,11 +91,7 @@ export const addNote = async (
       message: 'Note saved.',
     });
   } catch (err) {
-    /* istanbul ignore else */
-    // Stryker disable next-line ConditionalExpression: Mongoose save never rejects with a falsy value
-    if (err) {
-      return errorService.sendBadRequest(res, err);
-    }
+    return errorService.sendBadRequest(res, err);
   }
 };
 
