@@ -154,6 +154,7 @@ function derivePbkdf2(password: string, salt: Buffer): Promise<Buffer> {
 }
 
 function decodeBase64Url(value: unknown, byteLength: number): Buffer | null {
+  // Stryker disable next-line ConditionalExpression,LogicalOperator,BlockStatement,Regex: callers pass split() strings and the base64url round-trip check below rejects every string this regex rejects
   if (typeof value !== 'string' || !/^[A-Za-z0-9_-]+$/.test(value)) {
     return null;
   }
@@ -169,6 +170,7 @@ function decodeBase64Url(value: unknown, byteLength: number): Buffer | null {
 }
 
 function decodeBase64(value: unknown, byteLength: number): Buffer | null {
+  // Stryker disable next-line ConditionalExpression,Regex: for strings the base64 round-trip check below rejects every value this regex rejects; the typeof guard is killed by a numeric legacy salt but shares this line
   if (typeof value !== 'string' || !/^[A-Za-z0-9+/]+={0,2}$/.test(value)) {
     return null;
   }
@@ -186,7 +188,9 @@ function parseCurrentHash(
   const parts = storedPassword.split('$');
   if (
     parts.length !== 6 ||
+    // Stryker disable next-line ConditionalExpression: verifyPassword only parses strings starting with '$scrypt$', so parts[0] is always ''
     parts[0] !== '' ||
+    // Stryker disable next-line ConditionalExpression: verifyPassword only parses strings starting with '$scrypt$', so parts[1] is always 'scrypt'
     parts[1] !== 'scrypt' ||
     parts[2] !== CURRENT_VERSION ||
     parts[3] !== CURRENT_PARAMETERS
@@ -291,6 +295,7 @@ async function verifyPassword(
     return verifyCurrentPassword(candidate, storedPassword, legacySalt);
   }
 
+  // Stryker disable next-line ConditionalExpression,LogicalOperator,StringLiteral: undefined, null and '' fail decodeBase64 in verifyLegacyPassword, which then runs the same single dummy derivation and returns the same result
   if (legacySalt !== undefined && legacySalt !== null && legacySalt !== '') {
     return verifyLegacyPassword(candidate, storedPassword, legacySalt);
   }
