@@ -569,8 +569,10 @@ export async function pollSupportMailbox(
           internalDate && !Number.isNaN(internalDate.getTime())
             ? internalDate
             : undefined;
-        const withinRescan = item.uid <= (rescanThroughUid ?? -Infinity);
-        const reachesBoundary = item.uid >= (rescanThroughUid ?? Infinity);
+        const withinRescan =
+          rescanThroughUid !== undefined && item.uid <= rescanThroughUid;
+        const reachesBoundary =
+          rescanThroughUid !== undefined && item.uid >= rescanThroughUid;
         if (withinRescan && (!receivedAt || receivedAt < cursor.cutoverAt)) {
           await SupportMailboxCursor.updateOne(
             { _id: 'support-inbox', uidValidity },

@@ -97,8 +97,8 @@ async function resolve(key: string, date: unknown) {
     !messages.length ||
     messages.length > 50 ||
     String(messages[0]._id) !== id ||
-    user.blocked.some(blocked => String(blocked) === String(sender._id)) ||
-    sender.blocked.some(blocked => String(blocked) === String(user._id)) ||
+    user.blocked?.some(blocked => String(blocked) === String(sender._id)) ||
+    sender.blocked?.some(blocked => String(blocked) === String(user._id)) ||
     new Date(messages[0].created).getTime() > Date.now() - 600000 ||
     new Date(messages[0].created).getTime() < Date.now() - 30 * 86400000
   )

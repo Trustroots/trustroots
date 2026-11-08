@@ -358,7 +358,7 @@ describe('Location corrections controller', () => {
       });
       assert.equal(result.statusCode, 200);
       assert.equal(
-        await Thread.countDocuments({ message: result.body.messageId }),
+        await Thread.countDocuments({ message: String(result.body.messageId) }),
         1,
       );
     }

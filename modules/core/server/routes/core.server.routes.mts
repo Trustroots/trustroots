@@ -76,7 +76,10 @@ const defaultExport = function (app: Application) {
         (pubkeys as string[]).map(pubkey => String(pubkey).toLowerCase()),
       ),
     ];
-    const npubs = normalizedPubkeys.map(pubkey => nip19.npubEncode(pubkey));
+    const npubs: string[] = [];
+    for (const pubkey of normalizedPubkeys) {
+      npubs.push(nip19.npubEncode(String(pubkey)));
+    }
     // Stryker disable next-line ObjectLiteral: the response filters the found users by the requested keys again, so the query only narrows the fetch
     User.find({
       nostrNpub: {

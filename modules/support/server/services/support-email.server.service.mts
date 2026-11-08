@@ -154,7 +154,9 @@ async function queueForRequest(
     emailFrom: config.supportInbox.fromAddress,
     emailTo: request.email,
     messageId: messageId(),
-    inReplyTo: latest?.messageId || request.initialMessageId,
+    ...((latest?.messageId || request.initialMessageId) && {
+      inReplyTo: latest?.messageId || request.initialMessageId,
+    }),
     references,
     idempotencyKey,
     idempotencyKeys: [idempotencyKey],

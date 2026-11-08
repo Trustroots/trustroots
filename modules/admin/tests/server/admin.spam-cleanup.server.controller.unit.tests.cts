@@ -179,7 +179,7 @@ describe('Administrator spam account cleanup controller', () => {
       assert.equal(res.statusCode, 200);
       assert.equal(res.body.candidates, 0);
       assert.equal(
-        await Chunk.countDocuments({ preview: res.body.previewId }),
+        await Chunk.countDocuments({ preview: String(res.body.previewId) }),
         0,
       );
       const [audit] = await Audit.find().lean();
@@ -197,7 +197,7 @@ describe('Administrator spam account cleanup controller', () => {
         message: 'Preview unavailable or expired. Preview again.',
       });
       const review = await fullPreview();
-      const { previewId } = review.body;
+      const previewId = String(review.body.previewId);
       const page = await preview({ previewId, page: 2 });
       assert.equal(page.statusCode, 400);
       assert.deepEqual(page.body, { message: 'Invalid cleanup page.' });
