@@ -33,6 +33,7 @@ function dayRange(day: unknown) {
   if (
     // The strict round trip below rejects every non-string and every other
     // format except six-digit years, which never contain this pattern.
+    // Stryker disable next-line Regex: the strict round trip below rejects whatever a looser pattern lets through
     !/\d{4}-\d{2}-\d{2}/.test(day as string) ||
     // toISOString() throws for an invalid date.
     !Number.isFinite(Date.parse(day as string)) ||

@@ -135,6 +135,7 @@ describe('Email recovery service', () => {
         '2026-02-30',
         20261030,
         ['2026-10-30'],
+        utcDay(Date.now() + DAY),
       ]) {
         await assert.rejects(recovery.recoveryDay(day), {
           message: 'Choose a valid past or current UTC day.',
