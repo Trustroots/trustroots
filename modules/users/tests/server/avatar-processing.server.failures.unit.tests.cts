@@ -15,6 +15,7 @@ interface AvatarFailureOptions {
   writeError?: Error;
   thumbnailBytes?: string;
   fallback?: boolean;
+  onWrite?: () => void;
 }
 interface AvatarServiceResult {
   version: string;
@@ -35,9 +36,14 @@ interface AvatarJob {
   callback(error?: Error | null, result?: AvatarServiceResult): void;
 }
 interface ProcessorCommand {
+  inArgs: string[];
+  name: string;
   in(...args: string[]): this;
   options(options: { timeout: number }): this;
-  addDisposer(...args: unknown[]): this;
+  addDisposer(
+    emitter: import('node:events').EventEmitter,
+    events: string[],
+  ): this;
   command(name: string): this;
   toBuffer(
     callback: (error: Error | undefined | null, output: Buffer) => void,
@@ -83,24 +89,39 @@ const resourceList = [
   'Threads: 1',
   'Read: 40M',
 ].join('\n');
+// What the mocked backend and logger observed during the current test.
+let seen: {
+  probes: unknown[][];
+  formats: unknown[];
+  cancelled: string[];
+  logged: unknown[][];
+};
 
 function createBackend(options: AvatarFailureOptions = {}): BackendFactory {
   const imageProcessor: BackendFactory = (sourcePath: string | null) => ({
-    in() {
+    inArgs: [] as string[],
+    name: '',
+    in(...args: string[]) {
+      this.inArgs.push(...args);
       return this;
     },
     options() {
       return this;
     },
-    addDisposer() {
+    addDisposer(emitter: import('node:events').EventEmitter, events: string[]) {
+      events.forEach(event =>
+        emitter.on(event, () => seen.cancelled.push(event)),
+      );
       return this;
     },
-    command() {
+    command(name: string) {
+      this.name = name;
       return this;
     },
     toBuffer(
       callback: (error: Error | undefined | null, output: Buffer) => void,
     ) {
+      seen.probes.push([this.name, ...this.inArgs.slice(-2)]);
       callback(
         options.probeError,
         Buffer.from(options.resourceList || resourceList),
@@ -137,9 +158,10 @@ function createBackend(options: AvatarFailureOptions = {}): BackendFactory {
       return this;
     },
     identify(
-      _format: { format: string },
+      format: { format: string },
       callback: (error: Error | undefined | null, output: string) => void,
     ) {
+      seen.formats.push(format);
       if (options.identifyError && sourcePath === options.inputPath) {
         callback(options.identifyError, '');
         return;
@@ -153,6 +175,7 @@ function createBackend(options: AvatarFailureOptions = {}): BackendFactory {
       );
     },
     write(outputPath: string, callback: (error?: Error | null) => void) {
+      options.onWrite?.();
       if (options.writeError) {
         callback(options.writeError);
         return;
@@ -192,6 +215,7 @@ describe('Avatar processing failure handling', () => {
     previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
     process.env.NODE_ENV = 'test';
     delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+    seen = { probes: [], formats: [], cancelled: [], logged: [] };
   });
 
   afterEach(async () => {
@@ -241,7 +265,8 @@ describe('Avatar processing failure handling', () => {
           },
           fs: { promises: createFsProxy(fsHooks) },
           gm: createBackend({ ...options, inputPath }),
-          './../../../../config/lib/logger.mjs': () => {},
+          './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+            seen.logged.push(args),
         },
       ),
     };
@@ -257,14 +282,17 @@ describe('Avatar processing failure handling', () => {
       service.processAvatar({ sourcePath: inputPath, userId: validUserId }),
       pattern,
     );
+    seen.logged.should.be.empty();
   }
 
   it('rejects unsupported owner identifiers before creating public files', async () => {
     const { inputPath, service } = await makeService();
-    await assert.rejects(
-      service.processAvatar({ sourcePath: inputPath, userId: '../outside' }),
-      /Invalid avatar owner id/,
-    );
+    for (const userId of ['../outside', `x${validUserId}`, `${validUserId}x`]) {
+      await assert.rejects(
+        service.processAvatar({ sourcePath: inputPath, userId }),
+        /Invalid avatar owner id/,
+      );
+    }
   });
 
   it('uses the operating-system temporary directory when no private path is configured', async () => {
@@ -300,7 +328,7 @@ describe('Avatar processing failure handling', () => {
   it('rejects a native capability list that cannot be parsed completely', async () => {
     await expectProcessingFailure(
       { resourceList: 'Memory: 192M\nMap: 256M' },
-      /does not support required resource limits/,
+      /limits: disk, pixels, width, height, threads, read\.$/,
     );
   });
 
@@ -309,6 +337,7 @@ describe('Avatar processing failure handling', () => {
     await service.validateNativeResourceLimits();
     await service.validateNativeResourceLimits();
     void inputPath;
+    seen.probes.should.eql([['convert', '-list', 'resource']]);
   });
 
   it('rejects input identify errors and native thumbnail write errors', async () => {
@@ -327,6 +356,10 @@ describe('Avatar processing failure handling', () => {
       { outputDimensions: '1 1' },
       /unexpected dimensions/,
     );
+    await expectProcessingFailure(
+      { outputDimensions: '1 1\n1 1' },
+      /single-frame/,
+    );
     await expectProcessingFailure({ thumbnailBytes: 'x' }, /invalid file size/);
     await expectProcessingFailure({}, /invalid file size/, {
       stat: async thumbnailPath => {
@@ -336,6 +369,30 @@ describe('Avatar processing failure handling', () => {
         return actualFs.stat(thumbnailPath);
       },
     });
+  });
+
+  it('publishes boundary-sized thumbnails from an owner-only public stage', async () => {
+    const stageModes: number[] = [];
+    const { inputPath, service } = await makeService(
+      { thumbnailBytes: 'abcd' },
+      {
+        rename: async (from, to) => {
+          stageModes.push((await actualFs.stat(from)).mode & 0o777);
+          return actualFs.rename(from, to);
+        },
+        stat: async thumbnailPath =>
+          thumbnailPath.endsWith('/64.jpg')
+            ? { size: 8 * 1024 * 1024 }
+            : actualFs.stat(thumbnailPath),
+      },
+    );
+    const result = await service.processAvatar({
+      sourcePath: inputPath,
+      userId: validUserId,
+    });
+    (await fs.readdir(result.versionDirectory)).should.have.length(7);
+    stageModes.should.eql([0o700]);
+    seen.formats.should.eql(Array(8).fill({ format: '%w %h\n' }));
   });
 
   it('removes failed public staging after a publication rename error', async () => {
@@ -435,7 +492,12 @@ describe('Avatar processing failure handling', () => {
       /rename failed/,
     );
     logged.should.have.length(1);
-    logged[0][1].should.match(/public staging directory/);
+    logged[0]
+      .slice(0, 2)
+      .should.eql([
+        'error',
+        'Avatar processing failed to clean its public staging directory.',
+      ]);
 
     const privateCleanupFs = createFsProxy({
       chmod: async (filePath, mode) => {
@@ -473,7 +535,12 @@ describe('Avatar processing failure handling', () => {
       }),
       /chmod failed/,
     );
-    logged[1][1].should.match(/private staging directory/);
+    logged[1]
+      .slice(0, 2)
+      .should.eql([
+        'error',
+        'Avatar processing failed to clean its private staging directory.',
+      ]);
   });
 
   it('logs a cleanup failure for a version that could not be published', async () => {
@@ -516,18 +583,30 @@ describe('Avatar processing failure handling', () => {
       service.processAvatar({ sourcePath: inputPath, userId: validUserId }),
       /chmod failed/,
     );
-    logged[0][1].should.match(/unpublished version directory/);
+    logged[0]
+      .slice(0, 2)
+      .should.eql([
+        'error',
+        'Avatar processing failed to clean its unpublished version directory.',
+      ]);
   });
 
   it('rejects processing when its 60-second deadline expires at each publication stage', async () => {
     const originalSetTimeout = global.setTimeout;
     const originalClearTimeout = global.clearTimeout;
-    const deadlines = ['private', 'public', 'published'];
+    const deadlines = ['native', 'private', 'public', 'published'];
 
     try {
       for (const deadlineStage of deadlines) {
-        process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+        if (deadlineStage === 'native') {
+          delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+        } else {
+          process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
+        }
         let expire: (() => void) | undefined;
+        let cleared = false;
+        let staged = false;
+        let renamed = false;
         global.setTimeout = ((callback: () => void, delay?: number) => {
           if (delay === 60000) {
             expire = callback;
@@ -539,6 +618,7 @@ describe('Avatar processing failure handling', () => {
           if (!timer || !('deadline' in timer)) {
             return originalClearTimeout(timer);
           }
+          cleared = true;
           return undefined;
         }) as typeof global.clearTimeout;
         const fireDeadline = () => {
@@ -552,6 +632,7 @@ describe('Avatar processing failure handling', () => {
           ) {
             fireDeadline();
           }
+          staged ||= destination.includes('.staging-');
           return actualFs.copyFile(source, destination);
         };
         const chmod = async (filePath: string, mode: number) => {
@@ -560,14 +641,26 @@ describe('Avatar processing failure handling', () => {
           }
           return actualFs.chmod(filePath, mode);
         };
+        const rename = async (from: string, to: string) => {
+          renamed = true;
+          return actualFs.rename(from, to);
+        };
         const { inputPath, service } = await makeService(
-          {},
-          { copyFile, chmod },
+          deadlineStage === 'native' ? { onWrite: fireDeadline } : {},
+          { copyFile, chmod, rename },
         );
         await assert.rejects(
           service.processAvatar({ sourcePath: inputPath, userId: validUserId }),
           /exceeded its time limit/,
         );
+        cleared.should.be.true();
+        // Each stage stops at the first deadline check after it.
+        staged.should.equal(['public', 'published'].includes(deadlineStage));
+        renamed.should.equal(deadlineStage === 'published');
+        [...new Set(seen.cancelled)].should.eql(
+          deadlineStage === 'native' ? ['timeout'] : [],
+        );
+        seen.cancelled = [];
       }
     } finally {
       global.setTimeout = originalSetTimeout;
@@ -581,6 +674,8 @@ describe('Avatar processing failure handling', () => {
       {
         './../../../../config/config.mts': config,
         gm: require('gm'),
+        './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+          seen.logged.push(args),
       },
     );
     const callbacks: Array<Error | null | undefined> = [];
@@ -613,6 +708,11 @@ describe('Avatar processing failure handling', () => {
     });
     await new Promise(resolve => setImmediate(resolve));
     callbacks.should.have.length(2);
+    seen.logged
+      .map(entry => entry.slice(0, 2))
+      .should.eql(
+        Array(2).fill(['error', 'Avatar processing callback failed.']),
+      );
   });
 
   it('limits active processing to two and drains a full pending queue after failures', async () => {

@@ -425,6 +425,7 @@ describe('API route registrations', () => {
   it('registers local authentication routes without social OAuth', () => {
     const authentication = controller(
       [
+        'cancelEmailChange',
         'confirmEmail',
         'resendConfirmation',
         'signin',
@@ -460,6 +461,14 @@ describe('API route registrations', () => {
       },
     );
 
+    for (const path of [
+      '/api/auth/cancel-email-change',
+      '/api/auth/confirm-email/:token/cancel',
+    ]) {
+      assertHandlers(routeByPath(routes, path).post, [
+        authentication.cancelEmailChange,
+      ]);
+    }
     assertHandlers(routeByPath(routes, '/api/auth/confirm-email/:token').get, [
       authentication.validateEmailToken,
     ]);
@@ -507,6 +516,21 @@ describe('API route registrations', () => {
     assert.equal(
       routes.some(route => /\/api\/auth\/(facebook|github)/.test(route.path)),
       false,
+    );
+  });
+
+  it('registers users routes behind the users policy', () => {
+    const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const { params, routes } = register(
+      './../../../users/server/routes/users.server.routes.mts',
+      { '../policies/users.server.policy': policy },
+    );
+
+    assert.strictEqual(routes.length, 15);
+    routes.forEach(route => assertPolicy(route, policy));
+    assert.deepStrictEqual(
+      params.map(param => param.name),
+      ['userId', 'username', 'avatarUserId'],
     );
   });
 

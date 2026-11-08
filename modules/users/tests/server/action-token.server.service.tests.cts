@@ -26,15 +26,17 @@ describe('Account action token digests', function () {
     } = {};
     setToken(user, 'emailToken', 'reminder-token');
     assert.equal(emailToken(user, 'emailToken'), 'reminder-token');
-    assert.equal(
-      emailToken({ emailToken: 'legacy-token' }, 'emailToken'),
-      'legacy-token',
-    );
+    for (const legacy of [{}, { $locals: {} }]) {
+      assert.equal(
+        emailToken({ ...legacy, emailToken: 'legacy-token' }, 'emailToken'),
+        'legacy-token',
+      );
+    }
   });
   it('matches raw links against hashes and legacy tokens but rejects bearer digests', function () {
-    assert.deepEqual(matchToken('sample-token'), {
-      $in: [hashToken('sample-token'), 'sample-token'],
-    });
+    for (const valid of ['sample-token', 'a'.repeat(1024)]) {
+      assert.deepEqual(matchToken(valid), { $in: [hashToken(valid), valid] });
+    }
     for (const invalid of [
       undefined,
       {},

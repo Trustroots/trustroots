@@ -30,5 +30,8 @@ describe('Signup safety service', () => {
         password: 'trustroots',
       })
       .should.deepEqual([]);
+    signupSafety
+      .matchSignupProfile({ firstName: 'Sup', lastName: 'port' })
+      .should.deepEqual([]);
   });
 });
