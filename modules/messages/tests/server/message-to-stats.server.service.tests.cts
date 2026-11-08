@@ -169,6 +169,44 @@ describe('Message to stats server service Unit Tests:', function () {
         }
       });
     });
+    it('[first reply] uses the earliest reply even when a later one is stored first', function (done) {
+      const base = Date.now();
+      Promise.resolve()
+        .then(async () => {
+          await Message.deleteMany({});
+          const make = (
+            from: UserModelDocument,
+            to: UserModelDocument,
+            at: number,
+          ) =>
+            new Message({
+              userFrom: from._id,
+              userTo: to._id,
+              content: 'message content',
+              created: new Date(base + at),
+            });
+          const first = make(user1, user2, 0);
+          const earlyReply = make(user2, user1, 1000);
+          const lateReply = make(user2, user1, 5000);
+          // Stored latest-first, so natural order is not creation order.
+          await lateReply.save();
+          await earlyReply.save();
+          await first.save();
+          return earlyReply;
+        })
+        .then(earlyReply => {
+          statsService.process(earlyReply, function (err, stat) {
+            if (err) return done(err);
+            try {
+              stat.tags.position.should.equal('firstReply');
+              stat.values.timeToFirstReply!.should.equal(1000);
+              return done();
+            } catch (e) {
+              return done(e);
+            }
+          });
+        }, done);
+    });
     it('[short message] stat should contain tag "messageLengthType": "long"', function (done) {
       statsService.process(longMessage, function (err, stat) {
         if (err) return done(err);

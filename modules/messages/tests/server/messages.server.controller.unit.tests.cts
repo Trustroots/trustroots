@@ -2004,4 +2004,770 @@ describe('Messages controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
   });
+
+  describe('query scoping and response details', () => {
+    const longDescription =
+      'I am a long-time member of this community and I love to travel and host people from all over the world. ' +
+      'I enjoy cooking, cycling, hiking and sharing stories with travellers passing through my town.';
+    const genericError =
+      'Snap! Something went wrong. If this keeps happening, please contact us.';
+    const winston: typeof import('winston') = require('winston');
+    const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
+
+    function saveMembers(count: number): Promise<UserDocument[]> {
+      return utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(count, { public: true }),
+      );
+    }
+
+    async function prepareSender() {
+      const [sender, receiver] = await saveMembers(2);
+      const senderDoc = required(await User.findById(sender._id));
+      senderDoc.description = longDescription;
+      senderDoc.roles = ['user'];
+      await senderDoc.save();
+      return { sender: senderDoc, receiver };
+    }
+
+    async function sendMessage(
+      user: object,
+      body: Record<string, unknown>,
+    ): Promise<DeferredResponse> {
+      const res = deferredResponse();
+      messagesController.send({ user, body, headers: {} }, res);
+      return res.waitForResponse();
+    }
+
+    async function seedThread(
+      from: UserDocument,
+      to: UserDocument,
+      content: string,
+      read: boolean,
+      updated: Date,
+    ) {
+      const message = await Message.create({
+        content,
+        userFrom: from._id,
+        userTo: to._id,
+        read,
+      });
+      return Thread.create({
+        userFrom: from._id,
+        userTo: to._id,
+        message: message._id,
+        read,
+        updated,
+      });
+    }
+
+    describe('inbox', () => {
+      async function seedInbox() {
+        const [viewer, alice, bob, carol] = await saveMembers(4);
+        const now = Date.now();
+        const incomingUnread = await seedThread(
+          alice,
+          viewer,
+          'first line\nsecond line',
+          false,
+          new Date(now - 1000),
+        );
+        await seedThread(viewer, bob, 'Sent', false, new Date(now - 2000));
+        await seedThread(bob, viewer, 'Old', true, new Date(now - 3000));
+        await seedThread(alice, carol, 'Unrelated', false, new Date(now - 500));
+        return { viewer, alice, incomingUnread };
+      }
+      type Summary = {
+        read: boolean;
+        message: { excerpt: string };
+        userFrom: { username: string };
+      };
+
+      it('lists only the threads the viewer takes part in, newest first', async () => {
+        const { viewer, alice } = await seedInbox();
+        const res = deferredResponse();
+        messagesController.inbox({ user: viewer, query: {} }, res);
+        await res.waitForResponse();
+
+        const threads = bodyArray<Summary>(res.body);
+        threads
+          .map(thread => thread.message.excerpt)
+          .should.deepEqual(['first line second line', 'Sent', 'Old']);
+        threads
+          .map(thread => thread.read)
+          .should.deepEqual([false, true, true]);
+        threads[0].userFrom.username.should.equal(alice.username);
+      });
+
+      it('lists only unread threads addressed to the viewer when asked', async () => {
+        const { viewer } = await seedInbox();
+        const res = deferredResponse();
+        messagesController.inbox(
+          { user: viewer, query: { filter: 'unread' } },
+          res,
+        );
+        await res.waitForResponse();
+
+        bodyArray<Summary>(res.body)
+          .map(thread => thread.message.excerpt)
+          .should.deepEqual(['first line second line']);
+      });
+
+      it('honours the requested page and page size', async () => {
+        const { viewer } = await seedInbox();
+        const res = deferredResponse();
+        messagesController.inbox(
+          { user: viewer, query: { page: 2, limit: 2 } },
+          res,
+        );
+        await res.waitForResponse();
+
+        bodyArray<Summary>(res.body)
+          .map(thread => thread.message.excerpt)
+          .should.deepEqual(['Old']);
+      });
+
+      it('shortens long excerpts to 100 characters', async () => {
+        const [viewer, alice] = await saveMembers(2);
+        await seedThread(alice, viewer, 'x'.repeat(150), false, new Date());
+        const res = deferredResponse();
+        messagesController.inbox({ user: viewer, query: {} }, res);
+        await res.waitForResponse();
+
+        bodyArray<Summary>(res.body)[0].message.excerpt.should.equal(
+          'x'.repeat(100),
+        );
+      });
+
+      it('returns an empty list when pagination yields no documents', async () => {
+        typedStub<
+          [
+            query: QueryFilter<ThreadRecord>,
+            options: Record<string, unknown>,
+            callback: LegacyCallback<PaginationPayload>,
+          ]
+        >(Thread, 'paginate').callsFake((query, options, cb) => {
+          cb(null, { docs: null, pages: 0 });
+        });
+        const [viewer] = await saveMembers(1);
+        const res = deferredResponse();
+        messagesController.inbox({ user: viewer, query: {} }, res);
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(200);
+        res.body.should.deepEqual([]);
+      });
+    });
+
+    describe('send', () => {
+      let notify: import('sinon').SinonStub;
+      const throttle = config.limits.messagesToIndividualsThrottle;
+      const originalCount = throttle.count;
+
+      beforeEach(() => {
+        notify = sinon.stub(messageThrottleAlerts, 'notify').resolves();
+      });
+      afterEach(() => {
+        throttle.count = originalCount;
+      });
+
+      it('rejects content that is empty once its markup is stripped', async () => {
+        const { sender, receiver } = await prepareSender();
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: '<p> </p>',
+        });
+
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'message').should.equal(
+          'Please write a message.',
+        );
+      });
+
+      it('throttles only above the limit and counts only the sender’s own recipients', async () => {
+        throttle.count = 1;
+        const { sender, receiver } = await prepareSender();
+        const [stranger, other, another] = await saveMembers(3);
+        await Message.create([
+          { content: 'Mine', userFrom: sender._id, userTo: other._id },
+          { content: 'Theirs', userFrom: stranger._id, userTo: receiver._id },
+          {
+            content: 'Theirs too',
+            userFrom: stranger._id,
+            userTo: another._id,
+          },
+        ]);
+
+        const atLimit = await sendMessage(sender, {
+          userTo: new mongoose.Types.ObjectId().toString(),
+          content: 'Hello there friend',
+        });
+        atLimit.statusCode.should.equal(404);
+        notify.called.should.equal(false);
+
+        await Message.create({
+          content: 'Mine again',
+          userFrom: sender._id,
+          userTo: another._id,
+        });
+        const overLimit = await sendMessage(sender, {
+          userTo: new mongoose.Types.ObjectId().toString(),
+          content: 'Hello there friend',
+        });
+        overLimit.statusCode.should.equal(429);
+        notify.calledOnceWithExactly(sender, 2).should.equal(true);
+      });
+
+      it('records the throttle hit in the statistics', async () => {
+        throttle.count = -1;
+        const stat = sinon.stub(statService, 'stat');
+        const { sender } = await prepareSender();
+        await sendMessage(sender, {
+          userTo: new mongoose.Types.ObjectId().toString(),
+          content: 'Hello there friend',
+        });
+
+        stat.calledOnce.should.equal(true);
+        stat.firstCall.args[0].should.deepEqual({
+          namespace: 'message-throttle',
+          counts: { count: 1 },
+          tags: {},
+        });
+      });
+
+      it('logs a failure to queue the throttle alert', async () => {
+        throttle.count = -1;
+        const failure = new Error('Notification unavailable');
+        notify.rejects(failure);
+        const log = sinon.stub(winston.Logger.prototype, 'log');
+        const { sender } = await prepareSender();
+        await sendMessage(sender, {
+          userTo: new mongoose.Types.ObjectId().toString(),
+          content: 'Hello there friend',
+        });
+
+        const entry = required(
+          log
+            .getCalls()
+            .find(
+              call =>
+                call.args[1] ===
+                'Failed queuing message throttle notification.',
+            ),
+        );
+        entry.args[0].should.equal('error');
+        (entry.args[2] as object).should.have.property('error');
+      });
+
+      it('tells the sender when the recipient does not exist', async () => {
+        const { sender } = await prepareSender();
+        const res = await sendMessage(sender, {
+          userTo: new mongoose.Types.ObjectId().toString(),
+          content: 'Hello there friend',
+        });
+
+        res.statusCode.should.equal(404);
+        bodyField<string>(res.body, 'message').should.equal(
+          'Member you are writing to does not exist.',
+        );
+      });
+
+      it('gives the same answer when the recipient lookup fails', async () => {
+        const { sender, receiver } = await prepareSender();
+        typedStub<[query?: QueryFilter<UserRecord>]>(User, 'findOne').returns({
+          exec: () => Promise.reject(new Error('recipient lookup failed')),
+        });
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+
+        res.statusCode.should.equal(404);
+        bodyField<string>(res.body, 'message').should.equal(
+          'Member you are writing to does not exist.',
+        );
+      });
+
+      it('asks a sender without a profile description to write one', async () => {
+        const [sender, receiver] = await saveMembers(2);
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'error').should.equal('empty-profile');
+        bodyField<string>(res.body, 'message').should.equal(
+          'Please fill out your profile description before you send messages.',
+        );
+        bodyField<number>(res.body, 'limit').should.be.above(0);
+      });
+
+      it('treats a sender missing from the database as having no profile', async () => {
+        const [receiver] = await saveMembers(1);
+        const ghost = utils.createTestUser();
+        ghost.roles = ['user'];
+        const res = await sendMessage(ghost, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'error').should.equal('empty-profile');
+      });
+
+      it('only lets a sender without a description reply in a thread they take part in', async () => {
+        const [sender, receiver, third, fourth] = await saveMembers(4);
+        await seedThread(third, fourth, 'Not ours', false, new Date());
+        const unrelated = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+        unrelated.statusCode.should.equal(400);
+        bodyField<string>(unrelated.body, 'error').should.equal(
+          'empty-profile',
+        );
+
+        await seedThread(receiver, sender, 'Hi first', false, new Date());
+        const reply = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+        reply.statusCode.should.equal(200);
+      });
+
+      it('stores the message and its thread as unread for the recipient', async () => {
+        const { sender, receiver } = await prepareSender();
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+
+        res.statusCode.should.equal(200);
+        const thread = required(
+          await Thread.findOne({ userFrom: sender._id, userTo: receiver._id }),
+        );
+        thread.read!.should.equal(false);
+        thread
+          .message!.toString()
+          .should.equal(bodyField<string>(res.body, '_id').toString());
+      });
+
+      it('updates the existing thread of the pair, whichever way round it was started', async () => {
+        const { sender, receiver } = await prepareSender();
+        const [third, fourth] = await saveMembers(2);
+        const unrelated = await seedThread(
+          third,
+          fourth,
+          'Not ours',
+          false,
+          new Date('2020-01-01'),
+        );
+        const pair = await seedThread(
+          receiver,
+          sender,
+          'Started by them',
+          true,
+          new Date('2020-01-02'),
+        );
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hello there friend',
+        });
+
+        res.statusCode.should.equal(200);
+        (await Thread.countDocuments({})).should.equal(2);
+        required(await Thread.findById(unrelated._id))
+          .message!.toString()
+          .should.equal(unrelated.message!.toString());
+        const updated = required(await Thread.findById(pair._id));
+        updated
+          .message!.toString()
+          .should.equal(bodyField<string>(res.body, '_id').toString());
+        updated.read!.should.equal(false);
+      });
+
+      it('creates no thread for a restricted sender', async () => {
+        const { sender, receiver } = await prepareSender();
+        sender.roles = ['user', 'shadowban'];
+        await sender.save();
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'Hidden from recipient',
+        });
+
+        res.statusCode.should.equal(200);
+        (await Thread.countDocuments({})).should.equal(0);
+      });
+
+      it('logs a failure to save the message', async () => {
+        typedStub<[callback: LegacyCallback]>(
+          Message.prototype,
+          'save',
+        ).callsFake(() => Promise.reject(new Error('save failed')));
+        const log = sinon.stub(winston.Logger.prototype, 'log');
+        const { sender, receiver } = await prepareSender();
+        const res = await sendMessage(sender, {
+          userTo: receiver._id.toString(),
+          content: 'This will not save',
+        });
+
+        res.statusCode.should.equal(400);
+        const entry = required(
+          log
+            .getCalls()
+            .find(call => call.args[1] === 'Message failed to send. #sa239'),
+        );
+        entry.args[0].should.equal('error');
+      });
+    });
+
+    describe('markRead', () => {
+      for (const messageIds of [
+        ['aaaaaaaaaaaaaaaaaaaaaaaaa'],
+        ['xaaaaaaaaaaaaaaaaaaaaaaaa'],
+        [['aaaaaaaaaaaaaaaaaaaaaaaa']],
+      ]) {
+        it(`rejects malformed identifiers ${JSON.stringify(messageIds)}`, async () => {
+          const res = deferredResponse();
+          messagesController.markRead(
+            {
+              user: { _id: new mongoose.Types.ObjectId() },
+              body: { messageIds },
+            },
+            res,
+          );
+          await res.waitForResponse();
+
+          res.statusCode.should.equal(400);
+          bodyField<string>(res.body, 'message').should.equal(
+            'Invalid message identifiers.',
+          );
+        });
+      }
+
+      it('accepts an empty list without touching any message', async () => {
+        const update = sinon.spy(Message, 'updateMany');
+        const res = deferredResponse();
+        messagesController.markRead(
+          {
+            user: { _id: new mongoose.Types.ObjectId() },
+            body: { messageIds: [] },
+          },
+          res,
+        );
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(200);
+        update.called.should.equal(false);
+      });
+
+      it('explains why marking messages read failed', async () => {
+        sinon.stub(Message, 'updateMany').rejects(new Error('update failed'));
+        const [user] = await saveMembers(1);
+        const res = deferredResponse();
+        messagesController.markRead(
+          {
+            user: { id: user._id.toString(), _id: user._id },
+            body: { messageIds: [new mongoose.Types.ObjectId().toString()] },
+          },
+          res,
+        );
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'message').should.equal(genericError);
+      });
+    });
+
+    describe('guards and failures', () => {
+      it('answers unauthenticated count and sync requests with the forbidden message', async () => {
+        const count = deferredResponse();
+        messagesController.messagesCount({}, count);
+        const sync = deferredResponse();
+        messagesController.sync({}, sync);
+        await count.waitForResponse();
+        await sync.waitForResponse();
+
+        for (const res of [count, sync]) {
+          res.statusCode.should.equal(403);
+          bodyField<string>(res.body, 'message').should.equal('Forbidden.');
+        }
+      });
+
+      it('answers unauthenticated and empty draft previews with their messages', () => {
+        const unauthenticated = deferredResponse();
+        messagesController.preview({}, unauthenticated);
+        unauthenticated.statusCode.should.equal(403);
+        bodyField<string>(unauthenticated.body, 'message').should.equal(
+          'Forbidden.',
+        );
+
+        const empty = deferredResponse();
+        messagesController.preview({ user: {}, body: { content: ' ' } }, empty);
+        empty.statusCode.should.equal(400);
+        bodyField<string>(empty.body, 'message').should.equal(
+          'Please write a message.',
+        );
+      });
+
+      it('explains why counting unread threads failed', async () => {
+        sinon.stub(Thread, 'countDocuments').rejects(new Error('count failed'));
+        const [user] = await saveMembers(1);
+        const res = deferredResponse();
+        messagesController.messagesCount({ user }, res);
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'message').should.equal(genericError);
+      });
+
+      it('explains why a sync failed', async () => {
+        sinon.stub(Message, 'find').returns({
+          sort: () => ({
+            select: () => ({
+              exec: () => Promise.reject(new Error('find failed')),
+            }),
+          }),
+        } as unknown as ReturnType<typeof Message.find>);
+        const [user] = await saveMembers(1);
+        const res = deferredResponse();
+        messagesController.sync({ user, query: {} }, res);
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(400);
+        bodyField<string>(res.body, 'message').should.equal(genericError);
+      });
+    });
+
+    describe('threadByUser', () => {
+      async function seedConversations() {
+        const [viewer, alice, bob] = await saveMembers(3);
+        const fromAlice = await seedThread(
+          alice,
+          viewer,
+          'From Alice',
+          false,
+          new Date(),
+        );
+        const fromBob = await seedThread(
+          bob,
+          viewer,
+          'From Bob',
+          false,
+          new Date(),
+        );
+        return { viewer, alice, bob, fromAlice, fromBob };
+      }
+
+      it('leaves messages unread unless asked to mark them read', async () => {
+        const { viewer, alice, fromAlice } = await seedConversations();
+        const res = deferredResponse();
+        let nextCalled = false;
+        messagesController.threadByUser(
+          { user: viewer, query: {} },
+          res,
+          () => {
+            nextCalled = true;
+          },
+          alice._id.toString(),
+        );
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        nextCalled.should.equal(true);
+        required(await Thread.findById(fromAlice._id)).read!.should.equal(
+          false,
+        );
+        (await Message.countDocuments({ read: true })).should.equal(0);
+      });
+
+      it('marks only the opened conversation read', async () => {
+        const { viewer, alice, fromAlice, fromBob } = await seedConversations();
+        await new Promise<void>(resolve => {
+          messagesController.threadByUser(
+            { user: viewer, query: {} },
+            deferredResponse(),
+            () => resolve(),
+            alice._id.toString(),
+            true,
+          );
+        });
+
+        required(await Thread.findById(fromAlice._id)).read!.should.equal(true);
+        required(await Thread.findById(fromBob._id)).read!.should.equal(false);
+        (await Message.countDocuments({ read: true })).should.equal(1);
+      });
+
+      it('does not write anything when the viewer received nothing', async () => {
+        const { viewer, alice } = await seedConversations();
+        const messageUpdate = sinon.spy(Message, 'updateMany');
+        const threadUpdate = sinon.spy(Thread, 'updateMany');
+        await new Promise<void>(resolve => {
+          messagesController.threadByUser(
+            { user: alice, query: {} },
+            deferredResponse(),
+            () => resolve(),
+            viewer._id.toString(),
+            true,
+          );
+        });
+
+        messageUpdate.called.should.equal(false);
+        threadUpdate.called.should.equal(false);
+      });
+
+      it('stops when pagination reports an error', async () => {
+        const { viewer, alice } = await seedConversations();
+        typedStub<
+          [
+            query: QueryFilter<MessageRecord>,
+            options: Record<string, unknown>,
+            callback: LegacyCallback<PaginationPayload>,
+          ]
+        >(Message, 'paginate').callsFake((query, options, cb) => {
+          cb(new Error('paginate failed'), { docs: [], pages: 1 });
+        });
+        const res = deferredResponse();
+        let nextCalled = false;
+        messagesController.threadByUser(
+          { user: viewer, query: {} },
+          res,
+          () => {
+            nextCalled = true;
+          },
+          alice._id.toString(),
+        );
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(400);
+        nextCalled.should.equal(false);
+      });
+
+      it('sets no pagination link for an empty page', async () => {
+        const { viewer, alice } = await seedConversations();
+        typedStub<
+          [
+            query: QueryFilter<MessageRecord>,
+            options: Record<string, unknown>,
+            callback: LegacyCallback<PaginationPayload>,
+          ]
+        >(Message, 'paginate').callsFake((query, options, cb) => {
+          cb(null, { docs: [], pages: 2 });
+        });
+        const res = deferredResponse();
+        res.locals = { paginate: { href: ({ page }) => `/x?page=${page}` } };
+        let linked = false;
+        res.links = () => {
+          linked = true;
+          return res;
+        };
+        await new Promise<void>(resolve => {
+          messagesController.threadByUser(
+            { user: viewer, query: { page: 1, limit: 1 } },
+            res,
+            () => resolve(),
+            alice._id.toString(),
+          );
+        });
+
+        linked.should.equal(false);
+      });
+    });
+
+    describe('sync', () => {
+      type SyncBody = {
+        messages: Record<string, Array<{ content: string }>>;
+        users: Array<{ _id: string }>;
+      };
+      async function seedSync() {
+        const [viewer, alice, bob, carol] = await saveMembers(4);
+        const at = (iso: string) => new Date(iso);
+        await Message.create([
+          {
+            content: 'January',
+            userFrom: alice._id,
+            userTo: viewer._id,
+            created: at('2020-01-01'),
+          },
+          {
+            content: 'February',
+            userFrom: viewer._id,
+            userTo: alice._id,
+            created: at('2020-02-01'),
+          },
+          {
+            content: 'March',
+            userFrom: alice._id,
+            userTo: viewer._id,
+            created: at('2020-03-01'),
+          },
+          {
+            content: 'Hidden',
+            userFrom: alice._id,
+            userTo: viewer._id,
+            shadowHidden: true,
+            created: at('2020-02-15'),
+          },
+          {
+            content: 'Unrelated',
+            userFrom: bob._id,
+            userTo: carol._id,
+            created: at('2020-02-10'),
+          },
+        ]);
+        return { viewer, alice };
+      }
+      async function runSync(
+        user: UserDocument,
+        query: Record<string, unknown>,
+      ) {
+        const res = deferredResponse();
+        messagesController.sync({ user, query }, res);
+        await res.waitForResponse();
+        const body = res.body as SyncBody;
+        return {
+          res,
+          contents: Object.values(body.messages)
+            .flat()
+            .map(message => message.content)
+            .sort(),
+          users: body.users.map(user => String(user._id)).sort(),
+        };
+      }
+
+      it('returns only visible messages of the viewer and only the members involved', async () => {
+        const { viewer, alice } = await seedSync();
+        const { contents, users } = await runSync(viewer, {});
+
+        contents.should.deepEqual(['February', 'January', 'March']);
+        users.should.deepEqual([String(viewer._id), String(alice._id)].sort());
+      });
+
+      it('limits messages to the requested date range', async () => {
+        const { viewer } = await seedSync();
+
+        (
+          await runSync(viewer, {
+            dateFrom: '2020-01-15',
+            dateTo: '2020-02-20',
+          })
+        ).contents.should.deepEqual(['February']);
+        (
+          await runSync(viewer, { dateFrom: '2020-01-15' })
+        ).contents.should.deepEqual(['February', 'March']);
+        (
+          await runSync(viewer, { dateTo: '2020-02-20' })
+        ).contents.should.deepEqual(['February', 'January']);
+      });
+
+      it('accepts a start date in the future when no end date is given', async () => {
+        const { viewer } = await seedSync();
+        const { res, contents } = await runSync(viewer, {
+          dateFrom: '2999-01-01',
+        });
+
+        res.statusCode.should.equal(200);
+        contents.should.deepEqual([]);
+      });
+    });
+  });
 });

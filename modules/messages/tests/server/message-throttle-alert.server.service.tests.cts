@@ -89,6 +89,26 @@ describe('Message throttle support alerts', () => {
     );
   });
 
+  it('passes sender, campaign and an HTTP admin link to the email renderer on HTTP deployments', async () => {
+    sinon.stub(config, 'https').value(false);
+    const send = sinon
+      .stub(emailService, 'renderEmailAndSend')
+      .callsFake((_template, _params, callback) => callback());
+    await alerts.notify(user, 16);
+    const [template, params] = send.firstCall.args as [
+      string,
+      Record<string, unknown>,
+      unknown,
+    ];
+    assert.equal(template, 'message-throttle-alert');
+    assert.equal(params.from, `Trustroots Support <${config.supportEmail}>`);
+    assert.equal(params.sparkpostCampaign, 'message-throttle-alert');
+    assert.equal(
+      params.adminProfileUrl,
+      `http://${config.domain}/admin/user?id=${user._id}`,
+    );
+  });
+
   it('allows a later hit to retry after a queue failure', async () => {
     const error = new Error('Queue unavailable');
     sinon

@@ -318,6 +318,67 @@ describe('Message server services unit tests', function () {
       }
     });
 
+    it('does not log unexpected save failures in test mode', function (done) {
+      const { log, service } = loadMessageToStatsService();
+      const originalNodeEnv = process.env.NODE_ENV;
+      const error = new Error('stats write failed');
+
+      process.env.NODE_ENV = 'test';
+      sinon
+        .stub(service, 'process')
+        .callsArgWith(1, null, { namespace: 'messages' });
+      sinon.stub(service, 'send').callsArgWith(1, error);
+
+      service.save({ _id: 'message-id' }, function (err?: Error | null) {
+        try {
+          should(err).equal(error);
+          sinon.assert.notCalled(log);
+          done();
+        } catch (assertionError) {
+          done(assertionError);
+        } finally {
+          process.env.NODE_ENV = originalNodeEnv;
+        }
+      });
+    });
+
+    it('does not look for a reply when the message continues the first sender', function (done) {
+      const { findOne, service } = loadMessageToStatsService();
+      const firstMessage = {
+        _id: 'first-message-id',
+        userFrom: 'from-id',
+        userTo: 'to-id',
+        content: 'first message',
+        created: new Date('2026-01-01T00:00:00Z'),
+      };
+      const followUp = {
+        _id: 'follow-up-id',
+        userFrom: 'from-id',
+        userTo: 'to-id',
+        content: 'follow up',
+        created: new Date('2026-01-01T02:00:00Z'),
+      };
+      findOne.returns(
+        queryResult(firstMessage) as unknown as ReturnType<
+          MessageModel['findOne']
+        >,
+      );
+
+      service.process(
+        followUp,
+        function (err: Error | null, stat: MessageStatsPoint) {
+          try {
+            should.not.exist(err);
+            sinon.assert.calledOnce(findOne);
+            stat.tags.position.should.equal('other');
+            done();
+          } catch (error) {
+            done(error);
+          }
+        },
+      );
+    });
+
     it('treats missing influx config as disabled', function (done) {
       const { service } = loadMessageToStatsService({ config: {} });
 

@@ -61,6 +61,37 @@ describe('Messages policy unit tests', () => {
       .should.containEql('/api/messages-sync');
   });
 
+  it('grants exactly the documented permissions per role', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          { resources: '/api/messages', permissions: [] },
+          { resources: '/api/messages/:messageUserId', permissions: [] },
+          { resources: '/api/messages-preview', permissions: ['post'] },
+          { resources: '/api/messages-read', permissions: [] },
+          { resources: '/api/messages-count', permissions: [] },
+          { resources: '/api/messages-sync', permissions: [] },
+        ],
+      },
+      {
+        roles: ['user'],
+        allows: [
+          { resources: '/api/messages', permissions: ['get', 'post'] },
+          { resources: '/api/messages/:messageUserId', permissions: ['get'] },
+          { resources: '/api/messages-preview', permissions: ['post'] },
+          { resources: '/api/messages-read', permissions: ['post'] },
+          { resources: '/api/messages-count', permissions: ['get'] },
+          { resources: '/api/messages-sync', permissions: ['get'] },
+        ],
+      },
+    ]);
+  });
+
   it('calls next when ACL allows a public user', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, true);
