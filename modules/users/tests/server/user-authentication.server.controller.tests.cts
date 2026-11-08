@@ -162,6 +162,29 @@ function userField<Key extends keyof AuthenticationUserRecord>(
     throw new Error(`Expected user field ${key}`);
   return value as NonNullable<AuthenticationUserRecord[Key]>;
 }
+const statService: typeof import('../../../stats/server/services/stats.server.service.mts').default = require('../../../stats/server/services/stats.server.service.mts');
+const SNAP =
+  'Snap! Something went wrong. If this keeps happening, please contact us.';
+/** Record what the controller logs and sends to the stats servers. */
+function captureTelemetry() {
+  const logs: unknown[][] = [];
+  sinon.stub(winston.Logger.prototype, 'log').callsFake(function (
+    this: import('winston').Logger,
+    ...args: unknown[]
+  ) {
+    logs.push(args);
+    return this;
+  });
+  const stats: unknown[] = [];
+  sinon.stub(statService, 'stat').callsFake((stat, callback) => {
+    stats.push(stat);
+    callback?.(null);
+  });
+  return { logs, stats };
+}
+function statOf(namespace: string, tags: Record<string, string>) {
+  return { namespace, counts: { count: 1 }, tags };
+}
 
 describe('Authentication controller OAuth unit tests', () => {
   const jobs = testutils.catchJobs();
@@ -178,6 +201,7 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.removeOAuthProvider({}, res);
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+      res.body!.should.deepEqual({ message: 'Forbidden.' });
     });
 
     it('responds with 400 for an unknown provider', async () => {
@@ -211,6 +235,7 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.removeOAuthProvider(req, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({ message: SNAP });
     });
 
     it('returns 400 when login fails after removing a provider', async () => {
@@ -291,16 +316,21 @@ describe('Authentication controller OAuth unit tests', () => {
       userField(reloaded, 'avatarSource').should.equal('none');
     });
 
-    it('allows removing a provider that is not connected', async () => {
+    it('allows removing a provider that is not connected without rewriting the others', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
       userDoc.additionalProvidersData = {};
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
+      // A connection stored after this request loaded the member survives.
+      await User.collection.updateOne(
+        { _id: saved._id },
+        { $set: { 'additionalProvidersData.github': { id: 'gh-2' } } },
+      );
 
       const req = {
         user: userDoc,
-        params: { provider: 'facebook' },
+        params: { provider: 'twitter' },
         login: (user: unknown, cb: AuthCallback) => cb(),
       };
       const res = deferredResponse();
@@ -310,6 +340,10 @@ describe('Authentication controller OAuth unit tests', () => {
 
       res.statusCode.should.equal(200);
       responseField(res, '_id').toString().should.equal(userDoc._id.toString());
+      const stored = await User.collection.findOne({ _id: saved._id });
+      stored!.additionalProvidersData.should.deepEqual({
+        github: { id: 'gh-2' },
+      });
     });
   });
 
@@ -347,6 +381,7 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.resendConfirmation({}, res);
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+      res.body!.should.deepEqual({ message: 'Forbidden.' });
     });
 
     it('responds with 400 when the user is already confirmed', async () => {
@@ -410,6 +445,7 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.resendConfirmation({ user: userDoc }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({ message: SNAP });
     });
 
     it('returns 400 when generating a new confirmation token fails', async () => {
@@ -461,12 +497,16 @@ describe('Authentication controller OAuth unit tests', () => {
       userDoc.emailTemporary = userDoc.email;
       userDoc.emailToken = 'token';
       await userDoc.save();
+      const before = Date.now();
 
       const res = deferredResponse();
       authController.resendConfirmation({ user: userDoc }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       responseField(res, 'message').should.equal('Sent confirmation email.');
+      userField(await findUser(saved._id), 'updated')
+        .getTime()
+        .should.be.aboveOrEqual(before);
     });
   });
 
@@ -488,68 +528,74 @@ describe('Authentication controller OAuth unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('rejects usernames with invalid characters', async () => {
-      const controller = loadSignupController();
-      const res = deferredResponse();
-      controller.signup(
-        {
-          body: {
-            ageConfirmed: true,
-            firstName: 'Ada',
-            lastName: 'Lovelace',
-            username: 'has space',
-            password: 'password123',
-            email: 'ada@example.com',
-          },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
+    function signupBody(fields: Record<string, string>) {
+      return {
+        ageConfirmed: true,
+        firstName: 'Amina',
+        lastName: 'Vale',
+        username: 'samplemember',
+        email: 'sample-member@example.org',
+        password: 'password123',
+        ...fields,
+      };
+    }
 
-    it('rejects spammy signup attempts', async () => {
-      const controller = loadSignupController();
-      const res = deferredResponse();
-      controller.signup(
-        {
-          body: {
-            ageConfirmed: true,
-            firstName: 'Ada',
-            lastName: 'Lovelace',
-            username: 'has_underscore',
-            password: 'password123',
-            email: 'ada@example.com',
-          },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
+    const formatAdvice =
+      'Use 3–34 letters and numbers, including at least one letter.';
+    for (const [username, message] of [
+      ['has space', formatAdvice],
+      ['has_underscore', formatAdvice],
+      ['trustroots', 'Username is not available.'],
+    ]) {
+      it(`rejects the username ${username}`, async () => {
+        const res = deferredResponse();
+        loadSignupController().signup({ body: signupBody({ username }) }, res);
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body!.should.deepEqual({ message });
+      });
+    }
 
-    it('keeps name-spam errors separate from username advice', async () => {
-      const controller = loadSignupController();
-      const res = deferredResponse();
-      controller.signup(
-        {
-          body: {
-            ageConfirmed: true,
-            firstName: 'Amina',
-            lastName: 'spam_name',
-            username: 'samplemember',
-            email: 'sample-member@example.org',
-            password: 'password123',
+    // Each spam name trips exactly one check; 34 characters is still allowed.
+    for (const [firstName, lastName, spam] of [
+      ['A'.repeat(35), 'Vale', true],
+      ['A'.repeat(34), 'Vale', false],
+      ['Am:ina', 'Vale', true],
+      ['Am/ina', 'Vale', true],
+      ['Am_ina', 'Vale', true],
+      ['wwwAmina', 'Vale', true],
+      ['bit.lyAmina', 'Vale', true],
+      ['Amina', 'spam_name', true],
+    ] as const) {
+      it(`keeps name spam out with a generic error (${firstName} ${lastName}: ${spam})`, async () => {
+        const { logs, stats } = captureTelemetry();
+        const res = deferredResponse();
+        loadSignupController().signup(
+          {
+            body: signupBody({ firstName, lastName }),
+            login: (_user: unknown, cb: AuthCallback) => cb(),
           },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      responseField(res, 'message').should.equal(
-        'Snap! Something went wrong. If this keeps happening, please contact us.',
-      );
-    });
+          res,
+        );
+        await res.waitForResponse();
+        if (!spam) {
+          res.statusCode.should.equal(200);
+          stats.should.deepEqual([statOf('signup', { status: 'success' })]);
+          return;
+        }
+        res.statusCode.should.equal(400);
+        res.body!.should.deepEqual({ message: SNAP });
+        should.not.exist(await User.findOne({ username: 'samplemember' }));
+        logs.should.deepEqual([
+          [
+            'error',
+            'User signup failed. #fywghg',
+            { error: { name: 'Error' } },
+          ],
+        ]);
+        stats.should.deepEqual([statOf('signup', { status: 'failed' })]);
+      });
+    }
 
     it('keeps internal signup errors private', async () => {
       const controller = loadSignupController();
@@ -644,9 +690,12 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       responseField(res, 'username').should.equal('adalovelace');
+      const stored = await User.findOne({ username: 'adalovelace' });
+      stored!.lastName!.should.equal('Lovelace');
     });
 
     it('sends one alert after a matching user is saved', async () => {
+      const { logs } = captureTelemetry();
       const sendFlaggedSignupAlert = sinon
         .stub()
         .callsFake(
@@ -685,17 +734,11 @@ describe('Authentication controller OAuth unit tests', () => {
       ]);
       const saved = await User.findOne({ username: 'flaggedmember' });
       should.exist(saved);
+      logs.should.deepEqual([]);
     });
 
     it('continues signup when flagged-alert delivery fails', async () => {
-      const log = sinon.stub();
-      sinon.stub(winston.Logger.prototype, 'log').callsFake(function (
-        this: import('winston').Logger,
-        ...args: unknown[]
-      ) {
-        log(...args);
-        return this;
-      });
+      const { logs } = captureTelemetry();
       const controller = stubControllerDependencies({
         './../../../core/server/services/email.server.service.mjs': {
           sendFlaggedSignupAlert: (
@@ -727,13 +770,13 @@ describe('Authentication controller OAuth unit tests', () => {
 
       res.statusCode.should.equal(200);
       responseField(res, 'username').should.equal('alertfailure');
-      log
-        .calledWith(
+      logs.should.deepEqual([
+        [
           'error',
           'Flagged signup alert delivery failed.',
-          sinon.match.has('error'),
-        )
-        .should.be.true();
+          { error: { name: 'Error' } },
+        ],
+      ]);
     });
 
     it('reports email confirmation delivery failures during signup', async () => {
@@ -763,12 +806,33 @@ describe('Authentication controller OAuth unit tests', () => {
   });
 
   describe('signupValidation', () => {
-    it('rejects a missing username', async () => {
+    for (const body of [{}, { username: '' }]) {
+      it(`rejects a missing username (${JSON.stringify(body)})`, async () => {
+        const { stats } = captureTelemetry();
+        const res = deferredResponse();
+        authController.signupValidation({ body }, res);
+        await res.waitForResponse();
+        responseField(res, 'valid').should.be.false();
+        responseField(res, 'error').should.equal('username-missing');
+        stats.should.deepEqual([
+          statOf('signup-validation', {
+            status: 'failed',
+            reason: 'username-missing',
+          }),
+        ]);
+      });
+    }
+
+    it('rejects a username that is not a string', async () => {
       const res = deferredResponse();
-      authController.signupValidation({ body: {} }, res);
+      authController.signupValidation({ body: { username: 42 } }, res);
       await res.waitForResponse();
-      responseField(res, 'valid').should.be.false();
-      responseField(res, 'error').should.equal('username-missing');
+      res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({
+        valid: false,
+        error: 'username-invalid',
+        message: 'Use 3–34 letters and numbers, including at least one letter.',
+      });
     });
 
     it('rejects a reserved username', async () => {
@@ -796,7 +860,9 @@ describe('Authentication controller OAuth unit tests', () => {
       responseField(res, 'valid').should.be.true();
     });
 
-    it('accepts an available username', async () => {
+    it('accepts an available username while other members exist', async () => {
+      await utils.saveUsers(utils.generateUsers(1));
+      const { stats } = captureTelemetry();
       const res = deferredResponse();
       authController.signupValidation(
         { body: { username: 'brandnewusername' } },
@@ -804,6 +870,9 @@ describe('Authentication controller OAuth unit tests', () => {
       );
       await res.waitForResponse();
       responseField(res, 'valid').should.be.true();
+      stats.should.deepEqual([
+        statOf('signup-validation', { status: 'success' }),
+      ]);
     });
   });
 
@@ -828,17 +897,34 @@ describe('Authentication controller OAuth unit tests', () => {
       });
     }
 
-    it('rejects wrong credentials', async () => {
-      const controller = loadSigninController(() => [
-        null,
-        null,
-        { message: 'Invalid credentials' },
-      ]);
-      const res = deferredResponse();
-      controller.signin({}, res, () => {});
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
+    // Only a password-hash overload is retryable; other errors are wrong
+    // credentials. Logged errors keep just their name and code.
+    for (const error of [null, { name: 'Error', code: 'X' }]) {
+      it(`rejects wrong credentials (error: ${Boolean(error)})`, async () => {
+        const { logs, stats } = captureTelemetry();
+        const info = { message: 'Invalid credentials' };
+        const controller = loadSigninController(() => [
+          error && Object.assign(new Error('x'), error),
+          null,
+          info,
+        ]);
+        const res = deferredResponse();
+        controller.signin({}, res, () => {});
+        await res.waitForResponse();
+        res.statusCode.should.equal(400);
+        res.body!.should.equal(info);
+        logs.should.deepEqual([
+          [
+            'error',
+            'User signin failed. #3tfgbg-1',
+            { reason: 'Wrong credentials', error },
+          ],
+        ]);
+        stats.should.deepEqual([
+          statOf('signin', { status: 'failed:wrong-credentials' }),
+        ]);
+      });
+    }
 
     it('returns retryable service unavailable for password hash overload', async () => {
       const overload = Object.assign(new Error('busy'), {
@@ -856,6 +942,7 @@ describe('Authentication controller OAuth unit tests', () => {
     });
 
     it('rejects suspended users', async () => {
+      const { logs, stats } = captureTelemetry();
       const controller = loadSigninController(() => [
         null,
         { roles: ['user', 'suspended'] },
@@ -865,6 +952,19 @@ describe('Authentication controller OAuth unit tests', () => {
       controller.signin({}, res, () => {});
       await res.waitForResponse();
       res.statusCode.should.equal(403);
+      res.body!.should.deepEqual({
+        message: 'Your account has been suspended.',
+      });
+      logs.should.deepEqual([
+        [
+          'error',
+          'User signin failed. #3tfgbg-2',
+          { reason: 'Suspended user' },
+        ],
+      ]);
+      stats.should.deepEqual([
+        statOf('signin', { status: 'failed:suspended' }),
+      ]);
     });
 
     it('logs in a valid user', async () => {
@@ -872,12 +972,14 @@ describe('Authentication controller OAuth unit tests', () => {
       const userDoc = await findUser(saved._id);
       userDoc.created = new Date('2020-05-27T19:23:44.733Z');
       await userDoc.save();
+      const { stats } = captureTelemetry();
       const controller = loadSigninController(() => [null, userDoc, null]);
       const res = deferredResponse();
       const req = { login: (user: unknown, cb: AuthCallback) => cb() };
       controller.signin(req, res, () => {});
       await res.waitForResponse();
       res.statusCode.should.equal(200);
+      stats.should.deepEqual([statOf('signin', { status: 'success' })]);
       responseField(res, '_id').toString().should.equal(userDoc._id.toString());
       responseField(res, 'usernameUpdateAllowed').should.be.true();
     });
@@ -885,15 +987,23 @@ describe('Authentication controller OAuth unit tests', () => {
     it('returns 400 when login fails after authentication', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
+      const { logs, stats } = captureTelemetry();
       const controller = loadSigninController(() => [null, userDoc, null]);
       const res = deferredResponse();
-      const req = {
-        login: (user: unknown, cb: AuthCallback) =>
-          cb(new Error('login failed')),
-      };
+      const error = new Error('login failed');
+      const req = { login: (user: unknown, cb: AuthCallback) => cb(error) };
       controller.signin(req, res, () => {});
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.body!.should.equal(error);
+      logs.should.deepEqual([
+        [
+          'error',
+          'User signin failed. #3tfgbg-3',
+          { reason: 'Login error', error: { name: 'Error' } },
+        ],
+      ]);
+      stats.should.deepEqual([statOf('signin', { status: 'failed:other' })]);
     });
   });
 
@@ -952,20 +1062,24 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.cancelEmailChange({}, res);
       await res.waitForResponse();
       res.statusCode.should.equal(401);
+      res.body!.should.deepEqual({
+        message: 'Please sign in to cancel your email change.',
+      });
+      sinon.assert.calledWith(res.set, 'Cache-Control', 'no-store');
     });
 
-    for (const newEmail of [undefined, '', 42]) {
-      it(`rejects missing or malformed pending addresses (${newEmail})`, async () => {
+    for (const body of [undefined, {}, { newEmail: '' }, { newEmail: 42 }]) {
+      it(`rejects missing or malformed pending addresses (${JSON.stringify(body)})`, async () => {
         const member = await pendingChange();
         const res = Object.assign(deferredResponse(), {
           set: sinon.stub().returnsThis(),
         });
-        authController.cancelEmailChange(
-          { user: member, body: { newEmail } },
-          res,
-        );
+        authController.cancelEmailChange({ user: member, body }, res);
         await res.waitForResponse();
         res.statusCode.should.equal(400);
+        res.body!.should.deepEqual({
+          message: 'A pending email address is required.',
+        });
       });
     }
 
@@ -980,6 +1094,10 @@ describe('Authentication controller OAuth unit tests', () => {
         authController.cancelEmailChange(req, res);
         await res.waitForResponse();
         res.statusCode.should.equal(409);
+        res.body!.should.deepEqual({
+          message:
+            'This email change is no longer pending. Refresh the page to check your account.',
+        });
       }
       await rejectCancellation({ params: { token: 'cancel-token' } });
       member.public = true;
@@ -1014,6 +1132,9 @@ describe('Authentication controller OAuth unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(500);
+      res.body!.should.deepEqual({
+        message: 'Unable to cancel the email change. Please try again.',
+      });
     });
 
     for (const signup of [true, false]) {
@@ -1118,15 +1239,19 @@ describe('Authentication controller OAuth unit tests', () => {
       responseRedirect(res).should.equal('/confirm-email/valid-token');
     });
 
-    it('confirms a signup email token', async () => {
+    it('confirms a signup email token for a legacy account without an auth version', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
       userDoc.public = false;
-      userDoc.emailTemporary = userDoc.email;
+      userDoc.emailTemporary = 'pending@example.org';
       userDoc.emailToken = 'confirm-token';
       userDoc.emailTokenIssuedAt = new Date();
       userDoc.emailTokenExpires = new Date(Date.now() + 60 * 60 * 1000);
       await userDoc.save();
+      await User.collection.updateOne(
+        { _id: saved._id },
+        { $unset: { authVersion: 1, emailHash: 1 } },
+      );
 
       const res = deferredResponse();
       authController.confirmEmail(
@@ -1143,6 +1268,9 @@ describe('Authentication controller OAuth unit tests', () => {
       const reloaded = await findUser(saved._id);
       userField(reloaded, 'public').should.be.true();
       should.not.exist(reloaded.emailToken);
+      userField(reloaded, 'emailHash').should.equal(
+        crypto.createHash('md5').update('pending@example.org').digest('hex'),
+      );
     });
 
     it('reports login failures after confirming the email token', async () => {
@@ -1164,6 +1292,7 @@ describe('Authentication controller OAuth unit tests', () => {
       );
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({ message: SNAP });
     });
 
     it('rejects an expired confirmation on both validation and consumption', async () => {
@@ -1279,56 +1408,64 @@ describe('Authentication controller OAuth unit tests', () => {
       should.not.exist(confirmed.emailTokenExpires);
     });
 
-    it('does not authenticate from a confirmation when authVersion changes mid-request', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const token = 'stale-confirm-token';
-      const pendingEmail = 'pending@example.test';
-      await User.updateOne(
-        { _id: saved._id },
-        {
-          $set: {
-            public: false,
-            emailTemporary: pendingEmail,
-            emailToken: token,
-            emailTokenIssuedAt: new Date(),
-            emailTokenExpires: new Date(Date.now() + 86400000),
+    for (const authVersion of [0, 2])
+      it(`does not authenticate from a confirmation when authVersion ${authVersion} changes mid-request`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const token = 'stale-confirm-token';
+        const pendingEmail = 'pending@example.test';
+        await User.updateOne(
+          { _id: saved._id },
+          {
+            $set: {
+              public: false,
+              emailTemporary: pendingEmail,
+              emailToken: token,
+              emailTokenIssuedAt: new Date(),
+              emailTokenExpires: new Date(Date.now() + 86400000),
+              authVersion,
+            },
           },
-        },
-      );
-
-      type LegacyFindOneAndUpdate = (
-        filter: Parameters<typeof User.findOneAndUpdate>[0],
-        update: Parameters<typeof User.findOneAndUpdate>[1],
-        options: Parameters<typeof User.findOneAndUpdate>[2],
-      ) => PromiseLike<unknown>;
-      const originalFindOneAndUpdate =
-        User.findOneAndUpdate as unknown as LegacyFindOneAndUpdate;
-      const legacyUserModel = User as unknown as {
-        findOneAndUpdate: LegacyFindOneAndUpdate;
-      };
-      sinon
-        .stub(legacyUserModel, 'findOneAndUpdate')
-        .callsFake((filter, update, options) =>
-          User.updateOne({ _id: saved._id }, { $inc: { authVersion: 1 } }).then(
-            () => originalFindOneAndUpdate.call(User, filter, update, options),
-          ),
         );
 
-      const login = sinon.spy((_user: unknown, callback: AuthCallback) =>
-        callback(),
-      );
-      const res = deferredResponse();
-      authController.confirmEmail({ params: { token }, login }, res);
-      await res.waitForResponse();
+        type LegacyFindOneAndUpdate = (
+          filter: Parameters<typeof User.findOneAndUpdate>[0],
+          update: Parameters<typeof User.findOneAndUpdate>[1],
+          options: Parameters<typeof User.findOneAndUpdate>[2],
+        ) => PromiseLike<unknown>;
+        const originalFindOneAndUpdate =
+          User.findOneAndUpdate as unknown as LegacyFindOneAndUpdate;
+        const legacyUserModel = User as unknown as {
+          findOneAndUpdate: LegacyFindOneAndUpdate;
+        };
+        sinon
+          .stub(legacyUserModel, 'findOneAndUpdate')
+          .callsFake((filter, update, options) =>
+            User.updateOne(
+              { _id: saved._id },
+              { $inc: { authVersion: 1 } },
+            ).then(() =>
+              originalFindOneAndUpdate.call(User, filter, update, options),
+            ),
+          );
 
-      res.statusCode.should.equal(400);
-      login.called.should.be.false();
-      const unchanged = await findUser(saved._id);
-      userField(unchanged, 'authVersion').should.equal(1);
-      userField(unchanged, 'public').should.be.false();
-      userField(unchanged, 'emailTemporary').should.equal(pendingEmail);
-      userField(unchanged, 'emailToken').should.equal(token);
-    });
+        const login = sinon.spy((_user: unknown, callback: AuthCallback) =>
+          callback(),
+        );
+        const res = deferredResponse();
+        authController.confirmEmail({ params: { token }, login }, res);
+        await res.waitForResponse();
+
+        res.statusCode.should.equal(400);
+        res.body!.should.deepEqual({
+          message: 'Email confirm token is invalid or has expired.',
+        });
+        login.called.should.be.false();
+        const unchanged = await findUser(saved._id);
+        userField(unchanged, 'authVersion').should.equal(authVersion + 1);
+        userField(unchanged, 'public').should.be.false();
+        userField(unchanged, 'emailTemporary').should.equal(pendingEmail);
+        userField(unchanged, 'emailToken').should.equal(token);
+      });
 
     it('confirms an email when the account already has an auth version', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
