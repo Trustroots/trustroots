@@ -289,7 +289,8 @@ describe('Admin Experience changes controller', () => {
         proposed: { feedbackPublic: 'Earlier.' },
         status: 'approved',
         active: false,
-        reviewedAt: new Date(Date.now() - 60_000),
+        // Six days old: still inside the seven-day window.
+        reviewedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000),
       });
       const laterApproval = await ChangeRequest.create({
         experience: fourth._id,

@@ -160,6 +160,7 @@ function isPopulatedRecipient(
   user: OfferRecord['user'],
 ): user is LocationRecipient {
   return (
+    // Stryker disable next-line ConditionalExpression: Mongoose gives an offer's user as an ObjectId or a populated document, both objects
     typeof user === 'object' &&
     user !== null &&
     '_id' in user &&
