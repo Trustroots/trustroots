@@ -114,6 +114,12 @@ this repository. Download and extract the artifact
 to obtain `app-debug.apk` and its SHA-256 checksum. New commits to a labelled PR
 trigger a fresh build. Android changes also build automatically without the label.
 
+CI measures the shrunk release APK against a 5 MB (5,000,000 byte) download
+budget. The PR comment shows the debug APK size and the unsigned
+release APK size and change from `main`. CI builds both release APKs with preview
+update alerts enabled. The preview release workflow checks the final signed APK
+before publishing.
+
 ## Member screen source layout
 
 Member feature screens have dedicated packages below

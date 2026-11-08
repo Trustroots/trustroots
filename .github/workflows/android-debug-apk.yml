@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - 'apps/android/**'
+      - 'apps/shared/**'
       - 'config/languages/languages.json'
       - '.github/workflows/android-debug-apk.yml'
   workflow_dispatch:
@@ -46,6 +47,8 @@ jobs:
     needs: changes
     outputs:
       artifact-url: ${{ steps.apk.outputs.artifact-url }}
+      debug-size: ${{ steps.size.outputs.debug-size }}
+      release-size-report: ${{ steps.size.outputs.report }}
     if: >
       github.event_name != 'pull_request' ||
        contains(github.event.pull_request.labels.*.name, 'build-apk') ||
@@ -61,9 +64,33 @@ jobs:
       - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4
       - name: Install Android SDK
         run: sdkmanager 'platforms;android-37.0' 'build-tools;37.0.0'
-      - name: Test, lint and build debug APK
+      - name: Set a shared build timestamp
+        run: echo "ANDROID_BUILD_EPOCH_SECONDS=$(date +%s)" >> "$GITHUB_ENV"
+      - name: Test, lint and build APKs
         working-directory: apps/android
-        run: ./gradlew --build-cache testDebugUnitTest lintDebug assembleDebug
+        run: ./gradlew --build-cache testDebugUnitTest lintDebug assembleDebug assembleRelease -PtrustrootsPreviewUpdateAlerts=true
+      - name: Check out main for the APK size comparison
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.base_ref == 'main' && github.event.pull_request.base.sha || 'main' }}
+          path: apk-size-baseline
+          persist-credentials: false
+      - name: Build the release APK from main
+        if: github.event_name == 'pull_request'
+        working-directory: apk-size-baseline/apps/android
+        run: ./gradlew --build-cache assembleRelease -PtrustrootsPreviewUpdateAlerts=true
+      - name: Check release APK size
+        id: size
+        run: |
+          apk_path=apps/android/app/build/outputs/apk
+          release_apk="$apk_path/release/app-release-unsigned.apk"
+          if [[ "$GITHUB_EVENT_NAME" == pull_request ]]; then
+            bash apps/android/scripts/check-apk-size.sh "$release_apk" "apk-size-baseline/$release_apk"
+          else
+            bash apps/android/scripts/check-apk-size.sh "$release_apk"
+          fi
+          echo "debug-size=$(stat -c '%s' "$apk_path/debug/app-debug.apk")" >> "$GITHUB_OUTPUT"
       - name: Record APK checksum
         run: sha256sum apps/android/app/build/outputs/apk/debug/app-debug.apk > apps/android/app/build/outputs/apk/debug/app-debug.apk.sha256
       - name: Upload debug APK
@@ -284,6 +311,8 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
           ARTIFACT_URL: ${{ needs.debug-apk.outputs.artifact-url }}
+          DEBUG_SIZE: ${{ needs.debug-apk.outputs.debug-size }}
+          RELEASE_SIZE_REPORT: ${{ needs.debug-apk.outputs.release-size-report }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         with:
           script: |
@@ -302,6 +331,9 @@ jobs:
               `**[Download APK (ZIP)](${process.env.ARTIFACT_URL})**`,
               '',
               'Extract the ZIP and install `app-debug.apk`. It also contains the SHA-256 checksum.',
+              '',
+              `- **Debug APK size** · ${Number(process.env.DEBUG_SIZE).toLocaleString('en-GB')} bytes`,
+              `- ${process.env.RELEASE_SIZE_REPORT}`,
               '',
               `Built from \`${process.env.HEAD_SHA.slice(0, 7)}\` after Android unit tests and lint passed. The download is retained for 30 days.`,
               '',
