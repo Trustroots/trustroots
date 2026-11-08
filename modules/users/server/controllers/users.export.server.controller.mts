@@ -170,7 +170,7 @@ function isExportProfile(value: unknown): value is ExportProfileRecord {
 }
 
 function isExportTribe(value: unknown): value is ExportTribe {
-  // Stryker disable next-line ConditionalExpression: `value !== null` is redundant because memberships without a tribe are filtered out first
+  // Stryker disable next-line ConditionalExpression,LogicalOperator: `value !== null` is redundant because memberships without a tribe are filtered out first; a truthy non-object tribe has no _id, slug or label, so treating it as a record gives the same id and fields
   return typeof value === 'object' && value !== null;
 }
 

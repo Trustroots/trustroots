@@ -207,14 +207,13 @@ service.signup = function (req, res) {
     // Add missing user fields
     user.public = false;
     user.provider = 'local';
-    // Stryker disable next-line ArrayDeclaration: the pre-save hook rebuilds displayName from the same names, and nothing reads it before the save
+    // Stryker disable ArrayDeclaration,ArrowFunction,MethodExpression,StringLiteral: the pre-save hook rebuilds displayName from the same names, and nothing reads it before the save
+    // Stryker restore next-line MethodExpression
     user.displayName = [user.firstName, user.lastName]
-      // Stryker disable next-line ArrowFunction,MethodExpression: overwritten by the pre-save hook
       .filter((name): name is string => Boolean(name?.trim()))
-      // Stryker disable next-line ArrowFunction,MethodExpression: overwritten by the pre-save hook
       .map(name => name.trim())
-      // Stryker disable next-line StringLiteral: overwritten by the pre-save hook
       .join(' ');
+    // Stryker restore ArrayDeclaration,ArrowFunction,MethodExpression,StringLiteral
 
     // Just to simplify email confirm process later
     // This field is normally needed when changing email after the signup process
@@ -593,8 +592,10 @@ service.emailConfirmationDetails = function (req, res) {
   User.findOne(
     emailConfirmationTokenQuery(String(req.params!.token), new Date()),
   )
-    // Stryker disable next-line StringLiteral: the response is built from these three fields alone
-    .select('email emailTemporary public')
+    .select(
+      // Stryker disable next-line StringLiteral: the response is built from these three fields alone
+      'email emailTemporary public',
+    )
     .then(
       user => {
         if (!user) {
@@ -689,8 +690,10 @@ service.confirmEmail = function (req, res) {
               // @todo: this should be done at user.server.model.js
               emailHash: crypto
                 .createHash('md5')
-                // Stryker disable next-line MethodExpression: the emailTemporary filter is cast trimmed and lowercased, so the update only applies when the stored value already is
-                .update(user.emailTemporary!.trim().toLowerCase())
+                .update(
+                  // Stryker disable next-line MethodExpression: the emailTemporary filter is cast trimmed and lowercased, so the update only applies when the stored value already is
+                  user.emailTemporary!.trim().toLowerCase(),
+                )
                 .digest('hex'),
             },
           },

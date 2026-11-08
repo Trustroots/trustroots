@@ -43,8 +43,10 @@ service.getBlockedUsers = async function (req, res) {
   try {
     const user = await User.findById(req.user._id)
       // Avoid pulling in sensitive fields from Mongoose
-      // Stryker disable next-line StringLiteral: only the populated `blocked` list is sent, whichever user fields are loaded
-      .select('-password -salt')
+      .select(
+        // Stryker disable next-line StringLiteral: only the populated `blocked` list is sent, whichever user fields are loaded
+        '-password -salt',
+      )
       .populate({
         path: 'blocked',
         select: 'username displayName',

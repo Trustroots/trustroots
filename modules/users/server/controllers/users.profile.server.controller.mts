@@ -50,6 +50,7 @@ import { userMiniProfileFields as miniProfileFields } from '../services/user-min
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
     new URL('../../../../config/shared/locales.json', import.meta.url),
+    // Stryker disable next-line StringLiteral: with no encoding readFileSync returns a Buffer, which JSON.parse reads as UTF-8 text anyway
     'utf8',
   ),
 );
@@ -273,6 +274,7 @@ service.update = function (req, res) {
     typeof req.body.nostrNpub === 'string' ? req.body.nostrNpub : undefined;
   async function updateProfile(): Promise<void> {
     if (requestedEmail && requestedEmail !== authenticatedUser.email) {
+      // Stryker disable MethodExpression,ArrowFunction: Mongoose lowercases email and emailTemporary filters itself (lowercase: true), and a failed lookup resolving to undefined instead of null still finds no other member
       const emailUser = await User.findOne(
         {
           $or: [
@@ -282,8 +284,8 @@ service.update = function (req, res) {
         },
         // Stryker disable next-line StringLiteral: the projection only narrows the lookup; only _id is read
         'emailTemporary email',
-        // Stryker disable next-line ArrowFunction: a failed lookup resolving to undefined instead of null still finds no other member
       ).catch(() => null);
+      // Stryker restore MethodExpression,ArrowFunction
       if (emailUser && !emailUser._id.equals(authenticatedUser._id)) {
         res.status(403).send({
           message: 'This email is already in use. Please use another one.',
@@ -321,7 +323,7 @@ service.update = function (req, res) {
       token = buffer.toString('hex');
     }
     if (
-      // Stryker disable next-line ConditionalExpression: a present non-string username was rejected above, so the typeof only narrows the type
+      // Stryker disable next-line ConditionalExpression,LogicalOperator: a present non-string username was rejected above, so the typeof only narrows the type; an empty username fails validateUsername above, so || and && agree
       typeof req.body.username === 'string' &&
       req.body.username &&
       req.body.username !== authenticatedUser.username
@@ -520,12 +522,13 @@ service.removeProfile = function (req, res) {
     );
   }
   async function remove(): Promise<void> {
+    // Stryker disable ArrowFunction: undefined and null both mean no matching token
     const user = await User.findOne({
       _id: authenticatedUser._id,
       removeProfileToken: matchToken(String(req.params.token)),
       removeProfileExpires: { $gt: Date.now() },
-      // Stryker disable next-line ArrowFunction: undefined and null both mean no matching token
     }).catch(() => null);
+    // Stryker restore ArrowFunction
     if (!user) {
       report('failed', 'Profile remove token is invalid or has expired.', true);
       return;
@@ -771,6 +774,7 @@ service.userByUsername = function (req, res, next, username) {
   async function readProfile(): Promise<void> {
     const profileLookup = User.findOne(
       {
+        // Stryker disable next-line MethodExpression: Mongoose lowercases username filters itself (lowercase: true)
         username: username.toLowerCase(),
       },
       service.userProfileFields + ' roles public blocked',
@@ -938,17 +942,19 @@ function sanitizeProfile(
       profile.memberIds!.push(tribeId.toString());
     });
   }
+  // Stryker disable BlockStatement: the public response selection leaves out the fields the else branch deletes
+  // Stryker restore next-line BlockStatement
   // Stryker disable next-line ConditionalExpression: the public response leaves out usernameUpdateAllowed and the fields the other branch deletes
   if (isOwnProfile) {
     // Is user allowed to update their username?
     profile.usernameUpdateAllowed = isUsernameUpdateAllowed(profile);
-    // Stryker disable next-line BlockStatement: the public response selection leaves these fields out anyway
   } else {
     // Remove data we don't need from other member's profile
     delete profile.updated;
     delete profile.passwordUpdated;
     delete profile.usernameUpdated;
   }
+  // Stryker restore BlockStatement
   // Username history is visible only through the dedicated admin endpoint.
   delete profile.usernameHistory;
 

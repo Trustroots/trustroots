@@ -327,13 +327,23 @@ describe('Profile controller unit tests', () => {
       });
     }
 
-    for (const suspended of [false, true]) {
-      it(`administrator deletion ${suspended ? 'removes a suspended' : 'refuses an unsuspended'} account`, async () => {
+    it('builds the space-separated profile field lists when it loads', () => {
+      const { controller } = loadRemoval();
+      for (const [fields, field] of [
+        [controller.userProfileFields, 'tagline'],
+        [controller.userListingProfileFields, 'birthdate'],
+        [controller.userSearchProfileFields, 'locationFrom'],
+      ])
+        fields.split(' ').should.containEql(field);
+    });
+
+    for (const roles of [['user'], ['suspended'], ['suspended', 'admin']]) {
+      const suspended = roles.join() === 'suspended';
+      it(`administrator deletion ${suspended ? 'removes' : 'refuses'} an account with roles ${roles}`, async () => {
         const { deleteUserAccount } =
           await import('../../server/controllers/users.profile.server.controller.mts');
         const [saved] = await utils.saveUsers(utils.generateUsers(1));
-        if (suspended)
-          await User.updateOne({ _id: saved._id }, { roles: ['suspended'] });
+        await User.updateOne({ _id: saved._id }, { roles });
         const removal = deleteUserAccount(
           (await findUser(saved._id)) as unknown as Parameters<
             typeof deleteUserAccount
@@ -432,6 +442,8 @@ describe('Profile controller unit tests', () => {
         );
         res.statusCode.should.equal(400);
         responseBody(res).should.deepEqual({ message });
+        // Rejected before any change is staged on the signed-in member.
+        (userDoc.emailTemporary || '').should.equal('');
       });
     }
 
@@ -1911,14 +1923,18 @@ describe('Profile controller unit tests', () => {
       (profileController.sanitizeProfile(null) === undefined).should.be.true();
     });
 
-    const bareProfile = (extra: Record<string, unknown> = {}) => ({
-      toObject: () => ({
-        _id: new mongoose.Types.ObjectId(),
-        email: 'bare@example.test',
-        roles: [],
-        ...extra,
-      }),
-    });
+    const bareProfile = (extra: Record<string, unknown> = {}) => {
+      const _id = new mongoose.Types.ObjectId();
+      return {
+        _id,
+        toObject: () => ({
+          _id,
+          email: 'bare@example.test',
+          roles: [],
+          ...extra,
+        }),
+      };
+    };
 
     for (const [label, viewer] of [
       ['no viewer', undefined],
