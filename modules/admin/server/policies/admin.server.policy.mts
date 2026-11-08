@@ -150,10 +150,6 @@ export const invokeRolesPolicies = () => {
           permissions: ['post'],
         },
         {
-          resources: '/api/admin/notes',
-          permissions: ['get', 'post'],
-        },
-        {
           resources: '/api/admin/user',
           permissions: ['post'],
         },

@@ -237,6 +237,21 @@ describe('Admin dashboard controller unit tests', () => {
     ]);
   });
 
+  it('skips the profile lookup when no top messenger has an id', async () => {
+    stubAggregate([{ _id: null, messageCount: 3 }]);
+    const findUsers = stubUserFind([]);
+    stubThreadFind([]);
+
+    const res = mockResponse();
+    adminDashboard.getDashboard({}, res);
+    const response = await res.waitForResponse();
+
+    sinon.assert.notCalled(findUsers);
+    response.body.topMessengers.should.deepEqual([
+      { messageCount: 3, user: null },
+    ]);
+  });
+
   it('returns an error response when dashboard queries fail', async () => {
     stubAggregate(null, new Error('db failed'));
 

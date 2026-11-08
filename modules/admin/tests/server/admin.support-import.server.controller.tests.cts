@@ -176,9 +176,11 @@ describe('admin support status import controller', () => {
       'not an object',
       { selectedMatches: [] },
       { previewId: 123 },
-      { previewId: 'preview', unexpected: true },
-      { previewId: 'preview', matchingWindowMinutes: 60 },
-      { previewId: 'preview', selectedMatches: null },
+      { previewId: [unknownPreviewId] },
+      { previewId: unknownPreviewId, unexpected: true },
+      { previewId: unknownPreviewId, matchingWindowMinutes: 60 },
+      { previewId: unknownPreviewId, selectedMatches: null },
+      { previewId: unknownPreviewId, selectedMatches: [validSelection, null] },
     ]) {
       const response = await apply(adminId, invalidBody);
       assert.equal(response.statusCode, 400);
@@ -189,6 +191,12 @@ describe('admin support status import controller', () => {
 
     const invalidSelections = [
       'not an object',
+      'ab',
+      { ...validSelection, extra: true },
+      { zendeskTicketId: -1, requestId: 'a'.repeat(24) },
+      { zendeskTicketId: 789, requestId: ['a'.repeat(24)] },
+      { zendeskTicketId: 789, requestId: 'x' + 'a'.repeat(24) },
+      { zendeskTicketId: 789, requestId: 'a'.repeat(24) + 'x' },
       null,
       [],
       {},
@@ -206,7 +214,7 @@ describe('admin support status import controller', () => {
     ];
     for (const selection of invalidSelections) {
       const response = await apply(adminId, {
-        previewId: 'valid-looking-preview',
+        previewId: unknownPreviewId,
         selectedMatches: [selection],
       });
       assert.equal(response.statusCode, 400);
