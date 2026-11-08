@@ -12,13 +12,14 @@ import type {
  */
 const sinon: typeof import('sinon') = require('sinon');
 const mongoose: typeof import('mongoose') = require('mongoose');
+const winston: typeof import('winston') = require('winston');
 
 const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
 const reactivateHostsJobHandler: typeof import('./../../../server/jobs/reactivate-hosts.server.job.mjs').default = require('./../../../server/jobs/reactivate-hosts.server.job.mjs');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
 const config: TestConfigModule = require('./../../../../../config/config.mts');
 const moment: typeof import('moment') = require('moment');
-require('should');
+const should: typeof import('should') = require('should');
 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
@@ -72,6 +73,59 @@ describe('Job: reactivate hosts unit tests', () => {
           .then(() => done(), done);
       })
       .catch(err => done(err));
+  });
+
+  it('hands the reminder the contact details of the host', function (done) {
+    const send = sinon
+      .stub(emailService, 'sendReactivateHosts')
+      .callsFake((_, cb) => cb());
+
+    reactivateHostsJobHandler({}, function (err?: Error | null) {
+      if (err) return done(err);
+      send.callCount.should.equal(1);
+      const recipient = send.firstCall.args[0] as unknown as {
+        public: boolean;
+        email: string;
+        firstName: string;
+        displayName: string;
+        username?: string;
+      };
+      recipient.public.should.equal(true);
+      recipient.email.should.equal('reactivate-unit@test.com');
+      recipient.firstName.should.equal('Full');
+      recipient.displayName.should.equal('Full Name');
+      // Only the contact fields are loaded, not the whole member
+      should(recipient.username).be.undefined();
+      done();
+    });
+  });
+
+  it('finishes without logging when the reminders went out', function (done) {
+    const log = sinon.stub(winston, 'log');
+    sinon.stub(emailService, 'sendReactivateHosts').callsFake((_, cb) => cb());
+
+    reactivateHostsJobHandler({}, function (err?: Error | null) {
+      (err === undefined || err === null).should.be.true();
+      log.called.should.be.false();
+      done();
+    });
+  });
+
+  it('logs a failure before passing it to agenda', function (done) {
+    const log = sinon.stub(winston, 'log');
+    sinon
+      .stub(emailService, 'sendReactivateHosts')
+      .callsFake((_, cb) => cb(new Error('mail failed')));
+
+    reactivateHostsJobHandler({}, function () {
+      sinon.assert.calledOnce(log);
+      sinon.assert.calledWithMatch(
+        log,
+        'error',
+        'Failure in reactivate hosts background job.',
+      );
+      done();
+    });
   });
 
   it('passes lookup errors to agenda', function (done) {

@@ -23,12 +23,14 @@ function normaliseOfferExpiry(
   };
   // moment's JavaScript API has always coerced arbitrary raw request values.
   const parsedValidUntil = moment(validUntil as moment.MomentInput);
+  // Stryker disable next-line StringLiteral: validUntilEndOfDay is always the last millisecond of a day, so it is at or after `now` exactly when it is at or after the start of that day
   const minDate = moment(now).startOf('day');
   const maxDate = moment(now)
     .add(maximumAge)
     // Add one extra day just to accommodate oddities from timezones
     .endOf('day');
   if (validUntil && parsedValidUntil.isValid()) {
+    // Stryker disable next-line StringLiteral: comparing the exact time with the limits instead of the end of its day gives the same answer, because the lower limit is the start and the upper limit the end of a day
     const validUntilEndOfDay = parsedValidUntil.clone().endOf('day');
     if (
       validUntilEndOfDay.isSameOrAfter(minDate) &&

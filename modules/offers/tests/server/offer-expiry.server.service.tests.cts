@@ -31,4 +31,15 @@ describe('Offer expiry service', () => {
 
     expiry!.should.deepEqual(validUntil);
   });
+
+  it('accepts an expiry on the last day of the allowed range', () => {
+    const lastDay = moment(now).add(maxValidFromNow).endOf('day').toDate();
+
+    normaliseOfferExpiry(
+      'meet',
+      lastDay,
+      maxValidFromNow,
+      now,
+    )!.should.deepEqual(lastDay);
+  });
 });

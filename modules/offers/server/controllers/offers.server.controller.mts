@@ -60,6 +60,7 @@ function addOfferFilterHelpers(filters: object): OfferFilters {
     hasArrayFilter(filterType: string): boolean {
       const value = Reflect.get(filters, filterType);
       return (
+        // Stryker disable next-line LogicalOperator: every caller also requires `isUnknownArray(value)`, so a non-array value that the `||` would let through never reaches the filter
         Object.hasOwn(filters, filterType) &&
         Array.isArray(value) &&
         value.length > 0
@@ -115,8 +116,11 @@ function parseFiltersString(
     // but... JSON.parse(null) returns null, and typeof null === "object",
     // so we must check for that, too. Thankfully, null is falsey, so this suffices.
     // @link http://stackoverflow.com/a/20392392/1984644
-    if (filtersObject !== null && typeof filtersObject === 'object') {
-      if (Array.isArray(filtersObject)) return filtersObject;
+    if (
+      // Stryker disable next-line ConditionalExpression: `Object.entries(null)` throws and the catch below returns false, exactly what the null check returns
+      filtersObject !== null &&
+      typeof filtersObject === 'object'
+    ) {
       const filters: Record<string, unknown> = Object.create(null);
       for (const [key, value] of Object.entries(filtersObject)) {
         filters[key] = value;
@@ -124,7 +128,7 @@ function parseFiltersString(
       return filters;
     }
   } catch {
-    return false;
+    // Invalid JSON falls through to the `false` below.
   }
   return false;
 }
@@ -148,6 +152,7 @@ function sanitizeOffer(
     authenticatedUser._id.equals(
       ownerId as Parameters<typeof authenticatedUser._id.equals>[0],
     );
+  // Stryker disable next-line ArrayDeclaration: the roles are only ever probed with includes('shadowban') and includes('admin'), which a placeholder entry cannot match
   const authenticatedRoles = authenticatedUser?.roles || [];
   const hideContactDetails =
     !isOwnOffer &&
@@ -231,10 +236,10 @@ function isValidCoordinate(coordinate: unknown): boolean {
 function isValidOfferType(type: unknown): type is OfferType {
   // Get list of valid offer types directly from Mongoose Schema
   const typePath = Offer.schema.path('type');
-  const enumValues =
-    (typePath as typeof typePath & { enumValues?: OfferType[] }).enumValues ||
-    [];
-  return enumValues.includes(type as OfferType);
+  const { enumValues } = typePath as typeof typePath & {
+    enumValues?: OfferType[];
+  };
+  return enumValues?.includes(type as OfferType) ?? false;
 }
 
 /**
@@ -268,12 +273,8 @@ function create(
     });
   }
 
-  const validUntil = normaliseEndpointExpiry(body.type, body.validUntil);
-  if (validUntil === undefined) {
-    delete body.validUntil;
-  } else {
-    body.validUntil = validUntil;
-  }
+  // Host offers get `undefined`, which `prepareNewOfferInput` leaves out
+  body.validUntil = normaliseEndpointExpiry(body.type, body.validUntil);
 
   // Create new offer by filtering out what users can modify
   // When creating an offer, we allow type field
@@ -322,9 +323,8 @@ function update(
   if (body.type && body.type !== offer.type) {
     return res.status(400).send({ message: 'You cannot update offer type.' });
   }
-  const validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
-  if (validUntil === undefined) delete body.validUntil;
-  else body.validUntil = validUntil;
+  // Host offers get `undefined`, which `prepareOfferUpdateInput` leaves out
+  body.validUntil = normaliseEndpointExpiry(offer.type, body.validUntil);
   const updatedOffer = _.extend(offer, prepareOfferUpdateInput(body));
   updatedOffer.updated = new Date();
   updatedOffer.set('reactivateReminderSent', undefined);
@@ -375,6 +375,7 @@ function list(req: OfferRequest, res: OfferResponse) {
   const isCoordinatesValid = _.every(coordinateKeys, function (coordinateKey) {
     // Get query string from query
     // If there is no query string (`req.query`), it is the empty object, `{}`.
+    // Stryker disable next-line BooleanLiteral: `false` and `true` both stringify to text that is not a number, so a missing coordinate fails validation either way
     let coordinate = _.get(req.query!, coordinateKey, false);
 
     // Trim string coordinates
@@ -480,6 +481,7 @@ function list(req: OfferRequest, res: OfferResponse) {
 
   // Types filter
   const typesFilter = Reflect.get(filters, 'types');
+  // Stryker disable next-line LogicalOperator: the two checks only disagree for an empty array, which leaves no valid types and adds no stage
   if (filters.hasArrayFilter('types') && isUnknownArray(typesFilter)) {
     // Accept only valid values, ignore the rest
     // @link https://lodash.com/docs/#filter
@@ -514,6 +516,7 @@ function list(req: OfferRequest, res: OfferResponse) {
   query.push({
     $unwind: {
       path: '$user',
+      // Stryker disable next-line BooleanLiteral: the next stage requires `user.public: true`, which drops an entry whose user lookup failed
       preserveNullAndEmptyArrays: true,
     },
   });
@@ -549,6 +552,7 @@ function list(req: OfferRequest, res: OfferResponse) {
 
   // Languages filter
   if (
+    // Stryker disable next-line LogicalOperator: the two checks only disagree for an empty array, which leaves no valid languages and adds no stage
     filters.hasArrayFilter('languages') &&
     isUnknownArray(Reflect.get(filters, 'languages'))
   ) {
@@ -556,6 +560,7 @@ function list(req: OfferRequest, res: OfferResponse) {
     let languages = JSON.parse(
       readFileSync(
         new URL('../../../../config/languages/languages.json', import.meta.url),
+        // Stryker disable next-line StringLiteral: JSON.parse reads the Buffer that readFileSync returns without an encoding as the same utf8 text
         'utf8',
       ),
     );
@@ -568,9 +573,7 @@ function list(req: OfferRequest, res: OfferResponse) {
     const filterLanguages = _.filter(
       languageFilter,
       function (language: unknown) {
-        return (
-          typeof language === 'string' && _.indexOf(languages, language) > -1
-        );
+        return _.includes(languages, language);
       },
     );
 
@@ -596,6 +599,7 @@ function list(req: OfferRequest, res: OfferResponse) {
     const isTribeFilterValid = tribeFilter.every(function (tribeId: unknown) {
       // Return failure if tribe id is invalid, otherwise add id to query array
       return (
+        // Stryker disable next-line ConditionalExpression: ObjectId.isValid is already false for every non-string JSON value, so the typeof check only narrows the type
         typeof tribeId === 'string' &&
         mongoose.Types.ObjectId.isValid(tribeId) &&
         tribeQueries.push({
@@ -609,20 +613,12 @@ function list(req: OfferRequest, res: OfferResponse) {
       });
     }
 
-    // Build the query
-    if (tribeQueries.length > 1) {
-      // Match multible tribes
-      query.push({
-        $match: {
-          $or: tribeQueries,
-        },
-      });
-    } else {
-      // Just one tribe
-      query.push({
-        $match: tribeQueries[0],
-      });
-    }
+    // Build the query: match any of the tribes (a single one included)
+    query.push({
+      $match: {
+        $or: tribeQueries,
+      },
+    });
   }
 
   // Filter out users that do not share any circles with the authenticated user
@@ -649,6 +645,7 @@ function list(req: OfferRequest, res: OfferResponse) {
   query.push({
     $project: {
       _id: 0,
+      // Stryker disable next-line StringLiteral: prepareOfferSearchResults sets the feature type itself and drops the one from the pipeline
       type: 'Feature',
       properties: {
         id: '$_id',
@@ -660,6 +657,7 @@ function list(req: OfferRequest, res: OfferResponse) {
       },
       geometry: {
         coordinates: '$locationFuzzy',
+        // Stryker disable next-line StringLiteral: prepareOfferSearchResults sets the geometry type itself and drops the one from the pipeline
         type: 'Point',
       },
     },
@@ -709,6 +707,7 @@ function getOffer(req: OfferRequest, res: OfferResponse) {
     err => {
       log('error', 'Failed to load offer. #g34gss', { error: err });
       return res.status(400).send({
+        // Stryker disable next-line StringLiteral: an unknown key also yields the default message, so the empty key is indistinguishable from 'default'
         message: errorService.getErrorMessageByKey('default'),
       });
     },
@@ -733,7 +732,11 @@ function offersByUserId(
   }
 
   // Database query
-  const query = {
+  const query: {
+    user: string | Types.ObjectId;
+    $or: Array<Record<string, unknown>>;
+    type?: { $in: OfferType[] };
+  } = {
     user: userId,
     $or: [
       {
@@ -749,47 +752,23 @@ function offersByUserId(
     ],
   };
 
-  // Validate optional type parameter
+  // Optional `types` parameter: keep the valid types. A missing parameter
+  // becomes the string 'undefined', which is not a valid type and is ignored.
   const requestQuery = req.query!;
-  if (_.has(requestQuery, 'types')) {
-    // Get list of valid offer types directly from Mongoose Schema
-    const typePath = Offer.schema.path('type');
-    const enumValues = (typePath as typeof typePath & { enumValues?: string[] })
-      .enumValues;
-    const validOfferTypes = (enumValues || []).filter(
-      (value): value is OfferType => isValidOfferType(value),
-    );
-
-    // Ensure we have array of type(s)
-    // 3rd parameter sets max limit for array length,
-    // ensuring users can't send insanely long arrays for our queries
-    const queryTypes = _.split(
-      String(requestQuery.types),
-      ',',
-      validOfferTypes.length,
-    );
-    queryTypes.forEach(function (paramType) {
-      // Return failure if type is invalid, otherwise add type to query array
-      if (paramType && isValidOfferType(paramType)) {
-        // Returns array length if other types exist already in db query,
-        // otherwise returns `0`
-        const i = (_.get(query, 'type.$in') || []).length;
-        // Add type to db query array
-        // Results with `query`:
-        // ```
-        // {
-        //   user: userId,
-        //   type: {
-        //     $in: [
-        //       'host',
-        //       ...
-        //     ]
-        //   }
-        // }
-        // ```
-        _.set(query, 'type.$in[' + i + ']', paramType);
-      }
-    });
+  // Get list of valid offer types directly from Mongoose Schema
+  const typePath = Offer.schema.path('type');
+  const { enumValues } = typePath as typeof typePath & {
+    enumValues?: string[];
+  };
+  // The 3rd parameter sets max limit for array length,
+  // ensuring users can't send insanely long arrays for our queries
+  const requestedTypes = _.split(
+    String(requestQuery.types),
+    ',',
+    enumValues?.length ?? 0,
+  ).filter(isValidOfferType);
+  if (requestedTypes.length > 0) {
+    query.type = { $in: requestedTypes };
   }
 
   // Get offers
@@ -854,14 +833,12 @@ function removeAllByUserId(
   userId: Types.ObjectId | string,
   callback?: (error: Error | null) => void,
 ) {
-  const deletion = Offer.deleteMany({
-    user: userId,
-  });
-  const pending =
-    deletion && typeof deletion.exec === 'function'
-      ? deletion.exec()
-      : deletion;
-  void Promise.resolve(pending).then(
+  // A Mongoose query is thenable, so resolving it runs the deletion.
+  void Promise.resolve(
+    Offer.deleteMany({
+      user: userId,
+    }),
+  ).then(
     () => callback?.(null),
     (err: Error) => callback?.(err),
   );

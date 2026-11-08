@@ -61,6 +61,76 @@ describe('Offers policy unit tests', () => {
       .should.containEql('/api/offers-by/:offerUserId');
   });
 
+  it('grants admins everything and users only the documented methods', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          { resources: '/api/offers', permissions: '*' },
+          { resources: '/api/offers-by/:offerUserId', permissions: '*' },
+          { resources: '/api/offers/:offerId', permissions: '*' },
+        ],
+      },
+      {
+        roles: ['user'],
+        allows: [
+          { resources: '/api/offers', permissions: ['get', 'post'] },
+          { resources: '/api/offers-by/:offerUserId', permissions: ['get'] },
+          {
+            resources: '/api/offers/:offerId',
+            permissions: ['get', 'put', 'delete'],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('answers 500 when the ACL check fails', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
+    const res = mockResponse();
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { _id: 'user-id', public: true, roles: ['user'] },
+        route: { path: '/api/offers' },
+        method: 'GET',
+      },
+      res,
+      next,
+    );
+
+    res.statusCode.should.equal(500);
+    res.body!.message.should.equal('Unexpected authorization error');
+    next.called.should.be.false();
+  });
+
+  it('does not let a user manipulate an offer owned by someone else', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, false);
+    const res = mockResponse();
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { _id: 'user-id', public: true, roles: ['user'] },
+        route: { path: '/api/offers/:offerId' },
+        method: 'PUT',
+        offer: { user: 'someone-else' },
+      },
+      res,
+      next,
+    );
+
+    next.called.should.be.false();
+    res.statusCode.should.equal(403);
+  });
+
   it('returns 403 for unauthenticated users', () => {
     const { policy } = loadPolicy();
     const res = mockResponse();
