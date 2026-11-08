@@ -46,21 +46,6 @@ function mockResponse(): PolicyResponseDouble {
 describe('Offers policy unit tests', () => {
   afterEach(() => sinon.restore());
 
-  it('registers admin and user offer policies', () => {
-    const { policy, mockAcl } = loadPolicy();
-
-    policy.invokeRolesPolicies();
-
-    mockAcl.allow.calledOnce.should.be.true();
-    const policies = mockAcl.allow.firstCall.args[0];
-    policies[0].roles.should.deepEqual(['admin']);
-    policies[0].allows[0].permissions.should.equal('*');
-    policies[1].roles.should.deepEqual(['user']);
-    policies[1].allows
-      .map((allow: { resources: string }) => allow.resources)
-      .should.containEql('/api/offers-by/:offerUserId');
-  });
-
   it('grants admins everything and users only the documented methods', () => {
     const { policy, mockAcl } = loadPolicy();
 
@@ -90,8 +75,17 @@ describe('Offers policy unit tests', () => {
   });
 
   it('answers 500 when the ACL check fails', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
+    // A fresh copy of the policy, so its route authorisation is built in this test.
+    const policy = require('../../../../testutils/server/mock-module')(
+      require.resolve('../../server/policies/offers.server.policy.mts'),
+      {
+        './../../../core/server/services/memory-policy.server.service.mts':
+          () => ({
+            allow() {},
+            areAnyRolesAllowed: sinon.stub().yields(new Error('acl down')),
+          }),
+      },
+    ) as typeof policyModule.default;
     const res = mockResponse();
     const next = sinon.stub();
 

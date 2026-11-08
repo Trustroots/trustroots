@@ -122,12 +122,11 @@ describe('Targeted request limit storage', function () {
 
   it('exposes consume and digest to CommonJS callers', async function () {
     // Load a fresh copy: the interop object is built when the module loads.
-    const source =
-      require.resolve('../../server/services/targeted-request-limits.server.service.mts');
-    delete require.cache[source];
-    const commonjs: typeof import('../../server/services/targeted-request-limits.server.service.mts').default = require(
-      source,
-    );
+    const commonjs: typeof import('../../server/services/targeted-request-limits.server.service.mts').default =
+      require('./../../../../testutils/server/mock-module')(
+        require.resolve('../../server/services/targeted-request-limits.server.service.mts'),
+        {},
+      );
     assert.equal(
       commonjs.digest('198.51.100.25'),
       requestLimitService.digest('198.51.100.25'),

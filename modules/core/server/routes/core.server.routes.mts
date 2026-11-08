@@ -76,6 +76,7 @@ const defaultExport = function (app: Application) {
         (pubkeys as string[]).map(pubkey => String(pubkey).toLowerCase()),
       ),
     ];
+    // Stryker disable next-line ArrayDeclaration: an extra $in value only widens the fetch, and the response keeps only users whose npub encodes a requested key
     const npubs: string[] = [];
     for (const pubkey of normalizedPubkeys) {
       npubs.push(nip19.npubEncode(String(pubkey)));

@@ -306,10 +306,8 @@ describe('file-upload.service unit tests', () => {
         options.limits.files.should.equal(1);
         options.limits.fields.should.equal(10);
         options.limits.parts.should.equal(11);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done();
       } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         done(err);
       }
     });
@@ -333,8 +331,6 @@ describe('file-upload.service unit tests', () => {
           done();
         } catch (err) {
           done(err);
-        } finally {
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         }
       };
       res.send = finish;
@@ -347,6 +343,9 @@ describe('file-upload.service unit tests', () => {
     const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
     const res = mockResponse(() => {
       res.statusCode.should.equal(415);
+      res.body!.message!.should.equal(
+        errorService.getErrorMessageByKey('unsupported-media-type'),
+      );
       fs.existsSync(filePath).should.equal(false);
       done();
     });
@@ -368,116 +367,34 @@ describe('file-upload.service unit tests', () => {
     uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
-  it('rejects files whose magic bytes do not match allowed mime types', done => {
-    const filePath = writeTempFile(Buffer.from('not-an-image', 'utf8'));
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      try {
-        res.statusCode.should.equal(415);
-        res.body!.message!.should.equal(
-          errorService.getErrorMessageByKey('unsupported-media-type'),
-        );
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done();
-      } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done(err);
-      }
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('accepts jpeg, png, gif, and pdf files via the fallback detector', done => {
-    const samples = [
-      { buffer: Buffer.from([0xff, 0xd8, 0xff, 0x00]), mime: 'image/jpeg' },
-      {
-        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a]),
-        mime: 'image/png',
-      },
-      { buffer: Buffer.from('GIF89a', 'ascii'), mime: 'image/gif' },
-      { buffer: Buffer.from('%PDF-1.4', 'ascii'), mime: 'application/pdf' },
+  it('accepts or rejects files by their detected content', async () => {
+    const cases: Array<[string, Buffer, boolean, number]> = [
+      // [label, bytes, use the fallback detector, expected status]
+      ['jpeg', Buffer.from([0xff, 0xd8, 0xff, 0x00]), true, 200],
+      ['png', Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a]), true, 200],
+      ['gif', Buffer.from('GIF89a'), true, 200],
+      ['pdf', Buffer.from('%PDF-1.4'), true, 200],
+      [
+        'svg',
+        Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
+        true,
+        415,
+      ],
+      [
+        'file-type jpeg',
+        Buffer.from([
+          0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46,
+        ]),
+        false,
+        200,
+      ],
+      ['file-type unknown', Buffer.from('not a supported file'), false, 415],
     ];
-
-    let index = 0;
-
-    function runNext() {
-      const sample = samples[index];
-      const filePath = writeTempFile(sample.buffer);
-      const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-
-      uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
-        try {
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-          index += 1;
-          if (index < samples.length) {
-            runNext();
-          } else {
-            done();
-          }
-        } catch (err) {
-          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-          done(err);
-        }
-      });
+    for (const [label, bytes, fallback, status] of cases) {
+      if (fallback) process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK = 'true';
+      else delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
+      (await detectedStatus(bytes, validMimeTypes)).should.equal(status, label);
     }
-
-    runNext();
-  });
-
-  it('accepts jpeg files via the file-type detector', done => {
-    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    const filePath = writeTempFile(
-      Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46]),
-    );
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-
-    uploadFile(validMimeTypes, uploadField, {}, mockResponse(), () => {
-      try {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done();
-      } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done(err);
-      }
-    });
-  });
-
-  it('rejects files when magic-byte detection finds no supported type', done => {
-    delete process.env.TRUSTROOTS_FILE_MAGIC_FALLBACK;
-    const filePath = writeTempFile(Buffer.from('not a supported file'));
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      try {
-        res.statusCode.should.equal(415);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done();
-      } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done(err);
-      }
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
-  });
-
-  it('accepts svg files via the fallback detector', done => {
-    const filePath = writeTempFile(
-      Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>', 'utf8'),
-    );
-    const uploadFile = loadUploadFileWithStubbedMulter({ path: filePath });
-    const res = mockResponse(() => {
-      try {
-        res.statusCode.should.equal(415);
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done();
-      } catch (err) {
-        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        done(err);
-      }
-    });
-
-    uploadFile(validMimeTypes, uploadField, {}, res, () => {});
   });
 
   it('rejects files when fallback detection cannot read the file', done => {
@@ -578,10 +495,10 @@ describe('file-upload.service unit tests', () => {
     ).should.equal(200);
   });
 
-  it('rejects declared MIME types outside the allowed list before reading the file', done => {
+  it('rejects declared MIME types outside the allowed list even when the bytes are an image', done => {
     const { uploadFile } = loadUploadFileWithFileFilter(
       { mimetype: 'text/plain' },
-      { path: '/tmp/not-used' },
+      { path: writeTempFile(Buffer.from([0xff, 0xd8, 0xff, 0x00])) },
     );
     const res = mockResponse(() => {
       res.statusCode.should.equal(415);
@@ -597,10 +514,10 @@ describe('file-upload.service unit tests', () => {
 
   it('exposes uploadFile to CommonJS callers of the TypeScript module', done => {
     // Load a fresh copy: the interop object is built when the module loads.
-    const source =
-      require.resolve('../../../server/services/file-upload.service.mts');
-    delete require.cache[source];
-    const commonjs: typeof uploadService = require(source);
+    const commonjs = require('./../../../../../testutils/server/mock-module')(
+      require.resolve('../../../server/services/file-upload.service.mts'),
+      {},
+    ) as typeof uploadService;
     loadUploadFileWithStubbedMulter(null, { code: 'LIMIT_UNEXPECTED_FILE' });
     const res = mockResponse(() => {
       res.statusCode.should.equal(400);

@@ -452,14 +452,14 @@ describe('Experience member change controller', () => {
       const out = await call(memberChanges.submit, author, {
         body: {
           kind: 'edit',
-          proposed: { ...VALID_EDIT, feedbackPublic: '<b>Bold</b> words' },
+          proposed: { ...VALID_EDIT, feedbackPublic: '<b>Bold</b>\nwords' },
         },
       });
       out.status!.should.equal(201);
       const stored =
         await ExperienceChangeRequest.findOne().lean<StoredChangeRequest>();
       stored!.original!.feedbackPublic.should.equal('');
-      stored!.proposed!.feedbackPublic!.should.equal('Bold words');
+      stored!.proposed!.feedbackPublic!.should.equal('Bold\nwords');
     });
 
     it('rejects malformed edits', async () => {
@@ -480,34 +480,16 @@ describe('Experience member change controller', () => {
             interactions: { ...VALID_EDIT.interactions, extra: true },
           },
         },
-        {
+        // Truthy non-booleans, so only the type check can reject them.
+        ...[
+          { met: 1, host: false, guest: false },
+          { met: false, host: 'no', guest: false },
+          { met: false, host: false, guest: 1 },
+          { met: false, host: false, guest: false },
+        ].map(interactions => ({
           ...base,
-          proposed: {
-            ...VALID_EDIT,
-            interactions: { met: 1, host: false, guest: false },
-          },
-        },
-        {
-          ...base,
-          proposed: {
-            ...VALID_EDIT,
-            interactions: { met: false, host: 'no', guest: false },
-          },
-        },
-        {
-          ...base,
-          proposed: {
-            ...VALID_EDIT,
-            interactions: { met: false, host: false, guest: 0 },
-          },
-        },
-        {
-          ...base,
-          proposed: {
-            ...VALID_EDIT,
-            interactions: { met: false, host: false, guest: false },
-          },
-        },
+          proposed: { ...VALID_EDIT, interactions },
+        })),
         {
           ...base,
           proposed: { ...VALID_EDIT, feedbackPublic: 'x'.repeat(2001) },
