@@ -78,6 +78,7 @@ export function matchReviewRules(
   ]
     .join(' ')
     .toLowerCase();
+  // Stryker disable next-line StringLiteral: without an email the placeholder only matters to a domain rule equal to it, and normaliseReviewRules rejects both '' and values with spaces
   const email = (profile.email || '').trim().toLowerCase();
   const domain = email.slice(email.lastIndexOf('@') + 1);
   return rules

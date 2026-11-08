@@ -6,6 +6,7 @@ const rules: typeof import('../../../server/services/signup-review-rules.server.
 const {
   matchSignupProfile,
 }: typeof import('../../../server/services/signup-safety.server.service.mts') = require('../../../server/services/signup-safety.server.service.mts');
+const mockModule: typeof import('../../../../../testutils/server/mock-module.mts').default = require('../../../../../testutils/server/mock-module');
 const SignupReviewRules = mongoose.model('SignupReviewRules');
 
 describe('Signup review rules service', () => {
@@ -26,35 +27,33 @@ describe('Signup review rules service', () => {
         { kind: 'email', value: 'person@example.test' },
         { kind: 'domain', value: 'example.test' },
       ]);
-    should.equal(
-      rules.normaliseReviewRules([
+    const keywords = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        kind: 'keyword',
+        value: `k${i}`,
+      }));
+    rules.normaliseReviewRules(keywords(500))!.should.have.length(500);
+    rules
+      .normaliseReviewRules([{ kind: 'keyword', value: 'x'.repeat(254) }])!
+      .should.have.length(1);
+    for (const invalid of [
+      [
         { kind: 'keyword', value: 'x' },
         { kind: 'keyword', value: ' X ' },
-      ]),
-      null,
-    );
-    should.equal(
-      rules.normaliseReviewRules(
-        Array(501).fill({ kind: 'keyword', value: 'x' }),
-      ),
-      null,
-    );
-    should.equal(
-      rules.normaliseReviewRules([{ kind: 'email', value: 'not-an-email' }]),
-      null,
-    );
-    should.equal(
-      rules.normaliseReviewRules([{ kind: 'domain', value: 'not a domain' }]),
-      null,
-    );
-    should.equal(
-      rules.normaliseReviewRules([{ kind: 'other', value: 'x' }]),
-      null,
-    );
-    should.equal(
-      rules.normaliseReviewRules([{ kind: 'keyword', value: '  ' }]),
-      null,
-    );
+      ],
+      keywords(501),
+      [null],
+      [Object.assign(() => {}, { kind: 'keyword', value: 'x' })],
+      [{ kind: 'keyword', value: 5 }],
+      [{ kind: 'keyword', value: 'x'.repeat(255) }],
+      [{ kind: 'keyword', value: 'a\u0001' }],
+      [{ kind: 'keyword', value: 'a\u007f' }],
+      [{ kind: 'email', value: 'not-an-email' }],
+      [{ kind: 'domain', value: 'not a domain' }],
+      [{ kind: 'other', value: 'x' }],
+      [{ kind: 'keyword', value: '  ' }],
+    ])
+      should.equal(rules.normaliseReviewRules(invalid), null);
   });
 
   it('matches profile keywords, exact email addresses and exact domains', () => {
@@ -79,6 +78,15 @@ describe('Signup review rules service', () => {
         configured,
       )
       .should.deepEqual(['domain: example.test']);
+    rules
+      .matchReviewRules({ email: ' person@example.test ' }, configured)
+      .should.deepEqual(['email: person@example.test', 'domain: example.test']);
+    rules
+      .matchReviewRules(
+        { firstName: 'Fic', lastName: 'tional', email: 'x@other.test' },
+        configured,
+      )
+      .should.deepEqual([]);
   });
 
   it('matches a signup against the persisted review rules', async () => {
@@ -99,12 +107,24 @@ describe('Signup review rules service', () => {
     loaded.rules.every(rule => rule.kind === 'keyword').should.equal(true);
   });
 
-  it('falls back to built-in signup matching if saved rules cannot be loaded', async () => {
+  it('logs and falls back to built-in signup matching if saved rules cannot be loaded', async () => {
+    const error = new Error('Fictional storage failure');
     sinon.stub(SignupReviewRules, 'findById').returns({
-      lean: () => Promise.reject(new Error('Fictional storage failure')),
+      lean: () => Promise.reject(error),
     } as unknown as ReturnType<typeof SignupReviewRules.findById>);
+    const logs: unknown[][] = [];
+    const service = mockModule<typeof rules>(
+      require.resolve('../../../server/services/signup-review-rules.server.service.mts'),
+      {
+        '../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+          logs.push(args),
+      },
+    );
     const profile = { displayName: 'Fictional ordinary member' };
-    const result = await rules.matchSignupReviewRules(profile);
+    const result = await service.matchSignupReviewRules(profile);
     result.should.deepEqual(matchSignupProfile(profile));
+    logs.should.deepEqual([
+      ['error', 'Signup review rules could not be loaded.', { error }],
+    ]);
   });
 });

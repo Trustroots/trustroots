@@ -115,6 +115,7 @@ async function findUsersWithProtectedActivity(
   const queryByUser = {
     $in: userIds,
   };
+  // Stryker disable StringLiteral: select('') projects the whole document, which still holds the field addIds reads
   const [
     messagesSent,
     messagesReceived,
@@ -190,6 +191,7 @@ async function findUsersWithProtectedActivity(
       .select('user')
       .lean(),
   ]);
+  // Stryker restore StringLiteral
   const ids = new Set<string>();
   addIds(ids, messagesSent, 'userFrom');
   addIds(ids, messagesReceived, 'userTo');
@@ -224,6 +226,7 @@ async function processBatch(
     eligibleIds = eligibleIds.filter(
       userId => !newlyProtectedIds.has(userId.toString()),
     );
+    // Stryker disable next-line ConditionalExpression: deleteMany with _id $in [] deletes nothing, so deleted stays 0
     if (eligibleIds.length) {
       const deletion = await User.deleteMany({
         $and: [
@@ -260,7 +263,10 @@ service.run = async function ({
 }: RunOptions = {}): Promise<BatchResult> {
   const User = mongoose.model<UserServerRecord>('User');
   const cursor = User.find(candidateQuery())
-    .select('_id')
+    .select(
+      // Stryker disable next-line StringLiteral: select('') returns whole documents; only _id is read
+      '_id',
+    )
     .sort({
       created: 1,
       _id: 1,
@@ -303,7 +309,10 @@ export async function previewAdminBatch(after?: Types.ObjectId) {
     ? { $and: [candidateQuery(), { _id: { $gt: after } }] }
     : candidateQuery();
   const rows = await User.find(query)
-    .select('_id username created seen')
+    .select(
+      // Stryker disable next-line StringLiteral: select('') returns whole documents; only these four fields are read
+      '_id username created seen',
+    )
     .sort({ _id: 1 })
     .limit(SPAM_CLEANUP_SCAN_SIZE + 1)
     .maxTimeMS(10000)
@@ -331,6 +340,7 @@ export async function deleteAdminBatch(
   inactiveOnly: boolean | 'unknown-login' = false,
 ) {
   const User = mongoose.model<UserServerRecord>('User');
+  // Stryker disable next-line ConditionalExpression: an empty id list finds no users and processBatch([]) deletes nothing, giving the same zero result
   if (!ids.length) return { deleted: 0, skipped: 0 };
   const current = await User.find({
     $and: [
@@ -345,7 +355,10 @@ export async function deleteAdminBatch(
         : []),
     ],
   })
-    .select('_id')
+    .select(
+      // Stryker disable next-line StringLiteral: select('') returns whole documents; only _id is read
+      '_id',
+    )
     .maxTimeMS(10000)
     .lean();
   const result = await processBatch(
