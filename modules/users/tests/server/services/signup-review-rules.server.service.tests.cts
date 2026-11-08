@@ -109,7 +109,7 @@ describe('Signup review rules service', () => {
 
   it('logs and falls back to built-in signup matching if saved rules cannot be loaded', async () => {
     const error = new Error('Fictional storage failure');
-    sinon.stub(SignupReviewRules, 'findById').returns({
+    const findById = sinon.stub(SignupReviewRules, 'findById').returns({
       lean: () => Promise.reject(error),
     } as unknown as ReturnType<typeof SignupReviewRules.findById>);
     const logs: unknown[][] = [];
@@ -123,6 +123,7 @@ describe('Signup review rules service', () => {
     const profile = { displayName: 'Fictional ordinary member' };
     const result = await service.matchSignupReviewRules(profile);
     result.should.deepEqual(matchSignupProfile(profile));
+    findById.calledOnceWithExactly('signup-review').should.be.true();
     logs.should.deepEqual([
       ['error', 'Signup review rules could not be loaded.', { error }],
     ]);
