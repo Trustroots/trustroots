@@ -882,9 +882,6 @@ importers:
       '@trustroots/offers':
         specifier: workspace:*
         version: link:../offers
-      '@trustroots/references-thread':
-        specifier: workspace:*
-        version: link:../references-thread
       '@trustroots/search':
         specifier: workspace:*
         version: link:../search

@@ -2925,28 +2925,6 @@ const features = [
     relatedSpecs: [],
   },
   {
-    id: 'admin.spam-cleanup',
-    area: AREA.adminModeration,
-    status: STATUS.active,
-    description:
-      'Administrators review and explicitly delete eligible historical spam accounts.',
-    roles: ['admin'],
-    references: {
-      clientRoutes: [
-        clientRoute('admin', '/admin/spam-cleanup', source.adminClient, {
-          requiresAuth: true,
-          requiresRole: 'admin',
-        }),
-      ],
-      apiRoutes: [],
-    },
-    requiredScenarios: [
-      'Administrators sort the full cleanup preview while selections persist across pages.',
-      'Administrators explicitly delete reviewed eligible spam accounts while protected accounts remain.',
-    ],
-    relatedSpecs: [],
-  },
-  {
     id: 'admin.dashboard',
     area: AREA.adminModeration,
     status: STATUS.active,
@@ -2963,6 +2941,8 @@ const features = [
     },
     requiredScenarios: [
       'Admin dashboard loads for admin.',
+      'Dashboard search shows all matching members.',
+      'The historical spam cleanup page and API are unavailable.',
       'Regular member is denied access to admin tools.',
       'Guest direct loads of React-owned admin pages redirect to sign in.',
       'Authenticated non-admin direct loads of React-owned admin pages redirect away.',
@@ -2971,6 +2951,14 @@ const features = [
       'Dashboard previews negative-experience feedback.',
     ],
     relatedSpecs: [
+      spec(
+        'admin-search.spec.js',
+        'dashboard search includes suspended matches without a spam filter',
+      ),
+      spec(
+        'admin-pages.spec.js',
+        'retired historical spam cleanup is unavailable',
+      ),
       spec(
         'admin-pages.spec.js',
         'admin dashboard welcomes the signed in admin',

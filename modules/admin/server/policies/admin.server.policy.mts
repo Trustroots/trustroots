@@ -96,8 +96,6 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/signup-review-rules',
           permissions: ['get', 'put'],
         },
-        { resources: '/api/admin/spam-cleanup/preview', permissions: ['post'] },
-        { resources: '/api/admin/spam-cleanup/apply', permissions: ['post'] },
         {
           resources: '/api/admin/support-import/preview',
           permissions: ['post'],

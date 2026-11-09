@@ -19,7 +19,6 @@
     "@trustroots/experiences": "workspace:*",
     "@trustroots/messages": "workspace:*",
     "@trustroots/offers": "workspace:*",
-    "@trustroots/references-thread": "workspace:*",
     "@trustroots/search": "workspace:*",
     "@trustroots/stats": "workspace:*",
     "@trustroots/support": "workspace:*",

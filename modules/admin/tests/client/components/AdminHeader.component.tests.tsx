@@ -45,13 +45,7 @@ describe('<AdminHeader />', () => {
       ['Outreach', ['Acquisition stories', 'Newsletter', 'SparkPost']],
       [
         'Audit',
-        [
-          'Audit log',
-          'Username changes',
-          'Gravatar',
-          'Spam account cleanup',
-          'Signup watchlist',
-        ],
+        ['Audit log', 'Username changes', 'Gravatar', 'Signup watchlist'],
       ],
     ] as const) {
       const group = within(screen.getByRole('list', { name }));

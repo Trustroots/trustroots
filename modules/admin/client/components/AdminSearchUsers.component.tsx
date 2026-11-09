@@ -9,7 +9,6 @@ import AdminHeader from './AdminHeader.component.js';
 import AdminUserResultsTable from './AdminUserResultsTable.component.js';
 import {
   SEARCH_STRING_LIMIT,
-  isObviousSpamUser,
   normalizeAdminQuery,
 } from './userSearch.helpers.js';
 import { Button } from '@trustroots/ui/Button';
@@ -54,7 +53,6 @@ interface SearchUsersRouteProps extends SearchUsersProps {
 }
 
 interface SearchUsersState {
-  hideObviousSpamUsers: boolean;
   role: string;
   search: string;
   sort: MemberSort;
@@ -90,15 +88,12 @@ export class SearchUsersContent extends Component<
   constructor(props: SearchUsersRouteProps) {
     super(props);
     this.onSearchChange = this.onSearchChange.bind(this);
-    this.onHideObviousSpamUsersChange =
-      this.onHideObviousSpamUsersChange.bind(this);
     this.onRoleChange = this.onRoleChange.bind(this);
     this.onPageChange = this.onPageChange.bind(this);
     this.onSortChange = this.onSortChange.bind(this);
     this.doSearch = this.doSearch.bind(this);
     this.doListUsersByRole = this.doListUsersByRole.bind(this);
     this.state = {
-      hideObviousSpamUsers: true,
       role: 'admin',
       search: '',
       sort: DEFAULT_MEMBER_LIST_SORT,
@@ -128,10 +123,6 @@ export class SearchUsersContent extends Component<
   onSearchChange(event: ChangeEvent<HTMLInputElement>) {
     const search = event.target.value;
     this.setState({ search });
-  }
-
-  onHideObviousSpamUsersChange(event: ChangeEvent<HTMLInputElement>) {
-    this.setState({ hideObviousSpamUsers: event.target.checked });
   }
 
   onPageChange(page: number) {
@@ -219,23 +210,8 @@ export class SearchUsersContent extends Component<
 
   render() {
     const { showHeading } = this.props;
-    const {
-      hideObviousSpamUsers,
-      sort,
-      userResults,
-      userResultsPagination,
-      userResultsSource,
-    } = this.state;
+    const { sort, userResults, userResultsPagination } = this.state;
     const normalizedSearch = normalizeAdminQuery(this.state.search);
-    const shouldHideObviousSpamUsers =
-      hideObviousSpamUsers && userResultsSource === 'search';
-    const visibleUserResults = shouldHideObviousSpamUsers
-      ? userResults.filter(user => !isObviousSpamUser(user))
-      : userResults;
-    const hiddenObviousSpamUserCount =
-      userResultsSource === 'search'
-        ? userResults.length - visibleUserResults.length
-        : 0;
 
     return (
       <>
@@ -260,16 +236,6 @@ export class SearchUsersContent extends Component<
               >
                 Search
               </Button>
-              <div className="checkbox">
-                <label>
-                  <input
-                    checked={hideObviousSpamUsers}
-                    onChange={this.onHideObviousSpamUsersChange}
-                    type="checkbox"
-                  />{' '}
-                  Hide obvious spam
-                </label>
-              </div>
             </form>
           </div>
           <div className="col-xs-12 col-md-6">
@@ -302,14 +268,8 @@ export class SearchUsersContent extends Component<
           showUserState
           showZendeskActions
           sort={sort}
-          userResults={visibleUserResults}
+          userResults={userResults}
         />
-
-        {hiddenObviousSpamUserCount > 0 && (
-          <p className="text-muted">
-            {hiddenObviousSpamUserCount} likely spam hidden.
-          </p>
-        )}
       </>
     );
   }

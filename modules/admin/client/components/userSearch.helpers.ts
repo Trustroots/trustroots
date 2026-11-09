@@ -14,8 +14,6 @@ interface AdminUserCandidate {
   username?: string;
   email?: string;
   emailTemporary?: string;
-  displayName?: string;
-  public?: boolean;
   roles?: string[];
   profile?: { roles?: string[] };
 }
@@ -87,21 +85,6 @@ export function formatAdminDate(date?: Date | string | number | null) {
     return date.toISOString().slice(0, 10);
   }
   return String(date).slice(0, 10);
-}
-
-export function isObviousSpamUser(user: AdminUserCandidate) {
-  const displayName = user.displayName || '';
-  const roles = user.roles || [];
-
-  return (
-    (roles.includes('suspended') &&
-      !user.public &&
-      user.emailTemporary &&
-      user.emailTemporary === user.email) ||
-    /(https?:\/\/|bit\.ly\/|tinyurl\.com\/|t\.co\/)/i.test(displayName) ||
-    (/\b(hot|pretty)\b/i.test(displayName) &&
-      /\b(date|meet|waiting|gaze)\b/i.test(displayName))
-  );
 }
 
 export function isSuspendedUser(user: AdminUserCandidate | null | undefined) {

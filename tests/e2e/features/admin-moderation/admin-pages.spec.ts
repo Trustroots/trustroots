@@ -46,6 +46,33 @@ test.describe('admin moderation page flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('retired historical spam cleanup is unavailable', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'The historical spam cleanup page and API are unavailable.',
+    ]);
+
+    await gotoAdminPage(page, '/admin', /\/admin$/);
+    await expect(
+      page.getByRole('heading', { name: 'Admin Dashboard' }),
+    ).toBeVisible();
+    await expect(page.locator('a[href="/admin/spam-cleanup"]')).toHaveCount(0);
+
+    await page.goto('/admin/spam-cleanup');
+    await expect(
+      page.getByRole('heading', { name: 'This page cannot be found.' }),
+    ).toBeVisible();
+
+    for (const action of ['preview', 'apply']) {
+      const response = await page.request.post(
+        `/api/admin/spam-cleanup/${action}`,
+        { data: {} },
+      );
+      expect(response.status()).toBe(404);
+    }
+  });
+
   test('admin dashboard welcomes the signed in admin', async ({
     page,
   }, testInfo) => {
