@@ -333,7 +333,7 @@ test.describe.serial('message action feature coverage', () => {
     const message = await page.request.post('/api/messages', {
       data: {
         userTo: recipientId,
-        content: `${marker} <a href="https://outside.example.test/">outside.example.test</a> <a href="/safety">Internal label</a>`,
+        content: `${marker} <a href="https://outside.example.test/">outside.example.test</a> <a href="/safety">Internal label</a> https://team.trustroots.org/apps/`,
       },
     });
     expect(message.ok()).toBeTruthy();
@@ -344,10 +344,13 @@ test.describe.serial('message action feature coverage', () => {
     });
     await expect(body).toBeVisible();
     await expect(body).toContainText('outside.example.test');
-    await expect(body.getByRole('link')).toHaveCount(1);
+    await expect(body.getByRole('link')).toHaveCount(2);
     await expect(
       body.getByRole('link', { name: 'Internal label' }),
     ).toHaveAttribute('href', '/safety');
+    await expect(
+      body.getByRole('link', { name: 'team.trustroots.org/apps' }),
+    ).toHaveAttribute('href', 'https://team.trustroots.org/apps/');
   });
 
   test('direct conversation links change the recipient and clear the previous draft', async ({

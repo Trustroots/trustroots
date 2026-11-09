@@ -13,6 +13,8 @@ describe('message links', () => {
     'http://www.trustroots.org/rules',
     '//www.trustroots.org/safety',
     'https://WWW.TRUSTROOTS.ORG/faq',
+    'https://team.trustroots.org/apps/',
+    'https://nested.team.trustroots.org/',
   ])('keeps the Trustroots destination %s clickable', href => {
     const content = `<p><a href="${href}"><b>Guidance</b></a></p>`;
     expect(disableExternalLinks(content)).toBe(content);
@@ -24,7 +26,8 @@ describe('message links', () => {
     'https://www.trustroots.org.example.com/',
     'https://othertrustroots.org/',
     'https://trustroots.org@outside.example/',
-    'https://unrelated.trustroots.org/',
+    'https://team.trustroots.org.example.com/',
+    'ftp://team.trustroots.org/',
     'ftp://trustroots.org/',
     'mailto:member@trustroots.org',
     'javascript:alert(1)',

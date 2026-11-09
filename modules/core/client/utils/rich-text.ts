@@ -45,7 +45,8 @@ export function disableUserContentLinks(
           if (
             ['http:', 'https:'].includes(url.protocol) &&
             (url.origin === window.location.origin ||
-              ['trustroots.org', 'www.trustroots.org'].includes(url.hostname))
+              url.hostname === 'trustroots.org' ||
+              url.hostname.endsWith('.trustroots.org'))
           ) {
             continue;
           }
