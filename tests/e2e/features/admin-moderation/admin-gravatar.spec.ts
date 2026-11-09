@@ -26,7 +26,8 @@ test('administrators can count and inspect Gravatar members', async ({
   );
   const imageRequests: string[] = [];
   page.on('request', outgoing => {
-    if (new URL(outgoing.url()).hostname.endsWith('gravatar.com'))
+    const { hostname } = new URL(outgoing.url());
+    if (hostname === 'gravatar.com' || hostname.endsWith('.gravatar.com'))
       imageRequests.push(outgoing.url());
   });
   try {
