@@ -66,6 +66,20 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       '../../server/controllers/users.unified-push.server.controller.mts',
     ).should.deepEqual(['configuration', 'add', 'remove']);
   });
+  it('connects the transport to the real web-push delivery functions', function () {
+    const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
+    const transport = mockModule<
+      typeof import('../../server/services/web-push.server.transport.mts')
+    >(
+      require.resolve('../../server/services/web-push.server.transport.mts'),
+      {},
+    );
+    const nativePush: typeof import('web-push') = require('web-push');
+    transport.webPush.should.deepEqual({
+      sendNotification: nativePush.sendNotification,
+      setVapidDetails: nativePush.setVapidDetails,
+    });
+  });
   it('reports configuration and rejects registration when disabled', async function () {
     config.webPush.privateKey = '';
     const settings = await agent.get('/api/users/unified-push').expect(200);
