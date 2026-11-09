@@ -17,17 +17,8 @@ const winston: typeof import('winston') = require('winston');
 const unifiedPush: typeof import('./../../../../users/server/services/unified-push.server.service.mjs') = require('./../../../../users/server/services/unified-push.server.service.mjs');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
 const mongoose: typeof import('mongoose') = require('mongoose');
-type WebPushService = {
-  sendNotification(
-    subscription: {
-      endpoint: string;
-      keys?: { p256dh?: string; auth?: string };
-    },
-    payload?: string,
-  ): Promise<void>;
-  setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
-};
-const webPush: WebPushService = require('web-push');
+const webPush: typeof import('../../../../users/server/services/web-push.server.transport.mts').webPush =
+  require('../../../../users/server/services/web-push.server.transport.mts').webPush;
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Message = mongoose.model<MessageRecord, MessageModel>('Message');
 const Registration = mongoose.model('UnifiedPushRegistration');

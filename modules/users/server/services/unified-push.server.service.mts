@@ -1,7 +1,7 @@
 import mongoose, { type Types } from 'mongoose';
-import webPush from 'web-push';
 import config from './../../../../config/config.mts';
 import log from './../../../../config/lib/logger.mjs';
+import { webPush } from './web-push.server.transport.mts';
 interface UnifiedPushRegistrationRecord {
   _id: Types.ObjectId;
   user: Types.ObjectId;
