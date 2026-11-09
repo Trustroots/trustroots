@@ -12,6 +12,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import org.trustroots.android.ui.LocalTransportFixture
 import org.trustroots.android.ui.MemberShellViewModelStoreOwner
 import org.trustroots.android.ui.session.AndroidAppSessionOperations
@@ -89,8 +91,64 @@ class SecureMobileSessionStoreTest {
             LocalTransportFixture.Response("""{"accessToken":"new-access","refreshToken":"new-refresh","member":{"username":"quiet-fox","displayName":"Quiet Fox"}}""")
         }.use { local ->
             val refreshed = operations(local.baseURL).loadSession()
-            assertEquals(saved.copy(accessToken = "new-access", refreshToken = "new-refresh"), refreshed)
+            assertEquals(
+                saved.copy(accessToken = "new-access", refreshToken = "new-refresh", localSessionId = saved.sessionId),
+                refreshed,
+            )
             assertEquals(refreshed, store.load())
+        }
+    }
+
+    @Test
+    fun concurrentRequestsRefreshOnceAndRetryWithPersistedCredentials() = runBlocking {
+        val saved = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "old-access", "old-refresh")
+        store.save(saved)
+        val account = """{"username":"quiet-fox","displayName":"Quiet Fox","email":"fox@example.invalid"}"""
+        LocalTransportFixture { request ->
+            when {
+                request.path == "/api/mobile/v0/auth/refresh" -> {
+                    assertEquals("old-refresh", org.json.JSONObject(request.body).getString("refreshToken"))
+                    LocalTransportFixture.Response(
+                        """{"accessToken":"new-access","refreshToken":"new-refresh","member":$account}""",
+                    )
+                }
+                request.authorization == "Bearer old-access" -> LocalTransportFixture.Response("{}", 401)
+                else -> {
+                    assertEquals("Bearer new-access", request.authorization)
+                    LocalTransportFixture.Response(account)
+                }
+            }
+        }.use { local ->
+            val results = List(4) {
+                async {
+                    MobileApiClient(local.baseURL, sessionStore = store)
+                        .updateAccount(saved, "fox@example.invalid", newsletter = true).getOrThrow()
+                }
+            }.awaitAll()
+            assertTrue(results.all { it.username == saved.member.username })
+            assertEquals(1, local.requests.count { it.path == "/api/mobile/v0/auth/refresh" })
+            assertEquals(4, local.requests.count { it.authorization == "Bearer new-access" })
+            val accountRequests = local.requests.filter { it.authorization != null }
+            assertTrue(accountRequests.all { it.method == "PUT" && it.path == accountRequests.first().path })
+            assertEquals(setOf("""{"email":"fox@example.invalid","newsletter":true}"""), accountRequests.map { it.body }.toSet())
+            assertEquals("new-refresh", SecureMobileSessionStore(context).load()?.refreshToken)
+            store.updateMember(saved.copy(member = saved.member.copy(displayName = "Updated Fox")))
+            assertEquals("new-access", store.load()?.accessToken)
+            assertEquals("Updated Fox", store.load()?.member?.displayName)
+        }
+    }
+
+    @Test
+    fun temporaryRefreshFailureDuringAnAuthenticatedRequestKeepsTheSavedSession() = runBlocking {
+        val saved = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "old-access", "old-refresh")
+        store.save(saved)
+        LocalTransportFixture { request ->
+            LocalTransportFixture.Response("{}", if (request.authorization == null) 503 else 401)
+        }.use { local ->
+            val result = MobileApiClient(local.baseURL, sessionStore = store).accountDetails(saved)
+            assertEquals(503, (result.exceptionOrNull() as MobileApiException).statusCode)
+            assertEquals(saved, store.load())
+            assertEquals(2, local.requests.size)
         }
     }
 

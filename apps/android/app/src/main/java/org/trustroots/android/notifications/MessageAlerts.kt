@@ -155,7 +155,8 @@ object MessageAlerts {
         registerDistributor: (String) -> Unit,
     ) {
         scope.launch {
-            val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull()
+            val api = MobileApiClient(apiBaseUrl, sessionStore = SecureMobileSessionStore(activity))
+            val key = api.messagePushConfiguration(session).getOrNull()
             activity.runOnUiThread {
                 if (key.isNullOrBlank()) {
                     onResult(MessageAlertStatusMetadata(R.string.message_alerts_not_configured))
@@ -210,7 +211,8 @@ object MessageAlerts {
             return null
         }
         return scope.launch {
-            val key = MobileApiClient(apiBaseUrl).messagePushConfiguration(session).getOrNull() ?: return@launch
+            val api = MobileApiClient(apiBaseUrl, sessionStore = SecureMobileSessionStore(context))
+            val key = api.messagePushConfiguration(session).getOrNull() ?: return@launch
             if (hasSavedDistributor()) {
                 registerDistributor(key)
             }
@@ -233,7 +235,8 @@ object MessageAlerts {
         statusMetadata.value = null
         unregisterDistributor()
         if (oldEndpoint != null) {
-            MobileApiClient(apiBaseUrl).unregisterMessagePush(session, oldEndpoint)
+            val api = MobileApiClient(apiBaseUrl, sessionStore = SecureMobileSessionStore(context))
+            api.unregisterMessagePush(session, oldEndpoint)
         }
     }
 
@@ -255,7 +258,7 @@ object MessageAlerts {
             return
         }
         scope.launch {
-            val api = MobileApiClient(apiBaseUrl)
+            val api = MobileApiClient(apiBaseUrl, sessionStore = SecureMobileSessionStore(context))
             handleMessageEndpointRegistration(
                 account = account,
                 endpointUrl = newEndpoint.url,
@@ -304,7 +307,8 @@ object MessageAlerts {
             scope.launch {
                 val session = loadSession() ?: return@launch
                 if (session.member.username == account) {
-                    MobileApiClient(apiBaseUrl).unregisterMessagePush(session, it)
+                    val api = MobileApiClient(apiBaseUrl, sessionStore = SecureMobileSessionStore(context))
+                    api.unregisterMessagePush(session, it)
                 }
             }
         }

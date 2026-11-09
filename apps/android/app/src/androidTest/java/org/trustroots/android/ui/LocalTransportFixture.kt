@@ -16,7 +16,13 @@ import kotlin.concurrent.thread
 internal class LocalTransportFixture(
     private val respond: (Request) -> Response?,
 ) : Closeable {
-    data class Request(val method: String, val path: String, val body: String, val cookie: String?)
+    data class Request(
+        val method: String,
+        val path: String,
+        val body: String,
+        val cookie: String?,
+        val authorization: String?,
+    )
     data class Response(
         val body: String,
         val status: Int = 200,
@@ -46,6 +52,7 @@ internal class LocalTransportFixture(
                         val first = readLine(input) ?: throw EOFException("Missing fixture request line")
                         var length = 0
                         var cookie: String? = null
+                        var authorization: String? = null
                         while (true) {
                             val header = readLine(input) ?: throw EOFException("Incomplete fixture headers")
                             if (header.isEmpty()) break
@@ -53,6 +60,8 @@ internal class LocalTransportFixture(
                                 length = header.substringAfter(':').trim().toInt()
                             } else if (header.startsWith("Cookie:", ignoreCase = true)) {
                                 cookie = header.substringAfter(':').trim()
+                            } else if (header.startsWith("Authorization:", ignoreCase = true)) {
+                                authorization = header.substringAfter(':').trim()
                             }
                         }
                         val bytes = ByteArray(length)
@@ -67,6 +76,7 @@ internal class LocalTransportFixture(
                             first.substringAfter(' ').substringBefore(' '),
                             String(bytes, Charsets.UTF_8),
                             cookie,
+                            authorization,
                         )
                         requests += request
                         // Returning null closes the socket before a status line is sent.
