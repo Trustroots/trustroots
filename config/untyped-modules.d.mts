@@ -274,19 +274,16 @@ declare module 'web-push' {
   interface SendOptions {
     TTL?: number;
   }
-  const webPush: {
-    setVapidDetails(
-      subject: string,
-      publicKey: string,
-      privateKey: string,
-    ): void;
-    sendNotification(
-      subscription: PushSubscription,
-      payload: string,
-      options?: SendOptions,
-    ): Promise<unknown>;
-  };
-  export default webPush;
+  export function setVapidDetails(
+    subject: string,
+    publicKey: string,
+    privateKey: string,
+  ): void;
+  export function sendNotification(
+    subscription: PushSubscription,
+    payload: string,
+    options?: SendOptions,
+  ): Promise<unknown>;
 }
 
 declare module 'gm' {

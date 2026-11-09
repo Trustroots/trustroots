@@ -6,16 +6,8 @@ require('should');
 const sinon: typeof import('sinon') = require('sinon');
 const winston: typeof import('winston') = require('winston');
 const request: typeof import('supertest') = require('supertest');
-const webPush: {
-  sendNotification(
-    subscription: {
-      endpoint: string;
-      keys: { p256dh: string; auth: string };
-    },
-    payload: string,
-  ): Promise<unknown>;
-  setVapidDetails(subject: string, publicKey: string, privateKey: string): void;
-} = require('web-push');
+const webPush: typeof import('../../server/services/web-push.server.transport.mts').webPush =
+  require('../../server/services/web-push.server.transport.mts').webPush;
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const express: typeof import('../../../../config/lib/express.mjs').default = require('../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
