@@ -61,7 +61,7 @@ jobs:
             "${args[@]}" "${targets[@]}"
       - name: Upload code scanning results
         if: ${{ !cancelled() && hashFiles('semgrep.sarif') != '' }}
-        uses: github/codeql-action/upload-sarif@8498dc4c2b27cdd99baf0f87955b29ebbf30c78d # v4.39.1
+        uses: github/codeql-action/upload-sarif@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           sarif_file: semgrep.sarif
           category: semgrep
