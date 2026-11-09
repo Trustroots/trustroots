@@ -4,6 +4,7 @@ import type { Request, Response } from 'express';
 const mongoose: typeof import('mongoose') = require('mongoose');
 require('should');
 const sinon: typeof import('sinon') = require('sinon');
+const winston: typeof import('winston') = require('winston');
 const request: typeof import('supertest') = require('supertest');
 const webPush: {
   sendNotification(
@@ -56,11 +57,31 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     config.webPush = originalConfiguration;
     await utils.clearDatabase();
   });
+  it('exposes the service and controller from a fresh module load', function () {
+    const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
+    const keysOf = (path: string) =>
+      Object.keys(mockModule<object>(require.resolve(path), {}));
+    keysOf(
+      '../../server/services/unified-push.server.service.mts',
+    ).should.deepEqual([
+      'pushConfiguration',
+      'validRegistration',
+      'register',
+      'unregister',
+      'notifyUnread',
+    ]);
+    keysOf(
+      '../../server/controllers/users.unified-push.server.controller.mts',
+    ).should.deepEqual(['configuration', 'add', 'remove']);
+  });
   it('reports configuration and rejects registration when disabled', async function () {
     config.webPush.privateKey = '';
     const settings = await agent.get('/api/users/unified-push').expect(200);
     settings.body.enabled.should.equal(false);
-    await agent.post('/api/users/unified-push').send(registration).expect(503);
+    await agent
+      .post('/api/users/unified-push')
+      .send(registration)
+      .expect(503, { message: 'Message alerts are not configured.' });
     config.webPush = {
       ...originalConfiguration,
       publicKey: '',
@@ -70,7 +91,12 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     (missingKey.body.publicKey === null).should.equal(true);
   });
   it('rejects unsafe endpoints and invalid keys', async function () {
-    push.validRegistration(registration).should.equal(true);
+    for (const endpoint of [
+      registration.endpoint,
+      `https://ntfy.sh/${'x'.repeat(2048 - 16)}`,
+    ]) {
+      push.validRegistration({ ...registration, endpoint }).should.equal(true);
+    }
     for (const changes of [
       {
         endpoint: 'http://ntfy.sh/a',
@@ -96,12 +122,11 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       {
         endpoint: `https://ntfy.sh/${'x'.repeat(2050)}`,
       },
-      {
-        publicKey: 'bad',
-      },
-      {
-        auth: 'bad',
-      },
+      ...[[key], `!${key}`, `${key}!`].map(publicKey => ({ publicKey })),
+      ...['bad', [registration.auth], `!${registration.auth}`].map(auth => ({
+        auth,
+      })),
+      { auth: `${registration.auth}!` },
     ]) {
       push
         .validRegistration({
@@ -116,8 +141,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
         ...registration,
         endpoint: 'http://ntfy.sh/a',
       })
-      .expect(400);
-    await agent.post('/api/users/unified-push').send({}).expect(400);
+      .expect(400, { message: 'Invalid push endpoint or encryption keys.' });
   });
   it('rejects requests without a parsed body', async function () {
     const controller: {
@@ -147,7 +171,12 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       })
       .expect(204);
     (await Registration.countDocuments()).should.equal(0);
-    await agent.delete('/api/users/unified-push').send({}).expect(400);
+    for (const body of [{}, { endpoint: 42 }]) {
+      await agent
+        .delete('/api/users/unified-push')
+        .send(body)
+        .expect(400, { message: 'Endpoint is required.' });
+    }
   });
   it('does not remove another member’s endpoint', async function () {
     await push.register(other._id, registration);
@@ -163,7 +192,10 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     const save = sinon
       .stub(Registration, 'findOneAndUpdate')
       .rejects(new Error('database unavailable'));
-    await agent.post('/api/users/unified-push').send(registration).expect(500);
+    await agent
+      .post('/api/users/unified-push')
+      .send(registration)
+      .expect(500, { message: 'Could not register message alerts.' });
     save.restore();
     sinon
       .stub(Registration, 'deleteOne')
@@ -173,37 +205,56 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       .send({
         endpoint: registration.endpoint,
       })
-      .expect(500);
+      .expect(500, { message: 'Could not remove message alerts.' });
   });
   it('sends an encrypted generic payload and removes a gone endpoint', async function () {
-    await push.register(user._id, registration);
+    const othersEndpoint = `${registration.endpoint}-other`;
+    await push.register(other._id, {
+      ...registration,
+      endpoint: othersEndpoint,
+    });
     const sent = sinon.stub(webPush, 'sendNotification').resolves();
-    sinon.stub(webPush, 'setVapidDetails');
-    await push.notifyUnread(user._id, other._id);
-    sent.calledOnce.should.equal(true);
-    sent.firstCall.args[0].keys.should.deepEqual({
-      p256dh: key,
-      auth: registration.auth,
-    });
-    sent.firstCall.args[1].should.equal(
-      JSON.stringify({
-        senderId: other._id.toString(),
-      }),
-    );
-    sent.rejects({
-      statusCode: 410,
-    });
-    await push.notifyUnread(user._id, other._id);
-    (await Registration.countDocuments()).should.equal(0);
+    const vapid = sinon.stub(webPush, 'setVapidDetails');
+    for (const statusCode of [404, 410]) {
+      await push.register(user._id, registration);
+      sent.resetHistory();
+      await push.notifyUnread(user._id, other._id);
+      sent.calledOnce.should.equal(true);
+      sent.firstCall.args.should.deepEqual([
+        {
+          endpoint: registration.endpoint,
+          keys: { p256dh: key, auth: registration.auth },
+        },
+        JSON.stringify({ senderId: other._id.toString() }),
+        { TTL: 3600 },
+      ]);
+      vapid.lastCall.args.should.deepEqual([
+        config.webPush.subject,
+        config.webPush.publicKey,
+        config.webPush.privateKey,
+      ]);
+      sent.rejects({ statusCode });
+      await push.notifyUnread(user._id, other._id);
+      sent.resolves();
+      (await Registration.find())
+        .map(r => r.endpoint)
+        .should.deepEqual([othersEndpoint]);
+    }
   });
   it('keeps registrations after a temporary push failure', async function () {
     await push.register(user._id, registration);
-    sinon.stub(webPush, 'sendNotification').rejects({
-      statusCode: 503,
-    });
+    const failure = { statusCode: 503 };
+    sinon.stub(webPush, 'sendNotification').rejects(failure);
     sinon.stub(webPush, 'setVapidDetails');
+    const log = sinon.stub(winston.Logger.prototype, 'log');
     await push.notifyUnread(user._id, other._id);
     (await Registration.countDocuments()).should.equal(1);
+    log.calledOnce.should.equal(true);
+    (log.firstCall.args as unknown[]).should.eql([
+      'error',
+      'UnifiedPush unread-message delivery failed.',
+      { error: failure },
+    ]);
   });
   it('does not send when Web Push is disabled', async function () {
     config.webPush.privateKey = '';

@@ -35,7 +35,16 @@ const Tribe = mongoose.model<
   import('../../../../testutils/server/model-contracts.mts').TribeModel
 >('Tribe');
 const UnifiedPushRegistration = mongoose.model('UnifiedPushRegistration');
+const createPushRegistration = (user: unknown) =>
+  UnifiedPushRegistration.create({
+    user,
+    endpoint: `https://ntfy.sh/anonymous-${String(user)}`,
+    publicKey:
+      'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+    auth: 'abcdefghijklmnopqrstuv',
+  });
 
+const nip19: typeof import('nostr-tools/nip19') = require('nostr-tools/nip19');
 const validNpub =
   'npub1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqzqujme';
 
@@ -185,6 +194,9 @@ function stubSearch(
 
 const controllerPath =
   './../../server/controllers/users.profile.server.controller.mjs';
+const controllerModulePath =
+  '../../server/controllers/users.profile.server.controller.mts';
+const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 const emailServicePath =
   './../../../core/server/services/email.server.service.mjs';
 
@@ -203,6 +215,24 @@ function stubControllerDependencies<
   }
   return require(controllerPath);
 }
+
+const statServicePath =
+  './../../../stats/server/services/stats.server.service.mts';
+function recordStats(): unknown[] {
+  const stats: unknown[] = [];
+  stubControllerDependencies(controllerPath, {
+    [statServicePath]: {
+      stat: (payload: unknown, cb: () => void) => {
+        stats.push(payload);
+        cb();
+      },
+    },
+  });
+  return stats;
+}
+const {
+  usernameFormatMessage,
+}: typeof import('../../server/services/authentication.server.service.mjs') = require('../../server/services/authentication.server.service.mjs');
 
 describe('Profile controller unit tests', () => {
   afterEach(() => {
@@ -228,6 +258,109 @@ describe('Profile controller unit tests', () => {
     });
   });
 
+  describe('deleteUserAccount cleanup', () => {
+    const cleanupSteps = ['push', 'offers', 'contacts', 'email'] as const;
+    type CleanupStep = (typeof cleanupSteps)[number];
+    // A fresh controller whose logger records calls; the logger cannot be stubbed in place.
+    function loadRemoval(failing?: CleanupStep) {
+      const logs: unknown[][] = [];
+      const error = new Error(`${failing} cleanup failed`);
+      const done =
+        (step: CleanupStep) =>
+        (_id: unknown, cb: (error: Error | null) => void) =>
+          cb(step === failing ? error : null);
+      if (failing === 'push')
+        sinon.stub(UnifiedPushRegistration, 'deleteMany').rejects(error);
+      const controller = mockModule<typeof profileController>(
+        require.resolve(controllerModulePath),
+        {
+          './../../../offers/server/controllers/offers.server.controller.mjs': {
+            removeAllByUserId: done('offers'),
+          },
+          './../../../contacts/server/controllers/contacts.server.controller.mjs':
+            { removeAllByUserId: done('contacts') },
+          [emailServicePath]: { sendRemoveProfileConfirmed: done('email') },
+          './../../../../config/lib/logger.mjs': (...args: unknown[]) =>
+            logs.push(args),
+        },
+      );
+      return { controller, logs, error };
+    }
+
+    for (const failing of [undefined, ...cleanupSteps]) {
+      it(`removes the account and logs ${failing || 'no'} best-effort cleanup failure`, async () => {
+        const [other, saved] = await utils.saveUsers(utils.generateUsers(2));
+        await User.updateOne(
+          { _id: saved._id },
+          {
+            removeProfileToken: 'remove-token',
+            removeProfileExpires: new Date(Date.now() + 3600000),
+          },
+        );
+        await createPushRegistration(other._id);
+        const { controller, logs, error } = loadRemoval(failing);
+
+        const { res } = await runHandler(res =>
+          controller.removeProfile(
+            { user: { _id: saved._id }, params: { token: 'remove-token' } },
+            res,
+          ),
+        );
+
+        res.statusCode.should.equal(200);
+        logs.should.deepEqual(
+          failing
+            ? [
+                [
+                  'error',
+                  'Account removed but related cleanup failed.',
+                  { userId: String(saved._id), error },
+                ],
+              ]
+            : [],
+        );
+        should.not.exist(await User.exists({ _id: saved._id }));
+        if (failing !== 'push')
+          (
+            await UnifiedPushRegistration.countDocuments({ user: other._id })
+          ).should.equal(1);
+      });
+    }
+
+    it('builds the space-separated profile field lists when it loads', () => {
+      const { controller } = loadRemoval();
+      for (const [fields, field] of [
+        [controller.userProfileFields, 'tagline'],
+        [controller.userListingProfileFields, 'birthdate'],
+        [controller.userSearchProfileFields, 'locationFrom'],
+      ])
+        fields.split(' ').should.containEql(field);
+    });
+
+    for (const roles of [['user'], ['suspended'], ['suspended', 'admin']]) {
+      const suspended = roles.join() === 'suspended';
+      it(`administrator deletion ${suspended ? 'removes' : 'refuses'} an account with roles ${roles}`, async () => {
+        const { deleteUserAccount } =
+          await import('../../server/controllers/users.profile.server.controller.mts');
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        await User.updateOne({ _id: saved._id }, { roles });
+        const removal = deleteUserAccount(
+          (await findUser(saved._id)) as unknown as Parameters<
+            typeof deleteUserAccount
+          >[0],
+          true,
+        );
+        if (suspended)
+          (await removal).should.deepEqual({ cleanupIncomplete: false });
+        else
+          await should(removal).be.rejectedWith(
+            'Account changed or was already deleted. Refresh the member report.',
+          );
+        Boolean(await User.exists({ _id: saved._id })).should.equal(!suspended);
+      });
+    }
+  });
+
   describe('profile removal status and cancellation', () => {
     for (const method of ['getProfileRemovalStatus', 'cancelProfileRemoval']) {
       it(`${method} refuses an unauthenticated caller`, async () => {
@@ -235,6 +368,26 @@ describe('Profile controller unit tests', () => {
           profileController[method]({}, res),
         );
         res.statusCode.should.equal(403);
+      });
+
+      it(`${method} only reads and changes the caller's own request`, async () => {
+        const [other, user] = await utils.saveUsers(utils.generateUsers(2));
+        const pending = {
+          removeProfileExpires: new Date(Date.now() + 3600000),
+        };
+        await User.updateOne(
+          { _id: other._id },
+          { ...pending, removeProfileToken: 'other-token' },
+        );
+        await User.updateOne(
+          { _id: user._id },
+          { ...pending, removeProfileToken: '' },
+        );
+        const { res } = await runHandler(res =>
+          profileController[method]({ user }, res),
+        );
+        responseBody(res).should.deepEqual({ pending: false });
+        should.exist((await findUser(other._id)).removeProfileToken);
       });
 
       it(`${method} reports database failures`, async () => {
@@ -268,15 +421,61 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('rejects a level for an unselected language on a legacy profile without languages', async () => {
-      userDoc.languages = undefined;
+    const rejections: Array<[string, Record<string, unknown>, string]> = [
+      [
+        'a level for an unselected language on a legacy profile',
+        { languageLevels: { eng: 'basic' } },
+        'Please select valid levels for your profile languages.',
+      ],
+      [
+        'a malformed email address',
+        { email: 'not-an-email' },
+        'Please enter a valid email address.',
+      ],
+      ['a non-string username', { username: 42 }, usernameFormatMessage],
+    ];
+    for (const [label, body, message] of rejections) {
+      it(`rejects ${label}`, async () => {
+        userDoc.languages = undefined;
+        const { res } = await runHandler(res =>
+          profileController.update({ user: userDoc, body }, res),
+        );
+        res.statusCode.should.equal(400);
+        responseBody(res).should.deepEqual({ message });
+        // Rejected before any change is staged on the signed-in member.
+        (userDoc.emailTemporary || '').should.equal('');
+      });
+    }
+
+    it('keeps levels of the saved languages when the request omits languages', async () => {
+      userDoc.languages = ['eng'];
+      await userDoc.save();
       const { res } = await runHandler(res =>
         profileController.update(
           { user: userDoc, body: { languageLevels: { eng: 'basic' } } },
           res,
         ),
       );
-      res.statusCode.should.equal(400);
+      res.statusCode.should.equal(200);
+      (await findUser(userDoc._id))
+        .get('languageLevels')
+        .should.deepEqual({ eng: 'basic' });
+    });
+
+    it('only trims levels when languages arrive as a list', async () => {
+      userDoc.languages = ['eng', 'ger'];
+      userDoc.set('languageLevels', { eng: 'basic', ger: 'native' });
+      await userDoc.save();
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { languages: 'eng' } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      (await findUser(userDoc._id))
+        .get('languageLevels')
+        .should.deepEqual({ eng: 'basic', ger: 'native' });
     });
 
     it('updates languages on a legacy profile without language levels', async () => {
@@ -320,15 +519,18 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('rejects an invalid nostrNpub', async () => {
-      const { res } = await runHandler(res =>
-        profileController.update(
-          { user: userDoc, body: { nostrNpub: 'npub-not-valid' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
+    for (const nostrNpub of [
+      'npub-not-valid',
+      nip19.noteEncode('ab'.repeat(32)),
+      nip19.encodeBytes('npub', new Uint8Array(33).fill(1)),
+    ]) {
+      it(`rejects the nostr key ${nostrNpub.slice(0, 12)}…`, async () => {
+        const { res } = await runHandler(res =>
+          profileController.update({ user: userDoc, body: { nostrNpub } }, res),
+        );
+        res.statusCode.should.equal(400);
+      });
+    }
 
     it('accepts a valid nostrNpub', async () => {
       const { res } = await runHandler(res =>
@@ -382,21 +584,29 @@ describe('Profile controller unit tests', () => {
       );
     });
 
+    const updateUsername = (username = 'brandnewusername') =>
+      runHandler(res =>
+        profileController.update({ user: userDoc, body: { username } }, res),
+      );
+    const stubReload = (exec: import('sinon').SinonStub) => {
+      const query = { select: () => query, exec };
+      sinon
+        .stub(User, 'findById')
+        .returns(query as unknown as ReturnType<typeof User.findById>);
+    };
+
     it('returns not found if the account disappears before a username change', async () => {
       await User.deleteOne({ _id: userDoc._id });
-
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { username: 'brandnewusername' },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
-      );
-
+      const { res } = await updateUsername();
       res.statusCode.should.equal(404);
+      responseBody(res).should.deepEqual({ message: 'User not found.' });
+    });
+
+    it('saves an unchanged username without reloading the account', async () => {
+      await User.deleteOne({ _id: userDoc._id });
+      const { res } = await updateUsername(userDoc.username);
+      // The vanished account fails to save instead of answering not found.
+      res.statusCode.should.equal(400);
     });
 
     it('accepts the username already saved by a concurrent request', async () => {
@@ -405,16 +615,7 @@ describe('Profile controller unit tests', () => {
       const currentUsername = userDoc.username;
       userDoc.username = 'staleusername';
 
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { username: currentUsername },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
-      );
+      const { res } = await updateUsername(currentUsername);
 
       res.statusCode.should.equal(200);
       responseString(res, 'username').should.equal(currentUsername);
@@ -423,116 +624,61 @@ describe('Profile controller unit tests', () => {
       (saved.usernameHistory || []).should.have.length(0);
     });
 
-    it('returns 400 when reloading the account for a username change fails', async () => {
-      const query = {
-        select: sinon.stub(),
-        exec: sinon.stub().rejects(new Error('lookup failed')),
-      };
-      query.select.returns(query);
-      sinon
-        .stub(User, 'findById')
-        .returns(query as unknown as ReturnType<typeof User.findById>);
+    it('answers a conflict when another request renamed the account first', async () => {
       userDoc.created = new Date('2020-01-01');
-
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { username: 'brandnewusername' },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
+      await userDoc.save();
+      await User.updateOne(
+        { _id: userDoc._id },
+        { username: 'renamedelsewhere' },
       );
-
-      res.statusCode.should.equal(400);
-    });
-
-    it('returns a conflict when a concurrent username save wins', async () => {
-      const query = {
-        select: sinon.stub(),
-        exec: sinon.stub().resolves(userDoc),
-      };
-      query.select.returns(query);
-      sinon
-        .stub(User, 'findById')
-        .returns(query as unknown as ReturnType<typeof User.findById>);
-      userDoc.created = new Date('2020-01-01');
-      const conflict = new mongoose.Error.VersionError(userDoc, userDoc.__v, [
-        'username',
-      ]);
-      sinon.stub(userDoc, 'save').rejects(conflict);
-
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { username: 'brandnewusername' },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
-      );
-
+      stubReload(sinon.stub().resolves(userDoc));
+      const { res } = await updateUsername();
       res.statusCode.should.equal(409);
+      responseBody(res).should.deepEqual({
+        message: 'Your username changed in another request. Please try again.',
+      });
+      should.exist(
+        await User.exists({ _id: userDoc._id, username: 'renamedelsewhere' }),
+      );
     });
 
-    it('treats a deleted record during save as a username conflict', async () => {
-      const query = {
-        select: sinon.stub(),
-        exec: sinon.stub().resolves(userDoc),
-      };
-      query.select.returns(query);
-      sinon
-        .stub(User, 'findById')
-        .returns(query as unknown as ReturnType<typeof User.findById>);
-      userDoc.created = new Date('2020-01-01');
-      const missingRecord = new Error('record changed');
-      Object.setPrototypeOf(
-        missingRecord,
-        mongoose.Error.DocumentNotFoundError.prototype,
-      );
-      sinon.stub(userDoc, 'save').rejects(missingRecord);
-
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { username: 'brandnewusername' },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
-      );
-
-      res.statusCode.should.equal(409);
-    });
-
-    it('returns a validation error when a username save fails for another reason', async () => {
-      const query = {
-        select: sinon.stub(),
-        exec: sinon.stub().resolves(userDoc),
-      };
-      query.select.returns(query);
-      sinon
-        .stub(User, 'findById')
-        .returns(query as unknown as ReturnType<typeof User.findById>);
-      userDoc.created = new Date('2020-01-01');
-      sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
-
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { username: 'brandnewusername' },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
-      );
-
-      res.statusCode.should.equal(400);
-    });
+    const usernameFailures: Array<[string, () => void, number]> = [
+      [
+        'reloading the account fails',
+        () => stubReload(sinon.stub().rejects(new Error('lookup failed'))),
+        400,
+      ],
+      [
+        'a concurrent save wins the version check',
+        () => {
+          stubReload(sinon.stub().resolves(userDoc));
+          sinon
+            .stub(userDoc, 'save')
+            .rejects(
+              new mongoose.Error.VersionError(userDoc, userDoc.__v, [
+                'username',
+              ]),
+            );
+        },
+        409,
+      ],
+      [
+        'saving fails for another reason',
+        () => {
+          stubReload(sinon.stub().resolves(userDoc));
+          sinon.stub(userDoc, 'save').rejects(new Error('save failed'));
+        },
+        400,
+      ],
+    ];
+    for (const [label, arrange, status] of usernameFailures) {
+      it(`answers ${status} when ${label}`, async () => {
+        userDoc.created = new Date('2020-01-01');
+        arrange();
+        const { res } = await updateUsername();
+        res.statusCode.should.equal(status);
+      });
+    }
 
     it('rejects an email already used by someone else', async () => {
       const [other] = await utils.saveUsers(
@@ -549,34 +695,61 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('updates a simple field', async () => {
+    it('updates a simple field and the update time', async () => {
+      const before = new Date('2020-01-01');
+      await User.updateOne({ _id: userDoc._id }, { updated: before });
       const { res } = await runHandler(res =>
         profileController.update(
-          {
-            user: userDoc,
-            body: { tagline: 'New tagline' },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
+          { user: userDoc, body: { tagline: 'New tagline' } },
           res,
         ),
       );
       res.statusCode.should.equal(200);
       responseString(res, 'tagline').should.equal('New tagline');
+      (await findUser(userDoc._id)).get('updated').should.be.above(before);
     });
 
-    it('allows resubmitting the same email address', async () => {
-      const { res } = await runHandler(res =>
-        profileController.update(
-          {
-            user: userDoc,
-            body: { email: userDoc.email },
-            login: (_user: unknown, cb: () => void) => cb(),
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-    });
+    for (const field of ['tagline', 'email']) {
+      it(`does no email-change work when saving the ${field === 'email' ? 'current email' : 'tagline'}`, async () => {
+        const body = { [field]: userDoc.get(field) || 'New tagline' };
+        // Another member already holds the address: only a lookup would see it.
+        const lookup = sinon
+          .stub(User, 'findOne')
+          .resolves(
+            new User({ _id: new mongoose.Types.ObjectId() }) as Awaited<
+              ReturnType<typeof User.findOne>
+            >,
+          );
+        const sendConfirmation = sinon.spy();
+        const controller = stubControllerDependencies(controllerPath, {
+          [emailServicePath]: { sendChangeEmailConfirmation: sendConfirmation },
+        });
+        const { res } = await runHandler(res =>
+          controller.update({ user: userDoc, body }, res),
+        );
+        res.statusCode.should.equal(200);
+        sendConfirmation.called.should.be.false();
+        lookup.restore();
+        ((await findUser(userDoc._id)).emailTemporary || '').should.equal('');
+      });
+    }
+
+    for (const field of ['email', 'emailTemporary']) {
+      it(`matches another member's ${field} case-insensitively`, async () => {
+        const [other] = await utils.saveUsers(utils.generateUsers(1));
+        await User.updateOne(
+          { _id: other._id },
+          { [field]: 'taken-address@example.com' },
+        );
+        const { res } = await runHandler(res =>
+          profileController.update(
+            { user: userDoc, body: { email: 'Taken-Address@Example.com' } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(403);
+      });
+    }
 
     it('allows resubmitting a pending email change address', async () => {
       userDoc.emailTemporary = 'pending-change@example.com';
@@ -655,17 +828,6 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('returns the updated profile after saving without email work', async () => {
-      const { res } = await runHandler(res =>
-        profileController.update(
-          { user: userDoc, body: { tagline: 'Updated profile' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-      responseString(res, 'tagline').should.equal('Updated profile');
-    });
-
     it('reports failure to generate an email-change token', async () => {
       sinon
         .stub(crypto, 'randomBytes')
@@ -732,44 +894,60 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('responds with 403 for suspended users', async () => {
-      const { res } = await runHandler(res =>
-        profileController.initializeRemoveProfile(
-          {
-            user: { _id: new mongoose.Types.ObjectId(), roles: ['suspended'] },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(403);
-    });
+    for (const role of ['suspended', 'shadowban']) {
+      it(`responds with 403 for ${role} users`, async () => {
+        const { res } = await runHandler(res =>
+          profileController.initializeRemoveProfile(
+            { user: { _id: new mongoose.Types.ObjectId(), roles: [role] } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(403);
+      });
+    }
 
-    it('responds with 403 for shadowbanned users', async () => {
-      const { res } = await runHandler(res =>
-        profileController.initializeRemoveProfile(
-          {
-            user: { _id: new mongoose.Types.ObjectId(), roles: ['shadowban'] },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(403);
-    });
-
-    it('sends a removal confirmation email for a valid user', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+    it('stores a day-long removal token on the requesting member only', async () => {
+      const [other, saved] = await utils.saveUsers(utils.generateUsers(2));
       const userDoc = await findUser(saved._id);
+      const stats = recordStats();
+      const before = Date.now();
 
       const { res } = await runHandler(res =>
         profileController.initializeRemoveProfile({ user: userDoc }, res),
       );
 
       res.statusCode.should.equal(200);
-      responseString(res, 'message').should.containEql('email');
-
+      responseBody(res).should.deepEqual({
+        message: 'We sent you an email with further instructions.',
+      });
+      stats.should.deepEqual([
+        {
+          namespace: 'profileRemoval',
+          counts: { count: 1 },
+          tags: { status: 'emailSent' },
+        },
+      ]);
       const reloaded = await findUser(saved._id);
       should.exist(reloaded.removeProfileToken);
-      should.exist(reloaded.removeProfileExpires);
+      reloaded
+        .removeProfileExpires!.getTime()
+        .should.be.within(before + 24 * 3600000, Date.now() + 24 * 3600000);
+      should.not.exist((await findUser(other._id)).removeProfileToken);
+    });
+
+    it('still answers when the account vanished before the token was stored', async () => {
+      const controller = stubControllerDependencies(controllerPath, {
+        [emailServicePath]: {
+          sendRemoveProfile: (_user: unknown, cb: () => void) => cb(),
+        },
+      });
+      const { res } = await runHandler(res =>
+        controller.initializeRemoveProfile(
+          { user: { _id: new mongoose.Types.ObjectId(), roles: [] } },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
     });
 
     it('returns 400 when sending the removal email fails', async () => {
@@ -786,6 +964,10 @@ describe('Profile controller unit tests', () => {
         controller.initializeRemoveProfile({ user: userDoc }, res),
       );
       res.statusCode.should.equal(400);
+      responseBody(res).should.deepEqual({
+        message:
+          'Failure while sending confirmation email to you. Please try again later.',
+      });
     });
 
     it('returns 400 without sending a removal email when token persistence fails', async () => {
@@ -847,16 +1029,46 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('responds with 400 for an invalid token', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const { res } = await runHandler(res =>
-        profileController.removeProfile(
-          { user: { _id: saved._id }, params: { token: 'invalid-token' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
+    const outcomes: Array<[string, boolean, string, string]> = [
+      [
+        'wrong-token',
+        false,
+        'failed',
+        'Profile remove token is invalid or has expired.',
+      ],
+      ['remove-token', true, 'failed', 'Removing your profile failed.'],
+      ['remove-token', false, 'removed', 'Your profile has been removed.'],
+    ];
+    for (const [token, deletionFails, status, message] of outcomes) {
+      it(`reports "${message}" to the member and stats`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        await User.updateOne(
+          { _id: saved._id },
+          {
+            removeProfileToken: 'remove-token',
+            removeProfileExpires: new Date(Date.now() + 3600000),
+          },
+        );
+        if (deletionFails)
+          sinon.stub(User, 'findOneAndDelete').rejects(new Error('db down'));
+        const stats = recordStats();
+        const { res } = await runHandler(res =>
+          profileController.removeProfile(
+            { user: { _id: saved._id }, params: { token } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(status === 'removed' ? 200 : 400);
+        responseBody(res).should.deepEqual({ message });
+        stats.should.deepEqual([
+          {
+            namespace: 'profileRemoval',
+            counts: { count: 1 },
+            tags: { status },
+          },
+        ]);
+      });
+    }
 
     it('removes the profile when the token is valid', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -864,13 +1076,7 @@ describe('Profile controller unit tests', () => {
       userDoc.removeProfileToken = 'valid-remove-token';
       userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
       await userDoc.save();
-      await UnifiedPushRegistration.create({
-        user: saved._id,
-        endpoint: 'https://ntfy.sh/anonymous-deleted-account',
-        publicKey:
-          'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
-        auth: 'abcdefghijklmnopqrstuv',
-      });
+      await createPushRegistration(saved._id);
 
       const { res } = await runHandler(res =>
         profileController.removeProfile(
@@ -955,53 +1161,6 @@ describe('Profile controller unit tests', () => {
       responseString(res, 'message').should.equal(
         'Removing your profile failed.',
       );
-    });
-
-    it('still removes the profile when ancillary cleanup steps fail', async () => {
-      const offerHandlerPath =
-        './../../../offers/server/controllers/offers.server.controller.mjs';
-      const contactHandlerPath =
-        './../../../contacts/server/controllers/contacts.server.controller.mjs';
-      const controller = stubControllerDependencies(controllerPath, {
-        [emailServicePath]: {
-          sendRemoveProfileConfirmed: (
-            _user: unknown,
-            cb: (error: Error) => void,
-          ) => cb(new Error('confirm email failed')),
-        },
-        [offerHandlerPath]: {
-          removeAllByUserId: (_userId: unknown, cb: (error: Error) => void) =>
-            cb(new Error('offers failed')),
-        },
-        [contactHandlerPath]: {
-          removeAllByUserId: (_userId: unknown, cb: (error: Error) => void) =>
-            cb(new Error('contacts failed')),
-        },
-      });
-
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(saved._id);
-      userDoc.removeProfileToken = 'valid-remove-token';
-      userDoc.removeProfileExpires = new Date(Date.now() + 3600000);
-      await userDoc.save();
-
-      const pushCleanup = sinon
-        .stub(UnifiedPushRegistration, 'deleteMany')
-        .rejects(new Error('push cleanup failed'));
-      const { res } = await runHandler(res =>
-        controller.removeProfile(
-          {
-            user: { _id: saved._id },
-            params: { token: 'valid-remove-token' },
-          },
-          res,
-        ),
-      );
-      pushCleanup.restore();
-
-      res.statusCode.should.equal(200);
-      const gone = await User.findById(saved._id);
-      should.not.exist(gone);
     });
 
     it('reports membership counter failures during profile removal', async () => {
@@ -1235,24 +1394,30 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(403);
     });
 
-    it('responds with 400 for too short a username', async () => {
-      const { res } = await runHandler((res, next) =>
-        profileController.userByUsername({ user: {} }, res, next, 'ab'),
-      );
-      res.statusCode.should.equal(400);
-    });
+    for (const username of ['ab', 42, '   ']) {
+      it(`responds with 400 for the username ${JSON.stringify(username)}`, async () => {
+        const { res } = await runHandler((res, next) =>
+          profileController.userByUsername({ user: {} }, res, next, username),
+        );
+        res.statusCode.should.equal(400);
+        responseBody(res).should.deepEqual({
+          message: 'Valid username required.',
+        });
+      });
+    }
 
-    it('responds with 404 for a missing username', async () => {
+    it('responds with 404 for a missing three-letter username', async () => {
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const { res } = await runHandler((res, next) =>
         profileController.userByUsername(
           { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
-          'nosuchusername',
+          'abc',
         ),
       );
       res.statusCode.should.equal(404);
+      responseBody(res).should.deepEqual({ message: 'Not found.' });
     });
 
     it('accepts a thenable profile lookup without populate or exec helpers', async () => {
@@ -1273,7 +1438,7 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
-    it('calls next for an existing public profile', async () => {
+    it('calls next for an existing public profile in any letter case', async () => {
       const [viewer] = await utils.saveUsers(utils.generateUsers(1));
       const [target] = await utils.saveUsers(
         utils.generateUsers(1, { public: true }),
@@ -1285,7 +1450,7 @@ describe('Profile controller unit tests', () => {
           { user: { _id: viewer._id, roles: ['user'] } },
           res,
           next,
-          targetDoc.username,
+          targetDoc.username!.toUpperCase(),
         ),
       );
       nextCalled.should.be.true();
@@ -1310,6 +1475,7 @@ describe('Profile controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(404);
+      responseBody(res).should.deepEqual({ message: 'Not found.' });
     });
 
     it('passes unexpected middleware errors to next', async () => {
@@ -1470,9 +1636,11 @@ describe('Profile controller unit tests', () => {
     it('removePushRegistration removes an existing registration', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.pushRegistration = [
-        { platform: 'android', token: 'device-token', created: new Date() },
-      ];
+      userDoc.pushRegistration = ['device-token', 'other-token'].map(token => ({
+        platform: 'android',
+        token,
+        created: new Date(),
+      }));
       await userDoc.save();
 
       const { res } = await runHandler(res =>
@@ -1488,7 +1656,9 @@ describe('Profile controller unit tests', () => {
       responseString(res, 'message').should.equal('Removed registration.');
 
       const reloaded = await findUser(saved._id);
-      reloaded.pushRegistration!.length.should.equal(0);
+      reloaded
+        .pushRegistration!.map(registration => registration.token)
+        .should.deepEqual(['other-token']);
     });
 
     it('addPushRegistration rejects new registrations', async () => {
@@ -1513,23 +1683,28 @@ describe('Profile controller unit tests', () => {
   });
 
   describe('joinTribe and leaveTribe', () => {
-    it('joinTribe responds with 403 without a user', async () => {
-      const { res } = await runHandler(res =>
-        profileController.joinTribe({ params: { tribeId: 'x' } }, res),
-      );
-      res.statusCode.should.equal(403);
-    });
+    for (const action of ['joinTribe', 'leaveTribe']) {
+      it(`${action} responds with 403 without a user`, async () => {
+        const { res } = await runHandler(res =>
+          profileController[action]({ params: { tribeId: 'x' } }, res),
+        );
+        res.statusCode.should.equal(403);
+      });
 
-    it('joinTribe rejects an invalid tribe id', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const { res } = await runHandler(res =>
-        profileController.joinTribe(
-          { user: { _id: saved._id, member: [] }, params: { tribeId: 'bad' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
+      it(`${action} rejects an invalid tribe id`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const { res } = await runHandler(res =>
+          profileController[action](
+            {
+              user: { _id: saved._id, member: [] },
+              params: { tribeId: 'bad' },
+            },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(400);
+      });
+    }
 
     it('joinTribe rejects joining the same tribe twice', async () => {
       const tribe = await new Tribe({ label: 'Unit Tribe' }).save();
@@ -1548,20 +1723,6 @@ describe('Profile controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(409);
-    });
-
-    it('leaveTribe rejects an invalid tribe id', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const { res } = await runHandler(res =>
-        profileController.leaveTribe(
-          {
-            user: { _id: saved._id, member: [] },
-            params: { tribeId: 'not-an-object-id' },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
     });
 
     it('leaveTribe rejects leaving a tribe that no longer exists', async () => {
@@ -1599,15 +1760,38 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(409);
     });
 
-    it('leaveTribe responds with 403 without a user', async () => {
-      const tribe = await new Tribe({ label: 'No User Tribe' }).save();
-      const { res } = await runHandler(res =>
-        profileController.leaveTribe(
-          { params: { tribeId: tribe._id.toString() } },
-          res,
-        ),
+    it('reports joins and leaves to stats and only pulls the left tribe', async () => {
+      const [kept, changed] = await Tribe.create([
+        { label: 'Kept Tribe' },
+        { label: 'Changed Tribe' },
+      ]);
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      await User.updateOne(
+        { _id: saved._id },
+        { member: [{ tribe: kept._id, since: new Date() }] },
       );
-      res.statusCode.should.equal(403);
+      const stats = recordStats();
+      for (const action of ['joinTribe', 'leaveTribe']) {
+        const user = await findUser(saved._id);
+        const { res } = await runHandler(res =>
+          profileController[action](
+            { user, params: { tribeId: changed._id.toString() } },
+            res,
+          ),
+        );
+        res.statusCode.should.equal(200);
+      }
+      stats.should.deepEqual(
+        [1, -1].map(count => ({
+          namespace: 'tagAction',
+          counts: { count },
+          tags: { type: 'tribe' },
+          meta: { slug: changed.slug },
+        })),
+      );
+      (await findUser(saved._id))
+        .member!.map(membership => String(membership.tribe))
+        .should.deepEqual([String(kept._id)]);
     });
 
     it('joinTribe rejects a tribe that does not exist', async () => {
@@ -1615,7 +1799,8 @@ describe('Profile controller unit tests', () => {
       const { res } = await runHandler(res =>
         profileController.joinTribe(
           {
-            user: { _id: saved._id, member: [] },
+            // A legacy account without a membership list is not a member.
+            user: { _id: saved._id },
             params: { tribeId: new mongoose.Types.ObjectId().toString() },
           },
           res,
@@ -1738,6 +1923,55 @@ describe('Profile controller unit tests', () => {
       (profileController.sanitizeProfile(null) === undefined).should.be.true();
     });
 
+    const bareProfile = (extra: Record<string, unknown> = {}) => {
+      const _id = new mongoose.Types.ObjectId();
+      return {
+        _id,
+        toObject: () => ({
+          _id,
+          email: 'bare@example.test',
+          roles: [],
+          ...extra,
+        }),
+      };
+    };
+
+    for (const [label, viewer] of [
+      ['no viewer', undefined],
+      ['a viewer with another string id', { _id: 'another-member' }],
+    ] as const) {
+      it(`treats a profile seen by ${label} as public`, () => {
+        const sanitized = profileController.sanitizeProfile(
+          bareProfile(),
+          viewer,
+        );
+        should.not.exist(sanitized.email);
+        should.not.exist(sanitized.usernameUpdateAllowed);
+      });
+    }
+
+    it('adds no description, memberships or providers the profile lacks', () => {
+      const sanitized = profileController.sanitizeOwnProfile(bareProfile());
+      for (const field of ['description', 'member', 'additionalProvidersData'])
+        (sanitized[field] === undefined).should.be.true();
+      sanitized.memberIds.should.deepEqual([]);
+    });
+
+    it('keeps only the known providers a profile has', () => {
+      const sanitized = profileController.sanitizeOwnProfile(
+        bareProfile({
+          additionalProvidersData: {
+            facebook: null,
+            github: { login: 'fictional-github-login' },
+          },
+        }),
+      );
+      Object.keys(sanitized.additionalProvidersData).should.deepEqual([
+        'facebook',
+        'github',
+      ]);
+    });
+
     it('omits private and unrecognised document fields after sanitisation', () => {
       const profile = {
         toObject: () => ({
@@ -1800,26 +2034,19 @@ describe('Profile controller unit tests', () => {
       second.isGreeter.should.be.false();
     });
 
-    it('marks active volunteers on the sanitized profile', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(saved._id);
-      userDoc.roles = ['user', 'volunteer'];
-      await userDoc.save();
-
-      const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
-      sanitized.isVolunteer.should.be.true();
-    });
-
-    it('marks volunteer alumni on the sanitized profile', async () => {
-      const [saved] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(saved._id);
-      userDoc.roles = ['user', 'volunteer-alumni'];
-      await userDoc.save();
-
-      const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
-      sanitized.isVolunteerAlumni.should.be.true();
-      (sanitized.roles === undefined).should.be.true();
-    });
+    for (const [role, flag] of [
+      ['volunteer', 'isVolunteer'],
+      ['volunteer-alumni', 'isVolunteerAlumni'],
+    ]) {
+      it(`marks the ${role} role on the sanitized profile`, async () => {
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await findUser(saved._id);
+        userDoc.roles = ['user', role];
+        const sanitized = profileController.sanitizeProfile(userDoc, userDoc);
+        sanitized[flag].should.be.true();
+        (sanitized.roles === undefined).should.be.true();
+      });
+    }
 
     it('retains only the minimal public identity for legacy providers', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
@@ -2027,6 +2254,49 @@ describe('Profile controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(400);
+    });
+
+    const searchOutcome = (search: string, skip: number) =>
+      runHandler((res, next) =>
+        profileController.search(
+          {
+            query: { search },
+            user: { _id: new mongoose.Types.ObjectId(), blocked: [] },
+            skip,
+          },
+          res,
+          next,
+        ),
+      );
+
+    for (const [label, search, skip] of [
+      ['a 120-character search', 'x'.repeat(120), 0],
+      ['the last allowed page', 'Findme', 1000],
+    ] as const) {
+      it(`accepts ${label}`, async () => {
+        stubSearch(() => {}, []);
+        const { res } = await searchOutcome(search, skip);
+        res.statusCode.should.equal(200);
+      });
+    }
+
+    it('rejects pages beyond the search window', async () => {
+      const { res } = await searchOutcome('Findme', 1001);
+      res.statusCode.should.equal(400);
+      responseBody(res).should.deepEqual({
+        message:
+          'Please refine your member search instead of requesting more pages.',
+      });
+    });
+
+    it('searches for the trimmed text', async () => {
+      stubSearch(
+        filter =>
+          assertFilterContains(filter, { $text: { $search: 'Findme' } }),
+        [],
+      );
+      const { res } = await searchOutcome('  Findme  ', 0);
+      res.statusCode.should.equal(200);
     });
 
     it('returns matching public profiles', async () => {

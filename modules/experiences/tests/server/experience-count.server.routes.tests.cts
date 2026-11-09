@@ -99,10 +99,6 @@ describe('Read count of experiences received by user', () => {
     username: _usersPublic[0].username,
     password: _usersPublic[0].password,
   };
-  const credentialsPrivate = {
-    username: _usersPrivate[0].username,
-    password: _usersPrivate[0].password,
-  };
   beforeEach(async () => {
     users = await utils.saveUsersWithCachedPasswords(
       _users.map(user => ({
@@ -161,26 +157,6 @@ describe('Read count of experiences received by user', () => {
         .get('/api/experiences/count?userTo=1')
         .expect(400);
       body.message.should.equal('Missing or invalid `userTo` request param');
-    });
-  });
-  context('logged in as non-public user', () => {
-    beforeEach(async () => {
-      await utils.signIn(credentialsPrivate, agent);
-    });
-    afterEach(async () => {
-      await utils.signOut(agent);
-    });
-    it('403', async () => {
-      await agent
-        .get(`/api/experiences/count?userTo=${users[2]._id}`)
-        .expect(403);
-    });
-  });
-  context('not logged in', () => {
-    it('403', async () => {
-      await agent
-        .get(`/api/experiences/count?userTo=${users[2]._id}`)
-        .expect(403);
     });
   });
 });

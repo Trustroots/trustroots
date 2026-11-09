@@ -46,7 +46,6 @@ async function increment(key: string, expiresAt: Date) {
     return await RequestLimit.findOneAndUpdate({ key }, update, {
       new: true,
       upsert: true,
-      setDefaultsOnInsert: false,
     });
   } catch (error) {
     // Concurrent first requests can both attempt the unique-key upsert. The

@@ -380,22 +380,35 @@ describe('SpaceAPI import preview controller', () => {
       {},
       'short',
       'z'.repeat(64),
+      `z${'a'.repeat(64)}`,
+      `${'a'.repeat(64)}z`,
+      ['a'.repeat(64)],
     ]) {
       const res = response();
       await controller.signerIdentity({ query: { publicKey } }, res);
       assert.equal(res.statusCode, 400);
+      assert.equal(
+        previewErrorMessage(res),
+        'A valid Nostr public key is required.',
+      );
     }
     assert.equal(model.called, false);
   });
   it('reports upstream failures and handles missing error messages', async () => {
-    for (const error of [new Error('Collector unavailable'), null]) {
+    for (const error of [
+      new Error('Collector unavailable'),
+      null,
+      'fictional failure',
+    ]) {
       global.fetch = (() => Promise.reject(error)) as typeof global.fetch;
       const res = response();
       await controller.preview({}, res);
       assert.equal(res.statusCode, 502);
       assert.equal(
         previewErrorMessage(res),
-        error?.message || 'Could not fetch the SpaceAPI Collector.',
+        error instanceof Error
+          ? error.message
+          : 'Could not fetch the SpaceAPI Collector.',
       );
     }
   });

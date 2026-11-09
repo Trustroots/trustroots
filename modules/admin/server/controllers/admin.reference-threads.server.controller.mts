@@ -52,12 +52,10 @@ export const list = async (
         .populate({
           path: 'userTo',
           select: 'username displayName _id',
-          model: 'User',
         })
         .populate({
           path: 'userFrom',
           select: 'username displayName _id',
-          model: 'User',
         })
         .exec(),
       ReferenceThread.aggregate<NegativeRecipientCount>([
@@ -87,15 +85,18 @@ export const list = async (
         },
       ]).exec(),
     ]);
-    const userIds = (topNegativeRecipientCounts || [])
-      .map(({ _id }) => _id)
-      .filter(Boolean);
+    const recipientCounts = topNegativeRecipientCounts || [];
+    // Stryker disable next-line MethodExpression: Mongoose casts each { _id, count } group in $in to its _id, and null ids match no member
+    const userIds = recipientCounts.map(({ _id }) => _id).filter(Boolean);
     const users = userIds.length
-      ? await User.find({
-          _id: {
-            $in: userIds,
+      ? await User.find(
+          // Stryker disable next-line ObjectLiteral: members are looked up by id below, so loading every member gives the same result
+          {
+            _id: {
+              $in: userIds,
+            },
           },
-        })
+        )
           .select('username displayName _id')
           .exec()
       : [];
@@ -106,12 +107,10 @@ export const list = async (
       },
       {},
     );
-    const topNegativeRecipients = (topNegativeRecipientCounts || []).map(
-      ({ _id, count }) => ({
-        count,
-        user: _id ? usersById[_id.toString()] || _id : _id,
-      }),
-    );
+    const topNegativeRecipients = recipientCounts.map(({ _id, count }) => ({
+      count,
+      user: _id ? usersById[_id.toString()] || _id : _id,
+    }));
     res.send({
       items: items || [],
       topNegativeRecipients,

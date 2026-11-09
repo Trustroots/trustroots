@@ -46,19 +46,83 @@ function mockResponse(): PolicyResponseDouble {
 describe('Offers policy unit tests', () => {
   afterEach(() => sinon.restore());
 
-  it('registers admin and user offer policies', () => {
+  it('grants admins everything and users only the documented methods', () => {
     const { policy, mockAcl } = loadPolicy();
 
     policy.invokeRolesPolicies();
 
-    mockAcl.allow.calledOnce.should.be.true();
-    const policies = mockAcl.allow.firstCall.args[0];
-    policies[0].roles.should.deepEqual(['admin']);
-    policies[0].allows[0].permissions.should.equal('*');
-    policies[1].roles.should.deepEqual(['user']);
-    policies[1].allows
-      .map((allow: { resources: string }) => allow.resources)
-      .should.containEql('/api/offers-by/:offerUserId');
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          { resources: '/api/offers', permissions: '*' },
+          { resources: '/api/offers-by/:offerUserId', permissions: '*' },
+          { resources: '/api/offers/:offerId', permissions: '*' },
+        ],
+      },
+      {
+        roles: ['user'],
+        allows: [
+          { resources: '/api/offers', permissions: ['get', 'post'] },
+          { resources: '/api/offers-by/:offerUserId', permissions: ['get'] },
+          {
+            resources: '/api/offers/:offerId',
+            permissions: ['get', 'put', 'delete'],
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('answers 500 when the ACL check fails', () => {
+    // A fresh copy of the policy, so its route authorisation is built in this test.
+    const policy = require('../../../../testutils/server/mock-module')(
+      require.resolve('../../server/policies/offers.server.policy.mts'),
+      {
+        './../../../core/server/services/memory-policy.server.service.mts':
+          () => ({
+            allow() {},
+            areAnyRolesAllowed: sinon.stub().yields(new Error('acl down')),
+          }),
+      },
+    ) as typeof policyModule.default;
+    const res = mockResponse();
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { _id: 'user-id', public: true, roles: ['user'] },
+        route: { path: '/api/offers' },
+        method: 'GET',
+      },
+      res,
+      next,
+    );
+
+    res.statusCode.should.equal(500);
+    res.body!.message.should.equal('Unexpected authorization error');
+    next.called.should.be.false();
+  });
+
+  it('does not let a user manipulate an offer owned by someone else', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, false);
+    const res = mockResponse();
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { _id: 'user-id', public: true, roles: ['user'] },
+        route: { path: '/api/offers/:offerId' },
+        method: 'PUT',
+        offer: { user: 'someone-else' },
+      },
+      res,
+      next,
+    );
+
+    next.called.should.be.false();
+    res.statusCode.should.equal(403);
   });
 
   it('returns 403 for unauthenticated users', () => {
@@ -146,77 +210,5 @@ describe('Offers policy unit tests', () => {
       .calledWith(['user'], '/api/offers-by/:offerUserId', 'get')
       .should.be.true();
     next.calledOnce.should.be.true();
-  });
-
-  it('checks guest permissions for public users without explicit roles', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-
-    policy.isAllowed(
-      {
-        user: { _id: { valueOf: () => 'user-id' }, public: true },
-        route: { path: '/api/offers' },
-        method: 'GET',
-      },
-      mockResponse(),
-      () => {},
-    );
-
-    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
-  });
-
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
-    const res = mockResponse();
-    let sendCalled = false;
-    const send = res.send;
-    res.send = body => {
-      sendCalled = true;
-      return send(body);
-    };
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/offers' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(500);
-    res.body!.message.should.equal('Unexpected authorization error');
-    sendCalled.should.be.true();
-    done();
-  });
-
-  it('returns 403 JSON when the user is not allowed', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/offers' },
-        method: 'DELETE',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-    done();
   });
 });

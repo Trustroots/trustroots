@@ -12,6 +12,7 @@ const config: TestConfigModule = require('./../../../../config/config.mts');
 const winston: typeof import('winston') = require('winston');
 const statService: typeof import('./../../../stats/server/services/stats.server.service.mts') = require('./../../../stats/server/services/stats.server.service.mts');
 const sinon: typeof import('sinon') = require('sinon');
+const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 
 type TestQueryResult<T> = {
   sort(): TestQueryResult<T>;
@@ -318,6 +319,67 @@ describe('Message server services unit tests', function () {
       }
     });
 
+    it('does not log unexpected save failures in test mode', function (done) {
+      const { log, service } = loadMessageToStatsService();
+      const originalNodeEnv = process.env.NODE_ENV;
+      const error = new Error('stats write failed');
+
+      process.env.NODE_ENV = 'test';
+      sinon
+        .stub(service, 'process')
+        .callsArgWith(1, null, { namespace: 'messages' });
+      sinon.stub(service, 'send').callsArgWith(1, error);
+
+      service.save({ _id: 'message-id' }, function (err?: Error | null) {
+        try {
+          should(err).equal(error);
+          sinon.assert.notCalled(log);
+          done();
+        } catch (assertionError) {
+          done(assertionError);
+        } finally {
+          process.env.NODE_ENV = originalNodeEnv;
+        }
+      });
+    });
+
+    it('does not look for a reply when the message continues the first sender', function (done) {
+      const { findOne, service } = loadMessageToStatsService();
+      const firstMessage = {
+        _id: 'first-message-id',
+        userFrom: 'from-id',
+        userTo: 'to-id',
+        content: 'first message',
+        created: new Date('2026-01-01T00:00:00Z'),
+      };
+      const followUp = {
+        _id: 'follow-up-id',
+        userFrom: 'from-id',
+        userTo: 'to-id',
+        content: 'follow up',
+        created: new Date('2026-01-01T02:00:00Z'),
+      };
+      findOne.returns(
+        queryResult(firstMessage) as unknown as ReturnType<
+          MessageModel['findOne']
+        >,
+      );
+
+      service.process(
+        followUp,
+        function (err: Error | null, stat: MessageStatsPoint) {
+          try {
+            should.not.exist(err);
+            sinon.assert.calledOnce(findOne);
+            stat.tags.position.should.equal('other');
+            done();
+          } catch (error) {
+            done(error);
+          }
+        },
+      );
+    });
+
     it('treats missing influx config as disabled', function (done) {
       const { service } = loadMessageToStatsService({ config: {} });
 
@@ -502,11 +564,17 @@ describe('Message server services unit tests', function () {
 
     it('returns read errors from formatted message stats', function (done) {
       const error = new Error('find failed');
-      const { service } = loadMessageStatService();
-      sinon.stub(service, 'readMessageStatsOfUser').callsArgWith(2, error);
+      const { statFind } = loadMessageStatService();
+      statFind.returns(queryResult([], error) as never);
+      // A fresh copy, loaded inside this test, so it covers the service object.
+      const service: typeof import('./../../server/services/message-stat.server.service.mts') =
+        mockModule(
+          require.resolve('./../../server/services/message-stat.server.service.mts'),
+          {},
+        );
 
       service.readFormattedMessageStatsOfUser(
-        'user-id',
+        new mongoose.Types.ObjectId(),
         new Date('2026-02-01T00:00:00Z').getTime(),
         function (err?: Error | null) {
           try {

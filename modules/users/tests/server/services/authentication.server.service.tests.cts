@@ -75,6 +75,7 @@ describe('Service: authentication', function () {
       'legacy_name',
       'legacy-name',
       'legacy.name',
+      '--a',
       '123456',
       'trustroots',
     ]) {

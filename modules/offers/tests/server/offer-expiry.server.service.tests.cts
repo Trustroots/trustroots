@@ -7,29 +7,6 @@ describe('Offer expiry service', () => {
   const now = new Date('2026-04-10T12:00:00.000Z');
   const maxValidFromNow = { days: 30 };
 
-  it('removes expiry from host offers', () => {
-    const expiry = normaliseOfferExpiry(
-      'host',
-      '2026-04-20T00:00:00.000Z',
-      maxValidFromNow,
-      now,
-    );
-
-    (expiry === undefined).should.be.true();
-  });
-
-  it('parses an in-range meet expiry without changing its time', () => {
-    const validUntil = '2026-04-20T08:15:00.000Z';
-    const expiry = normaliseOfferExpiry(
-      'meet',
-      validUntil,
-      maxValidFromNow,
-      now,
-    );
-
-    expiry!.should.deepEqual(new Date(validUntil));
-  });
-
   it('uses the configured maximum age for missing, invalid, and out-of-range dates', () => {
     const fallback = moment(now).add(maxValidFromNow).toDate();
 
@@ -53,5 +30,16 @@ describe('Offer expiry service', () => {
     const expiry = normaliseOfferExpiry('meet', validUntil, undefined, now);
 
     expiry!.should.deepEqual(validUntil);
+  });
+
+  it('accepts an expiry on the last day of the allowed range', () => {
+    const lastDay = moment(now).add(maxValidFromNow).endOf('day').toDate();
+
+    normaliseOfferExpiry(
+      'meet',
+      lastDay,
+      maxValidFromNow,
+      now,
+    )!.should.deepEqual(lastDay);
   });
 });

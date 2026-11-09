@@ -144,9 +144,11 @@ service.signup = function (req, res) {
     if (
       ['locale', 'acquisitionStory'].some(
         field =>
+          // Stryker disable next-line OptionalChaining: validatedSignupBody was just set to the checked, non-null body
           validatedSignupBody?.[field] !== undefined &&
           typeof validatedSignupBody[field] !== 'string',
       ) ||
+      // Stryker disable next-line OptionalChaining: validatedSignupBody was just set to the checked, non-null body
       (validatedSignupBody?.newsletter !== undefined &&
         typeof validatedSignupBody.newsletter !== 'boolean')
     ) {
@@ -169,6 +171,7 @@ service.signup = function (req, res) {
       const body = validatedSignupBody!;
       const { firstName, lastName, username } = body;
       if (isNameSpam(firstName) || (lastName && isNameSpam(lastName))) {
+        // Stryker disable next-line StringLiteral: the response uses the generic message and the logger keeps only the error name
         throw new Error('Invalid signup attempt');
       }
 
@@ -204,10 +207,13 @@ service.signup = function (req, res) {
     // Add missing user fields
     user.public = false;
     user.provider = 'local';
+    // Stryker disable ArrayDeclaration,ArrowFunction,MethodExpression,StringLiteral: the pre-save hook rebuilds displayName from the same names, and nothing reads it before the save
+    // Stryker restore next-line MethodExpression
     user.displayName = [user.firstName, user.lastName]
       .filter((name): name is string => Boolean(name?.trim()))
       .map(name => name.trim())
       .join(' ');
+    // Stryker restore ArrayDeclaration,ArrowFunction,MethodExpression,StringLiteral
 
     // Just to simplify email confirm process later
     // This field is normally needed when changing email after the signup process
@@ -305,6 +311,7 @@ service.signup = function (req, res) {
 service.signupValidation = function (req, res) {
   const suppliedUsername = req.body!.username;
   const username =
+    // Stryker disable next-line ConditionalExpression: any other type except undefined is rejected just below
     typeof suppliedUsername === 'string' ? suppliedUsername : undefined;
   if (suppliedUsername !== undefined && typeof suppliedUsername !== 'string') {
     return res.status(400).send({
@@ -369,6 +376,7 @@ service.signupValidation = function (req, res) {
       'username-not-available-reserved',
     );
   }
+  // Stryker disable next-line MethodExpression: the username path is lowercase: true, which Mongoose also applies to query filters
   User.findOne({ username: String(username).toLowerCase() }).then(
     user =>
       user
@@ -559,6 +567,7 @@ service.cancelEmailChange = function (req, res) {
         emailTokenExpires: 1,
       },
     },
+    // Stryker disable next-line ObjectLiteral,BooleanLiteral: only email is read back, and the update never changes it
     { new: true },
   ).then(
     user => {
@@ -583,7 +592,10 @@ service.emailConfirmationDetails = function (req, res) {
   User.findOne(
     emailConfirmationTokenQuery(String(req.params!.token), new Date()),
   )
-    .select('email emailTemporary public')
+    .select(
+      // Stryker disable next-line StringLiteral: the response is built from these three fields alone
+      'email emailTemporary public',
+    )
     .then(
       user => {
         if (!user) {
@@ -630,6 +642,7 @@ service.confirmEmail = function (req, res) {
     now,
   );
   async function confirm() {
+    // Stryker disable next-line ArrowFunction: !user treats undefined and null alike
     const user = await User.findOne(tokenQuery).catch(() => null);
     if (!user) {
       res
@@ -677,7 +690,10 @@ service.confirmEmail = function (req, res) {
               // @todo: this should be done at user.server.model.js
               emailHash: crypto
                 .createHash('md5')
-                .update(user.emailTemporary!.trim().toLowerCase())
+                .update(
+                  // Stryker disable next-line MethodExpression: the emailTemporary filter is cast trimmed and lowercased, so the update only applies when the stored value already is
+                  user.emailTemporary!.trim().toLowerCase(),
+                )
                 .digest('hex'),
             },
           },

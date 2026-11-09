@@ -43,7 +43,11 @@ describe('API input boundaries', () => {
   ]) {
     it(`rejects the reserved object key ${key} at any depth`, async () => {
       const body = { nested: [{ [key]: null }] };
-      await request(app()).post('/api/echo').send(body).expect(400);
+      const rejected = await request(app())
+        .post('/api/echo')
+        .send(body)
+        .expect(400);
+      assert.deepEqual(rejected.body, { message: 'Invalid request field.' });
       await request(app())
         .get(`/api/echo?${encodeURIComponent(key)}=value`)
         .expect(400);

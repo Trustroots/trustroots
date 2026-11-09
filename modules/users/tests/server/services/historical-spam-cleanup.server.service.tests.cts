@@ -1,6 +1,9 @@
 const mongoose: typeof import('mongoose') = require('mongoose');
 const should: typeof import('should') = require('should');
 const sinon: typeof import('sinon') = require('sinon');
+const {
+  SPAM_CLEANUP_SCAN_SIZE,
+}: typeof import('../../../shared/spam-cleanup.ts') = require('../../../shared/spam-cleanup.ts');
 const utils: typeof import('../../../../../testutils/server/data.server.testutil.mts') = require('../../../../../testutils/server/data.server.testutil');
 
 interface CleanupBatch {
@@ -18,6 +21,9 @@ interface CleanupService {
   }): Promise<CleanupResult>;
 }
 const cleanup: CleanupService = require('./../../../server/services/historical-spam-cleanup.server.service.mjs');
+// require() yields only the default export; the admin batch helpers are named ESM exports.
+const adminBatch = () =>
+  import('../../../server/services/historical-spam-cleanup.server.service.mts');
 
 const AdminNote = mongoose.model('AdminNote');
 const Contact = mongoose.model('Contact');
@@ -27,6 +33,15 @@ const Offer = mongoose.model('Offer');
 const ReferenceThread = mongoose.model('ReferenceThread');
 const Thread = mongoose.model('Thread');
 const User = mongoose.model('User');
+const activityModels = [
+  AdminNote,
+  Contact,
+  Experience,
+  Message,
+  Offer,
+  ReferenceThread,
+  Thread,
+];
 
 const campaignDate = new Date('2021-07-04T12:00:00.000Z');
 let createdUserIds: import('mongoose').Types.ObjectId[];
@@ -88,6 +103,9 @@ async function removeCreatedData() {
       $or: [{ userFrom: userQuery }, { userTo: userQuery }],
     }),
     User.deleteMany({ _id: userQuery }),
+    ...activityModels.map(model =>
+      model.collection.deleteMany({ stray: true }),
+    ),
   ]);
 }
 
@@ -103,7 +121,8 @@ describe('Service: historical spam cleanup', () => {
   });
 
   it('uses safe defaults when there are no campaign accounts', async () => {
-    const result = await cleanup.run();
+    const batches: CleanupBatch[] = [];
+    const result = await cleanup.run({ onBatch: batch => batches.push(batch) });
 
     result.should.deepEqual({
       candidates: 0,
@@ -111,7 +130,77 @@ describe('Service: historical spam cleanup', () => {
       protected: 0,
       deleted: 0,
     });
+    batches.should.be.empty();
   });
+
+  it('runs batches in signup order and pages the admin preview by id', async () => {
+    const ids = Array.from(
+      { length: SPAM_CLEANUP_SCAN_SIZE },
+      () => new mongoose.Types.ObjectId(),
+    );
+    const late = await createCandidate({
+      _id: ids[1],
+      created: new Date('2021-07-05T00:00:00.000Z'),
+    });
+    await createCandidate({ _id: ids[0] });
+    await new AdminNote({ user: late._id, note: 'Reviewed' }).save();
+    const batches: CleanupBatch[] = [];
+    await cleanup.run({ batchSize: 1, onBatch: batch => batches.push(batch) });
+    batches
+      .map(batch => batch.protected)
+      .should.deepEqual([0, 1], 'earliest signup first');
+
+    createdUserIds.push(...ids.slice(2));
+    await User.collection.insertMany(
+      ids.slice(2).map((_id, i) => ({
+        _id,
+        email: `historical-spam-raw-${i}@example.test`,
+        username: `historicalspamraw${i}`,
+        created: campaignDate,
+        public: false,
+        roles: ['user', 'suspended'],
+      })),
+    );
+    const preview = await (await adminBatch()).previewAdminBatch();
+    preview.items
+      .slice(0, 2)
+      .map(item => item.id)
+      .should.deepEqual([String(ids[0]), String(ids[1])]);
+    preview.items.should.have.length(SPAM_CLEANUP_SCAN_SIZE);
+    preview.hasMore.should.equal(false);
+  });
+
+  const now = new Date();
+  const old = new Date('2023-06-01T00:00:00.000Z');
+  // [inactiveOnly, seen when selected, seen during the protection check, deleted]
+  for (const [inactiveOnly, seen, seenDuringCheck, deleted] of [
+    [undefined, now, now, 1],
+    [true, old, now, 0],
+    ['unknown-login', null, now, 0],
+    [true, now, old, 0],
+    ['unknown-login', old, null, 0],
+  ] as const)
+    it(`admin deletion (${inactiveOnly}) applies the login filter on selection and on deletion (seen ${seen?.getFullYear() ?? 'never'} then ${seenDuringCheck?.getFullYear() ?? 'never'})`, async () => {
+      const { deleteAdminBatch } = await adminBatch();
+      const id = objectId((await createCandidate({ seen }))._id);
+      const find = AdminNote.find.bind(AdminNote);
+      sinon.stub(AdminNote, 'find').callsFake(((filter: object) => {
+        const query = find(filter);
+        const lean = query.lean.bind(query);
+        return Object.assign(query, {
+          lean: () =>
+            User.updateOne({ _id: id }, { seen: seenDuringCheck }).then(() =>
+              lean(),
+            ),
+        });
+      }) as unknown as typeof AdminNote.find);
+
+      (await deleteAdminBatch([id], inactiveOnly)).should.deepEqual({
+        deleted,
+        skipped: 1 - deleted,
+      });
+      ((await User.exists({ _id: id })) === null).should.equal(!!deleted);
+    });
 
   it('retains an account protected immediately before deletion', async () => {
     const candidate = await createCandidate();
@@ -201,7 +290,12 @@ describe('Service: historical spam cleanup', () => {
     const outsideCampaign = await createCandidate({
       created: new Date('2022-01-01T00:00:00.000Z'),
     });
+    const publicProfile = await createCandidate({ public: true });
     const otherUserId = new mongoose.Types.ObjectId();
+    // Unrelated records without user fields must not reach the id collection.
+    await Promise.all(
+      activityModels.map(model => model.collection.insertOne({ stray: true })),
+    );
 
     await Promise.all([
       new AdminNote({
@@ -268,6 +362,7 @@ describe('Service: historical spam cleanup', () => {
     should.exist(await User.findById(pushUser._id));
     should.exist(await User.findById(avatarUser._id));
     should.exist(await User.findById(outsideCampaign._id));
+    should.exist(await User.findById(publicProfile._id));
 
     const deletion = await cleanup.run({ deleteAccounts: true, batchSize: 2 });
 

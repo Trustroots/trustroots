@@ -36,6 +36,10 @@ const ReferenceThread = mongoose.model<
   ReferenceThreadModel
 >('ReferenceThread');
 const AdminNote = mongoose.model('AdminNote');
+const saveMembers = (count: number) =>
+  utils.saveUsersWithCachedPasswords(
+    utils.generateUsersWithSharedPassword(count),
+  );
 const Message = mongoose.model('Message');
 const Thread = mongoose.model('Thread');
 
@@ -329,6 +333,9 @@ describe('Admin users controller unit tests', () => {
       await res.waitForResponse();
 
       res.statusCode.should.equal(400);
+      should(res.body).deepEqual({
+        message: errorService.getErrorMessageByKey('default'),
+      });
     });
 
     it('returns 400 when the database lookup fails', async () => {
@@ -343,7 +350,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('obfuscates sensitive tokens in search results', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const userDoc = await User.findById(users[0]._id);
       assertPresent(userDoc, 'saved user');
       userDoc.removeProfileToken = 'remove-token';
@@ -374,7 +381,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('obfuscates OAuth tokens in search results', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const userDoc = await User.findById(users[0]._id);
       assertPresent(userDoc, 'saved user');
       userDoc.additionalProvidersData = {
@@ -457,7 +464,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('returns users with the requested role', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const userDoc = await User.findById(users[0]._id);
       assertPresent(userDoc, 'saved user');
       userDoc.roles = ['user', 'volunteer'];
@@ -522,7 +529,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('returns exact IP-address matches', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       users[0].lastIpHash =
         'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
       users[1].lastIpHash =
@@ -608,7 +615,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('returns profile details for an existing user', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const res = mockResponse();
 
       await adminUsers.getUser({ body: { id: users[0]._id.toString() } }, res);
@@ -632,7 +639,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('counts received and written experiences without mixing unpublished recommendations or removed records', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(8));
+      const users = await saveMembers(8);
       const member = users[0]._id;
       const categories = [
         { public: true, recommend: 'yes' },
@@ -680,7 +687,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('defaults nullable contact and offer lookups to empty arrays', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const nullContactQuery = {
         populate() {
           return this;
@@ -709,7 +716,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('defaults nullable thread references to an empty array', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       sinon.stub(ReferenceThread, 'find').returns({
         sort: () => ({
           limit: () => ({
@@ -891,7 +898,7 @@ describe('Admin users controller unit tests', () => {
 
   describe('changeRole', () => {
     it('adds and removes welcome-team idempotently while preserving other roles and notes', async () => {
-      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      const [admin, target] = await saveMembers(2);
       target.roles = ['user', 'volunteer'];
       await target.save();
       for (const [index, action] of [
@@ -944,7 +951,7 @@ describe('Admin users controller unit tests', () => {
     }
 
     it('promotes a volunteer and removes volunteer-alumni', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       const admin = users[0];
       const target = users[1];
       target.roles = ['user', 'volunteer-alumni'];
@@ -970,7 +977,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('promotes a user to volunteer-alumni and removes volunteer', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       const admin = users[0];
       const target = users[1];
       target.roles = ['user', 'volunteer'];
@@ -996,7 +1003,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('increments a missing legacy authVersion for concurrent role changes', async () => {
-      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      const [admin, target] = await saveMembers(2);
       await User.collection.updateOne(
         { _id: target._id },
         { $unset: { authVersion: '' } },
@@ -1025,7 +1032,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('retries a stale role update without applying the change twice', async () => {
-      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      const [admin, target] = await saveMembers(2);
       const updateOne = sinon.stub(User, 'updateOne').callThrough();
       updateOne.onFirstCall().resolves({
         acknowledged: true,
@@ -1056,7 +1063,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('updates a legacy account whose roles field is absent', async () => {
-      const [admin, target] = await utils.saveUsers(utils.generateUsers(2));
+      const [admin, target] = await saveMembers(2);
       await User.collection.updateOne(
         { _id: target._id },
         { $unset: { roles: '' } },
@@ -1078,7 +1085,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('returns 404 when the target user does not exist', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const res = mockResponse();
 
       await adminUsers.changeRole(
@@ -1099,7 +1106,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('rejects invalid roles', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const res = mockResponse();
 
       await adminUsers.changeRole(
@@ -1115,7 +1122,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('rejects the legacy moderator role', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const res = mockResponse();
 
       await adminUsers.changeRole(
@@ -1131,7 +1138,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('rejects missing user ids', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const res = mockResponse();
 
       await adminUsers.changeRole(
@@ -1149,7 +1156,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('shadowbans a user and removes suspended role', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       const target = users[1];
       target.roles = ['user', 'suspended'];
       await target.save();
@@ -1170,7 +1177,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('removes a shadowban without changing other roles or profile settings', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       const target = users[1];
       target.roles = ['user', 'shadowban', 'suspended', 'volunteer'];
       target.public = true;
@@ -1221,7 +1228,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('rejects removal of unsupported moderation roles', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const res = mockResponse();
 
       await adminUsers.changeRole(
@@ -1241,7 +1248,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('suspends a user and removes shadowban role', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       const target = users[1];
       target.roles = ['user', 'shadowban'];
       await target.save();
@@ -1263,7 +1270,7 @@ describe('Admin users controller unit tests', () => {
     });
 
     it('returns 400 when updating a role fails', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(2));
+      const users = await saveMembers(2);
       sinon.stub(User, 'updateOne').rejects(new Error('update failed'));
 
       const res = mockResponse();
@@ -1312,7 +1319,7 @@ describe('Admin users controller unit tests', () => {
       find.called.should.be.false();
     });
     it('attaches a user id when the username exists', async () => {
-      const users = await utils.saveUsers(utils.generateUsers(1));
+      const users = await saveMembers(1);
       const req: {
         body: { username: string };
         userIdFromUsername?: import('mongoose').Types.ObjectId;

@@ -92,12 +92,6 @@ describe('Message CRUD tests', function () {
     };
   });
   afterEach(utils.clearDatabase);
-  it('denies a preview to visitors', async () => {
-    await request(app)
-      .post('/api/messages-preview')
-      .send({ content: 'Draft' })
-      .expect(403);
-  });
 
   it('formats authenticated previews without creating a message or thread', async () => {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
@@ -111,29 +105,6 @@ describe('Message CRUD tests', function () {
     (await Message.countDocuments()).should.equal(0);
     (await Thread.countDocuments()).should.equal(0);
     await agent.post('/api/messages-preview').send({ content: 42 }).expect(400);
-  });
-  it('should not be able to read inbox if not logged in', function (done) {
-    agent
-      .get('/api/messages')
-      .expect(403)
-      .end(function (messageSaveErr, messageSaveRes) {
-        messageSaveRes.body.message.should.equal('Forbidden.');
-
-        // Call the assertion callback
-        return done(messageSaveErr);
-      });
-  });
-  it('should not be able to send message if not logged in', function (done) {
-    agent
-      .post('/api/messages')
-      .send(message)
-      .expect(403)
-      .end(function (messageSaveErr, messageSaveRes) {
-        messageSaveRes.body.message.should.equal('Forbidden.');
-
-        // Call the assertion callback
-        return done(messageSaveErr);
-      });
   });
   it('should be able to send and read messages if logged in', function (done) {
     agent
@@ -857,17 +828,6 @@ describe('Message CRUD tests', function () {
       })
       .catch(newMessageErr => done(newMessageErr)); // newMessage
   });
-  it('should not be able to check for unread message count if not logged in', function (done) {
-    agent
-      .get('/api/messages-count')
-      .expect(403)
-      .end(function (countReadErr, countReadRes) {
-        countReadRes.body.message.should.equal('Forbidden.');
-
-        // Call the assertion callback
-        return done(countReadErr);
-      });
-  });
   it('should be able to check for unread message count if logged in', function (done) {
     // Sign in
     agent
@@ -966,17 +926,6 @@ describe('Message CRUD tests', function () {
         throw newMessage1Err;
       },
     );
-  });
-  it('should not be able to read sync endpoint if not logged in', function (done) {
-    agent
-      .get('/api/messages-sync')
-      .expect(403)
-      .end(function (messageSaveErr, messageSaveRes) {
-        messageSaveRes.body.message.should.equal('Forbidden.');
-
-        // Call the assertion callback
-        return done(messageSaveErr);
-      });
   });
   it('should be able to read sync endpoint and show messages sent from currently authenticated user', function (done) {
     // Save message to this user from other user

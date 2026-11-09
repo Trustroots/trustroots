@@ -61,6 +61,7 @@ const defaultExport = function (app: Application) {
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
     if (
+      // Stryker disable next-line ConditionalExpression,EqualityOperator: the qs query parser turns more than 20 repeated keys into an object, so no request reaches this with over 100 keys
       pubkeys.length > 100 ||
       pubkeys.some(
         pubkey => typeof pubkey !== 'string' || !/^[0-9a-f]{64}$/i.test(pubkey),
@@ -75,10 +76,12 @@ const defaultExport = function (app: Application) {
         (pubkeys as string[]).map(pubkey => String(pubkey).toLowerCase()),
       ),
     ];
+    // Stryker disable next-line ArrayDeclaration: an extra $in value only widens the fetch, and the response keeps only users whose npub encodes a requested key
     const npubs: string[] = [];
     for (const pubkey of normalizedPubkeys) {
       npubs.push(nip19.npubEncode(String(pubkey)));
     }
+    // Stryker disable next-line ObjectLiteral: the response filters the found users by the requested keys again, so the query only narrows the fetch
     User.find({
       nostrNpub: {
         $in: npubs,
@@ -115,7 +118,7 @@ const defaultExport = function (app: Application) {
   });
 
   // Return a 404 for all undefined api, module or lib routes
-  app.route(/^\/(?:api|modules|lib|developers)\/.*$/i).get(core.renderNotFound);
+  app.route(/^\/(?:api|modules|lib|developers)\//i).get(core.renderNotFound);
 
   // Protect direct page loads before the client-side route guard is ready.
   // Signed-in members continue to the generic circle route below.
@@ -161,6 +164,7 @@ const defaultExport = function (app: Application) {
         }
         const nostrNpub = user.nostrNpub;
         try {
+          // Stryker disable next-line ConditionalExpression: decoding a missing key throws, and the catch below also leaves the names empty
           if (nostrNpub) {
             const decode: (code: string) => DecodedResult = nip19.decode;
             const result = decode(nostrNpub);
@@ -168,9 +172,8 @@ const defaultExport = function (app: Application) {
               obj.names[name] = result.data.toLowerCase();
             }
           }
-        } catch (decodeError) {
+        } catch {
           // Malformed stored Nostr keys should fail closed.
-          _.noop(decodeError);
         }
         res.json(obj);
       },

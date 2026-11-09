@@ -99,7 +99,9 @@ async function register(
     },
     {
       upsert: true,
+      // Stryker disable next-line BooleanLiteral: register discards the returned document
       new: true,
+      // Stryker disable next-line BooleanLiteral: the only schema default, updated, is always in $set
       setDefaultsOnInsert: true,
     },
   );

@@ -91,10 +91,7 @@ export const addNote = async (
       message: 'Note saved.',
     });
   } catch (err) {
-    /* istanbul ignore else */
-    if (err) {
-      return errorService.sendBadRequest(res, err);
-    }
+    return errorService.sendBadRequest(res, err);
   }
 };
 
@@ -119,7 +116,6 @@ export const getNotes = async (
       .populate({
         path: 'admin',
         select: 'username displayname',
-        model: 'User',
       })
       .exec();
     res.send(items || []);

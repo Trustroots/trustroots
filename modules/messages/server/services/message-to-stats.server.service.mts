@@ -47,15 +47,18 @@ interface MessageToStatsService {
 
 const service: MessageToStatsService = { save, process, send };
 const Message = mongoose.model<MessageRecord>('Message');
-const INFLUXDB_DISABLED_ERROR_MESSAGE =
-  'InfluxDB disabled. Not creating a point for message statistics.';
+// A function rather than a module constant, so the text is evaluated by the
+// tests that exercise it.
+function influxDisabledErrorMessage(): string {
+  return 'InfluxDB disabled. Not creating a point for message statistics.';
+}
 
 function save(message: MessageStatsInput, callback?: Callback): void {
   const completion: Callback = error => {
     if (
       error &&
       (error as { message?: unknown }).message !==
-        INFLUXDB_DISABLED_ERROR_MESSAGE &&
+        influxDisabledErrorMessage() &&
       nodeProcess.env.NODE_ENV !== 'test'
     ) {
       // Keep the logger's legacy third-argument value unchanged at this boundary.
@@ -68,8 +71,8 @@ function save(message: MessageStatsInput, callback?: Callback): void {
     if (typeof callback === 'function') return callback(error);
   };
 
-  if (!config?.influxdb?.enabled) {
-    completion(new Error(INFLUXDB_DISABLED_ERROR_MESSAGE));
+  if (!config.influxdb?.enabled) {
+    completion(new Error(influxDisabledErrorMessage()));
     return;
   }
   service.process(message, (error, statObject) => {
@@ -82,8 +85,8 @@ function process(
   message: MessageStatsInput,
   callback: (error: unknown | null, point?: MessageStatsPoint) => void,
 ): void {
-  let isFirstMessage = false;
-  let isFirstReply = false;
+  let isFirstMessage: boolean;
+  let isFirstReply: boolean;
   const userFrom = getUserId(message.userFrom);
   const userTo = getUserId(message.userTo);
 
@@ -107,6 +110,7 @@ function process(
         !isFirstMessage &&
         String(completeFirstMessage.userTo) === String(userFrom);
       if (!canBeTheFirstReply) {
+        // Stryker disable next-line ObjectLiteral: firstMessage is only read when firstReply is set, and an empty object leaves firstReply undefined, which is falsy exactly like null
         return { firstMessage: completeFirstMessage, firstReply: null };
       }
       return Message.findOne({
@@ -131,6 +135,7 @@ function process(
             firstReply!.created.getTime() - firstMessage.created.getTime();
         }
 
+        // Stryker disable next-line BooleanLiteral: whitespace cleaning replaces characters one for one and trim() strips the same characters, so the length never changes
         const msgLen = textService.plainText(message.content, true).length;
         let position: MessageStatsPoint['tags']['position'];
         if (isFirstMessage) position = 'first';

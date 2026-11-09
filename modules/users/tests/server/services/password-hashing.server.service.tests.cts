@@ -97,7 +97,13 @@ describe('Service: password hashing', { timeout: 15000 }, function () {
       await scheduler
         .run(() => {})
         .should.be.rejectedWith(passwordHashing.KdfOverloadedError);
-      new passwordHashing.KdfOverloadedError().status.should.equal(503);
+      new passwordHashing.KdfOverloadedError().should.match({
+        message: 'Password service is temporarily busy. Please try again.',
+        name: 'KdfOverloadedError',
+        code: 'KDF_OVERLOADED',
+        status: 503,
+        userFacing: true,
+      });
       release!();
       await active;
 
@@ -105,16 +111,20 @@ describe('Service: password hashing', { timeout: 15000 }, function () {
         passwordHashing.createKdfScheduler({
           maxActive: 0,
           maxQueued: 0,
-        })).should.throw(TypeError);
+        })).should.throw(TypeError, {
+        message: 'maxActive must be a positive integer.',
+      });
       (() =>
         passwordHashing.createKdfScheduler({
           maxActive: 1,
           maxQueued: -1,
-        })).should.throw(TypeError);
+        })).should.throw(TypeError, {
+        message: 'maxQueued must be a non-negative integer.',
+      });
       await passwordHashing
         .createKdfScheduler({ maxActive: 1, maxQueued: 0 })
         .run(null)
-        .should.be.rejectedWith(TypeError);
+        .should.be.rejectedWith('task must be a function.');
     });
 
     it('releases capacity after a task throws or rejects', async function () {
@@ -154,38 +164,18 @@ describe('Service: password hashing', { timeout: 15000 }, function () {
     });
 
     it('verifies the current hash asynchronously and rejects a wrong password', async function () {
-      (
-        await passwordHashing.verifyPassword(
-          'correct horse battery staple',
-          storedPassword,
-        )
-      ).should.deepEqual({ valid: true, needsRehash: false });
-      (
-        await passwordHashing.verifyPassword(
-          'incorrect password',
-          storedPassword,
-        )
-      ).should.deepEqual({ valid: false, needsRehash: false });
-    });
-
-    it('does not accept altered parameters, encoding, or a mixed legacy salt', async function () {
-      const invalidHashes = [
-        storedPassword.replace('ln=17,r=8,p=1', 'ln=18,r=8,p=1'),
-        storedPassword.replace(/\$([A-Za-z0-9_-]{22})\$/, '$A$'),
-        `${storedPassword}=`,
-      ];
-      for (const invalidHash of invalidHashes) {
-        (
-          await passwordHashing.verifyPassword('candidate', invalidHash)
-        ).should.deepEqual({ valid: false, needsRehash: false });
+      // Precomputed with N=2^17, r=8, p=1 so the scrypt parameters are pinned.
+      const fixture =
+        '$scrypt$v=1$ln=17,r=8,p=1$dHJ1c3Ryb290cy1maXh0IQ$DPfT46nLkY_TEH1-IR075e_ZwKoPM1it9EDnHzFJVwE';
+      for (const [password, hash, valid] of [
+        ['correct horse battery staple', storedPassword, true],
+        ['correct horse battery staple', fixture, true],
+        ['incorrect password', storedPassword, false],
+      ] as const) {
+        (await passwordHashing.verifyPassword(password, hash)).should.deepEqual(
+          { valid, needsRehash: false },
+        );
       }
-      (
-        await passwordHashing.verifyPassword(
-          'candidate',
-          storedPassword,
-          'legacy',
-        )
-      ).should.deepEqual({ valid: false, needsRehash: false });
     });
 
     it('hashes plaintext even when it resembles a tagged hash', async function () {
@@ -200,54 +190,115 @@ describe('Service: password hashing', { timeout: 15000 }, function () {
     it('rejects non-string passwords for hashing and uses dummy work for unknown records', async function () {
       await passwordHashing
         .hashPassword(null)
-        .should.be.rejectedWith(TypeError);
-      (
-        await passwordHashing.verifyPassword('candidate', 'unknown-format')
-      ).should.deepEqual({ valid: false, needsRehash: false });
-      (
-        await passwordHashing.verifyPassword('candidate', null, '')
-      ).should.deepEqual({ valid: false, needsRehash: false });
-      (
-        await passwordHashing.verifyPassword(null, 'unknown-format')
-      ).should.deepEqual({ valid: false, needsRehash: false });
+        .should.be.rejectedWith('password must be a string.');
+      for (const [password, stored, salt] of [
+        ['candidate', 'unknown-format', undefined],
+        ['candidate', null, ''],
+        [null, 'unknown-format', undefined],
+      ]) {
+        (
+          await passwordHashing.verifyPassword(password, stored, salt)
+        ).should.deepEqual({ valid: false, needsRehash: false });
+      }
       (await passwordHashing.dummyVerifyPassword(null)).should.be.false();
     });
 
-    it('verifies legacy PBKDF2 hashes and marks successful logins for upgrade', async function () {
-      const salt = crypto.randomBytes(16);
-      const legacyKey = crypto.pbkdf2Sync(
-        'legacy password',
-        salt,
-        10000,
-        64,
-        'sha1',
-      );
-      const encodedSalt = salt.toString('base64');
-      const encodedKey = legacyKey.toString('base64');
+    describe('with a stubbed scrypt', function () {
+      const salt = Buffer.alloc(16).toString('base64url');
+      const key = Buffer.alloc(32, 1).toString('base64url');
+      const hash = (...parts: string[]) =>
+        ['', 'scrypt', 'v=1', 'ln=17,r=8,p=1', ...parts].join('$');
+      // Same bytes, but with non-zero padding bits in the last character.
+      const nonCanonical = (value: string) =>
+        value.slice(0, -1) +
+        String.fromCharCode(value.charCodeAt(value.length - 1) + 1);
+      let derived: Uint8Array;
+      let scrypt: sinon.SinonStub;
 
-      (
-        await passwordHashing.verifyPassword(
-          'legacy password',
-          encodedKey,
-          encodedSalt,
-        )
-      ).should.deepEqual({ valid: true, needsRehash: true });
-      (
-        await passwordHashing.verifyPassword(
-          'wrong password',
-          encodedKey,
-          encodedSalt,
-        )
-      ).should.deepEqual({ valid: false, needsRehash: false });
-    });
+      beforeEach(function () {
+        derived = Buffer.alloc(32, 1);
+        scrypt = sinon
+          .stub(crypto, 'scrypt')
+          .callsFake((password, salt, keyLength, options, callback) =>
+            callback(null, derived as NonSharedBuffer),
+          );
+      });
+      afterEach(function () {
+        scrypt.restore();
+      });
 
-    it('runs dummy current-cost work for malformed legacy records', async function () {
-      (
-        await passwordHashing.verifyPassword('candidate', 'bad-key', 'bad-salt')
-      ).should.deepEqual({ valid: false, needsRehash: false });
-      (
-        await passwordHashing.verifyPassword('candidate', 'bad-key', 'AA==')
-      ).should.deepEqual({ valid: false, needsRehash: false });
+      it('accepts only the exact current format without a legacy salt', async function () {
+        const cases: Array<[string, unknown, boolean]> = [
+          [hash(salt, key), undefined, true],
+          [hash(salt, key), null, true],
+          [hash(salt, key), '', true],
+          [hash(salt, key), 'legacy', false],
+          [`${hash(salt, key)}$extra`, undefined, false],
+          [hash(salt, key).replace('v=1', 'v=2'), undefined, false],
+          [hash(salt, key).replace('ln=17', 'ln=18'), undefined, false],
+          [hash(Buffer.alloc(15).toString('base64url'), key), undefined, false],
+          [hash(nonCanonical(salt), key), undefined, false],
+          [hash(salt, nonCanonical(key)), undefined, false],
+          [hash('A', key), undefined, false],
+          [`${hash(salt, key)}=`, undefined, false],
+        ];
+        for (const [stored, legacySalt, valid] of cases) {
+          (
+            await passwordHashing.verifyPassword('pw', stored, legacySalt)
+          ).should.deepEqual({ valid, needsRehash: false });
+        }
+      });
+
+      it('rejects derived keys that are not same-length buffers', async function () {
+        for (const value of [
+          new Uint8Array(Buffer.alloc(32, 1)),
+          Buffer.alloc(31, 1),
+        ]) {
+          derived = value;
+          (
+            await passwordHashing.verifyPassword('pw', hash(salt, key))
+          ).should.deepEqual({ valid: false, needsRehash: false });
+        }
+      });
+
+      it('derives keys from the candidate, or the empty string for non-strings', async function () {
+        await passwordHashing.dummyVerifyPassword('pw');
+        await passwordHashing.dummyVerifyPassword(null);
+        await passwordHashing.verifyPassword(null, hash(salt, key));
+        scrypt.args.map(args => args[0]).should.deepEqual(['pw', '', '']);
+      });
+
+      it('verifies legacy PBKDF2 hashes and runs dummy work only on failure', async function () {
+        const legacy = (password: string, saltBytes: Buffer) =>
+          crypto
+            .pbkdf2Sync(password, saltBytes, 10000, 64, 'sha1')
+            .toString('base64');
+        const legacySalt = Buffer.alloc(16).toString('base64');
+        const encodedKey = legacy('legacy password', Buffer.alloc(16));
+        const cases: Array<[string, unknown, unknown, boolean, number]> = [
+          ['legacy password', encodedKey, legacySalt, true, 0],
+          ['wrong password', encodedKey, legacySalt, false, 1],
+          ['legacy password', encodedKey, 'AAAAAAAAAAAAAAAAAAAAAB==', false, 1],
+          [
+            'legacy password',
+            legacy('legacy password', Buffer.alloc(15)),
+            Buffer.alloc(15).toString('base64'),
+            false,
+            1,
+          ],
+          ['legacy password', encodedKey, 12345, false, 1],
+          ['legacy password', encodedKey, 'bad-salt', false, 1],
+          ['candidate', 'bad-key', legacySalt, false, 1],
+          ['candidate', 'bad-key', 'AA==', false, 1],
+        ];
+        for (const [password, stored, salt, valid, dummyRuns] of cases) {
+          scrypt.resetHistory();
+          (
+            await passwordHashing.verifyPassword(password, stored, salt)
+          ).should.deepEqual({ valid, needsRehash: valid });
+          scrypt.callCount.should.equal(dummyRuns);
+        }
+      });
     });
 
     it('propagates KDF provider errors and releases the scheduler slot', async function () {

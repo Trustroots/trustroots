@@ -1,9 +1,5 @@
 import type { QueryFilter, HydratedDocument } from 'mongoose';
 import type { UserRecord } from '../../../../testutils/server/model-contracts.mts';
-const {
-  hashIpAddress,
-}: typeof import('../../../core/server/services/ip-hash.server.service.mts') = require('../../../core/server/services/ip-hash.server.service.mts');
-
 const request: typeof import('supertest') = require('supertest');
 const moment: typeof import('moment') = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
@@ -23,25 +19,12 @@ interface LastSeenUserRecord extends UserRecord {
 interface LastSeenRequest {
   get(name: string): string | undefined;
   ip: string;
-  user?: { id: string; lastIpHash?: string; seen?: Date };
 }
 const lastSeen: {
-  (
-    req: LastSeenRequest,
-    res: import('express').Response,
-    next: (error?: unknown) => void,
-  ): void;
-  getClientIpAddress(
-    req: Pick<LastSeenRequest, 'get' | 'ip'>,
-  ): string | undefined;
+  getClientIpAddress(req: LastSeenRequest): string | undefined;
 } = require('./../../server/controllers/users.lastseen.server.controller.mjs');
 const User = mongoose.model<LastSeenUserRecord>('User');
 type LastSeenDocument = HydratedDocument<LastSeenUserRecord>;
-type CallbackUpdate = (
-  id: string,
-  update: Partial<LastSeenUserRecord>,
-  callback: (error?: unknown) => void,
-) => void;
 function findUser(
   filter: QueryFilter<LastSeenUserRecord>,
   callback: (error: unknown | null, user: LastSeenDocument | null) => void,
@@ -117,6 +100,23 @@ describe('User last seen CRUD tests', function () {
       await utils.signOut(agent);
     });
     afterEach(utils.clearDatabase);
+
+    it('uses the socket-derived request address when Passenger is unavailable', () => {
+      const req = {
+        get: () => undefined,
+        ip: '2001:db8::1',
+      };
+      lastSeen.getClientIpAddress(req)!.should.equal('2001:db8::1');
+    });
+
+    it('does not store an invalid client address', () => {
+      const req = {
+        get: () => 'not-an-ip-address',
+        ip: 'not-an-ip-address',
+      };
+      should(lastSeen.getClientIpAddress(req)).be.undefined();
+    });
+
     it('should update the last seen date of logged user when accessing api', function (done) {
       // Read statistics
       sinon.clock.tick(20);
@@ -145,136 +145,98 @@ describe('User last seen CRUD tests', function () {
           );
         });
     });
-    it('prefers the trusted Passenger client address', () => {
-      const req = {
-        get: (header: string) =>
-          header === '!~Passenger-Client-Address' ? '203.0.113.24' : undefined,
-        ip: '198.51.100.24',
-      };
-      lastSeen.getClientIpAddress(req)!.should.equal('203.0.113.24');
-    });
-    it('uses the socket-derived request address when Passenger is unavailable', () => {
-      const req = {
-        get: () => undefined,
-        ip: '2001:db8::1',
-      };
-      lastSeen.getClientIpAddress(req)!.should.equal('2001:db8::1');
-    });
-    it('does not store an invalid client address', () => {
-      const req = {
-        get: () => 'not-an-ip-address',
-        ip: 'not-an-ip-address',
-      };
-      should(lastSeen.getClientIpAddress(req)).be.undefined();
-    });
-    it('updates a changed IP address without advancing the last-seen timestamp', async () => {
-      const findByIdAndUpdate = sinon.stub(
-        User,
-        'findByIdAndUpdate',
-      ) as unknown as sinon.SinonStub<Parameters<CallbackUpdate>, void>;
-      findByIdAndUpdate.resolves();
-      const req: LastSeenRequest = {
-        get: () => '203.0.113.24',
-        ip: '198.51.100.24',
-        user: {
-          id: 'user-id',
-          lastIpHash: hashIpAddress('203.0.113.23'),
-          seen: new Date(),
-        },
-      };
-      await new Promise<void>((resolve, reject) => {
-        lastSeen(req, {} as unknown as import('express').Response, err =>
-          err ? reject(err) : resolve(),
-        );
-      });
-      sinon.assert.calledOnce(findByIdAndUpdate);
-      findByIdAndUpdate.firstCall.args[0].should.equal('user-id');
-      findByIdAndUpdate.firstCall.args[1].should.deepEqual({
-        lastIpHash: hashIpAddress('203.0.113.24'),
-      });
-    });
-    it('should update the last seen date only if a specific time passed since the last update', function (done) {
-      // the user's username, shortcut
-      const username = _confirmedUser.username;
-
-      // how long should we wait between updates on minimum
-      const minutesToUpdate = {
-        minutes: 1,
-      }; // 1 minute
-
+    it('should update the last seen date only after the configured interval', async function () {
       sinon
         .stub(config.limits, 'timeToUpdateLastSeenUser')
-        .value(minutesToUpdate);
-      const timeToUpdate = moment.duration(minutesToUpdate).asMilliseconds();
+        .value({ minutes: 1 });
+      const seenAfterRequest = async (tick: number) => {
+        sinon.clock.tick(tick);
+        await agent.get('/api/messages').expect(200);
+        const user = await User.findOne({ username: _confirmedUser.username });
+        assertUser(user);
+        return user.seen;
+      };
       const originalTime = new Date();
-      // update for the first time, OK
-      agent
-        .get('/api/messages')
-        .expect(200)
-        .end(function () {
-          // read user from database
-          findUser(
-            {
-              username,
-            },
-            function (err, user) {
-              try {
-                if (err) throw err;
-                assertUser(user);
-                should(user.seen).eql(originalTime);
 
-                // now wait almost for the time to update
-                sinon.clock.tick(timeToUpdate - 1);
-                agent
-                  .get('/api/messages')
-                  .expect(200)
-                  .end(function () {
-                    // and the User.seen should not be updated (too early)
-                    findUser(
-                      {
-                        username,
-                      },
-                      function (err, user) {
-                        try {
-                          if (err) throw err;
-                          assertUser(user);
-                          should(user.seen).eql(originalTime);
+      should(await seenAfterRequest(0)).eql(originalTime);
+      // Exactly the interval is not enough; one more millisecond is.
+      should(await seenAfterRequest(60 * 1000)).eql(originalTime);
+      should(await seenAfterRequest(1)).eql(new Date());
+    });
+  });
+});
 
-                          // now wait for another 2 milliseconds
-                          sinon.clock.tick(2);
-                          agent
-                            .get('/api/messages')
-                            .expect(200)
-                            .end(function () {
-                              // and the User.seen should be updated now
-                              findUser(
-                                {
-                                  username,
-                                },
-                                function (err, user) {
-                                  if (err) return done(err);
-                                  try {
-                                    assertUser(user);
-                                    should(user.seen).eql(new Date());
-                                    return done();
-                                  } catch (error) {
-                                    return done(error);
-                                  }
-                                },
-                              );
-                            });
-                        } catch (err) {
-                          return done(err);
-                        }
-                      },
-                    );
-                  });
-              } catch (err) {
-                return done(err);
-              }
-            },
-          );
-        });
+describe('Last seen middleware', function () {
+  type Middleware = (
+    req: object,
+    res: object,
+    next: (error?: unknown) => void,
+  ) => void;
+  const middleware = lastSeen as unknown as Middleware;
+  const {
+    hashIpAddress,
+  }: typeof import('../../../core/server/services/ip-hash.server.service.mts') = require('../../../core/server/services/ip-hash.server.service.mts');
+  const now = new Date('2026-01-02T03:04:05.000Z');
+  const interval = moment
+    .duration(config.limits.timeToUpdateLastSeenUser)
+    .asMilliseconds();
+  const ip = '192.0.2.1';
+  const otherIp = '192.0.2.2';
+
+  beforeEach(() => sinon.useFakeTimers({ now, toFake: ['Date'] }));
+  afterEach(() => sinon.restore());
+
+  const cases: Array<
+    [string, { seenAgo?: number; ip: string } | null, object | null]
+  > = [
+    ['skips anonymous requests', null, null],
+    [
+      'skips a recent visit from the same address',
+      { seenAgo: interval, ip },
+      null,
+    ],
+    [
+      'skips a recent visit without a valid address',
+      { seenAgo: 0, ip: 'not-an-ip' },
+      null,
+    ],
+    [
+      'stores a changed address without touching seen',
+      { seenAgo: 0, ip: otherIp },
+      { lastIpHash: hashIpAddress(otherIp) },
+    ],
+    [
+      'updates seen after the interval',
+      { seenAgo: interval + 1, ip },
+      { seen: now },
+    ],
+    [
+      'stores both on a first visit',
+      { ip: otherIp },
+      { seen: now, lastIpHash: hashIpAddress(otherIp) },
+    ],
+  ];
+  cases.forEach(([name, visit, update]) => {
+    it(name, async () => {
+      const findByIdAndUpdate = sinon
+        .stub(User, 'findByIdAndUpdate')
+        .resolves(null);
+      const user = visit && {
+        id: 'member-id',
+        lastIpHash: hashIpAddress(ip),
+        seen:
+          visit.seenAgo === undefined
+            ? undefined
+            : new Date(now.getTime() - visit.seenAgo),
+      };
+      const error = await new Promise(resolve =>
+        middleware({ user, get: () => undefined, ip: visit?.ip }, {}, resolve),
+      );
+      should(error).be.undefined();
+      // Serialised, because the fake-timer Date has its own prototype.
+      JSON.stringify(findByIdAndUpdate.args).should.equal(
+        JSON.stringify(update ? [['member-id', update]] : []),
+      );
     });
   });
 });

@@ -254,15 +254,13 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     });
   }
   async function notify(notification: Notification): Promise<void> {
-    const userTo = _.get(
+    const userTo: ReminderUser | undefined = _.get(
       collectedUsers,
       notification._id.userTo.toString(),
-      false,
     );
-    const userFrom = _.get(
+    const userFrom: ReminderUser | undefined = _.get(
       collectedUsers,
       notification._id.userFrom.toString(),
-      false,
     );
 
     // If we don't have info about these users, they've been removed.
@@ -270,6 +268,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     // Message will still be marked as notified.
     if (!userFrom || !userTo) {
       throw new Error(
+        // Stryker disable next-line StringLiteral: the message only reaches the log, where metadata redaction keeps just the error name
         'Could not find all users relevant for this message to notify about. #j93bvs',
       );
     }
@@ -289,7 +288,8 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     if (notification.dontSend === true) {
       return;
     }
-    if (reminderOrder === 0 && notification.notificationCount === 0) {
+    // Only the first reminder can reach messages that were never reminded about: its query matches a notification count of 0 and nothing else
+    if (reminderOrder === 0) {
       // Push is best effort. Keep the existing email callback independent.
       unifiedPushWithNotify
         .notifyUnread(userTo._id, userFrom._id)
@@ -301,6 +301,7 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     }
     await new Promise<void>((resolve, reject) => {
       emailService.sendMessagesUnread(userFrom, userTo, notification, err => {
+        // Stryker disable next-line ConditionalExpression: rejecting with an undefined error leaves queueError unset, exactly like resolving
         if (err) reject(err);
         else resolve();
       });
@@ -334,12 +335,9 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
 
   // Collect message ids for updating documents to `notified:true` later
   for (let i = 0, len = notifications.length; i < len; i++) {
-    /* istanbul ignore else */
-    if (notifications[i].messages) {
-      notifications[i].messages.forEach(function (message: ReminderMessage) {
-        messageIds.push(message.id);
-      });
-    }
+    notifications[i].messages.forEach(function (message: ReminderMessage) {
+      messageIds.push(message.id);
+    });
   }
 
   // No message ids (shouldn't happen, but just in case)

@@ -66,13 +66,11 @@ let roleReset: { roles: string[]; rolesLength: number } | undefined;
 
 async function loadController({
   findResults = [],
-  maxUploadSize = 2 * 1024 * 1024,
-}: { findResults?: NewsletterUser[]; maxUploadSize?: number } = {}) {
+}: { findResults?: NewsletterUser[] } = {}) {
   const User = mongoose.model('User');
   const findStub = sinon.stub(User, 'find').returns({
     exec: async () => findResults,
   });
-  sinon.stub(config, 'maxUploadSize').value(maxUploadSize);
   const roles = userRolesService.restrictedMessagingRoles;
   const rolesLength = roles.length;
   roleReset = { roles, rolesLength };
@@ -115,8 +113,9 @@ describe('Admin newsletter controller edge-case unit tests', () => {
   });
   describe('uploadSubscribersCsv', () => {
     it('returns 413 for files larger than upload limit', async () => {
-      const limit = 2 * 1024 * 1024;
-      const { controller } = await loadController({ maxUploadSize: limit });
+      // Multer reads the limit once, when the controller first loads.
+      const limit: number = config.maxUploadSize;
+      const { controller } = await loadController();
       const res = mockResponse();
 
       controller.uploadSubscribersCsv(
@@ -132,7 +131,7 @@ describe('Admin newsletter controller edge-case unit tests', () => {
 
       res.statusCode.should.equal(413);
       res.body.message!.should.equal(
-        'File too big. Please maximum 2.00 Mb files.',
+        `File too big. Please maximum ${(limit / 1048576).toFixed(2)} Mb files.`,
       );
     });
 

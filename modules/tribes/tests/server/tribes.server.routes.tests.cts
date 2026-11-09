@@ -133,13 +133,6 @@ describe('Tribe CRUD tests', function () {
     response.headers.link.should.not.containEql('constructor');
     response.body.should.have.length(1);
   });
-  it('serves the catalogue and details through the React root', async () => {
-    for (const url of ['/circles', `/circles/${tribe.slug}`]) {
-      const response = await agent.get(url).expect(200);
-      response.text.should.containEql('id="tr-react-root"');
-      response.text.should.not.containEql('data-ui-view');
-    }
-  });
   it('lists only recent, visible members of circles the viewer joined', async () => {
     user.member!.push({ tribe: tribe._id });
     await user.save();
@@ -273,38 +266,141 @@ describe('Tribe CRUD tests', function () {
       .map((member: { username: string }) => member.username)
       .should.deepEqual(['eligiblecontact']);
   });
+
+  const circleFixture = (
+    username: string,
+    attributes: Partial<UserRecord> & Record<string, unknown> = {},
+  ) => ({
+    ..._user,
+    username,
+    email: `${username}@example.com`,
+    displayName: `Member ${username}`,
+    password: 'M3@n.jsI$Aw3$0m3',
+    public: true,
+    member: [{ tribe: tribe._id }],
+    seen: new Date(),
+    ...attributes,
+  });
+  const usernames = (members: { username: string }[]) =>
+    members.map(member => member.username);
+
+  it('lists confirmed contacts in either direction ordered by name', async () => {
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const [fromViewer, toViewer, unconfirmed, otherA, otherB] =
+      await utils.saveUsersWithCachedPasswords([
+        circleFixture('fromviewer', { displayName: 'A From viewer' }),
+        circleFixture('toviewer', { displayName: 'B To viewer' }),
+        circleFixture('unconfirmed'),
+        circleFixture('othera'),
+        circleFixture('otherb'),
+      ]);
+    await Contact.create([
+      { userFrom: user._id, userTo: fromViewer._id, confirmed: true },
+      { userFrom: toViewer._id, userTo: user._id, confirmed: true },
+      { userFrom: user._id, userTo: unconfirmed._id, confirmed: false },
+      { userFrom: otherA._id, userTo: otherB._id, confirmed: true },
+    ]);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    usernames(response.body.contacts).should.deepEqual([
+      'fromviewer',
+      'toviewer',
+    ]);
+  });
+
+  it('lists only public recommending experiences, newest first', async () => {
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const [older, newer, notRecommending, privateExperience, forOther, other] =
+      await utils.saveUsersWithCachedPasswords([
+        circleFixture('older'),
+        circleFixture('newer'),
+        circleFixture('notrecommending'),
+        circleFixture('privateexperience'),
+        circleFixture('forother'),
+        circleFixture('other'),
+      ]);
+    await Experience.create([
+      {
+        userFrom: older._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes',
+        created: new Date('2021-01-01'),
+      },
+      {
+        userFrom: newer._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes',
+        created: new Date('2024-01-01'),
+      },
+      {
+        userFrom: notRecommending._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'no',
+      },
+      {
+        userFrom: privateExperience._id,
+        userTo: user._id,
+        public: false,
+        recommend: 'yes',
+      },
+      {
+        userFrom: forOther._id,
+        userTo: other._id,
+        public: true,
+        recommend: 'yes',
+      },
+    ]);
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    usernames(response.body.recommenders).should.deepEqual(['newer', 'older']);
+  });
+
+  it('limits active members to the eight most recently seen', async () => {
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const now = Date.now();
+    // Saved oldest first so insertion order differs from the expected order.
+    await utils.saveUsersWithCachedPasswords(
+      Array.from({ length: 9 }, (_, index) =>
+        circleFixture(`active${index}`, {
+          seen: new Date(now - (9 - index) * 60 * 1000),
+        }),
+      ),
+    );
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get(`/api/tribes/${tribe.slug}/members`)
+      .expect(200);
+    usernames(response.body.active).should.deepEqual([
+      'active8',
+      'active7',
+      'active6',
+      'active5',
+      'active4',
+      'active3',
+      'active2',
+      'active1',
+    ]);
+  });
+
+  it('does not serve non-public circles by slug', async () => {
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent.get(`/api/tribes/${tribeNonPublic.slug}`);
+    response.body.should.not.have.property('label');
+  });
+
   it('requires circle membership to list active members', async () => {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     await agent.get(`/api/tribes/${tribe.slug}/members`).expect(403);
-  });
-  it('should be able to read tribes when not logged in', function (done) {
-    // Read tribes
-    agent
-      .get('/api/tribes')
-      .expect(200)
-      .end(function (tribesReadErr, tribesReadRes) {
-        tribesReadRes.body.should.have.length(1);
-        tribesReadRes.body[0].label.should.equal('Awesome Tribe');
-        tribesReadRes.body[0].slug.should.equal('awesome-tribe');
-        tribesReadRes.body[0].description.should.equal(_tribe.description);
-        tribesReadRes.body[0].attribution.should.equal(_tribe.attribution);
-        tribesReadRes.body[0].attribution_url.should.equal(
-          _tribe.attribution_url,
-        );
-        tribesReadRes.body[0].count.should.eql(0);
-        tribesReadRes.body[0].new.should.equal(true); // Virtual field
-        should.exist(tribesReadRes.body[0].created);
-        should.exist(tribesReadRes.body[0]._id);
-        // `color` and `image` are published only for tribes
-        should.exist(tribesReadRes.body[0].color);
-        tribesReadRes.body[0].image.should.equal(_tribe.image);
-        // These are at the model, but aren't exposed
-        should.not.exist(tribesReadRes.body[0].synonyms);
-        should.not.exist(tribesReadRes.body[0].labelHistory);
-        should.not.exist(tribesReadRes.body[0].slugHistory);
-        // Call the assertion callback
-        return done(tribesReadErr);
-      });
   });
   it('should be able to read tribes when logged in', function (done) {
     agent

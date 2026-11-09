@@ -344,6 +344,7 @@ service.changePassword = function (req, res) {
     },
     (err: PasswordError) => {
       res.status(err.status || 400).send({
+        // Stryker disable next-line StringLiteral: getErrorMessageByKey('') falls back to the same default message
         message: err.message || errorService.getErrorMessageByKey('default'),
       });
     },

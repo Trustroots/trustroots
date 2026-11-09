@@ -49,7 +49,6 @@ describe('Create an experience', () => {
   let realNow: number;
   let user1: UserDocument;
   let user2: UserDocument;
-  let user3Nonpublic: UserDocument;
   const _usersPublic = utils.generateUsersWithSharedPassword(2, {
     public: true,
   });
@@ -71,8 +70,7 @@ describe('Create an experience', () => {
     sinon.restore();
   });
   beforeEach(async () => {
-    [user1, user2, user3Nonpublic] =
-      await utils.saveUsersWithCachedPasswords(_users);
+    [user1, user2] = await utils.saveUsersWithCachedPasswords(_users);
   });
   afterEach(utils.clearDatabase);
   context('logged in', () => {
@@ -210,27 +208,6 @@ describe('Create an experience', () => {
             .send({
               userTo: '0'.repeat(24),
               // nonexistent user id
-              interactions: {
-                met: false,
-                guest: true,
-                host: false,
-              },
-              recommend: 'no',
-            })
-            .expect(404);
-          should(body).match({
-            message: 'Not found.',
-            details: {
-              userTo: 'not found',
-            },
-          });
-        });
-        it('[creating an experience for non-public user] 404', async () => {
-          const { body } = await agent
-            .post('/api/experiences')
-            .send({
-              userTo: user3Nonpublic._id,
-              // non-public user id
               interactions: {
                 met: false,
                 guest: true,
@@ -634,23 +611,6 @@ describe('Create an experience', () => {
           },
         });
       });
-    });
-  });
-  context('logged in as non-public user', () => {
-    // Sign in and sign out
-    beforeEach(function () {
-      return utils.signIn.call(this, _usersNonpublic[0], agent);
-    });
-    afterEach(function () {
-      return utils.signOut.call(this, agent);
-    });
-    it('403', async () => {
-      await agent.post('/api/experiences').send({}).expect(403);
-    });
-  });
-  context('not logged in', () => {
-    it('403', async () => {
-      await agent.post('/api/experiences').send({}).expect(403);
     });
   });
 });

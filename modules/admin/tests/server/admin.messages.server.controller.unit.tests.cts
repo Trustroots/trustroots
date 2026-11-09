@@ -340,17 +340,19 @@ describe('Admin messages controller unit tests', () => {
     should(responseBody(response).message).equal(message);
   });
 
-  it('rejects missing warning content', async () => {
-    const res = mockResponse();
-    await adminMessages.sendScammerWarning(
-      { body: { username: 'scammer' } },
-      res,
-    );
-    const response = await res.waitForResponse();
+  // A link without an address is dropped, leaving only a blank line.
+  for (const content of [undefined, '<a>x</a><br>'])
+    it(`rejects warning content without text: ${content}`, async () => {
+      const res = mockResponse();
+      await adminMessages.sendScammerWarning(
+        { body: { username: 'scammer', content } },
+        res,
+      );
+      const response = await res.waitForResponse();
 
-    response.statusCode.should.equal(400);
-    should(responseBody(response).message).equal('Please write a message.');
-  });
+      response.statusCode.should.equal(400);
+      should(responseBody(response).message).equal('Please write a message.');
+    });
 
   it('returns the validation error when warning recipient lookup is invalid', async () => {
     const res = mockResponse();
@@ -384,5 +386,192 @@ describe('Admin messages controller unit tests', () => {
     const response = await res.waitForResponse();
 
     response.statusCode.should.equal(400);
+  });
+});
+
+describe('Admin scammer warnings with stored members', () => {
+  const crypto: typeof import('node:crypto') = require('node:crypto');
+  const assert: typeof import('node:assert').strict =
+    require('node:assert').strict;
+  const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil.mts');
+  type ThreadRecord =
+    import('../../../../testutils/server/model-contracts.mts').ThreadRecord;
+  const Thread = mongoose.model<ThreadRecord>('Thread');
+  type Saved = { _id: import('mongoose').Types.ObjectId; username: string };
+  let admin: Saved;
+  let scammer: Saved;
+  let first: Saved;
+  let second: Saved;
+  let bystanders: Saved[];
+  const requestId = 'a'.repeat(32);
+
+  beforeEach(async () => {
+    const raw = utils.generateUsersWithSharedPassword(6);
+    raw[0].username = 'warnadmin';
+    raw[1].username = 'warnscammer';
+    // Created in reverse name order, so only sorting lists them by name.
+    raw[2].username = 'warnrecipientb';
+    raw[3].username = 'warnrecipienta';
+    raw[4].username = 'warnbystandera';
+    raw[5].username = 'warnbystanderb';
+    const saved = (await utils.saveUsersWithCachedPasswords(
+      raw,
+    )) as unknown as Saved[];
+    [admin, scammer, second, first, ...bystanders] = saved;
+    await Message.create(
+      [second, first, admin].map(recipient => ({
+        content: 'Fictional scam.',
+        userFrom: scammer._id,
+        userTo: recipient._id,
+      })),
+    );
+  });
+  afterEach(async () => {
+    sinon.restore();
+    await utils.clearDatabase();
+  });
+
+  async function call(
+    action: 'getScammerRecipients' | 'sendScammerWarning',
+    body: Record<string, unknown>,
+  ) {
+    const res = mockResponse();
+    await adminMessages[action]({ body, user: { _id: admin._id } }, res);
+    const response = await res.waitForResponse();
+    return {
+      statusCode: response.statusCode,
+      body: JSON.parse(JSON.stringify(response.body)),
+    };
+  }
+  function warn(body: Record<string, unknown> = {}) {
+    return call('sendScammerWarning', {
+      username: scammer.username,
+      content: 'Please ignore that fictional message.',
+      requestId,
+      ...body,
+    });
+  }
+  // The thread key the controller derives for two members, from ids read back
+  // from the database.
+  async function threadId(...usernames: string[]) {
+    const ids = await User.find({ username: { $in: usernames } }).lean();
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify(ids.map(user => String(user._id)).sort()))
+      .digest('hex')
+      .slice(0, 24);
+  }
+
+  it('lists recipients by name with only their public names', async () => {
+    const response = await call('getScammerRecipients', {
+      username: `  ${scammer.username}  `,
+    });
+    assert.equal(response.statusCode, 200);
+    const users = await User.find({ _id: { $in: [first._id, second._id] } })
+      .sort({ username: 1 })
+      .lean();
+    assert.deepEqual(response.body, {
+      scammer: { _id: String(scammer._id), username: scammer.username },
+      recipients: users.map(user => ({
+        _id: String(user._id),
+        username: user.username,
+        displayName: user.displayName,
+      })),
+    });
+  });
+
+  it('requires a well-formed request ID', async () => {
+    for (const bad of [[requestId], 'x' + requestId, requestId + 'x']) {
+      assert.deepEqual(await warn({ requestId: bad }), {
+        statusCode: 400,
+        body: { message: 'A valid warning request ID is required.' },
+      });
+    }
+    assert.equal(await Message.countDocuments({ userFrom: admin._id }), 0);
+  });
+
+  it('warns every other recipient once, visibly, in a thread of its own', async () => {
+    const unrelated = await Thread.create({
+      userFrom: bystanders[0]._id,
+      userTo: bystanders[1]._id,
+      updated: new Date('2020-01-01T00:00:00.000Z'),
+      read: true,
+    });
+    const response = await warn();
+    assert.deepEqual(response, {
+      statusCode: 200,
+      body: {
+        scammer: { _id: String(scammer._id), username: scammer.username },
+        sent: 2,
+      },
+    });
+    const warnings = await Message.find({ userFrom: admin._id }).lean();
+    assert.deepEqual(
+      warnings.map(warning => String(warning.userTo)).sort(),
+      [String(first._id), String(second._id)].sort(),
+    );
+    for (const warning of warnings) {
+      assert.equal(warning.shadowHidden, false);
+      assert.equal(warning.read, false);
+      assert.equal(warning.notificationCount, 0);
+      assert.ok(warning.created instanceof Date);
+      const thread = (await Thread.findOne({ message: warning._id }).lean())!;
+      assert.equal(String(thread.userFrom), String(admin._id));
+      assert.equal(String(thread.userTo), String(warning.userTo));
+      assert.equal(thread.updated?.getTime(), warning.created?.getTime());
+    }
+    assert.deepEqual(
+      await Thread.findById(unrelated._id).lean(),
+      unrelated.toObject(),
+    );
+    assert.equal(await Thread.countDocuments(), 3);
+  });
+
+  it('writes the other threads when one cannot be created', async () => {
+    // A thread between other members already holds the first recipient's key.
+    await Thread.create({
+      _id: new mongoose.Types.ObjectId(
+        await threadId('warnadmin', 'warnrecipienta'),
+      ),
+      userFrom: bystanders[0]._id,
+      userTo: bystanders[1]._id,
+      updated: new Date(),
+    });
+    const bulkWrite = Thread.bulkWrite.bind(Thread);
+    const write = sinon.stub(Thread, 'bulkWrite');
+    // Another request wins the first attempt, so the batch is retried.
+    write
+      .onFirstCall()
+      .rejects(Object.assign(new Error('Concurrent insert'), { code: 11000 }));
+    write.onSecondCall().callsFake(bulkWrite as never);
+    assert.equal((await warn()).statusCode, 400);
+    sinon.restore();
+    const secondWarning = (await Message.findOne({
+      userFrom: admin._id,
+      userTo: second._id,
+    }).lean())!;
+    assert.ok(await Thread.exists({ message: secondWarning._id }));
+
+    // Without a concurrent insert, the first attempt also writes the rest.
+    await Thread.deleteMany({ message: secondWarning._id });
+    assert.equal((await warn()).statusCode, 400);
+    assert.ok(await Thread.exists({ message: secondWarning._id }));
+  });
+
+  it('retries only after a duplicate key error', async () => {
+    const callable = Object.assign(() => undefined, { code: 11000 });
+    for (const failure of [
+      new Error('Thread storage unavailable'),
+      Object.assign(new Error('Validation failed'), { code: 121 }),
+      callable,
+    ]) {
+      const bulkWrite = Thread.bulkWrite.bind(Thread);
+      const write = sinon.stub(Thread, 'bulkWrite');
+      write.onFirstCall().callsFake(() => Promise.reject(failure) as never);
+      write.onSecondCall().callsFake(bulkWrite as never);
+      assert.equal((await warn()).statusCode, 400);
+      assert.equal(write.callCount, 1);
+      sinon.restore();
+    }
   });
 });

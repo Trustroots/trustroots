@@ -41,7 +41,6 @@ export async function sendSupportMessage(
         $set: { deliveryState: 'sending', lastAttemptAt: new Date() },
         $inc: { attempts: 1 },
       },
-      { returnDocument: 'after' },
     );
     // Duplicate Agenda jobs do not claim an already-running or completed send.
     if (!message) return done();
@@ -62,7 +61,7 @@ export async function sendSupportMessage(
       .replace(/[\r\n]+/g, ' ')
       .trim()
       .slice(0, 998);
-    const replySubject = /^re:\s*/i.test(requestSubject)
+    const replySubject = /^re:/i.test(requestSubject)
       ? requestSubject
       : `Re: ${requestSubject}`;
     transport = nodemailer.createTransport(config.mailer.options);
@@ -80,6 +79,7 @@ export async function sendSupportMessage(
       text: message.body,
       messageId: message.messageId,
       ...(message.inReplyTo && { inReplyTo: message.inReplyTo }),
+      // Stryker disable next-line OptionalChaining: Mongoose always hydrates an array for references, so the optional chain never meets undefined
       ...(message.references?.length && { references: message.references }),
       ...(message.kind === 'acknowledgement' && {
         headers: {
@@ -125,6 +125,7 @@ export async function sendSupportMessage(
     });
     return done();
   } catch (error) {
+    // Stryker disable next-line OptionalChaining: a missing data object returns before the try block can throw, so no input reaches this line without data
     const messageId = job.attrs.data?.messageId;
     const deliveryError = error as Error & {
       code?: unknown;
@@ -151,6 +152,7 @@ export async function sendSupportMessage(
     return done();
   } finally {
     try {
+      // Stryker disable next-line OptionalChaining: a TypeError from closing an undefined transport is swallowed by the surrounding catch, exactly like the optional call
       await transport?.close();
     } catch {
       // A close failure after send does not change the SMTP acceptance result.

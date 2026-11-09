@@ -68,7 +68,7 @@ describe('Local passport strategy unit tests', () => {
       require.resolve('../../../server/config/strategies/local.mts'),
       {
         mongoose: {
-          model: () => User,
+          model: (name: string) => (name === 'User' ? User : undefined),
         },
         passport: {
           use: passportUse,
@@ -117,6 +117,14 @@ describe('Local passport strategy unit tests', () => {
         .should.be.true();
     }
     User.findOne.called.should.be.false();
+  });
+
+  it('looks up an identifier of exactly the maximum length', async () => {
+    User.findOne.resolves(null);
+    const done = sinon.spy();
+    verify('a'.repeat(320), 'example-password', done);
+    await new Promise(resolve => setImmediate(resolve));
+    User.findOne.calledOnce.should.be.true();
   });
 
   it('configures username and password fields', () => {

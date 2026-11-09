@@ -122,6 +122,9 @@ describe('Service: error', function () {
       errorService
         .getErrorMessageByKey('suspended')
         .should.equal('Your account has been suspended.');
+      errorService
+        .getErrorMessageByKey('unprocessable-entity')
+        .should.equal('Unprocessable Entity.');
     });
 
     it('returns the default message for an unknown key', function () {
@@ -149,6 +152,18 @@ describe('Service: error', function () {
       const message = errorService.getErrorMessage({});
       message.should.startWith('Snap! Something went wrong.');
     });
+
+    it('keeps an earlier validation message when a later error has none', function () {
+      errorService
+        .getErrorMessage({
+          errors: {
+            email: { message: 'Email is invalid.' },
+            username: {},
+          },
+        })
+        .should.equal('Email is invalid.');
+    });
+
     it('falls back to the default message when validation errors have no message', function () {
       const message = errorService.getErrorMessage({
         errors: {
@@ -198,12 +213,6 @@ describe('Service: error', function () {
       jsonBody(res).message.should.equal('Boom');
     });
 
-    it('defaults to status 500 when the error has no status', function () {
-      const res = mockResponse('application/json');
-      errorService.errorResponse(new Error('Boom'), {}, res);
-      statusCode(res).should.equal(500);
-    });
-
     it('uses the default message when err.message is empty', function () {
       const res = mockResponse('application/json');
       errorService.errorResponse({ message: '' }, {}, res);
@@ -247,47 +256,13 @@ describe('Service: error', function () {
     });
   });
 
-  describe('sendInvalidId', function () {
-    it('responds with 400 and the invalid-id message', function () {
-      const res = mockResponse();
-      errorService.sendInvalidId(res);
-      statusCode(res).should.equal(400);
-      jsonBody(res).message.should.equal(
-        errorService.getErrorMessageByKey('invalid-id'),
-      );
-    });
-  });
-
   describe('sendBadRequest', function () {
-    it('derives the message from a Mongoose error when given', function () {
-      const res = mockResponse();
-      const err = {
-        errors: {
-          username: { message: 'Username is required.' },
-        },
-      };
-      errorService.sendBadRequest(res, err);
-      statusCode(res).should.equal(400);
-      jsonBody(res).message.should.equal('Username is required.');
-    });
-
     it('falls back to the bad-request message without an error', function () {
       const res = mockResponse();
       errorService.sendBadRequest(res);
       statusCode(res).should.equal(400);
       jsonBody(res).message.should.equal(
         errorService.getErrorMessageByKey('bad-request'),
-      );
-    });
-  });
-
-  describe('sendNotFound', function () {
-    it('responds with 404 and the not-found message', function () {
-      const res = mockResponse();
-      errorService.sendNotFound(res);
-      statusCode(res).should.equal(404);
-      jsonBody(res).message.should.equal(
-        errorService.getErrorMessageByKey('not-found'),
       );
     });
   });

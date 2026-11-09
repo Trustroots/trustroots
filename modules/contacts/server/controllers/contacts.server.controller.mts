@@ -143,24 +143,21 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
 
   let messageHTML: string | false = false;
   let messagePlain: string | false = false;
-  if (req.body.message && req.body.message !== '') {
+  if (req.body.message) {
     const message = req.body.message as string;
     messageHTML = sanitizeHtml(message, textService.sanitizeOptions);
+    // Stryker disable next-line ObjectLiteral: html-to-text wraps at 80 columns by default, so an empty options object renders the same text
     messagePlain = htmlToText.htmlToText(message, { wordwrap: 80 });
   }
   delete req.body.message;
 
   try {
-    const existingContactQuery = Contact.findOne({
+    const existingContact = await Contact.findOne({
       $or: [
         { userTo: friendUserId, userFrom: req.user._id },
         { userTo: req.user._id, userFrom: friendUserId },
       ],
     });
-    const existingContact = await (typeof existingContactQuery?.exec ===
-    'function'
-      ? existingContactQuery.exec()
-      : existingContactQuery);
     if (existingContact) {
       return res.status(409).json({
         message: errorService.getErrorMessageByKey('conflict'),
@@ -170,16 +167,14 @@ async function createContact(req: AddContactRequest, res: ContactResponse) {
 
     // Find friend before creating a contact, so restricted profiles do not
     // receive a request or reveal that they exist.
-    const friendQuery = User.findOne(
+    const friend = await User.findOne(
       {
         _id: friendUserId,
         roles: { $nin: userRolesService.restrictedMessagingRoles },
       },
       'email displayName roles blocked',
     );
-    const friend = await (typeof friendQuery?.exec === 'function'
-      ? friendQuery.exec()
-      : friendQuery);
+    // Stryker disable next-line ConditionalExpression,StringLiteral,CallExpression: the error text never reaches the response (the error service ignores errors without validation details), and without this throw the next line throws a TypeError into the same catch, sending the same 400
     if (!friend) throw new Error('Failed to load user ' + friendUserId);
     if (friend.blocked?.some(id => id.equals(req.user._id))) {
       return errorService.sendForbidden(res);
@@ -255,10 +250,10 @@ service.removeAllByUserId = function (userId, callback) {
  */
 service.confirm = async function (req, res) {
   // Only receiving user can confirm user connections
-  const contactUserToId = req.contact
-    ? contactPartyId(req.contact.userTo)
-    : undefined;
-  if (!req.contact || !req.user || !contactUserToId?.equals(req.user._id)) {
+  if (!req.contact || !req.user) {
+    return errorService.sendForbidden(res);
+  }
+  if (!contactPartyId(req.contact.userTo).equals(req.user._id)) {
     return errorService.sendForbidden(res);
   }
 
@@ -390,6 +385,7 @@ service.filterByCommon = async function (req, res, next) {
         // Include only confirmed contacts
         confirmed: true,
       },
+      // Stryker disable next-line ObjectLiteral: the projection only narrows the loaded fields; the code reads nothing but userFrom and userTo
       {
         // By default, the `_id` field is included in the results.
         // Leave it out.
@@ -397,28 +393,19 @@ service.filterByCommon = async function (req, res, next) {
         // Return only `userFrom` & `userTo` fields
         userFrom: 1,
         userTo: 1,
-        test: '$userTo',
       },
     ).exec();
 
-    // No contacts to match, just return empty array
-    if (!authUserContacts || !authUserContacts.length) {
-      req.contacts = [];
-      return next();
-    }
-
-    // Remodel authenticated user's contact list to array of user ids
-    const authUserContactUsers: string[] = [];
-    _.map(authUserContacts, function (contact) {
-      // Pick user id which isn't authenticated user themself
-      const userId = contact.userFrom.equals(user._id)
+    // Remodel authenticated user's contact list to array of user ids.
+    // Pick user id which isn't authenticated user themself and ensure we have
+    // string id's instead of Mongo ObjectId's, otherwise checking against this
+    // list fails using `indexOf()`
+    const authUserContactUsers = authUserContacts.map(contact =>
+      (contact.userFrom.equals(user._id)
         ? contact.userTo
-        : contact.userFrom;
-
-      // Ensure we have a list of string id's instead of Mongo ObjectId's
-      // Otherwise checking against this list fails using `indexOf()`
-      authUserContactUsers.push(userId.toString());
-    });
+        : contact.userFrom
+      ).toString(),
+    );
 
     // Ensure we have a list of string id's instead of Mongo ObjectId's
     // Otherwise checking if we have certain id in this list using `indexOf`

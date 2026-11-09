@@ -95,6 +95,7 @@ service.createReferenceThread = async function (req, res) {
           { userTo: req.user._id, userFrom: userTo },
         ],
       },
+      // Stryker disable next-line StringLiteral: the projection only limits loaded fields; _id, userFrom and userTo are read either way and nothing else is used
       'userTo userFrom',
     );
     let thread;
@@ -103,7 +104,7 @@ service.createReferenceThread = async function (req, res) {
         ? threadQuery.exec()
         : threadQuery);
     } catch {
-      return res.status(400).send({ message: 'Thread does not exist.' });
+      // A failed lookup leaves thread unset, answered as a missing thread below.
     }
     if (!thread) {
       return res.status(400).send({ message: 'Thread does not exist.' });
@@ -144,9 +145,10 @@ service.createReferenceThread = async function (req, res) {
       });
     }
 
-    const referenceUserTo = await User.findById(referenceUserToId)
-      .select('_id gender')
-      .exec();
+    const userQuery = User.findById(referenceUserToId);
+    // Stryker disable next-line StringLiteral: the projection only limits loaded fields; _id and gender are read either way and nothing else is used
+    const referenceUserTo = await userQuery.select('_id gender').exec();
+    // Stryker disable next-line CallExpression,ConditionalExpression,StringLiteral: a missing user either throws this error or a TypeError on the next line, and the catch sends the same 400 with the default message (the error text is never used) before anything is saved
     if (!referenceUserTo) throw new Error('Failed to load referenced user.');
 
     const referenceThread = new ReferenceThread({

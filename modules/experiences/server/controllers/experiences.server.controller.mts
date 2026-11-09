@@ -114,14 +114,18 @@ const plainText = textService.plainText as (
 ) => string;
 
 // Provide minimal access to a blocked profile or an existing reply recipient.
+// Stryker disable next-line StringLiteral: the response copies explicit fields, so loading every field instead of this projection gives the same output
+const recipientFields = '_id username displayName blocked';
+
 service.readReplyRecipient = async function (req, res, next) {
   try {
     const recipient = await User.findOne({
+      // Stryker disable next-line MethodExpression: the username schema path lowercases query values, so the case of this string never matters
       username: String(req.params.recipientUsername).toLowerCase(),
       public: true,
       roles: visibleAuthorRoles,
     })
-      .select('_id username displayName blocked')
+      .select(recipientFields)
       .exec();
     const incoming =
       recipient &&
@@ -130,6 +134,7 @@ service.readReplyRecipient = async function (req, res, next) {
         userTo: req.user._id,
         removedAt: { $exists: false },
       }));
+    // Stryker disable next-line OptionalChaining: Mongoose always hydrates the selected blocked path as an array, so it is never undefined
     const blocked = recipient?.blocked?.some(id => id.equals(req.user._id));
     if (!recipient || (!incoming && !blocked)) {
       return res.status(404).json({
@@ -228,6 +233,7 @@ function validateCreate(req: ExperienceRequest) {
 
   // Can't create an experience to oneself
   if (
+    // Stryker disable next-line ConditionalExpression: request bodies are JSON, so a non-string userTo can never equal the user's ObjectId
     typeof req.body.userTo === 'string' &&
     req.user._id.equals(req.body.userTo)
   ) {
@@ -260,6 +266,7 @@ function validateCreate(req: ExperienceRequest) {
   allowedInteractions.forEach(function (interaction) {
     if (
       _.has(req, ['body', 'interactions', interaction]) &&
+      // Stryker disable next-line OptionalChaining: _.has above is only true when interactions is a non-nullish object
       typeof req.body.interactions?.[interaction] !== 'boolean'
     ) {
       valid = false;
@@ -368,23 +375,16 @@ function processResponses(
   next: ExperienceNext,
   resOrErr: unknown,
 ) {
-  const responseError =
-    resOrErr instanceof ResponseError ? resOrErr : undefined;
-  const responseBody =
-    responseError &&
-    responseError.body !== null &&
-    typeof responseError.body === 'object'
-      ? (responseError.body as Record<string, unknown>)
-      : undefined;
-  // send error responses
-  if (responseError?.status && responseBody) {
+  // ResponseError is only built with a status and an object body.
+  if (resOrErr instanceof ResponseError) {
+    const responseBody = resOrErr.body as Record<string, unknown>;
     if (typeof responseBody.errType === 'string') {
       responseBody.message = errorService.getErrorMessageByKey(
         responseBody.errType,
       );
       delete responseBody.errType;
     }
-    return res.status(responseError.status).json(responseBody);
+    return res.status(resOrErr.status).json(responseBody);
   }
 
   // take care of unexpected errors
@@ -612,6 +612,7 @@ function pairUpExperiences(
     });
 
   experiences.forEach(experience => {
+    // Stryker disable next-line ConditionalExpression: every listed experience has userId as userTo or userFrom, and for the former userTo is never a key of the pair dictionary because self experiences are rejected on create
     if (experience.userFrom._id.equals(userId)) {
       const userTo = String(experience.userTo._id);
       if (experiencePairDict[userTo]) {
@@ -638,6 +639,7 @@ service.readMany = async function readMany(req, res, next) {
     const userToId = new mongoose.Types.ObjectId(userTo);
     let matchQuery: Record<string, unknown> = {
       removedAt: { $exists: false },
+      // Stryker disable next-line ObjectLiteral: a wider match only adds rows with neither side equal to userTo, which pairUpExperiences drops
       $or: [{ userTo: userToId }, { userFrom: userToId }],
     };
     // Allow non-public experiences only when userTo is self

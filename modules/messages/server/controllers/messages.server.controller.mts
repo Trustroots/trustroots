@@ -54,7 +54,6 @@ type MessageEndpointRecord = Omit<MessageRecord, 'userFrom' | 'userTo'> & {
   userFrom: Types.ObjectId;
   userTo: Types.ObjectId;
   shadowHidden?: boolean;
-  notified?: boolean;
 };
 
 type ThreadEndpointRecord = Omit<
@@ -252,6 +251,7 @@ function excludeBlockedUsers(
   user: MessageUser,
 ): Record<string, unknown> {
   const blocked = blockedUserIds(user);
+  // Stryker disable next-line ConditionalExpression,BlockStatement: wrapping the query with an empty $nin list matches exactly the same documents, so skipping this shortcut changes only the shape of the query
   if (blocked.length === 0) {
     return query;
   }
@@ -330,24 +330,22 @@ service.sanitizeMessages = sanitizeMessages;
  * @return {Object} Thread with possibly mutated `thread.userFrom` / `thread.userTo`
  */
 function fillDeletedProfiles(
-  threads: ClientThreadSummary[] | null | undefined,
+  threads: ClientThreadSummary[],
   callback: (error?: Error | null, result?: ClientThreadSummary[]) => void,
 ): void {
-  if (!threads || !threads.length) {
-    return callback(null, []);
-  }
   async function fill(): Promise<ClientThreadSummary[]> {
-    for (const thread of threads!) {
+    for (const thread of threads) {
       if (thread.userTo && thread.userFrom) continue;
       const field = !thread.userTo ? 'userTo' : 'userFrom';
       try {
         const stored = await Thread.findById(thread._id, field);
+        // Stryker disable next-line ConditionalExpression: when no thread is stored, reading the field below throws and the catch leaves the summary unchanged, exactly like skipping the assignment
         if (stored) thread[field] = { _id: stored[field] as Types.ObjectId };
       } catch {
         // A failed lookup leaves this summary unchanged, as before.
       }
     }
-    return threads!;
+    return threads;
   }
   fill().then(result => callback(null, result), callback);
 }
@@ -436,6 +434,7 @@ service.inbox = function (req, res) {
       populate: [
         {
           path: 'message',
+          // Stryker disable next-line StringLiteral: an empty selection populates the whole message, and only its content is read for the excerpt
           select: 'content',
         },
         userMiniService.miniUserPopulate('userFrom userTo'),
@@ -461,7 +460,7 @@ service.inbox = function (req, res) {
           // Until we refactor our code not to use `mongoose-paginate`, this helper
           // will backfill the IDs. Cumbersome and not optimal, but there are not that
           // many deleted profiles that this would be a significant issue.
-          fillDeletedProfiles(threads, function (err, threads) {
+          fillDeletedProfiles(threads!, function (err, threads) {
             res.json(threads!);
           });
         });
@@ -573,9 +572,8 @@ service.send = async function (req, res) {
         ...publicityLimit,
       }).exec();
     } catch {
-      return res
-        .status(404)
-        .send({ message: 'Member you are writing to does not exist.' });
+      // A failed lookup is treated like a missing member: the check below
+      // answers with the same 404.
     }
     if (!receiver)
       return res
@@ -588,6 +586,7 @@ service.send = async function (req, res) {
       ],
     });
     if (!existingThread) {
+      // Stryker disable next-line StringLiteral: an empty projection returns the whole user, which still includes the description
       const sender = await User.findById(user._id, 'description').exec();
       const descriptionLength = sender?.description
         ? textService.plainText(sender.description).length
@@ -607,7 +606,6 @@ service.send = async function (req, res) {
         {
           userTo: body.userTo as string,
           content: textService.html(body.content as string),
-          read: false,
         },
         user._id,
       ),
@@ -618,7 +616,6 @@ service.send = async function (req, res) {
     // but they are hidden from recipients.
     message.read = senderIsRestricted;
     message.shadowHidden = senderIsRestricted;
-    message.notified = false;
 
     message = await message.save();
     if (!message.shadowHidden) {
@@ -694,10 +691,9 @@ service.send = async function (req, res) {
  */
 service.thread = function (req, res) {
   // Sanitize messages
-  const messages =
-    req.messages && req.messages.length
-      ? sanitizeMessages(req.messages as MessageEndpointRecord[])
-      : [];
+  const messages = sanitizeMessages(
+    req.messages as MessageEndpointRecord[] | undefined,
+  );
   res.json(messages.map(message => prepareMessageForClient(message)));
 };
 
@@ -758,6 +754,7 @@ service.threadByUser = function (
       if (!data || !data.docs) {
         return errorService.sendBadRequest(
           res,
+          // Stryker disable next-line StringLiteral: sendBadRequest only reads the error's validation details, so the text of this error never reaches the response
           new Error('Failed to load messages.'),
         );
       }
@@ -878,16 +875,6 @@ service.sync = function (req, res) {
     });
   }
 
-  // Root object to be sent out from this API endpoint
-  const data: {
-    messages:
-      | Partial<Record<string, MessageEndpointDocument[]>>
-      | MessageEndpointDocument[];
-    users: HydratedDocument<PopulatedMessageUser>[];
-  } = {
-    messages: [],
-    users: [],
-  };
   const queryParams = req.query!;
   // Validate and construct date filters
   let dateFrom;
@@ -948,6 +935,7 @@ service.sync = function (req, res) {
   );
 
   // Filter only by user or also by date?
+  // Stryker disable next-line ConditionalExpression: an empty date filter inside $and matches every document, so always taking this branch gives the same results
   if (_.has(queryDate, 'created')) {
     // Construct query with date limits
     messageQuery = {
@@ -958,7 +946,11 @@ service.sync = function (req, res) {
     messageQuery = queryUsers;
   }
 
-  async function collect(): Promise<void> {
+  // Root object to be sent out from this API endpoint
+  async function collect(): Promise<{
+    messages: Partial<Record<string, MessageEndpointDocument[]>>;
+    users: HydratedDocument<PopulatedMessageUser>[];
+  }> {
     let messages = await Message.find(messageQuery)
       .sort({ created: -1 })
       .select(messageFields)
@@ -970,7 +962,7 @@ service.sync = function (req, res) {
     let userIds: string[] = [];
 
     // Re-group messages by users
-    data.messages = _.groupBy(messages, function (row) {
+    const groupedMessages = _.groupBy(messages, function (row) {
       // Collect user id
       userIds.push(row.userTo.toString());
       userIds.push(row.userFrom.toString());
@@ -984,12 +976,13 @@ service.sync = function (req, res) {
 
     // Ensure we have only one of each user ids
     userIds = _.uniq(userIds);
-    data.users = await User.find({ _id: { $in: userIds } })
+    const users = await User.find({ _id: { $in: userIds } })
       .select(userMiniService.userMiniProfileFields)
       .exec();
+    return { messages: groupedMessages, users };
   }
   collect().then(
-    () => res.json(data),
+    data => res.json(data),
     err =>
       res.status(400).send({
         message: errorService.getErrorMessage(err),

@@ -28,6 +28,7 @@ function isSelection(value: unknown): value is SupportStatusImportSelection {
     !Array.isArray(value) &&
     Object.keys(value).length === 2 &&
     'zendeskTicketId' in value &&
+    // Stryker disable next-line ConditionalExpression: Number.isSafeInteger below rejects every non-number; this check only narrows the type
     typeof value.zendeskTicketId === 'number' &&
     Number.isSafeInteger(value.zendeskTicketId) &&
     value.zendeskTicketId > 0 &&
@@ -101,8 +102,3 @@ export async function apply(
     return res.status(response.status).send({ message: response.message });
   }
 }
-
-const api = { preview, apply };
-export default api;
-/** @commonjs */
-export { api as 'module.exports' };

@@ -71,33 +71,36 @@ export const list = async (
   const dateCriteria: Record<string, Date> = { $lte: now };
   if (range === '90d') dateCriteria.$gte = since;
 
+  // The first $match only narrows the documents scanned: the $match after
+  // $unwind decides which changes are listed, so loosening it changes nothing.
   const hasNoHistory = {
     $or: [
-      { usernameHistory: { $exists: false } },
-      { usernameHistory: { $size: 0 } },
+      {
+        usernameHistory: { $exists: false },
+      },
+      {
+        usernameHistory: { $size: 0 },
+      },
     ],
   };
   const history = { $ifNull: ['$usernameHistory', []] };
-  const fallback = {
-    $cond: [
-      { $ne: [{ $ifNull: ['$usernameUpdated', null] }, null] },
-      [
-        {
-          oldUsername: null,
-          newUsername: '$username',
-          changedAt: '$usernameUpdated',
-          legacy: true,
-        },
-      ],
-      [],
-    ],
-  };
+  // Without `usernameUpdated` the fallback change has no date, so the $match
+  // after $unwind drops it.
+  const fallback = [
+    {
+      oldUsername: null,
+      newUsername: '$username',
+      changedAt: '$usernameUpdated',
+      legacy: true,
+    },
+  ];
   const pipeline: PipelineStage[] = [
     {
       $match: {
         $or: [
           { 'usernameHistory.changedAt': dateCriteria },
           {
+            // Stryker disable next-line ObjectLiteral: without history the listed change is dated by usernameUpdated, which the $match after $unwind checks again
             $and: [{ usernameUpdated: dateCriteria }, hasNoHistory],
           },
         ],

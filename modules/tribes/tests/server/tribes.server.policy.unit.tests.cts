@@ -46,21 +46,8 @@ function mockResponse(): PolicyResponseDouble {
 describe('Tribes policy unit tests', () => {
   afterEach(() => sinon.restore());
 
-  it('registers admin, user, and guest tribe policies', () => {
-    const { policy, mockAcl } = loadPolicy();
-
-    policy.invokeRolesPolicies();
-
-    mockAcl.allow.calledOnce.should.be.true();
-    const policies = mockAcl.allow.firstCall.args[0];
-    policies
-      .map(entry => entry.roles[0])
-      .should.deepEqual(['admin', 'user', 'guest']);
-    policies[2].allows
-      .map((allow: { resources: string }) => allow.resources)
-      .should.deepEqual(['/api/tribes', '/api/tribes/:tribe']);
-  });
-
+  // First in the file: module-level code is attributed to the first test, so
+  // this one must exercise the error responder wired up at load time.
   it('returns 500 when authorization fails unexpectedly', done => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
@@ -85,69 +72,82 @@ describe('Tribes policy unit tests', () => {
     done();
   });
 
-  it('returns 403 JSON when the user is not allowed', done => {
+  it('registers admin, user, and guest tribe policies', () => {
     const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
 
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['guest'],
-        },
-        route: { path: '/api/tribes' },
-        method: 'DELETE',
-      },
-      res,
-      () => {},
-    );
+    policy.invokeRolesPolicies();
 
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-    done();
+    mockAcl.allow.calledOnce.should.be.true();
+    const policies = mockAcl.allow.firstCall.args[0];
+    policies
+      .map(entry => entry.roles[0])
+      .should.deepEqual(['admin', 'user', 'guest']);
+    policies[2].allows
+      .map((allow: { resources: string }) => allow.resources)
+      .should.deepEqual(['/api/tribes', '/api/tribes/:tribe']);
   });
 
-  it('allows guests to read tribes', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    let nextCalled = false;
+  describe('granted routes', () => {
+    const decide = (
+      role: string,
+      path: string,
+      method: string,
+    ): Promise<number> => {
+      const { policy } = {
+        policy: policyModule.default,
+      };
+      policy.invokeRolesPolicies();
+      return new Promise(resolve => {
+        const res = mockResponse();
+        policy.isAllowed(
+          {
+            user:
+              role === 'guest'
+                ? undefined
+                : {
+                    _id: { valueOf: () => 'user-id' },
+                    public: true,
+                    roles: [role],
+                  },
+            route: { path },
+            method,
+          },
+          res,
+          () => resolve(200),
+        );
+        if (res.statusCode !== 200) {
+          resolve(res.statusCode);
+        }
+      });
+    };
+    const listing = '/api/tribes';
+    const detail = '/api/tribes/:tribe';
+    const members = '/api/tribes/:tribe/members';
 
-    policy.isAllowed(
-      {
-        route: { path: '/api/tribes' },
-        method: 'GET',
-      },
-      mockResponse(),
-      () => {
-        nextCalled = true;
-      },
-    );
+    for (const role of ['admin', 'user', 'guest']) {
+      it(`lets ${role} read the catalogue and a circle`, async () => {
+        (await decide(role, listing, 'GET')).should.equal(200);
+        (await decide(role, detail, 'GET')).should.equal(200);
+      });
 
-    nextCalled.should.be.true();
-    done();
-  });
+      it(`refuses ${role} writes to the catalogue and a circle`, async () => {
+        for (const path of [listing, detail, members]) {
+          for (const method of ['POST', 'PUT', 'DELETE']) {
+            (await decide(role, path, method)).should.equal(403);
+          }
+        }
+      });
+    }
 
-  it('uses signed-in user roles for ACL checks', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
+    for (const role of ['admin', 'user']) {
+      it(`lets ${role} read circle members`, async () => {
+        (await decide(role, members, 'GET')).should.equal(200);
+      });
+    }
 
-    policy.isAllowed(
-      {
-        user: { _id: { valueOf: () => 'user-id' }, roles: ['admin'] },
-        route: { path: '/api/tribes/:tribe' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
-
-    mockAcl.areAnyRolesAllowed
-      .calledWith(['admin'], '/api/tribes/:tribe', 'get')
-      .should.be.true();
-    next.calledOnce.should.be.true();
+    it('refuses guests the circle members listing', async () => {
+      (await decide('guest', members, 'GET')).should.equal(403);
+    });
   });
 
   it('keeps active circle-member listings private to signed-in roles', () => {

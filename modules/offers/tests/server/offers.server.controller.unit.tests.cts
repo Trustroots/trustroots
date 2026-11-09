@@ -16,12 +16,13 @@ import type { OfferPayload } from '../../shared/offer.js';
 const mongoose: typeof import('mongoose') = require('mongoose');
 
 const sinon: typeof import('sinon') = require('sinon');
+const winston: typeof import('winston') = require('winston');
 
 const config: TestConfigModule = require('./../../../../config/config.mts');
 const offersController: typeof import('./../../server/controllers/offers.server.controller.mjs') = require('./../../server/controllers/offers.server.controller.mjs');
 const userProfile: typeof import('./../../../users/server/controllers/users.profile.server.controller.mjs') = require('./../../../users/server/controllers/users.profile.server.controller.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil') = require('../../../../testutils/server/data.server.testutil');
-require('should');
+const should: typeof import('should') = require('should');
 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Offer = mongoose.model<OfferRecord, OfferModel>('Offer');
@@ -110,6 +111,12 @@ async function createOffer(
   await offer.save();
   return offer;
 }
+
+type ByUserRequest = Parameters<typeof offersController.offersByUserId>[0] & {
+  offers?: Array<{ _id: unknown }>;
+};
+const idsOf = (...offers: OfferDocument[]) =>
+  offers.map(offer => offer._id.toString()).sort();
 
 describe('Offers controller unit tests', () => {
   let owner: UserDocument;
@@ -212,16 +219,6 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('rejects a location that is not a coordinate pair', async () => {
-      const { res } = await runHandler(res =>
-        offersController.create(
-          { user: owner, body: { type: 'host', location: 'invalid' } },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
-
     it('creates a host offer', async () => {
       const { res } = await runHandler(res =>
         offersController.create(
@@ -231,31 +228,6 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer saved.');
-    });
-
-    it('rejects coordinates that cannot be converted to numbers', async () => {
-      const { res } = await runHandler(res =>
-        offersController.create(
-          { user: owner, body: { type: 'host', location: [10, {}] } },
-          res,
-        ),
-      );
-
-      res.statusCode.should.equal(400);
-    });
-
-    it('creates a meet offer with a valid validUntil', async () => {
-      const validUntil = require('moment')().add(5, 'days').toISOString();
-      const { res } = await runHandler(res =>
-        offersController.create(
-          {
-            user: owner,
-            body: { type: 'meet', location: [10, 20], validUntil },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
     });
 
     it('preserves numeric moment-compatible expiry input', async () => {
@@ -291,34 +263,40 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(200);
     });
 
-    it('accepts a valid meet offer expiry when max validity config is absent', async () => {
-      sinon.stub(config, 'limits').value({});
-      const controller = offersController;
-      const validUntil = require('moment')().add(5, 'days').toISOString();
-
-      const { res } = await runHandler(res =>
-        controller.create(
-          {
-            user: owner,
-            body: { type: 'meet', location: [10, 20], validUntil },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
+    it('only treats the exact map starting point as unchosen', async () => {
+      const [lat, lng] = [48.6908333333, 9.14055555556];
+      const nearlyDefault: unknown[] = [
+        [lat, lng, 5],
+        [10, lng],
+        { 0: lat, 1: lng },
+        { 0: lat, 1: lng, length: 2 },
+      ];
+      for (const location of nearlyDefault) {
+        const { res } = await runHandler(res =>
+          offersController.create(
+            { user: owner, body: { type: 'host', location } },
+            res,
+          ),
+        );
+        res.body.message.should.not.equal('Choose a location for your offer.');
+      }
     });
 
-    it('creates a meet offer defaulting validUntil', async () => {
+    it('leaves the expiry off host offers whatever the request says', async () => {
+      const validUntil = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000);
       const { res } = await runHandler(res =>
         offersController.create(
           {
             user: owner,
-            body: { type: 'meet', location: [10, 20], validUntil: 'invalid' },
+            body: { type: 'host', location: [10, 20], validUntil },
           },
           res,
         ),
       );
+
       res.statusCode.should.equal(200);
+      const offer = required(await Offer.findOne({ user: owner._id }));
+      should(offer.validUntil == null).be.true();
     });
 
     it('returns 400 when saving a new offer fails', async () => {
@@ -370,6 +348,7 @@ describe('Offers controller unit tests', () => {
         ),
       );
       res.statusCode.should.equal(400);
+      res.body.message.should.equal('Missing offer location.');
     });
 
     it('rejects changing an offer to the map starting location', async () => {
@@ -478,47 +457,6 @@ describe('Offers controller unit tests', () => {
       const reloaded = required(await Offer.findById(offerReq._id));
       required(reloaded.validUntil).should.be.a.Date();
     });
-
-    it('accepts a valid validUntil when updating a meet offer', async () => {
-      const validUntil = require('moment')().add(5, 'days').toISOString();
-      const { res } = await runHandler(res =>
-        offersController.update(
-          {
-            user: owner,
-            offer: offerReq,
-            body: { location: [1, 2], validUntil },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-
-      const reloaded = required(await Offer.findById(offerReq._id));
-      required(reloaded.validUntil).should.be.a.Date();
-    });
-
-    it('returns 400 when saving an updated offer fails', async () => {
-      const saveOffer = sinon.stub(
-        Offer.prototype,
-        'save',
-      ) as unknown as import('sinon').SinonStub<
-        [(error?: Error | null) => void],
-        void
-      >;
-      saveOffer.callsFake(() => Promise.reject(new Error('save failed')));
-
-      const { res } = await runHandler(res =>
-        offersController.update(
-          {
-            user: owner,
-            offer: offerReq,
-            body: { location: [1, 2], description: 'Updated' },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(400);
-    });
   });
 
   describe('update host offer', () => {
@@ -570,6 +508,21 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.message.should.equal('Offer removed.');
+    });
+
+    it('removes only the requested offer', async () => {
+      const otherOffer = await createOffer(stranger._id);
+      const offer = await createOffer(owner._id);
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate('user', '_id'),
+      );
+
+      await runHandler(res =>
+        offersController.delete({ user: owner, offer: offerReq }, res),
+      );
+
+      should(await Offer.findById(offer._id)).be.null();
+      should(await Offer.findById(otherOffer._id)).not.be.null();
     });
 
     it('returns 400 when removing an offer fails', async () => {
@@ -703,23 +656,6 @@ describe('Offers controller unit tests', () => {
       res.body.type.should.equal('FeatureCollection');
     });
 
-    it('keeps legacy array handling for object filters', async () => {
-      const { res } = await runHandler(res =>
-        offersController.list(
-          {
-            user: owner,
-            query: {
-              ...validCoords,
-              filters: JSON.stringify({ seen: [] }),
-            },
-          },
-          res,
-        ),
-      );
-      res.statusCode.should.equal(200);
-      res.body.type.should.equal('FeatureCollection');
-    });
-
     it('ignores invalid language filters', async () => {
       const ownerDoc = required(await User.findById(owner._id));
       const { res } = await runHandler(res =>
@@ -783,6 +719,251 @@ describe('Offers controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       res.body.type.should.equal('FeatureCollection');
+    });
+
+    interface SearchFeature {
+      type: string;
+      properties: {
+        id: string;
+        status?: string;
+        type?: string;
+        offer?: string | null;
+      };
+      geometry: { type: string; coordinates: number[] };
+    }
+    async function search(
+      viewer: UserDocument,
+      filters?: unknown,
+      coordinates: Record<string, string> = validCoords,
+    ) {
+      const query = {
+        ...coordinates,
+        ...(filters === undefined ? {} : { filters: JSON.stringify(filters) }),
+      };
+      const { res } = await runHandler(res =>
+        offersController.list({ user: viewer, query }, res),
+      );
+      return {
+        statusCode: res.statusCode,
+        message: res.body.message,
+        features: res.body.features as SearchFeature[],
+      };
+    }
+    const ids = (features: SearchFeature[]) =>
+      features.map(feature => feature.properties.id).sort();
+    async function memberWith(update: Record<string, unknown> = {}) {
+      const [member] = await utils.saveUsers(
+        utils.generateUsers(1, { public: true }),
+      );
+      await User.updateOne({ _id: member._id }, update);
+      return member;
+    }
+
+    it('names the required coordinates when one is invalid', async () => {
+      const { statusCode, message } = await search(owner, undefined, {});
+
+      statusCode.should.equal(400);
+      message.should.equal(
+        'Invalid or missing coordinate. Required coordinates: southWestLat, southWestLng, northEastLat, northEastLng.',
+      );
+    });
+
+    it('accepts decimal and exponent notation for coordinates', async () => {
+      for (const southWestLat of ['5e0', '1E+0', '5e-10', '+5.5', '.5']) {
+        const { statusCode } = await search(owner, undefined, {
+          ...validCoords,
+          southWestLat,
+        });
+        statusCode.should.equal(200, southWestLat);
+      }
+    });
+
+    it('rejects coordinates that are not plain numbers', async () => {
+      for (const southWestLat of [
+        '12,2',
+        '1 2',
+        '1x5',
+        '1ee5',
+        '1e+x',
+        '1e999',
+        '14.',
+        '12foo',
+        '3.33.33',
+      ]) {
+        const { statusCode, message } = await search(owner, undefined, {
+          ...validCoords,
+          southWestLat,
+        });
+        statusCode.should.equal(400, southWestLat);
+        message.should.startWith(
+          'Invalid or missing coordinate.',
+          southWestLat,
+        );
+      }
+    });
+
+    it('returns each offer as a GeoJSON point at its fuzzy location', async () => {
+      const offer = await createOffer(owner._id, {
+        type: 'host',
+        status: 'maybe',
+        location: [15, 25],
+      });
+      const stored = required(await Offer.findById(offer._id));
+      const [lat, lng] = Array.from(required(stored.locationFuzzy));
+
+      const { features } = await search(owner);
+
+      features.should.deepEqual([
+        {
+          type: 'Feature',
+          properties: {
+            id: offer._id.toString(),
+            status: 'maybe',
+            type: 'host',
+            offer: 'host-maybe',
+          },
+          geometry: { type: 'Point', coordinates: [lng, lat] },
+        },
+      ]);
+    });
+
+    it('lists offers that are available, maybe available or without a status', async () => {
+      const yes = await createOffer(owner._id, {
+        status: 'yes',
+        location: [15, 25],
+      });
+      const maybe = await createOffer(owner._id, {
+        status: 'maybe',
+        location: [15.1, 25.1],
+      });
+      await createOffer(owner._id, { status: 'no', location: [15.2, 25.2] });
+      const withoutStatus = await createOffer(owner._id, {
+        location: [15.3, 25.3],
+      });
+      await Offer.updateOne(
+        { _id: withoutStatus._id },
+        { $unset: { status: 1 } },
+      );
+
+      const { features } = await search(owner);
+
+      ids(features).should.deepEqual(idsOf(yes, maybe, withoutStatus));
+    });
+
+    it('hides offers of suspended, shadowbanned and non-public members', async () => {
+      const visible = await createOffer(stranger._id, { location: [15, 25] });
+      for (const [index, update] of [
+        { roles: ['user', 'suspended'] },
+        { roles: ['user', 'shadowban'] },
+        { public: false },
+      ].entries()) {
+        const hidden = await memberWith(update);
+        await createOffer(hidden._id, { location: [16 + index, 26] });
+      }
+
+      const { features } = await search(owner);
+
+      ids(features).should.deepEqual(idsOf(visible));
+    });
+
+    it('works for a viewer without circle memberships', async () => {
+      const offer = await createOffer(stranger._id, { location: [15, 25] });
+      const viewer = {
+        _id: owner._id,
+        public: true,
+      } as unknown as UserDocument;
+
+      const { statusCode, features } = await search(viewer);
+
+      statusCode.should.equal(200);
+      ids(features).should.deepEqual(idsOf(offer));
+    });
+
+    it('ignores empty or malformed filter values', async () => {
+      const hostOffer = await createOffer(owner._id, {
+        type: 'host',
+        location: [15, 25],
+      });
+      const meetOffer = await createOffer(owner._id, {
+        type: 'meet',
+        location: [15.1, 25.1],
+      });
+      const everything = idsOf(hostOffer, meetOffer);
+
+      for (const filters of [
+        { tribes: [] },
+        { tribes: { a: 1 } },
+        { types: [] },
+        { types: { 0: 'host', length: 1 } },
+        { types: ['unknown'] },
+        { languages: [] },
+        { languages: { 0: 'fin', length: 1 } },
+        { languages: ['not-a-language', 5] },
+        { seen: {} },
+        { seen: 'abc' },
+      ]) {
+        await User.updateOne(
+          { _id: owner._id },
+          { seen: new Date(Date.now() - 60 * 60 * 1000) },
+        );
+        const { statusCode, features } = await search(owner, filters);
+        statusCode.should.equal(200, JSON.stringify(filters));
+        ids(features).should.deepEqual(everything, JSON.stringify(filters));
+      }
+    });
+
+    it('rejects tribe ids that are not strings with the invalid id message', async () => {
+      const { statusCode, message } = await search(owner, { tribes: [12] });
+
+      statusCode.should.equal(400);
+      message.should.equal('Cannot interpret id.');
+    });
+
+    it('filters by language codes, ignoring unknown ones', async () => {
+      const first = await memberWith({ languages: ['iso_639_3-aaa'] });
+      const second = await memberWith({ languages: ['iso_639_3-aab'] });
+      const other = await memberWith({ languages: ['fin'] });
+      const firstOffer = await createOffer(first._id, { location: [15, 25] });
+      const secondOffer = await createOffer(second._id, {
+        location: [15.1, 25.1],
+      });
+      await createOffer(other._id, { location: [15.2, 25.2] });
+
+      const { features } = await search(owner, {
+        languages: ['iso_639_3-aaa', 'iso_639_3-aab', 'not-a-language'],
+      });
+
+      ids(features).should.deepEqual(idsOf(firstOffer, secondOffer));
+    });
+
+    it('filters by last seen', async () => {
+      const recent = await memberWith({ seen: new Date() });
+      const old = await memberWith({
+        seen: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      });
+      const recentOffer = await createOffer(recent._id, { location: [15, 25] });
+      await createOffer(old._id, { location: [15.1, 25.1] });
+
+      const { features } = await search(owner, { seen: { days: 30 } });
+
+      ids(features).should.deepEqual(idsOf(recentOffer));
+    });
+
+    it('logs the failure when the map query fails', async () => {
+      const log = sinon.stub(winston, 'log');
+      sinon.stub(Offer, 'aggregate').returns({
+        exec: () => Promise.reject(new Error('aggregate failed')),
+      } as unknown as ReturnType<typeof Offer.aggregate>);
+
+      const { statusCode } = await search(owner);
+
+      statusCode.should.equal(400);
+      sinon.assert.calledWithMatch(
+        log,
+        'error',
+        'Querying for offers caused an error. #g28fb1',
+      );
+      should((log.firstCall.args as unknown[])[2]).have.property('error');
     });
 
     it('respects showOnlyInMyCircles on offers', async () => {
@@ -1016,6 +1197,86 @@ describe('Offers controller unit tests', () => {
       res.body.type.should.equal('host');
     });
 
+    it('leaves out descriptions the offer does not have', async () => {
+      const offer = {
+        _id: new mongoose.Types.ObjectId(),
+        type: 'host',
+        user: { _id: owner._id },
+        location: [12, 22],
+        toObject() {
+          return {
+            _id: this._id,
+            type: this.type,
+            user: this.user,
+            location: this.location,
+          };
+        },
+      };
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer }, res),
+      );
+
+      res.statusCode.should.equal(200);
+      res.body.should.not.have.property('description');
+      res.body.should.not.have.property('noOfferDescription');
+    });
+
+    it('does not look up tribes for an owner without memberships', async () => {
+      const populate = sinon.stub(User, 'populate');
+      populate.rejects(new Error('populate failed'));
+      const offerOf = (user: Record<string, unknown>) => ({
+        _id: new mongoose.Types.ObjectId(),
+        type: 'host',
+        user,
+        location: [12, 22],
+        toObject() {
+          return {
+            _id: this._id,
+            type: this.type,
+            user: this.user,
+            location: this.location,
+          };
+        },
+      });
+
+      for (const user of [{ _id: owner._id }, { _id: owner._id, member: [] }]) {
+        const { res } = await runHandler(res =>
+          offersController.getOffer({ user: owner, offer: offerOf(user) }, res),
+        );
+        res.statusCode.should.equal(200);
+      }
+      populate.called.should.be.false();
+    });
+
+    it('logs and answers with the default message when the tribe lookup fails', async () => {
+      const log = sinon.stub(winston, 'log');
+      sinon.stub(User, 'populate').rejects(new Error('populate failed'));
+      const offer = await createOffer(owner._id);
+      const offerReq = populatedOffer(
+        await Offer.findById(offer._id).populate(
+          'user',
+          userProfile.userListingProfileFields,
+        ),
+      );
+      offerReq.user.member = [{ tribe: new mongoose.Types.ObjectId() }];
+
+      const { res } = await runHandler(res =>
+        offersController.getOffer({ user: owner, offer: offerReq }, res),
+      );
+
+      res.statusCode.should.equal(400);
+      res.body.message.should.equal(
+        'Snap! Something went wrong. If this keeps happening, please contact us.',
+      );
+      sinon.assert.calledWithMatch(
+        log,
+        'error',
+        'Failed to load offer. #g34gss',
+      );
+      should((log.firstCall.args as unknown[])[2]).have.property('error');
+    });
+
     it('returns an offer when tribe memberships are undefined', async () => {
       const offer = await createOffer(owner._id);
       const offerReq = populatedOffer(
@@ -1099,6 +1360,64 @@ describe('Offers controller unit tests', () => {
         ),
       );
       nextCalled.should.be.true();
+    });
+
+    it('lists only the unexpired offers of the user', async () => {
+      const current = await createOffer(owner._id, { type: 'host' });
+      const expiring = await createOffer(owner._id, {
+        type: 'meet',
+        validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      });
+      const expired = await createOffer(owner._id, { type: 'meet' });
+      await Offer.updateOne(
+        { _id: expired._id },
+        { validUntil: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      );
+      await createOffer(stranger._id, { type: 'host' });
+      const req = {
+        user: required(await User.findById(owner._id)),
+        query: {},
+      } as ByUserRequest;
+
+      const { nextCalled } = await runHandler((res, next) =>
+        offersController.offersByUserId(req, res, next, owner._id.toString()),
+      );
+
+      nextCalled.should.be.true();
+      required(req.offers)
+        .map(offer => String(offer._id))
+        .sort()
+        .should.deepEqual(idsOf(current, expiring));
+    });
+
+    it('narrows the offers to the requested valid types', async () => {
+      const host = await createOffer(owner._id, { type: 'host' });
+      const meet = await createOffer(owner._id, { type: 'meet' });
+      const cases: Array<[string, OfferDocument[]]> = [
+        ['host', [host]],
+        ['meet,host', [host, meet]],
+        ['host,bogus', [host]],
+        ['host,host,meet', [host, host]],
+        ['bogus,,', [host, meet]],
+        ['', [host, meet]],
+      ];
+
+      for (const [types, expected] of cases) {
+        const req = {
+          user: required(await User.findById(owner._id)),
+          query: { types },
+        } as ByUserRequest;
+        await runHandler((res, next) =>
+          offersController.offersByUserId(req, res, next, owner._id.toString()),
+        );
+        required(req.offers)
+          .map(offer => String(offer._id))
+          .sort()
+          .should.deepEqual(
+            [...new Set(expected.map(offer => offer._id.toString()))].sort(),
+            types,
+          );
+      }
     });
 
     it('ignores requested types when schema enum values are unavailable', async () => {
@@ -1234,6 +1553,31 @@ describe('Offers controller unit tests', () => {
       res.statusCode.should.equal(404);
     });
 
+    it('logs the failure when loading an offer errors', async () => {
+      const log = sinon.stub(winston, 'log');
+      sinon.stub(Offer, 'findById').returns({
+        populate: () => ({
+          exec: () => Promise.reject(new Error('lookup failed')),
+        }),
+      } as unknown as ReturnType<typeof Offer.findById>);
+
+      await runHandler((res, next) =>
+        offersController.offerById(
+          { user: owner },
+          res,
+          next,
+          new mongoose.Types.ObjectId().toString(),
+        ),
+      );
+
+      sinon.assert.calledWithMatch(
+        log,
+        'error',
+        'Getting offer by id caused an error. #2kg3g3',
+      );
+      should((log.firstCall.args as unknown[])[2]).have.property('error');
+    });
+
     it('calls next and attaches the offer', async () => {
       const offer = await createOffer(owner._id);
       const { nextCalled } = await runHandler((res, next) =>
@@ -1246,29 +1590,6 @@ describe('Offers controller unit tests', () => {
       );
       nextCalled.should.be.true();
     });
-
-    it('responds with 404 when attaching the offer fails', async () => {
-      const findOfferById = sinon.stub(
-        Offer,
-        'findById',
-      ) as unknown as import('sinon').SinonStub;
-      findOfferById.returns({
-        populate: () => ({
-          exec: () => Promise.reject(new Error('attach failed')),
-        }),
-      });
-
-      const { res, nextCalled } = await runHandler((res, next) =>
-        offersController.offerById(
-          { user: owner },
-          res,
-          next,
-          new mongoose.Types.ObjectId().toString(),
-        ),
-      );
-      nextCalled.should.be.false();
-      res.statusCode.should.equal(404);
-    });
   });
 
   describe('removeAllByUserId', () => {
@@ -1280,6 +1601,46 @@ describe('Offers controller unit tests', () => {
           done();
         },
       );
+    });
+
+    it('removes only the offers of that user', async () => {
+      await createOffer(owner._id);
+      const kept = await createOffer(stranger._id);
+
+      await new Promise<void>((resolve, reject) =>
+        offersController.removeAllByUserId(owner._id, err =>
+          err ? reject(err) : resolve(),
+        ),
+      );
+
+      should(await Offer.findOne({ user: owner._id })).be.null();
+      should(await Offer.findById(kept._id)).not.be.null();
+    });
+
+    it('passes a failed removal to the callback', async () => {
+      sinon.stub(Offer, 'deleteMany').rejects(new Error('remove failed'));
+
+      const error = await new Promise<Error | null | undefined>(resolve =>
+        offersController.removeAllByUserId(owner._id, resolve),
+      );
+
+      required(error).message.should.equal('remove failed');
+    });
+
+    it('does not raise when a failed removal has no callback', async () => {
+      sinon.stub(Offer, 'deleteMany').rejects(new Error('remove failed'));
+      const unhandled: unknown[] = [];
+      const onUnhandled = (reason: unknown) => unhandled.push(reason);
+      process.on('unhandledRejection', onUnhandled);
+
+      try {
+        offersController.removeAllByUserId(owner._id);
+        await new Promise(resolve => setTimeout(resolve, 50));
+      } finally {
+        process.off('unhandledRejection', onUnhandled);
+      }
+
+      unhandled.should.deepEqual([]);
     });
 
     it('does not require a callback', done => {

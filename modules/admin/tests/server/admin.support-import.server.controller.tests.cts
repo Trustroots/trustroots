@@ -60,10 +60,10 @@ describe('admin support status import controller', () => {
   beforeEach(async () => {
     const admins = utils.generateUsersWithSharedPassword(1);
     admins[0]!.roles = ['user', 'admin'];
-    const [admin] = await utils.saveUsers(admins);
+    const [admin] = await utils.saveUsersWithCachedPasswords(admins);
     adminId = admin!._id;
     const ordinary = utils.generateUsersWithSharedPassword(1);
-    const [user] = await utils.saveUsers(ordinary);
+    const [user] = await utils.saveUsersWithCachedPasswords(ordinary);
     ordinaryUserId = user!._id;
     await SupportRequest.create({
       ...identity,
@@ -159,6 +159,16 @@ describe('admin support status import controller', () => {
   });
 
   it('validates apply input and hides internal server error detail', async () => {
+    // A well-formed but unknown preview: input that slips past validation
+    // would reach the lookup and answer "not found" instead.
+    const unknownPreviewId = 'b'.repeat(24);
+    const validSelection = { zendeskTicketId: 789, requestId: 'a'.repeat(24) };
+    const unknownPreview = await apply(adminId, {
+      previewId: unknownPreviewId,
+      selectedMatches: [validSelection],
+    });
+    assert.equal(unknownPreview.statusCode, 404);
+
     const invalidShape = await apply(adminId, []);
     assert.equal(invalidShape.statusCode, 400);
     assert.deepEqual(invalidShape.body, {
@@ -176,9 +186,11 @@ describe('admin support status import controller', () => {
       'not an object',
       { selectedMatches: [] },
       { previewId: 123 },
-      { previewId: 'preview', unexpected: true },
-      { previewId: 'preview', matchingWindowMinutes: 60 },
-      { previewId: 'preview', selectedMatches: null },
+      { previewId: [unknownPreviewId] },
+      { previewId: unknownPreviewId, unexpected: true },
+      { previewId: unknownPreviewId, matchingWindowMinutes: 60 },
+      { previewId: unknownPreviewId, selectedMatches: null },
+      { previewId: unknownPreviewId, selectedMatches: [validSelection, null] },
     ]) {
       const response = await apply(adminId, invalidBody);
       assert.equal(response.statusCode, 400);
@@ -189,6 +201,12 @@ describe('admin support status import controller', () => {
 
     const invalidSelections = [
       'not an object',
+      'ab',
+      { ...validSelection, extra: true },
+      { zendeskTicketId: -1, requestId: 'a'.repeat(24) },
+      { zendeskTicketId: 789, requestId: ['a'.repeat(24)] },
+      { zendeskTicketId: 789, requestId: 'x' + 'a'.repeat(24) },
+      { zendeskTicketId: 789, requestId: 'a'.repeat(24) + 'x' },
       null,
       [],
       {},
@@ -206,7 +224,7 @@ describe('admin support status import controller', () => {
     ];
     for (const selection of invalidSelections) {
       const response = await apply(adminId, {
-        previewId: 'valid-looking-preview',
+        previewId: unknownPreviewId,
         selectedMatches: [selection],
       });
       assert.equal(response.statusCode, 400);
@@ -284,6 +302,19 @@ describe('admin support status import controller', () => {
         message: 'Matching window must be an integer from 1 to 60 minutes.',
       });
     }
+  });
+
+  it('previews a request that has no query string', async () => {
+    const response = captureResponse();
+    await controller.preview(
+      { body: manifest(), user: { _id: adminId } } as never,
+      response as never,
+    );
+    assert.equal(response.statusCode, 200);
+    assert.equal(
+      (response.body as { counts: { eligible: number } }).counts.eligible,
+      1,
+    );
   });
 
   it('maps unexpected actor lookup errors to a generic response', async () => {

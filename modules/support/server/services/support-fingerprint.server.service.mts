@@ -39,7 +39,11 @@ export function supportRequestFingerprint(
   input: SupportFingerprintInput,
 ): string {
   return createHash('sha256')
-    .update(JSON.stringify(normaliseSupportFingerprintInput(input)), 'utf8')
+    .update(
+      JSON.stringify(normaliseSupportFingerprintInput(input)),
+      // Stryker disable next-line StringLiteral: Node treats an empty input encoding as the default, which is utf8, so no input hashes differently
+      'utf8',
+    )
     .digest('hex');
 }
 
@@ -61,8 +65,9 @@ export function normaliseSupportImportMessage(message: string): string {
       const numeric = key.startsWith('&#x')
         ? Number.parseInt(key.slice(3, -1), 16)
         : Number.parseInt(key.slice(2, -1), 10);
-      if (!Number.isInteger(numeric) || numeric < 0 || numeric > 0x10ffff)
-        return entity;
+      // The entity pattern only admits digits, so `numeric` is never negative
+      // or NaN; absurdly long digit runs parse to Infinity and fail this check.
+      if (numeric > 0x10ffff) return entity;
       return String.fromCodePoint(numeric);
     },
   );
@@ -80,6 +85,7 @@ export function normaliseSupportImportMessage(message: string): string {
     phone: false,
     mention: false,
     hashtag: false,
+    // Stryker disable next-line BooleanLiteral: Autolinker only uses stripPrefix for the anchor text, and replaceFn returns the anchor href, so no input renders differently
     stripPrefix: false,
     replaceFn: match => match.getAnchorHref(),
   });
@@ -87,13 +93,21 @@ export function normaliseSupportImportMessage(message: string): string {
 
 export function supportImportSenderHash(email: string): string {
   return createHash('sha256')
-    .update(email.trim().toLowerCase(), 'utf8')
+    .update(
+      email.trim().toLowerCase(),
+      // Stryker disable next-line StringLiteral: Node treats an empty input encoding as the default, which is utf8, so no input hashes differently
+      'utf8',
+    )
     .digest('hex');
 }
 
 export function supportImportMessageHash(message: string): string {
   return createHash('sha256')
-    .update(normaliseSupportImportMessage(message), 'utf8')
+    .update(
+      normaliseSupportImportMessage(message),
+      // Stryker disable next-line StringLiteral: Node treats an empty input encoding as the default, which is utf8, so no input hashes differently
+      'utf8',
+    )
     .digest('hex');
 }
 
@@ -117,6 +131,7 @@ export function supportRequestImportFingerprints(
     phone: false,
     mention: false,
     hashtag: false,
+    // Stryker disable next-line BooleanLiteral: Autolinker only uses stripPrefix for the anchor text, and replaceFn returns the anchor href, so no input renders differently
     stripPrefix: false,
     replaceFn: match => match.getAnchorHref(),
   });

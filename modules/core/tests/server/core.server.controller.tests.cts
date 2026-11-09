@@ -17,6 +17,7 @@ const languagesArray: Array<{
 }> = require('../../../../config/languages/languages-array.json');
 const deprecatedLanguages: Set<string> = require('./../../../../config/languages/deprecated.mts');
 
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 require('should');
 const should: typeof import('should') = require('should');
 
@@ -160,23 +161,18 @@ describe('Controller: core', function () {
     sinon.restore();
   });
   describe('renderIndex', function () {
+    it('renders anonymous visitors with only an empty user', function () {
+      const res = mockResponse();
+      coreController.renderIndex({ path: '/definitely-not-a-route' }, res);
+      res.rendered.should.equal('react-index.server.view.html');
+      assert.deepStrictEqual(renderVars(res), { user: null });
+    });
+
     it('marks the signup page as an invite', function () {
       const res = mockResponse();
       coreController.renderIndex({ path: '/signup' }, res);
       res.rendered.should.equal('react-index.server.view.html');
       should(renderVars(res).invite).be.true();
-    });
-
-    it('does not mark other pages as invites', function () {
-      const res = mockResponse();
-      coreController.renderIndex({ path: '/' }, res);
-      should(renderVars(res).invite === undefined).be.true();
-    });
-
-    it('renders the React index for React-owned paths', function () {
-      const res = mockResponse();
-      coreController.renderIndex({ path: '/support' }, res);
-      res.rendered.should.equal('react-index.server.view.html');
     });
 
     it('redirects legacy React routes to their replacement', function () {
@@ -287,18 +283,45 @@ describe('Controller: core', function () {
       }
     });
 
-    it('responds with status 204 when no report body is present', function () {
+    function captureLogs(run: () => void): unknown[][] {
+      const originalLog = winston.log;
+      const calls: unknown[][] = [];
+      winston.log = ((...args: unknown[]) => {
+        calls.push(args);
+        return winston;
+      }) as unknown as typeof winston.log;
+      try {
+        run();
+      } finally {
+        winston.log = originalLog;
+      }
+      return calls.filter(
+        ([, event]) => event === 'CSP violation report #ljeanw',
+      );
+    }
+
+    // The logger redacts every `report` value, so the placeholder for a
+    // missing body is not visible; the warning itself is.
+    it('logs a redacted warning when no report body is present', function () {
       const res = mockResponse();
-      coreController.receiveCSPViolationReport({ body: null }, res);
+      const reports = captureLogs(() =>
+        coreController.receiveCSPViolationReport({ body: null }, res),
+      );
       res.statusCode.should.equal(204);
+      should(reports).deepEqual([
+        ['warn', 'CSP violation report #ljeanw', { report: '[REDACTED]' }],
+      ]);
     });
 
-    it('responds with status 204 in test mode', function () {
+    it('does not log reports in test mode', function () {
       process.env.NODE_ENV = 'test';
 
       const res = mockResponse();
-      coreController.receiveCSPViolationReport({ body: { foo: 'bar' } }, res);
+      const reports = captureLogs(() =>
+        coreController.receiveCSPViolationReport({ body: { foo: 'bar' } }, res),
+      );
       res.statusCode.should.equal(204);
+      should(reports).deepEqual([]);
     });
   });
 
@@ -320,6 +343,15 @@ describe('Controller: core', function () {
       should(findLanguage(res, 'grc').deprecated).be.false();
       should(findLanguage(res, 'lat').deprecated).be.false();
       should(findLanguage(res, 'lim').label).equal('Limburgish');
+    });
+
+    it('returns the languages object without a query or request', function () {
+      const withoutQuery = mockResponse();
+      coreController.getLanguages({}, withoutQuery);
+      languageObject(withoutQuery).should.deepEqual(languagesObject);
+      const withoutRequest = mockResponse();
+      coreController.getLanguages(undefined, withoutRequest);
+      languageObject(withoutRequest).should.deepEqual(languagesObject);
     });
 
     it('returns the languages object by default', function () {

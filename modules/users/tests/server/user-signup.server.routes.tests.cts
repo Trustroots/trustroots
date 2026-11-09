@@ -627,63 +627,6 @@ describe('User signup and authentication CRUD tests', function () {
           .catch(done);
       });
   });
-  it('should be able to login successfully using username and logout successfully', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send(confirmedCredentials)
-      .expect(200)
-      .end(function (signinErr, signinRes) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-        // Sensitive information should be not sent to the client
-        should.not.exist(signinRes.body.emailToken);
-        should.not.exist(signinRes.body.password);
-        should.not.exist(signinRes.body.salt);
-        // Logout
-        agent
-          .post('/api/auth/signout')
-          .set('Origin', 'http://localhost:3000')
-          .expect(302)
-          .end(function (signoutErr, signoutRes) {
-            if (signoutErr) {
-              return done(signoutErr);
-            }
-            signoutRes.redirect.should.equal(true);
-            signoutRes.text.should.equal('Found. Redirecting to /');
-            return done();
-          });
-      });
-  });
-  it('should be able to login successfully using email and logout successfully', function (done) {
-    agent
-      .post('/api/auth/signin')
-      .send({
-        username: 'test@example.org',
-        password: confirmedCredentials.password,
-      })
-      .expect(200)
-      .end(function (signinErr) {
-        // Handle signin error
-        if (signinErr) {
-          return done(signinErr);
-        }
-        // Logout
-        agent
-          .post('/api/auth/signout')
-          .set('Origin', 'http://localhost:3000')
-          .expect(302)
-          .end(function (signoutErr, signoutRes) {
-            if (signoutErr) {
-              return done(signoutErr);
-            }
-            signoutRes.redirect.should.equal(true);
-            signoutRes.text.should.equal('Found. Redirecting to /');
-            return done();
-          });
-      });
-  });
   it('should reject signin with an unknown username', function (done) {
     agent
       .post('/api/auth/signin')

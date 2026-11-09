@@ -39,11 +39,21 @@ export async function linkHistoricalReport(
       'Each mapping requires requestId, reportedUserId and historical identity evidence.',
     );
   }
-  const actor = await User.findById(actorId).select('roles').lean();
+  const actor = await User.findById(actorId)
+    .select(
+      // Stryker disable next-line StringLiteral: an empty projection returns whole documents, and only roles is read from the result, so no input can tell them apart
+      'roles',
+    )
+    .lean();
   if (!actor?.roles.includes('admin'))
     throw new Error('An administrator must verify historical mappings.');
   const report = await SupportRequest.findById(requestId).lean();
-  const target = await User.findById(reportedUserId).select('created').lean();
+  const target = await User.findById(reportedUserId)
+    .select(
+      // Stryker disable next-line StringLiteral: an empty projection returns whole documents, and only _id and created are read from the result, so no input can tell them apart
+      'created',
+    )
+    .lean();
   if (
     !report ||
     report.category !== 'reportMember' ||

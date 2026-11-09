@@ -26,29 +26,6 @@ let receiver: UserDocument;
 let firstMessage: MessageDocument;
 let firstReply: MessageDocument;
 let initiatorMessage: MessageDocument;
-let receiverMessage: MessageDocument;
-
-describe('Convert Message Statistics to human readable form', function () {
-  it('should convert null values correctly', function () {
-    const converted = messageStatService.formatStats({
-      replyRate: null,
-      replyTime: null,
-    });
-
-    converted.should.have.property('replyRate', '');
-    converted.should.have.property('replyTime', '');
-  });
-
-  it('should convert finite values correctly', function () {
-    const converted = messageStatService.formatStats({
-      replyRate: 0.37631,
-      replyTime: 3600 * 1000 * 3.7,
-    });
-
-    converted.should.have.property('replyRate', '38%');
-    converted.should.have.property('replyTime', '4 hours');
-  });
-});
 
 describe('Count Message Statistics of User', function () {
   const NOW = new Date('2002-02-20').getTime(); // an arbitrary date
@@ -207,8 +184,7 @@ describe('Count Message Statistics of User', function () {
         },
       );
 
-    // Two ordinary conversations are below the three-conversation threshold.
-    (await readStats()).should.deepEqual({ replyRate: null, replyTime: null });
+    // Two ordinary conversations are below the three-conversation threshold.    (await readStats()).should.deepEqual({ replyRate: null, replyTime: null });
 
     // Statistics use current roles: removing the role makes all three eligible.
     await User.updateOne(
@@ -218,31 +194,69 @@ describe('Count Message Statistics of User', function () {
     (await readStats()).should.deepEqual({ replyRate: 0, replyTime: null });
   });
 
-  it('excludes greeters before choosing between the 30-day and 90-day windows', async function () {
-    const receiver = users[28];
-    const recentGreeters = users.slice(1, 9);
-    const olderMembers = users.slice(9, 12);
-    await User.updateMany(
-      { _id: { $in: recentGreeters.map(user => user._id) } },
-      { $set: { roles: ['user', 'welcome-team'] } },
-    );
+  it('leaves out conversations started by members who currently have the welcome-team role', function (done) {
+    const sender = (roles: string[]) => ({
+      firstMessageUserFrom: { _id: new mongoose.Types.ObjectId(), roles },
+      firstMessageCreated: new Date(NOW - DAY),
+      timeToFirstReply: null,
+    });
+    sinon.stub(MessageStat, 'find').returns({
+      sort: () => ({
+        populate: () => ({
+          exec: () =>
+            Promise.resolve([
+              sender(['user']),
+              sender(['user', 'welcome-team']),
+              sender(['user']),
+            ]),
+        }),
+      }),
+    } as unknown as ReturnType<typeof MessageStat.find>);
 
-    await MessageStat.insertMany([
-      ...recentGreeters.map((sender, index) => ({
-        firstMessageUserFrom: sender._id,
-        firstMessageUserTo: receiver._id,
-        firstMessageCreated: new Date(NOW - (index + 1) * DAY),
-        firstMessageLength: 40,
-        timeToFirstReply: null,
-      })),
-      ...olderMembers.map((sender, index) => ({
-        firstMessageUserFrom: sender._id,
-        firstMessageUserTo: receiver._id,
-        firstMessageCreated: new Date(NOW - (32 + index) * DAY),
-        firstMessageLength: 40,
-        timeToFirstReply: null,
-      })),
-    ]);
+    messageStatService.readMessageStatsOfUser(
+      users[0]._id,
+      NOW,
+      (error, stats) => {
+        sinon.restore();
+        if (error) return done(error);
+        try {
+          // Two ordinary conversations stay below the three-conversation minimum.
+          should(stats).deepEqual({ replyRate: null, replyTime: null });
+          done();
+        } catch (assertionError) {
+          done(assertionError as Error);
+        }
+      },
+    );
+  });
+
+  it('keeps conversations started exactly 30 days ago when more than ten are eligible', async function () {
+    const receiver = users[28];
+    const threshold = NOW - 30 * DAY;
+    // Newest first: nine recent replied conversations, two unreplied ones
+    // exactly on the cut-off, and an older replied one that is left out.
+    const created = [
+      ...Array.from({ length: 9 }, (_, i) => NOW - (i + 1) * DAY),
+      threshold,
+      threshold,
+      threshold - DAY,
+    ];
+    await MessageStat.insertMany(
+      created.map((firstMessageCreated, index) => {
+        const replied = index < 9 || index === 11;
+        return {
+          firstMessageUserFrom: users[index + 1]._id,
+          firstMessageUserTo: receiver._id,
+          firstMessageCreated: new Date(firstMessageCreated),
+          firstMessageLength: 40,
+          firstReplyCreated: replied
+            ? new Date(firstMessageCreated + DAY)
+            : null,
+          firstReplyLength: replied ? 10 : null,
+          timeToFirstReply: replied ? DAY : null,
+        };
+      }),
+    );
 
     const stats = await new Promise<{
       replyRate: number | null;
@@ -251,135 +265,32 @@ describe('Count Message Statistics of User', function () {
       messageStatService.readMessageStatsOfUser(
         receiver._id,
         NOW,
-        (err, result) => {
-          if (err) return reject(err);
-          if (!result) return reject(new Error('Expected message statistics'));
-          resolve(result);
-        },
+        (err, result) => (err || !result ? reject(err) : resolve(result)),
       );
     });
 
-    // Removing eight recent greeter conversations first leaves three ordinary
-    // conversations, so the 90-day sample reaches the display threshold.
-    stats.should.deepEqual({ replyRate: 0, replyTime: null });
+    stats.should.deepEqual({ replyRate: 9 / 11, replyTime: DAY });
+  });
+});
+
+describe('formatStats', function () {
+  it('formats a finite reply rate and reply time', function () {
+    messageStatService
+      .formatStats({ replyRate: 0.5, replyTime: 2 * 3600 * 1000 })
+      .should.deepEqual({ replyRate: '50%', replyTime: '2 hours' });
   });
 
-  it('[< 10 messages in last 90 days] should use 90 days', function (done) {
-    messageStatService.readMessageStatsOfUser(
-      users[0]._id,
-      NOW - 60 * DAY,
-      function (err, stats) {
-        if (err) return done(err);
-        if (!stats) return done(new Error('Expected message statistics'));
-        try {
-          should(stats).have.property('replyRate', 3 / 8);
-          should(stats).have.property('replyTime', 3 * DAY);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      },
-    );
-  });
-
-  it('[< 10 messages in last 30 days && > 10 in 90 d] should use last 10 messages', function (done) {
-    messageStatService.readMessageStatsOfUser(
-      users[0]._id,
-      NOW - 30 * DAY,
-      function (err, stats) {
-        // expected statistics values
-        // out of last 10 messages, 4 are replied;
-        // 2 replied within 3 days and 2 within 1 day
-        const expectedReplyRate = 4 / 10;
-        const expectedReplyTime = (2 * 3 * DAY + 2 * 1 * DAY) / 4;
-
-        if (err) return done(err);
-        try {
-          should(stats).have.property('replyRate', expectedReplyRate);
-          should(stats).have.property('replyTime', expectedReplyTime);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      },
-    );
-  });
-
-  it('[> 10 messages in last 30 days] should use last 30 days', function (done) {
-    messageStatService.readMessageStatsOfUser(
-      users[0]._id,
-      NOW,
-      function (err, stats) {
-        // expected statistics values
-        // out of last month 6/12 messages are replied; all within 2 days
-        const expectedReplyRate = 6 / 12;
-        const expectedReplyTime = 2 * DAY;
-
-        if (err) return done(err);
-        try {
-          should(stats).have.property('replyRate', expectedReplyRate);
-          should(stats).have.property('replyTime', expectedReplyTime);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      },
-    );
-  });
-
-  it('[no messages] reply rate and time should be null', function (done) {
-    messageStatService.readMessageStatsOfUser(
-      users[0]._id,
-      NOW - 120 * DAY,
-      function (err, stats) {
-        if (err) return done(err);
-        if (!stats) return done(new Error('Expected message statistics'));
-        try {
-          should(stats).have.property('replyRate', null);
-          should(stats).have.property('replyTime', null);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      },
-    );
-  });
-
-  it('[no replied messages] reply rate should be 0 and reply time null', function (done) {
-    messageStatService.readMessageStatsOfUser(
-      users[0]._id,
-      NOW - 90 * DAY,
-      function (err, stats) {
-        if (err) return done(err);
-        try {
-          should(stats).have.property('replyRate', 0);
-          should(stats).have.property('replyTime', null);
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      },
-    );
-  });
-
-  it('[some replied messages] reply rate and time should be a number', function (done) {
-    messageStatService.readMessageStatsOfUser(
-      users[0]._id,
-      NOW - 30 * DAY,
-      function (err, stats) {
-        if (err) return done(err);
-        if (!stats) return done(new Error('Expected message statistics'));
-        try {
-          should(stats).have.property('replyRate');
-          should(stats).have.property('replyTime');
-          should(stats.replyRate).be.Number();
-          should(stats.replyTime).be.Number();
-          return done();
-        } catch (e) {
-          return done(e);
-        }
-      },
-    );
+  it('leaves missing and non-finite values empty', function () {
+    const empty = { replyRate: '', replyTime: '' };
+    messageStatService
+      .formatStats({ replyRate: null, replyTime: null })
+      .should.deepEqual(empty);
+    messageStatService
+      .formatStats({ replyRate: NaN, replyTime: NaN })
+      .should.deepEqual(empty);
+    messageStatService
+      .formatStats({ replyRate: Infinity, replyTime: Infinity })
+      .should.deepEqual(empty);
   });
 });
 
@@ -421,13 +332,6 @@ describe('MessageStat Creation & Updating Test', function () {
       userFrom: initiator._id,
       userTo: receiver._id,
       created: new Date('2016-01-03'),
-    });
-    // create a message by receiver
-    receiverMessage = new Message({
-      content: 'Message content',
-      userFrom: receiver._id,
-      userTo: initiator._id,
-      created: new Date('2016-01-04'),
     });
   });
 
@@ -529,21 +433,6 @@ describe('MessageStat Creation & Updating Test', function () {
     });
 
     context('Other messages in Thread', function () {
-      it('[another message by the initiator before reply] should not change the MessageStat', async function () {
-        await saveMessage(firstMessage);
-        await updateStats(firstMessage);
-        await saveMessage(initiatorMessage);
-        (await updateStats(initiatorMessage)).should.equal('other');
-
-        const ts = await findThreadStats();
-        should(ts).have.property('firstMessageUserFrom', initiator._id);
-        should(ts).have.property('firstMessageUserTo', receiver._id);
-        should(ts).have.property('firstMessageCreated', firstMessage.created);
-        should(ts).have.property('firstReplyCreated', null);
-        should(ts).have.property('firstReplyLength', null);
-        should(ts).have.property('timeToFirstReply', null);
-      });
-
       it('[another message by the initiator after reply] should not change the MessageStat', async function () {
         await saveMessage(firstMessage);
         await updateStats(firstMessage);
@@ -562,23 +451,78 @@ describe('MessageStat Creation & Updating Test', function () {
           messageInput(firstReply).created,
         );
       });
+    });
 
-      it('[later message by the receiver] should not change the MessageStat', async function () {
+    context('With other threads in the database', function () {
+      const otherFrom = new mongoose.Types.ObjectId();
+      const otherTo = new mongoose.Types.ObjectId();
+
+      async function seedOtherThread(): Promise<MessageStatDocument> {
+        // An unanswered thread whose stat and messages are older than ours.
+        await new Message({
+          content: 'Other thread',
+          userFrom: otherFrom,
+          userTo: otherTo,
+          created: new Date('2015-01-01'),
+        }).save();
+        await new Promise<void>((resolve, reject) =>
+          messageStatService.updateMessageStat(
+            { userFrom: otherFrom, userTo: otherTo },
+            error => (error ? reject(error) : resolve()),
+          ),
+        );
+        return (await MessageStat.findOne({
+          firstMessageUserFrom: otherFrom,
+        }).orFail()) as MessageStatDocument;
+      }
+
+      it('creates the stat from the first message of this thread only', async function () {
+        await seedOtherThread();
+        await saveMessage(firstMessage);
+        (await updateStats(firstMessage)).should.equal('first');
+
+        (await MessageStat.countDocuments({})).should.equal(2);
+        const ms = await findThreadStats();
+        should(ms).have.property('firstMessageUserFrom', initiator._id);
+        should(ms).have.property('firstMessageUserTo', receiver._id);
+        should(ms!.firstMessageCreated!.getTime()).equal(
+          messageInput(firstMessage).created.getTime(),
+        );
+      });
+
+      it('records the reply on this thread only', async function () {
+        const other = await seedOtherThread();
         await saveMessage(firstMessage);
         await updateStats(firstMessage);
         await saveMessage(firstReply);
-        await updateStats(firstReply);
-        await saveMessage(receiverMessage);
-        (await updateStats(receiverMessage)).should.equal('other');
+        (await updateStats(firstReply)).should.equal('firstReply');
 
-        const ts = await findThreadStats();
-        should(ts).have.property('firstMessageUserFrom', initiator._id);
-        should(ts).have.property('firstMessageUserTo', receiver._id);
-        should(ts).have.property('firstMessageCreated', firstMessage.created);
-        should(ts).have.property(
-          'firstReplyCreated',
-          messageInput(firstReply).created,
+        should(await findThreadStats()).have.property('firstReplyLength', 15);
+        const untouched = await MessageStat.findById(other._id).orFail();
+        should(untouched.firstReplyCreated).equal(null);
+        should(untouched.timeToFirstReply).equal(null);
+      });
+
+      it('uses the earliest reply and the earliest message of the thread', async function () {
+        // Saved latest-first so natural order differs from creation order.
+        const laterReply = new Message({
+          content: 'Later reply',
+          userFrom: receiver._id,
+          userTo: initiator._id,
+          created: new Date('2016-01-05'),
+        });
+        await saveMessage(laterReply);
+        await saveMessage(firstReply);
+        await saveMessage(initiatorMessage);
+        await saveMessage(firstMessage);
+        (await updateStats(initiatorMessage)).should.equal('firstReply');
+
+        const ms = await findThreadStats();
+        should(ms).have.property('firstMessageUserFrom', initiator._id);
+        should(ms!.firstReplyCreated!.getTime()).equal(
+          messageInput(firstReply).created.getTime(),
         );
+        should(ms).have.property('timeToFirstReply', 24 * 3600 * 1000);
       });
     });
 

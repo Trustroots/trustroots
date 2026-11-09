@@ -45,109 +45,187 @@ const avatarProcessing: AvatarProcessingService = require('./../../server/servic
 require('should');
 
 describe('Avatar processing service', () => {
-  describe('resource limits', () => {
-    it('applies native limits when no cancellation emitter is provided', () => {
-      const args = avatarProcessing
-        .createLimitedCommand('/private/upload-without-cancellation')
-        .args();
-
-      args.should.containEql('/private/upload-without-cancellation');
-      args.should.containEql('-limit');
+  const gmLimits = [
+    ['memory', '192M'],
+    ['map', '256M'],
+    ['disk', '128M'],
+    ['pixels', '40MP'],
+    ['width', '10000'],
+    ['height', '10000'],
+    ['threads', '1'],
+    ['read', '40M'],
+  ];
+  const imLimits = [
+    ['memory', '192MiB'],
+    ['map', '256MiB'],
+    ['disk', '128MiB'],
+    ['area', '40MP'],
+    ['width', '10000'],
+    ['height', '10000'],
+    ['file', '16'],
+    ['thread', '1'],
+    ['time', '15'],
+  ];
+  const limitArgs = (limits: string[][]) =>
+    limits.flatMap(([name, value]) => ['-limit', name, value]);
+  const resourceList = (limits: string[][]) =>
+    limits.map(([name, value]) => `${name}: ${value}`).join('\n');
+  function loadImageMagickService() {
+    const disposers: unknown[][] = [];
+    const imageMagickCommand = (): ImageMagickCommand => ({
+      args: [] as string[],
+      commandOptions: { timeout: 0 },
+      options(options: { timeout: number }) {
+        this.commandOptions = options;
+        return this;
+      },
+      in(...args: string[]) {
+        this.args.push(...args);
+        return this;
+      },
+      addDisposer(...args: unknown[]) {
+        disposers.push(args);
+        return this;
+      },
     });
-
-    it('places GraphicsMagick limits before the untrusted input path', () => {
-      const inputPath = '/private/upload-123';
-      const args = avatarProcessing
-        .createLimitedCommand(inputPath, new EventEmitter())
-        .args();
-      const inputIndex = args.indexOf(inputPath);
-
-      inputIndex.should.be.above(0);
-      args.slice(0, inputIndex).should.containEql('-limit');
-      args.slice(0, inputIndex).should.containEql('memory');
-      args.slice(0, inputIndex).should.containEql('map');
-      args.slice(0, inputIndex).should.containEql('disk');
-      args.slice(0, inputIndex).should.containEql('pixels');
-      args.slice(0, inputIndex).should.containEql('threads');
-      args.slice(inputIndex + 1).should.not.containEql('-limit');
-    });
-
-    it('selects ImageMagick limit names explicitly', () => {
-      const imageMagickConfig = {
-        ...config,
-        imageProcessor: 'imagemagic',
-      };
-      const imageMagickCommand = (): ImageMagickCommand => ({
-        args: [] as string[],
-        commandOptions: { timeout: 0 },
-        options(options: { timeout: number }) {
-          this.commandOptions = options;
-          return this;
-        },
-        in(...args: string[]) {
-          this.args.push(...args);
-          return this;
-        },
-        addDisposer() {
-          return this;
-        },
-      });
-      const imageMagick = Object.assign(() => imageMagickCommand(), {
+    const imageMagick = Object.assign(
+      () => {
+        throw new Error('GraphicsMagick must not be used');
+      },
+      {
         subClass: (options: { imageMagick: boolean }) => {
           options.should.deepEqual({ imageMagick: true });
           return () => imageMagickCommand();
         },
-      });
-      const service = proxyquire<ImageMagickProcessingService>(
-        require.resolve('./../../server/services/avatar-processing.server.service.mts'),
-        {
-          './../../../../config/config.mts': imageMagickConfig,
-          gm: imageMagick,
+      },
+    );
+    const service = proxyquire<ImageMagickProcessingService>(
+      require.resolve('./../../server/services/avatar-processing.server.service.mts'),
+      {
+        './../../../../config/config.mts': {
+          ...config,
+          imageProcessor: 'imagemagic',
         },
-      );
+        gm: imageMagick,
+      },
+    );
+    return { service, disposers };
+  }
 
-      const command = service.createLimitedCommand(
-        '/private/upload-456',
-        new EventEmitter(),
-      );
-      command.args.should.containEql('area');
-      command.args.should.containEql('thread');
-      command.args.should.containEql('time');
-      command.args.should.not.containEql('pixels');
+  describe('resource limits', () => {
+    it('places exactly the GraphicsMagick limits before the untrusted input path', () => {
+      for (const inputPath of ['/private/upload-123', '/private/upload-456']) {
+        const args = avatarProcessing
+          .createLimitedCommand(inputPath, new EventEmitter())
+          .args();
+        const inputIndex = args.indexOf(inputPath);
+
+        args
+          .slice(args.indexOf('-limit'), inputIndex)
+          .should.eql(limitArgs(gmLimits));
+        args.slice(inputIndex + 1).should.not.containEql('-limit');
+      }
+    });
+
+    it('selects ImageMagick limits and cancels only commands given an emitter', () => {
+      const { service, disposers } = loadImageMagickService();
+      const emitter = new EventEmitter();
+
+      const command = service.createLimitedCommand('/private/upload', emitter);
+      service.createLimitedCommand('/private/upload-without-cancellation');
+
+      command.args.should.eql(limitArgs(imLimits));
       command.commandOptions.timeout.should.equal(15000);
+      disposers.should.eql([[emitter, ['timeout']]]);
     });
   });
 
   describe('input validation', () => {
-    it('accepts a single frame within the pixel and dimension limits', () => {
-      assert.strictEqual(
-        avatarProcessing.validateDimensions('600 600'),
-        undefined,
-      );
+    it('accepts single frames up to the dimension and pixel limits', () => {
+      for (const output of [
+        '600 600',
+        ' 600  600 \n\n',
+        '10000 1',
+        '1 10000',
+        '10000 4000',
+      ]) {
+        assert.strictEqual(
+          avatarProcessing.validateDimensions(output),
+          undefined,
+        );
+      }
     });
 
-    it('rejects multiple frames', () => {
-      assert.throws(
-        () => avatarProcessing.validateDimensions('600 600\n600 600'),
-        /single-frame/,
-      );
+    it('rejects multiple frames and malformed frames', () => {
+      for (const output of [
+        '600 600\n600 600',
+        '600\n600',
+        '600',
+        '600 600 600',
+      ]) {
+        assert.throws(
+          () => avatarProcessing.validateDimensions(output),
+          /single-frame/,
+          output,
+        );
+      }
     });
 
     it('rejects dimensions beyond the configured limits', () => {
-      assert.throws(
-        () => avatarProcessing.validateDimensions('10001 1'),
-        /dimensions/,
-      );
-      assert.throws(
-        () => avatarProcessing.validateDimensions('8000 6000'),
-        /dimensions/,
-      );
+      for (const output of [
+        '1.5 600',
+        '600 1.5',
+        '0 600',
+        '600 0',
+        '10001 1',
+        '1 10001',
+        '8000 6000',
+      ]) {
+        assert.throws(
+          () => avatarProcessing.validateDimensions(output),
+          /dimensions/,
+          output,
+        );
+      }
+    });
+
+    it('accepts complete resource lists, including aliases and padded names', () => {
+      const { service } = loadImageMagickService();
+      for (const [validate, list] of [
+        [
+          avatarProcessing.validateResourceList,
+          `Resource limits:\n  Memory : 192M\n${resourceList(gmLimits.slice(1))}`,
+        ],
+        [
+          avatarProcessing.validateResourceList,
+          resourceList(gmLimits).replace('threads', 'Thread'),
+        ],
+        [service.validateResourceList, resourceList(imLimits)],
+        [
+          service.validateResourceList,
+          resourceList(imLimits)
+            .replace('file', 'Files')
+            .replace('thread', 'Threads'),
+        ],
+      ] as const) {
+        assert.strictEqual(validate(list), undefined, list);
+      }
     });
 
     it('fails closed when the selected backend omits a resource limit', () => {
       assert.throws(
         () => avatarProcessing.validateResourceList('Memory: 192M\nMap: 256M'),
-        /does not support required resource limits/,
+        {
+          message:
+            'Image processor does not support required resource limits: disk, pixels, width, height, threads, read.',
+        },
+      );
+      assert.throws(
+        () =>
+          avatarProcessing.validateResourceList(
+            resourceList(gmLimits).replace('memory', '1-memory'),
+          ),
+        /limits: memory\.$/,
       );
     });
   });
@@ -230,12 +308,20 @@ describe('Avatar processing service', () => {
 
       await avatarProcessing.removeAvatarVersion(avatarDirectory, versions[0]);
 
+      await avatarProcessing.removeAvatarVersion(avatarDirectory, versions[0]);
+
       const remaining = await fs.readdir(avatarDirectory);
       remaining.should.eql([versions[1]]);
-      await assert.rejects(
-        avatarProcessing.removeAvatarVersion(avatarDirectory, '../other'),
-        /Invalid avatar version/,
-      );
+      for (const invalid of [
+        '../other',
+        `x${versions[1]}`,
+        `${versions[1]}x`,
+      ]) {
+        await assert.rejects(
+          avatarProcessing.removeAvatarVersion(avatarDirectory, invalid),
+          /Invalid avatar version/,
+        );
+      }
     });
   });
 
@@ -250,8 +336,9 @@ describe('Avatar processing service', () => {
       );
       previousNodeEnv = process.env.NODE_ENV;
       previousFallback = process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
-      process.env.NODE_ENV = 'test';
-      delete process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK;
+      // The copy fallback is only honoured in the test environment.
+      process.env.NODE_ENV = 'development';
+      process.env.TRUSTROOTS_AVATAR_PROCESSOR_FALLBACK = 'true';
     });
 
     afterEach(async () => {
@@ -276,9 +363,20 @@ describe('Avatar processing service', () => {
       await fs.writeFile(inputPath, 'anonymous source');
       const observedInputs: Array<{ sourcePath: string; arguments: string[] }> =
         [];
+      const writes: unknown[][][] = [];
+      const listenerLimits = new Set<number>();
+      const recordChain = function (
+        this: { chain: unknown[][] },
+        name: string,
+        args: unknown[],
+      ) {
+        this.chain.push([name, ...args]);
+        return this;
+      };
       const imageProcessor = (sourcePath: string) => {
         const command = {
           arguments: [] as string[],
+          chain: [] as unknown[][],
           in(...args: string[]) {
             this.arguments.push(...args);
             return this;
@@ -286,7 +384,8 @@ describe('Avatar processing service', () => {
           options() {
             return this;
           },
-          addDisposer() {
+          addDisposer(emitter: InstanceType<typeof EventEmitter>) {
+            listenerLimits.add(emitter.getMaxListeners());
             return this;
           },
           command() {
@@ -314,35 +413,35 @@ describe('Avatar processing service', () => {
               ),
             );
           },
-          autoOrient() {
-            return this;
+          autoOrient(...args: unknown[]) {
+            return recordChain.call(this, 'autoOrient', args);
           },
-          noProfile() {
-            return this;
+          noProfile(...args: unknown[]) {
+            return recordChain.call(this, 'noProfile', args);
           },
-          colorspace() {
-            return this;
+          colorspace(...args: unknown[]) {
+            return recordChain.call(this, 'colorspace', args);
           },
-          interlace() {
-            return this;
+          interlace(...args: unknown[]) {
+            return recordChain.call(this, 'interlace', args);
           },
-          filter() {
-            return this;
+          filter(...args: unknown[]) {
+            return recordChain.call(this, 'filter', args);
           },
-          resize() {
-            return this;
+          resize(...args: unknown[]) {
+            return recordChain.call(this, 'resize', args);
           },
-          gravity() {
-            return this;
+          gravity(...args: unknown[]) {
+            return recordChain.call(this, 'gravity', args);
           },
-          extent() {
-            return this;
+          extent(...args: unknown[]) {
+            return recordChain.call(this, 'extent', args);
           },
-          unsharp() {
-            return this;
+          unsharp(...args: unknown[]) {
+            return recordChain.call(this, 'unsharp', args);
           },
-          quality() {
-            return this;
+          quality(...args: unknown[]) {
+            return recordChain.call(this, 'quality', args);
           },
           identify(
             _options: { format: string },
@@ -356,6 +455,7 @@ describe('Avatar processing service', () => {
             callback(null, match ? `${match[1]} ${match[1]}` : '600 600');
           },
           write(outputPath: string, callback: (error?: Error | null) => void) {
+            writes.push(this.chain);
             observedInputs.push({
               sourcePath,
               arguments: this.arguments.slice(),
@@ -386,6 +486,21 @@ describe('Avatar processing service', () => {
 
       (await fs.readdir(result.versionDirectory)).should.have.length(7);
       observedInputs.length.should.equal(15);
+      [...listenerLimits].should.eql([23]);
+      writes.should.eql(
+        [2048, 1024, 512, 256, 128, 64, 32].map(size => [
+          ['autoOrient'],
+          ['noProfile'],
+          ['colorspace', 'rgb'],
+          ['interlace', 'None'],
+          ['filter', 'Triangle'],
+          ['resize', size, `${size}^`],
+          ['gravity', 'Center'],
+          ['extent', size, size],
+          ['unsharp', 0.25, 0.25, 8, 0.065],
+          ['quality', 82],
+        ]),
+      );
       for (const observation of observedInputs) {
         observation.arguments.should.containEql('-limit');
         observation.arguments.should.containEql('memory');

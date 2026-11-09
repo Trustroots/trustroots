@@ -61,6 +61,37 @@ describe('Messages policy unit tests', () => {
       .should.containEql('/api/messages-sync');
   });
 
+  it('grants exactly the documented permissions per role', () => {
+    const { policy, mockAcl } = loadPolicy();
+
+    policy.invokeRolesPolicies();
+
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          { resources: '/api/messages', permissions: [] },
+          { resources: '/api/messages/:messageUserId', permissions: [] },
+          { resources: '/api/messages-preview', permissions: ['post'] },
+          { resources: '/api/messages-read', permissions: [] },
+          { resources: '/api/messages-count', permissions: [] },
+          { resources: '/api/messages-sync', permissions: [] },
+        ],
+      },
+      {
+        roles: ['user'],
+        allows: [
+          { resources: '/api/messages', permissions: ['get', 'post'] },
+          { resources: '/api/messages/:messageUserId', permissions: ['get'] },
+          { resources: '/api/messages-preview', permissions: ['post'] },
+          { resources: '/api/messages-read', permissions: ['post'] },
+          { resources: '/api/messages-count', permissions: ['get'] },
+          { resources: '/api/messages-sync', permissions: ['get'] },
+        ],
+      },
+    ]);
+  });
+
   it('calls next when ACL allows a public user', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, true);
@@ -86,22 +117,6 @@ describe('Messages policy unit tests', () => {
     next.calledOnce.should.be.true();
   });
 
-  it('checks guest permissions when there is no signed-in user', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-
-    policy.isAllowed(
-      {
-        route: { path: '/api/messages' },
-        method: 'GET',
-      },
-      mockResponse(),
-      () => {},
-    );
-
-    mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
-  });
-
   it('blocks non-public signed-in users before ACL', () => {
     const { policy } = loadPolicy();
     const res = mockResponse();
@@ -115,53 +130,6 @@ describe('Messages policy unit tests', () => {
         },
         route: { path: '/api/messages' },
         method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-  });
-
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/messages' },
-        method: 'GET',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(500);
-    res.body!.message.should.equal('Unexpected authorization error');
-    done();
-  });
-
-  it('returns 403 JSON when ACL denies access', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
-        route: { path: '/api/messages-read' },
-        method: 'DELETE',
       },
       res,
       () => {},

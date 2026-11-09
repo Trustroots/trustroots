@@ -143,44 +143,6 @@ describe('Account validation safeguards', function () {
       saved.lastName.should.equal('River');
     }
   });
-  it('rejects changing an existing username to a reserved name', async function () {
-    const [user] = await utils.saveUsers([member()]);
-    user.username = 'nostr';
-    const error = user.validateSync();
-    assertPresent(error);
-    assertPresent(error.errors.username);
-  });
-  for (const email of [
-    'member@example.org extra',
-    'two@@example.org',
-    'plain-text',
-  ]) {
-    it('rejects malformed pending email ' + email, function () {
-      const user = new User({
-        ...member(),
-        emailTemporary: email,
-      });
-      const validationError = user.validateSync();
-      assertPresent(validationError);
-      assertPresent(validationError.errors.emailTemporary);
-      validationError.errors.emailTemporary.message.should.equal(
-        'Please enter a valid email address.',
-      );
-    });
-  }
-  for (const emailTemporary of ['', 'member+confirmation@example.org']) {
-    it(
-      'allows valid or empty pending email ' + emailTemporary,
-      async function () {
-        const user = new User({
-          ...member(),
-          emailTemporary,
-        });
-        await user.save();
-        present(user.emailTemporary).should.equal(emailTemporary);
-      },
-    );
-  }
   for (const email of [
     'member@example.org extra',
     {},

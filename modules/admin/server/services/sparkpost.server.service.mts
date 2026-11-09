@@ -43,6 +43,7 @@ export class DiagnosticInputError extends Error {}
 
 export function period(value: unknown): number {
   if (value === undefined) return 30;
+  // Stryker disable next-line ConditionalExpression: includes() only matches these strings; the typeof only narrows the type
   if (typeof value !== 'string' || !['7', '30', '90'].includes(value)) {
     throw new DiagnosticInputError('Choose a period of 7, 30 or 90 days.');
   }
@@ -50,11 +51,13 @@ export function period(value: unknown): number {
 }
 
 export function windowDates(from: unknown, to: unknown, now = new Date()) {
+  // The strict round trip through toISOString() rejects every non-string and
+  // every other format, so the pattern needs no end anchor: it only rejects
+  // the six-digit years that toISOString() also produces.
   const valid = (value: unknown): value is string =>
-    typeof value === 'string' &&
-    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) &&
-    Number.isFinite(Date.parse(value)) &&
-    new Date(value).toISOString() === value;
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z/.test(value as string) &&
+    Number.isFinite(Date.parse(value as string)) &&
+    new Date(value as string).toISOString() === value;
   if (!valid(from) || !valid(to)) {
     throw new DiagnosticInputError('Enter valid UTC dates.');
   }
@@ -109,7 +112,10 @@ async function dailyCounts(model: 'User' | 'Message', from: Date, to: Date) {
         },
       },
     ])
-    .option({ maxTimeMS: 10000 })
+    .option(
+      // Stryker disable next-line ObjectLiteral: a server-side time limit that no test query comes near
+      { maxTimeMS: 10000 },
+    )
     .exec();
 }
 
@@ -169,11 +175,12 @@ export async function events(
   now = new Date(),
   cursor: unknown = '',
 ): Promise<SparkpostEvents> {
+  // The strict round trip through toISOString() rejects every non-string and
+  // every other format. Date.parse() goes first, as toISOString() throws for
+  // an invalid date.
   if (
-    typeof day !== 'string' ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(day) ||
-    !Number.isFinite(Date.parse(day)) ||
-    new Date(day).toISOString().slice(0, 10) !== day ||
+    !Number.isFinite(Date.parse(day as string)) ||
+    new Date(day as string).toISOString().slice(0, 10) !== day ||
     Date.parse(day) < now.getTime() - 10 * DAY ||
     Date.parse(day) > now.getTime()
   ) {
@@ -182,6 +189,7 @@ export async function events(
     );
   }
   const to = new Date(Math.min(Date.parse(day) + DAY, now.getTime()));
+  // Stryker disable next-line ArrayDeclaration: events is always replaced with the mapped provider events before the result is returned
   const result: SparkpostEvents = { date: day, capped: false, events: [] };
   if (typeof cursor !== 'string' || cursor.length > 2048)
     throw new DiagnosticInputError('Invalid event page.');
@@ -195,7 +203,12 @@ export async function events(
   );
   const recipients = [
     ...new Set(
-      payload.results.map(event => event.rcpt_to.toLowerCase()).filter(Boolean),
+      payload.results
+        .map(event =>
+          // Stryker disable next-line MethodExpression: Mongoose lowercases email query values, as both address fields are lowercase in the schema
+          event.rcpt_to.toLowerCase(),
+        )
+        .filter(Boolean),
     ),
   ];
   const accounts = await mongoose
@@ -212,7 +225,10 @@ export async function events(
         { emailTemporary: { $in: recipients } },
       ],
     })
-    .select('username email emailTemporary created public')
+    .select(
+      // Stryker disable next-line StringLiteral: the projection only trims loaded fields; the result is built from named fields
+      'username email emailTemporary created public',
+    )
     .lean()
     .exec();
   result.events = payload.results.map(event => {
@@ -258,7 +274,7 @@ export async function events(
 function campaignOf(header: unknown): string {
   try {
     const parsed = JSON.parse(String(header));
-    return typeof parsed?.campaign_id === 'string'
+    return typeof parsed.campaign_id === 'string'
       ? parsed.campaign_id.slice(0, 100)
       : 'Unknown';
   } catch {
@@ -284,7 +300,9 @@ export async function preview(
             $gt: ['$lastFinishedAt', { $ifNull: ['$failedAt', new Date(0)] }],
           },
         },
+        // Stryker disable next-line ObjectLiteral: the projection and time limit only trim the work; campaigns are read from the header alone
         {
+          // Stryker disable next-line ObjectLiteral: the projection only trims loaded fields; campaigns are read from the header alone
           projection: { _id: 0, 'data.headers.X-MSYS-API': 1 },
           maxTimeMS: 10000,
         },

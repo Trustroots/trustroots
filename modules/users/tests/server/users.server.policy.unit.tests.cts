@@ -77,24 +77,81 @@ const noProfileUserId = { valueOf: () => 'anonymous-test-user' };
 describe('Users policy unit tests', () => {
   afterEach(() => sinon.restore());
 
-  it('registers user and admin role policies', () => {
+  const grants: [string, string[]][] = [
+    ['/api/users', ['get', 'put', 'delete']],
+    ['/api/users/export', ['get']],
+    ['/api/users/removal/pending', ['get', 'delete']],
+    ['/api/users/remove/:token', ['delete']],
+    ['/api/users/:username', ['get']],
+    ['/api/users/:avatarUserId/avatar', ['get']],
+    ['/api/users-avatar', ['post']],
+    ['/api/users/mini/:userId', ['get']],
+    ['/api/users/password', ['post']],
+    ['/api/users/accounts/:provider', ['delete']],
+    ['/api/users/memberships', ['get']],
+    ['/api/users/memberships/:tribeId', ['post', 'delete']],
+    ['/api/users/push/registrations', ['post']],
+    ['/api/users/push/registrations/:token', ['delete']],
+    ['/api/users/unified-push', ['get', 'post', 'delete']],
+    ['/api/blocked-users', ['get']],
+    ['/api/blocked-users/:username', ['put', 'delete']],
+  ];
+
+  // Assert inside a test: grants registered from a hook are credited to no
+  // test, so their mutants would never run.
+  it('registers admin routes without methods and the member grants', () => {
     const { policy, mockAcl } = loadPolicy();
-
     policy.invokeRolesPolicies();
+    mockAcl.allow.firstCall.args[0].should.deepEqual([
+      {
+        roles: ['admin'],
+        allows: [
+          '/api/users',
+          '/api/users/:username',
+          '/api/users/avatar',
+          '/api/users/mini/:userId',
+          '/api/users/password',
+          '/api/users/accounts/:provider',
+          '/api/users/memberships',
+          '/api/users/memberships/:tribeId',
+        ].map(resources => ({ resources, permissions: [] })),
+      },
+      {
+        roles: ['user'],
+        allows: grants.map(([resources, permissions]) => ({
+          resources,
+          permissions,
+        })),
+      },
+    ]);
+  });
 
-    mockAcl.allow.calledOnce.should.be.true();
-    const policies = mockAcl.allow.firstCall.args[0];
-    policies[0].roles.should.deepEqual(['admin']);
-    policies[1].roles.should.deepEqual(['user']);
-    policies[0].allows
-      .map(allow => allow.resources)
-      .should.not.containEql('/api/users/export');
-    policies[1].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/users/push/registrations/:token');
-    policies[1].allows
-      .map(allow => allow.resources)
-      .should.containEql('/api/users/export');
+  describe('grants for signed-in users', () => {
+    const decide = (roles: string[], path: string, method: string) => {
+      const res = mockResponse();
+      let status = 0;
+      policyModule.isAllowed(
+        {
+          user: { _id: noProfileUserId, public: true, roles },
+          route: { path },
+          method,
+        },
+        res,
+        () => (status = 200),
+      );
+      return status || res.statusCode;
+    };
+    before(() => policyModule.invokeRolesPolicies());
+
+    for (const [path, allowed] of grants) {
+      it(`${path} allows exactly ${allowed.join(', ')}`, () => {
+        for (const method of ['GET', 'POST', 'PUT', 'DELETE']) {
+          const expected = allowed.includes(method.toLowerCase()) ? 200 : 403;
+          decide(['user'], path, method).should.equal(expected);
+          decide(['admin'], path, method).should.equal(403);
+        }
+      });
+    }
   });
 
   it('calls next when ACL allows the request', () => {

@@ -71,7 +71,7 @@ function dateDaysAgo(days: number): Date {
 }
 
 async function getTopMessengers(): Promise<TopMessenger[]> {
-  const messengerCounts: MessengerCount[] | null =
+  const aggregated: MessengerCount[] | null =
     await Message.aggregate<MessengerCount>([
       {
         $match: {
@@ -83,9 +83,12 @@ async function getTopMessengers(): Promise<TopMessenger[]> {
       { $sort: { messageCount: -1 } },
       { $limit: TOP_MESSENGERS_LIMIT },
     ]).exec();
-  const userIds = (messengerCounts || []).map(({ _id }) => _id).filter(Boolean);
+  const messengerCounts = aggregated || [];
+  const userIds = messengerCounts.map(({ _id }) => _id).filter(Boolean);
+  const listedIds = { $in: userIds };
   const users = userIds.length
-    ? await User.find({ _id: { $in: userIds } })
+    ? // Stryker disable next-line ObjectLiteral: loading every user only adds profiles that the lookup by id never reads
+      await User.find({ _id: listedIds })
         .select('username displayName _id')
         .exec()
     : [];
@@ -96,7 +99,7 @@ async function getTopMessengers(): Promise<TopMessenger[]> {
     },
     {},
   );
-  return (messengerCounts || []).map(({ _id, messageCount }) => ({
+  return messengerCounts.map(({ _id, messageCount }) => ({
     messageCount,
     user: _id ? usersById[_id.toString()] || { _id } : null,
   }));
@@ -111,12 +114,10 @@ async function getThreadVotes(): Promise<ThreadVoteRecord[]> {
     .populate({
       path: 'userFrom',
       select: 'username displayName _id',
-      model: 'User',
     })
     .populate({
       path: 'userTo',
       select: 'username displayName _id',
-      model: 'User',
     })
     .exec();
   return threadVotes || [];
@@ -133,12 +134,10 @@ async function getNegativeExperiences(): Promise<NegativeExperienceRecord[]> {
       .populate({
         path: 'userFrom',
         select: 'username displayName _id',
-        model: 'User',
       })
       .populate({
         path: 'userTo',
         select: 'username displayName _id',
-        model: 'User',
       })
       .exec();
   return negativeExperiences || [];

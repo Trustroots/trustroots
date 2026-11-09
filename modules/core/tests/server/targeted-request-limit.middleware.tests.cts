@@ -284,7 +284,10 @@ describe('Targeted request limit middleware', function () {
       getRequestIdentity({ params: { token: 123 } }, 'token'),
       undefined,
     );
-    assert.equal(getRequestIdentity({}, 'unknown'), undefined);
+    assert.equal(
+      getRequestIdentity({ params: { token: 'Token-Value' } }, 'unknown'),
+      undefined,
+    );
   });
 
   it('fails closed when the policy window is invalid', async function () {
@@ -335,5 +338,179 @@ describe('Targeted request limit middleware', function () {
       proceeded = true;
     });
     proceeded.should.be.true();
+  });
+
+  const unavailable = {
+    message: 'This service is temporarily unavailable. Please try again later.',
+  };
+
+  function recordCalls() {
+    const calls: ConsumeOptions[] = [];
+    const consume = async (options: ConsumeOptions) => {
+      calls.push(options);
+      return { allowed: true };
+    };
+    return { calls, consume };
+  }
+
+  it('uses the reset token from the route as the identity', async function () {
+    const assert = require('assert/strict');
+    assert.equal(
+      getRequestIdentity({ params: { token: 'Token-Value' } }, 'token'),
+      'Token-Value',
+    );
+    const { calls, consume } = recordCalls();
+    await loadMiddleware(consume).resetPassword(
+      { params: { token: 'Token-Value' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(calls, [
+      {
+        operation: 'resetPassword',
+        windowMs: 60_000,
+        dimensions: [
+          { name: 'ip', value: '198.51.100.20', limit: 10 },
+          {
+            name: 'ip-and-identity',
+            value: JSON.stringify(['198.51.100.20', 'Token-Value']),
+            limit: 2,
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('names each operation and limits confirmation resends per member', async function () {
+    const assert = require('assert/strict');
+    const { calls, consume } = recordCalls();
+    const middleware = loadMiddleware(consume);
+    await middleware.forgotPassword(
+      { body: { username: 'Member' } },
+      response(),
+      () => {},
+    );
+    await middleware.resendConfirmation(
+      { user: { id: 'fictional-member' } },
+      response(),
+      () => {},
+    );
+    assert.deepEqual(
+      calls.map(call => call.operation),
+      ['forgotPassword', 'resendConfirmation'],
+    );
+    assert.deepEqual(calls[0].dimensions[1], {
+      name: 'ip-and-identity',
+      value: JSON.stringify(['198.51.100.20', 'member']),
+      limit: 2,
+    });
+    assert.deepEqual(calls[1].dimensions, [
+      { name: 'ip', value: '198.51.100.20', limit: 10 },
+      {
+        name: 'ip-and-identity',
+        value: JSON.stringify(['198.51.100.20', 'fictional-member']),
+        limit: 2,
+      },
+      { name: 'member', value: 'fictional-member', limit: 2 },
+    ]);
+  });
+
+  for (const windowMs of [0, -1, 1.5]) {
+    it(`fails closed without counting for a policy window of ${windowMs}`, async function () {
+      const assert = require('assert/strict');
+      const { calls, consume } = recordCalls();
+      const middleware = loadMiddleware(consume, () => '198.51.100.20', {
+        signin: { windowMs },
+      });
+      const res = response();
+      let proceeded = false;
+      await middleware.signin({ body: { username: 'member' } }, res, () => {
+        proceeded = true;
+      });
+      assert.equal(proceeded, false);
+      assert.equal(res.statusCode, 503);
+      assert.deepEqual(res.body, unavailable);
+      assert.deepEqual(calls, []);
+    });
+  }
+
+  it('explains why limited, address-less and storage-failed requests are refused', async function () {
+    const assert = require('assert/strict');
+    const limited = response();
+    await loadMiddleware(async () => ({
+      allowed: false,
+      retryAfterSeconds: 5,
+    })).signin({ body: { username: 'member' } }, limited, () => {});
+    assert.deepEqual(limited.body, {
+      message: 'Too many requests. Please try again later.',
+    });
+
+    const withoutAddress = response();
+    await loadMiddleware(
+      async () => ({ allowed: true }),
+      () => undefined,
+    ).signin({ body: { username: 'member' } }, withoutAddress, () => {});
+    assert.deepEqual(withoutAddress.body, unavailable);
+
+    const storageDown = response();
+    await loadMiddleware(async () => {
+      throw new Error('mongo down');
+    }).signin({ body: { username: 'member' } }, storageDown, () => {});
+    assert.deepEqual(storageDown.body, unavailable);
+  });
+
+  it('leaves out identity dimensions when identity limiting is disabled', async function () {
+    const assert = require('assert/strict');
+    const { calls, consume } = recordCalls();
+    await loadMiddleware(consume, () => '198.51.100.20', {
+      support: { identityLimit: 0 },
+    }).support({ user: { id: 'fictional-member' } }, response(), () => {});
+    assert.deepEqual(calls[0].dimensions, [
+      { name: 'ip', value: '198.51.100.20', limit: 10 },
+    ]);
+  });
+
+  it('leaves out the IP dimension when IP limiting is disabled even with an address', async function () {
+    const assert = require('assert/strict');
+    const { calls, consume } = recordCalls();
+    await loadMiddleware(consume, () => '198.51.100.20', {
+      support: { ipLimit: 0 },
+    }).support({ user: { id: 'fictional-member' } }, response(), () => {});
+    assert.deepEqual(
+      calls[0].dimensions.map(dimension => dimension.name),
+      ['ip-and-identity', 'member'],
+    );
+  });
+
+  it('counts requests in the request limit store by default', async function () {
+    const assert = require('assert/strict');
+    const mongoose: typeof import('mongoose') = require('mongoose');
+    require('../../server/models/request-limit.server.model.mjs');
+    const RequestLimit = mongoose.model('RequestLimit');
+    await RequestLimit.deleteMany({});
+    try {
+      const middleware = createTargetedRequestLimits({
+        config: {
+          targetedRequestLimits: {
+            signin: { windowMs: 60_000, ipLimit: 1, identityLimit: 0 },
+          },
+        },
+        getClientIpAddress: () => '198.51.100.30',
+      } as unknown as Parameters<MiddlewareFactory>[0]);
+      let proceeded = 0;
+      const first = response();
+      await middleware.signin({}, first, () => {
+        proceeded++;
+      });
+      const second = response();
+      await middleware.signin({}, second, () => {
+        proceeded++;
+      });
+      assert.equal(proceeded, 1);
+      assert.equal(second.statusCode, 429);
+      assert.equal(await RequestLimit.countDocuments({}), 1);
+    } finally {
+      await RequestLimit.deleteMany({});
+    }
   });
 });

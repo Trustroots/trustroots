@@ -43,16 +43,21 @@ service.getBlockedUsers = async function (req, res) {
   try {
     const user = await User.findById(req.user._id)
       // Avoid pulling in sensitive fields from Mongoose
-      .select('-password -salt')
+      .select(
+        // Stryker disable next-line StringLiteral: only the populated `blocked` list is sent, whichever user fields are loaded
+        '-password -salt',
+      )
       .populate({
         path: 'blocked',
         select: 'username displayName',
+        // Stryker disable next-line StringLiteral: the schema's `blocked` ref is already 'User'
         model: 'User',
       });
     res.send(user!.blocked);
   } catch (err) {
     logCaughtError(err);
     return res.status(400).send({
+      // Stryker disable next-line StringLiteral: an empty or unknown key also returns the default message
       message: errorService.getErrorMessageByKey('default'),
     });
   }
@@ -95,6 +100,7 @@ service.blockUser = async function (req, res) {
   } catch (err) {
     logCaughtError(err);
     return res.status(400).send({
+      // Stryker disable next-line StringLiteral: an empty or unknown key also returns the default message
       message: errorService.getErrorMessageByKey('default'),
     });
   }
@@ -142,6 +148,7 @@ service.unblockUser = async function (req, res) {
   } catch (err) {
     logCaughtError(err);
     return res.status(400).send({
+      // Stryker disable next-line StringLiteral: an empty or unknown key also returns the default message
       message: errorService.getErrorMessageByKey('default'),
     });
   }

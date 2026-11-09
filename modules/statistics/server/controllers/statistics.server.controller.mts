@@ -188,7 +188,6 @@ const MessageStat = mongoose.model<MessageStatRecord>('MessageStat');
 const Message = mongoose.model<MessageRecord>('Message');
 const ReferenceThread =
   mongoose.model<ReferenceThreadRecord>('ReferenceThread');
-const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
 let publicStatisticsCache:
   { expiresAt: number; statistics: PublicStatistics } | undefined;
 
@@ -376,7 +375,7 @@ export const getHostOffersCount = function (
       maybe: 0,
       no: 0,
     };
-    if (counters && counters.length > 0) {
+    if (counters) {
       counters.forEach(function (counter) {
         if (isOfferStatus(counter._id)) {
           values[counter._id] = parseStatisticsCount(counter.count);
@@ -910,6 +909,7 @@ export const getPublicStatistics = function (
   req: StatisticsRequest,
   res: JsonResponse<PublicStatistics>,
 ): JsonResponse<PublicStatistics> | void {
+  const PUBLIC_STATISTICS_CACHE_SECONDS = 60 * 60;
   if (publicStatisticsCache && publicStatisticsCache.expiresAt > Date.now()) {
     return res
       .header(
@@ -1007,7 +1007,7 @@ export const collectStatistics = function (
   req: CollectionRequest,
   res: JsonResponse<{ message: string }>,
 ): JsonResponse<{ message: string }> | void {
-  const collection = String(_.get(req, 'body.collection', ''));
+  const collection = String(_.get(req, 'body.collection'));
   const validCollections = ['mobileAppInit'];
   const updateMsg =
     'You should update Trustroots app or otherwise it will not continue functioning.';
@@ -1017,7 +1017,7 @@ export const collectStatistics = function (
       message: 'Missing or invalid `stats`.',
     });
   }
-  if (!collection || validCollections.indexOf(collection) === -1) {
+  if (validCollections.indexOf(collection) === -1) {
     return res.header('x-tr-update-needed', updateMsg).status(400).send({
       message: 'Missing or invalid `collection`.',
     });

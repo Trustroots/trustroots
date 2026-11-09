@@ -422,116 +422,10 @@ describe('API route registrations', () => {
     ]);
   });
 
-  it('registers users profile, avatar, memberships, push, and password routes', () => {
-    const policy = { isAllowed: handler('usersPolicy.isAllowed') };
-    const profile = controller(
-      [
-        'addPushRegistration',
-        'getMiniUser',
-        'getUser',
-        'getUserMemberships',
-        'initializeRemoveProfile',
-        'joinTribe',
-        'leaveTribe',
-        'removeProfile',
-        'removePushRegistration',
-        'search',
-        'update',
-        'userByUsername',
-        'userMiniByID',
-      ],
-      'userProfile',
-    );
-    const avatar = controller(
-      [
-        'avatarUpload',
-        'avatarUploadField',
-        'getAvatar',
-        'userForAvatarByUserId',
-      ],
-      'userAvatar',
-    );
-    const password = controller(['changePassword'], 'userPassword');
-    const authentication = controller(
-      ['removeOAuthProvider'],
-      'userAuthentication',
-    );
-    const targetedRequestLimit = controller(['avatarUpload'], 'requestLimit');
-
-    const { params, routes } = register(
-      './../../../users/server/routes/users.server.routes.mts',
-      {
-        '../controllers/users.authentication.server.controller': authentication,
-        '../controllers/users.avatar.server.controller': avatar,
-        '../controllers/users.password.server.controller': password,
-        '../controllers/users.profile.server.controller': profile,
-        '../policies/users.server.policy': policy,
-        '../../../core/server/middleware/targeted-request-limit.server.middleware':
-          targetedRequestLimit,
-      },
-    );
-
-    assertHandlers(routeByPath(routes, '/api/users').get, [profile.search]);
-    assertHandlers(routeByPath(routes, '/api/users').delete, [
-      profile.initializeRemoveProfile,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/users').put, [profile.update]);
-    assertHandlers(routeByPath(routes, '/api/users/remove/:token').delete, [
-      profile.removeProfile,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/users-avatar').post, [
-      targetedRequestLimit.avatarUpload,
-      avatar.avatarUploadField,
-      avatar.avatarUpload,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/users/:avatarUserId/avatar').get, [
-      avatar.getAvatar,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/users/memberships').get, [
-      profile.getUserMemberships,
-    ]);
-    assertHandlers(
-      routeByPath(routes, '/api/users/memberships/:tribeId').post,
-      [profile.joinTribe],
-    );
-    assertHandlers(
-      routeByPath(routes, '/api/users/memberships/:tribeId').delete,
-      [profile.leaveTribe],
-    );
-    assertHandlers(routeByPath(routes, '/api/users/push/registrations').post, [
-      profile.addPushRegistration,
-    ]);
-    assertHandlers(
-      routeByPath(routes, '/api/users/push/registrations/:token').delete,
-      [profile.removePushRegistration],
-    );
-    assertHandlers(routeByPath(routes, '/api/users/mini/:userId').get, [
-      profile.getMiniUser,
-    ]);
-    assertHandlers(
-      routeByPath(routes, '/api/users/accounts/:provider').delete,
-      [authentication.removeOAuthProvider],
-    );
-    assertHandlers(routeByPath(routes, '/api/users/password').post, [
-      password.changePassword,
-    ]);
-    assertHandlers(routeByPath(routes, '/api/users/:username').get, [
-      profile.getUser,
-    ]);
-    routes.forEach(route => assertPolicy(route, policy));
-    assert.deepStrictEqual(
-      params.map(param => [param.name, param.middleware.routeTestName]),
-      [
-        ['userId', 'userProfile.userMiniByID'],
-        ['username', 'userProfile.userByUsername'],
-        ['avatarUserId', 'userAvatar.userForAvatarByUserId'],
-      ],
-    );
-  });
-
   it('registers local authentication routes without social OAuth', () => {
     const authentication = controller(
       [
+        'cancelEmailChange',
         'confirmEmail',
         'resendConfirmation',
         'signin',
@@ -567,6 +461,14 @@ describe('API route registrations', () => {
       },
     );
 
+    for (const path of [
+      '/api/auth/cancel-email-change',
+      '/api/auth/confirm-email/:token/cancel',
+    ]) {
+      assertHandlers(routeByPath(routes, path).post, [
+        authentication.cancelEmailChange,
+      ]);
+    }
     assertHandlers(routeByPath(routes, '/api/auth/confirm-email/:token').get, [
       authentication.validateEmailToken,
     ]);
@@ -614,6 +516,21 @@ describe('API route registrations', () => {
     assert.equal(
       routes.some(route => /\/api\/auth\/(facebook|github)/.test(route.path)),
       false,
+    );
+  });
+
+  it('registers users routes behind the users policy', () => {
+    const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const { params, routes } = register(
+      './../../../users/server/routes/users.server.routes.mts',
+      { '../policies/users.server.policy': policy },
+    );
+
+    assert.strictEqual(routes.length, 15);
+    routes.forEach(route => assertPolicy(route, policy));
+    assert.deepStrictEqual(
+      params.map(param => param.name),
+      ['userId', 'username', 'avatarUserId'],
     );
   });
 

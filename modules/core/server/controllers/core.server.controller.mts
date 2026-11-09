@@ -131,7 +131,8 @@ function receiveCSPViolationReport(req: { body?: unknown }, res: CoreResponse) {
     log('warn', 'CSP violation report #ljeanw', {
       report: req.body
         ? textService.plainText(JSON.stringify(req.body))
-        : 'No report available.',
+        : // Stryker disable next-line StringLiteral: the logger redacts every `report` value, so the placeholder is never visible
+          'No report available.',
     });
   }
   res.status(204).json();

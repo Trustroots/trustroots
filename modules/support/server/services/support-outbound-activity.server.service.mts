@@ -41,6 +41,7 @@ async function markActivity(
     {
       $set: {
         activityAppliedAt: new Date(),
+        // Stryker disable next-line ConditionalExpression: Mongoose drops an undefined $set value, so always spreading the revision writes the same document
         ...(postApplyRevision !== undefined && {
           requestRevision: postApplyRevision,
         }),

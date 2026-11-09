@@ -107,6 +107,27 @@ describe('Job: user finish signup direct unit tests', function () {
     );
   });
 
+  it('logs a failed run with its job id', function (done) {
+    const { job, log, query } = loadJob({ limits: {} });
+    const error = new Error('lookup failed');
+    query.exec.rejects(error);
+
+    job({ attrs: { _id: { toString: () => 'job-id' } } }, function (err) {
+      try {
+        should(err).equal(error);
+        sinon.assert.calledOnce(log);
+        (log.firstCall.args as unknown[]).should.eql([
+          'error',
+          'Failure in finish signup reminder background job.',
+          { error: { name: 'Error' }, jobId: 'job-id' },
+        ]);
+        done();
+      } catch (failure) {
+        done(failure);
+      }
+    });
+  });
+
   it('marks each reminded user after sending signup reminders', function (done) {
     const user: {
       _id: string;
@@ -117,6 +138,7 @@ describe('Job: user finish signup direct unit tests', function () {
     const {
       findByIdAndUpdate,
       job,
+      log,
       query,
       sendSignupEmailReminder,
       updateOne,
@@ -152,9 +174,13 @@ describe('Job: user finish signup direct unit tests', function () {
             );
           const updateFilter = record(callArgument(updateOne, 0));
           should(updateFilter.public).be.false();
-          record(updateFilter.emailToken).should.eql({
-            $exists: false,
-          });
+          for (const field of [
+            'emailToken',
+            'emailTokenIssuedAt',
+            'emailTokenExpires',
+          ]) {
+            record(updateFilter[field]).should.eql({ $exists: false });
+          }
           const updateSet = record(record(callArgument(updateOne, 1)).$set);
           date(updateSet.emailTokenExpires)
             .getTime()
@@ -164,6 +190,7 @@ describe('Job: user finish signup direct unit tests', function () {
           record(record(callArgument(findByIdAndUpdate, 1)).$inc).should.eql({
             publicReminderCount: 1,
           });
+          sinon.assert.notCalled(log);
           done();
         } catch (error) {
           done(error);

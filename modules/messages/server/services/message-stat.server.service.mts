@@ -167,6 +167,8 @@ function readMessageStatsOfUser(
   callback: Callback<ReplyStats>,
 ): void {
   const DAY = 24 * 3600 * 1000;
+  // Stryker disable next-line StringLiteral: an empty field selection populates the whole user, which still has _id and roles, so results are identical
+  const senderFields = '_id roles';
   MessageStat.find({
     firstMessageUserTo: userId,
     firstMessageCreated: {
@@ -175,7 +177,7 @@ function readMessageStatsOfUser(
     },
   })
     .sort({ firstMessageCreated: -1 })
-    .populate('firstMessageUserFrom', '_id roles')
+    .populate('firstMessageUserFrom', senderFields)
     .exec()
     .then(
       messageStats => {
@@ -189,6 +191,7 @@ function readMessageStatsOfUser(
         );
 
         const chosenStats = (function (stats: PopulatedMessageStat[]) {
+          // Stryker disable next-line EqualityOperator: with exactly ten stats both the first-ten and the 30-day branch return all ten
           if (stats.length < 10) return stats;
           if (stats[9].firstMessageCreated.getTime() < timeNow - 30 * DAY) {
             return stats.splice(0, 10);
@@ -225,15 +228,17 @@ function readMessageStatsOfUser(
     );
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return _.isFinite(value);
+}
+
 function formatStats(stats: ReplyStats): FormattedStats {
-  const replyRate =
-    typeof stats.replyRate === 'number' && _.isFinite(stats.replyRate)
-      ? Math.round(stats.replyRate * 100) + '%'
-      : '';
-  const replyTime =
-    typeof stats.replyTime === 'number' && _.isFinite(stats.replyTime)
-      ? moment.duration(stats.replyTime).humanize()
-      : '';
+  const replyRate = isFiniteNumber(stats.replyRate)
+    ? Math.round(stats.replyRate * 100) + '%'
+    : '';
+  const replyTime = isFiniteNumber(stats.replyTime)
+    ? moment.duration(stats.replyTime).humanize()
+    : '';
   return { replyRate, replyTime };
 }
 

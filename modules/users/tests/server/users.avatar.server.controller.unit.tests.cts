@@ -1,5 +1,8 @@
 /**
  * Unit tests for avatar controller guards and URL generation branches.
+ *
+ * Most tests load the controller fresh through `mock-module` inside the test,
+ * so its module-level version pattern is evaluated (and mutated) per test.
  */
 const fs: typeof import('fs') = require('fs');
 const os: typeof import('os') = require('os');
@@ -21,17 +24,17 @@ function createTemporaryUpload(): { directory: string; path: string } {
 }
 require('./../../server/models/user.server.model.mjs');
 
+type ObjectId = import('mongoose').Types.ObjectId;
 type AvatarUser = {
-  _id: import('mongoose').Types.ObjectId | string;
+  _id: ObjectId | string;
   roles?: string[];
-  blocked?: Array<import('mongoose').Types.ObjectId | string>;
+  blocked?: Array<ObjectId | string>;
   public?: boolean;
   avatarVersion?: string;
   avatarSource?: string;
   avatarUploaded?: boolean;
   updated?: Date;
   emailHash?: string;
-  additionalProvidersData?: AvatarUserRecord['additionalProvidersData'];
 };
 type AvatarRequest = {
   user?: AvatarUser;
@@ -39,9 +42,10 @@ type AvatarRequest = {
   query?: Record<string, string>;
   file?: { path: string };
 };
+type UploadUser = AvatarUser & { save(): Promise<unknown> };
 type AvatarController = {
   avatarUpload(
-    req: { user: AvatarUser; file: { path: string } },
+    req: { user: UploadUser; file: { path: string } },
     res: MockResponse,
   ): void;
   avatarUploadField(
@@ -55,55 +59,34 @@ type AvatarController = {
     res: MockResponse,
     next: () => void,
     id: string,
-  ): void;
+  ): Promise<void>;
 };
 const avatarController =
   require('./../../server/controllers/users.avatar.server.controller.mjs') as AvatarController;
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 require('should');
 
-type UserRecord =
-  import('../../../../testutils/server/model-contracts.mts').UserRecord;
-interface AvatarUserRecord extends UserRecord {
-  updated?: Date;
-  emailHash?: string;
-  avatarVersion?: string;
-  avatarSource?: string;
-  avatarUploaded?: boolean;
-  additionalProvidersData?: {
-    facebook?: { id?: string };
-    github?: { login?: string };
-    twitter?: { screen_name?: string };
-  };
+interface AvatarUserRecord extends AvatarUser {
+  username?: string;
 }
 const User = mongoose.model<AvatarUserRecord>('User');
 type UserLookup = ReturnType<typeof User.findById>;
 function replaceAvatarVersionLookup(
   error: Error | null,
   version: string | null,
+  lookups: unknown[][],
 ): void {
-  const query = {
-    exec(
-      callback?: (
-        error: Error | null,
-        user: { avatarVersion?: string } | null,
-      ) => void,
-    ) {
-      const user = version === null ? null : { avatarVersion: version };
-      if (typeof callback === 'function') {
-        callback(error, user);
-        return undefined;
-      }
-      return error ? Promise.reject(error) : Promise.resolve(user);
-    },
-  };
-  User.findById = (() =>
-    query as unknown as UserLookup) as typeof User.findById;
-}
-async function findUser(id: unknown) {
-  const user = await User.findById(id);
-  if (!user) throw new Error('Expected test user to exist');
-  return user;
+  User.findById = ((...args: unknown[]) => {
+    lookups.push(args);
+    return {
+      exec: () =>
+        error
+          ? Promise.reject(error)
+          : Promise.resolve(
+              version === null ? null : { avatarVersion: version },
+            ),
+    } as unknown as UserLookup;
+  }) as typeof User.findById;
 }
 interface AvatarProcessingResult {
   version: string;
@@ -112,7 +95,7 @@ interface AvatarProcessingResult {
 }
 interface AvatarProcessingJob {
   sourcePath: string;
-  userId: import('mongoose').Types.ObjectId;
+  userId: ObjectId;
   callback(error: Error | null, result?: AvatarProcessingResult): void;
 }
 interface AvatarProcessor {
@@ -124,32 +107,15 @@ interface AvatarLogEntry {
   message: string;
   detail?: unknown;
 }
-function requireJob(job: AvatarProcessingJob | undefined): AvatarProcessingJob {
-  if (!job) throw new Error('Expected avatar processing job');
-  return job;
-}
 type MockResponse = {
   statusCode: number;
   body: unknown;
-  headers: Record<string, string>;
   redirectUrl: string;
   status(code: number): MockResponse;
   send(body: unknown): MockResponse;
   redirect(url: string): MockResponse;
-  setHeader(key: string, value: string): MockResponse;
   waitForResponse(): Promise<MockResponse>;
 };
-function responseMessage(res: MockResponse): string {
-  const body = res.body;
-  if (
-    typeof body !== 'object' ||
-    body === null ||
-    !('message' in body) ||
-    typeof body.message !== 'string'
-  )
-    throw new Error('Expected a message response');
-  return body.message;
-}
 
 function deferredResponse(): MockResponse {
   let resolveResponse: (response: MockResponse) => void = () => {};
@@ -159,7 +125,6 @@ function deferredResponse(): MockResponse {
   const res: MockResponse = {
     statusCode: 200,
     body: null,
-    headers: {},
     redirectUrl: '',
     status(code) {
       res.statusCode = code;
@@ -175,16 +140,22 @@ function deferredResponse(): MockResponse {
       resolveResponse(res);
       return res;
     },
-    setHeader(key, value) {
-      res.headers[key] = value;
-      return res;
-    },
     waitForResponse() {
       return promise;
     },
   };
   return res;
 }
+
+function loadAvatarWithStubs(stubs: Record<string, unknown> = {}) {
+  return proxyquire<AvatarController>(
+    require.resolve('./../../server/controllers/users.avatar.server.controller.mts'),
+    stubs,
+  );
+}
+
+const loggerPath = './../../../../config/lib/logger.mjs';
+const forbidden = { message: 'Forbidden.' };
 
 describe('Avatar controller unit tests', () => {
   it('exposes the bounded upload pipeline through the ESM adapter', async () => {
@@ -211,898 +182,516 @@ describe('Avatar controller unit tests', () => {
   });
 
   describe('avatarUploadField', () => {
-    it('responds with 403 without a user', async () => {
+    it('responds with 403 without a user', () => {
       const res = deferredResponse();
       avatarController.avatarUploadField({}, res, () => {});
-      await res.waitForResponse();
-      res.statusCode.should.equal(403);
+      [res.statusCode, res.body].should.eql([403, forbidden]);
     });
 
     it('delegates authenticated uploads to the file upload service', () => {
-      let uploadArgs:
-        | [string[], string, object, MockResponse, () => void, number]
-        | undefined;
+      let uploadArgs: unknown[] = [];
       const controller = loadAvatarWithStubs({
         './../../../core/server/services/file-upload.service.mjs': {
-          uploadFile: (
-            ...args: [
-              string[],
-              string,
-              object,
-              MockResponse,
-              () => void,
-              number,
-            ]
-          ) => {
+          uploadFile: (...args: unknown[]) => {
             uploadArgs = args;
           },
         },
       });
-      const req: AvatarRequest = {
-        user: { _id: new mongoose.Types.ObjectId() },
-      };
+      const req = { user: { _id: new mongoose.Types.ObjectId() } };
       const res = deferredResponse();
       const next = () => {};
 
       controller.avatarUploadField(req, res, next);
 
-      (uploadArgs ??
-        (() => {
-          throw new Error('Expected upload arguments');
-        })())[0].should.containEql('image/jpeg');
-      (uploadArgs ??
-        (() => {
-          throw new Error('Expected upload arguments');
-        })())[1].should.equal('avatar');
-      (uploadArgs ??
-        (() => {
-          throw new Error('Expected upload arguments');
-        })())[2].should.equal(req);
-      (uploadArgs ??
-        (() => {
-          throw new Error('Expected upload arguments');
-        })())[3].should.equal(res);
-      (uploadArgs ??
-        (() => {
-          throw new Error('Expected upload arguments');
-        })())[4].should.equal(next);
-      (uploadArgs ??
-        (() => {
-          throw new Error('Expected upload arguments');
-        })())[5].should.equal(config.maxAvatarUploadSize);
+      uploadArgs.should.eql([
+        ['image/gif', 'image/jpeg', 'image/jpg', 'image/png'],
+        'avatar',
+        req,
+        res,
+        next,
+        config.maxAvatarUploadSize,
+      ]);
+      uploadArgs[4]!.should.equal(next);
     });
   });
 
   describe('userForAvatarByUserId', () => {
-    it('responds with 403 without a user', async () => {
-      const res = deferredResponse();
-      avatarController.userForAvatarByUserId(
-        {},
-        res,
-        () => {},
-        new mongoose.Types.ObjectId().toString(),
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(403);
+    it('rejects requests without a user or with an invalid id', async () => {
+      const cases: Array<[AvatarRequest, string, number, unknown]> = [
+        [{}, new mongoose.Types.ObjectId().toString(), 403, forbidden],
+        [
+          { user: { _id: new mongoose.Types.ObjectId() } },
+          'bad-id',
+          400,
+          { message: 'Cannot interpret id.' },
+        ],
+      ];
+      for (const [req, id, status, body] of cases) {
+        const res = deferredResponse();
+        await avatarController.userForAvatarByUserId(req, res, () => {}, id);
+        [res.statusCode, res.body].should.eql([status, body]);
+      }
     });
 
-    it('responds with 400 for an invalid id', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      avatarController.userForAvatarByUserId({ user }, res, () => {}, 'bad-id');
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
-
-    it('loads the profile and calls next', async () => {
+    it('loads only the avatar fields of the profile and calls next', async () => {
       const [viewer, target] = await utils.saveUsers(
         utils.generateUsers(2, { public: true }),
       );
-      const res = deferredResponse();
+      await User.updateOne(
+        { _id: target._id },
+        {
+          avatarVersion: 'a'.repeat(32),
+          blocked: [viewer._id],
+          updated: new Date(),
+        },
+      );
       let nextCalled = false;
-      const req: {
-        user: typeof viewer;
-        profile?: { _id: import('mongoose').Types.ObjectId };
+      const req: AvatarRequest & {
+        profile?: import('mongoose').Document & AvatarUser;
       } = { user: viewer };
-      await new Promise<void>(resolve => {
-        avatarController.userForAvatarByUserId(
-          req,
-          res,
-          () => {
-            nextCalled = true;
-            resolve();
-          },
-          target._id.toString(),
-        );
-      });
+      await avatarController.userForAvatarByUserId(
+        req,
+        deferredResponse(),
+        () => {
+          nextCalled = true;
+        },
+        target._id.toString(),
+      );
       nextCalled.should.be.true();
-      (
-        req.profile ??
-        (() => {
-          throw new Error('Expected profile to be loaded');
-        })()
-      )._id
-        .toString()
-        .should.equal(target._id.toString());
+      Object.keys(req.profile!.toObject())
+        .sort()
+        .should.eql([
+          '_id',
+          'avatarSource',
+          'avatarUploaded',
+          'avatarVersion',
+          'blocked',
+          'emailHash',
+          'public',
+          'roles',
+          'updated',
+        ]);
+      req.profile!._id.toString().should.equal(target._id.toString());
     });
   });
 
   describe('getAvatar', () => {
-    it('rejects an invalid avatar size', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user, profile: user, query: { size: '9999' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
+    const ownerId = new mongoose.Types.ObjectId();
+    const viewerId = new mongoose.Types.ObjectId();
+    const owner = { _id: ownerId, roles: ['user'] };
+    const viewer = { _id: viewerId, roles: ['user'] };
+    const profile = (overrides: Partial<AvatarUser> = {}): AvatarUser => ({
+      _id: ownerId,
+      public: true,
+      roles: ['user'],
+      avatarSource: 'local',
+      avatarUploaded: true,
+      ...overrides,
     });
-
-    it('redirects to the default avatar without a profile', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const res = deferredResponse();
-      avatarController.getAvatar({ user, query: {} }, res);
-      await res.waitForResponse();
-      res.statusCode.should.equal(302);
-      res.redirectUrl.should.containEql('/img/avatar-');
-    });
-
-    it('redirects to the default avatar for a hidden profile', async () => {
-      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
-      const [target] = await utils.saveUsers(
-        utils.generateUsers(1, { public: false }),
-      );
-      const targetDoc = await findUser(target._id);
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: {} },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-');
-    });
-
-    it('redirects to the default avatar for a shadowbanned profile', async () => {
-      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
-      const [target] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
-      );
-      const targetDoc = await findUser(target._id);
-      targetDoc.roles = ['user', 'shadowban'];
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: {} },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-');
-    });
-
-    it('redirects to the default avatar for a suspended profile', async () => {
-      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
-      const [target] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
-      );
-      const targetDoc = await findUser(target._id);
-      targetDoc.roles = ['user', 'suspended'];
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: { size: '128' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-128.png');
-    });
-
-    it('redirects to the default avatar when the profile blocked the viewer', async () => {
-      const [viewer] = await utils.saveUsers(utils.generateUsers(1));
-      const [target] = await utils.saveUsers(
-        utils.generateUsers(1, { public: true }),
-      );
-      const targetDoc = await findUser(target._id);
-      targetDoc.blocked = [new mongoose.Types.ObjectId(viewer._id.toString())];
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: { size: '128' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-128.png');
-    });
-
-    it('lets admins view a shadowbanned profile avatar', async () => {
-      const [viewer, target] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
-      );
-      viewer.roles = ['user', 'admin'];
-      const targetDoc = await findUser(target._id);
-      targetDoc.roles = ['user', 'shadowban'];
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        { user: viewer, profile: targetDoc, query: { size: '128' } },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/uploads-profile/');
-    });
-
-    it('ignores custom avatar source requests from non-owners', async () => {
-      const [viewer, target] = await utils.saveUsers(
-        utils.generateUsers(2, { public: true }),
-      );
-      const targetDoc = await findUser(target._id);
-      targetDoc.avatarUploaded = true;
-      targetDoc.avatarSource = 'local';
-      await targetDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: viewer,
-          profile: targetDoc,
-          query: { source: 'not-a-source', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(302);
-      res.redirectUrl.should.containEql('/uploads-profile/');
-    });
-
-    it('rejects an invalid avatar source for the owner', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'not-a-source' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-    });
-
-    it('redirects to a local avatar url when the user uploaded one', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarUploaded = true;
-      userDoc.avatarSource = 'local';
-      await userDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/uploads-profile/');
-    });
-
-    it('includes an update timestamp in local avatar URLs', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarUploaded = true;
-      userDoc.avatarSource = 'local';
-      userDoc.updated = new Date('2026-01-02T03:04:05.000Z');
-      await userDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'local', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-
-      res.redirectUrl.should.containEql('/uploads-profile/');
-      res.redirectUrl.should.endWith(`?${userDoc.updated.getTime()}`);
-    });
-
-    it('includes the server-owned avatar version in local avatar URLs', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      const version = 'f'.repeat(32);
-      userDoc.avatarUploaded = true;
-      userDoc.avatarSource = 'local';
-      userDoc.avatarVersion = version;
-      await userDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'local', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-
-      res.redirectUrl.should.containEql(`/avatar/${version}/128.jpg`);
-    });
-
-    it('uses the https domain for local avatar URLs when configured', async () => {
-      const originalHttps = config.https;
-      config.https = true;
-
-      try {
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
-        const userDoc = await findUser(user._id);
-        userDoc.avatarUploaded = true;
-        userDoc.avatarSource = 'local';
-        await userDoc.save();
-
-        const res = deferredResponse();
-        avatarController.getAvatar(
+    const domain = (https = false) =>
+      `${https ? 'https' : 'http'}://${config.domain}`;
+    const fallback = (size = 128, https = false) =>
+      `${domain(https)}/img/avatar-${size}.png`;
+    const local = (version = '', stamp = '', https = false) =>
+      `${domain(https)}/uploads-profile/${ownerId}/avatar/${version}128.jpg?${stamp}`;
+    const updated = new Date('2026-01-02T03:04:05.000Z');
+    const invalid = (message: string) => [400, { message }];
+    const cases: Array<[string, AvatarRequest, unknown[] | string, boolean?]> =
+      [
+        [
+          'rejects an invalid size',
+          { user: owner, profile: profile(), query: { size: '9999' } },
+          invalid(
+            'Invalid size. Please use one of these: 2048, 1024, 512, 256, 128, 64, 36, 32, 24, 16',
+          ),
+        ],
+        [
+          'defaults without a profile',
+          { user: owner, query: { size: '' } },
+          fallback(1024),
+        ],
+        [
+          'uses https for the default avatar when configured',
+          { user: owner, query: { size: '128' } },
+          fallback(128, true),
+          true,
+        ],
+        [
+          'hides a private profile',
+          { user: viewer, profile: profile({ public: false }) },
+          fallback(),
+        ],
+        [
+          'hides a suspended profile',
+          { user: viewer, profile: profile({ roles: ['user', 'suspended'] }) },
+          fallback(),
+        ],
+        [
+          'hides a shadowbanned profile',
+          { user: viewer, profile: profile({ roles: ['user', 'shadowban'] }) },
+          fallback(),
+        ],
+        [
+          'hides a profile that blocked the viewer',
+          { user: viewer, profile: profile({ blocked: [ownerId, viewerId] }) },
+          fallback(),
+        ],
+        [
+          'shows a profile that blocked someone else',
+          { user: viewer, profile: profile({ blocked: [ownerId] }) },
+          local(),
+        ],
+        [
+          'lets admins see a shadowbanned profile',
           {
-            user: userDoc,
-            profile: userDoc,
-            query: { source: 'local', size: '128' },
+            user: { _id: viewerId, roles: ['user', 'admin'] },
+            profile: profile({ roles: ['user', 'shadowban'] }),
           },
-          res,
-        );
-        await res.waitForResponse();
-
-        res.redirectUrl.should.startWith('https://');
-        res.redirectUrl.should.containEql('/uploads-profile/');
-      } finally {
-        config.https = originalHttps;
-      }
-    });
-
-    it('redirects to a local avatar url without a timestamp when updated is absent', async () => {
-      const userId = new mongoose.Types.ObjectId();
-      const res = deferredResponse();
-
-      avatarController.getAvatar(
-        {
-          user: { _id: userId, roles: [] },
-          profile: {
-            _id: userId,
-            avatarUploaded: true,
-            avatarSource: 'local',
-            public: true,
-            roles: [],
+          local(),
+        ],
+        [
+          'ignores a source requested by a non-owner',
+          { user: viewer, profile: profile(), query: { source: 'none' } },
+          local(),
+        ],
+        [
+          'rejects an unknown source from the owner',
+          { user: owner, profile: profile(), query: { source: 'facebook' } },
+          invalid(
+            'Invalid source. Please use one of these: none, gravatar, local',
+          ),
+        ],
+        [
+          'rejects a new Gravatar selection',
+          { user: owner, profile: profile(), query: { source: 'gravatar' } },
+          invalid(
+            'Gravatar can no longer be selected. Please upload a photo or choose no photo.',
+          ),
+        ],
+        [
+          'falls back for an owner-selected source without an upload',
+          {
+            user: owner,
+            profile: profile({ avatarUploaded: false }),
+            query: { source: 'local' },
           },
-          query: { source: 'local', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-
-      res.redirectUrl.should.containEql('/uploads-profile/');
-      res.redirectUrl.endsWith('?').should.be.true();
-    });
-
-    it('uses the https domain for default avatar redirects when configured', async () => {
-      const originalHttps = config.https;
-      config.https = true;
-
-      try {
-        const [user] = await utils.saveUsers(utils.generateUsers(1));
+          fallback(),
+        ],
+        [
+          'falls back for an unnormalised legacy source',
+          { user: owner, profile: profile({ avatarSource: 'facebook' }) },
+          fallback(),
+        ],
+        [
+          'adds the update timestamp and server-owned version',
+          {
+            user: owner,
+            profile: profile({ updated, avatarVersion: 'f'.repeat(32) }),
+          },
+          local(`${'f'.repeat(32)}/`, String(updated.getTime())),
+        ],
+        [
+          'uses https for local avatars when configured',
+          { user: owner, profile: profile() },
+          local('', '', true),
+          true,
+        ],
+        [
+          'ignores a malformed version',
+          { user: owner, profile: profile({ avatarVersion: '0'.repeat(33) }) },
+          local(),
+        ],
+        [
+          'keeps a retained Gravatar',
+          {
+            user: owner,
+            profile: profile({ avatarSource: 'gravatar', emailHash: 'abc123' }),
+            query: { source: 'gravatar' },
+          },
+          `https://gravatar.com/avatar/abc123?s=128&d=${encodeURIComponent(
+            'https://trustroots.org/img/avatar-128.png',
+          )}`,
+        ],
+        [
+          'falls back for a Gravatar without an email hash',
+          { user: viewer, profile: profile({ avatarSource: 'gravatar' }) },
+          fallback(),
+        ],
+      ];
+    cases.forEach(([name, req, expected, https = false]) => {
+      it(name, () => {
+        const originalHttps = config.https;
+        config.https = https;
         const res = deferredResponse();
-        avatarController.getAvatar({ user, query: { size: '128' } }, res);
-        await res.waitForResponse();
-
-        res.redirectUrl.should.startWith('https://');
-        res.redirectUrl.should.containEql('/img/avatar-128.png');
-      } finally {
-        config.https = originalHttps;
-      }
-    });
-
-    it('falls back to the default avatar when local source has no upload', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarUploaded = false;
-      userDoc.avatarSource = 'local';
-      await userDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'local', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-128.png');
-    });
-
-    it('rejects a Facebook avatar source requested by the owner', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.additionalProvidersData = { facebook: { id: 'fb-123' } };
-      userDoc.markModified('additionalProvidersData');
-      await userDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'facebook', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      responseMessage(res).should.containEql('Invalid source');
-    });
-
-    it('falls back to the default avatar for an unnormalised legacy source', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarSource = 'facebook';
-      userDoc.additionalProvidersData = { facebook: {} };
-      userDoc.markModified('additionalProvidersData');
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('/img/avatar-128.png');
-    });
-
-    it('redirects to a gravatar url when retained by its current owner', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarSource = 'gravatar';
-      userDoc.emailHash = 'abc123';
-      await userDoc.save();
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'gravatar', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('gravatar.com');
-    });
-
-    it('rejects a new Gravatar override from the owner', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'gravatar', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.statusCode.should.equal(400);
-      responseMessage(res).should.containEql(
-        'Gravatar can no longer be selected',
-      );
-    });
-
-    it('uses the default avatar as the Gravatar fallback image', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarSource = 'gravatar';
-      await userDoc.save();
-
-      const res = deferredResponse();
-      avatarController.getAvatar(
-        {
-          user: userDoc,
-          profile: userDoc,
-          query: { source: 'gravatar', size: '128' },
-        },
-        res,
-      );
-      await res.waitForResponse();
-      res.redirectUrl.should.containEql('gravatar.com/avatar/');
-      decodeURIComponent(res.redirectUrl).should.containEql(
-        'd=https://trustroots.org/img/avatar-128.png',
-      );
+        try {
+          loadAvatarWithStubs().getAvatar(
+            { ...req, query: { size: '128', ...req.query } },
+            res,
+          );
+        } finally {
+          config.https = originalHttps;
+        }
+        if (typeof expected === 'string') {
+          [res.statusCode, res.redirectUrl].should.eql([302, expected]);
+        } else {
+          [res.statusCode, res.body].should.eql(expected);
+        }
+      });
     });
   });
 
-  function loadAvatarWithStubs(stubs: Record<string, unknown>) {
-    return proxyquire<AvatarController>(
-      require.resolve('./../../server/controllers/users.avatar.server.controller.mts'),
-      stubs,
-    );
-  }
-
-  function loadAvatarWithProcessor(processor: AvatarProcessor) {
-    return loadAvatarWithStubs({
-      './../../server/services/avatar-processing.server.service.mts': processor,
-    });
-  }
-
   describe('avatarUpload', () => {
-    it('logs temporary upload cleanup failures after processor errors', async () => {
-      const logged: AvatarLogEntry[] = [];
-      let job: AvatarProcessingJob | undefined;
-      const controller = loadAvatarWithStubs({
-        fs: {
-          promises: {
-            unlink: async () => {
-              throw new Error('temporary cleanup failed');
-            },
-          },
-        },
-        './../../../../config/lib/logger.mjs': (
-          level: string,
-          message: string,
-          detail?: unknown,
-        ) => {
-          logged.push({ level, message, detail });
-        },
-        '../services/avatar-processing.server.service': {
-          enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
-            job = value;
-            return true;
-          },
-        },
-      });
-      const res = deferredResponse();
-
-      controller.avatarUpload(
-        {
-          user: { _id: new mongoose.Types.ObjectId() },
-          file: { path: '/private/avatar-upload.jpg' },
-        },
-        res,
-      );
-      requireJob(job).callback(new Error('image processor failed'));
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(422);
-      logged
-        .map(entry => entry.message)
-        .should.containEql(
-          'User profile avatar upload: failed to clean out temporary image.',
-        );
+    const OLD = 'a'.repeat(32);
+    const NEW = 'b'.repeat(32);
+    const avatarDirectory = '/private/avatar-dir';
+    const uploaded = [200, { message: 'Avatar image uploaded.' }];
+    const failure = new Error('anonymous failure');
+    const log = (message: string): AvatarLogEntry => ({
+      level: 'error',
+      message: `User profile avatar upload: ${message}`,
+      detail: failure,
     });
 
-    it('logs version cleanup failures and uses the fallback save error message', async () => {
+    interface UploadCase {
+      previous?: string;
+      processingError?: boolean;
+      missingUpload?: boolean;
+      unlinkFails?: boolean;
+      queueFull?: boolean;
+      saveError?: unknown;
+      saveMessage?: string;
+      lookup?: [Error | null, string | null];
+      removeFails?: boolean;
+    }
+    async function upload(c: UploadCase) {
       const logged: AvatarLogEntry[] = [];
-      let job: AvatarProcessingJob | undefined;
+      const removed: string[] = [];
+      const lookups: unknown[][] = [];
       const { path: sourcePath } = createTemporaryUpload();
-      const controller = loadAvatarWithStubs({
-        './../../../../config/lib/logger.mjs': (
-          level: string,
-          message: string,
-          detail?: unknown,
-        ) => {
-          logged.push({ level, message, detail });
-        },
-        './../../../core/server/services/error.server.service.mjs': {
-          getErrorMessage: () => '',
-        },
+      if (c.missingUpload) fs.unlinkSync(sourcePath);
+      const stubs: Record<string, unknown> = {
+        [loggerPath]: (level: string, message: string, detail?: unknown) =>
+          logged.push({ level, message, detail }),
         '../services/avatar-processing.server.service': {
-          enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
-            job = value;
+          enqueueAvatarProcessing: (job: AvatarProcessingJob) => {
+            if (c.queueFull) return false;
+            process.nextTick(() =>
+              c.processingError
+                ? job.callback(failure)
+                : job.callback(null, { version: NEW, avatarDirectory }),
+            );
             return true;
           },
-          removeAvatarVersion: async () => {
-            throw new Error('version cleanup failed');
+          removeAvatarVersion: async (directory: string, version: string) => {
+            directory.should.equal(avatarDirectory);
+            removed.push(version);
+            if (c.removeFails) throw failure;
           },
-        },
-      });
-      const user = {
-        _id: new mongoose.Types.ObjectId(),
-        avatarVersion: 'a'.repeat(32),
-        save: async () => {
-          throw new Error('database unavailable');
         },
       };
-      const res = deferredResponse();
-
-      controller.avatarUpload({ user, file: { path: sourcePath } }, res);
-      requireJob(job).callback(null, {
-        version: 'b'.repeat(32),
-        avatarDirectory: '/private/avatar-dir',
-      });
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(400);
-      responseMessage(res).should.equal(
-        'Failed to save the new avatar version.',
-      );
-      logged
-        .map(entry => entry.message)
-        .should.containEql(
-          'User profile avatar upload: failed to clean up unpublished avatar version.',
-        );
-      fs.existsSync(sourcePath).should.equal(false);
-    });
-
-    it('logs avatar pointer verification errors without failing the upload', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      const originalFindById = User.findById;
-      const logged: AvatarLogEntry[] = [];
-      const controller = loadAvatarWithStubs({
-        './../../../../config/lib/logger.mjs': (
-          level: string,
-          message: string,
-          detail?: unknown,
-        ) => {
-          logged.push({ level, message, detail });
-        },
-        '../services/avatar-processing.server.service': {
-          enqueueAvatarProcessing: (job: AvatarProcessingJob) => {
-            process.nextTick(() =>
-              requireJob(job).callback(null, {
-                version: 'c'.repeat(32),
-                avatarDirectory: '/private/avatar-dir',
-              }),
-            );
-            return true;
+      if (c.unlinkFails) {
+        stubs.fs = {
+          promises: {
+            unlink: async () => {
+              throw Object.assign(failure, { code: 'EACCES' });
+            },
           },
-          removeAvatarVersion: async () => {},
+        };
+      }
+      if (c.saveMessage !== undefined) {
+        stubs['./../../../core/server/services/error.server.service.mjs'] = {
+          getErrorMessage: () => c.saveMessage,
+        };
+      }
+      const user: UploadUser = {
+        _id: new mongoose.Types.ObjectId(),
+        avatarVersion: c.previous,
+        save: async () => {
+          if (c.saveError) throw c.saveError;
         },
-      });
+      };
+      const originalFindById = User.findById;
+      replaceAvatarVersionLookup(...(c.lookup ?? [null, NEW]), lookups);
       const res = deferredResponse();
-      replaceAvatarVersionLookup(new Error('avatar lookup failed'), null);
-
       try {
-        controller.avatarUpload(
-          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
+        loadAvatarWithStubs(stubs).avatarUpload(
+          { user, file: { path: sourcePath } },
           res,
         );
         await res.waitForResponse();
       } finally {
         User.findById = originalFindById;
       }
+      if (lookups.length) lookups.should.eql([[user._id, 'avatarVersion']]);
+      return {
+        response: [res.statusCode, res.body],
+        logged,
+        removed,
+        avatarVersion: user.avatarVersion,
+        uploadKept: fs.existsSync(sourcePath),
+      };
+    }
 
-      res.statusCode.should.equal(200);
-      logged
-        .map(entry => entry.message)
-        .should.containEql(
-          'User profile avatar upload: failed to verify current avatar version.',
-        );
-    });
-
-    it('keeps the previous version when another upload has replaced its pointer', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      const originalFindById = User.findById;
-      let job: AvatarProcessingJob | undefined;
-      const removed: string[] = [];
-      const controller = loadAvatarWithProcessor({
-        enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
-          job = value;
-          return true;
+    const cases: Array<[string, UploadCase, Record<string, unknown>]> = [
+      [
+        'logs a failed temporary cleanup after a processing error',
+        { previous: OLD, processingError: true, unlinkFails: true },
+        {
+          response: [
+            422,
+            { message: 'Failed to process image, please try again.' },
+          ],
+          logged: [
+            log('failed to clean out temporary image.'),
+            log('failed to generate thumbnails.'),
+          ],
+          avatarVersion: OLD,
+          uploadKept: true,
         },
-        removeAvatarVersion: async (_directory: string, version: string) => {
-          removed.push(version);
+      ],
+      [
+        'does not log an already removed temporary upload',
+        { previous: OLD, processingError: true, missingUpload: true },
+        {
+          response: [
+            422,
+            { message: 'Failed to process image, please try again.' },
+          ],
+          logged: [log('failed to generate thumbnails.')],
+          avatarVersion: OLD,
         },
-      });
-      const res = deferredResponse();
-      replaceAvatarVersionLookup(null, 'd'.repeat(32));
-
-      try {
-        controller.avatarUpload(
-          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
-          res,
-        );
-        requireJob(job).callback(null, {
-          version: 'e'.repeat(32),
-          avatarDirectory: '/private/avatar-dir',
+      ],
+      [
+        'restores the pointer and removes the new version when saving fails',
+        {
+          previous: OLD,
+          saveError: {
+            errors: { avatarVersion: { message: 'Invalid avatar.' } },
+          },
+        },
+        {
+          response: [400, { message: 'Invalid avatar.' }],
+          removed: [NEW],
+          avatarVersion: OLD,
+        },
+      ],
+      [
+        'logs a failed version cleanup and falls back to a save message',
+        {
+          previous: OLD,
+          saveError: failure,
+          saveMessage: '',
+          removeFails: true,
+        },
+        {
+          response: [
+            400,
+            { message: 'Failed to save the new avatar version.' },
+          ],
+          logged: [log('failed to clean up unpublished avatar version.')],
+          removed: [NEW],
+          avatarVersion: OLD,
+        },
+      ],
+      [
+        'logs a failed pointer verification without failing the upload',
+        { previous: OLD, lookup: [failure, null] },
+        { logged: [log('failed to verify current avatar version.')] },
+      ],
+      [
+        'keeps the previous version when another upload replaced the pointer',
+        { previous: OLD, lookup: [null, 'c'.repeat(32)] },
+        {},
+      ],
+      [
+        'keeps the previous version when the user is gone',
+        { previous: OLD, lookup: [null, null] },
+        {},
+      ],
+      [
+        'removes the previous version once published',
+        { previous: OLD },
+        {
+          removed: [OLD],
+        },
+      ],
+      [
+        'logs a failed previous version cleanup after publishing',
+        { previous: OLD, removeFails: true },
+        {
+          logged: [log('failed to remove the previous avatar version.')],
+          removed: [OLD],
+        },
+      ],
+      ...[undefined, 'legacy', `${OLD}a`, NEW].map(
+        previous =>
+          [
+            `does not remove the unsafe or current previous version ${previous}`,
+            { previous },
+            {},
+          ] as [string, UploadCase, Record<string, unknown>],
+      ),
+      [
+        'returns 503 and removes the upload when the queue is full',
+        { previous: OLD, queueFull: true },
+        {
+          response: [
+            503,
+            { message: 'Avatar processing is busy. Please try again shortly.' },
+          ],
+          avatarVersion: OLD,
+        },
+      ],
+    ];
+    cases.forEach(([name, uploadCase, expected]) => {
+      it(name, async () => {
+        (await upload(uploadCase)).should.eql({
+          response: uploaded,
+          logged: [],
+          removed: [],
+          avatarVersion: NEW,
+          uploadKept: false,
+          ...expected,
         });
-        await res.waitForResponse();
-      } finally {
-        User.findById = originalFindById;
-      }
-
-      res.statusCode.should.equal(200);
-      removed.should.be.empty();
+      });
     });
 
-    it('reports old version cleanup errors after successfully publishing', async () => {
+    it('publishes a complete avatar version on the stored user', async () => {
       const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarVersion = 'f'.repeat(32);
+      const userDoc = (await User.findById(user._id))!;
+      userDoc.avatarVersion = OLD;
       await userDoc.save();
-      const originalFindById = User.findById;
-      const logged: AvatarLogEntry[] = [];
+      const { path: sourcePath } = createTemporaryUpload();
+      const removed: string[] = [];
+      let job: AvatarProcessingJob | undefined;
       const controller = loadAvatarWithStubs({
-        './../../../../config/lib/logger.mjs': (
-          level: string,
-          message: string,
-          detail?: unknown,
-        ) => {
-          logged.push({ level, message, detail });
-        },
-        '../services/avatar-processing.server.service': {
-          enqueueAvatarProcessing: (job: AvatarProcessingJob) => {
-            process.nextTick(() =>
-              requireJob(job).callback(null, {
-                version: '1'.repeat(32),
-                avatarDirectory: '/private/avatar-dir',
-              }),
-            );
+        './../../server/services/avatar-processing.server.service.mts': {
+          enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
+            job = value;
             return true;
           },
           removeAvatarVersion: async (_directory: string, version: string) => {
-            if (version === 'f'.repeat(32)) {
-              throw new Error('old version cleanup failed');
-            }
+            removed.push(version);
           },
-        },
-      });
-      const res = deferredResponse();
-      replaceAvatarVersionLookup(null, '1'.repeat(32));
-
-      try {
-        controller.avatarUpload(
-          { user: userDoc, file: { path: '/private/avatar-upload.jpg' } },
-          res,
-        );
-        await res.waitForResponse();
-      } finally {
-        User.findById = originalFindById;
-      }
-
-      res.statusCode.should.equal(200);
-      logged
-        .map(entry => entry.message)
-        .should.containEql(
-          'User profile avatar upload: failed to remove the previous avatar version.',
-        );
-    });
-
-    it('publishes a complete avatar version and removes the old version', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarVersion = 'a'.repeat(32);
-      await userDoc.save();
-      const { path: sourcePath } = createTemporaryUpload();
-      let job: AvatarProcessingJob | undefined;
-      const removed: string[] = [];
-      const nextVersion = 'b'.repeat(32);
-      const controller = loadAvatarWithProcessor({
-        enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
-          job = value;
-          return true;
-        },
-        removeAvatarVersion: async (directory: string, version: string) => {
-          removed.push(version);
-        },
-      });
-      const res = deferredResponse();
-
-      controller.avatarUpload(
-        { user: userDoc, file: { path: sourcePath } },
-        res,
-      );
-      requireJob(job).callback(null, {
-        version: nextVersion,
-        avatarDirectory: '/private/avatar-dir',
-        versionDirectory: '/private/avatar-dir/version',
-      });
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(200);
-      (await findUser(user._id)).avatarVersion!.should.equal(nextVersion);
-      removed.should.eql(['a'.repeat(32)]);
-      fs.existsSync(sourcePath).should.equal(false);
-    });
-
-    it('preserves the current avatar when processing fails', async () => {
-      const [user] = await utils.saveUsers(utils.generateUsers(1));
-      const userDoc = await findUser(user._id);
-      userDoc.avatarVersion = 'c'.repeat(32);
-      await userDoc.save();
-      const { path: sourcePath } = createTemporaryUpload();
-      let job: AvatarProcessingJob | undefined;
-      const controller = loadAvatarWithProcessor({
-        enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
-          job = value;
-          return true;
-        },
-      });
-      const res = deferredResponse();
-
-      controller.avatarUpload(
-        { user: userDoc, file: { path: sourcePath } },
-        res,
-      );
-      requireJob(job).callback(new Error('processor rejected image'));
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(422);
-      (await findUser(user._id)).avatarVersion!.should.equal('c'.repeat(32));
-      fs.existsSync(sourcePath).should.equal(false);
-    });
-
-    it('removes the new version and restores the old pointer when saving fails', async () => {
-      const oldVersion = 'd'.repeat(32);
-      const newVersion = 'e'.repeat(32);
-      let job: AvatarProcessingJob | undefined;
-      const removed: string[] = [];
-      const controller = loadAvatarWithProcessor({
-        enqueueAvatarProcessing: (value: AvatarProcessingJob) => {
-          job = value;
-          return true;
-        },
-        removeAvatarVersion: async (directory: string, version: string) => {
-          removed.push(version);
-        },
-      });
-      const { path: sourcePath } = createTemporaryUpload();
-      const user = {
-        _id: new mongoose.Types.ObjectId(),
-        avatarVersion: oldVersion,
-        save: (callback: (error: Error) => void) =>
-          callback(new Error('database unavailable')),
-      };
-      const res = deferredResponse();
-
-      controller.avatarUpload({ user, file: { path: sourcePath } }, res);
-      requireJob(job).callback(null, {
-        version: newVersion,
-        avatarDirectory: '/private/avatar-dir',
-        versionDirectory: '/private/avatar-dir/version',
-      });
-      await res.waitForResponse();
-
-      res.statusCode.should.equal(400);
-      user.avatarVersion.should.equal(oldVersion);
-      removed.should.eql([newVersion]);
-      fs.existsSync(sourcePath).should.equal(false);
-    });
-
-    it('returns 503 and cleans up the temporary upload when the queue is full', async () => {
-      const { path: sourcePath } = createTemporaryUpload();
-      const controller = loadAvatarWithProcessor({
-        enqueueAvatarProcessing: () => false,
+        } satisfies AvatarProcessor,
       });
       const res = deferredResponse();
 
       controller.avatarUpload(
         {
-          user: { _id: new mongoose.Types.ObjectId() },
+          user: userDoc as unknown as UploadUser,
           file: { path: sourcePath },
         },
         res,
       );
+      job!.sourcePath.should.equal(sourcePath);
+      job!.userId.should.equal(userDoc._id);
+      job!.callback(null, { version: NEW, avatarDirectory });
       await res.waitForResponse();
 
-      res.statusCode.should.equal(503);
+      [res.statusCode, res.body].should.eql(uploaded);
+      (await User.findById(user._id))!.avatarVersion!.should.equal(NEW);
+      removed.should.eql([OLD]);
       fs.existsSync(sourcePath).should.equal(false);
     });
   });

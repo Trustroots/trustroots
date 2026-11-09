@@ -166,6 +166,29 @@ describe('Experiences controller unit tests', () => {
       res.body.hasPending.should.be.true();
     });
 
+    it('rejects a userTo that is not a string, even if it is an id', async () => {
+      const [user] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1, { public: true }),
+      );
+      const res = deferredResponse<{ message: string }>();
+      experiencesController.getCount(
+        {
+          user,
+          body: {},
+          query: { userTo: user._id },
+          params: {},
+        } as unknown as Parameters<typeof experiencesController.getCount>[0],
+        res,
+        () => {},
+      );
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(400);
+      res.body.should.deepEqual({
+        message: 'Missing or invalid `userTo` request param',
+      });
+    });
+
     it('passes unexpected errors to next', async () => {
       const [user] = await utils.saveUsersWithCachedPasswords(
         utils.generateUsersWithSharedPassword(1, { public: true }),

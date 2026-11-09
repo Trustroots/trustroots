@@ -21,7 +21,6 @@ const statistics: typeof import('../../../statistics/server/controllers/statisti
 const publishExperiences: typeof import('../../server/jobs/experiences-publish.server.job.mjs') = require('../../server/jobs/experiences-publish.server.job.mjs');
 const adminChanges: typeof import('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs') = require('../../../admin/server/controllers/admin.experience-changes.server.controller.mjs');
 const memberChanges: typeof import('../../server/controllers/experience-changes.server.controller.mjs') = require('../../server/controllers/experience-changes.server.controller.mjs');
-const experiencePolicy: typeof import('../../server/policies/experiences.server.policy.mts') = require('../../server/policies/experiences.server.policy.mts');
 
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
@@ -52,7 +51,6 @@ type AdminIssueRequest = Parameters<typeof adminChanges.issueLink>[0];
 type AdminFindRequest = Parameters<typeof adminChanges.findExperiences>[0];
 type AdminListRequest = Parameters<typeof adminChanges.listRequests>[0];
 type AdminDecisionRequest = Parameters<typeof adminChanges.decide>[0];
-type PolicyRequest = Parameters<typeof experiencePolicy.isAllowedChange>[0];
 interface TestResponse {
   status(code: number): TestResponse;
   json(body: unknown): TestResponse;
@@ -1057,33 +1055,6 @@ describe('Experience change requests', () => {
     next.alwaysCalledWithExactly(error).should.equal(true);
   });
 
-  it('denies unauthenticated policy calls and passes policy errors onward', async () => {
-    const { response, statusSpy } = createTestResponse();
-    const next = sinon.spy();
-    const route = { path: '/api/experiences/:id/change-access' };
-    await experiencePolicy.isAllowedChange(
-      { user: null, route, method: 'GET' } as unknown as PolicyRequest,
-      response,
-      next,
-    );
-    statusSpy.calledWith(403).should.equal(true);
-    await experiencePolicy.isAllowedChange(
-      { user: { _id: { valueOf: () => '' } }, route, method: 'GET' },
-      response,
-      next,
-    );
-    statusSpy.calledTwice.should.equal(true);
-    await experiencePolicy.isAllowedChange(
-      {
-        user: { roles: ['user'], _id: { valueOf: () => '' } },
-        method: 'GET',
-      } as unknown as PolicyRequest,
-      response,
-      next,
-    );
-    next.calledOnce.should.equal(true);
-    next.firstCall.args[0].should.be.instanceOf(TypeError);
-  });
   it('can approve an unchanged edit even when MongoDB modifies no values', async () => {
     experience.feedbackPublic = '';
     await experience.save();

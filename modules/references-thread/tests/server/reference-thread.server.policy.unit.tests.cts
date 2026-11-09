@@ -4,6 +4,7 @@ before(async function () {
     await import('../../server/policies/reference-thread.server.policy.mts');
 });
 const sinon: typeof import('sinon') = require('sinon');
+const proxyquire: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
 require('should');
 interface PolicyResponseDouble {
   statusCode: number;
@@ -151,30 +152,6 @@ describe('Reference thread policy unit tests', () => {
     next.calledOnce.should.be.true();
   });
 
-  it('lets unpublished users read through ACL when not owning the thread', () => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, true);
-    const next = sinon.stub();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: 'reader-id',
-          public: false,
-          roles: ['user'],
-        },
-        referenceThread: { userFrom: { equals: sinon.stub().returns(false) } },
-        route: { path: '/api/references-thread/:referenceThreadUserToId' },
-        method: 'GET',
-      },
-      mockResponse(),
-      next,
-    );
-
-    mockAcl.areAnyRolesAllowed.calledOnce.should.be.true();
-    next.calledOnce.should.be.true();
-  });
-
   it('checks guest permissions for signed-in users without roles', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, false);
@@ -192,18 +169,87 @@ describe('Reference thread policy unit tests', () => {
     mockAcl.areAnyRolesAllowed.firstCall.args[0].should.deepEqual(['guest']);
   });
 
-  it('returns 500 when authorization fails unexpectedly', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(new Error('acl down'));
+  describe('with the registered grants', () => {
+    type Outcome = { nextCalled: boolean; statusCode: number };
+    function check(roles: string[], path: string, method: string): Outcome {
+      // Registering inside the test keeps the grants covered by this test.
+      policyModule.default.invokeRolesPolicies();
+      const res = mockResponse();
+      let nextCalled = false;
+      policyModule.default.isAllowed(
+        { user: { _id: {}, public: true, roles }, route: { path }, method },
+        res,
+        () => {
+          nextCalled = true;
+        },
+      );
+      return { nextCalled, statusCode: res.statusCode };
+    }
+
+    for (const role of ['admin', 'user']) {
+      it(`lets ${role} create and read references`, () => {
+        check(
+          [role],
+          '/api/references-thread',
+          'POST',
+        ).nextCalled.should.be.true();
+        check(
+          [role],
+          '/api/references-thread/:referenceThreadUserToId',
+          'GET',
+        ).nextCalled.should.be.true();
+      });
+
+      it(`keeps ${role} from other methods on reference routes`, () => {
+        check([role], '/api/references-thread', 'GET').should.eql({
+          nextCalled: false,
+          statusCode: 403,
+        });
+        check(
+          [role],
+          '/api/references-thread/:referenceThreadUserToId',
+          'POST',
+        ).should.eql({ nextCalled: false, statusCode: 403 });
+        check(
+          [role],
+          '/api/references-thread',
+          'DELETE',
+        ).statusCode.should.equal(403);
+      });
+    }
+
+    it('denies roles without grants', () => {
+      check(['guest'], '/api/references-thread', 'POST').should.eql({
+        nextCalled: false,
+        statusCode: 403,
+      });
+    });
+  });
+
+  it('sends the unexpected authorization error as a 500 message', () => {
+    // A fresh copy of the policy, so its route authorisation is built in this test.
+    const freshPolicy = proxyquire<typeof policyModule.default>(
+      require.resolve('../../server/policies/reference-thread.server.policy.mts'),
+      {
+        './../../../core/server/services/memory-policy.server.service.mts':
+          () => ({
+            allow() {},
+            areAnyRolesAllowed(
+              _roles: string[],
+              _resource: string,
+              _permission: string,
+              callback: (error: Error | null, allowed?: boolean) => void,
+            ) {
+              return callback(new Error('acl down'));
+            },
+          }),
+      },
+    );
     const res = mockResponse();
 
-    policy.isAllowed(
+    freshPolicy.isAllowed(
       {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['user'],
-        },
+        user: { _id: {}, public: true, roles: ['user'] },
         route: { path: '/api/references-thread' },
         method: 'POST',
       },
@@ -212,31 +258,6 @@ describe('Reference thread policy unit tests', () => {
     );
 
     res.statusCode.should.equal(500);
-    res.body!.message.should.equal('Unexpected authorization error');
-    done();
-  });
-
-  it('returns 403 JSON when the user is not allowed', done => {
-    const { policy, mockAcl } = loadPolicy();
-    mockAcl.areAnyRolesAllowed.yields(null, false);
-    const res = mockResponse();
-
-    policy.isAllowed(
-      {
-        user: {
-          _id: { valueOf: () => 'user-id' },
-          public: true,
-          roles: ['guest'],
-        },
-        route: { path: '/api/references-thread' },
-        method: 'POST',
-      },
-      res,
-      () => {},
-    );
-
-    res.statusCode.should.equal(403);
-    res.body!.message.should.equal('Forbidden.');
-    done();
+    res.body!.should.eql({ message: 'Unexpected authorization error' });
   });
 });

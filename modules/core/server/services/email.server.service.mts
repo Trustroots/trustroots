@@ -548,10 +548,7 @@ function sendWelcomeSequenceThird(user: MailUser, callback: MailCallback) {
   // For members with empty profiles,
   // remind them how important it is to fill their profile.
   // Ask for feedback from the rest.
-  const descriptionLength = textService.plainText(
-    user.description || '',
-    true,
-  ).length;
+  const descriptionLength = textService.plainText(user.description).length;
   const messageTopic =
     descriptionLength < config.profileMinimumLength
       ? 'fill-profile'
@@ -763,6 +760,7 @@ function renderEmail(
         phone: false,
         mention: false,
         hashtag: false,
+        // Stryker disable next-line BooleanLiteral: replaceFn writes the full href, so the anchor text this strips is never used
         stripPrefix: false,
         replaceFn(match) {
           return '<' + match.getAnchorHref() + '>';
@@ -794,6 +792,7 @@ function renderEmail(
           transactional: true,
         },
       };
+      // Stryker disable next-line ConditionalExpression: callers pass a campaign or none, and JSON.stringify drops an undefined campaign_id
       if (params.sparkpostCampaign) {
         sparkpostHeader.campaign_id = params.sparkpostCampaign;
       }

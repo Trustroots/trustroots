@@ -11,6 +11,7 @@ interface SignupProfileText {
 export function matchSignupProfile<T extends SignupProfileText>(
   profile: T,
 ): string[] {
+  // Stryker disable next-line MethodExpression: join(' ') renders skipped falsy values as '', 'false', '0' or 'NaN' between spaces, which can never form a keyword
   const identifyingText = [
     profile.firstName,
     profile.lastName,

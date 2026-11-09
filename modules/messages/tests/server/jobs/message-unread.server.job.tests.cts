@@ -1066,6 +1066,219 @@ describe('Job: message unread', function () {
     });
   });
 
+  describe('reminder details', function () {
+    const queueErrorMessage =
+      'Sending unread message notifications caused an error. #j38vax';
+    const config: {
+      limits: {
+        unreadMessageReminders: moment.DurationInputArg1[];
+        unreadMessageRemindersTooLate: moment.DurationInputArg1;
+      };
+    } = require('./../../../../../config/config.mts');
+
+    function ageMessage(minutes = 11) {
+      message.created = moment().subtract({ minutes }).toDate();
+      return message.save();
+    }
+    function runJob(): Promise<void> {
+      return new Promise<void>((resolve, reject) => {
+        messageUnreadJobHandler({}, (error?: Error | null) =>
+          error ? reject(error) : resolve(),
+        );
+      });
+    }
+    function logCalls(log: import('sinon').SinonStub, text: string) {
+      return log.getCalls().filter(call => call.args[1] === text);
+    }
+
+    afterEach(function () {
+      sinon.restore();
+    });
+
+    it('puts the unread message text into the reminder', async function () {
+      message.content = 'Distinct reminder content';
+      await ageMessage();
+      await runJob();
+
+      jobs.length.should.equal(1);
+      (jobs[0].data as unknown as { text: string }).text.should.containEql(
+        'Distinct reminder content',
+      );
+    });
+
+    it('looks up only the members involved, with the fields the email needs', async function () {
+      const find = sinon.spy(User, 'find');
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      await ageMessage();
+      await runJob();
+
+      find.calledOnce.should.equal(true);
+      const [filter, projection] = find.firstCall.args as unknown as [
+        { _id: { $in: unknown[] } },
+        string,
+      ];
+      Object.keys(filter).should.deepEqual(['_id']);
+      filter._id.$in
+        .map(String)
+        .sort()
+        .should.deepEqual([String(userFromId), String(userToId)].sort());
+      projection.should.equal('email displayName username roles');
+      logCalls(log, queueErrorMessage).length.should.equal(0);
+    });
+
+    it('does no work when nothing is old enough to remind about', async function () {
+      const find = sinon.spy(User, 'find');
+      const update = sinon.spy(Message, 'updateMany');
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      await ageMessage(9);
+      await runJob();
+
+      find.called.should.equal(false);
+      update.called.should.equal(false);
+      log.called.should.equal(false);
+      jobs.length.should.equal(0);
+    });
+
+    it('marks only the reminded messages as notified', async function () {
+      await ageMessage();
+      const reply = await new Message({
+        userFrom: userToId,
+        userTo: userFromId,
+        content: 'A fresh reply',
+        read: false,
+        notificationCount: 0,
+      }).save();
+      await runJob();
+
+      required(
+        (await Message.findById(message._id))!.notificationCount,
+      ).should.equal(1);
+      required(
+        (await Message.findById(reply._id))!.notificationCount,
+      ).should.equal(0);
+    });
+
+    it('logs why a reminder was skipped for a removed member', async function () {
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      await ageMessage();
+      await userFrom.deleteOne();
+      await runJob();
+
+      jobs.length.should.equal(0);
+      const [entry] = logCalls(log, queueErrorMessage);
+      required(entry);
+      // Log redaction keeps only the error name, so a TypeError here would mean
+      // the missing member was not caught by the explicit lookup check.
+      (
+        entry.args[2] as unknown as { error: { name: string } }
+      ).error.name.should.equal('Error');
+    });
+
+    it('warns when a notification carries no message ids and updates nothing', async function () {
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      sinon.stub(emailService, 'sendMessagesUnread').callsArg(3);
+      sinon.stub(Message, 'aggregate').resolves([
+        {
+          _id: { userTo: userToId, userFrom: userFromId },
+          messages: [],
+          notificationCount: 0,
+        },
+      ]);
+      const update = sinon.stub(Message, 'updateMany').resolves();
+      await runJob();
+
+      update.called.should.equal(false);
+      logCalls(
+        log,
+        'No messages to set notified. This probably should not happen. #hg38vs',
+      )[0].args[0].should.equal('warn');
+    });
+
+    it('logs a failure to mark messages as notified', async function () {
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      const failure = new Error('update failed');
+      await ageMessage();
+      sinon.stub(Message, 'updateMany').rejects(failure);
+
+      await runJob().then(
+        () => {
+          throw new Error('Expected the job to fail');
+        },
+        error => error.should.equal(failure),
+      );
+
+      const [entry] = logCalls(
+        log,
+        'Error while marking messages as notified. #9ehvbn',
+      );
+      required(entry).args[0].should.equal('error');
+      (entry.args[2] as object).should.have.property('error');
+    });
+
+    it('logs a failed UnifiedPush delivery without failing the job', async function () {
+      const log = sinon.stub(winston.Logger.prototype, 'log');
+      sinon.stub(unifiedPush, 'notifyUnread').rejects(new Error('push down'));
+      await ageMessage();
+      await runJob();
+      await new Promise<void>(resolve => setImmediate(resolve));
+
+      const [entry] = logCalls(
+        log,
+        'UnifiedPush unread-message delivery failed.',
+      );
+      required(entry).args[0].should.equal('error');
+      (entry.args[2] as object).should.have.property('error');
+    });
+
+    it('sends the first reminder after the shortest configured delay whatever the config order', async function () {
+      sinon
+        .stub(config.limits, 'unreadMessageReminders')
+        .value([{ hours: 24 }, { minutes: 10 }]);
+      await ageMessage();
+      await runJob();
+
+      jobs.length.should.equal(1);
+      required(
+        (await Message.findById(message._id))!.notificationCount,
+      ).should.equal(1);
+    });
+
+    it('still sends a further reminder for a message exactly at the too-late limit', async function () {
+      sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
+      const tooOld = moment()
+        .subtract(moment.duration(config.limits.unreadMessageRemindersTooLate))
+        .toDate();
+      message.created = tooOld;
+      message.notificationCount = 1;
+      await message.save();
+      await runJob();
+
+      jobs.length.should.equal(1);
+      jobs[0].data.subject.should.containEql('is still waiting for a reply');
+    });
+
+    it('pushes only with the first reminder', async function () {
+      sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
+      const notifyUnread = sinon.stub(unifiedPush, 'notifyUnread').resolves();
+      message.created = new Date();
+      await message.save();
+
+      sinon.clock.tick(
+        moment.duration({ minutes: 10, milliseconds: 1 }).asMilliseconds(),
+      );
+      await runJob();
+      jobs.length.should.equal(1);
+      notifyUnread.callCount.should.equal(1);
+
+      sinon.clock.tick(
+        moment.duration({ hours: 23, minutes: 50 }).asMilliseconds(),
+      );
+      await runJob();
+      jobs.length.should.equal(2);
+      notifyUnread.callCount.should.equal(1);
+    });
+  });
+
   afterEach(async function () {
     await User.deleteMany();
     await Message.deleteMany();

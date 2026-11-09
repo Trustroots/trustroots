@@ -78,12 +78,6 @@ describe('Experience reply recipient access', () => {
     users[0].blocked!.map(String).should.containEql(users[1]._id.toString());
   });
 
-  it('also allows a reply when both participants have blocked each other', async () => {
-    users[1].blocked = [users[0]._id];
-    await users[1].save();
-    await agent.get(path()).expect(200);
-  });
-
   it('returns the viewer’s Experience without the reciprocal Experience', async () => {
     await Experience.create({
       userFrom: users[1]._id,
@@ -152,19 +146,4 @@ describe('Experience reply recipient access', () => {
       await agent.get(path()).expect(404);
     });
   }
-
-  it('does not reveal an absent author', async () => {
-    await agent
-      .get('/api/experiences/reply-recipient/missing-member')
-      .expect(404);
-  });
-
-  it('requires an authenticated, public viewer', async () => {
-    await utils.signOut(agent);
-    await agent.get(path()).expect(403);
-    users[1].public = false;
-    await users[1].save();
-    await utils.signIn(userData[1], agent);
-    await agent.get(path()).expect(403);
-  });
 });

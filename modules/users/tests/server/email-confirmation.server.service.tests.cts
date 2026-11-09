@@ -17,6 +17,7 @@ interface EmailConfirmationUser {
 }
 
 interface EmailConfirmationQuery {
+  emailTemporary: unknown;
   $or: Array<{ emailTokenExpires: { $gt?: Date; $exists?: false } }>;
 }
 
@@ -72,6 +73,7 @@ describe('Email confirmation token lifecycle', function () {
     const query = queryForEmail('fictional-confirmation-token', now);
 
     assert.deepEqual(query.$or, [{ emailTokenExpires: { $gt: now } }]);
+    assert.deepEqual(query.emailTemporary, { $type: 'string', $ne: '' });
   });
 
   it('uses a current timestamp when no validation time is supplied', function () {

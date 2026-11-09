@@ -241,10 +241,13 @@ describe('Admin Newsletter subscribers API tests', () => {
   });
   it('admin users receive validation errors for missing CSV uploads', async () => {
     await utils.signIn(adminAuth, agent);
-    await agent
+    const response = await agent
       .post('/api/admin/newsletter-subscribers/split')
       .set('X-Trustroots-Request', '1')
       .expect(422);
+    response.body.should.deepEqual({
+      message: errorService.getErrorMessageByKey('unprocessable-entity'),
+    });
     await utils.signOut(agent);
   });
   it('admin users receive unsupported media errors for non-csv files', async () => {

@@ -38,6 +38,7 @@ export async function signerIdentity(
     const user = await mongoose
       .model<{ username: string }>('User')
       .findOne({
+        // Stryker disable next-line MethodExpression: npubEncode decodes hex case-insensitively, so any case gives the same npub
         nostrNpub: nip19.npubEncode(String(publicKey).toLowerCase()),
         public: true,
         email: { $exists: true, $nin: ['', null] },

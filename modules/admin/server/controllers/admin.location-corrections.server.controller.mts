@@ -160,6 +160,7 @@ function isPopulatedRecipient(
   user: OfferRecord['user'],
 ): user is LocationRecipient {
   return (
+    // Stryker disable next-line ConditionalExpression: Mongoose gives an offer's user as an ObjectId or a populated document, both objects
     typeof user === 'object' &&
     user !== null &&
     '_id' in user &&
@@ -184,9 +185,13 @@ async function findCandidates(
       { type: 'meet', validUntil: { $gt: new Date() } },
     ],
   })
-    .select('_id user type status location validUntil updated')
+    .select(
+      // Stryker disable next-line StringLiteral: the projection only limits what is loaded; candidates are built from named fields
+      '_id user type status location validUntil updated',
+    )
     .populate(
       'user',
+      // Stryker disable next-line StringLiteral: the projection only limits what is loaded; eligibility and output read named fields
       'username displayName public roles removeProfileToken removeProfileExpires',
     )
     .exec();
@@ -234,11 +239,15 @@ async function findCandidates(
     }),
   );
   const contacted = candidates.length
-    ? await Message.find({
+    ? // Stryker disable next-line ObjectLiteral: the filter only limits what is loaded; coverage is keyed by recipient and read for candidates only, and other messages carry no correction offers
+      await Message.find({
         userTo: { $in: candidates.map(candidate => candidate.userId) },
         locationCorrectionOffers: { $exists: true, $ne: [] },
       })
-        .select('userTo locationCorrectionOffers')
+        .select(
+          // Stryker disable next-line StringLiteral: the projection only limits what is loaded; coverage reads named fields
+          'userTo locationCorrectionOffers',
+        )
         .exec()
     : [];
   const covered = new Map<string, Set<string>>();
@@ -285,6 +294,7 @@ async function updateThread(message: MessageRecord): Promise<void> {
   const threadId = crypto
     .createHash('sha256')
     .update(
+      // Stryker disable next-line MethodExpression: the $or filter already matches either direction, so only a concurrent opposite-direction insert could see an unsorted id
       JSON.stringify([String(message.userFrom), String(message.userTo)].sort()),
     )
     .digest('hex')
@@ -310,12 +320,8 @@ async function updateThread(message: MessageRecord): Promise<void> {
 }
 
 function isDuplicateKeyError(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    error.code === 11000
-  );
+  // Object() reads `code` safely from null and primitive throwables too.
+  return (Object(error) as { code?: unknown }).code === 11000;
 }
 
 function sendBody(req: LocationRequest): {
@@ -369,10 +375,7 @@ export async function send(
   if (!sender.public || userRolesService.hasRestrictedMessagingRole(sender)) {
     return res.status(403).send({ message: 'Messaging is unavailable.' });
   }
-  const descriptionLength = textService.plainText(
-    sender.description || '',
-    false,
-  ).length;
+  const descriptionLength = textService.plainText(sender.description).length;
   if (descriptionLength < config.profileMinimumLength) {
     return res.status(400).send({
       message: 'Please complete your profile before sending messages.',

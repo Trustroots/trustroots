@@ -13,6 +13,7 @@ This repository uses pnpm (the version is pinned in `packageManager`) and Node 2
 - `pnpm test:server`: the Vitest/Supertest suite. It needs MongoDB on localhost:27017. For selected files use `pnpm test:server:files modules/foo/tests/server/bar.tests.js`.
 - `pnpm test:e2e`: the Playwright end-to-end suite.
 - `pnpm test:coverage` and `pnpm coverage:check`: coverage runs and the comparison against `tooling/baselines/coverage.json`.
+- `pnpm test:mutation:server` and `pnpm mutation:check`: Stryker mutation runs and the comparison against the floors in `tooling/baselines/mutation.json`.
 - `pnpm build`: the production client build.
 - `pnpm reformat-files <files>`: run Prettier on the given files.
 
@@ -78,6 +79,12 @@ the user.
 
 Both server and client test coverage are currently at 100%; keep them at this
 level. Do not lower coverage thresholds or baselines without a clear reason.
+Coverage only says the tests run the code, so the server suite also has a
+Stryker mutation gate: on pull requests CI mutates the server code your
+changes can affect (changed source, and the module of any changed server test)
+and fails if the score is below the floor in `tooling/baselines/mutation.json`.
+Write tests that assert on behaviour so they kill mutants. Do not lower a
+mutation floor without a clear reason. See `docs/mutation-testing.md`.
 
 Try not to reduce the number of end-to-end tests. The current baseline on main
 is 167 e2e tests; if removing one, replace it with equivalent coverage unless

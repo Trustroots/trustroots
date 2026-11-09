@@ -71,9 +71,12 @@ describe('Welcome team location corrections', () => {
   let secondAgent: TestAgent;
   let app: TestExpressApp;
 
-  beforeEach(async () => {
+  before(async () => {
     app = await express.init(mongoose.connection);
-    const users = utils.generateUsers(5).map(user =>
+  });
+
+  beforeEach(async () => {
+    const users = utils.generateUsersWithSharedPassword(5).map(user =>
       Object.assign(user, {
         description: '',
         removeProfileToken: undefined as string | undefined,
@@ -87,7 +90,8 @@ describe('Welcome team location corrections', () => {
     });
     users[0]!.roles = ['user', 'welcome-team'];
     users[1]!.roles = ['user', 'welcome-team'];
-    [team, secondTeam, member] = await utils.saveUsers(users);
+    [team, secondTeam, member] =
+      await utils.saveUsersWithCachedPasswords(users);
     teamAgent = request.agent(app);
     secondAgent = request.agent(app);
     await utils.signIn(

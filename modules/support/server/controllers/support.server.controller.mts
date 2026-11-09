@@ -161,7 +161,10 @@ export const supportRequest: SupportService['supportRequest'] = async function (
     try {
       target = await User.findOne({
         username: String(req.body.reportMember).trim().toLowerCase(),
-      }).select('_id');
+      }).select(
+        // Stryker disable next-line StringLiteral: an empty projection returns whole documents, and only _id is read from the result, so no input can tell them apart
+        '_id',
+      );
     } catch {
       return res
         .status(500)

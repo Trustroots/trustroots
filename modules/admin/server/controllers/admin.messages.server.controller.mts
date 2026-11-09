@@ -79,6 +79,7 @@ async function findScammerRecipients(
     error.statusCode = 400;
     throw error;
   }
+  // Stryker disable next-line MethodExpression: the username path has trim: true, which Mongoose also applies to query values
   const scammer = await User.findOne({ username: username.trim() }).exec();
   if (!scammer) {
     const error: WarningError = new Error('Member does not exist.');
@@ -185,6 +186,7 @@ export const sendScammerWarning = async (
         ).exec();
       }),
     );
+    // Stryker disable next-line ConditionalExpression: Mongoose resolves an empty bulkWrite without writing, so this only skips a no-op
     if (savedMessages.length) {
       const updates = savedMessages.flatMap(message => {
         const savedMessage = message!;
@@ -207,6 +209,7 @@ export const sendScammerWarning = async (
           .createHash('sha256')
           .update(
             JSON.stringify(
+              // Stryker disable next-line MethodExpression: warnings are only written from the administrator to the recipient, so the pair always arrives in the same order
               [
                 String(savedMessage.userFrom),
                 String(savedMessage.userTo),
@@ -234,10 +237,12 @@ export const sendScammerWarning = async (
         ];
       });
       try {
+        // Stryker disable next-line ObjectLiteral,BooleanLiteral: an ordered batch stops at a duplicate key (11000), and the catch then reruns every idempotent update unordered
         await Thread.bulkWrite(updates, { ordered: false });
       } catch (error) {
         if (
           typeof error !== 'object' ||
+          // Stryker disable next-line ConditionalExpression: bulkWrite never rejects with null; the check only guards the `in` operator
           error === null ||
           !('code' in error) ||
           error.code !== 11000

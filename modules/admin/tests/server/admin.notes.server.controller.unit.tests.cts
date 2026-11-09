@@ -246,4 +246,100 @@ describe('Admin notes controller unit tests', () => {
       response.statusCode.should.equal(400);
     });
   });
+
+  describe('user id inputs and listing', () => {
+    async function getNotesFor(userId: unknown): Promise<MockResponse> {
+      const res = mockResponse();
+      await adminNotes.getNotes({ query: { userId } }, res);
+      return res;
+    }
+
+    function expectInvalidId(res: MockResponse): void {
+      res.statusCode.should.equal(400);
+      should(res.body).deepEqual({
+        message: errorService.getErrorMessageByKey('invalid-id'),
+      });
+    }
+
+    it('looks up notes by ObjectId-like values with a string or Buffer id', async () => {
+      const target = new mongoose.Types.ObjectId();
+      await AdminNote.create({
+        admin: new mongoose.Types.ObjectId(),
+        user: target,
+        note: 'Fictional note',
+      });
+
+      for (const id of [
+        target.toHexString().slice(0, 12),
+        Buffer.from(target.id),
+      ]) {
+        const res = await getNotesFor({
+          id,
+          toHexString: () => target.toHexString(),
+        });
+        res.statusCode.should.equal(200);
+        (res.body as unknown[]).length.should.equal(1);
+      }
+    });
+
+    it('rejects objects that are not ObjectId-like or not ids at all', async () => {
+      const target = new mongoose.Types.ObjectId();
+      const toHexString = () => target.toHexString();
+      const inputs: unknown[] = [
+        null,
+        12,
+        { id: Buffer.from(target.id) },
+        { id: Buffer.from(target.id), toHexString: 'not a function' },
+        { id: new Uint8Array(target.id), toHexString },
+      ];
+      for (const userId of inputs) {
+        expectInvalidId(await getNotesFor(userId));
+      }
+    });
+
+    it('rejects notes that are missing or not text', async () => {
+      for (const note of [undefined, 5]) {
+        const res = mockResponse();
+        await adminNotes.addNote(
+          { body: { userId: new mongoose.Types.ObjectId(), note } },
+          res,
+        );
+        res.statusCode.should.equal(400);
+        should(res.body).deepEqual({ message: 'Empty note.' });
+      }
+    });
+
+    it("lists only the user's notes, newest first, with the admin's username", async () => {
+      const [admin] = await utils.saveUsersWithCachedPasswords(
+        utils.generateUsersWithSharedPassword(1),
+      );
+      const target = new mongoose.Types.ObjectId();
+      await AdminNote.create(
+        (
+          [
+            [target, 'older'],
+            [new mongoose.Types.ObjectId(), 'other user'],
+            [target, 'newer'],
+          ] as const
+        ).map(([user, note], day) => ({
+          admin: admin._id,
+          user,
+          note,
+          date: new Date(Date.UTC(2026, 0, day + 1)),
+        })),
+      );
+
+      const res = await getNotesFor(target.toString());
+
+      const notes = JSON.parse(JSON.stringify(res.body)) as Array<{
+        note: string;
+        admin: unknown;
+      }>;
+      notes.map(item => item.note).should.deepEqual(['newer', 'older']);
+      should(notes[0].admin).deepEqual({
+        _id: admin._id.toString(),
+        username: admin.username,
+      });
+    });
+  });
 });

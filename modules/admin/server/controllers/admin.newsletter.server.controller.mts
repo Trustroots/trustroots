@@ -112,6 +112,7 @@ const newsletterRecipientUpload = multer({
     const extension = path.extname(file.originalname).toLowerCase();
     if (!RECIPIENT_UPLOAD_EXTENSIONS.includes(extension)) {
       const err: Error & CodedError = new Error(
+        // Stryker disable next-line StringLiteral: clients get the 415 message for the code; this text is never read
         'Unsupported recipient file type.',
       );
       err.code = 'UNSUPPORTED_MEDIA_TYPE';
@@ -235,13 +236,12 @@ function parseAudienceCriteria(
   const rawSources = Array.isArray(body.sources)
     ? [...new Set<unknown>(body.sources)]
     : [];
-  if (
-    rawSources.length > NEWSLETTER_LOCATION_SOURCES.length ||
-    rawSources.some(source => !isLocationSource(source))
-  ) {
+  // The sources are de-duplicated, so any list longer than the known sources
+  // contains an invalid one.
+  if (!rawSources.every(isLocationSource)) {
     throw invalidAudienceCriteria('Choose valid newsletter location sources.');
   }
-  const sources = rawSources.filter(isLocationSource);
+  const sources = rawSources;
   const locationText =
     typeof body.locationText === 'string' ? body.locationText.trim() : '';
   const usesTextLocation =
@@ -254,12 +254,11 @@ function parseAudienceCriteria(
   let hosting = null;
   if (sources.includes('hosting')) {
     const hasCoordinates =
+      // Number() reads '' and null as 0; undefined becomes NaN and fails below.
       body.latitude !== '' &&
       body.latitude !== null &&
-      body.latitude !== undefined &&
       body.longitude !== '' &&
-      body.longitude !== null &&
-      body.longitude !== undefined;
+      body.longitude !== null;
     const latitude = Number(body.latitude);
     const longitude = Number(body.longitude);
     const radiusKm = Number(body.radiusKm);
@@ -357,7 +356,7 @@ function buildHostingQuery(hosting: HostingCriteria): Record<string, unknown> {
 }
 function buildAudienceQuery(
   criteria: AudienceCriteria,
-  hostingUserIds: Types.ObjectId[],
+  hostingUserIds: Types.ObjectId[] | null,
 ): Record<string, unknown> {
   const conditions = [buildEligibleSubscribersQuery()];
   if (criteria.circleIds.length > 0) {
@@ -367,6 +366,7 @@ function buildAudienceQuery(
       },
     });
   }
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: without sources hostingUserIds is null, so this adds only $or: [], which Mongoose's cast deletes
   if (criteria.sources.length > 0) {
     const locationMatches: Record<string, unknown>[] = [];
     if (criteria.sources.includes('living')) {
@@ -385,7 +385,8 @@ function buildAudienceQuery(
         ),
       });
     }
-    if (criteria.hosting) {
+    // Stryker disable next-line ConditionalExpression: Mongoose casts $in: null to [null], and no member has a null _id
+    if (hostingUserIds) {
       locationMatches.push({
         _id: {
           $in: hostingUserIds,
@@ -401,9 +402,7 @@ function buildAudienceQuery(
   };
 }
 function normaliseEmail(value: unknown): string | null {
-  if (!value) {
-    return null;
-  }
+  // Falsy values stringify to text that is never an email address.
   const normalised = String(value).trim().toLowerCase().replace(/^<|>$/g, '');
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalised)) {
     return null;
@@ -416,17 +415,15 @@ function csvCell(value: unknown): string {
     .replace(/[,'"]/g, '');
 }
 function rowsToCSV(
-  rows: NewsletterRow[] | null | undefined,
+  rows: NewsletterRow[],
   columns: NewsletterCsvColumn[] = CSV_COLUMNS,
 ): string {
   // First CSV line is the header
   let data = columns.map(({ label }) => csvCell(label)).join(',');
-  if (rows && rows.length > 0) {
-    rows.forEach(row => {
-      data += '\n';
-      data += columns.map(({ key }) => csvCell(row[key])).join(',');
-    });
-  }
+  rows.forEach(row => {
+    data += '\n';
+    data += columns.map(({ key }) => csvCell(row[key])).join(',');
+  });
   return data;
 }
 function getUnsubscribedReason(user: NewsletterUser | undefined): string {
@@ -469,19 +466,17 @@ function parseFirstCsvField(line: string): string {
     }
     value += character;
   }
+  // Stryker disable next-line MethodExpression: the header test ignores spaces, normaliseEmail trims, and a blank field is quoted, so its trimmed-line fallback holds a space and fails the address check
   return value.trim();
 }
 function extractEmailsFromCsv(csvText: string): string[] {
-  const lines = String(csvText || '')
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/);
+  // trim() also removes a byte order mark, and blank lines hold no address.
+  const lines = csvText.split(/\r?\n/);
   const emails: string[] = [];
   const seenEmails = new Set<string>();
   lines.forEach((line, lineIndex) => {
+    // Stryker disable next-line MethodExpression: parseFirstCsvField trims the field and normaliseEmail trims the fallback, so outer whitespace never reaches an address
     const trimmedLine = line.trim();
-    if (!trimmedLine) {
-      return;
-    }
     const firstField = parseFirstCsvField(trimmedLine);
     if (lineIndex === 0 && /email/i.test(firstField)) {
       return;
@@ -496,9 +491,8 @@ function extractEmailsFromCsv(csvText: string): string[] {
   return emails;
 }
 function extractEmailsFromJsonLines(jsonLinesText: string): string[] {
-  const lines = String(jsonLinesText)
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/);
+  // trim() below also removes a byte order mark.
+  const lines = jsonLinesText.split(/\r?\n/);
   const emails: string[] = [];
   const seenEmails = new Set<string>();
   lines.forEach((line, lineIndex) => {
@@ -538,6 +532,7 @@ function extractEmailsFromUpload(file: NewsletterFile): {
   emails: string[];
   outputFormat: 'csv' | 'jsonl' | 'ndjson';
 } {
+  // Stryker disable next-line StringLiteral: any fallback without a dot has no extension, like ''
   const extension = path.extname(file.originalname || '').toLowerCase();
   let outputFormat: 'csv' | 'jsonl' | 'ndjson' = 'csv';
   if (JSON_LINES_EXTENSIONS.includes(extension)) {
@@ -552,7 +547,7 @@ function extractEmailsFromUpload(file: NewsletterFile): {
     outputFormat,
   };
 }
-function rowsToJsonLines(rows: NewsletterRow[], includeReason = false): string {
+function rowsToJsonLines(rows: NewsletterRow[]): string {
   return rows
     .map(row => {
       const record: NewsletterRow = {
@@ -561,10 +556,9 @@ function rowsToJsonLines(rows: NewsletterRow[], includeReason = false): string {
         firstName: row.firstName || '',
         lastName: row.lastName || '',
         username: row.username || '',
+        // Subscribed rows have no reason, which JSON.stringify leaves out.
+        reason: row.reason,
       };
-      if (includeReason) {
-        record.reason = row.reason;
-      }
       return JSON.stringify(record);
     })
     .join('\n');
@@ -574,11 +568,11 @@ export const list = async (
   _req: NewsletterRequest,
   res: NewsletterResponse,
 ): Promise<void> => {
-  const users = await User.find(buildEligibleSubscribersQuery(), {
-    email: 1,
-    firstName: 1,
-    lastName: 1,
-  }).exec();
+  const users = await User.find(
+    buildEligibleSubscribersQuery(),
+    // Stryker disable next-line ObjectLiteral: the projection only limits what is loaded; the CSV reads named columns
+    { email: 1, firstName: 1, lastName: 1 },
+  ).exec();
   const csv = rowsToCSV(users);
   res.set('Content-Type', 'text/csv').send(csv);
 };
@@ -587,11 +581,12 @@ export const listCircleMembers = async (
   req: NewsletterRequest,
   res: NewsletterResponse,
 ): Promise<unknown> => {
-  const circleId = req?.query?.circleId;
+  const params = req?.query ?? {};
+  const circleId = params.circleId;
 
   if (!isObjectIdInput(circleId)) return errorService.sendInvalidId(res);
 
-  const onlyNewsletterCircleMembers = !req?.query?.onlyNewsletterCircleMembers;
+  const onlyNewsletterCircleMembers = !params.onlyNewsletterCircleMembers;
   const query = onlyNewsletterCircleMembers
     ? buildEligibleSubscribersQuery({
         'member.tribe': new mongoose.Types.ObjectId(circleId),
@@ -603,18 +598,25 @@ export const listCircleMembers = async (
           $nin: userRolesService.restrictedMessagingRoles,
         },
       };
-  const users = await User.find(query, {
-    email: 1,
-    firstName: 1,
-    lastName: 1,
-    newsletter: 1,
-    public: 1,
-    roles: 1,
-    removeProfileExpires: 1,
-    removeProfileToken: 1,
-  }).exec();
+  const users = await User.find(
+    query,
+    // Stryker disable next-line ObjectLiteral: the projection only limits what is loaded; the CSV and filter read named fields
+    {
+      email: 1,
+      firstName: 1,
+      lastName: 1,
+      newsletter: 1,
+      public: 1,
+      roles: 1,
+      removeProfileExpires: 1,
+      removeProfileToken: 1,
+    },
+  ).exec();
   const csv = rowsToCSV(
-    onlyNewsletterCircleMembers ? users.filter(isNewsletterSubscriber) : users,
+    onlyNewsletterCircleMembers
+      ? // Stryker disable next-line MethodExpression: the eligible-subscriber query already applies the same rules; this is a second guard
+        users.filter(isNewsletterSubscriber)
+      : users,
   );
   res.set('Content-Type', 'text/csv').send(csv);
 };
@@ -634,7 +636,7 @@ export const audience = async (
   }
   const hostingUserIds = criteria.hosting
     ? await Offer.distinct('user', buildHostingQuery(criteria.hosting)).exec()
-    : [];
+    : null;
   const audienceQuery = buildAudienceQuery(criteria, hostingUserIds);
   if (criteria.format === 'preview') {
     // parseAudienceCriteria validates every field and constructs the ObjectIds.
@@ -644,6 +646,7 @@ export const audience = async (
       count,
     });
   }
+  // Stryker disable next-line ObjectLiteral: the projection only limits what is loaded; the CSV reads named columns
   // parseAudienceCriteria validates every field and constructs the ObjectIds.
   // nosemgrep: request-object-in-database-filter
   const users = await User.find(audienceQuery, {
@@ -696,7 +699,7 @@ export const uploadSubscribersCsv = (
     }
     if (err) {
       return res.status(400).send({
-        message: errorService.getErrorMessageByKey('default'),
+        message: errorService.getErrorMessageByKey(),
       });
     }
     return res.status(422).send({
@@ -730,11 +733,13 @@ export const splitSubscribers = async (
     });
   }
   const users = await User.find(
+    // Stryker disable next-line ObjectLiteral: users are looked up by email afterwards, so loading more of them changes nothing
     {
       email: {
         $in: emails,
       },
     },
+    // Stryker disable next-line ObjectLiteral: the projection only limits what is loaded; the output reads named fields
     {
       email: 1,
       displayName: 1,
@@ -748,13 +753,12 @@ export const splitSubscribers = async (
       username: 1,
     },
   ).exec();
-  const usersByEmail = new Map<string, NewsletterUser>(
-    users
-      .map((user): [string | null, NewsletterUser] => [
-        normaliseEmail(user.email),
-        user,
-      ])
-      .filter((entry): entry is [string, NewsletterUser] => entry[0] !== null),
+  // Users were found by normalised address, so every stored one normalises.
+  const usersByEmail = new Map<string | null, NewsletterUser>(
+    users.map((user): [string | null, NewsletterUser] => [
+      normaliseEmail(user.email),
+      user,
+    ]),
   );
   const subscribed: NewsletterRow[] = [];
   const unsubscribed: NewsletterRow[] = [];
@@ -786,7 +790,7 @@ export const splitSubscribers = async (
     totalEmailCount: emails.length,
     unsubscribedCount: unsubscribed.length,
     unsubscribedContent: outputsJsonLines
-      ? rowsToJsonLines(unsubscribed, true)
+      ? rowsToJsonLines(unsubscribed)
       : rowsToCSV(unsubscribed, UNSUBSCRIBED_CSV_COLUMNS),
   });
 };

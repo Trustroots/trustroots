@@ -138,6 +138,7 @@ function formatExportStamp(date: Date): string {
 
 function buildExportFilename(username: unknown, exportedAt: Date): string {
   const stamp = formatExportStamp(exportedAt);
+  // Stryker disable next-line StringLiteral: any fallback with a space or '!' fails EXPORT_USERNAME, as '' does
   const safeUsername = String(username || '').toLowerCase();
   if (EXPORT_USERNAME.test(safeUsername)) {
     return `trustroots-data-${safeUsername}-${stamp}.json`;
@@ -146,6 +147,7 @@ function buildExportFilename(username: unknown, exportedAt: Date): string {
 }
 
 function isExportMember(value: unknown): value is ExportMember {
+  // Stryker disable next-line ConditionalExpression: `value !== null` is redundant because selectMember returns early for a falsy member; this also ignores the line's other ConditionalExpression mutants, which the function-valued userTo test would kill
   return typeof value === 'object' && value !== null;
 }
 
@@ -168,11 +170,13 @@ function isExportProfile(value: unknown): value is ExportProfileRecord {
 }
 
 function isExportTribe(value: unknown): value is ExportTribe {
+  // Stryker disable next-line ConditionalExpression,LogicalOperator: `value !== null` is redundant because memberships without a tribe are filtered out first; a truthy non-object tribe has no _id, slug or label, so treating it as a record gives the same id and fields
   return typeof value === 'object' && value !== null;
 }
 
 function circlesFromProfile(profile: unknown): ExportRecord[] {
   const member = isExportProfile(profile) ? profile.member : undefined;
+  // Stryker disable next-line LogicalOperator,ArrayDeclaration: `member || member` is the same value, and a placeholder string has no tribe so the filter drops it
   return ((member && member) || [])
     .filter(membership => membership && membership.tribe)
     .map(membership => {

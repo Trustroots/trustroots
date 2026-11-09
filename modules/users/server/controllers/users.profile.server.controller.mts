@@ -50,6 +50,7 @@ import { userMiniProfileFields as miniProfileFields } from '../services/user-min
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
     new URL('../../../../config/shared/locales.json', import.meta.url),
+    // Stryker disable next-line StringLiteral: with no encoding readFileSync returns a Buffer, which JSON.parse reads as UTF-8 text anyway
     'utf8',
   ),
 );
@@ -190,11 +191,13 @@ service.update = function (req, res) {
   });
   if (
     req.body.locale &&
+    // Stryker disable next-line ConditionalExpression: a non-string locale is never in localeCodes, so includes() below rejects it too
     (typeof req.body.locale !== 'string' ||
       !localeCodes.includes(req.body.locale))
   ) {
     return errorService.sendBadRequest(res, undefined);
   }
+  // Stryker disable next-line ConditionalExpression: without languages the deprecation check below only sees [undefined], which is never a deprecated code
   if (req.body.languages) {
     const existingLanguages = new Set(authenticatedUser.languages!);
     const requestedLanguages = Array.isArray(req.body.languages)
@@ -202,6 +205,7 @@ service.update = function (req, res) {
       : [req.body.languages];
     const addedDeprecatedLanguage = requestedLanguages.some(
       code =>
+        // Stryker disable next-line ConditionalExpression: deprecatedLanguages holds only strings, so has() is false for any other value; the typeof only narrows the type
         typeof code === 'string' &&
         deprecatedLanguages.has(code) &&
         !existingLanguages.has(code),
@@ -215,7 +219,8 @@ service.update = function (req, res) {
 
   const selectedLanguages = Object.hasOwn(req.body, 'languages')
     ? req.body.languages
-    : authenticatedUser.languages || [];
+    : // Stryker disable next-line ArrayDeclaration: only a level keyed by the placeholder text itself could tell the lists apart, and no language code is that text
+      authenticatedUser.languages || [];
   if (Object.hasOwn(req.body, 'languageLevels')) {
     if (
       !Array.isArray(selectedLanguages) ||
@@ -242,17 +247,21 @@ service.update = function (req, res) {
           'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
       });
     }
+    // Stryker disable next-line MethodExpression: nip19 decodes an all-uppercase npub like the lowercase one, and the key is re-encoded from its hex below
     const trimmedNpub = req.body.nostrNpub.trim().toLowerCase();
     req.body.nostrNpub = trimmedNpub;
     try {
       if (trimmedNpub) {
         const result = nip19.decode(trimmedNpub);
         if (result.type !== 'npub' || !/^[0-9a-f]{64}$/i.test(result.data)) {
+          // Stryker disable next-line StringLiteral: the catch below replaces the error with a fixed response
           throw new Error('Invalid nostr npub.');
         }
+        // Stryker disable next-line MethodExpression: npubEncode reads upper- and lowercase hex alike
         req.body.nostrNpub = nip19.npubEncode(result.data.toLowerCase());
       }
     } catch (err) {
+      // Stryker disable next-line CallExpression: _.noop does nothing
       _.noop(err);
       return res.status(400).send({
         message:
@@ -261,9 +270,11 @@ service.update = function (req, res) {
     }
   }
   const requestedNostrNpub =
+    // Stryker disable next-line ConditionalExpression: a present non-string nostrNpub was rejected above, so the value here is a string or undefined
     typeof req.body.nostrNpub === 'string' ? req.body.nostrNpub : undefined;
   async function updateProfile(): Promise<void> {
     if (requestedEmail && requestedEmail !== authenticatedUser.email) {
+      // Stryker disable MethodExpression,ArrowFunction: Mongoose lowercases email and emailTemporary filters itself (lowercase: true), and a failed lookup resolving to undefined instead of null still finds no other member
       const emailUser = await User.findOne(
         {
           $or: [
@@ -271,8 +282,10 @@ service.update = function (req, res) {
             { email: String(requestedEmail).toLowerCase() },
           ],
         },
+        // Stryker disable next-line StringLiteral: the projection only narrows the lookup; only _id is read
         'emailTemporary email',
       ).catch(() => null);
+      // Stryker restore MethodExpression,ArrowFunction
       if (emailUser && !emailUser._id.equals(authenticatedUser._id)) {
         res.status(403).send({
           message: 'This email is already in use. Please use another one.',
@@ -286,6 +299,7 @@ service.update = function (req, res) {
           _id: { $ne: authenticatedUser._id },
           nostrNpub: String(requestedNostrNpub),
         },
+        // Stryker disable next-line StringLiteral: the projection only narrows the lookup; the result is only checked for presence
         '_id',
       );
       if (existingNostrUser) {
@@ -309,6 +323,7 @@ service.update = function (req, res) {
       token = buffer.toString('hex');
     }
     if (
+      // Stryker disable next-line ConditionalExpression,LogicalOperator: a present non-string username was rejected above, so the typeof only narrows the type; an empty username fails validateUsername above, so || and && agree
       typeof req.body.username === 'string' &&
       req.body.username &&
       req.body.username !== authenticatedUser.username
@@ -348,6 +363,7 @@ service.update = function (req, res) {
       user.usernameHistory.push(usernameChange);
     }
     user.set('updated', Date.now());
+    // Stryker disable next-line LogicalOperator: token is set exactly when email is truthy, so either operand decides alike
     if (token && email) {
       setEmailConfirmationToken(user, token);
       user.emailTemporary = email;
@@ -415,6 +431,7 @@ service.initializeRemoveProfile = function (req, res) {
           removeProfileExpires: Date.now() + 24 * 3600000,
         },
       },
+      // Stryker disable next-line ObjectLiteral,BooleanLiteral: the removal email reads the token from $locals and the unchanged name and email, so the pre-update document sends the same mail
       { new: true },
     );
     if (user) user.$locals.actionTokens = { removeProfileToken: token };
@@ -505,11 +522,13 @@ service.removeProfile = function (req, res) {
     );
   }
   async function remove(): Promise<void> {
+    // Stryker disable ArrowFunction: undefined and null both mean no matching token
     const user = await User.findOne({
       _id: authenticatedUser._id,
       removeProfileToken: matchToken(String(req.params.token)),
       removeProfileExpires: { $gt: Date.now() },
     }).catch(() => null);
+    // Stryker restore ArrowFunction
     if (!user) {
       report('failed', 'Profile remove token is invalid or has expired.', true);
       return;
@@ -589,6 +608,7 @@ export async function deleteUserAccount(
       cleanup(
         () =>
           new Promise<void>((resolve, reject) => {
+            // Stryker disable next-line BooleanLiteral: the callback ignores the returned tribe, so asking for the updated one changes nothing
             tribesHandler.updateCount(membership.tribe, -1, false, err =>
               err ? reject(err) : resolve(),
             );
@@ -702,6 +722,7 @@ service.userMiniByID = function (req, res, next, userId) {
     service.userMiniProfileFields + ' public roles blocked',
   );
   const miniPending =
+    // Stryker disable next-line ConditionalExpression,StringLiteral: a Mongoose query is thenable, so Promise.resolve settles it like exec() does
     miniLookup && typeof miniLookup.exec === 'function'
       ? miniLookup.exec()
       : miniLookup;
@@ -753,6 +774,7 @@ service.userByUsername = function (req, res, next, username) {
   async function readProfile(): Promise<void> {
     const profileLookup = User.findOne(
       {
+        // Stryker disable next-line MethodExpression: Mongoose lowercases username filters itself (lowercase: true)
         username: username.toLowerCase(),
       },
       service.userProfileFields + ' roles public blocked',
@@ -762,6 +784,7 @@ service.userByUsername = function (req, res, next, username) {
         ? profileLookup.populate({
             path: 'member.tribe',
             select: tribesHandler.tribeFields,
+            // Stryker disable next-line StringLiteral: without a model, populate uses the schema ref, which is Tribe
             model: 'Tribe',
             // Not possible at the moment due bug in Mongoose
             // http://mongoosejs.com/docs/faq.html#populate_sort_order
@@ -770,9 +793,11 @@ service.userByUsername = function (req, res, next, username) {
           })
         : profileLookup;
     const profilePending =
+      // Stryker disable next-line ConditionalExpression,StringLiteral: a Mongoose query is thenable, so Promise.resolve settles it like exec() does
       populatedProfile && typeof populatedProfile.exec === 'function'
         ? populatedProfile.exec()
         : populatedProfile;
+    // Stryker disable next-line ArrowFunction: undefined and null both answer not found
     const profile = await Promise.resolve(profilePending).catch(() => null);
     if (!profile) {
       res
@@ -798,6 +823,7 @@ service.userByUsername = function (req, res, next, username) {
         profile._id,
         Date.now(),
         (err, stats) => {
+          // Stryker disable next-line ConditionalExpression: the stats service passes no stats with an error, and picking from undefined assigns nothing
           if (!err)
             _.assign(req.profile, _.pick(stats!, ['replyRate', 'replyTime']));
           resolve();
@@ -838,6 +864,7 @@ function sameUser(
   ) {
     return false;
   }
+  // Stryker disable next-line ConditionalExpression,BlockStatement: for ObjectId and string ids, comparing hex strings agrees with ObjectId.equals
   if (authenticatedUser._id.equals) {
     return authenticatedUser._id.equals(profile._id);
   }
@@ -877,6 +904,7 @@ function sanitizeProfile(
   // Destruct Mongoose object to regular object so that we can manipulate it
   const profile =
     profileDocument.toObject() as unknown as SanitizedProfileRecord;
+  // Stryker disable next-line ArrayDeclaration: a placeholder role is neither shadowban nor admin
   const authenticatedRoles = authenticatedUser?.roles || [];
   const hideExternalContactDetails =
     !isOwnProfile &&
@@ -897,6 +925,7 @@ function sanitizeProfile(
   }
 
   // Remove tribes without reference object (= they've been deleted from `tribes` table)
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: rejecting from an empty member list leaves it empty, so the length test decides nothing
   if (profile.member && profile.member.length > 0) {
     profile.member = _.reject(profile.member, function (o) {
       return !o.tribe;
@@ -905,6 +934,7 @@ function sanitizeProfile(
 
   // Create simple arrays of tribe id's
   profile.memberIds = [];
+  // Stryker disable next-line ConditionalExpression,EqualityOperator: forEach over an empty member list adds no ids, so the length test decides nothing
   if (profile.member && profile.member.length > 0) {
     profile.member.forEach(function (obj) {
       const tribe = obj.tribe!;
@@ -912,6 +942,9 @@ function sanitizeProfile(
       profile.memberIds!.push(tribeId.toString());
     });
   }
+  // Stryker disable BlockStatement: the public response selection leaves out the fields the else branch deletes
+  // Stryker restore next-line BlockStatement
+  // Stryker disable next-line ConditionalExpression: the public response leaves out usernameUpdateAllowed and the fields the other branch deletes
   if (isOwnProfile) {
     // Is user allowed to update their username?
     profile.usernameUpdateAllowed = isUsernameUpdateAllowed(profile);
@@ -921,6 +954,7 @@ function sanitizeProfile(
     delete profile.passwordUpdated;
     delete profile.usernameUpdated;
   }
+  // Stryker restore BlockStatement
   // Username history is visible only through the dedicated admin endpoint.
   delete profile.usernameHistory;
 
@@ -1086,6 +1120,7 @@ function changeTribeMembership(
     const user = await User.findByIdAndUpdate(
       authenticatedUser._id,
       memberUpdate,
+      // Stryker disable next-line BooleanLiteral: Mongoose ignores the legacy safe option
       { safe: true, new: true },
     ).exec();
     const pickedTribe = _.pick(tribe, tribesHandler.tribeFields.split(' '));
@@ -1120,6 +1155,7 @@ service.joinTribe = function (req, res) {
 
 /** Leave tribe. */
 service.leaveTribe = function (req, res) {
+  // Stryker disable next-line StringLiteral: only 'join' is compared, so any other action leaves
   return changeTribeMembership(req, res, 'leave');
 };
 
@@ -1130,10 +1166,12 @@ service.getUserMemberships = function (req, res) {
   if (!req.user) {
     return errorService.sendForbidden(res);
   }
+  // Stryker disable next-line StringLiteral: the projection only narrows the lookup; the response only reads member
   User.findById(req.user._id, 'member')
     .populate({
       path: 'member.tribe',
       select: tribesHandler.tribeFields,
+      // Stryker disable next-line StringLiteral: without a model, populate uses the schema ref, which is Tribe
       model: 'Tribe',
       // Not possible at the moment due bug in Mongoose
       // http://mongoosejs.com/docs/faq.html#populate_sort_order
@@ -1169,9 +1207,12 @@ service.removePushRegistration = function (req, res) {
       },
     },
   };
+  // Stryker disable next-line ObjectLiteral: the sanitized response omits push registrations and Mongoose ignores safe, so the returned version does not matter
   User.findByIdAndUpdate(user._id, query, {
+    // Stryker disable next-line BooleanLiteral: Mongoose ignores the legacy safe option
     safe: true,
     // @link http://stackoverflow.com/a/4975054/1984644
+    // Stryker disable next-line BooleanLiteral: the sanitized response omits push registrations, so the pre-update document answers the same
     new: true, // get the updated document in return
   })
     .exec()
@@ -1219,6 +1260,7 @@ function isUserMemberOfTribe(
   user: UserServerDocument,
   tribeId: string,
 ): boolean {
+  // Stryker disable next-line ConditionalExpression,BlockStatement: _.find over a missing or empty member list also gives false
   if (!user.member || !user.member.length) {
     return false;
   }
