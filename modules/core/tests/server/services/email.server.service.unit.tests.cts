@@ -388,7 +388,7 @@ describe('Service: email (sent content)', function () {
         'https://survey.example.test/reactivate?utm_source=transactional-email&utm_medium=email&utm_campaign=reactivate-hosts',
       ),
     );
-    assert.ok(email.text.includes('https://survey.example.test/reactivate'));
+    assert.match(email.text, /https:\/\/survey\.example\.test\/reactivate\b/);
   });
 
   it('sends unread notifications from members without roles under their own name', async function () {

@@ -451,10 +451,13 @@ describe('Admin scammer warnings with stored members', () => {
       ...body,
     });
   }
-  function threadId(a: Saved, b: Saved) {
+  // The thread key the controller derives for two members, from ids read back
+  // from the database.
+  async function threadId(...usernames: string[]) {
+    const ids = await User.find({ username: { $in: usernames } }).lean();
     return crypto
       .createHash('sha256')
-      .update(JSON.stringify([String(a._id), String(b._id)].sort()))
+      .update(JSON.stringify(ids.map(user => String(user._id)).sort()))
       .digest('hex')
       .slice(0, 24);
   }
@@ -527,7 +530,9 @@ describe('Admin scammer warnings with stored members', () => {
   it('writes the other threads when one cannot be created', async () => {
     // A thread between other members already holds the first recipient's key.
     await Thread.create({
-      _id: new mongoose.Types.ObjectId(threadId(admin, first)),
+      _id: new mongoose.Types.ObjectId(
+        await threadId('warnadmin', 'warnrecipienta'),
+      ),
       userFrom: bystanders[0]._id,
       userTo: bystanders[1]._id,
       updated: new Date(),

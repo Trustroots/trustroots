@@ -646,13 +646,14 @@ export const audience = async (
       count,
     });
   }
+  // Stryker disable next-line ObjectLiteral: the projection only limits what is loaded; the CSV reads named columns
   // parseAudienceCriteria validates every field and constructs the ObjectIds.
-  const users = await User.find(
-    // nosemgrep: request-object-in-database-filter
-    audienceQuery,
-    // Stryker disable next-line ObjectLiteral: the projection only limits what is loaded; the CSV reads named columns
-    { email: 1, firstName: 1, lastName: 1 },
-  )
+  // nosemgrep: request-object-in-database-filter
+  const users = await User.find(audienceQuery, {
+    email: 1,
+    firstName: 1,
+    lastName: 1,
+  })
     .sort({
       email: 1,
     })
