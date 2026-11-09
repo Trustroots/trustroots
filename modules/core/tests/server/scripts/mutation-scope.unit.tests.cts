@@ -14,6 +14,7 @@ interface Shard {
   name: string;
   files: string[];
   reasons: string[];
+  tests?: string[];
 }
 
 const files = [
@@ -108,18 +109,40 @@ describe('mutation scope', () => {
     );
   });
 
-  it('names package shards after the package', () => {
+  it('leaves package shards to the full run, against their own tests', () => {
+    const changes = [
+      { status: 'A', path: 'packages/logger/logger.mts' },
+      {
+        status: 'M',
+        path: 'packages/analytics/server/umami.server.service.mts',
+      },
+    ];
+    assert.deepStrictEqual(plan(changes), []);
+    const full = planFull(files, 'full run');
+    for (const name of ['package-analytics', 'package-logger']) {
+      const shard = full.find((s: Shard) => s.name === name);
+      assert.ok(shard.tests.length > 0);
+      for (const test of shard.tests) assert.ok(fs.existsSync(test), test);
+    }
+    assert.ok(full.filter((s: Shard) => s.tests).length === 2);
+  });
+
+  it('gives password hashing a shard of its own', () => {
+    const service =
+      'modules/users/server/services/password-hashing.server.service';
+    const sources = ['a', 'b', 'c', 'd'].map(
+      name => `modules/users/server/services/${name}.server.service.mts`,
+    );
+    const shards = planFull(
+      [...sources, `${service}.mjs`, `${service}.mts`],
+      'full run',
+    );
     assert.deepStrictEqual(
-      names(
-        plan([
-          { status: 'A', path: 'packages/logger/logger.mts' },
-          {
-            status: 'M',
-            path: 'packages/analytics/server/umami.server.service.mts',
-          },
-        ]),
-      ),
-      ['package-analytics', 'package-logger'],
+      shards.map((s: Shard) => [s.name, s.files]),
+      [
+        ['users', sources],
+        ['users-password-hashing', [`${service}.mjs`, `${service}.mts`]],
+      ],
     );
   });
 
@@ -199,7 +222,6 @@ describe('mutation scope', () => {
           'core',
           ['modules/core/server/controllers/core.server.controller.mts'],
         ],
-        ['package-logger', ['packages/logger/logger.mts']],
         [
           'users',
           ['modules/users/server/services/user-mini.server.service.mts'],
@@ -236,15 +258,12 @@ describe('mutation scope', () => {
       const shards = plan([{ status: 'M', path: changed }]);
       assert.deepStrictEqual(
         shards,
-        planFull(files, `shared test infrastructure changed: ${changed}`),
+        planFull(
+          files,
+          `shared test infrastructure changed: ${changed}`,
+        ).filter((shard: Shard) => !shard.tests),
       );
-      assert.deepStrictEqual(names(shards), [
-        'core',
-        'offers',
-        'package-analytics',
-        'package-logger',
-        'users',
-      ]);
+      assert.deepStrictEqual(names(shards), ['core', 'offers', 'users']);
     }
     assert.deepStrictEqual(
       names(
@@ -256,7 +275,7 @@ describe('mutation scope', () => {
           },
         ]),
       ),
-      ['core', 'offers', 'package-analytics', 'package-logger', 'users'],
+      ['core', 'offers', 'users'],
     );
   });
 

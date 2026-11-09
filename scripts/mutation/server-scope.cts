@@ -22,11 +22,12 @@
 // Everything else, and anything the mapping misses (a test in one module
 // that only reaches another module over HTTP), is covered by the full run:
 // the mutation workflow mutates the whole server every week and on demand.
+// The logger and analytics packages run only there (see weeklyShardTests).
 //
 //   node scripts/mutation/server-scope.cts --base=<sha> [--head=HEAD]
 //   node scripts/mutation/server-scope.cts --full
 //
-// prints a JSON array of shards: { name, files, reasons }.
+// prints a JSON array of shards: { name, files, reasons, tests? }.
 
 const { execFileSync } =
   require('child_process') as typeof import('node:child_process');
@@ -88,7 +89,33 @@ interface Shard {
   name: string;
   files: string[];
   reasons: string[];
+  // Only these test files run, instead of every test covering a mutant.
+  tests?: string[];
 }
+
+// Almost every server test reaches the logger and analytics, so each of their
+// mutants ran thousands of tests and their shards never finished within the
+// CI time limit. They run only in the full (weekly and manual) run, against
+// the tests that check them directly, which cover all of their code.
+const weeklyShardTests: Record<string, string[]> = {
+  'package-analytics': [
+    'modules/core/tests/server/analytics.server.unit.tests.cts',
+    'modules/core/tests/server/controllers/analytics.server.controller.tests.cts',
+  ],
+  'package-logger': [
+    'modules/core/tests/server/log-redaction.unit.tests.cts',
+    'modules/users/tests/server/user-block.server.routes.tests.cts',
+  ],
+};
+
+// Sources slow enough to need a CI job of their own: every password-hashing
+// mutant runs scrypt-backed tests, which took its shard close to the limit.
+const ownShardSources = new Map([
+  [
+    'modules/users/server/services/password-hashing.server.service',
+    'users-password-hashing',
+  ],
+]);
 
 interface ScopeInput {
   changes: Change[];
@@ -157,21 +184,32 @@ const MAX_SOURCES_PER_SHARD = 4;
 
 function splitShard(shard: Shard): Shard[] {
   const sources = new Map<string, string[]>();
+  const own: Shard[] = [];
   for (const file of shard.files) {
     const stem = file.replace(/\.m[jt]s$/, '');
+    const ownName = ownShardSources.get(stem);
+    if (ownName) {
+      const existing = own.find(part => part.name === ownName);
+      if (existing) existing.files.push(file);
+      else own.push({ name: ownName, files: [file], reasons: shard.reasons });
+      continue;
+    }
     sources.set(stem, [...(sources.get(stem) ?? []), file]);
   }
   const groups = [...sources.values()];
-  if (groups.length <= MAX_SOURCES_PER_SHARD) return [shard];
   const parts: Shard[] = [];
-  for (let start = 0; start < groups.length; start += MAX_SOURCES_PER_SHARD) {
-    parts.push({
-      name: `${shard.name}-${parts.length + 1}`,
-      files: groups.slice(start, start + MAX_SOURCES_PER_SHARD).flat(),
-      reasons: shard.reasons,
-    });
+  if (groups.length <= MAX_SOURCES_PER_SHARD) {
+    if (groups.length) parts.push({ ...shard, files: groups.flat() });
+  } else {
+    for (let start = 0; start < groups.length; start += MAX_SOURCES_PER_SHARD) {
+      parts.push({
+        name: `${shard.name}-${parts.length + 1}`,
+        files: groups.slice(start, start + MAX_SOURCES_PER_SHARD).flat(),
+        reasons: shard.reasons,
+      });
+    }
   }
-  return parts;
+  return [...parts, ...own];
 }
 
 function finish(shards: Shard[]): Shard[] {
@@ -180,11 +218,21 @@ function finish(shards: Shard[]): Shard[] {
     .flatMap(splitShard);
 }
 
+// Pull requests never run the weekly-only shards.
+function withoutWeeklyShards(shards: Shard[]): Shard[] {
+  return shards.filter(shard => !(shard.name in weeklyShardTests));
+}
+
 function planFull(files: string[], reason: string): Shard[] {
   const shards = new Map<string, Shard>();
   for (const file of files.filter(isMutable).sort()) {
     const name = shardOf(file);
-    const shard = shards.get(name) ?? { name, files: [], reasons: [reason] };
+    const shard = shards.get(name) ?? {
+      name,
+      files: [],
+      reasons: [reason],
+      ...(weeklyShardTests[name] && { tests: weeklyShardTests[name] }),
+    };
     shard.files.push(file);
     shards.set(name, shard);
   }
@@ -199,9 +247,8 @@ function planScope({ changes, files, read }: ScopeInput): Shard[] {
     ),
   );
   if (shared) {
-    return planFull(
-      files,
-      `shared test infrastructure changed: ${shared.path}`,
+    return withoutWeeklyShards(
+      planFull(files, `shared test infrastructure changed: ${shared.path}`),
     );
   }
 
@@ -239,12 +286,14 @@ function planScope({ changes, files, read }: ScopeInput): Shard[] {
     }
   }
 
-  return finish(
-    [...shards.entries()].map(([name, shard]) => ({
-      name,
-      files: [...shard.files].sort(),
-      reasons: [...shard.reasons].sort(),
-    })),
+  return withoutWeeklyShards(
+    finish(
+      [...shards.entries()].map(([name, shard]) => ({
+        name,
+        files: [...shard.files].sort(),
+        reasons: [...shard.reasons].sort(),
+      })),
+    ),
   );
 }
 

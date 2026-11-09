@@ -33,7 +33,18 @@ Each module is a shard, run in parallel and checked against its own floor in
 `server.default`). A module with more than four source files is split into
 shards of four (`users-1`, `users-2`, …) that share its floor: a CI job has a
 time limit, and Stryker only saves its results when a run finishes. Shards reuse the incremental results cached by the last run,
-so only mutants whose code or covering tests changed are re-tested.
+so only mutants whose code or covering tests changed are re-tested. The floor
+is 100%: every mutant is killed, or carries a `// Stryker disable` comment
+saying why no test can tell it apart.
+
+Two kinds of shard are special-cased in `scripts/mutation/server-scope.cts`:
+
+- `users-password-hashing` holds the password-hashing service on its own,
+  because its scrypt-backed tests make each mutant slow;
+- `package-logger` and `package-analytics` run only in the weekly and manual
+  runs, against a short list of tests that check them directly. Almost every
+  server test reaches the logger and analytics, so with all covering tests
+  their shards never finished within the time limit.
 
 The mapping can miss a test that reaches another module only over HTTP. The
 weekly run (and any manual run of the workflow) mutates the whole server, which

@@ -34,10 +34,15 @@ const sourceChecks = [
   'modules/core/tests/server/scripts/server-native-coverage.unit.tests.cts',
 ];
 
+// A shard can name the only test files it runs (`tests` in
+// scripts/mutation/server-scope.cts); the workflow passes them here.
+const shardTests = process.env.STRYKER_TEST_FILES?.split(',').filter(Boolean);
+
 export default {
   ...config,
   test: {
     ...config.test,
+    ...(shardTests?.length && { include: shardTests }),
     exclude: [
       ...(config.test?.exclude ?? ['**/node_modules/**']),
       ...sourceChecks,

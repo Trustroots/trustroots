@@ -123,6 +123,7 @@ jobs:
       - name: Mutation-test ${{ matrix.shard.name }}
         env:
           FILES: ${{ join(matrix.shard.files, ',') }}
+          STRYKER_TEST_FILES: ${{ join(matrix.shard.tests, ',') }}
         run: pnpm run test:mutation:server --mutate "$FILES" --concurrency 3
       - name: Check the mutation score floor
         run: pnpm run mutation:check --scope=server --shard=${{ matrix.shard.name }}
