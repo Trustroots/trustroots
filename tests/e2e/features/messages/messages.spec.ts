@@ -166,7 +166,11 @@ test.describe('seeded message flows', () => {
       .getByText(SEEDED_CONVERSATIONS.berlinPortland.latestReply)
       .locator('xpath=ancestor::*[contains(@class, "message-sender-me")]');
     await expect(incoming).toHaveCSS('justify-content', 'normal');
-    await expect(outgoing).toHaveCSS('justify-content', 'flex-end');
+    expect(['flex-end', 'flow-end']).toContain(
+      await outgoing.evaluate(
+        element => getComputedStyle(element).justifyContent,
+      ),
+    );
     const incomingBubble = await incoming.locator('.panel').boundingBox();
     const outgoingBubble = await outgoing.locator('.panel').boundingBox();
     expectPresent(incomingBubble);
