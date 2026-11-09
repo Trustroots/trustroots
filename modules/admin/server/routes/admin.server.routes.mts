@@ -4,7 +4,6 @@ import {
   diagnostics,
   recover,
 } from '../controllers/admin.sparkpost.server.controller.mts';
-import * as spamCleanup from '../controllers/admin.spam-cleanup.server.controller.mts';
 import adminCircles from '../controllers/admin.circles.server.controller.mjs';
 import adminAcquisitionStories from './../controllers/admin.acquisition-stories.server.controller.mts';
 import adminAuditLog from './../controllers/admin.audit-log.server.controller.mts';
@@ -73,14 +72,6 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/sparkpost/:action')
     .all(adminPolicy.isAllowed)
     .get(diagnostics);
-  app
-    .route('/api/admin/spam-cleanup/preview')
-    .all(adminPolicy.isAllowed)
-    .post(spamCleanup.preview);
-  app
-    .route('/api/admin/spam-cleanup/apply')
-    .all(adminPolicy.isAllowed)
-    .post(spamCleanup.apply);
   app
     .route('/api/admin/support-import/preview')
     .all(adminPolicy.isAllowed)

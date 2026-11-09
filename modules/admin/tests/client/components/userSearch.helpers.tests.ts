@@ -3,7 +3,6 @@ import {
   getReferenceUserId,
   isExactUserMatch,
   isMongoObjectId,
-  isObviousSpamUser,
   isSuspendedUser,
   normalizeAdminQuery,
   resolveExactMemberId,
@@ -83,50 +82,12 @@ describe('admin user search helpers', () => {
     expect(users).toHaveBeenCalledWith('member-one');
   });
 
-  it('keeps date formatting and spam filtering behavior stable', () => {
+  it('formats admin dates', () => {
     expect(formatAdminDate(new Date('2024-01-15T12:00:00.000Z'))).toBe(
       '2024-01-15',
     );
     expect(formatAdminDate('2024-02-03T04:05:06.000Z')).toBe('2024-02-03');
     expect(formatAdminDate()).toBe('');
-    expect(
-      isObviousSpamUser(
-        candidate({
-          displayName: 'Hot Member Wants To Meet',
-          email: 'spam@example.test',
-          emailTemporary: 'spam@example.test',
-          public: false,
-          roles: ['user', 'suspended'],
-        }),
-      ),
-    ).toBe(true);
-    expect(
-      isObviousSpamUser(
-        candidate({
-          displayName: 'Member One',
-          public: true,
-          roles: ['user'],
-        }),
-      ),
-    ).toBe(false);
-    expect(isObviousSpamUser(candidate())).toBe(false);
-    expect(
-      isObviousSpamUser(
-        candidate({ displayName: 'http://example.invalid/profile' }),
-      ),
-    ).toBe(true);
-    expect(
-      isObviousSpamUser(
-        candidate({
-          displayName: 'Member One',
-          public: true,
-          roles: ['suspended'],
-        }),
-      ),
-    ).toBe(false);
-    expect(
-      isObviousSpamUser(candidate({ displayName: 'Hot springs volunteer' })),
-    ).toBe(false);
   });
 
   it('returns populated or raw reference user ids', () => {

@@ -339,9 +339,6 @@ describe('<AdminUser />', () => {
     expect(
       screen.queryByText('Standard Trustroots member access.'),
     ).not.toBeInTheDocument();
-    expect(
-      screen.queryByLabelText('Hide obvious spam'),
-    ).not.toBeInTheDocument();
     expect(screen.getByText('3 sent')).toBeInTheDocument();
     expect(screen.getByText('4 received')).toBeInTheDocument();
     expect(
@@ -1179,13 +1176,12 @@ describe('<AdminUser />', () => {
         {
           _id: '333333333333333333333333',
           created: '2021-07-06T00:00:00.000Z',
-          displayName:
-            'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
-          email: 'spam@example.org',
-          emailTemporary: 'spam@example.org',
+          displayName: 'Suspended Example',
+          email: 'suspended@example.org',
+          emailTemporary: 'suspended@example.org',
           public: false,
           roles: ['user', 'suspended'],
-          username: '24721768s',
+          username: 'suspended-example',
         },
       ]),
     );
@@ -1203,9 +1199,8 @@ describe('<AdminUser />', () => {
     expect(screen.getByText('2024-02-03 04:05')).toBeInTheDocument();
     expect(screen.queryByText('ID')).not.toBeInTheDocument();
     expect(
-      screen.queryByText(/Hot Daria Wants To Date/),
-    ).not.toBeInTheDocument();
-    expect(screen.getByText('1 likely spam hidden.')).toBeInTheDocument();
+      screen.getByText('suspended-example (Suspended Example)'),
+    ).toBeInTheDocument();
     expect(mockedUsersApi.getUser).not.toHaveBeenCalled();
   });
 
@@ -1283,63 +1278,17 @@ describe('<AdminUser />', () => {
     );
   });
 
-  it('reveals non-exact obvious spam matches when toggled off', async () => {
-    mockedUsersApi.searchUsers.mockResolvedValueOnce(
-      makeMemberList([
-        {
-          _id: otherUserId,
-          created: '2024-02-03T04:05:06.000Z',
-          displayName: 'Alice Similar',
-          email: 'similar@example.org',
-          username: 'alice-similar',
-        },
-        {
-          _id: '333333333333333333333333',
-          created: '2021-07-06T00:00:00.000Z',
-          displayName:
-            'Hot Daria Wants To Date https://bit.ly/lovezones Come In',
-          email: 'spam@example.org',
-          emailTemporary: 'spam@example.org',
-          public: false,
-          roles: ['user', 'suspended'],
-          username: '24721768s',
-        },
-      ]),
-    );
-
-    render(<AdminUser />);
-
-    submitMemberSearch('alice');
-
-    expect(
-      await screen.findByText('alice-similar (Alice Similar)'),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Hot Daria Wants To Date/),
-    ).not.toBeInTheDocument();
-
-    fireEvent.click(screen.getByLabelText('Hide obvious spam'));
-
-    expect(
-      await screen.findByText(
-        '24721768s (Hot Daria Wants To Date https://bit.ly/lovezones Come In)',
-      ),
-    ).toBeInTheDocument();
-    expect(screen.queryByText('1 likely spam hidden.')).not.toBeInTheDocument();
-    expect(mockedUsersApi.searchUsers).toHaveBeenCalledTimes(1);
-  });
-
-  it('loads an exact obvious spam match instead of hiding it', async () => {
+  it('loads an exact match for a suspended member', async () => {
     mockedUsersApi.searchUsers.mockResolvedValueOnce(
       makeMemberList([
         {
           _id: userId,
-          displayName: 'Hot Daria Wants To Date',
-          email: 'spam@example.org',
-          emailTemporary: 'spam@example.org',
+          displayName: 'Suspended Example',
+          email: 'suspended@example.org',
+          emailTemporary: 'suspended@example.org',
           public: false,
           roles: ['user', 'suspended'],
-          username: '24721768s',
+          username: 'suspended-example',
         },
       ]),
     );
@@ -1347,30 +1296,33 @@ describe('<AdminUser />', () => {
       makeReportCard({
         profile: {
           _id: userId,
-          displayName: 'Hot Daria Wants To Date',
-          email: 'spam@example.org',
+          displayName: 'Suspended Example',
+          email: 'suspended@example.org',
           roles: ['user', 'suspended'],
-          username: '24721768s',
+          username: 'suspended-example',
         },
       }),
     );
 
     render(<AdminUser />);
 
-    submitMemberSearch('24721768s');
+    submitMemberSearch('suspended-example');
 
     await waitFor(() =>
-      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith('24721768s', {
-        page: 1,
-        sort: { column: 'username', direction: 'ascending' },
-      }),
+      expect(mockedUsersApi.searchUsers).toHaveBeenCalledWith(
+        'suspended-example',
+        {
+          page: 1,
+          sort: { column: 'username', direction: 'ascending' },
+        },
+      ),
     );
     await waitFor(() =>
       expect(mockedUsersApi.getUser).toHaveBeenCalledWith(userId),
     );
     expect(
       await screen.findByRole('heading', {
-        name: '24721768s: Hot Daria Wants To Date',
+        name: 'suspended-example: Suspended Example',
       }),
     ).toBeInTheDocument();
   });

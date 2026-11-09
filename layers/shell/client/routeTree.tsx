@@ -71,7 +71,6 @@ import { Route as AdminSupportMemberUsernameRoute } from './routes/admin.support
 import { Route as AdminHackerspacesRoute } from './routes/admin.hackerspaces';
 import { Route as AdminAuditLogRoute } from './routes/admin.audit-log';
 import { Route as AdminUsernameChangesRoute } from './routes/admin.username-changes';
-import { Route as AdminSpamCleanupRoute } from './routes/admin.spam-cleanup';
 import { Route as AdminSignupReviewRulesRoute } from './routes/admin.signup-review-rules';
 import { Route as AdminAcquisitionStoriesRoute } from './routes/admin.acquisition-stories';
 import { Route as AdminStaffBlockersRoute } from './routes/admin.staff-blockers';
@@ -150,7 +149,6 @@ const rootChildren = [
   AdminHackerspacesRoute,
   AdminAuditLogRoute,
   AdminUsernameChangesRoute,
-  AdminSpamCleanupRoute,
   AdminSignupReviewRulesRoute,
   AdminAcquisitionStoriesRoute,
   AdminGravatarRoute,

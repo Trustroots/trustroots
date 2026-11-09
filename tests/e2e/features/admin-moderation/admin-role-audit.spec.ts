@@ -66,9 +66,6 @@ async function assertMemberProfileCleanup(
     0,
   );
   await expect(
-    page.getByText('Hide obvious spam', { exact: true }),
-  ).toHaveCount(0);
-  await expect(
     page.locator('#roles li').filter({ hasText: /^user$/ }),
   ).toHaveCount(0);
 

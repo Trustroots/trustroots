@@ -43,7 +43,6 @@ import {
   getReferenceUserId,
   isExactUserMatch,
   isMongoObjectId,
-  isObviousSpamUser,
   normalizeAdminQuery,
   isSuspendedUser,
 } from './userSearch.helpers';
@@ -193,7 +192,6 @@ interface MemberList {
 
 interface AdminUserState {
   hasSearched: boolean;
-  hideObviousSpamUsers: boolean;
   isSettingUserRole: boolean;
   isSearching: boolean;
   notesRevision: number;
@@ -367,15 +365,12 @@ export class AdminUserContent extends Component<
     this.handleUserRoleChange = this.handleUserRoleChange.bind(this);
     this.cancelUserRoleChange = this.cancelUserRoleChange.bind(this);
     this.confirmUserRoleChange = this.confirmUserRoleChange.bind(this);
-    this.onHideObviousSpamUsersChange =
-      this.onHideObviousSpamUsersChange.bind(this);
     this.onMatchingUsersPageChange = this.onMatchingUsersPageChange.bind(this);
     this.onMatchingUsersSortChange = this.onMatchingUsersSortChange.bind(this);
     this.onQueryChange = this.onQueryChange.bind(this);
     this.queryUser = this.queryUser.bind(this);
     this.state = {
       hasSearched: false,
-      hideObviousSpamUsers: true,
       isSettingUserRole: false,
       isSearching: false,
       notesRevision: 0,
@@ -436,10 +431,6 @@ export class AdminUserContent extends Component<
       }),
       to: '/admin/user',
     });
-  }
-
-  onHideObviousSpamUsersChange(event: ChangeEvent<HTMLInputElement>) {
-    this.setState({ hideObviousSpamUsers: event.target.checked });
   }
 
   onMatchingUsersPageChange(page: number) {
@@ -685,7 +676,6 @@ export class AdminUserContent extends Component<
   render() {
     const {
       hasSearched,
-      hideObviousSpamUsers,
       isSearching,
       isSettingUserRole,
       pendingRoleChange,
@@ -704,13 +694,8 @@ export class AdminUserContent extends Component<
       (role: string) => ['shadowban', 'suspended'].includes(role),
     );
     const potentialMatches = user ? user.potentialMatches || [] : [];
-    const visibleMatchingUsers = hideObviousSpamUsers
-      ? matchingUsers.filter(user => !isObviousSpamUser(user))
-      : matchingUsers;
-    const hiddenObviousSpamUserCount =
-      matchingUsers.length - visibleMatchingUsers.length;
     const hasNoMatchingUsers =
-      hasSearched && !isSearching && visibleMatchingUsers.length === 0;
+      hasSearched && !isSearching && matchingUsers.length === 0;
     const userId = get(user, ['profile', '_id']);
     const profileLabel = isProfile
       ? [user.profile.username, user.profile.displayName]
@@ -861,16 +846,6 @@ export class AdminUserContent extends Component<
                   type="search"
                   value={query}
                 />
-                <div className="checkbox">
-                  <label>
-                    <input
-                      checked={hideObviousSpamUsers}
-                      onChange={this.onHideObviousSpamUsersChange}
-                      type="checkbox"
-                    />{' '}
-                    Hide obvious spam
-                  </label>
-                </div>
               </form>
 
               {isSearching && (
@@ -887,14 +862,8 @@ export class AdminUserContent extends Component<
               onSortChange={this.onMatchingUsersSortChange}
               pagination={matchingUsersPagination}
               sort={matchingUsersSort}
-              userResults={visibleMatchingUsers}
+              userResults={matchingUsers}
             />
-          )}
-
-          {!isProfile && hiddenObviousSpamUserCount > 0 && (
-            <p className="text-muted">
-              {hiddenObviousSpamUserCount} likely spam hidden.
-            </p>
           )}
 
           {!isProfile && hasNoMatchingUsers && (

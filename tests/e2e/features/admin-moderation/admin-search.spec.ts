@@ -26,6 +26,44 @@ test.describe('admin moderation search flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('dashboard search includes suspended matches without a spam filter', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Dashboard search shows all matching members.',
+    ]);
+    await page.route('**/api/admin/users', route =>
+      route.fulfill({
+        json: {
+          pagination: { page: 1, pageSize: 150, total: 1, totalPages: 1 },
+          sort: { column: 'username', direction: 'ascending' },
+          users: [
+            {
+              _id: '111111111111111111111111',
+              created: '2026-01-01T00:00:00.000Z',
+              displayName: 'Suspended Example',
+              email: 'suspended@example.test',
+              emailTemporary: 'suspended@example.test',
+              public: false,
+              roles: ['user', 'suspended'],
+              username: 'suspended-example',
+            },
+          ],
+        },
+      }),
+    );
+
+    await page.goto('/admin');
+    await page.getByLabel('Name, username or email').fill('suspended');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await expect(
+      page.getByRole('link', { name: 'suspended-example (Suspended Example)' }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('checkbox', { name: 'Hide obvious spam' }),
+    ).toHaveCount(0);
+  });
+
   test('admin search finds a confirmed seeded member', async ({
     page,
   }, testInfo) => {

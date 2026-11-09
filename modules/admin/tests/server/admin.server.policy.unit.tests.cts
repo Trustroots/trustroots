@@ -166,8 +166,6 @@ describe('Admin policy unit tests', () => {
     const adminOnly = [
       'get /api/admin/signup-review-rules',
       'put /api/admin/signup-review-rules',
-      'post /api/admin/spam-cleanup/preview',
-      'post /api/admin/spam-cleanup/apply',
       'post /api/admin/support-import/preview',
       'post /api/admin/support-import/apply',
       'get /api/admin/circles',

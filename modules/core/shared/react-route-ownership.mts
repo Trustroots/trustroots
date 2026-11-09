@@ -402,12 +402,6 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
-    path: '/admin/spam-cleanup',
-    requiresRole: ['admin'],
-    title: 'Admin - Spam account cleanup',
-  },
-  {
-    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/signup-review-rules',
     requiresRole: ['admin'],
     title: 'Admin - Signup watchlist',
