@@ -14,6 +14,7 @@ import {
   EVENT_TTL,
   eventType,
   FAVOURITES_KEY,
+  fetchRadioAuthorUsernames,
   hasTag,
   LISTENER_TTL,
   mergeFavourites,
@@ -43,6 +44,31 @@ beforeEach(() => {
   jest.clearAllMocks();
   localStorage.clear();
   delete window.nostr;
+});
+
+it('resolves profiles in batches of up to 100 public keys', async () => {
+  const keys = Array.from({ length: 101 }, (_, index) =>
+    index.toString(16).padStart(64, '0'),
+  );
+  const { signal } = new AbortController();
+  jest
+    .mocked(http.get)
+    .mockResolvedValueOnce({
+      data: { usernames: { [keys[0]]: 'fictional-member' } },
+    })
+    .mockResolvedValueOnce({ data: {} });
+  await expect(fetchRadioAuthorUsernames(keys, signal)).resolves.toEqual({
+    [keys[0]]: 'fictional-member',
+  });
+  expect(
+    jest.mocked(http.get).mock.calls.map(([path, config]) => {
+      const url = new URL(path, 'https://example.test');
+      expect(url.pathname).toBe('/api/nostr/author-visibility');
+      expect(url.searchParams.get('profiles')).toBe('1');
+      expect(config?.signal).toBe(signal);
+      return url.searchParams.getAll('pubkey');
+    }),
+  ).toEqual([keys.slice(0, 100), keys.slice(100)]);
 });
 
 it('preserves the catalogue, station hashes and existing event formats', () => {

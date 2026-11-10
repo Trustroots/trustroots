@@ -3,11 +3,13 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import type { Event } from 'nostr-tools';
+import { npubEncode } from 'nostr-tools/nip19';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
   activeListeners,
   connectRadioSigner,
   eventType,
+  fetchRadioAuthorUsernames,
   FAVOURITES_KEY,
   mergeFavourites,
   RadioRoom,
@@ -40,6 +42,9 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   const [signer, setSigner] = useState<RadioSigner>();
   const [connecting, setConnecting] = useState(false);
   const [events, setEvents] = useState<Event[]>([]);
+  const [authorUsernames, setAuthorUsernames] = useState<
+    Record<string, string>
+  >({});
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -54,7 +59,24 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         eventType(event) === 'chat' &&
         Number(tag(event, 'expiration') || Infinity) > now,
     )
-    .sort((a, b) => a.created_at - b.created_at);
+    .sort((a, b) => a.created_at - b.created_at)
+    .slice(-200);
+  const chatAuthorKeys = [...new Set(chat.map(event => event.pubkey))]
+    .sort()
+    .join(',');
+
+  useEffect(() => {
+    if (!user || !chatAuthorKeys) return;
+    const controller = new AbortController();
+    void fetchRadioAuthorUsernames(chatAuthorKeys.split(','), controller.signal)
+      .then(usernames => {
+        if (!controller.signal.aborted) setAuthorUsernames(usernames);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setAuthorUsernames({});
+      });
+    return () => controller.abort();
+  }, [user, chatAuthorKeys]);
 
   useEffect(() => {
     mounted.current = true;
@@ -346,7 +368,9 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
                 <li key={listener.pubkey}>
                   <span>{identityLabel(listener.pubkey)}</span>
                   {' · '}
-                  <a href={`#${tag(listener, 'radiostr_station')}`}>
+                  <a
+                    href={`/circles/radio#${encodeURIComponent(tag(listener, 'radiostr_station')!)}`}
+                  >
                     {stations.find(
                       item => item.id === tag(listener, 'radiostr_station'),
                     )?.title || listener.content}
@@ -397,24 +421,36 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           )}
           {socialError && <p role="alert">{socialError}</p>}
           <ol className="radio-chat-log" aria-live="polite">
-            {chat.slice(-200).map(event => (
-              <li key={event.id}>
-                <strong>{identityLabel(event.pubkey)}</strong>{' '}
-                <time
-                  dateTime={new Date(event.created_at * 1000).toISOString()}
-                >
-                  {new Date(event.created_at * 1000).toLocaleTimeString()}
-                </time>
-                {tag(event, 'channel') &&
-                  stations.some(item => item.id === tag(event, 'channel')) && (
-                    <a href={`#${tag(event, 'channel')}`}>
+            {chat.map(event => {
+              const npub = npubEncode(event.pubkey);
+              const username = authorUsernames[event.pubkey];
+              const timestamp = new Date(event.created_at * 1000).toISOString();
+              const channel = tag(event, 'channel');
+              return (
+                <li key={event.id}>
+                  <strong>
+                    {username ? (
+                      <a href={`/profile/${encodeURIComponent(username)}`}>
+                        {npub}
+                      </a>
+                    ) : (
+                      npub
+                    )}
+                  </strong>{' '}
+                  <time dateTime={timestamp}>
+                    {timestamp.slice(0, 16).replace('T', ' ')}
+                  </time>{' '}
+                  UTC
+                  {stations.some(item => item.id === channel) && (
+                    <>
                       {' '}
-                      #{tag(event, 'channel')}
-                    </a>
+                      <a href={`/circles/radio#${channel}`}>#{channel}</a>
+                    </>
                   )}
-                <p>{event.content}</p>
-              </li>
-            ))}
+                  <p>{event.content}</p>
+                </li>
+              );
+            })}
           </ol>
           <form onSubmit={send} className="radio-chat-form">
             <label htmlFor="radio-message">{t('Message')}</label>

@@ -174,6 +174,9 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
     await expect(
       radio.getByText('A fictional shared listening message'),
     ).toBeVisible();
+    await expect(
+      radio.getByRole('link', { name: nip19.npubEncode(publicKey) }),
+    ).toHaveAttribute('href', `/profile/${SEEDED_ADMIN.username}`);
     const soma = radio.getByRole('region', { name: 'SomaFM' });
     await soma
       .getByRole('button', { name: 'Star Groovesalad', exact: true })
@@ -222,7 +225,22 @@ test('logged-in members can read radio chat but need a matching signer to publis
   await prepareRadio(page);
   await page.goto('/circles/radio');
   const radio = page.getByRole('region', { name: 'Trustroots Radio' });
-  await expect(radio.getByText('A fictional radio message')).toBeVisible();
+  const message = radio.getByRole('listitem').filter({
+    hasText: 'A fictional radio message',
+  });
+  await expect(message).toBeVisible();
+  await expect(message.locator('strong')).toHaveText(/^npub1[0-9a-z]+$/);
+  await expect(message.locator('time')).toHaveText(
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
+  );
+  await expect(message).toContainText('UTC');
+  const hashtag = message.getByRole('link', { name: '#groovesalad' });
+  await expect(hashtag).toHaveAttribute('href', '/circles/radio#groovesalad');
+  await hashtag.click();
+  await expect(page).toHaveURL(/\/circles\/radio#groovesalad$/);
+  await expect(
+    radio.getByRole('heading', { name: 'Groovesalad' }),
+  ).toBeVisible();
   await expect(
     radio.getByRole('region', { name: 'Listening now' }),
   ).toContainText('Groovesalad');
