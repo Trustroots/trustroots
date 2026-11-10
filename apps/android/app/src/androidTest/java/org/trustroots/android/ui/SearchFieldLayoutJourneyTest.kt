@@ -40,13 +40,13 @@ class SearchFieldLayoutJourneyTest {
     @get:Rule val compose = createComposeRule()
 
     @Test fun liveFilterFitsCompactWidthAndClearsOnlyAfterInput() {
+        val query = mutableStateOf("")
         compose.setContent {
             TrustrootsTheme {
-                var query by remember { mutableStateOf("") }
                 Box(Modifier.width(320.dp).background(Color(0xFF00FF00))) {
                     LiveFilterField(
-                        value = query,
-                        onValueChange = { query = it },
+                        value = query.value,
+                        onValueChange = { query.value = it },
                         label = "Filter circles",
                         clearLabel = "Clear circle filter",
                         modifier = Modifier.testTag("liveFilterField"),
@@ -57,9 +57,9 @@ class SearchFieldLayoutJourneyTest {
 
         compose.onNodeWithTag("liveFilterField").assertIsDisplayed()
         compose.onNodeWithContentDescription("Clear circle filter").assertDoesNotExist()
-        compose.onNodeWithTag("liveFilterField").performTextReplacement(" ")
+        compose.runOnIdle { query.value = " " }
         compose.onNodeWithContentDescription("Clear circle filter").assertIsDisplayed()
-        compose.onNodeWithTag("liveFilterField").performTextReplacement("harbour")
+        compose.runOnIdle { query.value = "harbour" }
         compose.onNodeWithContentDescription("Clear circle filter")
             .assertIsDisplayed()
             .assertWidthIsAtLeast(48.dp)
