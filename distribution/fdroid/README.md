@@ -5,10 +5,10 @@ F-Droid's [fdroiddata repository](https://gitlab.com/fdroid/fdroiddata). It was
 submitted on 2026-10-08 in [merge request !51684](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/51684)
 and is awaiting review and acceptance.
 
-The recipe targets the published `android-preview-100015-v0.1-20261008-0919`
-release: version name `0.1-20261008-0919`, version code `100015`, source commit
-`52839d4d3aa5a0e8c972f4101dd17371e6b31c0e`. The release and tag were verified
-on 2026-10-10. Only this latest build is retained, with category `Social Network`.
+The recipe targets the published [Android preview 100066](https://github.com/Trustroots/trustroots/releases/tag/android-preview-100066-v0.1-20261110-1020)
+with version name `0.1-20261110-1020` and source commit
+`1b74047d745751d0476c090438e277578419a7f8`. It matches the recipe submitted in
+!51684 at revision `7b4c239f425475b1c22a2856df4a1eb5b7ab9af9`.
 
 The app is AGPL-3.0-only. Using the hosted Trustroots service is subject to its
 service terms and community rules; these are separate from the software licence.
@@ -19,49 +19,23 @@ another server. Broader forkability is tracked in
 
 Future release tags contain both version fields in the form
 `android-preview-<code>-v<name>`, which `UpdateCheckData` extracts for automatic
-build entries. The build passes both fields to the existing Gradle environment
-variables. Preview APK update alerts are disabled by default, so F-Droid users
-receive updates through their F-Droid client.
+build entries. The recipe sets both fields in the Gradle app configuration.
+The release derives its build timestamp from the pinned commit. Preview APK
+update alerts are disabled by default, so F-Droid users receive updates through
+their F-Droid client.
 
 ## Validation
 
-On 2026-10-08, `fdroid readmeta` and `fdroid lint org.trustroots.android` passed
-using fdroidserver 2.4.5 and the official fdroiddata category configuration.
-`fdroid checkupdates --allow-dirty org.trustroots.android` also passed against
-the remote release tags and confirmed version code `100014` is current.
-The source scanner also passed in F-Droid's official Linux build container,
-without scanner exclusions. It reported warnings for web fonts and server test
-fixtures outside the Android app; it found no scanner errors.
-
-The container used was
-`registry.gitlab.com/fdroid/fdroidserver:buildserver`, digest
-`sha256:9cb68105642ca4e7b295f0ceab10f069f5b3247dc18fa7c36046e9d81aa469a8`,
-with fdroidserver source commit `c21c177ff6d813697aaf9c988ca9fbb2b571b468`.
-Its Gradle launcher selected the project's Gradle 9.4.1 wrapper version.
-
-`fdroid build --no-refresh org.trustroots.android` completed successfully in
-that container using a local clone containing the published tags. F-Droid
-verified the APK against the expected package and version fields. An
-independent `aapt2 dump badging` check confirmed package
-`org.trustroots.android`, version code `100014`, version name
-`0.1-20261005-2310`, and target SDK `37`. The resulting APK is unsigned, ready
-for F-Droid signing.
-
-The build emitted upstream API deprecation warnings and a warning that
-`libandroidx.graphics.path.so` was packaged without stripping. These did not
-prevent a successful build.
-
-The [branch pipeline](https://gitlab.com/guaka/fdroiddata/-/pipelines/2925672801)
-failed immediately with no jobs and no YAML errors. The
-[merge-request pipeline](https://gitlab.com/guaka/fdroiddata/-/pipelines/2925678703)
-also failed before starting. The merge request asks F-Droid maintainers to run
-CI on their runners. Review and successful upstream CI remain outstanding;
-local validation does not mean acceptance.
+The [October maintainer pipeline](https://gitlab.com/fdroid/fdroiddata/-/pipelines/2936123987)
+passed on an earlier recipe. The [fork pipeline for build 100066](https://gitlab.com/guaka/fdroiddata/-/pipelines/3049163391)
+failed before creating any jobs. The APK URL and signing certificate in the
+current recipe match the published release metadata. Independent
+reproducibility verification for this recipe is pending.
 
 ## Reproduce the validation
 
 From the Trustroots repository root, prepare fresh checkouts and launch the
-same pinned Linux image and server revision used for validation:
+pinned Linux image and server revision from the earlier build:
 
 ```sh
 git clone --depth 1 https://gitlab.com/fdroid/fdroiddata.git fdroiddata
@@ -84,13 +58,14 @@ cd /build
 fdroid readmeta
 fdroid lint org.trustroots.android
 fdroid checkupdates --allow-dirty org.trustroots.android
-fdroid build org.trustroots.android
+fdroid build --test org.trustroots.android:100066
 ```
 
-The recorded build used `--no-refresh` after preparing a local clone with the
-published tags. Omit that option for a fresh clone so F-Droid fetches upstream.
-The first build downloads Gradle, SDK components and dependencies; an amd64
-container on an ARM host also runs under emulation.
+The build downloads the reference APK specified by `Binaries`, compares
+the locally built APK against it and checks the upstream signing certificate
+against `AllowedAPKSigningKeys`. The first build downloads Gradle, SDK
+components and dependencies. An amd64 container on an ARM host runs under
+emulation.
 
 For general packaging instructions, see F-Droid's
 [submission guide](https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/).
@@ -117,18 +92,12 @@ For general packaging instructions, see F-Droid's
 4. **Future releases:** continue publishing tags in the existing
    `android-preview-<code>-v<name>` format with increasing version codes and
    upstream Fastlane metadata. F-Droid's update checker can then generate the
-   next build entry; monitor its build and publication results. F-Droid-signed
-   installations continue receiving F-Droid-signed updates.
+   next build entry. Monitor its build and publication results.
 
 ## Signing
 
-This recipe requests F-Droid's own signing key. An APK installed from GitHub,
-Obtainium or Zapstore has a different signing key and cannot be updated in
-place with that F-Droid build. F-Droid can use the project's signing key only
-after an independently built APK matches the developer-signed APK and the
-recipe includes the upstream binary URL and allowed signing certificate.
-
-The current release embeds its build time and enables preview update alerts
-in the GitHub build, so an F-Droid build using this recipe is not expected to
-match that APK. Reproducible upstream signing needs a separate build change
-and a new release; it is not a prerequisite for the F-Droid-signing route.
+The recipe specifies the upstream APK and its allowed signing certificate.
+After a successful reproducible build, F-Droid can distribute the verified
+upstream-signed APK. Android can update an existing installation in place when
+the package and signing certificate match and the update has a higher version
+code.
