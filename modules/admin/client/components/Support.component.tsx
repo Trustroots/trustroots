@@ -931,6 +931,11 @@ export function SupportMemberPage({ id }: { id: string }) {
               )}
             </h1>
             <UserState user={member} />
+            <p>
+              <a href={`/profile/${encodeURIComponent(member.username)}`}>
+                View profile
+              </a>
+            </p>
             <MemberFlag
               member={member}
               onChanged={roles => setData({ ...member, roles })}

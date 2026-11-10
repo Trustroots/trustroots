@@ -231,6 +231,48 @@ test.describe('admin moderation inspection flows', () => {
     expect(count).toBe(1);
   });
 
+  test('admin can preview an unconfirmed profile by username', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.user-report', [
+      'Admin can preview an unconfirmed profile and see why it is hidden.',
+      'Regular members cannot read the hidden profile.',
+    ]);
+
+    const member = createUser();
+    await registerViaApi(request, member);
+    const account = (await findUserByUsername(member.username))!;
+    const bio = 'I enjoy fixing bikes and sharing stories with travellers.';
+    try {
+      await withE2eDb(db =>
+        db
+          .collection('users')
+          .updateOne({ _id: account._id }, { $set: { description: bio } }),
+      );
+
+      await page.goto(`/admin/user/${member.username}`);
+      await expect(
+        page.getByRole('row', { name: 'Profile visible No' }),
+      ).toBeVisible();
+      await expect(
+        page.getByText('Signup email has not been confirmed', { exact: true }),
+      ).toBeVisible();
+      const preview = page.getByRole('region', {
+        name: 'Hidden profile preview',
+      });
+      await expect(preview.getByText(bio, { exact: true })).toBeVisible();
+
+      await signInViaApi(page, request, SEEDED_MEMBERS[0]);
+      const response = await page.request.get(`/api/users/${member.username}`);
+      expect(response.status()).toBe(404);
+    } finally {
+      await withE2eDb(db =>
+        db.collection('users').deleteOne({ _id: account._id }),
+      );
+    }
+  });
+
   test('admin user report card shows message counts for a shadowbanned member', async ({
     page,
   }, testInfo) => {

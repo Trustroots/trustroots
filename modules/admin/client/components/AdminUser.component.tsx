@@ -690,6 +690,21 @@ export class AdminUserContent extends Component<
     const isProfile = user && user.profile;
     const isSuspended = isSuspendedUser(get(user, ['profile']));
     const isShadowbanned = this.hasRole('shadowban');
+    const isProfileVisible =
+      isProfile && isProfile.public && !isSuspended && !isShadowbanned;
+    const visibilityReasons: string[] = [];
+    if (isSuspended) visibilityReasons.push('Account suspended');
+    if (isShadowbanned) visibilityReasons.push('Account shadowbanned');
+    if (isProfile && !isProfile.public) {
+      if (
+        isProfile.emailTemporary &&
+        isProfile.emailTemporary === isProfile.email
+      ) {
+        visibilityReasons.push('Signup email has not been confirmed');
+      } else if (!visibilityReasons.length) {
+        visibilityReasons.push('Reason unknown');
+      }
+    }
     const isRestricted = get(user, ['profile', 'roles'], []).some(
       (role: string) => ['shadowban', 'suspended'].includes(role),
     );
@@ -707,15 +722,17 @@ export class AdminUserContent extends Component<
           ['Display name', user.profile.displayName],
           [
             'Username',
-            user.profile.username && (
+            isProfileVisible && user.profile.username ? (
               <a href={`/profile/${user.profile.username}`}>
                 {user.profile.username}
               </a>
+            ) : (
+              user.profile.username
             ),
           ],
           [
             'Public profile',
-            user.profile.username && (
+            isProfileVisible && user.profile.username && (
               <a href={`/profile/${user.profile.username}`}>
                 /profile/{user.profile.username}
               </a>
@@ -731,7 +748,8 @@ export class AdminUserContent extends Component<
               ? user.profile.roles.map(formatRoleLabel).join(', ')
               : null,
           ],
-          ['Profile visible', user.profile.public ? 'Yes' : 'No'],
+          ['Profile visible', isProfileVisible ? 'Yes' : 'No'],
+          ['Visibility restrictions', visibilityReasons.join(', ')],
           ['Signed up', formatAdminDateTime(user.profile.created)],
           ['Last seen', formatAdminDateTime(user.profile.seen)],
           [
@@ -889,7 +907,7 @@ export class AdminUserContent extends Component<
                   }
                 />
                 <div className="admin-user-actions">
-                  {user.profile.username && !isSuspended && (
+                  {user.profile.username && isProfileVisible && (
                     <Button
                       render={<a href={`/profile/${user.profile.username}`} />}
                     >
@@ -1482,7 +1500,9 @@ export class AdminUserContent extends Component<
               className="admin-user-embedded-profile"
               aria-labelledby="reported-member-profile-heading"
             >
-              <h4 id="reported-member-profile-heading">Public profile</h4>
+              <h4 id="reported-member-profile-heading">
+                {isProfileVisible ? 'Public profile' : 'Hidden profile preview'}
+              </h4>
               <ProfilePage
                 currentPath={`/profile/${encodeURIComponent(
                   user.profile.username,

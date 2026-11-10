@@ -99,7 +99,7 @@ describe('Users policy unit tests', () => {
 
   // Assert inside a test: grants registered from a hook are credited to no
   // test, so their mutants would never run.
-  it('registers admin routes without methods and the member grants', () => {
+  it('registers the administrator profile read and member grants', () => {
     const { policy, mockAcl } = loadPolicy();
     policy.invokeRolesPolicies();
     mockAcl.allow.firstCall.args[0].should.deepEqual([
@@ -114,7 +114,10 @@ describe('Users policy unit tests', () => {
           '/api/users/accounts/:provider',
           '/api/users/memberships',
           '/api/users/memberships/:tribeId',
-        ].map(resources => ({ resources, permissions: [] })),
+        ].map(resources => ({
+          resources,
+          permissions: resources === '/api/users/:username' ? ['get'] : [],
+        })),
       },
       {
         roles: ['user'],
@@ -122,6 +125,10 @@ describe('Users policy unit tests', () => {
           resources,
           permissions,
         })),
+      },
+      {
+        roles: ['support-team'],
+        allows: [{ resources: '/api/users/:username', permissions: ['get'] }],
       },
     ]);
   });
@@ -148,7 +155,10 @@ describe('Users policy unit tests', () => {
         for (const method of ['GET', 'POST', 'PUT', 'DELETE']) {
           const expected = allowed.includes(method.toLowerCase()) ? 200 : 403;
           decide(['user'], path, method).should.equal(expected);
-          decide(['admin'], path, method).should.equal(403);
+          const adminExpected =
+            path === '/api/users/:username' && method === 'GET' ? 200 : 403;
+          decide(['admin'], path, method).should.equal(adminExpected);
+          decide(['support-team'], path, method).should.equal(adminExpected);
         }
       });
     }
@@ -268,6 +278,28 @@ describe('Users policy unit tests', () => {
     res.statusCode.should.equal(404);
     messageBody(res).should.equal('Not found.');
     done();
+  });
+
+  it('checks administrator authorisation for a hidden profile read', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const next = sinon.stub();
+
+    policy.isAllowed(
+      {
+        user: { _id: noProfileUserId, public: false, roles: ['admin'] },
+        profile: { _id: { equals: () => false }, public: false },
+        route: { path: '/api/users/:username' },
+        method: 'GET',
+      },
+      mockResponse(),
+      next,
+    );
+
+    mockAcl.areAnyRolesAllowed
+      .calledWith(['admin'], '/api/users/:username', 'get')
+      .should.be.true();
+    next.calledOnce.should.be.true();
   });
 
   it('returns 403 when a non-public user browses another profile', done => {

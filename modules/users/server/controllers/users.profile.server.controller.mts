@@ -46,6 +46,7 @@ import {
   selectProfileUpdateFields,
 } from '../services/profile-response.server.service.mts';
 import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
+import { isSupportProfileRead } from '../policies/users.server.policy.mts';
 
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
@@ -810,7 +811,8 @@ service.userByUsername = function (req, res, next, username) {
     if (
       !isAdmin &&
       !isOwnProfile &&
-      (!profile.public || isBannedProfile || isBlocked)
+      (isBlocked ||
+        ((!profile.public || isBannedProfile) && !isSupportProfileRead(req)))
     ) {
       res
         .status(404)
