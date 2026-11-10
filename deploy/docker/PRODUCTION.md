@@ -195,16 +195,34 @@ it unchanged. Failed events cannot be recovered; perform a new checked deploymen
 instead. If recording failure itself warned, investigate the deployment outcome
 before attempting recovery. Do not edit failed receipts into successes.
 
-These receipts are the first part of [#3502](https://github.com/Trustroots/trustroots/issues/3502).
-This version sends no deployment emails and does not consume historical events.
-A follow-up must add explicit production tier/runtime/domain/live-mail gates,
-recipient eligibility and address deduplication, individual queued emails and
-shared durable notification progress before enabling notifications. A host-local
-receipt alone is insufficient to deduplicate queueing across replicas. Recovery
-must not deliberately re-enqueue completed recipients; ambiguous SMTP acceptance
-can still cause duplicate delivery. Deployment emails will supplement the inbox
-canary proposed in [#3500](https://github.com/Trustroots/trustroots/issues/3500),
-and will not replace independent failure monitoring.
+#### Preview deployment notification recipients
+
+From the deployment's Compose directory, run this against an updated production
+webapp image with its usual database and mail configuration:
+
+```sh
+docker compose exec -T webapp node bin/preview-deployment-notification-recipients.mts
+```
+
+The command requires `TRUSTROOTS_DEPLOYMENT_TIER=production`, a production Node
+runtime, the configured domain `trustroots.org` or `www.trustroots.org`, and
+effective live mail. It exits unsuccessfully if a gate fails or the preview
+cannot complete.
+
+The count includes public accounts (the application's email confirmation flag)
+with either `welcome-team` or `admin`. Suspended accounts and removed accounts
+are excluded. Only the current email field is used. The preview trims and
+lowercases it, excludes syntactically invalid addresses and counts each
+destination once. It prints no addresses and does not verify inbox delivery.
+
+[#3502](https://github.com/Trustroots/trustroots/issues/3502) still needs a handoff
+from successful receipts to individual queued emails and shared durable
+notification progress. The preview reads no receipts and creates no jobs. A
+host-local receipt alone is insufficient to deduplicate queueing across replicas.
+Recovery must avoid re-enqueueing completed recipients. Ambiguous SMTP
+acceptance can still cause duplicate delivery. The emails will supplement the
+inbox canary proposed in [#3500](https://github.com/Trustroots/trustroots/issues/3500)
+and independent failure monitoring.
 
 ### Adopt independent log shipping
 

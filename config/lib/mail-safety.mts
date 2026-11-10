@@ -54,6 +54,12 @@ function validateLiveTransport(options: Config['mailer']['options']): void {
   }
 }
 
+export function isCanonicalProductionMailDomain(domain: string): boolean {
+  return ['trustroots.org', 'www.trustroots.org'].includes(
+    domain.toLowerCase().replace(/\.$/, ''),
+  );
+}
+
 /** Apply after deployment overrides so copied SMTP settings cannot bypass it. */
 export function applyMailSafety(
   config: Pick<Config, 'domain' | 'mailer' | 'supportInbox' | 'supportEmail'>,
@@ -61,14 +67,13 @@ export function applyMailSafety(
   createTransport: TransportFactory = options =>
     nodemailer.createTransport(options),
 ): 'live' | 'capture' | 'allowlist' {
-  const domain = config.domain.toLowerCase().replace(/\.$/, '');
   // Existing production deployments predate the optional deployment tier.
   // An explicit non-production tier must still override a copied site domain.
   const production =
     (env.TRUSTROOTS_DEPLOYMENT_TIER === undefined ||
       env.TRUSTROOTS_DEPLOYMENT_TIER === 'production') &&
     env.NODE_ENV === 'production' &&
-    ['trustroots.org', 'www.trustroots.org'].includes(domain);
+    isCanonicalProductionMailDomain(config.domain);
   const mode = env.TRUSTROOTS_MAIL_MODE || (production ? 'live' : 'capture');
   if (!['live', 'capture', 'allowlist'].includes(mode)) {
     throw new Error(
