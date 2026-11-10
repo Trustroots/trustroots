@@ -296,6 +296,7 @@ describe('<AdminUser />', () => {
             emailTemporary: 'alice-new@example.org',
             lastIpHash:
               'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            public: true,
             roles: ['user'],
             username: 'alice',
           },
@@ -1066,6 +1067,41 @@ describe('<AdminUser />', () => {
     expect(embeddedProfile).toHaveAttribute('data-embedded', 'true');
     expect(screen.getByRole('heading', { name: 'alex' })).toBeInTheDocument();
   });
+
+  it.each([
+    [true, ['user', 'shadowban'], 'Account shadowbanned'],
+    [false, ['user', 'suspended'], 'Account suspended'],
+    [false, ['user'], 'Reason unknown'],
+  ])(
+    'shows visibility restrictions for public=%s and roles=%j',
+    async (isPublic, roles, reason) => {
+      mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
+        makeReportCard({
+          profile: {
+            _id: userId,
+            username: 'alex',
+            email: 'alex@example.test',
+            emailTemporary: 'pending@example.test',
+            public: isPublic,
+            roles,
+          },
+        }),
+      );
+      render(<AdminUser username="alex" />);
+
+      expect(
+        await screen.findByRole('row', {
+          name: `Visibility restrictions ${reason}`,
+        }),
+      ).toBeInTheDocument();
+      expect(
+        screen.getByRole('row', { name: 'Profile visible No' }),
+      ).toBeInTheDocument();
+      expect(
+        screen.queryByRole('link', { name: 'Public profile' }),
+      ).not.toBeInTheDocument();
+    },
+  );
 
   it('shows the no-match state when a deep-link username does not exist', async () => {
     window.history.pushState({}, '', '/admin/user/missing-member');

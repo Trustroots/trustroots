@@ -3362,12 +3362,18 @@ const features = [
       'Report card includes role and message counts.',
       'Report card shows the current role inventory.',
       'Admin report shows the member public profile below moderation information.',
+      'Admin can preview an unconfirmed profile and see why it is hidden.',
+      'Regular members cannot read the hidden profile.',
       'Restricted member report shows potential related accounts.',
       'Missing user id shows a usable error state.',
       'Member statistics show received and written experiences with separate unpublished counts.',
       'Removed experiences are excluded and activity cards fit mobile screens.',
     ],
     relatedSpecs: [
+      spec(
+        'admin-inspection.spec.js',
+        'admin can preview an unconfirmed profile by username',
+      ),
       spec(
         'admin-inspection.spec.js',
         'admin user report card shows message counts for a shadowbanned member',
