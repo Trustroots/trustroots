@@ -13,6 +13,7 @@ import { getMapDefaultLocation } from '../controllers/map-default-location.serve
  */
 
 type NostrUserRecord = {
+  username: string;
   nostrNpub?: string;
   public?: boolean;
   email?: string;
@@ -57,6 +58,11 @@ const defaultExport = function (app: Application) {
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/map-default-location').get(getMapDefaultLocation);
   app.route('/api/nostr/author-visibility').get(function (req, res) {
+    const profilesRequested = req.query.profiles === '1';
+    const includeProfiles =
+      profilesRequested &&
+      Boolean((req as typeof req & { user?: unknown }).user);
+    if (profilesRequested) res.set('Cache-Control', 'private, no-store');
     const User = mongoose.model<NostrUserRecord>('User');
     const rawPubkeys = req.query.pubkey;
     const pubkeys = Array.isArray(rawPubkeys) ? rawPubkeys : [rawPubkeys];
@@ -89,7 +95,7 @@ const defaultExport = function (app: Application) {
     }).then(
       (users: NostrUserRecord[]) => {
         const linkedNpubs = new Set(users.map(user => user.nostrNpub));
-        const visibleNpubs = new Set(
+        const visibleUsers = new Map(
           users
             .filter(
               user =>
@@ -99,15 +105,24 @@ const defaultExport = function (app: Application) {
                   ['suspended', 'shadowban'].includes(role),
                 ),
             )
-            .map(user => user.nostrNpub),
+            .map(user => [user.nostrNpub, user.username]),
+        );
+        const visiblePubkeys = normalizedPubkeys.filter(pubkey =>
+          visibleUsers.has(nip19.npubEncode(pubkey)),
         );
         return res.json({
           linkedPubkeys: normalizedPubkeys.filter(pubkey =>
             linkedNpubs.has(nip19.npubEncode(pubkey)),
           ),
-          pubkeys: normalizedPubkeys.filter(pubkey =>
-            visibleNpubs.has(nip19.npubEncode(pubkey)),
-          ),
+          pubkeys: visiblePubkeys,
+          ...(includeProfiles && {
+            usernames: Object.fromEntries(
+              visiblePubkeys.map(pubkey => [
+                pubkey,
+                visibleUsers.get(nip19.npubEncode(pubkey)),
+              ]),
+            ),
+          }),
         });
       },
       () =>

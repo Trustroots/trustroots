@@ -12,6 +12,7 @@ import '@/config/client/i18n';
 import {
   finalizeEvent,
   generateSecretKey,
+  nip19,
   type Event,
   type EventTemplate,
 } from 'nostr-tools';
@@ -19,6 +20,7 @@ import RadioCircle from '@/modules/tribes/client/components/RadioCircle';
 import {
   connectRadioSigner,
   FAVOURITES_KEY,
+  fetchRadioAuthorUsernames,
   RadioRoom,
   roomTemplate,
   stations,
@@ -51,6 +53,7 @@ jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
       },
     ],
     connectRadioSigner: jest.fn(),
+    fetchRadioAuthorUsernames: jest.fn(),
     RadioRoom: jest.fn(),
   };
 });
@@ -76,6 +79,7 @@ let pause: jest.SpyInstance;
 let load: jest.SpyInstance;
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValue({});
   localStorage.clear();
   window.history.replaceState(null, '', '/circles/radio');
   play = jest
@@ -213,26 +217,95 @@ it('keeps playback available when relays fail and restores room status on events
   emit(event(roomTemplate('listening', station, 'Music')));
   expect(screen.queryByRole('status')).not.toBeInTheDocument();
 });
-it('allows logged-in members to read chat and listeners without a signer', () => {
+it('allows logged-in members to read chat and listeners without a signer', async () => {
   render(<RadioCircle user={user} />);
   expect(room.open).toHaveBeenCalledWith(true);
   expect(screen.getByText('No shared listening activity yet.')).toBeVisible();
   const listening = event(roomTemplate('listening', station, 'Music'));
+  const message = event(
+    roomTemplate(
+      'chat',
+      station,
+      '<script>fictional message</script>',
+      true,
+      1785751500,
+    ),
+  );
+  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValue({
+    [message.pubkey]: user.username,
+  });
   emit(
     listening,
     { ...listening, id: 'older', created_at: listening.created_at - 1 },
-    event(roomTemplate('chat', station, '<script>fictional message</script>')),
+    {
+      ...message,
+      tags: message.tags.filter(([name]) => name !== 'expiration'),
+    },
   );
   expect(screen.getByText('<script>fictional message</script>')).toBeVisible();
+  expect(screen.getByText('2026-08-03 10:05')).toHaveAttribute(
+    'datetime',
+    '2026-08-03T10:05:00.000Z',
+  );
+  expect(
+    await screen.findByRole('link', { name: nip19.npubEncode(message.pubkey) }),
+  ).toHaveAttribute('href', '/profile/fictional-member');
   expect(screen.getByRole('link', { name: `#${station.id}` })).toHaveAttribute(
     'href',
-    `#${station.id}`,
+    `/circles/radio#${station.id}`,
   );
   expect(screen.getByLabelText('Message')).toBeDisabled();
   expect(
     screen.getByRole('region', { name: 'Listening now' }),
   ).toHaveTextContent(station.title);
 });
+it('keeps chat readable as plain npubs if the author lookup fails', async () => {
+  render(<RadioCircle user={user} />);
+  const message = event(roomTemplate('chat', station, 'Fictional message'));
+  const npub = nip19.npubEncode(message.pubkey);
+  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
+    [message.pubkey]: user.username,
+  });
+  emit(message);
+  await screen.findByRole('link', { name: npub });
+
+  jest
+    .mocked(fetchRadioAuthorUsernames)
+    .mockRejectedValueOnce(new Error('offline'));
+  emit(
+    finalizeEvent(
+      roomTemplate('chat', station, 'Another message'),
+      generateSecretKey(),
+    ),
+  );
+  await waitFor(() =>
+    expect(screen.queryByRole('link', { name: npub })).not.toBeInTheDocument(),
+  );
+  expect(screen.getByText(npub)).toBeVisible();
+  expect(screen.getByText('Fictional message')).toBeVisible();
+});
+
+it.each([false, true])(
+  'aborts pending author lookups on unmount (rejected: %p)',
+  async reject => {
+    let finish!: () => void;
+    const lookup = jest
+      .mocked(fetchRadioAuthorUsernames)
+      .mockImplementationOnce(
+        () =>
+          new Promise((resolve, fail) => {
+            finish = () => (reject ? fail(new Error('offline')) : resolve({}));
+          }),
+      );
+    const { unmount } = render(<RadioCircle user={user} />);
+    emit(event(roomTemplate('chat', station, 'Pending author')));
+    const [, signal] = lookup.mock.calls[0];
+    unmount();
+    expect(signal.aborted).toBe(true);
+    await act(async () => finish());
+  },
+);
+
 it('connects a matching signer, restores remote favourites and publishes messages and stars', async () => {
   render(<RadioCircle user={user} />);
   await connect();

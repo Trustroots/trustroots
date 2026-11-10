@@ -17,6 +17,29 @@ export const RADIO_RELAYS = [
 export const LISTENER_TTL = 12 * 60;
 export const EVENT_TTL = 30 * 24 * 60 * 60;
 export const FAVOURITES_KEY = 'radiostr:starred-stations:v1';
+
+export async function fetchRadioAuthorUsernames(
+  pubkeys: string[],
+  signal: AbortSignal,
+): Promise<Record<string, string>> {
+  const batches = [];
+  for (let index = 0; index < pubkeys.length; index += 100) {
+    const query = new URLSearchParams({ profiles: '1' });
+    pubkeys
+      .slice(index, index + 100)
+      .forEach(key => query.append('pubkey', key));
+    batches.push(
+      http
+        .get<{ usernames?: Record<string, string> }>(
+          `/api/nostr/author-visibility?${query}`,
+          { signal },
+        )
+        .then(({ data }) => data.usernames),
+    );
+  }
+  return Object.assign({}, ...(await Promise.all(batches)));
+}
+
 export interface Station {
   id: string;
   title: string;

@@ -503,7 +503,8 @@ describe('Core CRUD tests', function () {
             '/api/nostr/author-visibility?pubkey=' +
               validNpubHex +
               '&pubkey=' +
-              '11'.repeat(32),
+              '11'.repeat(32) +
+              '&profiles=1',
           )
           .expect(200)
           .end(function (err, res) {
@@ -515,6 +516,47 @@ describe('Core CRUD tests', function () {
             return done();
           });
       });
+    });
+    it('returns profile usernames only for eligible authors when a member opts in', async function () {
+      const {
+        npubEncode,
+      }: typeof import('nostr-tools/nip19') = require('nostr-tools/nip19');
+      const credentials = {
+        username: 'fictionalradioauthor',
+        password: 'Password123!',
+      };
+      const privateAuthorPubkey = '11'.repeat(32);
+      await utils
+        .createTestUser({
+          ...credentials,
+          email: 'fictionalradioauthor@example.com',
+          nostrNpub: validNpub,
+          public: true,
+        })
+        .save();
+      await utils
+        .createTestUser({
+          username: 'fictionalprivateauthor',
+          email: 'fictionalprivateauthor@example.com',
+          nostrNpub: npubEncode(privateAuthorPubkey),
+          public: false,
+        })
+        .save();
+      const member = request.agent(app);
+      await utils.signIn(credentials, member);
+      const lookup = `/api/nostr/author-visibility?pubkey=${validNpubHex}&pubkey=${privateAuthorPubkey}`;
+      const visibility = {
+        linkedPubkeys: [validNpubHex, privateAuthorPubkey],
+        pubkeys: [validNpubHex],
+      };
+      await member.get(lookup).expect(200, visibility);
+      await member
+        .get(`${lookup}&profiles=1`)
+        .expect('Cache-Control', 'private, no-store')
+        .expect(200, {
+          ...visibility,
+          usernames: { [validNpubHex]: credentials.username },
+        });
     });
     it('excludes shadowbanned author keys', function (done) {
       createNostrUser(
