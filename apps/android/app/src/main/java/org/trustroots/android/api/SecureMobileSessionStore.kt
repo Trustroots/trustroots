@@ -17,6 +17,9 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 import org.json.JSONObject
 
+internal fun MemberSession?.renewedAccessTokenFor(session: MemberSession): String? =
+    this?.takeIf { it.sessionId == session.sessionId }?.accessToken
+
 class SecureMobileSessionStore(context: Context) {
     private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
     internal val renewedSession = latestRenewal.asStateFlow()

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -27,6 +28,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.trustroots.android.ui.LocalTransportFixture
 
 @RunWith(AndroidJUnit4::class)
 class RemoteArtworkStateJourneyTest {
@@ -84,6 +86,22 @@ class RemoteArtworkStateJourneyTest {
         allowSecondResponse.countDown()
         compose.waitUntil(10_000) { hasNode("Loaded 8 pixel image") }
         assertEquals(secondCookie, fixtureCookie.get())
+    }
+
+    @Test fun authenticatedArtworkUsesTheRenewedBearerToken() {
+        LocalTransportFixture { LocalTransportFixture.Response("", 404) }.use { local ->
+            compose.setContent {
+                CompositionLocalProvider(LocalArtworkBearerToken provides "renewed-access") {
+                    rememberArtworkBitmapState(
+                        java.net.URL("${local.baseURL}/member-artwork"),
+                        sessionCookie = null,
+                        accessToken = "expired-access",
+                    )
+                }
+            }
+            compose.waitUntil(10_000) { local.requests.isNotEmpty() }
+            assertEquals("Bearer renewed-access", local.requests.first().authorization)
+        }
     }
 
     private val fixtureCookie = AtomicReference<String?>()

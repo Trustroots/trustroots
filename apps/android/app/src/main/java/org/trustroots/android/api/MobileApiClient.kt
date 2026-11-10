@@ -225,11 +225,10 @@ class MobileApiClient(
     }
 
     private fun refreshCredentials(session: MemberSession): MemberSession {
-        val token = session.refreshToken ?: return session
         val response = JSONObject(jsonRequest(
             path = "/api/mobile/v0/auth/refresh",
             method = "POST",
-            body = JSONObject().put("refreshToken", token).toString(),
+            body = JSONObject().put("refreshToken", session.refreshToken).toString(),
         ).body)
         return mobileSessionFrom(response).copy(localSessionId = session.sessionId)
     }
@@ -716,12 +715,12 @@ class MobileApiClient(
     private fun sendJsonRequest(
         path: String,
         method: String,
-        body: String? = null,
-        sessionCookie: String? = null,
-        accessToken: String? = null,
-        requestHeaders: Map<String, String> = emptyMap(),
-        failureKind: ApiFailureKind = ApiFailureKind.REQUEST_REJECTED,
-        allowResponseCache: Boolean = true,
+        body: String?,
+        sessionCookie: String?,
+        accessToken: String?,
+        requestHeaders: Map<String, String>,
+        failureKind: ApiFailureKind,
+        allowResponseCache: Boolean,
     ): JsonResponse {
         val requestPath = if (accessToken != null) mobileApiPath(path, method, body) else path
         val endpoint = URL("$baseURL$requestPath")

@@ -1,9 +1,12 @@
 package org.trustroots.android.api
 
 import android.content.Context
+import android.content.ContextWrapper
+import android.content.SharedPreferences
 import android.util.Base64
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import java.io.IOException
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -177,6 +180,76 @@ class SecureMobileSessionStoreTest {
         MemberShellViewModelStoreOwner(),
         backendURL,
     )
+
+    @Test
+    fun staleSessionCannotUpdateOrClearReplacementCredentials() {
+        val member = MobileMember("quiet-fox", "Quiet Fox")
+        val bearer = MemberSession("", member, "old-access", "old-refresh")
+        val replacement = bearer.copy(accessToken = "replacement-access")
+        store.updateMember(bearer)
+        store.clearIfCurrent(bearer)
+        val missing = runCatching { store.currentBearerSession(bearer) }
+        assertEquals(401, (missing.exceptionOrNull() as MobileApiException).statusCode)
+        store.save(replacement)
+        store.updateMember(bearer)
+        store.clearIfCurrent(bearer)
+        val rejected = runCatching { store.currentBearerSession(bearer) }
+        assertEquals(401, (rejected.exceptionOrNull() as MobileApiException).statusCode)
+        assertEquals(replacement, store.load())
+
+        val legacy = MemberSession("connect.sid=first-cookie", member)
+        store.save(legacy)
+        store.updateMember(legacy.copy(cookieHeader = "connect.sid=stale-cookie", member = member.copy(displayName = "Stale")))
+        assertEquals(legacy, store.load())
+    }
+
+    @Test
+    fun rotationKeepsConcurrentProfileEditsAndOnlyPublishesToTheMatchingSession() {
+        val member = MobileMember("quiet-fox", "Quiet Fox")
+        val saved = MemberSession("", member, "old-access", "old-refresh")
+        val refreshed = saved.copy(accessToken = "new-access", localSessionId = saved.sessionId)
+        val edited = member.copy(displayName = "Updated Fox")
+        assertNull(store.renewedSession.value.renewedAccessTokenFor(saved))
+        store.save(saved)
+
+        val updated = store.rotateBearerSession(saved) {
+            store.updateMember(saved.copy(member = edited))
+            refreshed
+        }
+
+        assertEquals(refreshed.copy(member = edited), updated)
+        assertEquals(updated, store.load())
+        assertEquals(updated, store.rotateBearerSession(saved) { error("Credentials already rotated") })
+        assertEquals("new-access", store.renewedSession.value.renewedAccessTokenFor(saved))
+        val other = saved.copy(accessToken = "other-access")
+        assertNull(store.renewedSession.value.renewedAccessTokenFor(other))
+    }
+
+    @Test
+    fun failedDurableWriteDoesNotPublishTheRotation() {
+        val saved = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "old-access", "old-refresh")
+        store.save(saved)
+        val original = preferences
+        val failingContext = object : ContextWrapper(context) {
+            override fun getSharedPreferences(name: String, mode: Int): SharedPreferences =
+                object : SharedPreferences by original {
+                    override fun edit(): SharedPreferences.Editor =
+                        object : SharedPreferences.Editor by original.edit() {
+                            override fun putString(key: String?, value: String?): SharedPreferences.Editor = this
+                            override fun commit(): Boolean = false
+                        }
+                }
+        }
+        val failingStore = SecureMobileSessionStore(failingContext)
+
+        val rotation = runCatching {
+            failingStore.rotateBearerSession(saved) { saved.copy(accessToken = "new-access") }
+        }
+
+        assertTrue(rotation.exceptionOrNull() is IOException)
+        assertEquals(saved, store.load())
+        assertNull(store.renewedSession.value)
+    }
 
     @Test
     fun replacingSessionReturnsOnlyTheMostRecentlySavedAccount() {

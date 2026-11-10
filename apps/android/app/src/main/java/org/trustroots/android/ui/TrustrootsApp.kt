@@ -67,6 +67,7 @@ import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.circles.CirclesNavigationDisplay
 import org.trustroots.android.ui.common.LeaveGuard
 import org.trustroots.android.ui.common.LocalArtworkBearerToken
+import org.trustroots.android.api.renewedAccessTokenFor
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.MemberNavigationBar
 import org.trustroots.android.ui.session.AndroidAppSessionOperations
@@ -357,8 +358,7 @@ private fun MemberShell(
     val renewedSession by sessionStore.renewedSession.collectAsState()
     CompositionLocalProvider(
         LocalLeaveGuard provides leaveGuard,
-        LocalArtworkBearerToken provides renewedSession
-            ?.takeIf { it.sessionId == session.sessionId }?.accessToken,
+        LocalArtworkBearerToken provides renewedSession.renewedAccessTokenFor(session),
     ) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
