@@ -41,7 +41,6 @@
         // loads by path.
         "config/env/local.sample.js",
         ".devcontainer/local.js",
-        "deploy/files/secrets/*.local.js",
         // TypeScript uses this sidecar for the types of logger.mjs.
         "config/lib/logger.d.mts",
         // Playwright's setup project matches this with a regular expression,

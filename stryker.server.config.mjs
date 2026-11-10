@@ -18,9 +18,7 @@ export default {
   // Mutate exactly what the server coverage report measures; the list and
   // its exclusions live with the CI scope planner so they can't drift.
   mutate: serverScope.mutatePatterns,
-  // Ansible vault files are not JavaScript, whatever their extension.
   ignorePatterns: [
-    '/deploy/files/secrets',
     '/.stryker-tmp',
     '/.prune-tmp',
     '/.stryker-work',
