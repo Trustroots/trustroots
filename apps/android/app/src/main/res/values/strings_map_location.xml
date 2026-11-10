@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="map_use_my_location">Use my location</string>
+    <string name="map_locating">Finding your location…</string>
+    <string name="map_location_approximate">Approximate location</string>
+    <string name="map_location_denied">Location permission denied. You can still search or move the map.</string>
+    <string name="map_location_unavailable">Location unavailable. Try again, search or move the map.</string>
+</resources>

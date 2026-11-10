@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import android.location.Location
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -57,7 +58,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.onSizeChanged
@@ -104,6 +104,7 @@ internal fun HostMapScreen(
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
         ::createNostrootsNotesConnection,
     mapViewFactory: (Context) -> MapView = { MapView(it) },
+    deviceLocationLookup: suspend (Context, Boolean) -> Location? = ::lookupDeviceLocation,
 ) {
     val context = LocalContext.current
     val mapViewModel = viewModel ?: rememberHostMapViewModel(
@@ -334,6 +335,18 @@ internal fun HostMapScreen(
                     Icon(Icons.Default.FilterList, if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+            HostMapDeviceLocation(
+                onStart = {
+                    showSuggestions = false
+                    keyboard?.hide()
+                    focusManager.clearFocus()
+                },
+                onLocation = {
+                    mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
+                },
+                modifier = Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(horizontal = 8.dp),
+                lookup = deviceLocationLookup,
+            )
             if (showSuggestions) suggestions.forEach { suggestion ->
                 TextButton(onClick = {
                     showSuggestions = false
