@@ -8,7 +8,7 @@ import { routeOptions } from '../route-options';
 export const Route = createRoute(
   routeOptions('/admin/user/:username', ({ params, user }) =>
     userHasRole(user, 'admin') ? (
-      <AdminUser username={params.username} viewer={user ?? undefined} />
+      <AdminUser username={params.username} viewer={user} />
     ) : (
       <SupportMemberPage id={params.username} />
     ),

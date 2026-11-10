@@ -197,6 +197,7 @@ jobs:
           disable-animations: true
           avd-name: coverage-${{ env.ANDROID_EMULATOR_ATTEMPT }}
           emulator-port: ${{ env.ANDROID_EMULATOR_PORT }}
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
           force-avd-creation: true
           profile: pixel_6
           script: |
