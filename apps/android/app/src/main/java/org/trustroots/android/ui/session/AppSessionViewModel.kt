@@ -73,6 +73,7 @@ internal data class AppSessionSource(
 internal interface AppSessionOperations {
     suspend fun loadSession(): MemberSession?
     @MainThread fun saveSession(session: MemberSession)
+    @MainThread fun updateMember(session: MemberSession) = saveSession(session)
     @MainThread fun clearSession()
     @MainThread fun clearResponseCache(backendURL: String, username: String)
     @MainThread fun clearSignInDestination()
@@ -89,17 +90,18 @@ internal class AndroidAppSessionOperations(
     override suspend fun loadSession(): MemberSession? {
         val stored = sessionStore.load() ?: return null
         if (stored.refreshToken == null) return stored
-        return MobileApiClient(backendURL).refresh(stored).fold(
-            onSuccess = { refreshed -> sessionStore.save(refreshed); refreshed },
+        return MobileApiClient(backendURL, sessionStore = sessionStore).refresh(stored).fold(
+            onSuccess = { it },
             onFailure = { error ->
                 if ((error as? MobileApiException)?.isAuthenticationFailure == true) {
-                    sessionStore.clear()
+                    sessionStore.clearIfCurrent(stored)
                     null
                 } else stored
             },
         )
     }
     override fun saveSession(session: MemberSession) = sessionStore.save(session)
+    override fun updateMember(session: MemberSession) = sessionStore.updateMember(session)
     override fun clearSession() = sessionStore.clear()
     override fun clearResponseCache(backendURL: String, username: String) =
         responseCache.clear(backendURL, username)
@@ -173,7 +175,7 @@ internal class AppSessionViewModel(
     @MainThread
     private fun memberUpdated(current: MemberSession, member: MobileMember) {
         val updated = current.copy(member = member)
-        operations.saveSession(updated)
+        operations.updateMember(updated)
         mutableState.value = mutableState.value.copy(session = updated)
     }
 

@@ -22,6 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +59,8 @@ import org.trustroots.android.R
 private val artworkCache = object : LruCache<String, Bitmap>(8 * 1024 * 1024) {
     override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
 }
+
+internal val LocalArtworkBearerToken = compositionLocalOf<String?> { null }
 
 internal sealed interface ArtworkBitmapState {
     data object Loading : ArtworkBitmapState
@@ -248,14 +251,15 @@ internal fun rememberArtworkBitmapState(
     accessToken: String? = null,
 ): ArtworkBitmapState {
     val context = LocalContext.current.applicationContext
+    val currentAccessToken = accessToken?.let { LocalArtworkBearerToken.current ?: it }
     val cacheKey = "${url.orEmpty()}|${sessionCookie.orEmpty()}|${accessToken.orEmpty()}|$maxDownloadBytes"
     return key(cacheKey) {
-        produceState<ArtworkBitmapState>(ArtworkBitmapState.Loading) {
+        produceState<ArtworkBitmapState>(ArtworkBitmapState.Loading, currentAccessToken) {
             val cached = if (url == null) null else artworkCache.get(cacheKey)
             val bitmap = if (url == null) {
                 null
             } else {
-                cached ?: withContext(Dispatchers.IO) { loadArtwork(context, url, sessionCookie, maxDownloadBytes, accessToken) }
+                cached ?: withContext(Dispatchers.IO) { loadArtwork(context, url, sessionCookie, maxDownloadBytes, currentAccessToken) }
             }
             currentCoroutineContext().ensureActive()
             if (cached == null && bitmap != null) artworkCache.put(cacheKey, bitmap)

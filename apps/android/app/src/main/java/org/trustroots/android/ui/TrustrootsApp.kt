@@ -66,6 +66,8 @@ import org.trustroots.android.browser.DefaultBrowserContent
 import org.trustroots.android.notifications.MessageAlerts
 import org.trustroots.android.ui.circles.CirclesNavigationDisplay
 import org.trustroots.android.ui.common.LeaveGuard
+import org.trustroots.android.ui.common.LocalArtworkBearerToken
+import org.trustroots.android.api.renewedAccessTokenFor
 import org.trustroots.android.ui.common.LocalLeaveGuard
 import org.trustroots.android.ui.common.MemberNavigationBar
 import org.trustroots.android.ui.session.AndroidAppSessionOperations
@@ -176,6 +178,7 @@ internal fun TrustrootsApp(
                         MemberShell(
                             analytics = analytics,
                             session = activeSession,
+                            sessionStore = sessionStore,
                             responseCache = responseCache,
                             apiBaseUrl = apiBaseUrl,
                             reconcileAlerts = reconcileAlerts,
@@ -226,6 +229,7 @@ internal fun currentMemberTab(backStack: List<NavKey>): MemberTabVisit =
 private fun MemberShell(
     analytics: UsageAnalytics,
     session: MemberSession,
+    sessionStore: SecureMobileSessionStore,
     responseCache: SecureResponseCache,
     apiBaseUrl: String,
     reconcileAlerts: (Context, MemberSession) -> Unit,
@@ -263,7 +267,7 @@ private fun MemberShell(
     var searchResetGeneration by rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
     var searchResetVisitID by rememberSaveable { androidx.compose.runtime.mutableLongStateOf(-1L) }
     val api = remember(session.member.username, apiBaseUrl.trim().trimEnd('/')) {
-        MobileApiClient(apiBaseUrl, responseCache, session.member.username)
+        MobileApiClient(apiBaseUrl, responseCache, session.member.username, sessionStore)
     }
     val offlineSavedAt by api.offlineSavedAt.collectAsState()
     val alertDestination by MessageAlerts.destination.collectAsState()
@@ -351,7 +355,11 @@ private fun MemberShell(
         // Form routes own their Back guard; the shell only owns tab history.
         if (tabBackStack.size > 1) tabBackStack.removeLastOrNull()
     }
-    CompositionLocalProvider(LocalLeaveGuard provides leaveGuard) {
+    val renewedSession by sessionStore.renewedSession.collectAsState()
+    CompositionLocalProvider(
+        LocalLeaveGuard provides leaveGuard,
+        LocalArtworkBearerToken provides renewedSession.renewedAccessTokenFor(session),
+    ) {
         Scaffold(
             contentWindowInsets = WindowInsets.safeDrawing,
             bottomBar = {

@@ -866,6 +866,30 @@ class MobileApiClientTest {
     }
 
     @Test
+    fun reportsBearerRejectionWhenNoSessionStoreIsAvailable() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access", "example-refresh")
+        val (result, request) = withApiResponse(status = 401, responseBody = "{}") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).accountDetails(session) }
+        }
+
+        assertEquals(401, (result.exceptionOrNull() as MobileApiException).statusCode)
+        assertTrue(request.headers.any { it.equals("Authorization: Bearer example-access", ignoreCase = true) })
+    }
+
+    @Test
+    fun sendsATestPushUsingTheMobileEndpointForBearerSessions() {
+        val session = MemberSession("", MobileMember("quiet-fox", "Quiet Fox"), "example-access", "example-refresh")
+        val endpoint = "https://push.example.test/fictional-endpoint"
+        val (result, request) = withApiResponse(status = 200, responseBody = "{}") { baseURL ->
+            runBlocking { MobileApiClient(baseURL).testMessagePush(session, endpoint) }
+        }
+
+        result.getOrThrow()
+        assertEquals("POST /api/mobile/v0/users/unified-push/test HTTP/1.1", request.line)
+        assertEquals(endpoint, JSONObject(request.body).getString("endpoint"))
+    }
+
+    @Test
     fun removesAContactUsingItsEncodedIdentifier() {
         val session = MemberSession("connect.sid=session-value", MobileMember("quiet-fox", "Quiet Fox"))
         val (result, request) = withApiResponse(status = 200, responseBody = "{}") { baseURL ->
