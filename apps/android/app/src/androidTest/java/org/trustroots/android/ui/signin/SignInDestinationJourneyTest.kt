@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.ComposeTimeoutException
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -38,10 +39,14 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.test.core.app.ActivityScenario
+import androidx.test.espresso.Espresso.pressBack
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.net.ServerSocket
@@ -53,6 +58,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -227,7 +233,7 @@ class SignInDestinationJourneyTest {
         compose.onNodeWithText("French test Join Trustroots").assertIsDisplayed()
         compose.onNodeWithText("Change test locale").performClick()
         compose.onNodeWithText("English test Join Trustroots").assertIsDisplayed()
-        compose.onNodeWithText("Close test browser").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
         assertEditableText("signin-username", "anonymous-otter")
         assertPasswordMaskedAndRetained("fictional-password")
 
@@ -317,14 +323,14 @@ class SignInDestinationJourneyTest {
     fun signInBrowserHistorySurvivesRecreationThenBackReturnsToItsFormEntry() {
         startResponder { request ->
             when {
-                request.line.startsWith("GET /browser/signup ") -> Response(
+                request.line.startsWith("GET /browser/password/forgot ") -> Response(
                     "200 OK",
-                    "<html><head><title>Local signup origin</title></head><body>Signup origin</body></html>",
+                    "<html><head><title>Local recovery origin</title></head><body>Recovery origin</body></html>",
                     contentType = "text/html; charset=utf-8",
                 )
                 request.line.startsWith("GET /browser/second ") -> Response(
                     "200 OK",
-                    "<html><head><title>Local signup history</title></head><body>Second page</body></html>",
+                    "<html><head><title>Local recovery history</title></head><body>Second page</body></html>",
                     contentType = "text/html; charset=utf-8",
                 )
                 else -> Response("404 Not Found", "Missing local browser page")
@@ -334,24 +340,213 @@ class SignInDestinationJourneyTest {
         composeScenario = scenario
         waitForSignIn()
         compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
-        compose.onNodeWithText("Join").performScrollTo().performClick()
-        val signupURL = "$apiBaseUrl/browser/signup"
+        compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
+        val recoveryURL = "$apiBaseUrl/browser/password/forgot"
         val historyURL = "$apiBaseUrl/browser/second"
-        awaitWebViewPage(scenario, signupURL, "Local signup origin", canGoBack = false)
+        awaitWebViewPage(scenario, recoveryURL, "Local recovery origin", canGoBack = false)
 
         scenario.onActivity { activity ->
             requireNotNull(findWebView(activity.window.decorView)).loadUrl(historyURL)
         }
-        awaitWebViewPage(scenario, historyURL, "Local signup history", canGoBack = true)
+        awaitWebViewPage(scenario, historyURL, "Local recovery history", canGoBack = true)
         scenario.recreate()
-        awaitWebViewPage(scenario, historyURL, "Local signup history", canGoBack = true)
+        awaitWebViewPage(scenario, historyURL, "Local recovery history", canGoBack = true)
 
         scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
-        awaitWebViewPage(scenario, signupURL, "Local signup origin", canGoBack = false)
+        awaitWebViewPage(scenario, recoveryURL, "Local recovery origin", canGoBack = false)
         scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         waitForSignIn()
         assertEditableText("signin-username", "anonymous-heron")
         assertEquals(0, requests.count { it.line.startsWith("POST /api/mobile/v0/auth/signin ") })
+    }
+
+    @Test
+    fun signupPreservesDraftAcrossRulesAndEntersAppAfterProfileSave() {
+        val signupAttempts = AtomicInteger()
+        val signInAttempts = AtomicInteger()
+        val profile = """{"_id":"member-self","username":"quietheron","displayName":"Quiet Heron"}"""
+        val token = "a".repeat(64)
+        val refresh = "b".repeat(64)
+        startResponder { request ->
+            when {
+                request.line.startsWith("GET /browser/rules ") -> Response(
+                    "200 OK",
+                    "<html><head><title>Local rules</title></head><body>Rules</body></html>",
+                    contentType = "text/html; charset=utf-8",
+                )
+                request.line.startsWith("POST /api/auth/signup ") &&
+                    JSONObject(request.body).getString("email") == "offline@example.test" -> null
+                request.line.startsWith("POST /api/auth/signup ") -> when (signupAttempts.incrementAndGet()) {
+                    1 -> Response("400 Bad Request", """{"message":"Please check your email address."}""")
+                    2 -> Response("429 Too Many Requests", """{"message":"Please wait before trying again."}""")
+                    3 -> Response("503 Service Unavailable", "{}")
+                    else -> Response("200 OK", profile)
+                }
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> {
+                    if (signInAttempts.incrementAndGet() == 1) {
+                        Response("503 Service Unavailable", "{}")
+                    } else {
+                        Response("200 OK", """{"accessToken":"$token","refreshToken":"$refresh","member":$profile}""")
+                    }
+                }
+                request.line.startsWith("GET /api/mobile/v0/profiles/quietheron ") ->
+                    Response("200 OK", """{"profile":$profile}""")
+                request.line.startsWith("PUT /api/mobile/v0/profile ") -> Response("200 OK", profile)
+                request.line.startsWith("GET /api/mobile/v0/") -> Response("200 OK", "[]")
+                else -> Response("404 Not Found", "")
+            }
+        }
+        val scenario = launchActivity(browserBaseUrl = "$apiBaseUrl/browser")
+        composeScenario = scenario
+        waitForSignIn()
+        compose.onNodeWithText("Join").performScrollTo().performClick()
+        assertWithinSystemBars(scenario, "Join Trustroots")
+        val fields = mapOf(
+            "first-name" to "Quiet",
+            "last-name" to "Heron",
+            "username" to "quietheron",
+            "email" to "quiet@example.test",
+            "password" to "fictional-password",
+            "acquisition" to "A friend",
+        )
+        for ((field, value) in fields) {
+            compose.onNodeWithTag("signup-$field").performScrollTo().performTextInput(value)
+        }
+        compose.onNodeWithText("Create account").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithText("I am 18 years old or older").performScrollTo().performClick()
+        compose.onNodeWithText("Subscribe to community news").performScrollTo().performClick()
+
+        for (useToolbar in listOf(false, true)) {
+            compose.onNodeWithText("Read the rules").performScrollTo().performClick()
+            awaitWebViewPage(scenario, "$apiBaseUrl/browser/rules", "Local rules", canGoBack = false)
+            if (useToolbar) {
+                val toolbarBack = requireNotNull(
+                    compose.onNodeWithContentDescription("Back")
+                        .fetchSemanticsNode().config[SemanticsActions.OnClick].action,
+                )
+                compose.runOnUiThread {
+                    toolbarBack()
+                    toolbarBack()
+                }
+            } else {
+                pressBack()
+            }
+            waitForText("Join Trustroots")
+            for ((field, value) in fields) {
+                val expected = if (field == "password") "•".repeat(value.length) else value
+                assertEditableText("signup-$field", expected)
+            }
+        }
+
+        val createAccount = compose.onNodeWithText("Create account")
+        val password = compose.onNodeWithTag("signup-password")
+        password.performScrollTo().performTextReplacement("a".repeat(1025))
+        createAccount.performScrollTo().assertIsNotEnabled()
+        password.performScrollTo().performTextReplacement("fictional-password")
+
+        val email = compose.onNodeWithTag("signup-email")
+        email.performScrollTo().performTextReplacement("offline@example.test")
+        createAccount.performScrollTo().performClick()
+        waitForText("Could not create your account. Check your details and try again.")
+        email.performScrollTo().performTextReplacement("quiet@example.test")
+        createAccount.performScrollTo()
+        val submit = requireNotNull(createAccount.fetchSemanticsNode().config[SemanticsActions.OnClick].action)
+        compose.runOnUiThread {
+            submit()
+            submit()
+        }
+        waitForText("Please check your email address.")
+        createAccount.performScrollTo().performClick()
+        waitForText("Please wait before trying again.")
+        createAccount.performScrollTo().performClick()
+        waitForText("Could not create your account. Check your details and try again.")
+        createAccount.performScrollTo().performClick()
+        waitForText("Your account was created, but we could not sign you in. Try again or go back to sign in.")
+        compose.onNodeWithText("Retry").performScrollTo().performClick()
+        waitForText("Welcome to Trustroots!")
+        assertEquals(token, SecureMobileSessionStore(context).load()?.accessToken)
+        val signupRequests = requests.filter {
+            it.line.startsWith("POST /api/auth/signup ") &&
+                JSONObject(it.body).getString("email") == "quiet@example.test"
+        }
+        assertEquals(4, signupRequests.size)
+        val signup = JSONObject(signupRequests.last().body)
+        assertEquals("quiet@example.test", signup.getString("email"))
+        assertTrue(signup.getBoolean("ageConfirmed"))
+        assertTrue(signup.getBoolean("newsletter"))
+        assertEquals(2, signInAttempts.get())
+
+        compose.onNodeWithText("Edit profile").performScrollTo().performClick()
+        waitForText("Quiet Heron")
+        assertWithinSystemBars(scenario, "Save changes")
+        compose.onNodeWithText("Save changes").performClick()
+        waitForText("Discover circles")
+        assertTrue(requests.any { it.line.startsWith("PUT /api/mobile/v0/profile ") })
+    }
+
+    @Test
+    fun signupCanContinueAfterLeavingProfileEditor() {
+        finishSignupWithProfileResponse(Response(
+            "200 OK",
+            """{"profile":{"username":"quietheron","displayName":"Quiet Heron"}}""",
+        ))
+        waitForText("Quiet Heron")
+        compose.onNodeWithContentDescription("Cancel").performClick()
+        waitForText("Welcome to Trustroots!")
+        compose.onNodeWithText("Continue to Trustroots").performScrollTo().performClick()
+        waitForText("Discover circles")
+        assertTrue(requests.none { it.line.startsWith("PUT /api/mobile/v0/profile ") })
+    }
+
+    @Test
+    fun expiredSessionDuringSignupOnboardingReturnsToSignIn() {
+        finishSignupWithProfileResponse(Response("401 Unauthorized", "{}"))
+        waitForSignIn()
+        assertNull(SecureMobileSessionStore(context).load())
+    }
+
+    private fun finishSignupWithProfileResponse(profileResponse: Response) {
+        val member = """{"username":"quietheron","displayName":"Quiet Heron"}"""
+        val session = JSONObject()
+            .put("accessToken", "a".repeat(64))
+            .put("refreshToken", "b".repeat(64))
+            .put("member", JSONObject(member))
+        startResponder { request ->
+            when {
+                request.line.startsWith("POST /api/auth/signup ") -> Response("200 OK", member)
+                request.line.startsWith("POST /api/mobile/v0/auth/signin ") -> Response("200 OK", session.toString())
+                request.line.startsWith("POST /api/mobile/v0/auth/refresh ") -> Response("401 Unauthorized", "{}")
+                request.line.startsWith("GET /api/mobile/v0/profiles/quietheron ") -> profileResponse
+                request.line.startsWith("GET /api/mobile/v0/") -> Response("200 OK", "[]")
+                else -> Response("404 Not Found", "")
+            }
+        }
+        composeScenario = launchActivity()
+        waitForSignIn()
+        compose.onNodeWithText("Join").performScrollTo().performClick()
+        for ((field, value) in mapOf(
+            "first-name" to "Quiet",
+            "username" to "quietheron",
+            "email" to "quiet@example.test",
+            "password" to "fictional-password",
+        )) {
+            compose.onNodeWithTag("signup-$field").performScrollTo().performTextInput(value)
+        }
+        compose.onNodeWithText("I am 18 years old or older").performScrollTo().performClick()
+        compose.onNodeWithText("Create account").performScrollTo().performClick()
+        waitForText("Welcome to Trustroots!")
+        compose.onNodeWithText("Edit profile").performScrollTo().performClick()
+    }
+
+    private fun assertWithinSystemBars(scenario: ActivityScenario<SignInJourneyActivity>, label: String) {
+        val bounds = compose.onNodeWithText(label).fetchSemanticsNode().boundsInWindow
+        scenario.onActivity { activity ->
+            val decor = activity.window.decorView
+            val bars = requireNotNull(ViewCompat.getRootWindowInsets(decor))
+                .getInsets(WindowInsetsCompat.Type.systemBars())
+            assertTrue("$label overlaps the status bar", bounds.top >= bars.top)
+            assertTrue("$label overlaps the navigation bar", bounds.bottom <= decor.height - bars.bottom)
+        }
     }
 
     @Test
@@ -650,7 +845,7 @@ class SignInDestinationJourneyTest {
     private fun startResponder(
         fixtureServer: ServerSocket = server,
         capturedRequests: MutableList<CapturedRequest> = requests,
-        responseFor: (CapturedRequest) -> Response,
+        responseFor: (CapturedRequest) -> Response?,
     ) {
         responders += thread(isDaemon = true, name = "sign-in-destination-fixture") {
             while (!fixtureServer.isClosed) {
@@ -679,7 +874,7 @@ class SignInDestinationJourneyTest {
                     }
                     val request = CapturedRequest(line, body.concatToString())
                     capturedRequests += request
-                    val response = responseFor(request)
+                    val response = responseFor(request) ?: return@use
                     val bytes = response.body.toByteArray()
                     runCatching {
                         connection.getOutputStream().apply {

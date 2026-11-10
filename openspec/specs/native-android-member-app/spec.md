@@ -1622,22 +1622,27 @@ open and expose localized errors resolved from typed failure metadata.
 
 ### Requirement: Navigation-owned Android sign-in destinations
 
-The Android signed-out flow SHALL represent its form and browser destinations
-as Navigation 3 entries. The root `SignInVisit` SHALL own its sign-in
-ViewModel through the entry's ViewModel store. Sign-up and forgotten-password
-pages SHALL be children identified by a safe purpose enum and a unique visit
-identity. Their browser title and URL SHALL be derived from the purpose and
-localised Android resources. Route keys and restored navigation state SHALL
-NOT contain credentials, cookies, API responses or session objects.
+The Android signed-out flow SHALL represent sign-in, native signup and
+browser destinations as Navigation 3 entries with unique visit identities.
+The sign-in and signup forms SHALL own their ViewModels through their entries.
+Browser titles SHALL use localised Android resources. Route keys and restored
+navigation state SHALL NOT contain credentials, cookies, API responses or
+session objects.
 
 #### Scenario: Member opens sign-up or password reset
 
 - **WHEN** a signed-out member selects Join or Forgot password
-- **THEN** the corresponding browser route is pushed above the same SignIn
-  entry
-- **AND** Back first traverses available WebView history, then returns to the
-  existing form entry
-- **AND** the browser route records no cookie or credential
+- **THEN** the native signup form or password reset browser route is pushed above the same sign-in entry
+- **AND** the signup form respects system and keyboard insets
+- **AND** returning from the rules using either Android Back or the app bar preserves entered values
+- **AND** Back from password reset first traverses available WebView history, then returns to the existing sign-in form
+- **AND** the browser routes record no cookie or credential
+
+#### Scenario: Complete onboarding
+
+- **WHEN** signup through the existing account endpoint and mobile sign-in succeed
+- **THEN** the app SHALL explain that email confirmation is required and offer the native profile editor and an action to continue into the main app
+- **AND** saving or leaving the profile editor SHALL provide a route into the main app
 
 #### Scenario: Activity recreates during sign-in
 

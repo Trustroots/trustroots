@@ -82,6 +82,7 @@ import org.trustroots.android.ui.menu.MenuNavigationDisplay
 import org.trustroots.android.ui.search.SearchHubScreen
 import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
 import org.trustroots.android.ui.signin.SignInNavigation
+import org.trustroots.android.ui.signin.SignUpOnboarding
 import org.trustroots.android.ui.startup.StartupScreen
 
 @Composable
@@ -129,6 +130,7 @@ internal fun TrustrootsApp(
         onDispose { }
     }
     val sessionState by sessionViewModel.state.collectAsState()
+    var onboardingUsername by rememberSaveable(apiBaseUrl) { mutableStateOf<String?>(null) }
     val session = sessionState.session
     val starting = sessionState.isStarting
     val shellGraphOwner = remember(shellGraphStore, starting, session?.let { it.member.username }) {
@@ -153,7 +155,12 @@ internal fun TrustrootsApp(
                 apiBaseUrl = apiBaseUrl,
                 initialMessage = sessionState.signedOutMessage,
                 browserContent = browserContent,
+                onSignedUp = {
+                    onboardingUsername = it.member.username
+                    sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
+                },
                 onSignedIn = {
+                    onboardingUsername = null
                     sessionViewModel.onEvent(AppSessionEvent.SignedIn(it, apiBaseUrl))
                 },
             )
@@ -175,24 +182,45 @@ internal fun TrustrootsApp(
                 entryDecorators = rootDecorators,
                 entryProvider = entryProvider {
                     entry<MemberShellVisit> {
-                        MemberShell(
-                            analytics = analytics,
-                            session = activeSession,
-                            sessionStore = sessionStore,
-                            responseCache = responseCache,
-                            apiBaseUrl = apiBaseUrl,
-                            reconcileAlerts = reconcileAlerts,
-                            browserContent = browserContent,
-                            onMemberUpdated = { member ->
-                                sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
-                            },
-                            onSignedOut = {
-                                sessionViewModel.onEvent(AppSessionEvent.SignedOut(activeSessionSource))
-                            },
-                            onSessionInvalidated = {
-                                sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
-                            },
-                        )
+                        if (onboardingUsername == activeSession.member.username) {
+                            val api = remember(apiBaseUrl, activeSession.member.username) {
+                                MobileApiClient(apiBaseUrl, responseCache, activeSession.member.username, sessionStore)
+                            }
+                            SignUpOnboarding(
+                                api = api,
+                                session = activeSession,
+                                onComplete = { profile ->
+                                    if (profile != null) {
+                                        val member = MobileMember(profile.username, profile.displayName)
+                                        sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
+                                    }
+                                    onboardingUsername = null
+                                },
+                                onSessionInvalidated = {
+                                    onboardingUsername = null
+                                    sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
+                                },
+                            )
+                        } else {
+                            MemberShell(
+                                analytics = analytics,
+                                session = activeSession,
+                                sessionStore = sessionStore,
+                                responseCache = responseCache,
+                                apiBaseUrl = apiBaseUrl,
+                                reconcileAlerts = reconcileAlerts,
+                                browserContent = browserContent,
+                                onMemberUpdated = { member ->
+                                    sessionViewModel.onEvent(AppSessionEvent.MemberUpdated(activeSessionSource, member))
+                                },
+                                onSignedOut = {
+                                    sessionViewModel.onEvent(AppSessionEvent.SignedOut(activeSessionSource))
+                                },
+                                onSessionInvalidated = {
+                                    sessionViewModel.onEvent(AppSessionEvent.SessionInvalidated(activeSessionSource))
+                                },
+                            )
+                        }
                     }
                 },
             )
