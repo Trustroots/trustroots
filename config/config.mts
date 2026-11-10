@@ -116,7 +116,7 @@ const getGlobalConfigFiles = (
 /**
  * Initialize global configuration
  */
-const initGlobalConfig = function (): Config {
+const initGlobalConfig = function () {
   // Validate NDOE_ENV existance
   validateEnvironmentVariable();
 
@@ -140,16 +140,18 @@ const initGlobalConfig = function (): Config {
   console.info(
     `[Mail] mode=${mailMode}${mailMode === 'capture' ? '; outgoing delivery disabled' : ''}`,
   );
-  return Object.assign(config, {
+  const service: Config = Object.assign(config, {
     files: getGlobalConfigFiles(defaultAssets),
     utils: { getGlobbedPaths },
   });
+  return { service, mailMode };
 };
 
 /**
  * Set configuration object
  */
-const service: Config = initGlobalConfig();
+const { service, mailMode } = initGlobalConfig();
+export { mailMode };
 export default service;
 /** @commonjs */
 export { service as 'module.exports' };
