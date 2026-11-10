@@ -20,9 +20,7 @@ export default {
   mutate: jestConfig.collectCoverageFrom.map(glob =>
     glob.replace('<rootDir>/', ''),
   ),
-  // Ansible vault files are not JavaScript, whatever their extension.
   ignorePatterns: [
-    '/deploy/files/secrets',
     '/.stryker-tmp',
     '/.prune-tmp',
     '/.stryker-work',
