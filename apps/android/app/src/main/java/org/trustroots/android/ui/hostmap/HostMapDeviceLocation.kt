@@ -10,10 +10,16 @@ import android.os.Build
 import android.os.CancellationSignal
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MyLocation
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.location.LocationManagerCompat
 import androidx.lifecycle.Lifecycle
@@ -76,8 +83,8 @@ internal suspend fun lookupDeviceLocation(context: Context, precise: Boolean): L
 internal fun HostMapDeviceLocation(
     onStart: () -> Unit,
     onLocation: (Location) -> Unit,
-    modifier: Modifier = Modifier,
-    lookup: suspend (Context, Boolean) -> Location? = ::lookupDeviceLocation,
+    modifier: Modifier,
+    lookup: suspend (Context, Boolean) -> Location?,
 ) {
     val context = LocalContext.current
     val fine = Manifest.permission.ACCESS_FINE_LOCATION
@@ -107,9 +114,25 @@ internal fun HostMapDeviceLocation(
     LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
         preciseLookup = null
     }
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        TextButton(
+    Column(modifier, horizontalAlignment = Alignment.End) {
+        val message = if (preciseLookup != null) R.string.map_locating else status
+        message?.let {
+            Surface(shape = MaterialTheme.shapes.small, shadowElevation = 2.dp) {
+                Text(
+                    stringResource(it),
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }.padding(8.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+        FilledIconButton(
             enabled = !permissionPending && preciseLookup == null,
+            shape = MaterialTheme.shapes.small,
+            colors = IconButtonDefaults.filledIconButtonColors(
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
             onClick = {
                 onStart()
                 status = null
@@ -123,15 +146,7 @@ internal fun HostMapDeviceLocation(
                 }
             },
         ) {
-            Text(stringResource(R.string.map_use_my_location))
-        }
-        val message = if (preciseLookup != null) R.string.map_locating else status
-        message?.let {
-            Text(
-                stringResource(it),
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                style = MaterialTheme.typography.bodySmall,
-            )
+            Icon(Icons.Outlined.MyLocation, contentDescription = stringResource(R.string.map_use_my_location))
         }
     }
 }

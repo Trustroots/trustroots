@@ -220,10 +220,13 @@ internal fun HostMapScreen(
         onSessionInvalidated()
         mapViewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(pending.id))
     }
-    val findLocation: () -> Unit = {
+    val closePlaceSearch: () -> Unit = {
         showSuggestions = false
         keyboard?.hide()
         focusManager.clearFocus()
+    }
+    val findLocation: () -> Unit = {
+        closePlaceSearch()
         mapViewModel.onEvent(HostMapEvent.SubmitPlace)
     }
     DisposableEffect(map) {
@@ -326,32 +329,16 @@ internal fun HostMapScreen(
                     modifier = Modifier.weight(1f).testTag("placeSearchField"),
                 )
                 IconButton(onClick = {
-                    showSuggestions = false
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    closePlaceSearch()
                     showFilters = !showFilters
                     if (showFilters && circles.isEmpty()) mapViewModel.onEvent(HostMapEvent.CirclesRequested)
                 }, modifier = Modifier.testTag("openFilters")) {
                     Icon(Icons.Default.FilterList, if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            HostMapDeviceLocation(
-                onStart = {
-                    showSuggestions = false
-                    keyboard?.hide()
-                    focusManager.clearFocus()
-                },
-                onLocation = {
-                    mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
-                },
-                modifier = Modifier.fillMaxWidth().padding(contentPadding.horizontalInset()).padding(horizontal = 8.dp),
-                lookup = deviceLocationLookup,
-            )
             if (showSuggestions) suggestions.forEach { suggestion ->
                 TextButton(onClick = {
-                    showSuggestions = false
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    closePlaceSearch()
                     mapViewModel.onEvent(HostMapEvent.PlaceSelected(suggestion))
                 }, modifier = Modifier.fillMaxWidth()) { Text(suggestion.label) }
             }
@@ -478,6 +465,14 @@ internal fun HostMapScreen(
         Column(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
         ) {
+        HostMapDeviceLocation(
+            onStart = closePlaceSearch,
+            onLocation = {
+                mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
+            },
+            modifier = Modifier.align(Alignment.End).padding(horizontal = 8.dp, vertical = 4.dp),
+            lookup = deviceLocationLookup,
+        )
         if (selectedNotes.isNotEmpty()) {
             Column(
                 Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),

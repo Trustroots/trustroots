@@ -10,9 +10,12 @@ import androidx.activity.result.ActivityResultRegistryOwner
 import androidx.activity.result.contract.ActivityResultContract
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -21,6 +24,7 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.math.abs
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Rule
@@ -52,18 +56,24 @@ class HostMapDeviceLocationJourneyTest {
     private val session = MemberSession("connect.sid=test", MobileMember("steady-heron", "Steady Heron"))
 
     @Test fun approximateLocationRecentresAndSearchesWithActiveFilters() {
-        val permission = PermissionRegistry(mapOf(Manifest.permission.ACCESS_COARSE_LOCATION to true))
+        val permission = PermissionRegistry(mapOf(Manifest.permission.ACCESS_COARSE_LOCATION to true), deferResult = true)
+        val fix = CompletableDeferred<Location>()
         showMap(permission) { precise ->
             assertEquals(false, precise)
-            Location("test").apply {
-                latitude = 60.0
-                longitude = 24.0
-            }
+            fix.await()
         }
         compose.onNodeWithTag("openFilters").performClick()
         compose.onNodeWithText("Last active: 6 months").performClick()
         assertEquals(0, permission.requests)
-        compose.onNodeWithText("Use my location").performClick()
+        compose.onNodeWithContentDescription("Use my location").performClick()
+        compose.onNodeWithContentDescription("Use my location").assertIsNotEnabled()
+        compose.runOnIdle { permission.deliverResult() }
+        compose.onNodeWithText("Finding your location…").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Use my location").assertIsNotEnabled()
+        fix.complete(Location("test").apply {
+            latitude = 60.0
+            longitude = 24.0
+        })
         compose.onNodeWithText("Approximate location").assertIsDisplayed()
         compose.waitUntil(15_000) {
             searches.any { (bounds, filters) ->
@@ -81,7 +91,7 @@ class HostMapDeviceLocationJourneyTest {
     @Test fun deniedPermissionKeepsMapAndAllowsPlaceSearch() {
         showMap(PermissionRegistry(emptyMap())) { error("Denied permission started a lookup") }
         val viewport = model.state.value.viewport
-        compose.onNodeWithText("Use my location").performClick()
+        compose.onNodeWithContentDescription("Use my location").performClick()
         compose.onNodeWithText("Location permission denied. You can still search or move the map.").assertIsDisplayed()
         assertEquals(viewport, model.state.value.viewport)
         compose.onNodeWithTag("placeSearchField").performTextInput("Example City")
@@ -99,7 +109,7 @@ class HostMapDeviceLocationJourneyTest {
         }
         val viewport = model.state.value.viewport
         repeat(2) {
-            compose.onNodeWithText("Use my location").performClick()
+            compose.onNodeWithContentDescription("Use my location").performClick()
             compose.onNodeWithText("Location unavailable. Try again, search or move the map.").assertIsDisplayed()
             assertEquals(viewport, model.state.value.viewport)
         }
@@ -127,6 +137,7 @@ class HostMapDeviceLocationJourneyTest {
                 HostMapDeviceLocation(
                     onStart = {},
                     onLocation = { received += it },
+                    modifier = Modifier,
                     lookup = { _, precise ->
                         assertEquals(grantedPermission == Manifest.permission.ACCESS_FINE_LOCATION, precise)
                         fix
@@ -134,18 +145,18 @@ class HostMapDeviceLocationJourneyTest {
                 )
             }
         }
-        compose.onNodeWithText("Use my location").performClick()
+        compose.onNodeWithContentDescription("Use my location").performClick()
         compose.waitUntil(5_000) { received.size == 1 }
         assertSame(fix, received.single())
         compose.onNodeWithText("Approximate location").assertDoesNotExist()
         compose.runOnIdle { fix.accuracy = 2_000f }
-        compose.onNodeWithText("Use my location").performClick()
+        compose.onNodeWithContentDescription("Use my location").performClick()
         compose.onNodeWithText("Approximate location").assertIsDisplayed()
         compose.runOnIdle {
             grantedPermission = Manifest.permission.ACCESS_COARSE_LOCATION
             fix.accuracy = 20f
         }
-        compose.onNodeWithText("Use my location").performClick()
+        compose.onNodeWithContentDescription("Use my location").performClick()
         compose.waitUntil(5_000) { received.size == 3 }
         compose.onNodeWithText("Approximate location").assertIsDisplayed()
         assertEquals(0, permission.requests)
@@ -167,11 +178,21 @@ class HostMapDeviceLocationJourneyTest {
         compose.waitUntil(15_000) { searches.isNotEmpty() }
     }
 
-    private class PermissionRegistry(private val grants: Map<String, Boolean>) :
+    private class PermissionRegistry(
+        private val grants: Map<String, Boolean>,
+        private val deferResult: Boolean = false,
+    ) :
         ActivityResultRegistry(), ActivityResultRegistryOwner {
         override val activityResultRegistry = this
         var requests = 0
             private set
+        private var pendingRequestCode: Int? = null
+
+        fun deliverResult() {
+            val requestCode = requireNotNull(pendingRequestCode)
+            pendingRequestCode = null
+            dispatchResult(requestCode, grants)
+        }
 
         override fun <I, O> onLaunch(
             requestCode: Int,
@@ -184,7 +205,8 @@ class HostMapDeviceLocationJourneyTest {
                 (input as Array<*>).toSet(),
             )
             requests++
-            dispatchResult(requestCode, grants)
+            pendingRequestCode = requestCode
+            if (!deferResult) deliverResult()
         }
     }
 }
