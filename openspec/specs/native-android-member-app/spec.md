@@ -10,15 +10,22 @@ accessible presentation.
 
 ### Requirement: Android preview APK update alerts
 
-The GitHub preview Android APK SHALL let a member opt in to periodic update
-checks. When a newer signed Android preview release is available, the app SHALL
-notify the member at most once per version and open the corresponding Trustroots
-GitHub release page on request. The app SHALL NOT install an APK automatically.
-Local and F-Droid builds SHALL NOT offer GitHub preview update alerts.
+The signed GitHub preview and F-Droid Android builds SHALL leave in-app GitHub
+update alerts disabled. Release builds explicitly configured to enable alerts
+SHALL let a member opt in to periodic update checks. When a newer signed Android
+preview release is available, the app SHALL notify the member at most once per
+version and open the corresponding Trustroots GitHub release page on request.
+The app SHALL NOT install an APK automatically.
+
+#### Scenario: Member upgrades to a build with update alerts disabled
+
+- **WHEN** a member who previously enabled APK update alerts runs a signed
+  GitHub preview or F-Droid build
+- **THEN** the app hides the APK update controls and makes no GitHub release checks
 
 #### Scenario: Member enables update alerts
 
-- **WHEN** a member enables APK update alerts in a GitHub preview build
+- **WHEN** a member enables APK update alerts in a build configured to offer them
 - **THEN** the app requests notification permission when required
 - **AND** schedules periodic release checks
 
