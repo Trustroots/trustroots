@@ -106,12 +106,12 @@ class ProfileImageViewerJourneyTest {
         captureUsabilityScreenshot(compose, "android_profile_image_viewer")
         val screen = InstrumentationRegistry.getInstrumentation().uiAutomation.takeScreenshot()
         try {
-            assertEquals("Status-bar background should be black", AndroidColor.BLACK, screen.getPixel(screen.width / 3, 10))
-            assertEquals("Navigation-bar background should be black", AndroidColor.BLACK, screen.getPixel(screen.width / 3, screen.height - 10))
-            assertEquals("Top-left system-bar background should be black", AndroidColor.BLACK, screen.getPixel(0, 0))
-            assertEquals("Top-right system-bar background should be black", AndroidColor.BLACK, screen.getPixel(screen.width - 1, 0))
-            assertEquals("Bottom-left system-bar background should be black", AndroidColor.BLACK, screen.getPixel(0, screen.height - 1))
-            assertEquals("Bottom-right system-bar background should be black", AndroidColor.BLACK, screen.getPixel(screen.width - 1, screen.height - 1))
+            assertBlackScreenshotPixel("Status bar", screen.getPixel(screen.width / 3, 10))
+            assertBlackScreenshotPixel("Navigation bar", screen.getPixel(screen.width / 3, screen.height - 10))
+            assertBlackScreenshotPixel("Top-left corner", screen.getPixel(0, 0))
+            assertBlackScreenshotPixel("Top-right corner", screen.getPixel(screen.width - 1, 0))
+            assertBlackScreenshotPixel("Bottom-left corner", screen.getPixel(0, screen.height - 1))
+            assertBlackScreenshotPixel("Bottom-right corner", screen.getPixel(screen.width - 1, screen.height - 1))
         } finally {
             screen.recycle()
         }
@@ -119,6 +119,12 @@ class ProfileImageViewerJourneyTest {
         compose.onNodeWithTag("profileSection").assertIsDisplayed()
         compose.onNodeWithText("Open profile photo").assertIsDisplayed()
         assertEquals(originalActivityWindow, activityWindowState())
+    }
+
+    private fun assertBlackScreenshotPixel(region: String, pixel: Int) {
+        // Some emulator compositors dither black by a few RGB values at the display edge.
+        val brightestChannel = maxOf(AndroidColor.red(pixel), AndroidColor.green(pixel), AndroidColor.blue(pixel))
+        assertTrue("$region should be black (pixel #${pixel.toUInt().toString(16)})", brightestChannel <= 3)
     }
 
     @Test fun failedPhotoKeepsAnAccessibleCloseControl() {

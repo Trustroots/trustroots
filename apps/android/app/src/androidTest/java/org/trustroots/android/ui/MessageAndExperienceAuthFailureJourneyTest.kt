@@ -105,6 +105,7 @@ class MessageAndExperienceAuthFailureJourneyTest {
             apiFixture.requests.any { it.method == "GET" && it.path == "/api/messages/$recipientID?limit=100" }
         }
         compose.onNodeWithTag("messageComposer").performTextInput(draft)
+        hideTestKeyboard()
         compose.onNodeWithContentDescription("Send").assertIsEnabled().performClick()
         compose.waitUntil(10_000) {
             invalidations.get() == 1 &&

@@ -89,13 +89,13 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
             ADB_CALLS=str(self.calls),
         )
 
-    def run_gate(self, anr=None):
+    def run_gate(self, anr=None, command_status=0):
         if anr:
             self.environment["FAKE_ANR"] = anr
         else:
             self.environment.pop("FAKE_ANR", None)
         return subprocess.run(
-            ["bash", str(SCRIPT), str(self.diagnostics), "sh", "-c", f"touch '{self.command_marker}'"],
+            ["bash", str(SCRIPT), str(self.diagnostics), "sh", "-c", f"touch '{self.command_marker}'; exit {command_status}"],
             env=self.environment,
             capture_output=True,
             text=True,
@@ -114,6 +114,24 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
         self.assertTrue(self.command_marker.exists())
         self.assertEqual(1, self.calls.read_text().splitlines().count("reboot"))
 
+    def test_ci_requests_a_fresh_emulator_for_a_boot_ui_anr(self):
+        output = self.root / "step-output"
+        self.environment["ANDROID_BOOT_RETRY_OUTPUT"] = str(output)
+        result = self.run_gate("systemui")
+        self.assertEqual(1, result.returncode)
+        self.assertEqual("retry_fresh_emulator=true\n", output.read_text())
+        self.assertFalse(self.command_marker.exists())
+        self.assertNotIn("reboot\n", self.calls.read_text())
+        self.assertTrue((self.diagnostics / "window.txt").exists())
+
+    def test_ci_does_not_request_a_retry_for_instrumentation_failure(self):
+        output = self.root / "step-output"
+        self.environment["ANDROID_BOOT_RETRY_OUTPUT"] = str(output)
+        result = self.run_gate(command_status=9)
+        self.assertEqual(9, result.returncode)
+        self.assertTrue(self.command_marker.exists())
+        self.assertFalse(output.exists())
+
     def test_boot_ui_anr_that_appears_during_health_window_is_recovered(self):
         result = self.run_gate("delayed")
         self.assertEqual(0, result.returncode, result.stderr)
@@ -127,10 +145,13 @@ elif args[:3] == ['shell', 'dumpsys', 'window']:
         self.assertEqual(1, self.calls.read_text().splitlines().count("reboot"))
 
     def test_unexpected_app_anr_fails_without_reboot_or_running_command(self):
+        output = self.root / "step-output"
+        self.environment["ANDROID_BOOT_RETRY_OUTPUT"] = str(output)
         result = self.run_gate("app")
         self.assertEqual(1, result.returncode)
         self.assertFalse(self.command_marker.exists())
         self.assertNotIn("reboot\n", self.calls.read_text())
+        self.assertFalse(output.exists())
         self.assertTrue((self.diagnostics / "window.txt").exists())
 
     def test_unknown_anr_takes_precedence_over_system_ui_anr(self):

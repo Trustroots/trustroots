@@ -72,6 +72,11 @@ else
 fi
 
 if [[ "$health" == boot-ui ]]; then
+  if [[ -n "${ANDROID_BOOT_RETRY_OUTPUT:-}" ]]; then
+    printf 'retry_fresh_emulator=true\n' >> "$ANDROID_BOOT_RETRY_OUTPUT"
+    fail_with_diagnostics 1 'A boot-time Android System UI or launcher ANR was detected before tests.'
+  fi
+
   echo 'A boot-time Android System UI or launcher ANR was detected; rebooting the emulator once before tests.' >&2
   timeout 30 adb reboot || fail_with_diagnostics 1 'Could not request the one permitted emulator reboot.'
   timeout 60 adb wait-for-device || fail_with_diagnostics 1 'The emulator did not reconnect after reboot.'

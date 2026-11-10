@@ -1051,7 +1051,12 @@ describe('<AdminUser />', () => {
     window.history.pushState({}, '', '/admin/user/alex');
     mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
       makeReportCard({
-        profile: { _id: userId, roles: ['user'], username: 'alex' },
+        profile: {
+          _id: userId,
+          roles: ['user'],
+          username: 'alex',
+          public: true,
+        },
       }),
     );
     render(
@@ -1065,7 +1070,42 @@ describe('<AdminUser />', () => {
     expect(embeddedProfile).toHaveAttribute('data-profile-username', 'alex');
     expect(embeddedProfile).toHaveAttribute('data-viewer-id', 'admin-1');
     expect(embeddedProfile).toHaveAttribute('data-embedded', 'true');
+    expect(
+      screen.getByRole('heading', { name: 'Public profile' }),
+    ).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'alex' })).toBeInTheDocument();
+  });
+
+  it('shows the hidden profile preview and unconfirmed signup reason', async () => {
+    mockedUsersApi.getUserByUsername.mockResolvedValueOnce(
+      makeReportCard({
+        profile: {
+          _id: userId,
+          username: 'alex',
+          email: 'alex@example.test',
+          emailTemporary: 'alex@example.test',
+          public: false,
+          roles: ['user'],
+        },
+      }),
+    );
+
+    render(
+      <AdminUser
+        username="alex"
+        viewer={{ _id: 'admin-1', roles: ['admin'], public: true }}
+      />,
+    );
+
+    expect(
+      await screen.findByRole('row', {
+        name: 'Visibility restrictions Signup email has not been confirmed',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'Hidden profile preview' }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId('embedded-profile')).toBeInTheDocument();
   });
 
   it.each([

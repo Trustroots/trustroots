@@ -180,22 +180,55 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
       - name: Run device coverage
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
-        with:
+        id: device-coverage
+        # The boot-health gate signals a known System UI failure before any tests start.
+        # The final step propagates other failures from this attempt.
+        continue-on-error: true
+        env:
+          ANDROID_EMULATOR_ATTEMPT: initial
+          ANDROID_EMULATOR_PORT: '5554'
+        uses: &emulator-runner reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with: &device-coverage-inputs
           api-level: ${{ matrix.api }}
           arch: x86_64
+          target: ${{ matrix.api == 36 && env.ANDROID_EMULATOR_ATTEMPT == 'retry' && 'google_apis' || 'default' }}
           # Public ubuntu-latest runners have four vCPUs; leave enough CPU for
           # Android's System UI and launcher while the instrumentation suite runs.
           cores: 4
           disable-animations: true
+          avd-name: coverage-${{ env.ANDROID_EMULATOR_ATTEMPT }}
+          emulator-port: ${{ env.ANDROID_EMULATOR_PORT }}
+          emulator-options: -no-window -gpu swiftshader -feature -Vulkan -no-snapshot -noaudio -no-boot-anim
+          force-avd-creation: true
           profile: pixel_6
+          # Reduce API 36 software rendering load while retaining the Pixel 6 layout in dp.
+          pre-emulator-launch-script: >-
+            if [ "${{ matrix.api }}" = 36 ]; then
+            config="$ANDROID_AVD_HOME/coverage-$ANDROID_EMULATOR_ATTEMPT.avd/config.ini";
+            sed -i -e 's/^hw\.lcd\.width[[:space:]]*=.*/hw.lcd.width=720/'
+            -e 's/^hw\.lcd\.height[[:space:]]*=.*/hw.lcd.height=1600/'
+            -e 's/^hw\.lcd\.density[[:space:]]*=.*/hw.lcd.density=280/' "$config" &&
+            grep -qx 'hw.lcd.width=720' "$config" &&
+            grep -qx 'hw.lcd.height=1600' "$config" &&
+            grep -qx 'hw.lcd.density=280' "$config";
+            fi
           script: |
             adb shell settings put system screen_off_timeout 2147483647
             adb shell svc power stayon true
             adb shell input keyevent KEYCODE_WAKEUP
             adb shell wm dismiss-keyguard
             adb shell settings put secure show_ime_with_hard_keyboard 1
-            bash apps/android/scripts/run-with-android-boot-health.sh apps/android/app/build/diagnostics/${{ matrix.target }} ${{ matrix.command }}
+            ANDROID_BOOT_RETRY_OUTPUT="$GITHUB_OUTPUT" bash apps/android/scripts/run-with-android-boot-health.sh apps/android/app/build/diagnostics/${{ matrix.target }}/"$ANDROID_EMULATOR_ATTEMPT" ${{ matrix.command }}
+      - name: Retry device coverage on a fresh emulator
+        if: steps.device-coverage.outcome == 'failure' && steps.device-coverage.outputs.retry_fresh_emulator == 'true'
+        env:
+          ANDROID_EMULATOR_ATTEMPT: retry
+          ANDROID_EMULATOR_PORT: '5556'
+        uses: *emulator-runner
+        with: *device-coverage-inputs
+      - name: Propagate device coverage failures
+        if: steps.device-coverage.outcome == 'failure' && steps.device-coverage.outputs.retry_fresh_emulator != 'true'
+        run: exit 1
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         if: always()
         with:
