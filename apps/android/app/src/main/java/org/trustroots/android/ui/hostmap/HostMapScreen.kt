@@ -4,6 +4,7 @@ import androidx.activity.compose.BackHandler
 import android.content.Context
 import android.location.Address
 import android.location.Geocoder
+import android.location.Location
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Paint
@@ -57,7 +58,6 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.onSizeChanged
@@ -104,6 +104,7 @@ internal fun HostMapScreen(
     notesClientFactory: ((onNote: (CommunityNote) -> Unit, onError: () -> Unit) -> HostMapNotesConnection) =
         ::createNostrootsNotesConnection,
     mapViewFactory: (Context) -> MapView = { MapView(it) },
+    deviceLocationLookup: suspend (Context, Boolean) -> Location? = ::lookupDeviceLocation,
 ) {
     val context = LocalContext.current
     val mapViewModel = viewModel ?: rememberHostMapViewModel(
@@ -219,10 +220,13 @@ internal fun HostMapScreen(
         onSessionInvalidated()
         mapViewModel.onEvent(HostMapEvent.SessionInvalidationDelivered(pending.id))
     }
-    val findLocation: () -> Unit = {
+    val closePlaceSearch: () -> Unit = {
         showSuggestions = false
         keyboard?.hide()
         focusManager.clearFocus()
+    }
+    val findLocation: () -> Unit = {
+        closePlaceSearch()
         mapViewModel.onEvent(HostMapEvent.SubmitPlace)
     }
     DisposableEffect(map) {
@@ -325,9 +329,7 @@ internal fun HostMapScreen(
                     modifier = Modifier.weight(1f).testTag("placeSearchField"),
                 )
                 IconButton(onClick = {
-                    showSuggestions = false
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    closePlaceSearch()
                     showFilters = !showFilters
                     if (showFilters && circles.isEmpty()) mapViewModel.onEvent(HostMapEvent.CirclesRequested)
                 }, modifier = Modifier.testTag("openFilters")) {
@@ -336,9 +338,7 @@ internal fun HostMapScreen(
             }
             if (showSuggestions) suggestions.forEach { suggestion ->
                 TextButton(onClick = {
-                    showSuggestions = false
-                    keyboard?.hide()
-                    focusManager.clearFocus()
+                    closePlaceSearch()
                     mapViewModel.onEvent(HostMapEvent.PlaceSelected(suggestion))
                 }, modifier = Modifier.fillMaxWidth()) { Text(suggestion.label) }
             }
@@ -465,6 +465,14 @@ internal fun HostMapScreen(
         Column(
             Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(contentPadding.horizontalInset()).padding(bottom = contentPadding.calculateBottomPadding()),
         ) {
+        HostMapDeviceLocation(
+            onStart = closePlaceSearch,
+            onLocation = {
+                mapViewModel.onEvent(HostMapEvent.DeviceLocationFound(it.latitude, it.longitude))
+            },
+            modifier = Modifier.align(Alignment.End).padding(horizontal = 8.dp, vertical = 4.dp),
+            lookup = deviceLocationLookup,
+        )
         if (selectedNotes.isNotEmpty()) {
             Column(
                 Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surface).padding(16.dp),

@@ -423,11 +423,28 @@ class HostMapViewModelTest {
         val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
         viewModel.onEvent(HostMapEvent.LocationQueryChanged("Another fictional place"))
         viewModel.onEvent(HostMapEvent.SubmitPlace)
+        viewModel.onEvent(HostMapEvent.DeviceLocationFound(12.0, 34.0))
 
         assertEquals(1, repository.placeQueries.size)
         assertEquals(invalidation, viewModel.state.value.pendingSessionInvalidation)
         assertTrue(viewModel.state.value.suggestions.isEmpty())
         assertNull(viewModel.state.value.placeFailure)
+        assertNull(viewModel.state.value.viewportCommand)
+    }
+
+    @Test
+    fun deviceLocationRefreshesEvenWhenTheMeasuredBoundsAreStillFresh() = withViewModel { viewModel, repository, _ ->
+        val viewport = MapViewport(12.0, 34.0, 9.0)
+        val measuredViewport = HostMapEvent.ViewportChanged(viewport, bounds())
+        viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+        viewModel.onEvent(measuredViewport)
+        assertEquals(1, repository.searchCalls)
+
+        viewModel.onEvent(HostMapEvent.DeviceLocationFound(viewport.latitude, viewport.longitude))
+        assertEquals(viewport, viewModel.state.value.viewportCommand?.viewport)
+        viewModel.onEvent(measuredViewport)
+
+        assertEquals(2, repository.searchCalls)
     }
 
     @Test

@@ -208,6 +208,7 @@ internal sealed interface HostMapEvent {
     data class FiltersChanged(val filters: HostMapFilters) : HostMapEvent
     data class LocationQueryChanged(val value: String) : HostMapEvent
     data class PlaceSelected(val suggestion: PlaceSuggestion) : HostMapEvent
+    data class DeviceLocationFound(val latitude: Double, val longitude: Double) : HostMapEvent
     data object SubmitPlace : HostMapEvent
     data object CirclesRequested : HostMapEvent
     data class NotesSelected(val notes: List<CommunityNote>) : HostMapEvent
@@ -288,6 +289,14 @@ internal class HostMapViewModel(
                 loadPlaceSuggestions(event.value)
             }
             is HostMapEvent.PlaceSelected -> applyPlace(event.suggestion)
+            is HostMapEvent.DeviceLocationFound -> {
+                if (sessionInvalidationEmitted) return
+                placeRequest.cancel()
+                cancelSearch()
+                lastSuccessfulSearch = null
+                lastSuccessfulSearchAt = null
+                moveToPlace("", event.latitude, event.longitude)
+            }
             HostMapEvent.SubmitPlace -> submitPlace()
             HostMapEvent.CirclesRequested -> loadCircles()
             is HostMapEvent.NotesSelected -> mutableState.update { it.copy(selectedNotes = event.notes) }
@@ -453,14 +462,20 @@ internal class HostMapViewModel(
     }
 
     private fun applyPlace(place: PlaceSuggestion) {
+        moveToPlace(place.label, place.latitude, place.longitude)
+    }
+
+    private fun moveToPlace(label: String, latitude: Double, longitude: Double) {
+        val viewport = MapViewport(latitude, longitude, 9.0)
+        val command = MapViewportCommand(++nextViewportCommand, viewport)
         mutableState.update { current ->
             current.copy(
-                locationQuery = place.label,
+                locationQuery = label,
                 suggestions = emptyList(),
                 failure = null,
                 placeFailure = null,
-                viewport = MapViewport(place.latitude, place.longitude, 9.0),
-                viewportCommand = MapViewportCommand(++nextViewportCommand, MapViewport(place.latitude, place.longitude, 9.0)),
+                viewport = viewport,
+                viewportCommand = command,
             )
         }
     }
