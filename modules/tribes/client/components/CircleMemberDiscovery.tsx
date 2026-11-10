@@ -4,12 +4,13 @@ import { useTranslation } from 'react-i18next';
 
 import { getErrorResponse } from '@/modules/core/client/api/http-client';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
+import type { UserProfile } from '@/modules/users/client/types';
 import * as tribesApi from '@/modules/tribes/client/api/tribes.api';
 import type {
   CircleMemberGroups,
+  DiscoveryMember,
   TribeSummary,
 } from '@/modules/tribes/client/api/tribes.api';
-import type { UserProfile } from '@/modules/users/client/types';
 
 type Props = {
   circle: TribeSummary;
@@ -38,7 +39,7 @@ function isTransientError(error: unknown): boolean {
 
 function withoutDuplicates(groups: CircleMemberGroups): CircleMemberGroups {
   const seen = new Set<string>();
-  const uniqueMembers = (members: UserProfile[]) =>
+  const uniqueMembers = (members: DiscoveryMember[]) =>
     members.filter(member => {
       if (seen.has(member._id)) return false;
       seen.add(member._id);
@@ -55,10 +56,12 @@ function MemberSection({
   title,
   subtitle,
   members,
+  t,
 }: {
   title: string;
   subtitle: string;
-  members: UserProfile[];
+  members: DiscoveryMember[];
+  t: (key: string) => string;
 }) {
   if (!members.length) return null;
 
@@ -69,7 +72,32 @@ function MemberSection({
       <ul className="list-unstyled">
         {members.map(member => (
           <li className="circle-member-row" key={member._id}>
-            <MemberSearchCard user={member} />
+            <div className="circle-discovery-card">
+              <MemberSearchCard user={member} />
+              {(member.activity || member.hosting) && (
+                <div className="circle-discovery-card-meta">
+                  {member.activity && (
+                    <span data-testid="circle-member-activity">
+                      {member.activity === 'today'
+                        ? t('Active today')
+                        : member.activity === 'week'
+                          ? t('Active this week')
+                          : member.activity === 'month'
+                            ? t('Active this month')
+                            : t('Active more than a month ago')}
+                    </span>
+                  )}
+                  {member.hosting && (
+                    <a
+                      data-testid="circle-member-accommodation"
+                      href={`/profile/${encodeURIComponent(member.username)}/accommodation`}
+                    >
+                      {t('Hosting')}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </li>
         ))}
       </ul>
@@ -130,11 +158,13 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
         title={t('Your contacts in this circle')}
         subtitle={t('People you already know on Trustroots')}
         members={sections.contacts}
+        t={t}
       />
       <MemberSection
         title={t('People who recommend you')}
         subtitle={t('Members of this circle who recommend you')}
         members={sections.recommenders}
+        t={t}
       />
       <MemberSection
         title={t('Other active members')}
@@ -142,6 +172,7 @@ export default function CircleMemberDiscovery({ circle, user }: Props) {
           'Members of this circle who have been active in the past month',
         )}
         members={sections.active}
+        t={t}
       />
       {!isLoading && hasError && (
         <div className="circle-member-error" role="alert">

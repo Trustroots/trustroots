@@ -12,6 +12,10 @@ const routeHandler = <T extends MiddlewareCallback>(
 const parameterHandler = <T extends MiddlewareCallback>(
   callback: T,
 ): RequestParamHandler => callback as unknown as RequestParamHandler;
+const disableDiscoveryCaching: RequestHandler = (_req, res, next) => {
+  res.set('Cache-Control', 'private, no-store');
+  next();
+};
 
 /**
  * Module dependencies.
@@ -22,9 +26,13 @@ function register(app: Express) {
     .all(routeHandler(tribesPolicy.isAllowed))
     .get(routeHandler(tribes.listTribes));
   app
+    .route('/api/tribes/discovery/connections')
+    .all(routeHandler(tribesPolicy.isAllowed))
+    .get(disableDiscoveryCaching, routeHandler(tribes.listConnections));
+  app
     .route('/api/tribes/:tribe/members')
     .all(routeHandler(tribesPolicy.isAllowed))
-    .get(routeHandler(tribes.listMembers));
+    .get(disableDiscoveryCaching, routeHandler(tribes.listMembers));
   app
     .route('/api/tribes/:tribe')
     .all(routeHandler(tribesPolicy.isAllowed))

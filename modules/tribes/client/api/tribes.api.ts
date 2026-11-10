@@ -26,9 +26,28 @@ export interface MembershipUpdate {
 }
 
 export interface CircleMemberGroups {
-  contacts: UserProfile[];
-  recommenders: UserProfile[];
-  active: UserProfile[];
+  contacts: DiscoveryMember[];
+  recommenders: DiscoveryMember[];
+  active: DiscoveryMember[];
+}
+
+export type MemberActivity = 'today' | 'week' | 'month' | 'older';
+
+export type DiscoveryMember = UserProfile & {
+  activity?: MemberActivity;
+  hosting?: boolean;
+};
+
+export interface HostingConnection {
+  _id: string;
+  username: string;
+  displayName: string;
+  location: [number, number];
+}
+
+export interface ConnectionsDiscovery {
+  recent: DiscoveryMember[];
+  hosts: HostingConnection[];
 }
 
 export async function listMemberships(): Promise<MembershipUpdate[]> {
@@ -64,5 +83,10 @@ export async function get(slug: string): Promise<TribeSummary> {
 
 export async function listMembers(slug: string): Promise<CircleMemberGroups> {
   const { data } = await axios.get(`/api/tribes/${slug}/members`);
+  return data;
+}
+
+export async function getConnections(): Promise<ConnectionsDiscovery> {
+  const { data } = await axios.get('/api/tribes/discovery/connections');
   return data;
 }

@@ -10,6 +10,7 @@ import CircleMemberDiscovery from './CircleMemberDiscovery';
 import HackerspaceMap from './HackerspaceMap';
 import HitchhikingMap from './HitchhikingMap';
 import RadioCircle from './RadioCircle';
+import HackersCircleChat from './HackersCircleChat';
 import { getCircleBackgroundStyle } from '../utils';
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
@@ -334,7 +335,10 @@ export default function TribeDetailPage({
         </div>
       </Header>
       {tribe.slug === 'radio' && (
-        <RadioCircle key={user?._id || 'visitor'} user={user} />
+        <RadioCircle
+          key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
+          user={user}
+        />
       )}
       {/* Keep this a reviewed snapshot rendered as JSX text and fixed HTTPS links.
           Do not embed remote wiki HTML, scripts, images or frames here. */}
@@ -347,6 +351,12 @@ export default function TribeDetailPage({
             : undefined
         }
       >
+        {isHackersCircle && (
+          <HackersCircleChat
+            key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
+            user={user}
+          />
+        )}
         {isHackersCircle && (
           <section className="hackers-circle-resources">
             <h3>{t('Hackerspaces and community workshops') as string}</h3>

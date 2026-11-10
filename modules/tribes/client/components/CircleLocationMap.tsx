@@ -6,9 +6,9 @@ import './circle-location-map.less';
 
 const VIEW_KEY = 'circle-map-view';
 
-function readView(): [number, number, number] | null {
+function readView(viewKey = VIEW_KEY): [number, number, number] | null {
   try {
-    const view = JSON.parse(sessionStorage.getItem(VIEW_KEY) || 'null');
+    const view = JSON.parse(sessionStorage.getItem(viewKey) || 'null');
     return Array.isArray(view) &&
       view.length === 3 &&
       view.every(Number.isFinite) &&
@@ -74,12 +74,20 @@ export function locationPopup(location: CircleLocation): HTMLElement {
     paragraph.textContent = detail;
     root.append(paragraph);
   });
-  if (location.link && /^https?:\/\//i.test(location.link.url)) {
+  if (
+    location.link &&
+    (/^https?:\/\//i.test(location.link.url) ||
+      /^\/profile\/(?:[A-Za-z0-9._~-]|%[A-F0-9]{2})+\/accommodation$/.test(
+        location.link.url,
+      ))
+  ) {
     const link = document.createElement('a');
     link.href = location.link.url;
     link.textContent = location.link.label;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
+    if (/^https?:\/\//i.test(location.link.url)) {
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+    }
     root.append(link);
   }
   return root;
@@ -98,6 +106,7 @@ interface Props {
   attribution?: ReactNode;
   markerColor?: string;
   className?: string;
+  viewKey?: string;
 }
 
 export default function CircleLocationMap(props: Props) {
@@ -129,7 +138,7 @@ export default function CircleLocationMap(props: Props) {
       ],
       maxBoundsViscosity: 1,
     });
-    const savedView = readView();
+    const savedView = readView(props.viewKey);
     map.setView(
       savedView ? [savedView[0], savedView[1]] : [20, 0],
       savedView ? savedView[2] : minimumZoom(),
@@ -144,7 +153,7 @@ export default function CircleLocationMap(props: Props) {
       const { lat, lng } = map.getCenter();
       try {
         sessionStorage.setItem(
-          VIEW_KEY,
+          props.viewKey || VIEW_KEY,
           JSON.stringify([lat, lng, map.getZoom()]),
         );
       } catch {
@@ -162,7 +171,7 @@ export default function CircleLocationMap(props: Props) {
       markersRef.current = null;
       initialViewSet.current = false;
     };
-  }, []);
+  }, [props.viewKey]);
   useEffect(() => {
     const markers = markersRef.current!;
     const selected = openLocation.current;

@@ -92,6 +92,43 @@ describe('<CircleMemberDiscovery />', () => {
     expect(listMembersMock).toHaveBeenCalledWith('hitchhikers');
   });
 
+  it('shows coarse activity and links members who offer accommodation', async () => {
+    listMembersMock.mockResolvedValueOnce({
+      contacts: [
+        {
+          ...member('contact-1', 'known'),
+          activity: 'today',
+          hosting: true,
+        },
+      ],
+      recommenders: [
+        { ...member('recommender-1', 'recommender'), activity: 'week' },
+      ],
+      active: [
+        { ...member('active-1', 'active'), activity: 'month', hosting: true },
+        { ...member('older-1', 'older'), activity: 'older' },
+      ],
+    });
+
+    render(<CircleMemberDiscovery circle={circle} user={user} />);
+
+    expect(await screen.findByText('Active today')).toBeInTheDocument();
+    expect(screen.getByText('Active this week')).toBeInTheDocument();
+    expect(screen.getByText('Active this month')).toBeInTheDocument();
+    expect(
+      screen.getByText('Active more than a month ago'),
+    ).toBeInTheDocument();
+    expect(
+      screen
+        .getAllByTestId('circle-member-accommodation')
+        .map(link => link.getAttribute('href')),
+    ).toEqual([
+      '/profile/known/accommodation',
+      '/profile/active/accommodation',
+    ]);
+    expect(screen.getAllByTestId('circle-member-activity')).toHaveLength(4);
+  });
+
   it('only reloads when the circle or signed-in member changes', async () => {
     const { rerender } = render(
       <CircleMemberDiscovery circle={circle} user={user} />,

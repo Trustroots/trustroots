@@ -487,6 +487,18 @@ describe('Tribes controller unit tests', () => {
     });
   });
 
+  it('passes connection discovery failures to the error handler', async () => {
+    const error = new Error('connection discovery failed');
+    sinon.stub(Contact, 'distinct').throws(error);
+    const next = sinon.stub();
+    await tribesController.listConnections(
+      { user: { _id: new mongoose.Types.ObjectId() } },
+      deferredResponse(),
+      next,
+    );
+    next.calledOnceWithExactly(error).should.be.true();
+  });
+
   describe('tribePopulateOptions', () => {
     it('defaults to the public tribe fields', () => {
       tribesController.tribePopulateOptions().should.eql({

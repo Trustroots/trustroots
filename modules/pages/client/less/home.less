@@ -12,6 +12,35 @@
   padding: 0;
 }
 
+.home-connections {
+  display: grid;
+  gap: 24px;
+  padding-top: 28px;
+  padding-bottom: 28px;
+}
+.home-recent-members h2 {
+  margin-top: 0;
+  text-align: center;
+}
+.home-recent-member-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+  margin-bottom: 0;
+}
+.home-recent-member {
+  min-width: 0;
+}
+.home-recent-member-activity {
+  display: block;
+  padding: 8px 16px 0;
+  color: @gray;
+  font-size: 13px;
+}
+.home-hosting-map {
+  max-width: 100%;
+}
+
 // Upmost element at intro section
 .home-logo {
   margin-bottom: 40px;

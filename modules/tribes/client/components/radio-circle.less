@@ -78,6 +78,18 @@
     outline: 2px solid #128a78;
     outline-offset: 2px;
   }
+  @media (max-width: 767px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.hackers-circle-chat {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.radio-circle,
+.hackers-circle-chat {
   .radio-chat-log {
     list-style: none;
     padding: 0;
@@ -104,9 +116,6 @@
   .radio-chat-form input {
     flex: 1;
     min-width: 0;
-  }
-  @media (max-width: 767px) {
-    grid-template-columns: minmax(0, 1fr);
   }
 }
 

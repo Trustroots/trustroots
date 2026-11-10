@@ -22,6 +22,7 @@ jest.mock('@tanstack/react-router', () =>
 jest.mock('@/modules/tribes/client/api/tribes.api');
 
 const mockReadCircles = jest.mocked(circlesAPI.read);
+const mockGetConnections = jest.mocked(circlesAPI.getConnections);
 // The null response intentionally exercises the unresolved-route-circle case.
 const mockGetCircle = jest.mocked(circlesAPI.get) as jest.MockedFunction<
   (slug: string) => Promise<TribeSummary | null>
@@ -64,6 +65,10 @@ jest.mock('@/modules/core/client/components/BoardCredits.js', () => {
   return MockBoardCredits;
 });
 
+beforeEach(() => {
+  mockGetConnections.mockResolvedValue({ recent: [], hosts: [] });
+});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -101,6 +106,7 @@ describe('<Home />', () => {
       'href',
       '/support?category=volunteering',
     );
+    expect(mockGetConnections).not.toHaveBeenCalled();
   });
 
   it.each([

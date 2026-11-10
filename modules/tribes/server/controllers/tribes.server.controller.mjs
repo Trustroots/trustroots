@@ -4,6 +4,7 @@ import service from './tribes.server.controller.mts';
 export const {
   getTribe,
   listMembers,
+  listConnections,
   listTribes,
   tribeBySlug,
   tribeFields,

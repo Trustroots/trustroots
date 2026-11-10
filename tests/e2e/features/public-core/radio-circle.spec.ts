@@ -40,6 +40,15 @@ async function prepareRadio(page: Page, unavailable = false) {
       {
         kind: 1,
         created_at,
+        content: 'A fictional Hackers message',
+        tags: [['t', 'trustroots-circle-hackers']],
+      },
+      key,
+    ),
+    finalizeEvent(
+      {
+        kind: 1,
+        created_at,
         content: 'Groovesalad',
         tags: [
           ['t', 'radiostr'],
@@ -69,6 +78,16 @@ async function prepareRadio(page: Page, unavailable = false) {
         label: 'Radio',
         count: 0,
         description: 'Listen together.',
+      },
+    }),
+  );
+  await page.route('**/api/tribes/hackers', route =>
+    route.fulfill({
+      json: {
+        _id: 'fictional-hackers-circle',
+        slug: 'hackers',
+        label: 'Hackers',
+        count: 0,
       },
     }),
   );
@@ -120,6 +139,9 @@ test('visitors can play radio, save favourites and see a deduplicated count with
   await expect(
     radio.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();
+  await expect(
+    radio.getByText('2 listeners, including you on this device'),
+  ).toBeVisible();
   await soma
     .getByRole('button', { name: 'Star Groovesalad', exact: true })
     .click();
@@ -140,6 +162,7 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
 }, testInfo) => {
   annotateFeature(testInfo, 'circles.radio', [
     'A matching verified signer can publish chat, favourites and listening activity.',
+    'A matching NIP-07 extension connects automatically.',
   ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   const key = generateSecretKey();
@@ -163,10 +186,10 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
   try {
     await page.goto('/circles/radio');
     const radio = page.getByRole('region', { name: 'Trustroots Radio' });
-    await radio.getByRole('button', { name: 'Connect Nostr identity' }).click();
     await expect(radio.getByRole('status')).toContainText(
       `${SEEDED_ADMIN.username}@trustroots.org`,
     );
+    await expect(radio.getByText('A fictional Hackers message')).toHaveCount(0);
     await radio
       .getByLabel('Message')
       .fill('A fictional shared listening message');
@@ -193,6 +216,9 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
     await soma
       .getByRole('button', { name: 'Play Groovesalad', exact: true })
       .click();
+    await expect(
+      radio.getByText('2 listeners, including you on this device'),
+    ).toBeVisible();
     await expect
       .poll(
         () =>
@@ -257,6 +283,7 @@ test('radio remains playable when the shared room is unavailable and stops on na
 }, testInfo) => {
   annotateFeature(testInfo, 'circles.radio', [
     'Playback survives relay failures and stops when leaving the circle.',
+    'Local playback contributes to the listener count immediately.',
   ]);
   await prepareRadio(page, true);
   await page.goto('/circles/radio');
@@ -271,10 +298,76 @@ test('radio remains playable when the shared room is unavailable and stops on na
   await expect(
     radio.getByRole('button', { name: 'Pause', exact: true }),
   ).toBeVisible();
+  await expect(
+    radio.getByText('One listener, including you on this device'),
+  ).toBeVisible();
   await page.getByRole('link', { name: 'More circles' }).click();
   await expect(page).toHaveURL(/\/circles$/);
   await expect(radio).toHaveCount(0);
   expect(await page.evaluate(() => window.__radioMedia.loaded)).toBeGreaterThan(
     0,
   );
+});
+
+test('Hackers chat requires sign-in and publishes separately from Radio', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'circles.hackers-chat', [
+    'Visitors see a sign-in link, and members can read without a signer.',
+    'A verified signer posts to Hackers without publishing to Radio.',
+  ]);
+  await prepareRadio(page);
+  await page.goto('/circles/hackers');
+  const chat = page.getByRole('region', { name: 'Hackers chat' });
+  await expect(
+    chat.getByRole('link', { name: 'Log in to see chat.' }),
+  ).toBeVisible();
+  await expect(chat.getByText('A fictional Hackers message')).toHaveCount(0);
+
+  await signInViaApi(page, undefined, SEEDED_ADMIN);
+  await page.goto('/circles/hackers');
+  await expect(chat.getByText('A fictional Hackers message')).toHaveCount(1);
+  await expect(chat.getByText('A fictional radio message')).toHaveCount(0);
+  await expect(chat.getByLabel('Message')).toBeDisabled();
+
+  const key = generateSecretKey();
+  const publicKey = getPublicKey(key);
+  const profile = await page.request.put('/api/users', {
+    headers: { 'X-Trustroots-Request': '1' },
+    data: { nostrNpub: nip19.npubEncode(publicKey) },
+  });
+  expect(profile.ok()).toBe(true);
+  await page.exposeFunction(
+    'signRadioFixtureEvent',
+    (template: EventTemplate) => finalizeEvent(template, key),
+  );
+  await page.addInitScript(publicKey => {
+    window.nostr = {
+      getPublicKey: async () => publicKey,
+      signEvent: template => window.signRadioFixtureEvent(template),
+    };
+  }, publicKey);
+  try {
+    await page.reload();
+    await expect(chat.getByLabel('Message')).toBeEnabled();
+    await chat.getByLabel('Message').fill('Hello from a fictional hacker');
+    await chat.getByRole('button', { name: 'Send' }).click();
+    await expect(chat.getByText('Hello from a fictional hacker')).toHaveCount(
+      1,
+    );
+    const published = await page.evaluate(() => window.__radioPublished);
+    expect(published).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          content: 'Hello from a fictional hacker',
+          tags: [['t', 'trustroots-circle-hackers']],
+        }),
+      ]),
+    );
+  } finally {
+    await page.request.put('/api/users', {
+      headers: { 'X-Trustroots-Request': '1' },
+      data: { nostrNpub: '' },
+    });
+  }
 });

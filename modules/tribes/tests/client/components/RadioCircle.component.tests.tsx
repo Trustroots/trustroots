@@ -109,6 +109,7 @@ beforeEach(() => {
   });
 });
 afterEach(() => {
+  delete window.nostr;
   jest.restoreAllMocks();
   jest.useRealTimers();
 });
@@ -142,6 +143,41 @@ it('shows public playback and shared count, hiding chat and listener identities'
   expect(
     screen.getByRole('link', { name: 'Log in to see listeners and chat.' }),
   ).toHaveAttribute('href', '/signin?redirect=/circles/radio');
+});
+
+it('counts local playback before a shared event and deduplicates a linked key', async () => {
+  const listening = event(roomTemplate('listening', station, 'Music'));
+  render(
+    <RadioCircle
+      user={{ ...user, nostrNpub: nip19.npubEncode(listening.pubkey) }}
+    />,
+  );
+  fireEvent.click(row().getByRole('button', { name: `Play ${station.title}` }));
+  expect(
+    await screen.findByText('One listener, including you on this device'),
+  ).toBeVisible();
+  emit(listening);
+  expect(screen.getByText('One shared listener')).toBeVisible();
+  expect(
+    screen.queryByText(/including you on this device/),
+  ).not.toBeInTheDocument();
+});
+
+it('automatically connects once when a linked signer is injected late', async () => {
+  jest.useFakeTimers();
+  const pubkey = event(roomTemplate('chat', station, '')).pubkey;
+  render(
+    <RadioCircle user={{ ...user, nostrNpub: nip19.npubEncode(pubkey) }} />,
+  );
+  expect(connectRadioSigner).not.toHaveBeenCalled();
+  window.nostr = {
+    getPublicKey: async () => pubkey,
+    signEvent: async template => template,
+  };
+  await act(async () => jest.advanceTimersByTime(250));
+  expect(screen.getByText(/Connected as fictional-member/)).toBeVisible();
+  await act(async () => jest.advanceTimersByTime(5000));
+  expect(connectRadioSigner).toHaveBeenCalledTimes(1);
 });
 it('plays, pauses, persists local favourites, follows station hashes and cleans up', async () => {
   const { container, unmount } = render(<RadioCircle />);
