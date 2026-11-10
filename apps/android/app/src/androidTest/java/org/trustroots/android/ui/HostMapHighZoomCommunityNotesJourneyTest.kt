@@ -271,8 +271,8 @@ class HostMapHighZoomCommunityNotesJourneyTest {
 
             // Zoom schedules Compose work; this uninterrupted UI-thread block taps the old marker
             // while its callback still references the grouped notes.
-            map.controller.setCenter(groupedMarker.position)
             map.controller.setZoom(14.5)
+            map.controller.setCenter(groupedMarker.position)
             zoomBeforeStaleTap.set(map.zoomLevelDouble)
             assertTrue("The captured marker tap must occur at high zoom", zoomBeforeStaleTap.get() >= 14.0)
             val point = map.projection.toPixels(groupedMarker.position, Point())

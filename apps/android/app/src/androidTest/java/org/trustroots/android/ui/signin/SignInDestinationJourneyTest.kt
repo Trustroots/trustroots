@@ -76,6 +76,7 @@ import org.trustroots.android.notifications.MessageDestination
 import org.trustroots.android.ui.SignInJourneyActivity
 import org.trustroots.android.ui.LocaleOverlayResources
 import org.trustroots.android.ui.TrustrootsApp
+import org.trustroots.android.ui.hideTestKeyboard
 import org.trustroots.android.ui.theme.TrustrootsTheme
 
 @RunWith(AndroidJUnit4::class)
@@ -339,7 +340,8 @@ class SignInDestinationJourneyTest {
         val scenario = launchActivity(browserBaseUrl = "$apiBaseUrl/browser")
         composeScenario = scenario
         waitForSignIn()
-        compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
+        compose.onNodeWithTag("signin-username").performTextReplacement("anonymous-heron")
+        hideTestKeyboard()
         compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
         val recoveryURL = "$apiBaseUrl/browser/password/forgot"
         val historyURL = "$apiBaseUrl/browser/second"

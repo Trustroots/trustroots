@@ -24,7 +24,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextReplacement
-import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.junit.Assert.assertEquals
@@ -58,7 +57,7 @@ class SearchFieldLayoutJourneyTest {
 
         compose.onNodeWithTag("liveFilterField").assertIsDisplayed()
         compose.onNodeWithContentDescription("Clear circle filter").assertDoesNotExist()
-        compose.onNodeWithTag("liveFilterField").performTextInput(" ")
+        compose.onNodeWithTag("liveFilterField").performTextReplacement(" ")
         compose.onNodeWithContentDescription("Clear circle filter").assertIsDisplayed()
         compose.onNodeWithTag("liveFilterField").performTextReplacement("harbour")
         compose.onNodeWithContentDescription("Clear circle filter")
@@ -98,12 +97,13 @@ class SearchFieldLayoutJourneyTest {
         }
 
         compose.onNodeWithText("Members").assertIsDisplayed()
-        compose.onNodeWithTag("submittedSearchField").performTextInput("ab")
+        compose.onNodeWithTag("submittedSearchField").performTextReplacement("ab")
         compose.onNodeWithTag("submittedSearchField").performImeAction()
         compose.onNodeWithContentDescription("Search members").assertIsNotEnabled()
         assertEquals(0, submissions)
 
-        compose.onNodeWithTag("submittedSearchField").performTextInput("c")
+        compose.onNodeWithTag("submittedSearchField").performTextReplacement("abc")
+        hideTestKeyboard()
         compose.onNodeWithContentDescription("Search members")
             .assertIsDisplayed()
             .assertWidthIsAtLeast(48.dp)
