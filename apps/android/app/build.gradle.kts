@@ -38,7 +38,8 @@ val previewUpdateAlerts = providers.gradleProperty("trustrootsPreviewUpdateAlert
     .map { it == "true" }
     .orElse(false)
 val buildEpochSeconds = providers.environmentVariable("ANDROID_BUILD_EPOCH_SECONDS").orElse(providers.exec {
-    commandLine("date", "+%s")
+    workingDir(rootProject.projectDir)
+    commandLine("git", "show", "-s", "--format=%ct", "HEAD")
 }.standardOutput.asText.map(String::trim))
 val releaseKeystorePath = providers.environmentVariable("ANDROID_KEYSTORE_PATH")
 val releaseKeystorePassword = providers.environmentVariable("ANDROID_KEYSTORE_PASSWORD")

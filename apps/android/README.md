@@ -50,19 +50,13 @@ own website analytics behaviour; this setting controls native analytics only.
 
 ## APK update alerts
 
-The signed GitHub preview APK lets members opt in to update alerts from Account
-→ APK updates. It checks GitHub Releases daily and links to the release page
-when a newer signed Android preview is available. Android 13 and later asks for
-notification permission when alerts are enabled. A member can also check
-immediately from Account. The app does not download or install updates.
+The signed GitHub preview and F-Droid builds both leave in-app APK update
+alerts off so they can use the same build configuration. Members can follow
+GitHub prereleases with [Obtainium](https://obtainium.imranr.dev/).
 
-The preview release workflow enables this feature with
-`-PtrustrootsPreviewUpdateAlerts=true`. Local and F-Droid builds leave it off:
-F-Droid's build may have a different signing key, so linking its members to a
-GitHub APK could suggest an update they cannot install. Members using
-[Obtainium](https://obtainium.imranr.dev/) can leave the in-app option off and
-use Obtainium's GitHub prerelease alerts instead. Keep the signing key stable
-and increase Android version codes for every preview update.
+For local testing, a release build with `-PtrustrootsPreviewUpdateAlerts=true`
+offers opt-in alerts under Account → APK updates and links to newer GitHub
+releases. The app does not download or install updates.
 
 ## Message alerts without Google services
 
@@ -116,9 +110,9 @@ trigger a fresh build. Android changes also build automatically without the labe
 
 CI measures the shrunk release APK against a 5 MB (5,000,000 byte) download
 budget. The PR comment shows the debug APK size and the unsigned
-release APK size and change from `main`. CI builds both release APKs with preview
-update alerts enabled. The preview release workflow checks the final signed APK
-before publishing.
+release APK size and change from `main`. CI builds both release APKs with the
+same update alert setting as the signed preview. The preview release workflow
+checks the final signed APK before publishing.
 
 ## Member screen source layout
 

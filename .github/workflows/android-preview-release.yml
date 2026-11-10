@@ -54,7 +54,7 @@ jobs:
           test -n "$ANDROID_KEYSTORE_PASSWORD"
           test -n "$ANDROID_KEY_ALIAS"
           test -n "$ANDROID_KEY_PASSWORD"
-          ./gradlew testDebugUnitTest lintDebug assembleRelease -PtrustrootsPreviewUpdateAlerts=true
+          ./gradlew testDebugUnitTest lintDebug assembleRelease
       - name: Check signed APK size
         run: bash apps/android/scripts/check-apk-size.sh apps/android/app/build/outputs/apk/release/app-release.apk
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
