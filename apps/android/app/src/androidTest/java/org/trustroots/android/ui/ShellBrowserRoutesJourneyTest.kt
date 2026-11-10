@@ -97,16 +97,11 @@ class ShellBrowserRoutesJourneyTest {
         }
     }
 
-    @Test fun signInJoinAndPasswordResetUseOfflineBrowserSurface() {
+    @Test fun signInPasswordResetUsesOfflineBrowserSurface() {
         startResponder()
         showApp()
 
         waitForText("Username or email")
-        compose.onNodeWithText("Join").performScrollTo().performClick()
-        assertBrowserRoute("Join Trustroots", "https://www.trustroots.org/signup")
-        compose.onNodeWithText("Close fake browser").performClick()
-        compose.onNodeWithText("Username or email").assertIsDisplayed()
-
         compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
         assertBrowserRoute("Reset password", "https://www.trustroots.org/password/forgot")
         compose.onNodeWithText("Close fake browser").performClick()
@@ -120,8 +115,8 @@ class ShellBrowserRoutesJourneyTest {
 
         waitForText("Username or email")
         compose.onNodeWithTag("signin-username").performTextInput("anonymous-heron")
-        compose.onNodeWithText("Join").performScrollTo().performClick()
-        assertBrowserRoute("Join Trustroots", "https://www.trustroots.org/signup")
+        compose.onNodeWithText("Forgot password?").performScrollTo().performClick()
+        assertBrowserRoute("Reset password", "https://www.trustroots.org/password/forgot")
 
         pressSystemBack()
 

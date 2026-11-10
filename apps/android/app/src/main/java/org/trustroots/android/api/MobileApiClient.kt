@@ -26,6 +26,18 @@ data class AccountDetails(
     val newsletter: Boolean = false,
 )
 
+internal class SignUpDetails(
+    val firstName: String,
+    val lastName: String,
+    val username: String,
+    val email: String,
+    val password: String,
+    val ageConfirmed: Boolean,
+    val newsletter: Boolean,
+    val acquisitionStory: String,
+    val locale: String,
+)
+
 data class MemberSession(
     val cookieHeader: String,
     val member: MobileMember,
@@ -189,6 +201,28 @@ class MobileApiClient(
         URL("$baseURL/uploads-circle/${encode(slug).replace("+", "%20")}/742x496.jpg")
     fun avatarURL(memberID: String, size: Int = 128, session: MemberSession? = null): URL =
         URL("$baseURL${if (session?.accessToken != null) "/api/mobile/v0/members" else "/api/users"}/${encode(memberID)}/avatar?size=$size")
+    internal suspend fun signUp(details: SignUpDetails): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                jsonRequest(
+                    path = "/api/auth/signup",
+                    method = "POST",
+                    body = JSONObject()
+                        .put("firstName", details.firstName)
+                        .put("lastName", details.lastName)
+                        .put("username", details.username)
+                        .put("email", details.email)
+                        .put("password", details.password)
+                        .put("ageConfirmed", details.ageConfirmed)
+                        .put("newsletter", details.newsletter)
+                        .put("acquisitionStory", details.acquisitionStory)
+                        .put("locale", details.locale)
+                        .toString(),
+                )
+                Unit
+            }
+        }
+
     suspend fun signIn(usernameOrEmail: String, password: String): Result<MemberSession> =
         withContext(Dispatchers.IO) {
             runCatching {

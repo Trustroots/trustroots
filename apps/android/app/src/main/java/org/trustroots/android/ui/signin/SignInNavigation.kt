@@ -1,12 +1,18 @@
 package org.trustroots.android.ui.signin
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -21,11 +27,15 @@ import org.trustroots.android.R
 import org.trustroots.android.analytics.UsageAnalytics
 import org.trustroots.android.analytics.UsageScreen
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.browser.BrowserRoute
 import org.trustroots.android.ui.common.UsageScreenTracking
 
 @Serializable
 internal data class SignInVisit(val visitID: Long) : NavKey
+
+@Serializable
+internal data class SignUpVisit(val visitID: Long) : NavKey
 
 @Serializable
 internal data class SignInBrowserVisit(
@@ -34,7 +44,7 @@ internal data class SignInBrowserVisit(
 ) : NavKey
 
 @Serializable
-internal enum class SignInBrowserPurpose { SignUp, ForgotPassword }
+internal enum class SignInBrowserPurpose { Rules, ForgotPassword }
 
 @Composable
 internal fun SignInNavigation(
@@ -43,15 +53,15 @@ internal fun SignInNavigation(
     apiBaseUrl: String,
     initialMessage: org.trustroots.android.ui.common.UiFailure?,
     onSignedIn: (MemberSession) -> Unit,
+    onSignedUp: (MemberSession) -> Unit,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit,
 ) {
     val backStack = rememberNavBackStack(SignInVisit(visitID = 0L))
     var nextVisitID by rememberSaveable { mutableLongStateOf(1L) }
-    val pushBrowser: (SignInBrowserPurpose) -> Unit = { purpose ->
-        backStack.add(SignInBrowserVisit(purpose, nextVisitID++))
-    }
-    val popRoute: () -> Unit = {
-        if (backStack.size > 1) backStack.removeLastOrNull()
+    fun popRoute(expected: NavKey?) {
+        if (backStack.size > 1 && backStack.lastOrNull() == expected) {
+            backStack.removeLastOrNull()
+        }
     }
     UsageScreenTracking(
         analytics,
@@ -68,7 +78,7 @@ internal fun SignInNavigation(
         )
         NavDisplay(
             backStack = backStack,
-            onBack = popRoute,
+            onBack = { popRoute(backStack.lastOrNull()) },
             entryDecorators = decorators,
             entryProvider = entryProvider {
                 entry<SignInVisit> {
@@ -77,27 +87,42 @@ internal fun SignInNavigation(
                         analytics = analytics,
                         viewModel = viewModel,
                         onSignedIn = onSignedIn,
-                        onSignUp = { pushBrowser(SignInBrowserPurpose.SignUp) },
-                        onForgotPassword = { pushBrowser(SignInBrowserPurpose.ForgotPassword) },
+                        onSignUp = { backStack.add(SignUpVisit(nextVisitID++)) },
+                        onForgotPassword = {
+                            backStack.add(SignInBrowserVisit(SignInBrowserPurpose.ForgotPassword, nextVisitID++))
+                        },
+                    )
+                }
+                entry<SignUpVisit> { visit ->
+                    SignUpScreen(
+                        form = viewModel(),
+                        api = remember(apiBaseUrl) { MobileApiClient(apiBaseUrl) },
+                        onBack = { popRoute(visit) },
+                        onRules = { backStack.add(SignInBrowserVisit(SignInBrowserPurpose.Rules, nextVisitID++)) },
+                        onSignedUp = onSignedUp,
                     )
                 }
                 entry<SignInBrowserVisit> { visit ->
-                    val route = signInBrowserRoute(
-                        visit.purpose,
-                        stringResource(
-                            if (visit.purpose == SignInBrowserPurpose.SignUp) R.string.screen_join_trustroots
-                            else R.string.screen_reset_password,
-                        ),
-                    )
-                    browserContent(route, popRoute, PaddingValues.Zero)
+                    val route = when (visit.purpose) {
+                        SignInBrowserPurpose.Rules -> BrowserRoute(
+                            title = stringResource(R.string.screen_menu_link_rules),
+                            url = "https://www.trustroots.org/rules",
+                            backClosesRoute = true,
+                        )
+                        SignInBrowserPurpose.ForgotPassword -> BrowserRoute(
+                            title = stringResource(R.string.screen_reset_password),
+                            url = "https://www.trustroots.org/password/forgot",
+                        )
+                    }
+                    Box(Modifier.fillMaxSize().safeDrawingPadding()) {
+                        browserContent(
+                            route,
+                            { popRoute(visit) },
+                            PaddingValues.Zero,
+                        )
+                    }
                 }
             },
         )
     }
 }
-
-internal fun signInBrowserRoute(purpose: SignInBrowserPurpose, title: String): BrowserRoute =
-    when (purpose) {
-        SignInBrowserPurpose.SignUp -> BrowserRoute(title, "https://www.trustroots.org/signup")
-        SignInBrowserPurpose.ForgotPassword -> BrowserRoute(title, "https://www.trustroots.org/password/forgot")
-    }

@@ -3,6 +3,7 @@ package org.trustroots.android.ui
 import android.content.Intent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +21,7 @@ internal fun Intent.requireJourneyApiBaseUrl(): String =
 class SignInJourneyActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         val apiBaseUrl = intent.requireJourneyApiBaseUrl()
         setContent {
             TrustrootsTheme {
@@ -52,7 +54,7 @@ class SignInJourneyActivity : ComponentActivity() {
                             org.trustroots.android.browser.DefaultBrowserContent
                         } else {
                             { route, onClose, contentPadding ->
-                                val path = if (route.url.endsWith("/signup")) "/signup" else "/password/forgot"
+                                val path = java.net.URI(route.url).path
                                 org.trustroots.android.browser.TrustrootsBrowser(
                                     route.copy(url = localBrowserBaseUrl.trimEnd('/') + path),
                                     onClose,

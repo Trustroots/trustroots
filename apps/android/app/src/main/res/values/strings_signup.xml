@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="signup_first_name">First name</string>
+    <string name="signup_last_name">Last name (optional)</string>
+    <string name="signup_username">Username</string>
+    <string name="signup_password">Password (at least 8 characters)</string>
+    <string name="signup_acquisition">How did you hear about us? (optional)</string>
+    <string name="signup_newsletter">Subscribe to community news</string>
+    <string name="signup_age">I am 18 years old or older</string>
+    <string name="signup_rules_agreement">By signing up, you agree to follow the Trustroots rules.</string>
+    <string name="signup_read_rules">Read the rules</string>
+    <string name="signup_create_account">Create account</string>
+    <string name="signup_working">Please wait…</string>
+    <string name="signup_failed">Could not create your account. Check your details and try again.</string>
+    <string name="signup_signin_failed">Your account was created, but we could not sign you in. Try again or go back to sign in.</string>
+    <string name="signup_welcome">Welcome to Trustroots!</string>
+    <string name="signup_confirm_email">Check your inbox for a confirmation email. Follow the link in that email to confirm your address.</string>
+    <string name="signup_continue">Continue to Trustroots</string>
+</resources>

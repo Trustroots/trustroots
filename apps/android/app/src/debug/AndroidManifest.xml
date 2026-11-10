@@ -6,7 +6,8 @@
             android:exported="false" />
         <activity
             android:name="org.trustroots.android.ui.SignInJourneyActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <activity
             android:name="org.trustroots.android.browser.BrowserHistoryJourneyActivity"
             android:exported="false" />

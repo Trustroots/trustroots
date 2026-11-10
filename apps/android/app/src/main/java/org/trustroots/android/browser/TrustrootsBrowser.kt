@@ -46,6 +46,7 @@ data class BrowserRoute(
     val title: String,
     val url: String,
     val sessionCookie: String? = null,
+    val backClosesRoute: Boolean = false,
 )
 
 internal val DefaultBrowserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit =
@@ -78,7 +79,7 @@ fun TrustrootsBrowser(
         ViewModelProvider(viewModelStoreOwner)[BrowserEntryStateViewModel::class.java]
     }
 
-    BackHandler { navigateBack() }
+    BackHandler { if (route.backClosesRoute) closeBrowser() else navigateBack() }
 
     externalURL?.let { link ->
         AlertDialog(
