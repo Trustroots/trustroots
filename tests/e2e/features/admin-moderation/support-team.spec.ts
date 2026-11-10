@@ -16,7 +16,7 @@ test('Support team can open a hidden member profile', async ({
   baseURL,
 }, testInfo) => {
   annotateFeature(testInfo, 'admin.support-team', [
-    'Support can open hidden member profiles without access to the administrator member report.',
+    'Support can open hidden profiles and see a limited username report.',
   ]);
   const context = await createIsolatedContext(browser, baseURL);
   const page = await context.newPage();
@@ -40,10 +40,15 @@ test('Support team can open a hidden member profile', async ({
       );
     });
     await signInViaApi(page, context.request, support);
-    await page.goto(`/admin/support/member/${member.username}`);
+    await page.goto(`/admin/user/${member.username}`);
     await expect(
       page.getByText('Hidden profile', { exact: true }),
     ).toBeVisible();
+    await expect(page.getByText(bio, { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Suspend' })).toHaveCount(0);
+    await expect(
+      page.getByRole('button', { name: 'Delete member' }),
+    ).toHaveCount(0);
     await page.getByRole('link', { name: 'View profile' }).click();
     await expect(page.getByText(bio, { exact: true })).toBeVisible();
 

@@ -25,13 +25,18 @@ describe('React route ownership', function () {
     getReactRouteAccessRedirect(route, null).should.equal('/signin');
   });
 
-  it('owns username admin links with the same admin-only access as ID links', () => {
+  it('allows Support team members to open username report links only', () => {
     const matched = matchReactRoute('/admin/user/fictional-member');
     should({ ...matched.params }).deepEqual({ username: 'fictional-member' });
     matched.policy.path.should.equal('/admin/user/:username');
-    should(
-      getReactRouteAccessRedirect(matched.policy, { roles: ['admin'] }),
-    ).be.null();
+    for (const role of ['admin', 'support-team']) {
+      should(
+        getReactRouteAccessRedirect(matched.policy, { roles: [role] }),
+      ).be.null();
+    }
+    getReactRouteAccessRedirect(getReactRoutePolicy('/admin/user'), {
+      roles: ['support-team'],
+    }).should.equal('/volunteering');
     getReactRouteAccessRedirect(matched.policy, {
       roles: ['welcome-team'],
     }).should.equal('/volunteering');

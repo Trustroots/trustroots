@@ -743,7 +743,13 @@ The `support-team` role SHALL grant current greeter tools, allowlisted member se
 
 - **WHEN** a Support team member opens the profile from the Support member page for a hidden account
 - **THEN** the profile view displays the available member profile content
-- **AND** the administrator member report remains restricted to administrators
+- **AND** the full administrator report and its API remain restricted to administrators
+
+#### Scenario: Support team member follows a username report link
+
+- **WHEN** a Support team member opens `/admin/user/:username`
+- **THEN** the route displays the allowlisted Support member view
+- **AND** an administrator at the same URL sees the full administrator report
 
 ### Requirement: Support request inbox
 
