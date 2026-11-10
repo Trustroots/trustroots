@@ -11,6 +11,55 @@ import {
 } from '../../support/helpers.mts';
 import { withE2eDb } from '../../support/db.mts';
 
+test('Support team can open a hidden member profile', async ({
+  browser,
+  baseURL,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.support-team', [
+    'Support can open hidden member profiles without access to the administrator member report.',
+  ]);
+  const context = await createIsolatedContext(browser, baseURL);
+  const page = await context.newPage();
+  const support = createUser();
+  const member = createUser();
+  const bio = 'I enjoy repairing bicycles and sharing stories with travellers.';
+  const usernames = [support.username, member.username];
+  try {
+    for (const user of [support, member]) {
+      await registerViaApi(context.request, user);
+    }
+    await withE2eDb(async db => {
+      const users = db.collection('users');
+      await users.updateOne(
+        { username: support.username },
+        { $set: { roles: ['user', 'support-team'] } },
+      );
+      await users.updateOne(
+        { username: member.username },
+        { $set: { description: bio, roles: ['user', 'shadowban'] } },
+      );
+    });
+    await signInViaApi(page, context.request, support);
+    await page.goto(`/admin/support/member/${member.username}`);
+    await expect(
+      page.getByText('Hidden profile', { exact: true }),
+    ).toBeVisible();
+    await page.getByRole('link', { name: 'View profile' }).click();
+    await expect(page.getByText(bio, { exact: true })).toBeVisible();
+
+    const report = await page.request.post('/api/admin/user', {
+      headers: { 'X-Trustroots-Request': '1' },
+      data: { username: member.username },
+    });
+    expect(report.status()).toBe(403);
+  } finally {
+    await context.close();
+    await withE2eDb(db =>
+      db.collection('users').deleteMany({ username: { $in: usernames } }),
+    );
+  }
+});
+
 test('support can triage a report and investigate only its verified member pair', async ({
   browser,
   baseURL,

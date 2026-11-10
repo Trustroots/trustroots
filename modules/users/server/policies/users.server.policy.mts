@@ -134,21 +134,38 @@ function invokeRolesPolicies() {
         },
       ],
     },
+    {
+      roles: ['support-team'],
+      allows: [{ resources: '/api/users/:username', permissions: ['get'] }],
+    },
   ]);
+}
+
+export function isSupportProfileRead(req: {
+  user?: { roles?: string[] } | null;
+  route?: { path: string };
+  method?: string;
+}): boolean {
+  return (
+    req.route?.path === '/api/users/:username' &&
+    req.method === 'GET' &&
+    req.user?.roles?.includes('support-team') === true
+  );
 }
 
 /**
  * Check If Users Policy Allows
  */
 function isAllowed(req: UsersRequest, res: PolicyResponse, next: PolicyNext) {
-  const isAdminProfileRead =
-    req.user?.roles?.includes('admin') &&
-    req.route.path === '/api/users/:username' &&
-    req.method === 'GET';
+  const isStaffProfileRead =
+    (req.user?.roles?.includes('admin') &&
+      req.route.path === '/api/users/:username' &&
+      req.method === 'GET') ||
+    isSupportProfileRead(req);
 
   // Non-public profiles are invisible
   if (
-    !isAdminProfileRead &&
+    !isStaffProfileRead &&
     req.profile &&
     !req.profile.public &&
     req.user &&
@@ -161,7 +178,7 @@ function isAllowed(req: UsersRequest, res: PolicyResponse, next: PolicyNext) {
 
   // No profile browsing for non-public users
   if (
-    !isAdminProfileRead &&
+    !isStaffProfileRead &&
     req.profile &&
     req.user &&
     !req.user.public &&

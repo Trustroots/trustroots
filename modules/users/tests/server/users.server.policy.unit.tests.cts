@@ -126,6 +126,10 @@ describe('Users policy unit tests', () => {
           permissions,
         })),
       },
+      {
+        roles: ['support-team'],
+        allows: [{ resources: '/api/users/:username', permissions: ['get'] }],
+      },
     ]);
   });
 
@@ -154,6 +158,7 @@ describe('Users policy unit tests', () => {
           const adminExpected =
             path === '/api/users/:username' && method === 'GET' ? 200 : 403;
           decide(['admin'], path, method).should.equal(adminExpected);
+          decide(['support-team'], path, method).should.equal(adminExpected);
         }
       });
     }

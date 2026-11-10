@@ -739,6 +739,12 @@ The `support-team` role SHALL grant current greeter tools, allowlisted member se
 - **THEN** safe account details and status are available without authentication tokens or IP history
 - **AND** suspension, shadowban and staff role changes remain denied
 
+#### Scenario: Support team member opens a hidden profile
+
+- **WHEN** a Support team member opens the profile from the Support member page for a hidden account
+- **THEN** the profile view displays the available member profile content
+- **AND** the administrator member report remains restricted to administrators
+
 ### Requirement: Support request inbox
 
 Administrators and support volunteers SHALL share support threads at stable request URLs, search their plain-text correspondence and requester identifiers, filter by category and new/open/pending/hold/solved/closed status, and see accurate total, matching and per-status counts. Unresolved SHALL include new, open, pending and hold. Legacy resolved SHALL mean solved and missing legacy status SHALL mean open.

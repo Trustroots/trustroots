@@ -12,6 +12,8 @@ import type {
 } from '../services/profile-response.server.service.mts';
 
 export interface ProfileRequest {
+  method?: string;
+  route?: { path: string };
   body: Record<string, unknown>;
   params: Record<string, string | undefined>;
   query: Record<string, unknown>;

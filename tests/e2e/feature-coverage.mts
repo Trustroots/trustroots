@@ -3090,6 +3090,7 @@ const features = [
     requiredScenarios: [
       'Support can triage requests and inspect linked conversations and experiences without suspension authority.',
       'Support can search for a member from the top of the inbox.',
+      'Support can open hidden member profiles without access to the administrator member report.',
     ],
     relatedSpecs: [],
   },
