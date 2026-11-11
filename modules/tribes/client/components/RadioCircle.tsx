@@ -183,11 +183,14 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
     };
   }, [station, playing, signer, t]);
 
-  async function play(next: Station) {
+  async function play(next: Station, { pauseIfPlaying = true } = {}) {
+    const alreadyPlaying = station?.id === next.id && playing;
+    if (alreadyPlaying && !pauseIfPlaying) return;
+
     const request = ++playRequest.current;
     const player = audio.current!;
     setError('');
-    if (station?.id === next.id && playing) {
+    if (alreadyPlaying) {
       player.pause();
       setPlaying(false);
       return;
@@ -330,9 +333,22 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
             <Button
               intent="primary"
               type="button"
+              aria-label={playing ? t('Pause') : t('Play')}
               onClick={() => void play(station)}
             >
-              {playing ? t('Pause') : t('Play')}
+              <svg
+                aria-hidden="true"
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                {playing ? (
+                  <path d="M5 4h3v12H5zm7 0h3v12h-3z" />
+                ) : (
+                  <path d="M6 3v14l11-7z" />
+                )}
+              </svg>
             </Button>
           )}
         </div>
@@ -454,10 +470,28 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
             usernames={usernames}
             stationLink={event => {
               const channel = tag(event, 'channel');
-              return stations.some(item => item.id === channel) ? (
+              const next = stations.find(item => item.id === channel);
+              return next ? (
                 <>
                   {' '}
-                  <a href={`/circles/radio#${channel}`}>#{channel}</a>
+                  <a
+                    href={`/circles/radio#${next.id}`}
+                    onClick={event => {
+                      if (
+                        event.button !== 0 ||
+                        event.altKey ||
+                        event.ctrlKey ||
+                        event.metaKey ||
+                        event.shiftKey
+                      ) {
+                        return;
+                      }
+                      event.preventDefault();
+                      void play(next, { pauseIfPlaying: false });
+                    }}
+                  >
+                    #{next.id}
+                  </a>
                 </>
               ) : null;
             }}

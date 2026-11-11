@@ -608,6 +608,27 @@ it('shares after ten seconds, heartbeats while playing and expires stale listene
   expect(screen.getByText('No shared listening activity yet.')).toBeVisible();
 });
 
+it('switches to a station from chat and keeps playing on repeated activation', async () => {
+  render(<RadioCircle user={user} />);
+  const next = stations[1];
+  emit(event(roomTemplate('chat', next, 'A station recommendation')));
+  const hashtag = screen.getByRole('link', { name: `#${next.id}` });
+
+  fireEvent.click(row().getByRole('button', { name: `Play ${station.title}` }));
+  await screen.findByRole('button', { name: 'Pause' });
+  fireEvent.click(hashtag);
+  await screen.findByRole('button', { name: `Pause ${next.title}` });
+  expect(window.location.hash).toBe(`#${next.id}`);
+  expect(play).toHaveBeenCalledTimes(2);
+
+  fireEvent.click(hashtag);
+  expect(
+    screen.getByRole('button', { name: `Pause ${next.title}` }),
+  ).toBeVisible();
+  expect(play).toHaveBeenCalledTimes(2);
+  expect(fireEvent.click(hashtag, { ctrlKey: true })).toBe(true);
+});
+
 it('sorts chat, omits unknown station links and expires messages', () => {
   render(<RadioCircle user={user} />);
   const now = Math.floor(Date.now() / 1000);
