@@ -8,7 +8,10 @@ import unittest
 
 
 class ContainerPreparationTests(unittest.TestCase):
-    def run_preparation(self, image="example.invalid/dev:commit", fail="", fallback=False, version="4.4"):
+    def run_preparation(
+        self, image="example.invalid/dev:commit", fail="", fallback=False,
+        version="4.4", flaky_dev_pull=False,
+    ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             docker = root / "docker"
@@ -19,6 +22,10 @@ if [ "$*" = "$FAIL" ]; then exit 17; fi
 if [ "$1 $2" = "pull example.invalid/dev:commit" ]; then
   touch "$STATE/dev-started"
   while [ ! -f "$STATE/mongo-started" ]; do sleep 0.01; done
+  if [ "$FLAKY_DEV_PULL" = true ] && [ ! -f "$STATE/dev-pull-failed" ]; then
+    touch "$STATE/dev-pull-failed"
+    exit 1
+  fi
 elif [ "$1" = compose ] && [ "$6" = pull ]; then
   touch "$STATE/mongo-started"
   if [ -n "$EXPECT_DEV" ] && [ "$FAIL" != "pull example.invalid/dev:commit" ]; then
@@ -36,6 +43,7 @@ fi
                      "STATE": directory, "TRUSTROOTS_CI_DEV_IMAGE": image,
                      "TRUSTROOTS_CI_MONGO_VERSION": version,
                      "EXPECT_DEV": image, "FAIL": fail,
+                     "FLAKY_DEV_PULL": str(flaky_dev_pull).lower(),
                      "FALLBACK": str(fallback).lower()},
                 capture_output=True, text=True, timeout=10,
             )
@@ -52,7 +60,22 @@ fi
         code, commands, finished = self.run_preparation(fail="pull example.invalid/dev:commit")
         self.assertEqual(code, 17)
         self.assertTrue(finished)
+        self.assertEqual(commands.splitlines().count("pull example.invalid/dev:commit"), 3)
         self.assertNotIn("tag example.invalid/dev:commit", commands)
+
+    def test_retries_a_transient_dev_pull_failure_before_tagging(self):
+        code, commands, finished = self.run_preparation(flaky_dev_pull=True)
+        self.assertEqual(code, 0)
+        self.assertTrue(finished)
+        dev_commands = [
+            command for command in commands.splitlines()
+            if "example.invalid/dev:commit" in command
+        ]
+        self.assertEqual(dev_commands, [
+            "pull example.invalid/dev:commit",
+            "pull example.invalid/dev:commit",
+            "tag example.invalid/dev:commit trustroots-dev:ci",
+        ])
 
     def test_failed_tag_and_failed_mongo_start_are_propagated(self):
         for command in ["tag example.invalid/dev:commit trustroots-dev:ci",
