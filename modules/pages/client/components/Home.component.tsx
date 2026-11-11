@@ -15,6 +15,7 @@ import SiteFooter, {
   type Build,
 } from '@/modules/core/client/components/SiteFooter.component.js';
 import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
+import HomeConnections from './HomeConnections.component';
 import ManifestoText from './ManifestoText.component.js';
 import Screenshot from '@/modules/core/client/components/Screenshot.js';
 import screenshotProfilePng from '../img/screenshot-profile.png';
@@ -158,6 +159,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
 
   return (
     <>
+      {user && <HomeConnections key={user._id || user.username} />}
       {!user && (
         // TODO apply tr-boards-ignore-small attribute here and implement functionality in the Board.js controller
         <Board

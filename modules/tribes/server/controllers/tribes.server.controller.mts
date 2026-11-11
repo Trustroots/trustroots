@@ -3,6 +3,7 @@ import paginationService from '../../../core/server/services/pagination.server.s
 import mongoose, { type PipelineStage, type Types } from 'mongoose';
 import moment from 'moment';
 import userMiniService from '../../../users/server/services/user-mini.server.service.mjs';
+import { findDiscoveryHostingLocations } from '../../../users/server/services/discovery-hosting.server.service.mts';
 import userRolesService from '../../../users/server/services/user-roles.server.service.mjs';
 
 interface TribeRecord {
@@ -39,12 +40,26 @@ interface MemberView {
   _id: Types.ObjectId;
   username?: string;
   displayName?: string;
+  seen?: Date;
 }
 
+type Activity = 'today' | 'week' | 'month' | 'older';
+type DiscoveryMember = Omit<MemberView, 'seen'> & {
+  activity?: Activity;
+  hosting?: boolean;
+};
+
 interface MemberListResponse {
-  contacts: MemberView[];
-  recommenders: MemberView[];
-  active: MemberView[];
+  contacts: DiscoveryMember[];
+  recommenders: DiscoveryMember[];
+  active: DiscoveryMember[];
+}
+
+interface ConnectionsResponse {
+  recent: DiscoveryMember[];
+  hosts: (Pick<MemberView, '_id' | 'username' | 'displayName'> & {
+    location: [number, number];
+  })[];
 }
 
 interface RequestQuery {
@@ -63,8 +78,11 @@ interface TribeRequest {
 
 type ListTribesRequest = TribeRequest & { query: RequestQuery };
 
-type MemberRequest = TribeRequest & {
+type ConnectionRequest = TribeRequest & {
   user: UserRecord & { _id: Types.ObjectId };
+};
+
+type MemberRequest = ConnectionRequest & {
   tribe: TribeRecord & { _id: Types.ObjectId };
 };
 
@@ -97,6 +115,11 @@ const service = {} as {
   listMembers(
     req: MemberRequest,
     res: JsonResponse<MemberListResponse>,
+    next: Next,
+  ): Promise<unknown>;
+  listConnections(
+    req: ConnectionRequest,
+    res: JsonResponse<ConnectionsResponse>,
     next: Next,
   ): Promise<unknown>;
   tribeBySlug(
@@ -191,7 +214,7 @@ service.getTribe = function (req, res) {
 };
 
 function visibleMemberMatch(
-  req: MemberRequest,
+  req: ConnectionRequest,
   excludedIDs: Types.ObjectId[],
   prefix = '',
 ): Record<string, unknown> {
@@ -203,11 +226,26 @@ function visibleMemberMatch(
     [`${prefix}public`]: true,
     [`${prefix}roles`]: { $nin: userRolesService.restrictedMessagingRoles },
     [`${prefix}blocked`]: { $nin: [req.user._id] },
-    [`${prefix}member.tribe`]: req.tribe._id,
+    ...(req.tribe?._id && { [`${prefix}member.tribe`]: req.tribe._id }),
   };
 }
 
 const DISCOVERY_QUERY_TIMEOUT_MS = 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+const discoveryFields = ['locationLiving', 'locationFrom', 'tagline', 'seen'];
+const discoverySelect = `${userMiniService.userMiniProfileFields} ${discoveryFields.join(' ')}`;
+
+function memberSummary(
+  { seen, ...profile }: MemberView,
+  now: Date,
+): DiscoveryMember {
+  if (!(seen instanceof Date) || !Number.isFinite(seen.getTime()))
+    return profile;
+  const days = (now.getTime() - seen.getTime()) / DAY_MS;
+  const activity =
+    days < 1 ? 'today' : days < 7 ? 'week' : days <= 30 ? 'month' : 'older';
+  return { ...profile, activity };
+}
 
 function visibleMemberStages(
   req: MemberRequest,
@@ -227,7 +265,14 @@ function visibleMemberStages(
     { $match: visibleMemberMatch(req, excludedIDs, 'user.') },
     { $sort: sort },
     { $limit: 20 },
-    { $project: userMiniService.userMiniProjection('$user') },
+    {
+      $project: userMiniService.userMiniProjection(
+        '$user',
+        Object.fromEntries(
+          discoveryFields.map(field => [field, `$user.${field}`]),
+        ),
+      ),
+    },
   ];
 }
 
@@ -291,22 +336,109 @@ service.listMembers = async function (req, res, next) {
       return errorService.sendForbidden(res);
     }
 
+    const now = new Date();
     const contacts = await listCircleContacts(req);
     const contactIDs = contacts.map(member => member._id);
     const recommenders = await listCircleRecommenders(req, contactIDs);
     const recommenderIDs = recommenders.map(member => member._id);
     const active = await User.find({
       ...visibleMemberMatch(req, [...contactIDs, ...recommenderIDs]),
-      seen: { $gte: moment().subtract(1, 'month').toDate() },
+      seen: { $gte: moment(now).subtract(1, 'month').toDate() },
     })
-      .select(userMiniService.userMiniProfileFields)
+      .select(discoverySelect)
       .sort({ seen: -1, _id: 1 })
       .limit(8)
       .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
       .lean()
       .exec();
 
-    return res.json({ contacts, recommenders, active });
+    const ownerIDs = [...contacts, ...recommenders, ...active].map(
+      member => member._id,
+    );
+    const locations = await findDiscoveryHostingLocations(
+      ownerIDs,
+      ownerIDs,
+      now,
+    );
+    const summarise = (member: MemberView): DiscoveryMember => ({
+      ...memberSummary(member, now),
+      ...(locations.has(member._id.toString()) && { hosting: true }),
+    });
+    return res.json({
+      contacts: contacts.map(summarise),
+      recommenders: recommenders.map(summarise),
+      active: active.map(summarise),
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+/** Find recent and hosting connections for the signed-in homepage. */
+service.listConnections = async function (req, res, next) {
+  try {
+    const selfId = req.user._id;
+    const now = new Date();
+    const [outgoing, incoming, recommenders] = await Promise.all([
+      Contact.distinct('userTo', { userFrom: selfId, confirmed: true })
+        .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
+        .exec(),
+      Contact.distinct('userFrom', { userTo: selfId, confirmed: true })
+        .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
+        .exec(),
+      Experience.distinct('userFrom', {
+        userTo: selfId,
+        public: true,
+        recommend: 'yes',
+      })
+        .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
+        .exec(),
+    ]);
+    const match = {
+      $and: [
+        visibleMemberMatch(req, []),
+        { _id: { $in: [...outgoing, ...incoming, ...recommenders] } },
+      ],
+    };
+    const [recent, connections] = await Promise.all([
+      User.find({
+        ...match,
+        seen: { $gte: new Date(now.getTime() - 30 * DAY_MS) },
+      })
+        .select(discoverySelect)
+        .sort({ seen: -1, _id: 1 })
+        .limit(8)
+        .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
+        .lean<MemberView[]>()
+        .exec(),
+      User.find(match)
+        .select('username displayName member.tribe')
+        .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
+        .lean<(MemberView & Pick<UserRecord, 'member'>)[]>()
+        .exec(),
+    ]);
+    const viewerCircles = new Set(
+      req.user.member?.map(({ tribe }) => tribe.toString()),
+    );
+    const locations = await findDiscoveryHostingLocations(
+      connections.map(({ _id }) => _id),
+      connections
+        .filter(({ member }) =>
+          member?.some(({ tribe }) => viewerCircles.has(tribe.toString())),
+        )
+        .map(({ _id }) => _id),
+      now,
+    );
+    const hosts = connections.flatMap(({ _id, username, displayName }) => {
+      const location = locations.get(_id.toString());
+      return location && username && displayName
+        ? [{ _id, username, displayName, location }]
+        : [];
+    });
+    return res.json({
+      recent: recent.map(member => memberSummary(member, now)),
+      hosts,
+    });
   } catch (error) {
     return next(error);
   }
@@ -342,6 +474,7 @@ service.updateCount = function (id, difference, returnUpdated, callback) {
 
 const getTribe = service.getTribe;
 const listMembers = service.listMembers;
+const listConnections = service.listConnections;
 const listTribes = service.listTribes;
 const tribeBySlug = service.tribeBySlug;
 const tribeFields = service.tribeFields;
@@ -351,6 +484,7 @@ const updateCount = service.updateCount;
 export {
   getTribe,
   listMembers,
+  listConnections,
   listTribes,
   tribeBySlug,
   tribeFields,

@@ -22,6 +22,7 @@ jest.mock('@tanstack/react-router', () =>
 jest.mock('@/modules/tribes/client/api/tribes.api');
 
 const mockReadCircles = jest.mocked(circlesAPI.read);
+const mockGetConnections = jest.mocked(circlesAPI.getConnections);
 // The null response intentionally exercises the unresolved-route-circle case.
 const mockGetCircle = jest.mocked(circlesAPI.get) as jest.MockedFunction<
   (slug: string) => Promise<TribeSummary | null>
@@ -64,6 +65,10 @@ jest.mock('@/modules/core/client/components/BoardCredits.js', () => {
   return MockBoardCredits;
 });
 
+beforeEach(() => {
+  mockGetConnections.mockResolvedValue({ recent: [], hosts: [] });
+});
+
 afterEach(() => {
   jest.clearAllMocks();
 });
@@ -101,6 +106,7 @@ describe('<Home />', () => {
       'href',
       '/support?category=volunteering',
     );
+    expect(mockGetConnections).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -213,6 +219,13 @@ describe('<Home />', () => {
     expect(await screen.findByText('Mountain Bikers')).toBeInTheDocument();
     expect(screen.queryByText('Hitchhikers')).not.toBeInTheDocument();
     expect(mockGetCircle).toHaveBeenCalledWith('hitchhikers');
+  });
+
+  it('loads connections when a signed-in account has only a username', async () => {
+    mockReadCircles.mockResolvedValueOnce([]);
+    render(<Home user={{ username: 'sample' }} />);
+    expect(await screen.findByText('How does it work?')).toBeVisible();
+    expect(mockGetConnections).toHaveBeenCalledTimes(1);
   });
 
   it('does not show the top join link for logged-in users', async () => {

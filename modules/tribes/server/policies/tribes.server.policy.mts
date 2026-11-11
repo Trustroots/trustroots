@@ -30,6 +30,10 @@ function invokeRolesPolicies() {
           resources: '/api/tribes/:tribe/members',
           permissions: ['get'],
         },
+        {
+          resources: '/api/tribes/discovery/connections',
+          permissions: ['get'],
+        },
       ],
     },
     {
@@ -45,6 +49,10 @@ function invokeRolesPolicies() {
         },
         {
           resources: '/api/tribes/:tribe/members',
+          permissions: ['get'],
+        },
+        {
+          resources: '/api/tribes/discovery/connections',
           permissions: ['get'],
         },
       ],

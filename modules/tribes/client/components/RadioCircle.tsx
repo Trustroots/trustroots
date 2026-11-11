@@ -2,14 +2,15 @@ import { useLocation, useNavigate } from '@tanstack/react-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
-import type { Event } from 'nostr-tools';
-import { npubEncode } from 'nostr-tools/nip19';
+import { nip19, type Event } from 'nostr-tools';
+import useCircleSigner from '../hooks/useCircleSigner';
+import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
+import CircleChatLog from './CircleChatLog';
+import CircleNostrIdentity from './CircleNostrIdentity';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
   activeListeners,
-  connectRadioSigner,
   eventType,
-  fetchRadioAuthorUsernames,
   FAVOURITES_KEY,
   mergeFavourites,
   RadioRoom,
@@ -20,7 +21,6 @@ import {
   stationGroups,
   stations,
   tag,
-  type RadioSigner,
   type Station,
 } from '../services/radio.client.service';
 import './radio-circle.less';
@@ -39,12 +39,13 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
   const [error, setError] = useState('');
   const [socialError, setSocialError] = useState('');
   const [relayError, setRelayError] = useState(false);
-  const [signer, setSigner] = useState<RadioSigner>();
-  const [connecting, setConnecting] = useState(false);
+  const {
+    signer,
+    connecting,
+    error: signerError,
+    connect,
+  } = useCircleSigner(user);
   const [events, setEvents] = useState<Event[]>([]);
-  const [authorUsernames, setAuthorUsernames] = useState<
-    Record<string, string>
-  >({});
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
@@ -61,22 +62,25 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
     )
     .sort((a, b) => a.created_at - b.created_at)
     .slice(-200);
-  const chatAuthorKeys = [...new Set(chat.map(event => event.pubkey))]
-    .sort()
-    .join(',');
-
-  useEffect(() => {
-    if (!user || !chatAuthorKeys) return;
-    const controller = new AbortController();
-    void fetchRadioAuthorUsernames(chatAuthorKeys.split(','), controller.signal)
-      .then(usernames => {
-        if (!controller.signal.aborted) setAuthorUsernames(usernames);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setAuthorUsernames({});
-      });
-    return () => controller.abort();
-  }, [user, chatAuthorKeys]);
+  const usernames = useCircleProfileUsernames(
+    user ? [...chat, ...listeners].map(({ pubkey }) => pubkey) : [],
+  );
+  const linkedNpub = user?.nostrNpub;
+  const ownPublicKey = useMemo(() => {
+    if (!linkedNpub) return undefined;
+    try {
+      const decoded = nip19.decode(linkedNpub);
+      return decoded.type === 'npub' ? decoded.data : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [linkedNpub]);
+  const includesLocalListener =
+    playing &&
+    !listeners.some(
+      listener => listener.pubkey === (signer?.publicKey ?? ownPublicKey),
+    );
+  const listenerCount = listeners.length + Number(includesLocalListener);
 
   useEffect(() => {
     mounted.current = true;
@@ -119,6 +123,12 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       player.load();
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!signer) return;
+    room.current?.setSigner(signer);
+    room.current?.loadFavourites(signer.publicKey);
+  }, [signer, user]);
 
   useEffect(() => {
     const next = stationFromHash(hash);
@@ -199,26 +209,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         );
     }
   }
-  async function connect() {
-    setConnecting(true);
-    setSocialError('');
-    try {
-      const identity = await connectRadioSigner(user!);
-      if (!mounted.current) return;
-      room.current!.setSigner(identity);
-      room.current!.loadFavourites(identity.publicKey);
-      setSigner(identity);
-    } catch (cause) {
-      if (mounted.current)
-        setSocialError(
-          cause instanceof Error
-            ? t(cause.message)
-            : t('Could not connect your Nostr identity.'),
-        );
-    } finally {
-      if (mounted.current) setConnecting(false);
-    }
-  }
   function favourite(next: Station) {
     const starred = !favourites.includes(next.id);
     localFavouriteActions.current.set(next.id, starred);
@@ -263,42 +253,66 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       <section className="radio-station-group" key={label} aria-label={label}>
         <h4>{label}</h4>
         <ul>
-          {items.map(item => (
-            <li
-              key={item.id}
-              className={station?.id === item.id ? 'is-selected' : ''}
-            >
-              <button
-                type="button"
-                className="radio-tune"
-                onClick={() => void play(item)}
-                aria-label={`${playing && station?.id === item.id ? t('Pause') : t('Play')} ${item.title}`}
+          {items.map(item => {
+            const hasArtwork = item.img && item.site;
+            const initials = item.title.slice(0, 2);
+            return (
+              <li
+                key={item.id}
+                className={station?.id === item.id ? 'is-selected' : ''}
               >
-                <span className="radio-station-art" aria-hidden="true">
-                  {item.title.slice(0, 2)}
-                </span>
-                <span>
-                  <strong>{item.title}</strong>
-                  <small>{item.tags.join(' · ')}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                className="radio-favourite"
-                aria-label={`${favourites.includes(item.id) ? t('Unstar') : t('Star')} ${item.title}`}
-                aria-pressed={favourites.includes(item.id)}
-                onClick={() => favourite(item)}
-              >
-                {favourites.includes(item.id) ? '★' : '☆'}
-              </button>
-            </li>
-          ))}
+                {hasArtwork && (
+                  <a
+                    className="radio-station-art radio-station-art-link"
+                    href={item.site}
+                    aria-label={t('{{station}} website', {
+                      station: item.title,
+                    })}
+                  >
+                    <span aria-hidden="true">{initials}</span>
+                    <img
+                      src={item.img}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={event => {
+                        event.currentTarget.hidden = true;
+                      }}
+                    />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="radio-tune"
+                  onClick={() => void play(item)}
+                  aria-label={`${playing && station?.id === item.id ? t('Pause') : t('Play')} ${item.title}`}
+                >
+                  {!hasArtwork && (
+                    <span className="radio-station-art" aria-hidden="true">
+                      {initials}
+                    </span>
+                  )}
+                  <span>
+                    <strong>{item.title}</strong>
+                    <small>{item.tags.join(' · ')}</small>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="radio-favourite"
+                  aria-label={`${favourites.includes(item.id) ? t('Unstar') : t('Star')} ${item.title}`}
+                  aria-pressed={favourites.includes(item.id)}
+                  onClick={() => favourite(item)}
+                >
+                  {favourites.includes(item.id) ? '★' : '☆'}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </section>
     );
-  }
-  function identityLabel(key: string) {
-    return `${key.slice(0, 8)}…${key.slice(-4)}`;
   }
 
   return (
@@ -329,6 +343,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           onPause={() => setPlaying(false)}
           onEnded={() => setPlaying(false)}
           onError={() => {
+            playRequest.current++;
             setPlaying(false);
             setError(
               t(
@@ -339,9 +354,15 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
         />
         {error && <p role="alert">{error}</p>}
         <p aria-live="polite">
-          {listeners.length === 1
-            ? t('One shared listener')
-            : t('{{count}} shared listeners', { count: listeners.length })}
+          {includesLocalListener
+            ? listenerCount === 1
+              ? t('One listener, including you on this device')
+              : t('{{count}} listeners, including you on this device', {
+                  count: listenerCount,
+                })
+            : listenerCount === 1
+              ? t('One shared listener')
+              : t('{{count}} shared listeners', { count: listenerCount })}
         </p>
         {relayError && (
           <p role="status">
@@ -358,7 +379,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           </p>
         )}
         {user && (
-          <section aria-label={t('Listening now')}>
+          <section className="radio-listeners" aria-label={t('Listening now')}>
             <h4>{t('Listening now')}</h4>
             {!listeners.length && (
               <p>{t('No shared listening activity yet.')}</p>
@@ -366,7 +387,10 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
             <ul>
               {listeners.map(listener => (
                 <li key={listener.pubkey}>
-                  <span>{identityLabel(listener.pubkey)}</span>
+                  <CircleNostrIdentity
+                    pubkey={listener.pubkey}
+                    username={usernames[listener.pubkey]}
+                  />
                   {' · '}
                   <a
                     href={`/circles/radio#${encodeURIComponent(tag(listener, 'radiostr_station')!)}`}
@@ -400,7 +424,10 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
               <Button
                 type="button"
                 disabled={connecting}
-                onClick={() => void connect()}
+                onClick={() => {
+                  setSocialError('');
+                  void connect();
+                }}
               >
                 {connecting ? t('Connecting…') : t('Connect Nostr identity')}
               </Button>
@@ -419,39 +446,22 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
               )}
             </p>
           )}
-          {socialError && <p role="alert">{socialError}</p>}
-          <ol className="radio-chat-log" aria-live="polite">
-            {chat.map(event => {
-              const npub = npubEncode(event.pubkey);
-              const username = authorUsernames[event.pubkey];
-              const timestamp = new Date(event.created_at * 1000).toISOString();
+          {(socialError || signerError) && (
+            <p role="alert">{socialError || t(signerError)}</p>
+          )}
+          <CircleChatLog
+            messages={chat}
+            usernames={usernames}
+            stationLink={event => {
               const channel = tag(event, 'channel');
-              return (
-                <li key={event.id}>
-                  <strong>
-                    {username ? (
-                      <a href={`/profile/${encodeURIComponent(username)}`}>
-                        {npub}
-                      </a>
-                    ) : (
-                      npub
-                    )}
-                  </strong>{' '}
-                  <time dateTime={timestamp}>
-                    {timestamp.slice(0, 16).replace('T', ' ')}
-                  </time>{' '}
-                  UTC
-                  {stations.some(item => item.id === channel) && (
-                    <>
-                      {' '}
-                      <a href={`/circles/radio#${channel}`}>#{channel}</a>
-                    </>
-                  )}
-                  <p>{event.content}</p>
-                </li>
-              );
-            })}
-          </ol>
+              return stations.some(item => item.id === channel) ? (
+                <>
+                  {' '}
+                  <a href={`/circles/radio#${channel}`}>#{channel}</a>
+                </>
+              ) : null;
+            }}
+          />
           <form onSubmit={send} className="radio-chat-form">
             <label htmlFor="radio-message">{t('Message')}</label>
             <input

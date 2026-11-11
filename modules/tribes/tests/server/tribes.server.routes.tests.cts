@@ -4,6 +4,7 @@ import type {
   Credentials,
   ExperienceModel,
   ExperienceRecord,
+  OfferRecord,
   TestAgent,
   TestExpressApp,
   TestExpressModule,
@@ -22,6 +23,7 @@ const utils: typeof import('../../../../testutils/server/data.server.testutil') 
 const User = mongoose.model<UserRecord, UserModel>('User');
 const Tribe = mongoose.model<TribeRecord, TribeModel>('Tribe');
 const Contact = mongoose.model<ContactRecord, ContactModel>('Contact');
+const Offer = mongoose.model<OfferRecord>('Offer');
 const Experience = mongoose.model<ExperienceRecord, ExperienceModel>(
   'Experience',
 );
@@ -173,11 +175,13 @@ describe('Tribe CRUD tests', function () {
       suspendedMember.save(),
       blockedViewerMember.save(),
     ]);
-    await Contact.create({
-      userFrom: user._id,
-      userTo: circleContact._id,
-      confirmed: true,
-    });
+    await Contact.create(
+      [circleContact, oldMember].map(contact => ({
+        userFrom: user._id,
+        userTo: contact._id,
+        confirmed: true,
+      })),
+    );
     await Experience.create([
       {
         userFrom: circleRecommender._id,
@@ -192,13 +196,21 @@ describe('Tribe CRUD tests', function () {
         recommend: 'yes',
       },
     ]);
+    await Offer.collection.insertOne({
+      user: circleContact._id,
+      type: 'host',
+      status: 'yes',
+      location: [40, 6],
+      locationFuzzy: [40.001, 6.001],
+      showOnlyInMyCircles: true,
+    });
     await agent.post('/api/auth/signin').send(credentials).expect(200);
     const response = await agent
       .get(`/api/tribes/${tribe.slug}/members`)
       .expect(200);
     response.body.contacts
       .map((member: { username: string }) => member.username)
-      .should.deepEqual(['circlecontact']);
+      .should.deepEqual(['circlecontact', 'oldmember']);
     response.body.recommenders
       .map((member: { username: string }) => member.username)
       .should.deepEqual(['circlerecommender']);
@@ -210,7 +222,99 @@ describe('Tribe CRUD tests', function () {
       'username',
       'displayName',
     ]);
+    response.body.contacts[0].hosting.should.equal(true);
+    response.body.contacts[0].activity.should.equal('today');
+    response.body.contacts[1].activity.should.equal('older');
+    should.not.exist(response.body.contacts[0].locationFuzzy);
     should.not.exist(response.body.active[0].seen);
+  });
+  it('lists recent connections separately from all visible hosting connections', async () => {
+    await agent.get('/api/tribes/discovery/connections').expect(403);
+    user.member!.push({ tribe: tribe._id });
+    await user.save();
+    const createConnection = (username: string, fields: Partial<UserRecord>) =>
+      User.create({
+        ..._user,
+        username,
+        email: `${username}@example.com`,
+        ...fields,
+      });
+    const daysAgo = (days: number) =>
+      new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const [newer, olderHost, restrictedHost, hidden, blocked, expired] =
+      await Promise.all([
+        createConnection('recentcontact', { seen: daysAgo(2) }),
+        createConnection('olderhost', {
+          seen: daysAgo(40),
+          member: [{ tribe: tribe._id }],
+        }),
+        createConnection('restrictedhost', { seen: daysAgo(12) }),
+        createConnection('hiddenhost', { public: false, seen: daysAgo(1) }),
+        createConnection('blockedhost', {
+          blocked: [user._id],
+          seen: daysAgo(1),
+        }),
+        createConnection('expiredhost', { seen: daysAgo(40) }),
+      ]);
+    await Contact.create(
+      [newer, olderHost, hidden, blocked, expired].map(connection => ({
+        userFrom: connection._id,
+        userTo: user._id,
+        confirmed: true,
+      })),
+    );
+    await Experience.create(
+      [newer, restrictedHost].map(connection => ({
+        userFrom: connection._id,
+        userTo: user._id,
+        public: true,
+        recommend: 'yes' as const,
+      })),
+    );
+    const approximate = [40.001, 6.001];
+    await Offer.collection.insertMany(
+      [olderHost, restrictedHost, hidden, blocked, expired].map(connection => ({
+        user: connection._id,
+        type: 'host',
+        status: 'yes',
+        location: [40, 6],
+        locationFuzzy: approximate,
+        updated: daysAgo(2),
+        showOnlyInMyCircles: [olderHost, restrictedHost].includes(connection),
+        ...(connection === expired && { validUntil: daysAgo(1) }),
+      })),
+    );
+    await Offer.collection.insertOne({
+      user: olderHost._id,
+      type: 'host',
+      status: 'maybe',
+      location: [42, 6],
+      locationFuzzy: [42.001, 6.001],
+      updated: daysAgo(45),
+    });
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const response = await agent
+      .get('/api/tribes/discovery/connections')
+      .expect(200);
+    response.headers['cache-control'].should.equal('private, no-store');
+    response.body.recent
+      .map(({ username, activity }: { username: string; activity: string }) => [
+        username,
+        activity,
+      ])
+      .should.deepEqual([
+        ['recentcontact', 'week'],
+        ['restrictedhost', 'month'],
+      ]);
+    should.not.exist(response.body.recent[0].seen);
+    response.body.hosts.should.deepEqual([
+      {
+        _id: olderHost._id.toString(),
+        username: olderHost.username,
+        displayName: olderHost.displayName,
+        location: approximate,
+      },
+    ]);
   });
   it('filters contacts before applying the result limit and deduplicates pairs', async () => {
     user.member!.push({ tribe: tribe._id });

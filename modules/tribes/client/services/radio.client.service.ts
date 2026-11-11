@@ -14,6 +14,7 @@ export const RADIO_RELAYS = [
   'wss://relay.trustroots.org',
   'wss://relay.nomadwiki.org',
 ];
+export const HACKERS_CHAT_TOPIC = 'trustroots-circle-hackers';
 export const LISTENER_TTL = 12 * 60;
 export const EVENT_TTL = 30 * 24 * 60 * 60;
 export const FAVOURITES_KEY = 'radiostr:starred-stations:v1';
@@ -260,6 +261,7 @@ export class RadioRoom {
   constructor(
     private onEvent: (event: Event) => void,
     private onError: () => void,
+    private chatTopic?: string,
   ) {}
 
   async open(loggedIn: boolean) {
@@ -267,7 +269,7 @@ export class RadioRoom {
       ? [
           {
             kinds: [1],
-            '#t': ['radiostr'],
+            '#t': [this.chatTopic ?? 'radiostr'],
             since: Math.floor(Date.now() / 1000) - EVENT_TTL,
             limit: 500,
           },
@@ -301,8 +303,11 @@ export class RadioRoom {
                 const now = Math.floor(Date.now() / 1000);
                 if (
                   !this.closed &&
-                  eventType(event) &&
-                  (loggedIn || eventType(event) === 'listening') &&
+                  (this.chatTopic
+                    ? event.kind === 1 && hasTag(event, 't', this.chatTopic)
+                    : loggedIn
+                      ? eventType(event)
+                      : eventType(event) === 'listening') &&
                   event.created_at <= now + 60 &&
                   Number(tag(event, 'expiration') || Infinity) > now
                 )
@@ -366,7 +371,7 @@ export class RadioRoom {
     );
     if (!results.some(result => result.status === 'fulfilled'))
       throw new Error('Could not publish to the radio room. Try again.');
-    this.onEvent(event);
+    if (!this.closed) this.onEvent(event);
   }
   close() {
     this.closed = true;

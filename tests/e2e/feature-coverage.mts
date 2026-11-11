@@ -207,11 +207,17 @@ const features = [
     area: AREA.publicCore,
     status: STATUS.active,
     description:
-      'Visitors can load the homepage and reach authentication entry points.',
-    roles: ['visitor'],
+      'Visitors can reach authentication entry points and members can discover recently active and hosting connections.',
+    roles: ['visitor', 'member'],
     references: {
       clientRoutes: [clientRoute('home', '/?tribe?circle', source.pagesClient)],
-      apiRoutes: [],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/tribes/discovery/connections',
+          source.tribesServer,
+        ),
+      ],
     },
     requiredScenarios: [
       'Homepage loads for visitors.',
@@ -220,6 +226,7 @@ const features = [
       'Homepage footer links to safety guidance.',
       'Optional circle/tribe query parameters do not break the page.',
       'Home circles have space below the preceding image at desktop and mobile widths.',
+      'Signed-in members can find recent connections and hosting connections.',
     ],
     relatedSpecs: [
       spec(
@@ -229,6 +236,10 @@ const features = [
       spec(
         'bootstrap-ui-regressions.spec.js',
         'home circles have room below the preceding image',
+      ),
+      spec(
+        'features/public-core/connections-home.spec.ts',
+        'signed-in homepage shows recent connections and all hosting connections',
       ),
     ],
   },
@@ -2030,6 +2041,8 @@ const features = [
       'Chat and listener identities require login.',
       'A matching verified signer can publish chat, favourites and listening activity.',
       'Playback survives relay failures and stops when leaving the circle.',
+      'A matching NIP-07 extension connects automatically.',
+      'Local playback contributes to the listener count immediately.',
     ],
     relatedSpecs: [
       spec(
@@ -2047,6 +2060,29 @@ const features = [
       spec(
         'features/public-core/radio-circle.spec.ts',
         'radio remains playable when the shared room is unavailable and stops on navigation',
+      ),
+    ],
+  },
+  {
+    id: 'circles.hackers-chat',
+    area: AREA.searchOffersCircles,
+    status: STATUS.active,
+    description:
+      'Signed-in members can read a separate Hackers chat and post with a verified Nostr signer.',
+    roles: ['visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('circles.circle', '/circles/:circle', source.tribesClient),
+      ],
+    },
+    requiredScenarios: [
+      'Visitors see a sign-in link, and members can read without a signer.',
+      'A verified signer posts to Hackers without publishing to Radio.',
+    ],
+    relatedSpecs: [
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'Hackers chat requires sign-in and publishes separately from Radio',
       ),
     ],
   },

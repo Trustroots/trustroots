@@ -123,6 +123,7 @@ describe('Tribes policy unit tests', () => {
     const listing = '/api/tribes';
     const detail = '/api/tribes/:tribe';
     const members = '/api/tribes/:tribe/members';
+    const connections = '/api/tribes/discovery/connections';
 
     for (const role of ['admin', 'user', 'guest']) {
       it(`lets ${role} read the catalogue and a circle`, async () => {
@@ -131,7 +132,7 @@ describe('Tribes policy unit tests', () => {
       });
 
       it(`refuses ${role} writes to the catalogue and a circle`, async () => {
-        for (const path of [listing, detail, members]) {
+        for (const path of [listing, detail, members, connections]) {
           for (const method of ['POST', 'PUT', 'DELETE']) {
             (await decide(role, path, method)).should.equal(403);
           }
@@ -142,11 +143,13 @@ describe('Tribes policy unit tests', () => {
     for (const role of ['admin', 'user']) {
       it(`lets ${role} read circle members`, async () => {
         (await decide(role, members, 'GET')).should.equal(200);
+        (await decide(role, connections, 'GET')).should.equal(200);
       });
     }
 
     it('refuses guests the circle members listing', async () => {
       (await decide('guest', members, 'GET')).should.equal(403);
+      (await decide('guest', connections, 'GET')).should.equal(403);
     });
   });
 

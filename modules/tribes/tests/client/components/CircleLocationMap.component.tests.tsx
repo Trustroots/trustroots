@@ -290,6 +290,13 @@ describe('shared circle map', () => {
       [12, 34],
       expect.objectContaining({ fillColor: '#12b591' }),
     );
+    const accommodation = '/profile/sample/accommodation';
+    const internalLink = locationPopup({
+      ...location,
+      link: { url: accommodation, label: 'Hosting' },
+    }).querySelector('a');
+    expect(internalLink).toHaveAttribute('href', accommodation);
+    expect(internalLink).not.toHaveAttribute('target');
     const popup = locationPopup(location);
     expect(popup.querySelector('b')).toBeNull();
     expect(popup.querySelector('script')).toBeNull();

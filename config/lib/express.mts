@@ -331,6 +331,9 @@ function initHelmetHeaders(app: Express) {
         // Defines the origins from which images can be loaded.
         imgSrc: [
           "'self'",
+          // Official radio artwork used for links to broadcaster websites.
+          'https://somafm.com/img/',
+          'https://radioparadise.com/apple-touch-icon.png',
           'grafana.trustroots.org',
           // Stats tool, used on /statistics page
           'https://*.tiles.mapbox.com',

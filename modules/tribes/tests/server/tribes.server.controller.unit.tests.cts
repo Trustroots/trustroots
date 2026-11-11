@@ -434,8 +434,9 @@ describe('Tribes controller unit tests', () => {
       next.called.should.be.false();
     });
 
-    it('bounds every discovery query with a one second time limit', async () => {
+    it('bounds discovery queries and projects active members in recent order', async () => {
       const circleId = new mongoose.Types.ObjectId();
+      const users = sinon.spy(mongoose.model('User'), 'find');
       const options: unknown[] = [];
       const originalOption = mongoose.Aggregate.prototype.option;
       sinon.stub(mongoose.Aggregate.prototype, 'option').callsFake(function (
@@ -460,6 +461,9 @@ describe('Tribes controller unit tests', () => {
       );
 
       options.should.deepEqual([{ maxTimeMS: 1000 }, { maxTimeMS: 1000 }]);
+      const active = users.firstCall.returnValue;
+      active.projection()!.should.have.properties({ seen: 1, displayName: 1 });
+      active.getOptions().sort.should.deepEqual({ seen: -1, _id: 1 });
     });
 
     it('passes discovery query failures to the error handler', async () => {
@@ -485,6 +489,86 @@ describe('Tribes controller unit tests', () => {
 
       next.calledOnceWithExactly(error).should.be.true();
     });
+  });
+
+  it('uses viewer-scoped connection queries and classifies exact activity boundaries', async () => {
+    const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+    const User = mongoose.model('User');
+    const Experience = mongoose.model('Experience');
+    const day = 86_400_000;
+    const now = new Date('2026-01-31T12:00:00Z');
+    sinon.useFakeTimers({ now, toFake: ['Date'] });
+    const self = new mongoose.Types.ObjectId();
+    const ids = Array.from({ length: 4 }, () => new mongoose.Types.ObjectId());
+    const contacts = sinon.spy(Contact, 'distinct');
+    const references = sinon.spy(Experience, 'distinct');
+    const users = sinon.spy(User, 'find');
+    const exec = sinon.stub(mongoose.Query.prototype, 'exec');
+    exec.onCall(0).resolves([ids[0]]);
+    exec.onCall(1).resolves([ids[1]]);
+    exec.onCall(2).resolves(ids.slice(2));
+    exec.onCall(3).resolves(
+      ids.map((_id, index) => ({
+        _id,
+        seen: new Date(now.getTime() - [1, 7, 30, 31][index] * day),
+      })),
+    );
+    exec
+      .onCall(4)
+      .resolves([{ _id: ids[0], username: 'host', displayName: 'Host' }]);
+    exec.onCall(5).resolves([]);
+    const response = deferredResponse<{
+      recent: { activity: string }[];
+      hosts: unknown[];
+    }>();
+    const next = sinon.stub();
+    await tribesController.listConnections(
+      { user: { _id: self } },
+      response,
+      next,
+    );
+    assert.equal(next.callCount, 0);
+    assert.deepEqual(contacts.firstCall.args, [
+      'userTo',
+      { userFrom: self, confirmed: true },
+    ]);
+    assert.deepEqual(contacts.secondCall.args, [
+      'userFrom',
+      { userTo: self, confirmed: true },
+    ]);
+    assert.deepEqual(references.firstCall.args, [
+      'userFrom',
+      { userTo: self, public: true, recommend: 'yes' },
+    ]);
+    const recent = users.firstCall.returnValue;
+    assert.deepEqual(recent.getFilter().$and?.[1], { _id: { $in: ids } });
+    assert.deepEqual(recent.getFilter().seen, {
+      $gte: new Date(now.getTime() - 30 * day),
+    });
+    assert.deepEqual(recent.getOptions().sort, { seen: -1, _id: 1 });
+    assert.equal(recent.projection()?.seen, 1);
+    assert.deepEqual(users.secondCall.returnValue.projection(), {
+      username: 1,
+      displayName: 1,
+      'member.tribe': 1,
+    });
+    assert.deepEqual(
+      response.body.recent.map(row => row.activity),
+      ['week', 'month', 'month', 'older'],
+    );
+    assert.deepEqual(response.body.hosts, []);
+  });
+
+  it('passes connection discovery failures to the error handler', async () => {
+    const error = new Error('connection discovery failed');
+    sinon.stub(Contact, 'distinct').throws(error);
+    const next = sinon.stub();
+    await tribesController.listConnections(
+      { user: { _id: new mongoose.Types.ObjectId() } },
+      deferredResponse(),
+      next,
+    );
+    next.calledOnceWithExactly(error).should.be.true();
   });
 
   describe('tribePopulateOptions', () => {
