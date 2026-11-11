@@ -6,7 +6,16 @@ cd "$(dirname "$0")/../../deploy/docker"
 prepare_dev() {
   # Fork runs already built their image using Buildx in the preceding step.
   if [ -n "${TRUSTROOTS_CI_DEV_IMAGE:-}" ]; then
-    docker pull "$TRUSTROOTS_CI_DEV_IMAGE"
+    local attempt status
+    for attempt in 1 2 3; do
+      docker pull "$TRUSTROOTS_CI_DEV_IMAGE" && break
+      status=$?
+      if [ "$attempt" -eq 3 ]; then
+        return "$status"
+      fi
+      echo "Dev image pull failed (attempt $attempt of 3). Retrying in ${attempt}s." >&2
+      sleep "$attempt"
+    done
     docker tag "$TRUSTROOTS_CI_DEV_IMAGE" trustroots-dev:ci
   fi
 }
