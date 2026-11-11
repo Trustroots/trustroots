@@ -388,6 +388,170 @@ test('reports a missing compound index when key order differs', async () => {
   );
 });
 
+test('rejects unexpected semantic index options omitted from the model', async t => {
+  const unexpectedOptions: Array<[string, Record<string, unknown>]> = [
+    ['unique', { unique: true }],
+    ['sparse', { sparse: true }],
+    ['partial filter', { partialFilterExpression: { active: true } }],
+    ['TTL expiry', { expireAfterSeconds: 60 }],
+    ['hidden', { hidden: true }],
+  ];
+
+  for (const [label, options] of unexpectedOptions) {
+    await t.test(label, async () => {
+      await assert.rejects(
+        verifyModels([
+          {
+            collectionName: 'users',
+            indexes: [{ key: { email: 1 }, options: {} }],
+            async readIdOnly() {},
+            async listIndexes() {
+              return [{ key: { email: 1 }, name: 'email_1', ...options }];
+            },
+          },
+        ]),
+        (error: unknown) =>
+          error instanceof MigrationCheckError &&
+          error.code === 'DECLARED_INDEX_MISSING',
+      );
+    });
+  }
+});
+
+test('treats absent and false boolean index options as equivalent', async t => {
+  const booleanOptions = ['unique', 'sparse', 'hidden'] as const;
+
+  for (const option of booleanOptions) {
+    await t.test(`${option}: expected false, actual omitted`, async () => {
+      const result = await verifyModels([
+        {
+          collectionName: 'users',
+          indexes: [{ key: { email: 1 }, options: { [option]: false } }],
+          async readIdOnly() {},
+          async listIndexes() {
+            return [{ key: { email: 1 }, name: 'email_1' }];
+          },
+        },
+      ]);
+
+      assert.equal(result.indexesPresent, 1);
+    });
+
+    await t.test(`${option}: expected omitted, actual false`, async () => {
+      const result = await verifyModels([
+        {
+          collectionName: 'users',
+          indexes: [{ key: { email: 1 }, options: {} }],
+          async readIdOnly() {},
+          async listIndexes() {
+            return [{ key: { email: 1 }, name: 'email_1', [option]: false }];
+          },
+        },
+      ]);
+
+      assert.equal(result.indexesPresent, 1);
+    });
+  }
+});
+
+test('compares declared TTL and partial filter options structurally', async t => {
+  const cases: Array<{
+    label: string;
+    expectedOptions: Record<string, unknown>;
+    actualOptions: Record<string, unknown>;
+    matches: boolean;
+  }> = [
+    {
+      label: 'matches a zero-second TTL',
+      expectedOptions: { expireAfterSeconds: 0 },
+      actualOptions: { expireAfterSeconds: 0 },
+      matches: true,
+    },
+    {
+      label: 'rejects a changed TTL',
+      expectedOptions: { expireAfterSeconds: 0 },
+      actualOptions: { expireAfterSeconds: 60 },
+      matches: false,
+    },
+    {
+      label: 'matches a partial filter with equivalent object key order',
+      expectedOptions: {
+        partialFilterExpression: { active: true, role: 'member' },
+      },
+      actualOptions: {
+        partialFilterExpression: { role: 'member', active: true },
+      },
+      matches: true,
+    },
+    {
+      label: 'rejects a changed partial filter',
+      expectedOptions: {
+        partialFilterExpression: { active: true },
+      },
+      actualOptions: {
+        partialFilterExpression: { active: false },
+      },
+      matches: false,
+    },
+  ];
+
+  for (const testCase of cases) {
+    await t.test(testCase.label, async () => {
+      const verification = verifyModels([
+        {
+          collectionName: 'records',
+          indexes: [
+            { key: { expiresAt: 1 }, options: testCase.expectedOptions },
+          ],
+          async readIdOnly() {},
+          async listIndexes() {
+            return [
+              {
+                key: { expiresAt: 1 },
+                name: 'records_expiry',
+                ...testCase.actualOptions,
+              },
+            ];
+          },
+        },
+      ]);
+
+      if (testCase.matches) {
+        assert.equal((await verification).indexesPresent, 1);
+      } else {
+        await assert.rejects(
+          verification,
+          (error: unknown) =>
+            error instanceof MigrationCheckError &&
+            error.code === 'DECLARED_INDEX_MISSING',
+        );
+      }
+    });
+  }
+});
+
+test('ignores index name and background metadata when verifying semantics', async () => {
+  const result = await verifyModels([
+    {
+      collectionName: 'users',
+      indexes: [{ key: { email: 1 }, options: { unique: true } }],
+      async readIdOnly() {},
+      async listIndexes() {
+        return [
+          {
+            key: { email: 1 },
+            name: 'deployment_specific_name',
+            unique: true,
+            background: true,
+          },
+        ];
+      },
+    },
+  ]);
+
+  assert.equal(result.indexesPresent, 1);
+});
+
 test('sanitises application read and index inspection failures', async t => {
   await t.test('read failure', async () => {
     await assert.rejects(

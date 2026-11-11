@@ -214,9 +214,24 @@ function sameIndex(expected: IndexSpec, actual: Document): boolean {
     return false;
   }
   const ignored = new Set(['name', 'background']);
-  for (const [key, value] of Object.entries(expected.options)) {
+  const booleanOptions = new Set(['unique', 'sparse', 'hidden']);
+  // These options change writes, index membership, expiry or planner use even
+  // when the model does not declare them. Omitted boolean options mean false.
+  const options = new Set([
+    ...Object.keys(expected.options),
+    ...booleanOptions,
+    'partialFilterExpression',
+    'expireAfterSeconds',
+  ]);
+  for (const key of options) {
     if (ignored.has(key)) continue;
-    if (stable(value) !== stable(actual[key])) return false;
+    const expectedValue = expected.options[key];
+    const actualValue = actual[key];
+    if (booleanOptions.has(key)) {
+      if ((expectedValue ?? false) !== (actualValue ?? false)) return false;
+    } else if (stable(expectedValue) !== stable(actualValue)) {
+      return false;
+    }
   }
   return true;
 }

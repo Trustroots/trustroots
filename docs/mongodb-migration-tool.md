@@ -36,6 +36,10 @@ repository's supported Node.js runtime. It performs a bounded
 `_id`-only read for each registered model and checks that each declared index
 key and semantic option is present. The report contains only aggregate model,
 read and index counts. It does not return matched documents or index names.
+Verification also rejects undeclared unique, sparse, hidden, partial-filter and
+TTL options on an otherwise matching index. Omitted unique, sparse and hidden
+flags are equivalent to `false`; index names and background-build metadata do
+not affect the comparison.
 Run it against an environment where the operator expects every application
 collection and declared index to exist.
 
