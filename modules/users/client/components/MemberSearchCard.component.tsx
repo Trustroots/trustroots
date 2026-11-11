@@ -34,6 +34,10 @@ const Card = styled.a.attrs({ className: 'member-search-card' })`
     outline: 3px solid rgb(72 130 97 / 35%);
     outline-offset: 2px;
   }
+  &[data-compact] {
+    gap: 10px;
+    padding: 10px;
+  }
   .avatar,
   .member-avatar-fallback {
     flex: 0 0 auto;
@@ -50,6 +54,20 @@ const Details = styled.div`
   p {
     margin: 2px 0 0;
   }
+  ${Card}[data-compact] & {
+    gap: 2px;
+    line-height: 1.3;
+
+    p {
+      margin: 0;
+    }
+    .member-search-card-tagline {
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
+    }
+  }
 `;
 const DisplayName = styled.span`
   font-size: 1.05rem;
@@ -59,6 +77,10 @@ const DisplayName = styled.span`
 const Activity = styled.div`
   margin-top: auto;
   padding-top: 6px;
+
+  ${Card}[data-compact] & {
+    padding-top: 2px;
+  }
 
   [data-slot='badge'] {
     white-space: normal;
@@ -113,15 +135,20 @@ export default function MemberSearchCard({
   user,
   query = '',
   activityLabel,
+  compact = false,
 }: {
   user: UserProfile;
   query?: string;
   activityLabel?: string;
+  compact?: boolean;
 }) {
   const { t } = useTranslation('search') as { t: (key: string) => string };
   return (
-    <Card href={`/profile/${encodeURIComponent(user.username)}`}>
-      <MemberAvatar size={64} user={user} />
+    <Card
+      data-compact={compact || undefined}
+      href={`/profile/${encodeURIComponent(user.username)}`}
+    >
+      <MemberAvatar size={compact ? 36 : 64} user={user} />
       <Details>
         <DisplayName>{highlightMatches(user.displayName, query)}</DisplayName>
         <span className="text-muted">
@@ -138,7 +165,11 @@ export default function MemberSearchCard({
             {String(t('From'))}: {highlightMatches(user.locationFrom, query)}
           </p>
         )}
-        {user.tagline && <p>{highlightMatches(user.tagline, query)}</p>}
+        {user.tagline && (
+          <p className="member-search-card-tagline">
+            {highlightMatches(user.tagline, query)}
+          </p>
+        )}
         {activityLabel && (
           <Activity>
             <Badge variant="outline" intent="neutral">
