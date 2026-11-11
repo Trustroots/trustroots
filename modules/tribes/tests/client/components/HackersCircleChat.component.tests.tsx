@@ -166,3 +166,63 @@ it('reports relay errors and closes the room on unmount', () => {
   unmount();
   expect(room.close).toHaveBeenCalledTimes(1);
 });
+
+it('orders different messages and shows signer connection errors', async () => {
+  jest
+    .mocked(connectRadioSigner)
+    .mockRejectedValueOnce(new Error('Signer denied access.'));
+  render(<HackersCircleChat user={user} />);
+  const sample: Event = {
+    id: 'new',
+    pubkey: publicKey,
+    created_at: 2,
+    kind: 1,
+    tags: [],
+    content: 'New',
+    sig: 'signature',
+  };
+  act(() => {
+    receive(sample);
+    receive({ ...sample, id: 'old', content: 'Old', created_at: 1 });
+  });
+  expect(
+    screen
+      .getAllByRole('listitem')
+      .map(item => item.querySelector('p')?.textContent),
+  ).toEqual(['Old', 'New']);
+  fireEvent.submit(screen.getByLabelText('Message').closest('form')!);
+  expect(room.publish).not.toHaveBeenCalled();
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Connect Nostr identity' }),
+  );
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Signer denied access.',
+  );
+});
+
+it.each(['resolve', 'reject'])(
+  'ignores a publish that will %s after leaving',
+  async outcome => {
+    let finish!: () => void;
+    room.publish.mockImplementationOnce(
+      () =>
+        new Promise((resolve, reject) => {
+          finish = () =>
+            outcome === 'resolve'
+              ? resolve(undefined)
+              : reject(new Error('Offline'));
+        }),
+    );
+    const { unmount } = render(<HackersCircleChat user={user} />);
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Connect Nostr identity' }),
+    );
+    await screen.findByText('Connected as fictional-member@trustroots.org.');
+    fireEvent.change(screen.getByLabelText('Message'), {
+      target: { value: 'Hello' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    unmount();
+    await act(async () => finish());
+  },
+);

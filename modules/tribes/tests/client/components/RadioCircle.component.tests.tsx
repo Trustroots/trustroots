@@ -639,3 +639,17 @@ it.each([false, true])(
     expect(room.publish).toHaveBeenCalledTimes(1);
   },
 );
+
+it.each(['invalid', nip19.noteEncode('ab'.repeat(32))])(
+  'counts local playback alongside shared activity with a non-npub key (%s)',
+  async nostrNpub => {
+    render(<RadioCircle user={{ ...user, nostrNpub }} />);
+    emit(event(roomTemplate('listening', station, 'Music')));
+    fireEvent.click(
+      row().getByRole('button', { name: `Play ${station.title}` }),
+    );
+    expect(
+      await screen.findByText('2 listeners, including you on this device'),
+    ).toBeVisible();
+  },
+);

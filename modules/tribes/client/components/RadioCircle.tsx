@@ -361,7 +361,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
                   <span>{identityLabel(listener.pubkey)}</span>
                   {' · '}
                   <a
-                    href={`/circles/radio#${encodeURIComponent(tag(listener, 'radiostr_station') ?? '')}`}
+                    href={`/circles/radio#${encodeURIComponent(tag(listener, 'radiostr_station')!)}`}
                   >
                     {stations.find(
                       item => item.id === tag(listener, 'radiostr_station'),

@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
 import '@/config/client/i18n';
@@ -33,6 +33,32 @@ const getConnections = jest.mocked(tribesApi.getConnections);
 describe('<HomeConnections />', () => {
   beforeEach(() => jest.clearAllMocks());
 
+  it('keeps the section hidden when discovery fails', async () => {
+    getConnections.mockRejectedValueOnce(new Error('Offline'));
+    const { container } = render(<HomeConnections />);
+    await act(async () => {});
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it.each(['resolve', 'reject'])(
+    'ignores a request that will %s after unmount',
+    async outcome => {
+      let finish!: () => void;
+      getConnections.mockImplementationOnce(
+        () =>
+          new Promise((resolve, reject) => {
+            finish = () =>
+              outcome === 'resolve'
+                ? resolve({ recent: [], hosts: [] })
+                : reject(new Error('Offline'));
+          }),
+      );
+      const { unmount } = render(<HomeConnections />);
+      unmount();
+      await act(async () => finish());
+    },
+  );
+
   it('shows recent members and maps every valid hosting connection', async () => {
     getConnections.mockResolvedValueOnce({
       recent: [
@@ -47,6 +73,12 @@ describe('<HomeConnections />', () => {
           username: 'week-member',
           displayName: 'Weekly Member',
           activity: 'week',
+        },
+        {
+          _id: 'recent-3',
+          username: 'month-member',
+          displayName: 'Monthly Member',
+          activity: 'month',
         },
       ],
       hosts: [
@@ -78,7 +110,8 @@ describe('<HomeConnections />', () => {
         name: 'People you know who were active recently',
       }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+    expect(screen.getAllByRole('listitem')).toHaveLength(3);
+    expect(screen.getByText('Active this month')).toBeVisible();
     expect(screen.getByText('Active today')).toBeInTheDocument();
     expect(screen.getByText('Active this week')).toBeInTheDocument();
     const map = screen.getByTestId('hosting-map');

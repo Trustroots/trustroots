@@ -7,6 +7,7 @@ import {
   read,
   get,
   listMembers,
+  getConnections,
   type CircleMemberGroups,
   type MembershipUpdate,
   type TribeSummary,
@@ -30,6 +31,15 @@ afterEach(() => {
 });
 
 describe('tribes api', () => {
+  it('gets the current member’s homepage connections', async () => {
+    const data = { recent: [], hosts: [] };
+    axiosMock.get.mockResolvedValueOnce(response(data));
+    await expect(getConnections()).resolves.toBe(data);
+    expect(axiosMock.get).toHaveBeenCalledWith(
+      '/api/tribes/discovery/connections',
+    );
+  });
+
   it("lists the current member's circles", async () => {
     const memberships: MembershipUpdate[] = [
       {

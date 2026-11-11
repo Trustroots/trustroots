@@ -221,6 +221,13 @@ describe('<Home />', () => {
     expect(mockGetCircle).toHaveBeenCalledWith('hitchhikers');
   });
 
+  it('loads connections when a signed-in account has only a username', async () => {
+    mockReadCircles.mockResolvedValueOnce([]);
+    render(<Home user={{ username: 'sample' }} />);
+    expect(await screen.findByText('How does it work?')).toBeVisible();
+    expect(mockGetConnections).toHaveBeenCalledTimes(1);
+  });
+
   it('does not show the top join link for logged-in users', async () => {
     mockReadCircles.mockResolvedValueOnce([]);
     window.history.pushState({}, '', '/');

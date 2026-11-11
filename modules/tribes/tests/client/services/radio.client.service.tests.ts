@@ -345,6 +345,9 @@ it('publishes verified events, restores favourites and tolerates a failed relay'
   await room.open(true);
   room.setSigner(signer);
   expect(relays[0].subscribe.mock.calls[0][0][0]['#t']).toEqual(['radiostr']);
+  const chat = signed(roomTemplate('chat', station, 'Shared chat'));
+  relays[0].subscribe.mock.calls[0][1].onevent(chat);
+  expect(receive).toHaveBeenCalledWith(chat);
   const auth = {
     kind: 22242,
     content: '',
@@ -423,4 +426,32 @@ it('reports an unavailable room when both connections fail', async () => {
   expect(error).toHaveBeenCalled();
   expect(relays.every(relay => relay.close.mock.calls.length > 0)).toBe(true);
   room.close();
+});
+
+it('accepts only its chat topic and drops publish callbacks after closing', async () => {
+  const relays = relayFixture();
+  const receive = jest.fn();
+  const topic = 'trustroots-circle-hackers';
+  const room = new RadioRoom(receive, jest.fn(), topic);
+  await room.open(true);
+  const [filters, callbacks] = relays[0].subscribe.mock.calls[0];
+  expect(filters[0]['#t']).toEqual([topic]);
+  const chat = signed({
+    kind: 1,
+    created_at: now,
+    content: 'Hello',
+    tags: [['t', topic]],
+  });
+  callbacks.onevent(chat);
+  callbacks.onevent({ ...chat, kind: 0 });
+  callbacks.onevent(signed(roomTemplate('chat', station, 'Other room')));
+  expect(receive.mock.calls).toEqual([[chat]]);
+  provider();
+  room.setSigner(await connectRadioSigner(user));
+  relays[0].publish.mockImplementationOnce(async () => {
+    room.close();
+    return 'ok';
+  });
+  await room.publish(chat);
+  expect(receive).toHaveBeenCalledTimes(1);
 });
