@@ -4,9 +4,8 @@ const assert: typeof import('node:assert/strict') = require('node:assert/strict'
 const express: typeof import('express') = require('express');
 const config: typeof import('../../../../config/config.mts').default = require('../../../../config/config.mts');
 const adminPolicy: typeof import('../../server/policies/admin.server.policy.mts').default = require('../../server/policies/admin.server.policy.mts');
-const {
-  previewEmailReplies,
-}: typeof import('../../server/controllers/admin.email-replies.server.controller.mts') = require('../../server/controllers/admin.email-replies.server.controller.mts');
+const registerEmailReplyRoutes: typeof import('../../server/routes/admin.email-replies.server.routes.mts').default =
+  require('../../server/routes/admin.email-replies.server.routes.mts').default;
 
 const settings = {
   TRUSTROOTS_EMAIL_REPLIES_JMAP_SESSION_URL:
@@ -18,19 +17,12 @@ const settings = {
 const route = '/api/admin/email-replies';
 
 describe('admin email reply preview', () => {
-  const app = express();
   let fetchStub: import('sinon').SinonStub;
   const keys = Object.keys(settings);
   const previous = keys.map(key => process.env[key]);
   const originalHttps = config.https;
 
   adminPolicy.invokeRolesPolicies();
-  app.use((req, _res, next) => {
-    const role = req.get('X-Test-Role');
-    if (role) Object.assign(req, { user: { roles: ['user', role] } });
-    next();
-  });
-  app.route(route).all(adminPolicy.isAllowed).get(previewEmailReplies);
 
   beforeEach(() => {
     Object.assign(process.env, settings);
@@ -46,12 +38,18 @@ describe('admin email reply preview', () => {
     });
   });
 
-  function readAs(role: string) {
-    return request(app).get(route).set('X-Test-Role', role);
+  function readAs(role?: string) {
+    const app = express();
+    app.use((req, _res, next) => {
+      if (role) Object.assign(req, { user: { roles: ['user', role] } });
+      next();
+    });
+    registerEmailReplyRoutes(app);
+    return request(app).get(route);
   }
 
   it('checks administrator access before reading the mailbox', async () => {
-    await request(app).get(route).expect(403);
+    await readAs().expect(403);
     await readAs('support-team').expect(403);
     assert.equal(fetchStub.callCount, 0);
   });

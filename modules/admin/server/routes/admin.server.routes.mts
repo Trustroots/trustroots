@@ -1,4 +1,3 @@
-import { previewEmailReplies } from '../controllers/admin.email-replies.server.controller.mts';
 import unsuspension from '../controllers/admin.unsuspend.server.controller.mts';
 import gravatar from '../controllers/admin.gravatar.server.controller.mts';
 import {
@@ -65,10 +64,6 @@ const registerRoutes = (app: RouteApp): void => {
     .all(adminPolicy.isAllowed)
     .get(signupReviewRules.list)
     .put(signupReviewRules.save);
-  app
-    .route('/api/admin/email-replies')
-    .all(adminPolicy.isAllowed)
-    .get(previewEmailReplies);
   app
     .route('/api/admin/sparkpost/recovery')
     .all(adminPolicy.isAllowed)

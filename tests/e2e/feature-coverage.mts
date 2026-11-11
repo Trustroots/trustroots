@@ -3608,7 +3608,11 @@ const features = [
         ),
       ],
       apiRoutes: [
-        apiRoute('GET', '/api/admin/email-replies', source.adminServer),
+        apiRoute(
+          'GET',
+          '/api/admin/email-replies',
+          'modules/admin/server/routes/admin.email-replies.server.routes.mts',
+        ),
       ],
     },
     requiredScenarios: [
