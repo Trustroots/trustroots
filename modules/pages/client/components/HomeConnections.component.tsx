@@ -73,6 +73,7 @@ export default function HomeConnections() {
               <li className="home-recent-member" key={member._id}>
                 <MemberSearchCard
                   user={member}
+                  compact
                   activityLabel={
                     member.activity === 'today'
                       ? t('Active today')
