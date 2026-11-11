@@ -23,12 +23,29 @@ describe('message email reply text', () => {
       ),
       'My reply',
     );
+    assert.equal(
+      extractReplyText(
+        'My reply\n  --- Reply above this line ---  \nOriginal notification',
+      ),
+      'My reply',
+    );
   });
 
   it('stops at the first standard quoted block', () => {
     assert.equal(
       extractReplyText('First line\n> quoted line\nsecond quoted line'),
       'First line',
+    );
+  });
+
+  it('splits lone carriage returns and keeps ordinary lines before a marker', () => {
+    assert.equal(
+      extractReplyText('First line\r--- Reply above this line ---\rQuote'),
+      'First line',
+    );
+    assert.equal(
+      extractReplyText('First line\rSecond line'),
+      'First line\nSecond line',
     );
   });
 
@@ -103,7 +120,45 @@ describe('validateReplyEmail', () => {
       { ok: false, reason: 'invalid-address' },
     );
     assert.deepEqual(
+      validateReplyEmail({
+        ...validInput,
+        expectedSender: 'member\u001f@example.test',
+      }),
+      { ok: false, reason: 'invalid-address' },
+    );
+    assert.deepEqual(
+      validateReplyEmail({
+        ...validInput,
+        expectedSender: 'member\u007f@example.test',
+      }),
+      { ok: false, reason: 'invalid-address' },
+    );
+    assert.deepEqual(
+      validateReplyEmail({ ...validInput, expectedSender: '@example.test' }),
+      { ok: false, reason: 'invalid-address' },
+    );
+    assert.deepEqual(
+      validateReplyEmail({ ...validInput, expectedSender: 'member@' }),
+      { ok: false, reason: 'invalid-address' },
+    );
+    assert.deepEqual(
       validateReplyEmail({ ...validInput, from: ['other@example.test'] }),
+      { ok: false, reason: 'sender-mismatch' },
+    );
+    assert.deepEqual(
+      validateReplyEmail({ ...validInput, from: ['memberx@example.test'] }),
+      { ok: false, reason: 'sender-mismatch' },
+    );
+    assert.deepEqual(
+      validateReplyEmail({ ...validInput, from: ['member@evil.test'] }),
+      { ok: false, reason: 'sender-mismatch' },
+    );
+    assert.deepEqual(
+      validateReplyEmail({
+        ...validInput,
+        expectedSender: 'member@strasse.test',
+        from: ['member@straße.test'],
+      }),
       { ok: false, reason: 'sender-mismatch' },
     );
     assert.deepEqual(
@@ -139,6 +194,15 @@ describe('validateReplyEmail', () => {
       }),
       { ok: false, reason: 'oversized' },
     );
+  });
+
+  it('accepts a body exactly at the UTF-8 byte limit', () => {
+    const result = validateReplyEmail({
+      ...validInput,
+      text: 'x'.repeat(maxReplyBytes),
+    });
+    assert.equal(result.ok, true);
+    if (result.ok) assert.equal(result.replyText.length, maxReplyBytes);
   });
 
   it('rejects empty replies after quoted content is removed', () => {

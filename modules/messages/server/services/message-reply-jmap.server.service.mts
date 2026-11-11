@@ -140,7 +140,6 @@ async function createClient(options: JmapOptions) {
     throw new Error('JMAP apiUrl must be a valid HTTPS URL');
   }
   if (
-    apiUrlParsed.protocol !== 'https:' ||
     apiUrlParsed.origin !== sessionUrlParsed.origin ||
     apiUrlParsed.username ||
     apiUrlParsed.password
@@ -210,15 +209,17 @@ function addressList(value: EmailAddress[] | null | undefined): string[] {
 }
 
 function emailText(email: JmapEmail): { text: string; truncated: boolean } {
-  const bodyValues = email.bodyValues ?? {};
-  const textParts = email.textBody ?? [];
-  let truncated = textParts.length === 0;
+  if (!Array.isArray(email.textBody) || email.textBody.length === 0) {
+    return { text: '', truncated: true };
+  }
+  const textParts = email.textBody;
+  let truncated = false;
   const text = textParts.flatMap(part => {
     if (typeof part.partId !== 'string') {
       truncated = true;
       return [];
     }
-    const bodyValue = bodyValues[part.partId];
+    const bodyValue = email.bodyValues?.[part.partId];
     if (!bodyValue || typeof bodyValue.value !== 'string') {
       truncated = true;
       return [];
@@ -339,14 +340,15 @@ export async function acknowledgeReplyEmail(
     ],
   ]);
   const set = methodResult(response, 'Email/set', 'set');
-  if (
-    set.notUpdated &&
-    typeof set.notUpdated === 'object' &&
-    emailId in set.notUpdated
-  ) {
-    throw new Error(
-      'JMAP Email/set response contains notUpdated for the email',
-    );
+  if (set.notUpdated !== undefined && set.notUpdated !== null) {
+    if (typeof set.notUpdated !== 'object' || Array.isArray(set.notUpdated)) {
+      throw new Error('JMAP Email/set response has invalid notUpdated');
+    }
+    if (emailId in set.notUpdated) {
+      throw new Error(
+        'JMAP Email/set response contains notUpdated for the email',
+      );
+    }
   }
   if (
     !set.updated ||

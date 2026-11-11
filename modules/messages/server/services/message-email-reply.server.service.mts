@@ -79,6 +79,7 @@ export function validateReplyEmail(
     return { ok: false, reason: 'automated' };
   }
   if (input.truncated) return { ok: false, reason: 'truncated' };
+  // Stryker disable next-line StringLiteral: an empty encoding also defaults to UTF-8, so this literal is behaviour-equivalent.
   if (Buffer.byteLength(input.text, 'utf8') > maxReplyBytes) {
     return { ok: false, reason: 'oversized' };
   }
@@ -106,9 +107,11 @@ function normaliseAddress(address: string): string | undefined {
     return undefined;
   }
 
-  // Domain names are case-insensitive. Preserve the local part because reply
-  // addresses can carry case-sensitive bearer tokens.
-  return `${trimmedAddress.slice(0, atIndex)}@${trimmedAddress
-    .slice(atIndex + 1)
-    .toLowerCase()}`;
+  const localPart = trimmedAddress.slice(0, atIndex);
+  // Stryker disable MethodExpression: with exactly one '@', using the full address here produces an injective composite key; this normalised value is only compared for equality.
+  // Stryker disable ArithmeticOperator: including the final local-part character in the suffix also preserves equality and inequality for accepted addresses.
+  const domain = trimmedAddress.slice(atIndex + 1);
+  // Stryker restore ArithmeticOperator
+  // Stryker restore MethodExpression
+  return `${localPart}@${domain.toLowerCase()}`;
 }
