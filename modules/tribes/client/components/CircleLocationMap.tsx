@@ -82,6 +82,7 @@ export function locationPopup(location: CircleLocation): HTMLElement {
       ))
   ) {
     const link = document.createElement('a');
+    link.className = 'circle-location-popup-action';
     link.href = location.link.url;
     link.textContent = location.link.label;
     if (/^https?:\/\//i.test(location.link.url)) {

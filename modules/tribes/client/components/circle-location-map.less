@@ -22,18 +22,24 @@
   color: @gray;
   line-height: 1.6;
 }
-.circle-location-popup {
-  min-width: 200px;
+.circle-location-map .circle-location-popup {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 160px;
   max-width: 300px;
   line-height: 1.5;
-  strong {
+  overflow-wrap: anywhere;
+
+  > strong {
     font-size: 15px;
   }
   dl {
     display: grid;
-    grid-template-columns: auto 1fr;
+    grid-template-columns: auto minmax(0, 1fr);
     gap: 4px 14px;
-    margin: 10px 0;
+    margin: 0;
   }
   dt {
     color: @gray;
@@ -43,12 +49,22 @@
     margin: 0;
   }
   p {
-    margin: 6px 0;
+    margin: 0;
     font-size: 12px;
     color: @gray;
   }
-  a {
-    overflow-wrap: anywhere;
+  a.circle-location-popup-action {
+    padding: 6px 10px;
+    border-radius: 6px;
+    background-color: #edf6f2;
+    color: darken(@brand-primary, 26%);
+    font-weight: 600;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      background-color: #dceee5;
+    }
   }
 }
 .circle-location-map {
@@ -84,7 +100,7 @@
     outline-offset: 2px;
   }
 }
-.tribe-header .circle-location-map-panel a.leaflet-popup-close-button {
+.circle-location-map.leaflet-container a.leaflet-popup-close-button {
   width: 32px;
   height: 32px;
   top: 5px;

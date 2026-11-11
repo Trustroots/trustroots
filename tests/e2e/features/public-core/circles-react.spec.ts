@@ -853,6 +853,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/circles/hackers');
     const community = page.locator('.hackers-circle-community.has-members');
+    const chat = community.locator('.hackers-circle-chat');
     const resources = community.locator('.hackers-circle-resources');
     const members = community.locator('.circle-member-discovery');
     await expect(members.locator('.member-search-card')).toHaveCount(2);
@@ -869,8 +870,21 @@ test('Hackers circle puts community resources beside members on desktop and stac
     ).toHaveAttribute('href', 'https://wiki.trustroots.org/en/Hackers');
     const desktopResources = await resources.boundingBox();
     const desktopMembers = await members.boundingBox();
+    const desktopChat = await chat.boundingBox();
     expectPresent(desktopResources);
     expectPresent(desktopMembers);
+    expectPresent(desktopChat);
+    expect(Math.abs(desktopChat.x - desktopResources.x)).toBeLessThan(2);
+    expect(
+      Math.abs(
+        desktopChat.x +
+          desktopChat.width -
+          (desktopMembers.x + desktopMembers.width),
+      ),
+    ).toBeLessThan(2);
+    expect(desktopResources.y).toBeGreaterThanOrEqual(
+      desktopChat.y + desktopChat.height,
+    );
     expect(Math.abs(desktopResources.y - desktopMembers.y)).toBeLessThan(2);
     expect(desktopMembers.x).toBeGreaterThan(
       desktopResources.x + desktopResources.width,
@@ -881,10 +895,15 @@ test('Hackers circle puts community resources beside members on desktop and stac
     });
     fs.writeFileSync('tmp/screenshots/circle-hackers-desktop.url', page.url());
     await page.setViewportSize({ width: 390, height: 844 });
+    const mobileChat = await chat.boundingBox();
     const mobileResources = await resources.boundingBox();
     const mobileMembers = await members.boundingBox();
+    expectPresent(mobileChat);
     expectPresent(mobileResources);
     expectPresent(mobileMembers);
+    expect(mobileResources.y).toBeGreaterThanOrEqual(
+      mobileChat.y + mobileChat.height,
+    );
     expect(mobileMembers.y).toBeGreaterThanOrEqual(
       mobileResources.y + mobileResources.height,
     );

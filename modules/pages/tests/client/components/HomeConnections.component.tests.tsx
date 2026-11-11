@@ -111,9 +111,15 @@ describe('<HomeConnections />', () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole('listitem')).toHaveLength(3);
-    expect(screen.getByText('Active this month')).toBeVisible();
-    expect(screen.getByText('Active today')).toBeInTheDocument();
-    expect(screen.getByText('Active this week')).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: /Recent Member/ }),
+    ).toHaveTextContent('Active today');
+    expect(
+      screen.getByRole('link', { name: /Weekly Member/ }),
+    ).toHaveTextContent('Active this week');
+    expect(
+      screen.getByRole('link', { name: /Monthly Member/ }),
+    ).toHaveTextContent('Active this month');
     const map = screen.getByTestId('hosting-map');
     expect(map).toHaveAttribute('data-view-key', 'home-hosting-map-view');
     expect(map).toHaveTextContent('Older Host');
