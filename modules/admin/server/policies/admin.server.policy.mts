@@ -172,6 +172,7 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/users/by-last-ip-hash',
           permissions: ['post'],
         },
+        { resources: '/api/admin/email-replies', permissions: ['get'] },
         { resources: '/api/admin/reference-threads', permissions: ['get'] },
         {
           resources: '/api/admin/sparkpost/recovery',

@@ -197,7 +197,7 @@ jobs:
       - name: Build Vite client assets
         run: pnpm run build:vite
       - name: Install Chromium for Vite smoke tests
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
       - name: Test UI component stories
         run: pnpm --filter @trustroots/ui run test:stories
       - name: Test e2e screenshot capture

@@ -3590,6 +3590,37 @@ const features = [
     relatedSpecs: [],
   },
   {
+    id: 'admin.email-replies',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description: 'Administrator preview of the reply mailbox.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute(
+          'admin-email-replies',
+          '/admin/email-replies',
+          source.adminClient,
+          {
+            requiresAuth: true,
+            requiresRole: 'admin',
+          },
+        ),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/admin/email-replies',
+          'modules/admin/server/routes/admin.email-replies.server.routes.mts',
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Admin can check the reply mailbox and see when configuration is missing.',
+    ],
+    relatedSpecs: [],
+  },
+  {
     id: 'admin.sparkpost',
     area: AREA.adminModeration,
     status: STATUS.active,
