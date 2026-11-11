@@ -239,7 +239,7 @@ const features = [
       ),
       spec(
         'features/public-core/connections-home.spec.ts',
-        'signed-in homepage shows recent connections and all hosting connections',
+        'signed-in homepage lays out recent connections and opens hosting offers',
       ),
     ],
   },

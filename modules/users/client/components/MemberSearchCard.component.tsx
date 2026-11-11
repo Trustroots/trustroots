@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
+import { Badge } from '@trustroots/ui/Badge';
 
 import MemberAvatar from './MemberAvatar';
 import type { UserProfile } from '../types';
@@ -42,6 +43,7 @@ const Card = styled.a.attrs({ className: 'member-search-card' })`
 `;
 const Details = styled.div`
   display: flex;
+  align-self: stretch;
   min-width: 0;
   flex-direction: column;
   gap: 4px;
@@ -53,6 +55,14 @@ const DisplayName = styled.span`
   font-size: 1.05rem;
   font-weight: 400;
   line-height: 1.3;
+`;
+const Activity = styled.div`
+  margin-top: auto;
+  padding-top: 6px;
+
+  [data-slot='badge'] {
+    white-space: normal;
+  }
 `;
 
 function highlightMatches(value: string, query: string) {
@@ -102,9 +112,11 @@ function highlightMatches(value: string, query: string) {
 export default function MemberSearchCard({
   user,
   query = '',
+  activityLabel,
 }: {
   user: UserProfile;
   query?: string;
+  activityLabel?: string;
 }) {
   const { t } = useTranslation('search') as { t: (key: string) => string };
   return (
@@ -127,6 +139,13 @@ export default function MemberSearchCard({
           </p>
         )}
         {user.tagline && <p>{highlightMatches(user.tagline, query)}</p>}
+        {activityLabel && (
+          <Activity>
+            <Badge variant="outline" intent="neutral">
+              {activityLabel}
+            </Badge>
+          </Activity>
+        )}
       </Details>
     </Card>
   );

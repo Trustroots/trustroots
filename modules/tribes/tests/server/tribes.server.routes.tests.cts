@@ -256,12 +256,19 @@ describe('Tribe CRUD tests', function () {
         }),
         createConnection('expiredhost', { seen: daysAgo(40) }),
       ]);
+    const otherContacts = await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        createConnection(`contact${index}`, { seen: daysAgo(13 + index) }),
+      ),
+    );
     await Contact.create(
-      [newer, olderHost, hidden, blocked, expired].map(connection => ({
-        userFrom: connection._id,
-        userTo: user._id,
-        confirmed: true,
-      })),
+      [newer, olderHost, hidden, blocked, expired, ...otherContacts].map(
+        connection => ({
+          userFrom: connection._id,
+          userTo: user._id,
+          confirmed: true,
+        }),
+      ),
     );
     await Experience.create(
       [newer, restrictedHost].map(connection => ({
@@ -305,6 +312,7 @@ describe('Tribe CRUD tests', function () {
       .should.deepEqual([
         ['recentcontact', 'week'],
         ['restrictedhost', 'month'],
+        ...otherContacts.slice(0, 7).map(({ username }) => [username, 'month']),
       ]);
     should.not.exist(response.body.recent[0].seen);
     response.body.hosts.should.deepEqual([

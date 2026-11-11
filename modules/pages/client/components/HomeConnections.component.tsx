@@ -71,14 +71,16 @@ export default function HomeConnections() {
           <ul className="home-recent-member-list list-unstyled">
             {recent.map(member => (
               <li className="home-recent-member" key={member._id}>
-                <MemberSearchCard user={member} />
-                <span className="home-recent-member-activity">
-                  {member.activity === 'today'
-                    ? t('Active today')
-                    : member.activity === 'week'
-                      ? t('Active this week')
-                      : t('Active this month')}
-                </span>
+                <MemberSearchCard
+                  user={member}
+                  activityLabel={
+                    member.activity === 'today'
+                      ? t('Active today')
+                      : member.activity === 'week'
+                        ? t('Active this week')
+                        : t('Active this month')
+                  }
+                />
               </li>
             ))}
           </ul>

@@ -407,7 +407,7 @@ service.listConnections = async function (req, res, next) {
       })
         .select(discoverySelect)
         .sort({ seen: -1, _id: 1 })
-        .limit(8)
+        .limit(9)
         .maxTimeMS(DISCOVERY_QUERY_TIMEOUT_MS)
         .lean<MemberView[]>()
         .exec(),

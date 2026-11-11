@@ -14,28 +14,33 @@
 
 .home-connections {
   display: grid;
-  gap: 24px;
-  padding-top: 28px;
-  padding-bottom: 28px;
+  gap: 32px;
+  padding-top: calc(var(--tr-header-height, @navbar-height) + 28px);
+  padding-bottom: 32px;
 }
 .home-recent-members h2 {
-  margin-top: 0;
-  text-align: center;
+  margin: 0 0 20px;
+  font-size: clamp(23px, 3vw, 32px);
+  line-height: 1.2;
+  .font-brand-semibold();
 }
 .home-recent-member-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px;
   margin-bottom: 0;
-}
-.home-recent-member {
-  min-width: 0;
-}
-.home-recent-member-activity {
-  display: block;
-  padding: 8px 16px 0;
-  color: @gray;
-  font-size: 13px;
+
+  @media (min-width: @screen-sm-min) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: @screen-md-min) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .member-search-card {
+    height: 100%;
+  }
 }
 .home-hosting-map {
   max-width: 100%;
