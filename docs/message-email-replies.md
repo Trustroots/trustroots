@@ -50,4 +50,23 @@ retryable. Neither message bodies nor reply credentials should enter logs.
 - Full server coverage and an end-to-end notification/reply/conversation test.
 - A real Stalwart round trip, including alias delivery and provider retry tests.
 
+## Planned administration page
+
+`/admin/email-replies` will provide a read-only view for testing with existing
+replies and for ongoing operations. It is part of the proposal, not an available
+route in this draft.
+
+| View               | Information                                                                |
+| ------------------ | -------------------------------------------------------------------------- |
+| Mailbox health     | Configuration/mode, last poll, last success and sanitised errors           |
+| Reply list         | Received time, sender, matching result, processing status and reason       |
+| Reply detail       | Escaped source text, extracted reply, quote boundary and matching evidence |
+| Processing history | Retained delivery, duplicate, rejection and failure outcomes               |
+
+Inspection must not import messages, acknowledge mail or change mailbox read
+flags. Legacy replies without conversation tokens need explicit uncertain or
+unmatched states. Credentials and reply tokens must be redacted, and email HTML
+and external resources must not render. Retry, manual delivery and deletion are
+outside the initial read-only page.
+
 The OpenSpec proposal remains active until this complete flow is implemented.
