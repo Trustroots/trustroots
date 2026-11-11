@@ -191,6 +191,7 @@ describe('Admin policy unit tests', () => {
       'post /api/admin/users/by-role',
       'post /api/admin/users/by-last-ip-hash',
       'get /api/admin/reference-threads',
+      'get /api/admin/email-replies',
       'get /api/admin/sparkpost/recovery',
       'post /api/admin/sparkpost/recovery',
       'get /api/admin/sparkpost/:action',

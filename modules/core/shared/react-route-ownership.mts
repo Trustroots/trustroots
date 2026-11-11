@@ -468,6 +468,11 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/email-replies',
+    title: 'Admin - Email replies',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/sparkpost',
     title: 'Admin - SparkPost',
   },

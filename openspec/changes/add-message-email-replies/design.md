@@ -49,8 +49,8 @@ presenting a best-guess sender as confirmed. The page has no replay,
 acknowledge, or delete controls; those operations need a separately designed
 and reviewed workflow.
 
-The diagnostic record and page are planned operational requirements before
-general rollout. They are outside the current helpers-only draft implementation.
+The draft includes the on-demand mailbox preview. Receipt storage and processing
+history are planned for the delivery integration before general rollout.
 
 ## Deployment
 

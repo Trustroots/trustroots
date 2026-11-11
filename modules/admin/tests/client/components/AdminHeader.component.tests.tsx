@@ -42,7 +42,10 @@ describe('<AdminHeader />', () => {
       ],
       ['Circles', ['Circles', 'Hackerspaces']],
       ['Experiences', ['Reference threads', 'Experience changes']],
-      ['Outreach', ['Acquisition stories', 'Newsletter', 'SparkPost']],
+      [
+        'Outreach',
+        ['Acquisition stories', 'Newsletter', 'Email replies', 'SparkPost'],
+      ],
       [
         'Audit',
         ['Audit log', 'Username changes', 'Gravatar', 'Signup watchlist'],
@@ -76,6 +79,9 @@ describe('<AdminHeader />', () => {
     ).toHaveAttribute('href', '/admin/experience-changes');
     expect(
       screen.queryByRole('link', { name: 'Messages' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Email replies' }),
     ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('list', { name: 'Conversations' }),

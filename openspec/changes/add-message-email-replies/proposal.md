@@ -27,9 +27,11 @@ require no migration; new inbound delivery metadata requires an index.
 
 ## Draft scope
 
-This draft implements transport and reply-text validation primitives only. It
+This draft implements transport and reply-text validation primitives and an
+admin-only mailbox preview. It
 does not advertise reply addresses, schedule polling or create member messages.
 Token issuance, retry-safe persistence, notification integration, admin
 diagnostics and end-to-end coverage remain follow-up tasks within this proposal.
-The admin page is specified here but is not implemented by the draft helpers.
+The preview provides a bounded mailbox snapshot. Durable processing history
+remains part of the delivery integration.
 The issue stays open.

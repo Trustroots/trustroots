@@ -8,6 +8,7 @@
 - [ ] Update notification headers and templates.
 - [ ] Cover valid replies, eligibility, invalid input, duplicates and retries.
 - [ ] Add an end-to-end notification/reply/conversation test.
+- [x] Add the admin-only, on-demand mailbox preview and access-control tests.
 - [ ] Design bounded operational receipt storage and retention before rollout;
       retain outcome and sanitised matching evidence independently of provider
       acknowledgement, without storing reply tokens or credentials.

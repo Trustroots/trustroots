@@ -46,6 +46,20 @@ test.describe('admin moderation page flows', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('admin checks the reply mailbox', async ({ page }, testInfo) => {
+    annotateFeature(testInfo, 'admin.email-replies', [
+      'Admin can check the reply mailbox and see when configuration is missing.',
+    ]);
+
+    await gotoAdminPage(page, '/admin', /\/admin$/);
+    await page.getByRole('link', { name: 'Email replies' }).click();
+    await expect(page).toHaveURL(/\/admin\/email-replies$/);
+    await page.getByRole('button', { name: 'Check mailbox' }).click();
+    await expect(page.getByRole('status')).toHaveText(
+      'The reply mailbox is not configured.',
+    );
+  });
+
   test('retired historical spam cleanup is unavailable', async ({
     page,
   }, testInfo) => {

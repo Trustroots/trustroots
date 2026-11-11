@@ -50,18 +50,29 @@ retryable. Neither message bodies nor reply credentials should enter logs.
 - Full server coverage and an end-to-end notification/reply/conversation test.
 - A real Stalwart round trip, including alias delivery and provider retry tests.
 
-## Planned administration page
+## Administration preview
 
-`/admin/email-replies` will provide a read-only view for testing with existing
-replies and for ongoing operations. It is part of the proposal, not an available
-route in this draft.
+Open `/admin/email-replies` as an administrator and select **Check mailbox**.
+The preview reads up to 20 unprocessed messages. Message links on the configured
+Trustroots origin provide candidate usernames for inspection. They do not verify
+the sender or conversation.
 
-| View               | Information                                                                |
-| ------------------ | -------------------------------------------------------------------------- |
-| Mailbox health     | Configuration/mode, last poll, last success and sanitised errors           |
-| Reply list         | Received time, sender, matching result, processing status and reason       |
-| Reply detail       | Escaped source text, extracted reply, quote boundary and matching evidence |
-| Processing history | Retained delivery, duplicate, rejection and failure outcomes               |
+Set these environment variables on the web process to connect the preview:
+
+- `TRUSTROOTS_EMAIL_REPLIES_JMAP_SESSION_URL`
+- `TRUSTROOTS_EMAIL_REPLIES_JMAP_ACCESS_TOKEN`
+- `TRUSTROOTS_EMAIL_REPLIES_JMAP_ACCOUNT_ID`
+- `TRUSTROOTS_EMAIL_REPLIES_JMAP_MAILBOX_ID`
+
+The preview uses a mailbox credential with read access. Keep delivery disabled
+while reviewing existing replies. Retained outcomes and automatic polling are
+planned for the delivery integration.
+
+| View          | Information                                                        |
+| ------------- | ------------------------------------------------------------------ |
+| Mailbox check | Configuration status, successful check time and connection failure |
+| Reply list    | Sender, parsing result and candidate conversation usernames        |
+| Reply detail  | Redacted source and extracted reply rendered as plain text         |
 
 Inspection must not import messages, acknowledge mail or change mailbox read
 flags. Legacy replies without conversation tokens need explicit uncertain or
