@@ -347,6 +347,15 @@ test('logged-in members can read radio chat but need a matching signer to publis
   await expect(
     radio.getByRole('heading', { name: 'Groovesalad' }),
   ).toBeVisible();
+  await expect(
+    radio.getByRole('button', { name: 'Pause', exact: true }),
+  ).toBeVisible();
+  await expect(radio.locator('audio')).toHaveAttribute('src', /groovesalad/);
+  await hashtag.click();
+  await expect(
+    radio.getByRole('button', { name: 'Pause', exact: true }),
+  ).toBeVisible();
+  expect(await page.evaluate(() => window.__radioMedia.played)).toBe(1);
   const listeningNow = radio.getByRole('region', { name: 'Listening now' });
   await expect(listeningNow).toContainText('Groovesalad');
   await expect(listeningNow).toContainText(unknownNpub);
