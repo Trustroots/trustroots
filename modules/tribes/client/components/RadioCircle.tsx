@@ -4,7 +4,9 @@ import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import { nip19, type Event } from 'nostr-tools';
 import useCircleSigner from '../hooks/useCircleSigner';
+import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
 import CircleChatLog from './CircleChatLog';
+import CircleNostrIdentity from './CircleNostrIdentity';
 import type { UserProfile } from '@/modules/users/client/types';
 import {
   activeListeners,
@@ -60,6 +62,9 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
     )
     .sort((a, b) => a.created_at - b.created_at)
     .slice(-200);
+  const usernames = useCircleProfileUsernames(
+    user ? [...chat, ...listeners].map(({ pubkey }) => pubkey) : [],
+  );
   const linkedNpub = user?.nostrNpub;
   const ownPublicKey = useMemo(() => {
     if (!linkedNpub) return undefined;
@@ -248,42 +253,66 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       <section className="radio-station-group" key={label} aria-label={label}>
         <h4>{label}</h4>
         <ul>
-          {items.map(item => (
-            <li
-              key={item.id}
-              className={station?.id === item.id ? 'is-selected' : ''}
-            >
-              <button
-                type="button"
-                className="radio-tune"
-                onClick={() => void play(item)}
-                aria-label={`${playing && station?.id === item.id ? t('Pause') : t('Play')} ${item.title}`}
+          {items.map(item => {
+            const hasArtwork = item.img && item.site;
+            const initials = item.title.slice(0, 2);
+            return (
+              <li
+                key={item.id}
+                className={station?.id === item.id ? 'is-selected' : ''}
               >
-                <span className="radio-station-art" aria-hidden="true">
-                  {item.title.slice(0, 2)}
-                </span>
-                <span>
-                  <strong>{item.title}</strong>
-                  <small>{item.tags.join(' · ')}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                className="radio-favourite"
-                aria-label={`${favourites.includes(item.id) ? t('Unstar') : t('Star')} ${item.title}`}
-                aria-pressed={favourites.includes(item.id)}
-                onClick={() => favourite(item)}
-              >
-                {favourites.includes(item.id) ? '★' : '☆'}
-              </button>
-            </li>
-          ))}
+                {hasArtwork && (
+                  <a
+                    className="radio-station-art radio-station-art-link"
+                    href={item.site}
+                    aria-label={t('{{station}} website', {
+                      station: item.title,
+                    })}
+                  >
+                    <span aria-hidden="true">{initials}</span>
+                    <img
+                      src={item.img}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      referrerPolicy="no-referrer"
+                      onError={event => {
+                        event.currentTarget.hidden = true;
+                      }}
+                    />
+                  </a>
+                )}
+                <button
+                  type="button"
+                  className="radio-tune"
+                  onClick={() => void play(item)}
+                  aria-label={`${playing && station?.id === item.id ? t('Pause') : t('Play')} ${item.title}`}
+                >
+                  {!hasArtwork && (
+                    <span className="radio-station-art" aria-hidden="true">
+                      {initials}
+                    </span>
+                  )}
+                  <span>
+                    <strong>{item.title}</strong>
+                    <small>{item.tags.join(' · ')}</small>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className="radio-favourite"
+                  aria-label={`${favourites.includes(item.id) ? t('Unstar') : t('Star')} ${item.title}`}
+                  aria-pressed={favourites.includes(item.id)}
+                  onClick={() => favourite(item)}
+                >
+                  {favourites.includes(item.id) ? '★' : '☆'}
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </section>
     );
-  }
-  function identityLabel(key: string) {
-    return `${key.slice(0, 8)}…${key.slice(-4)}`;
   }
 
   return (
@@ -350,7 +379,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           </p>
         )}
         {user && (
-          <section aria-label={t('Listening now')}>
+          <section className="radio-listeners" aria-label={t('Listening now')}>
             <h4>{t('Listening now')}</h4>
             {!listeners.length && (
               <p>{t('No shared listening activity yet.')}</p>
@@ -358,7 +387,10 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
             <ul>
               {listeners.map(listener => (
                 <li key={listener.pubkey}>
-                  <span>{identityLabel(listener.pubkey)}</span>
+                  <CircleNostrIdentity
+                    pubkey={listener.pubkey}
+                    username={usernames[listener.pubkey]}
+                  />
                   {' · '}
                   <a
                     href={`/circles/radio#${encodeURIComponent(tag(listener, 'radiostr_station')!)}`}
@@ -419,6 +451,7 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
           )}
           <CircleChatLog
             messages={chat}
+            usernames={usernames}
             stationLink={event => {
               const channel = tag(event, 'channel');
               return stations.some(item => item.id === channel) ? (

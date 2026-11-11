@@ -119,6 +119,52 @@ function emit(...events: Event[]) {
 function row() {
   return within(screen.getByRole('region', { name: 'SomaFM' }));
 }
+
+it('links station artwork to station websites separately from playback', () => {
+  render(<RadioCircle />);
+
+  const beatblender = row().getByRole('link', { name: 'Beatblender website' });
+  expect(beatblender).toHaveAttribute('href', 'https://somafm.com/beatblender');
+  expect(beatblender.querySelector('img')).toHaveAttribute(
+    'src',
+    'https://somafm.com/img/blender.gif',
+  );
+  expect(beatblender.closest('button')).toBeNull();
+  fireEvent.click(beatblender);
+  expect(play).not.toHaveBeenCalled();
+
+  const paradise = within(
+    screen.getByRole('region', { name: 'Radio Paradise' }),
+  ).getByRole('link', { name: 'Paradise website' });
+  expect(paradise).toHaveAttribute('href', 'https://www.radioparadise.com/');
+  expect(paradise.querySelector('img')).toHaveAttribute(
+    'src',
+    'https://radioparadise.com/apple-touch-icon.png',
+  );
+});
+
+it('shows initials in the play button when a station has no artwork', () => {
+  render(<RadioCircle />);
+
+  const playStation = row().getByRole('button', { name: 'Play 7soul' });
+  expect(playStation.querySelector('.radio-station-art')).toHaveTextContent(
+    '7s',
+  );
+  expect(playStation.querySelector('img')).toBeNull();
+});
+
+it('keeps initials visible when station artwork fails to load', () => {
+  render(<RadioCircle />);
+
+  const artworkLink = row().getByRole('link', { name: 'Beatblender website' });
+  const image = artworkLink.querySelector('img')!;
+  fireEvent.error(image);
+
+  expect(image).toHaveAttribute('hidden');
+  expect(artworkLink).toHaveTextContent('Be');
+  expect(artworkLink).toBeInTheDocument();
+});
+
 async function connect() {
   fireEvent.click(
     screen.getByRole('button', { name: 'Connect Nostr identity' }),
@@ -283,17 +329,45 @@ it('allows logged-in members to read chat and listeners without a signer', async
     'datetime',
     '2026-08-03T10:05:00.000Z',
   );
-  expect(
-    await screen.findByRole('link', { name: nip19.npubEncode(message.pubkey) }),
-  ).toHaveAttribute('href', '/profile/fictional-member');
+  const npub = nip19.npubEncode(message.pubkey);
+  const messageRow = screen.getByText(message.content).closest('li')!;
+  const profileLink = await within(messageRow).findByRole('link', {
+    name: 'fictional-member@trustroots.org',
+  });
+  expect(profileLink).toHaveAttribute('href', '/profile/fictional-member');
+  expect(profileLink).toHaveAttribute('title', npub);
   expect(screen.getByRole('link', { name: `#${station.id}` })).toHaveAttribute(
     'href',
     `/circles/radio#${station.id}`,
   );
   expect(screen.getByLabelText('Message')).toBeDisabled();
+  const listeningNow = screen.getByRole('region', { name: 'Listening now' });
+  expect(listeningNow).toHaveTextContent(station.title);
+  const listenerIdentity = within(listeningNow).getByRole('link', {
+    name: 'fictional-member@trustroots.org',
+  });
+  expect(listenerIdentity).toHaveAttribute('href', '/profile/fictional-member');
+  expect(listenerIdentity).toHaveAttribute('title', npub);
+});
+it('resolves a known listener identity without any chat from that key', async () => {
+  const listening = event(roomTemplate('listening', station, 'Music'));
+  const npub = nip19.npubEncode(listening.pubkey);
+  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
+    [listening.pubkey]: user.username,
+  });
+  render(<RadioCircle user={user} />);
+  emit(listening);
+
+  const listeningNow = screen.getByRole('region', { name: 'Listening now' });
+  const identity = await within(listeningNow).findByRole('link', {
+    name: 'fictional-member@trustroots.org',
+  });
+  expect(identity).toHaveAttribute('href', '/profile/fictional-member');
+  expect(identity).toHaveAttribute('title', npub);
   expect(
-    screen.getByRole('region', { name: 'Listening now' }),
-  ).toHaveTextContent(station.title);
+    screen.queryByText('No shared listening activity yet.'),
+  ).not.toBeInTheDocument();
+  expect(document.querySelector('.radio-chat-log')).toBeEmptyDOMElement();
 });
 it('keeps chat readable as plain npubs if the author lookup fails', async () => {
   render(<RadioCircle user={user} />);
@@ -303,7 +377,10 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
     [message.pubkey]: user.username,
   });
   emit(message);
-  await screen.findByRole('link', { name: npub });
+  const verifiedAuthor = await screen.findByRole('link', {
+    name: 'fictional-member@trustroots.org',
+  });
+  expect(verifiedAuthor).toHaveAttribute('title', npub);
 
   jest
     .mocked(fetchRadioAuthorUsernames)
@@ -315,10 +392,46 @@ it('keeps chat readable as plain npubs if the author lookup fails', async () => 
     ),
   );
   await waitFor(() =>
-    expect(screen.queryByRole('link', { name: npub })).not.toBeInTheDocument(),
+    expect(
+      screen.queryByRole('link', { name: 'fictional-member@trustroots.org' }),
+    ).not.toBeInTheDocument(),
   );
   expect(screen.getByText(npub)).toBeVisible();
   expect(screen.getByText('Fictional message')).toBeVisible();
+});
+
+it('uses a full plain npub for an unknown chat author and radio listener', async () => {
+  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({});
+  render(<RadioCircle user={user} />);
+  const listening = event(roomTemplate('listening', station, 'Music'));
+  const message = event(
+    roomTemplate('chat', station, 'Unknown author message'),
+  );
+  emit(listening, message);
+
+  const npub = nip19.npubEncode(message.pubkey);
+  const listeningNow = screen.getByRole('region', { name: 'Listening now' });
+  expect(listeningNow).toHaveTextContent(npub);
+  expect(
+    within(listeningNow).queryByRole('link', { name: npub }),
+  ).not.toBeInTheDocument();
+  const chatLog = screen.getByRole('region', { name: 'Radio chat' });
+  expect(within(chatLog).getByText(npub)).toBeVisible();
+  expect(within(chatLog).getByText('Unknown author message')).toBeVisible();
+  expect(
+    within(chatLog).queryByRole('link', { name: npub }),
+  ).not.toBeInTheDocument();
+});
+
+it('does not look up authors until a signed-in member has room events', () => {
+  render(<RadioCircle user={user} />);
+  expect(fetchRadioAuthorUsernames).not.toHaveBeenCalled();
+});
+
+it('does not look up public room identities for a guest', () => {
+  render(<RadioCircle />);
+  expect(fetchRadioAuthorUsernames).not.toHaveBeenCalled();
+  expect(screen.queryByText(/^npub1/)).not.toBeInTheDocument();
 });
 
 it.each([false, true])(

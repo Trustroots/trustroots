@@ -4,9 +4,13 @@
       "tags": ["soma"]
     },
     "beatblender": {
+      "site": "https://somafm.com/beatblender",
+      "img": "https://somafm.com/img/blender.gif",
       "tags": ["soma"]
     },
     "bootliquor": {
+      "site": "https://somafm.com/bootliquor",
+      "img": "https://somafm.com/img/bootliquor120.jpg",
       "tags": ["soma"]
     },
     "bossa": {
@@ -22,6 +26,8 @@
       "tags": ["soma"]
     },
     "cliqhop": {
+      "site": "https://somafm.com/cliqhop",
+      "img": "https://somafm.com/img/cliqhop.gif",
       "tags": ["soma", "idm"]
     },
     "covers": {
@@ -46,6 +52,8 @@
       "tags": ["soma"]
     },
     "dronezone": {
+      "site": "https://somafm.com/dronezone",
+      "img": "https://somafm.com/img/DroneZoneBox.jpg",
       "tags": ["soma"]
     },
     "dubstep": {
@@ -61,12 +69,16 @@
       "tags": ["soma"]
     },
     "groovesalad": {
+      "site": "https://somafm.com/groovesalad",
+      "img": "https://somafm.com/img/GrooveSaladBox.jpg",
       "tags": ["soma", "indie"]
     },
     "illstreet": {
       "tags": ["soma"]
     },
     "indiepop": {
+      "site": "https://somafm.com/indiepop",
+      "img": "https://somafm.com/img/indychick.jpg",
       "tags": ["soma", "indie"]
     },
     "insound": {
@@ -100,6 +112,8 @@
       "tags": ["soma"]
     },
     "secretagent": {
+      "site": "https://somafm.com/secretagent",
+      "img": "https://somafm.com/img/SecretAgentBox.jpg",
       "tags": ["soma"]
     },
     "seventies": {
@@ -112,6 +126,8 @@
       "tags": ["soma"]
     },
     "sonicuniverse": {
+      "site": "https://somafm.com/sonicuniverse",
+      "img": "https://somafm.com/img/sonicuniverse120.jpg",
       "tags": ["soma"]
     },
     "spacestation": {
@@ -127,6 +143,8 @@
       "tags": ["soma"]
     },
     "thetrip": {
+      "site": "https://somafm.com/thetrip",
+      "img": "https://somafm.com/img/thetrip120.jpg",
       "tags": ["soma"]
     },
     "thistle": {
@@ -150,36 +168,43 @@
     "paradise": {
       "url": "https://stream.radioparadise.com/aac-128",
       "tags": ["paradise", "US", "rock", "eclectic"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "paradise_mellow": {
       "url": "https://stream.radioparadise.com/mellow-128",
       "tags": ["paradise", "US", "mellow", "acoustic"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "paradise_rock": {
       "url": "https://stream.radioparadise.com/rock-128",
       "tags": ["paradise", "US", "rock"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "paradise_global": {
       "url": "https://stream.radioparadise.com/global-128",
       "tags": ["paradise", "US", "global", "world"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "paradise_beyond": {
       "url": "https://stream.radioparadise.com/beyond-128",
       "tags": ["paradise", "US"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "paradise_serenity": {
       "url": "https://stream.radioparadise.com/serenity",
       "tags": ["paradise", "US", "relaxation"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "paradise_2050": {
       "url": "https://stream.radioparadise.com/radio2050-128",
       "tags": ["paradise", "US", "electronic", "future"],
+      "img": "https://radioparadise.com/apple-touch-icon.png",
       "site": "https://www.radioparadise.com/"
     },
     "antena1": {

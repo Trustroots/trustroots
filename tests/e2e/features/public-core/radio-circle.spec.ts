@@ -21,7 +21,9 @@ declare global {
 }
 
 async function prepareRadio(page: Page, unavailable = false) {
+  await stubArtworkImages(page);
   const key = generateSecretKey();
+  const authorPublicKey = getPublicKey(key);
   const created_at = Math.floor(Date.now() / 1000);
   const events = [
     finalizeEvent(
@@ -110,6 +112,20 @@ async function prepareRadio(page: Page, unavailable = false) {
       window.__radioMedia.loaded++;
     };
   });
+  return { authorPublicKey };
+}
+
+async function stubArtworkImages(page: Page) {
+  const pixel = Buffer.from(
+    'R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==',
+    'base64',
+  );
+  await page.route('https://somafm.com/**', route =>
+    route.fulfill({ status: 200, contentType: 'image/gif', body: pixel }),
+  );
+  await page.route('https://radioparadise.com/**', route =>
+    route.fulfill({ status: 200, contentType: 'image/gif', body: pixel }),
+  );
 }
 
 test('visitors can play radio, save favourites and see a deduplicated count without social identities', async ({
@@ -121,6 +137,54 @@ test('visitors can play radio, save favourites and see a deduplicated count with
   await prepareRadio(page);
   await page.goto('/circles/radio#groovesalad');
   const radio = page.getByRole('region', { name: 'Trustroots Radio' });
+  const soma = radio.getByRole('region', { name: 'SomaFM' });
+  const beatblenderWebsite = soma.getByRole('link', {
+    name: 'Beatblender website',
+  });
+  await expect(beatblenderWebsite).toHaveAttribute(
+    'href',
+    'https://somafm.com/beatblender',
+  );
+  const beatblenderArtwork = beatblenderWebsite.locator('img');
+  await beatblenderWebsite.scrollIntoViewIfNeeded();
+  await expect(beatblenderArtwork).toHaveAttribute(
+    'src',
+    'https://somafm.com/img/blender.gif',
+  );
+  await expect
+    .poll(() =>
+      beatblenderArtwork.evaluate(node => {
+        const image = node as HTMLImageElement;
+        return image.complete && image.naturalWidth > 0;
+      }),
+    )
+    .toBe(true);
+  await expect(beatblenderWebsite.locator('button')).toHaveCount(0);
+  const paradise = radio.getByRole('region', { name: 'Radio Paradise' });
+  const paradiseWebsite = paradise.getByRole('link', {
+    name: 'Paradise website',
+  });
+  await expect(paradiseWebsite).toHaveAttribute(
+    'href',
+    'https://www.radioparadise.com/',
+  );
+  const paradiseArtwork = paradiseWebsite.locator('img');
+  await paradiseWebsite.scrollIntoViewIfNeeded();
+  await expect(paradiseArtwork).toHaveAttribute(
+    'src',
+    'https://radioparadise.com/apple-touch-icon.png',
+  );
+  await expect
+    .poll(() =>
+      paradiseArtwork.evaluate(node => {
+        const image = node as HTMLImageElement;
+        return image.complete && image.naturalWidth > 0;
+      }),
+    )
+    .toBe(true);
+  await expect(soma.getByRole('button', { name: 'Play 7soul' })).toContainText(
+    '7s',
+  );
   await expect(
     radio.getByText('One shared listener', { exact: true }),
   ).toBeVisible();
@@ -132,7 +196,6 @@ test('visitors can play radio, save favourites and see a deduplicated count with
   ).toHaveCount(0);
   await expect(page.getByText('A fictional radio message')).toHaveCount(0);
   expect(await page.evaluate(() => window.__radioMedia.played)).toBe(0);
-  const soma = radio.getByRole('region', { name: 'SomaFM' });
   await soma
     .getByRole('button', { name: 'Play Groovesalad', exact: true })
     .click();
@@ -197,9 +260,15 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
     await expect(
       radio.getByText('A fictional shared listening message'),
     ).toBeVisible();
-    await expect(
-      radio.getByRole('link', { name: nip19.npubEncode(publicKey) }),
-    ).toHaveAttribute('href', `/profile/${SEEDED_ADMIN.username}`);
+    const signerNpub = nip19.npubEncode(publicKey);
+    const signerProfile = radio.getByRole('link', {
+      name: `${SEEDED_ADMIN.username}@trustroots.org`,
+    });
+    await expect(signerProfile).toHaveAttribute(
+      'href',
+      `/profile/${SEEDED_ADMIN.username}`,
+    );
+    await expect(signerProfile).toHaveAttribute('title', signerNpub);
     const soma = radio.getByRole('region', { name: 'SomaFM' });
     await soma
       .getByRole('button', { name: 'Star Groovesalad', exact: true })
@@ -233,6 +302,15 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
     await expect(
       radio.getByText('2 shared listeners', { exact: true }),
     ).toBeVisible();
+    const listeningNow = radio.getByRole('region', { name: 'Listening now' });
+    const signerListener = listeningNow.getByRole('link', {
+      name: `${SEEDED_ADMIN.username}@trustroots.org`,
+    });
+    await expect(signerListener).toHaveAttribute(
+      'href',
+      `/profile/${SEEDED_ADMIN.username}`,
+    );
+    await expect(signerListener).toHaveAttribute('title', signerNpub);
   } finally {
     await page.request.put('/api/users', {
       headers: { 'X-Trustroots-Request': '1' },
@@ -248,14 +326,16 @@ test('logged-in members can read radio chat but need a matching signer to publis
     'Chat and listener identities require login.',
   ]);
   await signInViaApi(page, undefined, SEEDED_ADMIN);
-  await prepareRadio(page);
+  const { authorPublicKey } = await prepareRadio(page);
   await page.goto('/circles/radio');
   const radio = page.getByRole('region', { name: 'Trustroots Radio' });
   const message = radio.getByRole('listitem').filter({
     hasText: 'A fictional radio message',
   });
   await expect(message).toBeVisible();
-  await expect(message.locator('strong')).toHaveText(/^npub1[0-9a-z]+$/);
+  const unknownNpub = nip19.npubEncode(authorPublicKey);
+  await expect(message.locator('strong')).toHaveText(unknownNpub);
+  await expect(message.getByRole('link', { name: unknownNpub })).toHaveCount(0);
   await expect(message.locator('time')).toHaveText(
     /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
   );
@@ -267,9 +347,9 @@ test('logged-in members can read radio chat but need a matching signer to publis
   await expect(
     radio.getByRole('heading', { name: 'Groovesalad' }),
   ).toBeVisible();
-  await expect(
-    radio.getByRole('region', { name: 'Listening now' }),
-  ).toContainText('Groovesalad');
+  const listeningNow = radio.getByRole('region', { name: 'Listening now' });
+  await expect(listeningNow).toContainText('Groovesalad');
+  await expect(listeningNow).toContainText(unknownNpub);
   await expect(radio.getByLabel('Message')).toBeDisabled();
   await radio.getByRole('button', { name: 'Connect Nostr identity' }).click();
   await expect(radio.getByRole('alert')).toContainText(
@@ -316,7 +396,7 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
     'Visitors see a sign-in link, and members can read without a signer.',
     'A verified signer posts to Hackers without publishing to Radio.',
   ]);
-  await prepareRadio(page);
+  const { authorPublicKey } = await prepareRadio(page);
   await page.goto('/circles/hackers');
   const chat = page.getByRole('region', { name: 'Hackers chat' });
   await expect(
@@ -327,6 +407,9 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.goto('/circles/hackers');
   await expect(chat.getByText('A fictional Hackers message')).toHaveCount(1);
+  const unknownNpub = nip19.npubEncode(authorPublicKey);
+  await expect(chat.getByText(unknownNpub, { exact: true })).toBeVisible();
+  await expect(chat.getByRole('link', { name: unknownNpub })).toHaveCount(0);
   await expect(chat.getByText('A fictional radio message')).toHaveCount(0);
   await expect(chat.getByLabel('Message')).toBeDisabled();
 
@@ -355,6 +438,15 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
     await expect(chat.getByText('Hello from a fictional hacker')).toHaveCount(
       1,
     );
+    const signerNpub = nip19.npubEncode(publicKey);
+    const signerProfile = chat.getByRole('link', {
+      name: `${SEEDED_ADMIN.username}@trustroots.org`,
+    });
+    await expect(signerProfile).toHaveAttribute(
+      'href',
+      `/profile/${SEEDED_ADMIN.username}`,
+    );
+    await expect(signerProfile).toHaveAttribute('title', signerNpub);
     const published = await page.evaluate(() => window.__radioPublished);
     expect(published).toEqual(
       expect.arrayContaining([

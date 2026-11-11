@@ -4,6 +4,7 @@ import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
 import type { UserProfile } from '@/modules/users/client/types';
 import useCircleSigner from '../hooks/useCircleSigner';
+import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
 import {
   HACKERS_CHAT_TOPIC,
   RadioRoom,
@@ -20,6 +21,9 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
     connect,
   } = useCircleSigner(user);
   const [messages, setMessages] = useState<Event[]>([]);
+  const usernames = useCircleProfileUsernames(
+    user ? messages.map(({ pubkey }) => pubkey) : [],
+  );
   const [message, setMessage] = useState('');
   const [sendError, setSendError] = useState(false);
   const [relayError, setRelayError] = useState(false);
@@ -107,7 +111,7 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
           {relayError && (
             <p role="status">{t('The Hackers chat is unavailable.')}</p>
           )}
-          <CircleChatLog messages={messages} />
+          <CircleChatLog messages={messages} usernames={usernames} />
           <form onSubmit={send} className="radio-chat-form">
             <label htmlFor="hackers-chat-message">{t('Message')}</label>
             <input

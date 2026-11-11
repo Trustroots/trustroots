@@ -11,11 +11,13 @@ import '@/config/client/i18n';
 import HackersCircleChat from '@/modules/tribes/client/components/HackersCircleChat';
 import {
   connectRadioSigner,
+  fetchRadioAuthorUsernames,
   HACKERS_CHAT_TOPIC,
   RadioRoom,
 } from '@/modules/tribes/client/services/radio.client.service';
 import type { UserProfile } from '@/modules/users/client/types';
 import type { Event } from 'nostr-tools';
+import { npubEncode } from 'nostr-tools/nip19';
 
 jest.mock('@/modules/tribes/client/services/radio.client.service', () => {
   const actual = jest.requireActual(
@@ -76,6 +78,9 @@ it('does not create a room for a guest', () => {
 });
 
 it('opens a room for a signed-in member and deduplicates received events', async () => {
+  jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
+    [publicKey]: user.username,
+  });
   render(<HackersCircleChat user={user} />);
 
   expect(RadioRoom).toHaveBeenCalledWith(
@@ -100,6 +105,30 @@ it('opens a room for a signed-in member and deduplicates received events', async
 
   expect(await screen.findByText(event.content)).toBeInTheDocument();
   expect(screen.getAllByText(event.content)).toHaveLength(1);
+  const identity = await screen.findByRole('link', {
+    name: 'fictional-member@trustroots.org',
+  });
+  expect(identity).toHaveAttribute('href', '/profile/fictional-member');
+  expect(identity).toHaveAttribute('title', npubEncode(publicKey));
+});
+
+it('shows an unknown author as a plain full npub', async () => {
+  const unknownKey = 'cd'.repeat(32);
+  const event: Event = {
+    id: 'unknown-event',
+    pubkey: unknownKey,
+    created_at: 1_800_000_000,
+    kind: 1,
+    tags: [],
+    content: 'A message from an unknown author.',
+    sig: 'signature',
+  };
+  render(<HackersCircleChat user={user} />);
+  act(() => receive(event));
+
+  const npub = npubEncode(unknownKey);
+  expect(await screen.findByText(npub)).toBeInTheDocument();
+  expect(screen.queryByRole('link', { name: npub })).not.toBeInTheDocument();
 });
 
 it('keeps sending disabled until the linked signer connects', async () => {
