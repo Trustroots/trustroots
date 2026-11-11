@@ -41,7 +41,7 @@ jobs:
         run: pnpm install --frozen-lockfile --ignore-scripts
       - name: Install Chromium
         if: steps.browser.outputs.run == 'true'
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
       - name: Test browser publishing
         if: steps.browser.outputs.run == 'true'
         run: pnpm exec playwright test --config scripts/ci/docs-playwright.config.mts
