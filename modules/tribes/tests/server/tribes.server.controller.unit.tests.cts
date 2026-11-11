@@ -434,8 +434,9 @@ describe('Tribes controller unit tests', () => {
       next.called.should.be.false();
     });
 
-    it('bounds every discovery query with a one second time limit', async () => {
+    it('bounds discovery queries and projects active members in recent order', async () => {
       const circleId = new mongoose.Types.ObjectId();
+      const users = sinon.spy(mongoose.model('User'), 'find');
       const options: unknown[] = [];
       const originalOption = mongoose.Aggregate.prototype.option;
       sinon.stub(mongoose.Aggregate.prototype, 'option').callsFake(function (
@@ -460,6 +461,9 @@ describe('Tribes controller unit tests', () => {
       );
 
       options.should.deepEqual([{ maxTimeMS: 1000 }, { maxTimeMS: 1000 }]);
+      const active = users.firstCall.returnValue;
+      active.projection()!.should.have.properties({ seen: 1, displayName: 1 });
+      active.getOptions().sort.should.deepEqual({ seen: -1, _id: 1 });
     });
 
     it('passes discovery query failures to the error handler', async () => {
