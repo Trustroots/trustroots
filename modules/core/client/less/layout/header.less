@@ -6,39 +6,8 @@
  */
 #tr-header {
   .font-brand-regular();
-  color: @navbar-default-color;
-  background: @navbar-default-bg;
-  min-height: @navbar-height;
-  position: fixed;
-  inset: 0 0 auto;
-  z-index: @zindex-navbar-fixed;
-  display: flex;
-  align-items: center;
-
-  @media print {
-    display: none;
-  }
-
-  > .container {
-    min-height: @navbar-height;
-    display: flex;
-    align-items: center;
-  }
-
-  .header-brand {
-    flex-shrink: 0;
-    margin-inline-end: 1rem;
-    padding-block: 6px 0.3125rem;
-    white-space: nowrap;
-  }
 
   .header-nav {
-    display: flex;
-    align-items: center;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-
     a {
       text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
     }
@@ -81,8 +50,6 @@
   }
 
   .nav-header-primary {
-    margin-inline-start: auto;
-
     > li > a:hover,
     > li > a:focus-visible {
       color: @navbar-default-link-hover-color;
@@ -97,8 +64,6 @@
     }
 
     @media (max-width: @grid-float-breakpoint-max) {
-      margin-inline-start: auto;
-      display: flex;
       width: 100%;
       justify-content: space-between;
 
@@ -157,41 +122,10 @@
       }
     }
   }
-
-  .header-menu-meta {
-    padding-inline: 10px;
-    text-align: center;
-    font-size: 0.875em;
-
-    a {
-      color: @text-muted;
-    }
-  }
-
-  .header-menu-meta-links {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    column-gap: 10px;
-    margin: 0 0 1rem;
-    padding: 0;
-    list-style: none;
-
-    a {
-      overflow-wrap: anywhere;
-    }
-  }
 }
 
 /* Welcome-header for non-authenticated users */
 .header-welcome {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 0;
-  text-align: center;
-
   .header-more-text,
   .header-welcome-text {
     font-size: 18px;
@@ -211,14 +145,5 @@
   .header-welcome-text,
   [data-slot='button'] {
     margin: 0 10px;
-  }
-
-  .flex-side {
-    flex: 1;
-  }
-
-  .language-switch {
-    display: flex;
-    justify-content: flex-end;
   }
 }
