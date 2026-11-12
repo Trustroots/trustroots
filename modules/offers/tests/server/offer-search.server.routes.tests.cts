@@ -350,6 +350,7 @@ describe('Offer search tests', function () {
       false,
       1,
       null,
+      '',
       'unknown',
       ['yes'],
     ]) {
