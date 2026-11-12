@@ -5,7 +5,7 @@ import { Button } from '@trustroots/ui/Button';
 
 // Internal dependencies
 import { rememberOutreachSource } from '@trustroots/analytics/client';
-import Tooltip from '@/modules/core/client/components/Tooltip.js';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 import { hostStatusIntent } from './hostStatusIntent';
 
 interface OfferStatusButtonProps {
@@ -13,16 +13,6 @@ interface OfferStatusButtonProps {
   username?: string;
   status?: 'yes' | 'no' | 'maybe';
 }
-
-interface TooltipProps {
-  children: React.ReactNode;
-  id: string;
-  placement: string;
-  tooltip: string;
-}
-
-const AccessibleTooltip =
-  Tooltip as unknown as React.ComponentType<TooltipProps>;
 
 export default function OfferStatusButton({
   isOwnOffer,
@@ -32,8 +22,7 @@ export default function OfferStatusButton({
   const { t } = useTranslation('offers');
 
   return (
-    <AccessibleTooltip
-      id="tooltip-change-host-offer"
+    <Tooltip
       placement="left"
       tooltip={isOwnOffer ? t('Change') : t('Send a message')}
     >
@@ -56,6 +45,6 @@ export default function OfferStatusButton({
         {status === 'yes' && String(t('Can host'))}
         {status === 'maybe' && String(t('Might be able to host'))}
       </Button>
-    </AccessibleTooltip>
+    </Tooltip>
   );
 }

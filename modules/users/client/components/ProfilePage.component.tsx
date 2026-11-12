@@ -48,7 +48,7 @@ import type { ExperienceMine } from '@/modules/experiences/shared/experience';
 import Offers from '@/modules/offers/client/components/Offers.component';
 import ContactsCommon from '@/modules/contacts/client/components/ContactsCommon.component';
 import ReportMember from '@/modules/support/client/components/ReportMember.component';
-import Tooltip from '@/modules/core/client/components/Tooltip';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 import type {
   ContactList as ContactListData,
   ContactRecord,
@@ -61,11 +61,6 @@ interface ResolvedUserProfile extends UserProfile {
 
 type ContactState = ContactRecord & { $resolved: boolean };
 
-const TooltipWithContent = Tooltip as unknown as React.ComponentType<{
-  tooltip: React.ReactNode;
-  placement: 'bottom';
-  children: React.ReactNode;
-}>;
 const ReportMemberButton = ReportMember as unknown as React.ComponentType<{
   username: string;
 }>;
@@ -216,7 +211,7 @@ function ProfileDesktopActions({
               </Button>
             )}
             {contactResolved && contact._id && (
-              <TooltipWithContent
+              <Tooltip
                 tooltip={
                   contact.confirmed
                     ? (t('Contacts since {{date, LL}}', {
@@ -234,7 +229,7 @@ function ProfileDesktopActions({
                     ? (t('Remove contact') as string)
                     : (t('Delete contact request') as string)}
                 </Button>
-              </TooltipWithContent>
+              </Tooltip>
             )}
           </li>
         </>

@@ -77,10 +77,25 @@ async function assertMemberProfileCleanup(
     'welcome-team-role-description',
   );
   await welcomeButton.focus();
+  await page.keyboard.press('Shift+Tab');
+  await page.keyboard.press('Tab');
+  await expect(welcomeButton).toBeFocused();
   await expect(page.getByRole('tooltip')).toHaveText(
     'Greeters can view acquisition stories and see members who blocked their account.',
   );
+  const welcomeTooltip = page.getByRole('tooltip', { includeHidden: true });
+  await page.keyboard.press('Escape');
+  await expect(welcomeTooltip).toBeHidden();
+  await expect(welcomeButton).toBeFocused();
   await welcomeButton.blur();
+
+  await welcomeButton.hover();
+  await expect(welcomeTooltip).toBeVisible();
+  await expect(welcomeTooltip).toHaveText(
+    'Greeters can view acquisition stories and see members who blocked their account.',
+  );
+  await page.mouse.move(0, 0);
+  await expect(welcomeTooltip).toBeHidden();
 
   let roleChangeRequests = 0;
   const onRequest = (request: Request) => {

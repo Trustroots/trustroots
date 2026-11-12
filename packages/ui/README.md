@@ -1,8 +1,8 @@
 # Shared UI primitives
 
 Import directly from `@trustroots/ui/Button`, `ButtonGroup`, `Alert`, `Badge`,
-`Spinner`, `Tabs`, `ToggleGroup` or `Modal`. They accept caller-supplied text and do not depend on translations
-or feature modules. `Button` is non-submitting by default; set `type="submit"` when
+`Spinner`, `Tabs`, `ToggleGroup`, `Modal` or `Tooltip`. They accept caller-supplied
+text and do not depend on translations or feature modules. `Button` is non-submitting by default; set `type="submit"` when
 needed. `Alert` takes a status intent (`danger`, `warning`, `info` or `success`) and a
 required `role`; `Spinner` requires a translated `label` supplied by its caller.
 
@@ -102,6 +102,14 @@ the default) or `lg` (800px on wide screens), and `scrollable` keeps the
 dialog within the viewport with a scrolling body. Each part renders a
 `data-slot` (`modal`, `modal-header`, `modal-title`, `modal-close`,
 `modal-body`, `modal-footer`), and the dialog its `data-size`.
+
+## Tooltip
+
+`Tooltip` renders a short text hint on hover or keyboard focus. Its single
+child stays the trigger and must pass props and its ref to a DOM element. The
+hint defaults to appearing above the trigger and can flip when space is
+limited. Escape dismisses it and leaves focus on the trigger. When a tooltip
+explains a disabled button, use a focusable wrapper as the trigger.
 
 ## shadcn
 

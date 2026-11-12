@@ -12,7 +12,7 @@ import AdminHeader from './AdminHeader.component';
 import UserLink from './UserLink.component';
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import LanguageList from '@/modules/users/client/components/LanguageList';
-import HoverTooltip from '@/modules/core/client/components/Tooltip';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 import {
   formatAdminDateTime,
   getAdminDateTimeAttribute,
@@ -95,16 +95,6 @@ interface StaticHeaderProps {
   tooltip: string;
 }
 
-interface AccessibleTooltipProps {
-  children: React.ReactNode;
-  id: string;
-  placement: string;
-  tooltip: string;
-}
-
-const AccessibleTooltip =
-  HoverTooltip as unknown as React.ComponentType<AccessibleTooltipProps>;
-
 function formatCoordinates(value?: number[] | null) {
   if (!Array.isArray(value) || value.length < 2) {
     return null;
@@ -143,11 +133,7 @@ function SortableHeader({
 
   return (
     <th aria-sort={direction}>
-      <AccessibleTooltip
-        id={`acquisition-stories-${column}-heading`}
-        placement="bottom"
-        tooltip={tooltip}
-      >
+      <Tooltip placement="bottom" tooltip={tooltip}>
         <Button
           variant="link"
           className="admin-acquisition-stories-sort"
@@ -157,7 +143,7 @@ function SortableHeader({
           {label}
           {isActive && (sort.direction === 'ascending' ? ' ▲' : ' ▼')}
         </Button>
-      </AccessibleTooltip>
+      </Tooltip>
     </th>
   );
 }
@@ -165,13 +151,7 @@ function SortableHeader({
 function StaticHeader({ label, tooltip }: StaticHeaderProps) {
   return (
     <th>
-      <AccessibleTooltip
-        id={`acquisition-stories-${label
-          .toLowerCase()
-          .replace(/\s+/g, '-')}-heading`}
-        placement="bottom"
-        tooltip={tooltip}
-      >
+      <Tooltip placement="bottom" tooltip={tooltip}>
         {/* Keep the explanatory tooltip reachable without suggesting sorting. */}
         {/* eslint-disable jsx-a11y/no-noninteractive-tabindex */}
         <span
@@ -182,7 +162,7 @@ function StaticHeader({ label, tooltip }: StaticHeaderProps) {
           {label}
         </span>
         {/* eslint-enable jsx-a11y/no-noninteractive-tabindex */}
-      </AccessibleTooltip>
+      </Tooltip>
     </th>
   );
 }

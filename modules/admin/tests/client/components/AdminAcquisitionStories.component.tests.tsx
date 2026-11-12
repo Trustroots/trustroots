@@ -812,10 +812,14 @@ describe('<AdminAcquisitionStories />', () => {
     render(<AdminAcquisitionStories />);
     await screen.findByText('A friend recommended it');
 
-    fireEvent.focus(screen.getByRole('button', { name: 'Date ▼' }));
-    expect(await screen.findByText('Date the member signed up')).toBeVisible();
+    const dateHeading = screen.getByRole('button', { name: 'Date ▼' });
+    fireEvent.focus(dateHeading);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Date the member signed up',
+    );
+    fireEvent.blur(dateHeading);
 
-    fireEvent.mouseOver(
+    fireEvent.mouseEnter(
       screen.getByLabelText(
         'Restricted matches: Suspended or shadowbanned accounts with a matching username or email identifier',
       ),

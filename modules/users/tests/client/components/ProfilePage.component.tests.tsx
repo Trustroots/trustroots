@@ -552,7 +552,9 @@ describe('ProfilePage', () => {
     expect(
       await screen.findByRole('button', { name: 'Remove contact' }),
     ).toBeVisible();
-    fireEvent.mouseOver(screen.getByRole('button', { name: 'Remove contact' }));
+    fireEvent.mouseEnter(
+      screen.getByRole('button', { name: 'Remove contact' }),
+    );
     expect(
       await screen.findByText('Contacts since January 1, 2024'),
     ).toBeVisible();
@@ -586,7 +588,7 @@ describe('ProfilePage', () => {
     const confirmedContact = await screen.findByRole('button', {
       name: 'Remove contact',
     });
-    fireEvent.mouseOver(confirmedContact);
+    fireEvent.mouseEnter(confirmedContact);
     expect(await screen.findByText(/Contacts since/)).toBeVisible();
   });
 
@@ -603,7 +605,7 @@ describe('ProfilePage', () => {
     const deleteRequest = await screen.findByRole('button', {
       name: 'Delete contact request',
     });
-    fireEvent.mouseOver(deleteRequest);
+    fireEvent.mouseEnter(deleteRequest);
     expect(await screen.findByText(/Request sent/)).toBeVisible();
   });
 
@@ -750,7 +752,7 @@ describe('ProfilePage', () => {
     expect(
       await screen.findByRole('button', { name: 'Delete contact request' }),
     ).toBeVisible();
-    fireEvent.mouseOver(
+    fireEvent.mouseEnter(
       screen.getByRole('button', { name: 'Delete contact request' }),
     );
     expect(

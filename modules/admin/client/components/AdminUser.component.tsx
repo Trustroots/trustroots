@@ -34,7 +34,7 @@ import AdminUserResultsTable from './AdminUserResultsTable.component';
 import Json from './Json.component';
 import UserEmailConfirmLink from './UserEmailConfirmLink.component';
 import UserState from './UserState.component';
-import Tooltip from '@/modules/core/client/components/Tooltip';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 import ProfilePage from '@/modules/users/client/components/ProfilePage.component';
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
 import type { UserProfile } from '@/modules/users/client/types';
@@ -1019,7 +1019,6 @@ export class AdminUserContent extends Component<
                         </Button>
                       ))}
                     <Tooltip
-                      id="welcome-team-role-help"
                       placement="bottom"
                       tooltip={ROLE_DESCRIPTIONS['welcome-team']}
                     >
@@ -1079,7 +1078,6 @@ export class AdminUserContent extends Component<
                       .map(role => (
                         <li key={role}>
                           <Tooltip
-                            id={`member-role-${role}-help`}
                             placement="bottom"
                             tooltip={
                               ROLE_DESCRIPTIONS[role] ||

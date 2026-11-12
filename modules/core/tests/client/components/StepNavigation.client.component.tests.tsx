@@ -199,8 +199,8 @@ describe('Step Navigation through 3 steps', () => {
     },
   );
 
-  it('renders small-screen icon variants and a disabled reason tooltip', () => {
-    const { getAllByRole } = render(
+  it('shows the reason when the disabled action trigger receives focus', async () => {
+    const { findByRole, getAllByRole } = render(
       <StepNavigation
         currentStep={1}
         numberOfSteps={3}
@@ -215,6 +215,15 @@ describe('Step Navigation through 3 steps', () => {
     expect(buttons[3]).toHaveTextContent('Next');
     expect(buttons[3].querySelector('.icon-right')).toBeInTheDocument();
     expect(buttons[3]).toBeDisabled();
+
+    // The wrapper receives focus because the button itself is disabled.
+    const trigger = buttons[3].parentElement!;
+    expect(trigger).toHaveAttribute('tabindex', '0');
+    fireEvent.focus(trigger);
+    expect(await findByRole('tooltip')).toHaveTextContent(
+      'Complete the required fields',
+    );
+    expect(trigger).toHaveAccessibleDescription('Complete the required fields');
   });
 
   it('keeps next actions enabled when disabled prop is omitted', () => {

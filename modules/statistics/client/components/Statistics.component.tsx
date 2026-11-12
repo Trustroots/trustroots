@@ -11,7 +11,7 @@ import { getNetworkName } from '@/modules/users/client/utils/networks';
 import BoardImplementation from '@/modules/core/client/components/Board';
 import Stat from './Stat';
 import StatisticsImage from './StatisticsImage';
-import Tooltip from '@/modules/core/client/components/Tooltip';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 import { Button } from '@trustroots/ui/Button';
 
 interface ExperienceSuggestion {
@@ -24,13 +24,6 @@ const Board = BoardImplementation as React.ComponentType<{
   className?: string;
   names?: string | string[];
   style?: React.CSSProperties | null;
-}>;
-
-const TypedTooltip = Tooltip as unknown as React.ComponentType<{
-  children: React.ReactNode;
-  id: string;
-  placement?: 'bottom' | 'right';
-  tooltip: string;
 }>;
 
 const Grid = styled.div`
@@ -508,8 +501,7 @@ export default function Statistics({
                       ))
                     : statistics?.connections?.map(
                         ({ network, count, percentage }) => (
-                          <TypedTooltip
-                            id={`network-${network}-tooltip`}
+                          <Tooltip
                             key={network}
                             placement="right"
                             tooltip={t('{{count}} members', {
@@ -527,7 +519,7 @@ export default function Statistics({
                                 {Number(percentage).toFixed(1)}%
                               </NetworkPercentage>
                             </NetworkRow>
-                          </TypedTooltip>
+                          </Tooltip>
                         ),
                       )}
                 </NetworkList>
@@ -549,8 +541,7 @@ export default function Statistics({
                     </>
                   ) : (
                     <>
-                      <TypedTooltip
-                        id="hosts-tooltip"
+                      <Tooltip
                         tooltip={t('{{count}} members', {
                           count: numberFormat(statistics?.hosting?.total ?? 0),
                         })}
@@ -558,9 +549,8 @@ export default function Statistics({
                         <Count>{`${
                           statistics?.hosting?.percentage ?? 0
                         }%`}</Count>
-                      </TypedTooltip>
-                      <TypedTooltip
-                        id="hosts-yes-tooltip"
+                      </Tooltip>
+                      <Tooltip
                         tooltip={t('{{count}} members', {
                           count: numberFormat(statistics?.hosting?.yes ?? 0),
                         })}
@@ -571,9 +561,8 @@ export default function Statistics({
                             percentage: statistics?.hosting?.yesPercentage ?? 0,
                           })}
                         </p>
-                      </TypedTooltip>
-                      <TypedTooltip
-                        id="hosts-maybe-tooltip"
+                      </Tooltip>
+                      <Tooltip
                         tooltip={t('{{count}} members', {
                           count: statistics?.hosting?.maybe ?? 0,
                         })}
@@ -585,7 +574,7 @@ export default function Statistics({
                               statistics?.hosting?.maybePercentage ?? 0,
                           })}
                         </p>
-                      </TypedTooltip>
+                      </Tooltip>
                     </>
                   )}
                 </Stat>

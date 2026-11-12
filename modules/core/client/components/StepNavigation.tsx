@@ -1,7 +1,7 @@
-import React, { type ButtonHTMLAttributes } from 'react';
+import React, { type ButtonHTMLAttributes, type ReactElement } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
-import Tooltip from './Tooltip';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 
 type StepButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   small?: boolean;
@@ -81,12 +81,19 @@ export default function StepNavigation({
   const backProps = { onClick: onBack };
   const nextProps = { onClick: onNext, disabled };
   const submitProps = { onClick: onSubmit, disabled, label: submitLabel };
-  const tooltipProps = {
-    tooltip: disabledReason,
-    id: 'tooltip-disabled-button',
-    hidden: !(disabled && disabledReason),
-    placement: 'top' as const,
-  };
+  function withDisabledReason(button: ReactElement) {
+    if (!disabled || !disabledReason) return button;
+
+    return (
+      <Tooltip tooltip={disabledReason}>
+        {/* A disabled button cannot receive pointer events or keyboard focus. */}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+        <span className="tw:inline-block" tabIndex={0}>
+          {button}
+        </span>
+      </Tooltip>
+    );
+  }
   const showBackButton = currentStep > 0;
   const showNextButton = currentStep < numberOfSteps - 1;
   const showSubmitButton = currentStep === numberOfSteps - 1;
@@ -95,16 +102,9 @@ export default function StepNavigation({
     <>
       <div className="text-center hidden-xs">
         {showBackButton && <BackButton {...backProps} />}
-        {showNextButton && (
-          <Tooltip {...tooltipProps}>
-            <NextButton {...nextProps} />
-          </Tooltip>
-        )}
-        {showSubmitButton && (
-          <Tooltip {...tooltipProps}>
-            <SubmitButton {...submitProps} />
-          </Tooltip>
-        )}
+        {showNextButton && withDisabledReason(<NextButton {...nextProps} />)}
+        {showSubmitButton &&
+          withDisabledReason(<SubmitButton {...submitProps} />)}
       </div>
       <nav className="navbar navbar-default navbar-fixed-bottom visible-xs-block">
         <div className="container">
@@ -119,16 +119,12 @@ export default function StepNavigation({
             )}
             {showNextButton && (
               <li className="pull-right">
-                <Tooltip {...tooltipProps}>
-                  <NextButton {...nextProps} small />
-                </Tooltip>
+                {withDisabledReason(<NextButton {...nextProps} small />)}
               </li>
             )}
             {showSubmitButton && (
               <li className="pull-right">
-                <Tooltip {...tooltipProps}>
-                  <SubmitButton {...submitProps} small />
-                </Tooltip>
+                {withDisabledReason(<SubmitButton {...submitProps} small />)}
               </li>
             )}
           </ul>
