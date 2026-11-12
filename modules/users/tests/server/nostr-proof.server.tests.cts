@@ -167,7 +167,8 @@ describe('Nostr ownership proofs', () => {
   it('rejects malformed nonces before looking up a stored challenge', async () => {
     const event = await createChallenge(user._id, npub);
     const update = sinon.spy(User, 'updateOne');
-    for (const nonce of ['', 'invalid']) {
+    const nonceValue = event.tags[2][1];
+    for (const nonce of ['', 'invalid', `x${nonceValue}`, `${nonceValue}x`]) {
       const proof = finalizeEvent(
         {
           ...event,
@@ -188,7 +189,9 @@ describe('Nostr ownership proofs', () => {
     await createChallenge(
       new mongoose.Types.ObjectId(),
       npub,
-    ).should.be.rejected();
+    ).should.be.rejectedWith(
+      'Sign a fresh Nostr challenge with the matching key before saving.',
+    );
   });
 
   it('reports challenge access, input and database errors', async () => {
