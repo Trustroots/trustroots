@@ -243,6 +243,9 @@ describe('Offer search tests', function () {
     await requestResult(
       agent.post('/api/auth/signin').send(credentials).expect(200),
     );
+    offerMeet.status = 'no';
+    offerMeet.meetingStatus = 'yes';
+    await offerMeet.save();
     const payload = {
       type: 'host',
       status: 'no',
@@ -273,6 +276,19 @@ describe('Offer search tests', function () {
     meeting.properties.type.should.equal('meet');
     meeting.properties.status.should.equal('yes');
     meeting.geometry.coordinates.should.not.eql([12, 51]);
+    should.not.exist(
+      (
+        await requestResult(
+          agent
+            .get('/api/offers' + testLocations.Europe.queryBoundingBox)
+            .query({ filters: JSON.stringify({ types: ['meet'] }) })
+            .expect(200),
+        )
+      ).body.features.find(
+        (feature: OfferFeature) =>
+          feature.properties.id === offerMeet._id.toString(),
+      ),
+    );
     should.not.exist(await search(['host']));
     should.exist(await search(['host', 'meet']));
     const stranger = request.agent(app);
@@ -337,18 +353,20 @@ describe('Offer search tests', function () {
       'unknown',
       ['yes'],
     ]) {
-      await requestResult(
+      const createResponse = await requestResult(
         agent
           .post('/api/offers')
           .send({ ...payload, meetingStatus })
           .expect(400),
       );
-      await requestResult(
+      createResponse.body.message.should.equal('Invalid meeting availability.');
+      const updateResponse = await requestResult(
         agent
           .put(`/api/offers/${saved._id}`)
           .send({ ...payload, meetingStatus })
           .expect(400),
       );
+      updateResponse.body.message.should.equal('Invalid meeting availability.');
     }
   });
 
