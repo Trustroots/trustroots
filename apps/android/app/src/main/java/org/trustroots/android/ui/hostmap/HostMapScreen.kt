@@ -209,9 +209,11 @@ internal fun HostMapScreen(
         )
     }
     LaunchedEffect(mapState.viewportCommand?.id) {
-        mapState.viewportCommand?.viewport?.let { viewport ->
+        mapState.viewportCommand?.let { command ->
+            val viewport = command.viewport
             map.controller.setZoom(viewport.zoom)
             map.controller.animateTo(GeoPoint(viewport.latitude, viewport.longitude))
+            mapViewModel.onEvent(HostMapEvent.ViewportCommandApplied(command.id))
             map.post { dispatchViewport() }
         }
     }

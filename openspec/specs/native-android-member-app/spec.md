@@ -149,10 +149,11 @@ navigation. Hosting details SHALL remain in About.
 
 ### Requirement: Restore recent map results on a new Search visit
 
-The authenticated Android shell SHALL retain the latest successful map
-viewport, visible bounds, filters and offers in memory for a short freshness
-period. Opening a new Search visit for the same backend and member session
-SHALL display that snapshot immediately. If the snapshot is stale, Search SHALL
+The authenticated Android shell SHALL retain the last displayed map viewport
+and measured bounds for the current backend and member session, including when
+there are no offer results yet or all offer types are disabled. It SHALL also
+retain filters and cached offers. Opening a new Search visit SHALL display that
+snapshot immediately. If the offer results are stale, Search SHALL
 refresh its current bounds in the background while keeping cached offers visible
 until a successful response replaces them. A changed viewport SHALL search its
 new bounds, and explicit Retry SHALL issue a request regardless of cache
@@ -1758,9 +1759,8 @@ root SHALL cancel its work and clear its account-owned state.
   history visit
 - **AND** the member query, results, searched/error state and in-flight request
   are cleared
-- **AND** the map returns to its existing default camera and filters, clears
-  place text, suggestions and old results, and performs a fresh visible-area
-  search
+- **AND** the map keeps its last centre and zoom, restores the default filters,
+  clears place text, suggestions and old results, and searches the visible area
 
 #### Scenario: Obsolete member or map request completes
 
