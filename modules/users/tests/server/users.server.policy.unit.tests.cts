@@ -109,7 +109,7 @@ describe('Users policy unit tests', () => {
         allows: [
           '/api/users',
           '/api/users/:username',
-          '/api/users/avatar',
+          '/api/users/:avatarUserId/avatar',
           '/api/users/mini/:userId',
           '/api/users/password',
           '/api/users/accounts/:provider',
@@ -117,7 +117,12 @@ describe('Users policy unit tests', () => {
           '/api/users/memberships/:tribeId',
         ].map(resources => ({
           resources,
-          permissions: resources === '/api/users/:username' ? ['get'] : [],
+          permissions: [
+            '/api/users/:username',
+            '/api/users/:avatarUserId/avatar',
+          ].includes(resources)
+            ? ['get']
+            : [],
         })),
       },
       {
@@ -158,7 +163,11 @@ describe('Users policy unit tests', () => {
           decide(['user'], path, method).should.equal(expected);
           const adminExpected =
             path === '/api/users/:username' && method === 'GET' ? 200 : 403;
-          decide(['admin'], path, method).should.equal(adminExpected);
+          const avatarGrant =
+            path === '/api/users/:avatarUserId/avatar' && method === 'GET';
+          decide(['admin'], path, method).should.equal(
+            avatarGrant ? 200 : adminExpected,
+          );
           decide(['support-team'], path, method).should.equal(adminExpected);
         }
       });

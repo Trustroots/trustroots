@@ -15,6 +15,7 @@ test('administrators can count and inspect Gravatar members', async ({
   annotateFeature(testInfo, 'admin.gravatar', [
     'Administrators can count current Gravatar accounts and paginate member links.',
     'Gravatar member data is restricted to administrators.',
+    'Administrators can view profile pictures and sort Gravatar accounts by last seen.',
   ]);
   await signInViaApi(page, request, SEEDED_ADMIN);
   const baseline = await page.request.get('/api/admin/gravatar');
@@ -24,12 +25,18 @@ test('administrators can count and inspect Gravatar members', async ({
     { length: 51 },
     (_, index) => new ObjectId((index + 1).toString(16).padStart(24, '0')),
   );
-  const imageRequests: string[] = [];
-  page.on('request', outgoing => {
-    const { hostname } = new URL(outgoing.url());
-    if (hostname === 'gravatar.com' || hostname.endsWith('.gravatar.com'))
-      imageRequests.push(outgoing.url());
-  });
+  const fixtureAvatarHash = '0123456789abcdef0123456789abcdef';
+  await page.route(
+    url => url.pathname === `/api/users/${ids[50]}/avatar`,
+    async route => {
+      const redirect = await route.fetch({ maxRedirects: 0 });
+      expect(redirect.status()).toBe(302);
+      expect(redirect.headers().location).toContain(
+        `https://gravatar.com/avatar/${fixtureAvatarHash}?s=32`,
+      );
+      await route.fulfill({ path: 'public/img/avatar-32.png' });
+    },
+  );
   try {
     await withE2eDb(async db => {
       await db.collection('users').insertMany(
@@ -39,6 +46,12 @@ test('administrators can count and inspect Gravatar members', async ({
           email: `gravatar-fixture-${index}@example.test`,
           displayName: 'Fictional Member',
           avatarSource: 'gravatar',
+          public: false,
+          ...(index === 0 && { seen: new Date('2026-10-01T08:00:00Z') }),
+          ...(index === 50 && {
+            seen: new Date('2026-11-05T18:15:00Z'),
+            emailHash: fixtureAvatarHash,
+          }),
         })),
       );
     });
@@ -56,11 +69,30 @@ test('administrators can count and inspect Gravatar members', async ({
     ).toHaveAttribute('href', '/admin/user/gravatar-fixture-0');
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByText('Page 2', { exact: true })).toBeVisible();
-    await expect(table).toContainText('gravatar-fixture-50');
+    const avatar = table
+      .getByRole('link', { name: 'gravatar-fixture-50', exact: true })
+      .locator('img');
+    await avatar.scrollIntoViewIfNeeded();
+    await expect(avatar).toHaveJSProperty('naturalWidth', 32);
+    const lastSeen = table.getByRole('button', { name: 'Last seen (UTC)' });
+    const lastSeenHeader = table.getByRole('columnheader', {
+      name: 'Last seen (UTC)',
+    });
+    const firstRow = table.locator('tbody tr').first();
+    await lastSeen.click();
+    await expect(page.getByText('Page 1', { exact: true })).toBeVisible();
+    await expect(lastSeenHeader).toHaveAttribute('aria-sort', 'descending');
+    await expect(firstRow).toContainText('gravatar-fixture-50');
+    await expect(firstRow).toContainText('2026-11-05 18:15');
+    await expect(table.getByText('Unknown').first()).toBeVisible();
+    await lastSeen.click();
+    await expect(lastSeenHeader).toHaveAttribute('aria-sort', 'ascending');
+    await expect(firstRow).toContainText('gravatar-fixture-0');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page.getByText('Page 2', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Previous', exact: true }).click();
     await expect(page.getByText('Page 1', { exact: true })).toBeVisible();
     await expect(table.locator('tbody tr')).toHaveCount(50);
-    expect(imageRequests).toEqual([]);
     await page.screenshot({
       path: testInfo.outputPath('admin-gravatar.png'),
       fullPage: true,
