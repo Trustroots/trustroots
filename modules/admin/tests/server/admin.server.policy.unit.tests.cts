@@ -84,6 +84,18 @@ describe('Admin policy unit tests', () => {
         { resources: '/api/admin/staff-blockers', permissions: ['get'] },
       ]);
     policies[0].roles.should.deepEqual(['admin']);
+    policies[0].allows.should.containDeep([
+      { resources: '/api/admin/mongo', permissions: ['get'] },
+      { resources: '/api/admin/nostr/featured-notes', permissions: ['post'] },
+      {
+        resources: '/api/admin/nostr/featured-notes/:id',
+        permissions: ['delete'],
+      },
+      {
+        resources: '/api/admin/nostr/featured-notes/:id/deletion',
+        permissions: ['post'],
+      },
+    ]);
     const adminResources = policies[0].allows.map(allow => allow.resources);
     for (const resource of [
       'hackerspaces/signer',
