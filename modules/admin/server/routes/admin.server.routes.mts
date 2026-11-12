@@ -1,5 +1,6 @@
 import unsuspension from '../controllers/admin.unsuspend.server.controller.mts';
 import gravatar from '../controllers/admin.gravatar.server.controller.mts';
+import { diagnostics as mongoDiagnostics } from '../controllers/admin.mongo.server.controller.mts';
 import {
   diagnostics,
   recover,
@@ -90,6 +91,10 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/sparkpost/:action')
     .all(adminPolicy.isAllowed)
     .get(diagnostics);
+  app
+    .route('/api/admin/mongo')
+    .all(adminPolicy.isAllowed)
+    .get(mongoDiagnostics);
   app
     .route('/api/admin/support-import/preview')
     .all(adminPolicy.isAllowed)

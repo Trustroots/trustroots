@@ -602,6 +602,19 @@ describe('React route ownership', () => {
     expect(renderRoute(route).getByText('Admin circles')).toBeInTheDocument();
   });
 
+  it('registers and renders the administrator MongoDB diagnostics route', () => {
+    const route = findRoute('/admin/mongo')!;
+    expect(route).toMatchObject({
+      path: '/admin/mongo',
+      requiresAuth: true,
+      requiresRole: 'admin',
+      title: 'Admin - MongoDB diagnostics',
+    });
+    expect(
+      renderRoute(route).getByRole('heading', { name: 'MongoDB diagnostics' }),
+    ).toBeInTheDocument();
+  });
+
   it('protects and renders the selected circle editor route', () => {
     const route = findRoute('/admin/circles/walkers')!;
     expect(route).toMatchObject({

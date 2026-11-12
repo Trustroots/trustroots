@@ -86,6 +86,7 @@ import { Route as AdminExperienceChangesRoute } from './routes/admin.experience-
 import { Route as AdminNewsletterRoute } from './routes/admin.newsletter';
 import { Route as AdminEmailRepliesRoute } from './routes/admin.email-replies';
 import { Route as AdminSparkpostRoute } from './routes/admin.sparkpost';
+import { Route as AdminMongoRoute } from './routes/admin.mongo';
 import { Route as AdminCirclesIndexRoute } from './routes/admin.circles.index';
 import { Route as AdminCirclesCircleRoute } from './routes/admin.circles.$circle';
 
@@ -168,6 +169,7 @@ const rootChildren = [
   AdminNewsletterRoute,
   AdminEmailRepliesRoute,
   AdminSparkpostRoute,
+  AdminMongoRoute,
   AdminCirclesIndexRoute,
   AdminCirclesCircleRoute,
 ];
