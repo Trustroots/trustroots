@@ -20,7 +20,7 @@ Here are some ideas:
 - communication
 - help trustroots users to organize locally
 - [welcoming new members](welcome.md) with practical advice for members and the team
-- test the [Android app](https://github.com/Trustroots/trustroots/releases)
+- test the [Android app](/apps/)
 - help support members through conflicts and contribute to community safety processes
 - improve the [Trustroots Wiki](https://wiki.trustroots.org/) and connect it to the main site
   - for example, it would be cool to have circle descriptions directly on the wiki, so that all trustroots users will add information
