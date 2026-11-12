@@ -13,6 +13,7 @@ const {
   createChallenge,
   consumeProof,
   decodeNpub,
+  normaliseNpub,
 }: typeof import('../../server/services/nostr-proof.server.service.mts') = require('../../server/services/nostr-proof.server.service.mts');
 const {
   challenge,
@@ -179,6 +180,12 @@ describe('Nostr ownership proofs', () => {
       (await consumeProof(user._id, npub, proof)).should.equal(false);
     }
     update.called.should.equal(false);
+  });
+
+  it('normalises whitespace and mixed case in a public key', () => {
+    const input = `  NPUB${npub.slice(4)}  `;
+    normaliseNpub(input).should.equal(npub);
+    decodeNpub(input).should.equal(getPublicKey(key));
   });
 
   it('rejects invalid or secret keys and missing members', async () => {

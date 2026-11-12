@@ -13,9 +13,13 @@ const lifetime = 300;
 export const proofError =
   'Sign a fresh Nostr challenge with the matching key before saving.';
 
+export function normaliseNpub(value: string): string {
+  return value.trim().toLowerCase();
+}
+
 export function decodeNpub(value: unknown): string {
   if (typeof value !== 'string') throw new Error('Invalid Nostr public key.');
-  const decoded = nip19.decode(value.trim().toLowerCase());
+  const decoded = nip19.decode(normaliseNpub(value));
   if (decoded.type !== 'npub') throw new Error('Invalid Nostr public key.');
   return decoded.data;
 }

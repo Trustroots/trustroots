@@ -49,6 +49,7 @@ function getUserProfile() {
 const Offer = mongoose.model<OfferEndpointRecord>('Offer');
 const User = mongoose.model<PopulatedOfferUser>('User');
 const DEFAULT_MAP_LOCATION = [48.6908333333, 9.14055555556];
+const MEETING_STATUSES = ['yes', 'maybe', 'no', 'not-set'] as const;
 
 interface OfferFilters {
   hasArrayFilter(filterType: string): boolean;
@@ -242,6 +243,10 @@ function isValidOfferType(type: unknown): type is OfferType {
   return enumValues?.includes(type as OfferType) ?? false;
 }
 
+function isValidMeetingStatus(value: unknown): boolean {
+  return MEETING_STATUSES.some(status => status === value);
+}
+
 /**
  * Create offer
  */
@@ -256,8 +261,7 @@ function create(
   const body = req.body!;
   if (
     body.meetingStatus !== undefined &&
-    (typeof body.meetingStatus !== 'string' ||
-      !['yes', 'maybe', 'no', 'not-set'].includes(body.meetingStatus))
+    !isValidMeetingStatus(body.meetingStatus)
   ) {
     return res.status(400).send({ message: 'Invalid meeting availability.' });
   }
@@ -321,8 +325,7 @@ function update(
   }
   if (
     body.meetingStatus !== undefined &&
-    (typeof body.meetingStatus !== 'string' ||
-      !['yes', 'maybe', 'no', 'not-set'].includes(body.meetingStatus))
+    !isValidMeetingStatus(body.meetingStatus)
   ) {
     return res.status(400).send({ message: 'Invalid meeting availability.' });
   }

@@ -517,6 +517,19 @@ describe('Core CRUD tests', function () {
           });
       });
     });
+    it('marks profile opt-in responses private even for visitors', async function () {
+      const publicResponse = await agent
+        .get('/api/nostr/author-visibility?pubkey=' + validNpubHex)
+        .expect(200);
+      should(publicResponse.headers['cache-control']).be.undefined();
+      const response = await agent
+        .get(
+          '/api/nostr/author-visibility?pubkey=' + validNpubHex + '&profiles=1',
+        )
+        .expect('Cache-Control', 'private, no-store')
+        .expect(200);
+      response.body.should.deepEqual({ linkedPubkeys: [], pubkeys: [] });
+    });
     it('returns profile usernames only for eligible authors when a member opts in', async function () {
       const {
         npubEncode,
