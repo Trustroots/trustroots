@@ -536,7 +536,7 @@ describe('React route ownership', () => {
       footerVariant: 'admin',
       path: '/admin',
       requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin', 'support-team'],
       title: 'Admin',
     });
   });

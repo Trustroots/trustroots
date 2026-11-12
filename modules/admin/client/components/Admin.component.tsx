@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../../core/client/react-app/auth';
 import {
   getAdminDashboard,
   type AdminDashboard,
@@ -19,6 +20,8 @@ function adminMessagesUrl(
 }
 
 export default function Admin() {
+  const { hasRole } = useAuth();
+  const isAdmin = hasRole('admin');
   const [dashboard, setDashboard] = useState<AdminDashboard>({
     negativeExperiences: [],
     threadVotes: [],
@@ -66,12 +69,14 @@ export default function Admin() {
       <div className="container admin-landing">
         <header className="admin-landing__hero">
           <h1 className="admin-landing__title">Admin Dashboard</h1>
-          <a href="/admin/circles">Manage circles</a>
+          {isAdmin && <a href="/admin/circles">Manage circles</a>}
         </header>
 
-        <div className="admin-landing__search">
-          <AdminSearchUsersContent showHeading={false} />
-        </div>
+        {isAdmin && (
+          <div className="admin-landing__search">
+            <AdminSearchUsersContent showHeading={false} />
+          </div>
+        )}
 
         <div className="row admin-dashboard-boxes">
           {dashboardError && (
@@ -117,9 +122,13 @@ export default function Admin() {
             <section className="panel panel-default admin-dashboard-box">
               <div className="panel-heading">
                 <h2 className="panel-title">
-                  <a href="/admin/reference-threads">
-                    Last 10 Negative Thread Votes
-                  </a>
+                  {isAdmin ? (
+                    <a href="/admin/reference-threads">
+                      Last 10 Negative Thread Votes
+                    </a>
+                  ) : (
+                    'Last 10 Negative Thread Votes'
+                  )}
                 </h2>
               </div>
               <div className="panel-body">
@@ -132,10 +141,12 @@ export default function Admin() {
                     <tbody>
                       {dashboard.threadVotes.map(
                         ({ _id, created, thread, userFrom, userTo }) => {
-                          const messagesUrl = adminMessagesUrl(
-                            userFrom,
-                            userTo,
-                          );
+                          const messagesUrl = isAdmin
+                            ? adminMessagesUrl(userFrom, userTo)
+                            : null;
+                          const formattedDate = formatAdminDateTime(created);
+                          const dateLabel =
+                            formattedDate === '—' ? thread : formattedDate;
 
                           return (
                             <tr key={_id}>
@@ -146,15 +157,9 @@ export default function Admin() {
                               </td>
                               <td className="text-right">
                                 {messagesUrl ? (
-                                  <a href={messagesUrl}>
-                                    {formatAdminDateTime(created) === '—'
-                                      ? thread
-                                      : formatAdminDateTime(created)}
-                                  </a>
-                                ) : formatAdminDateTime(created) === '—' ? (
-                                  thread
+                                  <a href={messagesUrl}>{dateLabel}</a>
                                 ) : (
-                                  formatAdminDateTime(created)
+                                  dateLabel
                                 )}
                               </td>
                             </tr>

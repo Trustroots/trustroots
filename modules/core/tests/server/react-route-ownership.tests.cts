@@ -115,7 +115,7 @@ describe('React route ownership', function () {
       footerVariant: 'admin',
       path: '/admin',
       requiresAuth: true,
-      requiresRole: 'admin',
+      requiresRole: ['admin', 'support-team'],
       title: 'Admin',
     });
   });
@@ -129,6 +129,9 @@ describe('React route ownership', function () {
     );
     should(
       getReactRouteAccessRedirect(route, { roles: ['user', 'admin'] }),
+    ).be.null();
+    should(
+      getReactRouteAccessRedirect(route, { roles: ['user', 'support-team'] }),
     ).be.null();
     should(
       getReactRouteAccessRedirect(getReactRoutePolicy('/support'), null),

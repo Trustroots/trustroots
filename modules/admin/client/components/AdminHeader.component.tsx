@@ -11,7 +11,7 @@ export default function AdminHeader() {
   const isWelcomeTeam = hasRole('welcome-team');
   const currentPath = useLocation({
     select: location => location.pathname,
-  }).replace('/admin/', '');
+  }).replace(/^\/admin\/?/, '');
 
   useEffect(() => {
     const input = document.querySelector<HTMLInputElement>(
@@ -28,6 +28,7 @@ export default function AdminHeader() {
       id: 'support',
       label: 'Member support',
       pages: [
+        { path: '', label: 'Dashboard' },
         { path: 'support', label: 'Support inbox' },
         { path: 'support/members', label: 'Member search' },
         { path: 'support/flagged', label: 'Flagged members' },
@@ -80,6 +81,7 @@ export default function AdminHeader() {
         page =>
           isAdmin ||
           ([
+            '',
             'support',
             'support/members',
             'support/flagged',
@@ -110,7 +112,10 @@ export default function AdminHeader() {
     const active = isActivePage(path);
     return (
       <li key={path} className={classnames({ active })}>
-        <a href={`/admin/${path}`} aria-current={active ? 'page' : undefined}>
+        <a
+          href={path ? `/admin/${path}` : '/admin'}
+          aria-current={active ? 'page' : undefined}
+        >
           {label}
         </a>
       </li>

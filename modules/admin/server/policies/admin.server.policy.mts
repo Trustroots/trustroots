@@ -19,6 +19,7 @@ export const invokeRolesPolicies = () => {
     {
       roles: ['admin', 'support-team'],
       allows: [
+        { resources: '/api/admin/dashboard', permissions: ['get'] },
         { resources: '/api/admin/experiences', permissions: ['get'] },
         {
           resources: '/api/admin/experiences/:id/change-links',
@@ -142,7 +143,6 @@ export const invokeRolesPolicies = () => {
         { resources: '/api/admin/audit-log/actors', permissions: ['get'] },
         { resources: '/api/admin/username-changes', permissions: ['get'] },
         { resources: '/api/admin/gravatar', permissions: ['get'] },
-        { resources: '/api/admin/dashboard', permissions: ['get'] },
         { resources: '/api/admin/messages', permissions: ['post'] },
         {
           resources: '/api/admin/messages/scammer-recipients',

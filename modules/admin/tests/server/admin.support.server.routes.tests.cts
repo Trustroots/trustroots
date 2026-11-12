@@ -407,9 +407,10 @@ describe('Support team access and investigation', () => {
       .post('/api/admin/acquisition-stories')
       .set('X-Trustroots-Request', '1')
       .expect(200);
+    await agent.get('/api/admin/dashboard').expect(200);
     for (const url of [
       '/api/admin/audit-log',
-      '/api/admin/dashboard',
+      '/api/admin/reference-threads',
       '/api/admin/newsletter-subscribers',
     ])
       await agent.get(url).expect(403);

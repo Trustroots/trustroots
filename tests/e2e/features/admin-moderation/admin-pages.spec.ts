@@ -12,6 +12,8 @@ import {
 import {
   SEEDED_ADMIN,
   SEEDED_MEMBERS,
+  createUser,
+  registerViaApi,
   signOut,
   signInViaApi,
 } from '../../support/helpers.mts';
@@ -421,6 +423,56 @@ test.describe('admin moderation page flows', () => {
 });
 
 test.describe('admin React route access boundaries', () => {
+  test('support team can view dashboard activity', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.dashboard', [
+      'Support team can open the dashboard and read all three activity panes.',
+    ]);
+    const staff = createUser({ firstName: 'Fictional', lastName: 'Support' });
+    await registerViaApi(request, staff);
+    await withE2eDb(db =>
+      db
+        .collection('users')
+        .updateOne(
+          { username: staff.username },
+          { $set: { roles: ['user', 'support-team'] } },
+        ),
+    );
+    await signInViaApi(page, request, staff);
+
+    await page.goto('/admin/support');
+    await page.getByRole('link', { name: 'Dashboard', exact: true }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+
+    for (const name of [
+      'Top 10 Messengers Last Week',
+      'Last 10 Negative Thread Votes',
+      'Last 10 Negative Experiences',
+    ]) {
+      const heading = page.getByRole('heading', { name, exact: true });
+      await expect(heading).toBeVisible();
+      const panel = page.locator('section').filter({ has: heading });
+      const memberLink = panel
+        .getByRole('row')
+        .first()
+        .getByRole('link')
+        .first();
+      await expect(memberLink).toHaveAttribute(
+        'href',
+        /^\/admin\/support\/member\//,
+      );
+    }
+
+    await expect(page.getByLabel('Name, username or email')).toHaveCount(0);
+    await expect(
+      page.locator(
+        'a[href="/admin/circles"], a[href="/admin/reference-threads"], a[href^="/admin/messages"]',
+      ),
+    ).toHaveCount(0);
+  });
+
   test('guest direct admin load redirects to sign in', async ({
     page,
   }, testInfo) => {
