@@ -441,6 +441,12 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/network-connections',
+    requiresRole: ['admin', 'support-team'],
+    title: 'Admin - External connection search',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/search-users',
     title: 'Admin - Search users',
   },

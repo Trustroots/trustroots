@@ -218,7 +218,9 @@ describe('Authentication controller OAuth unit tests', () => {
     it('returns 400 when saving after removing a provider fails', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
       stubLegacySave(userDoc).callsFake(() =>
@@ -238,10 +240,42 @@ describe('Authentication controller OAuth unit tests', () => {
       res.body!.should.deepEqual({ message: SNAP });
     });
 
+    it('returns a generic conflict when provider history CAS loses a race', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
+      userDoc.markModified('additionalProvidersData');
+      await userDoc.save();
+      stubLegacySave(userDoc).callsFake(() =>
+        Promise.reject(
+          new mongoose.Error.DocumentNotFoundError('private query'),
+        ),
+      );
+
+      const req = {
+        user: userDoc,
+        params: { provider: 'github' },
+        login: (user: unknown, cb: AuthCallback) => cb(),
+      };
+      const res = deferredResponse();
+
+      authController.removeOAuthProvider(req, res);
+      await res.waitForResponse();
+
+      res.statusCode.should.equal(409);
+      responseField(res, 'message').should.equal(
+        'An external connection changed in another request. Please try again.',
+      );
+    });
+
     it('returns 400 when login fails after removing a provider', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
 
@@ -261,7 +295,9 @@ describe('Authentication controller OAuth unit tests', () => {
     it('removes the provider data and returns the sanitized user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
 
@@ -283,6 +319,28 @@ describe('Authentication controller OAuth unit tests', () => {
         reloaded.additionalProvidersData &&
         reloaded.additionalProvidersData.github,
       ).should.be.false();
+      const history = await User.findById(saved._id)
+        .select('+connectionHistory')
+        .lean()
+        .exec();
+      should.exist(history);
+      const historyRecord = history as unknown as {
+        connectionHistory: Array<{
+          network: string;
+          oldIdentifier: string | null;
+          newIdentifier: string | null;
+          changedAt: Date | null;
+          initial: boolean;
+        }>;
+      };
+      const removed = historyRecord.connectionHistory.slice(-1)[0];
+      should(removed).have.properties({
+        network: 'github',
+        oldIdentifier: 'gh-member',
+        newIdentifier: null,
+        initial: false,
+      });
+      should(removed?.changedAt).be.Date();
     });
 
     it('keeps no photo when removing a legacy Facebook connection', async () => {
@@ -1212,6 +1270,56 @@ describe('Authentication controller OAuth unit tests', () => {
       });
     });
 
+    it('retains the previous address only after a successful confirmation', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const pendingEmail = 'new-address@example.test';
+      await User.updateOne(
+        { _id: saved._id },
+        {
+          $set: {
+            emailTemporary: pendingEmail,
+            emailToken: 'change-email-token',
+            emailTokenIssuedAt: new Date(),
+            emailTokenExpires: new Date(Date.now() + 86400000),
+            connectionHistoryRevision: 7,
+          },
+        },
+      );
+      const before = await User.findById(saved._id)
+        .select('+connectionHistory')
+        .lean();
+      before!
+        .connectionHistory!.some(entry => entry.newIdentifier === pendingEmail)
+        .should.be.false();
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token: 'change-email-token' },
+          login: (_user: unknown, callback: AuthCallback) => callback(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const after = await User.findById(saved._id)
+        .select(
+          '+connectionHistory +connectionSearchKeys +connectionHistoryRevision',
+        )
+        .lean()
+        .orFail();
+      should(after.connectionHistoryRevision).equal(8);
+      after.connectionHistory!.should.containDeep([
+        {
+          network: 'email',
+          oldIdentifier: saved.email,
+          newIdentifier: pendingEmail,
+          initial: false,
+        },
+      ]);
+      after.connectionSearchKeys!.should.containEql(`email:${saved.email}`);
+      after.connectionSearchKeys!.should.containEql(`email:${pendingEmail}`);
+    });
+
     it('redirects invalid email tokens to the invalid confirmation page', async () => {
       const res = deferredResponse();
       authController.validateEmailToken({ params: { token: 'missing' } }, res);
@@ -1470,16 +1578,18 @@ describe('Authentication controller OAuth unit tests', () => {
     it('confirms an email when the account already has an auth version', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const token = 'versioned-confirm-token';
-      await User.updateOne(
+      await User.collection.updateOne(
         { _id: saved._id },
         {
           $set: {
             public: false,
+            email: saved.email.toUpperCase(),
             emailTemporary: saved.email,
             emailToken: token,
             emailTokenIssuedAt: new Date(),
             emailTokenExpires: new Date(Date.now() + 86400000),
             authVersion: 2,
+            connectionHistoryRevision: 7,
           },
         },
       );
@@ -1495,9 +1605,19 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
 
-      const reloaded = await findUser(saved._id);
+      const reloaded = await User.findById(saved._id)
+        .select('+connectionHistory +connectionHistoryRevision')
+        .orFail();
       userField(reloaded, 'public').should.be.true();
       userField(reloaded, 'authVersion').should.equal(2);
+      reloaded.email.should.equal(saved.email);
+      should(reloaded.connectionHistoryRevision).equal(7);
+      should(reloaded.connectionHistory).not.containDeep([
+        {
+          oldIdentifier: saved.email.toUpperCase(),
+          newIdentifier: saved.email,
+        },
+      ]);
       should.not.exist(reloaded.emailToken);
     });
 
@@ -1506,6 +1626,46 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.confirmEmail({ params: { token: 'missing' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 if a matching member has no pending email address', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const member = await User.findOne({ _id: saved._id }).orFail();
+      member.emailTemporary = undefined;
+      const query = User.findOne({});
+      sinon.stub(query, 'exec').resolves(member);
+      sinon.stub(User, 'findOne').returns(query);
+      const update = sinon.spy(User, 'findOneAndUpdate');
+
+      const res = deferredResponse();
+      authController.confirmEmail({ params: { token: 'pending' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({
+        message: 'Email confirm token is invalid or has expired.',
+      });
+      update.called.should.be.false();
+    });
+
+    it('confirms an address on a legacy account without a previous email', async () => {
+      const member = await pendingChange();
+      await User.collection.updateOne(
+        { _id: member._id },
+        { $unset: { email: 1 } },
+      );
+
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token: 'cancel-token' },
+          login: (_user: unknown, callback: AuthCallback) => callback(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const reloaded = await findUser(member._id);
+      reloaded.email.should.equal('pending@example.org');
     });
 
     it('returns 400 when updating the confirmed user fails', async () => {

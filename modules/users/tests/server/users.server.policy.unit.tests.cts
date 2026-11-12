@@ -312,6 +312,77 @@ describe('Users policy unit tests', () => {
     next.calledOnce.should.be.true();
   });
 
+  it('recognises only support GET requests to the username profile route', () => {
+    const { isSupportProfileRead } = policyModule;
+    const route = { path: '/api/users/:username' };
+    const user = { roles: ['support-team'] };
+
+    isSupportProfileRead({ route, method: 'GET', user }).should.be.true();
+    for (const request of [
+      { method: 'GET', user },
+      {
+        route: { path: '/api/users/:avatarUserId/avatar' },
+        method: 'GET',
+        user,
+      },
+      { route, method: 'PUT', user },
+      { route, method: 'GET' },
+      { route, method: 'GET', user: {} },
+      { route, method: 'GET', user: { roles: ['user'] } },
+    ]) {
+      isSupportProfileRead(request).should.be.false();
+    }
+  });
+
+  it('applies the hidden profile exceptions only to the intended staff reads', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const profile = { _id: { equals: () => false }, public: false };
+    const usernamePath = '/api/users/:username';
+    const avatarPath = '/api/users/:avatarUserId/avatar';
+    const cases = [
+      {
+        roles: ['support-team'],
+        path: usernamePath,
+        method: 'GET',
+        status: 200,
+      },
+      { roles: ['admin'], path: avatarPath, method: 'GET', status: 200 },
+      { roles: ['support-team'], path: avatarPath, method: 'GET', status: 404 },
+      {
+        roles: ['support-team'],
+        path: usernamePath,
+        method: 'PUT',
+        status: 404,
+      },
+      { roles: ['admin'], path: usernamePath, method: 'PUT', status: 404 },
+      { roles: ['admin'], path: avatarPath, method: 'POST', status: 404 },
+      {
+        roles: ['admin'],
+        path: '/api/users/mini/:userId',
+        method: 'GET',
+        status: 404,
+      },
+      { roles: undefined, path: usernamePath, method: 'GET', status: 404 },
+    ];
+    for (const { roles, path, method, status } of cases) {
+      const res = mockResponse();
+      const next = sinon.stub();
+      policy.isAllowed(
+        {
+          user: { _id: noProfileUserId, public: false, roles },
+          profile,
+          route: { path },
+          method,
+        },
+        res,
+        next,
+      );
+      res.statusCode.should.equal(status);
+      next.called.should.equal(status === 200);
+    }
+  });
+
   it('returns 403 when a non-public user browses another profile', done => {
     const { policy } = loadPolicy();
     const profileId = { equals: () => false };

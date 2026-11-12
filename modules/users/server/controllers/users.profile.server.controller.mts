@@ -27,6 +27,7 @@ import moment from 'moment';
 import * as nip19 from 'nostr-tools/nip19';
 import {
   consumeProof,
+  normaliseNpub,
   proofError,
 } from '../services/nostr-proof.server.service.mts';
 import validator from 'validator';
@@ -51,6 +52,10 @@ import {
 } from '../services/profile-response.server.service.mts';
 import { userMiniProfileFields as miniProfileFields } from '../services/user-mini.server.service.mjs';
 import { isSupportProfileRead } from '../policies/users.server.policy.mts';
+import {
+  CONNECTION_HISTORY_CONFLICT_MESSAGE,
+  isConnectionHistoryWriteConflict,
+} from '../services/connection-history.server.service.mts';
 
 const locales: Array<{ code: string }> = JSON.parse(
   readFileSync(
@@ -252,8 +257,7 @@ service.update = function (req, res) {
           'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
       });
     }
-    // Stryker disable next-line MethodExpression: nip19 decodes an all-uppercase npub like the lowercase one, and the key is re-encoded from its hex below
-    const trimmedNpub = req.body.nostrNpub.trim().toLowerCase();
+    const trimmedNpub = normaliseNpub(req.body.nostrNpub);
     req.body.nostrNpub = trimmedNpub;
     try {
       if (trimmedNpub) {
@@ -388,6 +392,15 @@ service.update = function (req, res) {
     try {
       await user.save();
     } catch (error) {
+      if (
+        error instanceof Error &&
+        isConnectionHistoryWriteConflict(error, user)
+      ) {
+        res.status(409).send({
+          message: CONNECTION_HISTORY_CONFLICT_MESSAGE,
+        });
+        return;
+      }
       if (
         usernameChange &&
         (error instanceof mongoose.Error.DocumentNotFoundError ||

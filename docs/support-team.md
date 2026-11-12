@@ -138,6 +138,41 @@ imported status appears as Unconfirmed; it does not mean Zendesk considered it
 Open. To investigate an earlier import, preview the same reduced file again
 and review these aggregate reasons before applying further changes.
 
+## External connections
+
+Admin and support member pages show current external profile links and their
+history. The **External connection search** staff page searches by network and a complete
+identifier or recognised profile URL, including identifiers that a member has
+replaced or removed. Results distinguish current connections from previous ones.
+The same panel and search also include email addresses; an email change enters
+history only when the new address is confirmed. Earlier addresses that were
+replaced before this feature was deployed cannot be recovered by the backfill.
+An identifier match is not proof that two accounts belong to the same person;
+external usernames may be reassigned.
+
+History covers hospitality networks, Nostr and legacy Facebook, Twitter and
+GitHub profile identifiers. Initial snapshots have an unknown original date;
+links removed before tracking began cannot be recovered. History is available
+only to administrators and support-team members and is deleted with the account.
+Provider credentials are never copied into history.
+
+### Deployment and backfill
+
+Deploy the application changes before initialising existing accounts. With the
+target environment's database configuration, run:
+
+```sh
+NODE_ENV=production pnpm run ensure-indexes User
+NODE_ENV=production node bin/db-maintenance/backfill-connection-history.mts
+```
+
+The backfill processes accounts through a cursor and conditionally writes each
+initial snapshot. It can be rerun after interruption; concurrent member edits
+are retained. Exact search is complete for existing accounts once the backfill
+finishes. New accounts and edited connections are tracked immediately. The
+`user_connection_search_keys` index supports exact lookup without making external
+identifiers unique across members.
+
 ## Historical reports
 
 Signed-out and ambiguous reports remain visible but do not unlock private content.

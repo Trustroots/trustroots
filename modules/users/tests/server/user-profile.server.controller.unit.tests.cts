@@ -9,6 +9,9 @@ const sinon: typeof import('sinon') = require('sinon');
 
 require('./../../server/models/user.server.model.mjs');
 const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
+const {
+  ConnectionHistoryConflictError,
+}: typeof import('../../server/services/connection-history.server.service.mts') = require('../../server/services/connection-history.server.service.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
@@ -529,17 +532,21 @@ describe('Profile controller unit tests', () => {
           profileController.update({ user: userDoc, body: { nostrNpub } }, res),
         );
         res.statusCode.should.equal(400);
+        responseBody(res).should.deepEqual({
+          message:
+            'Invalid nostr key. Please provide your npub (public key) starting with "npub". Never use your nsec (secret key).',
+        });
       });
     }
 
-    it('accepts an unchanged valid nostrNpub without proof', async () => {
+    it('normalises an unchanged nostrNpub without asking for proof', async () => {
       userDoc.nostrNpub = validNpub;
       await userDoc.save();
       const { res } = await runHandler(res =>
         profileController.update(
           {
             user: userDoc,
-            body: { nostrNpub: validNpub },
+            body: { nostrNpub: `  NPUB${validNpub.slice(4)}  ` },
             login: (_user: unknown, cb: () => void) => cb(),
           },
           res,
@@ -547,6 +554,24 @@ describe('Profile controller unit tests', () => {
       );
       res.statusCode.should.equal(200);
       responseString(res, 'nostrNpub').should.equal(validNpub);
+    });
+
+    it('clears a saved Nostr key when the submitted field contains only whitespace', async () => {
+      userDoc.nostrNpub = validNpub;
+      await userDoc.save();
+      const { res } = await runHandler(res =>
+        profileController.update(
+          {
+            user: userDoc,
+            body: { nostrNpub: '   ' },
+            login: (_user: unknown, cb: () => void) => cb(),
+          },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(200);
+      should((await findUser(userDoc._id)).nostrNpub).equal('');
     });
 
     it('returns 400 when checking nostr npub availability fails', async () => {
@@ -642,6 +667,23 @@ describe('Profile controller unit tests', () => {
       should.exist(
         await User.exists({ _id: userDoc._id, username: 'renamedelsewhere' }),
       );
+    });
+
+    it('returns a conflict when an external connection changed concurrently', async () => {
+      sinon.stub(userDoc, 'save').rejects(new ConnectionHistoryConflictError());
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { extSitesBW: 'another-member' } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(409);
+      responseBody(res).should.deepEqual({
+        message:
+          'An external connection changed in another request. Please try again.',
+      });
     });
 
     const usernameFailures: Array<[string, () => void, number]> = [
@@ -1987,6 +2029,18 @@ describe('Profile controller unit tests', () => {
               changedAt: new Date('2025-01-01T00:00:00.000Z'),
             },
           ],
+          connectionHistory: [
+            {
+              network: 'github',
+              oldIdentifier: 'private-old-login',
+              newIdentifier: 'private-new-login',
+              changedAt: new Date('2025-01-01T00:00:00.000Z'),
+              initial: false,
+            },
+          ],
+          connectionSearchKeys: ['github:private-old-login'],
+          connectionHistoryInitialised: true,
+          connectionHistoryRevision: 4,
           email: 'member@example.test',
           locale: 'en',
           blocked: [],
@@ -2010,6 +2064,10 @@ describe('Profile controller unit tests', () => {
         'pushRegistration',
         'providerData',
         'usernameHistory',
+        'connectionHistory',
+        'connectionSearchKeys',
+        'connectionHistoryInitialised',
+        'connectionHistoryRevision',
         'futurePrivateField',
       ]) {
         (sanitized[field] === undefined).should.be.true();
