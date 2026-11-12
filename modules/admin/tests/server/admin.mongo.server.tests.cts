@@ -228,6 +228,13 @@ describe('Admin Mongo diagnostics', () => {
             : [
                 {
                   storageStats: {
+                    count: 0,
+                    storageSize: 0,
+                    totalIndexSize: 0,
+                  },
+                },
+                {
+                  storageStats: {
                     count: 1,
                     storageSize: 10,
                     totalIndexSize: 2,
