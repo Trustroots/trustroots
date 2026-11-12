@@ -128,13 +128,22 @@ describe('Admin network connections controller unit tests', () => {
 
   describe('history', () => {
     it('rejects invalid page and member identifiers before querying', async () => {
+      const memberId = new mongoose.Types.ObjectId().toString();
       for (const req of [
-        request({ page: '0' }, new mongoose.Types.ObjectId().toString()),
+        request({ page: '0' }, memberId),
+        request({ page: ['1'] }, memberId),
+        request({ page: 'x1' }, memberId),
+        request({ page: '1x' }, memberId),
+        request({}, `x${memberId}`),
+        request({}, `${memberId}x`),
         request({}, 'not-an-id'),
         request({}, undefined),
       ]) {
         const response = await callHistory(req);
         response.statusCode.should.equal(400);
+        assert.deepEqual(response.body, {
+          message: 'Invalid connection history request.',
+        });
       }
     });
 
@@ -197,8 +206,11 @@ describe('Admin network connections controller unit tests', () => {
       const id = new mongoose.Types.ObjectId();
       stubAggregate([{ history: [] }]);
       stubAuditSave();
-      const response = await callHistory(request({ page: 2 }, id.toString()));
+      const response = await callHistory(
+        request({ page: '12' }, id.toString()),
+      );
       response.statusCode.should.equal(200);
+      (response.body as { page: number }).page.should.equal(12);
       (response.body as { history: unknown[] }).history.length.should.equal(0);
       (response.body as { hasNextPage: boolean }).hasNextPage.should.equal(
         false,
@@ -208,6 +220,9 @@ describe('Admin network connections controller unit tests', () => {
       stubAggregate([], true);
       const failed = await callHistory(request({}, id.toString()));
       failed.statusCode.should.equal(500);
+      assert.deepEqual(failed.body, {
+        message: 'Could not load connection history.',
+      });
     });
 
     it('fails closed when audit persistence fails', async () => {
@@ -224,13 +239,34 @@ describe('Admin network connections controller unit tests', () => {
       for (const query of [
         { page: '0', network: 'github', identifier: 'someone' },
         { network: 'unknown', identifier: 'someone' },
-        { network: 'github', identifier: '' },
         { network: 'github', identifier: 123 },
         { network: 'github', identifier: 'x'.repeat(2049) },
       ]) {
         const response = await callSearch(request(query));
         response.statusCode.should.equal(400);
       }
+    });
+
+    it('returns a validation message for an invalid profile identifier', async () => {
+      const response = await callSearch(
+        request({ network: 'github', identifier: '' }),
+      );
+      response.statusCode.should.equal(400);
+      assert.deepEqual(response.body, {
+        message: 'Enter a valid identifier or profile URL for this network.',
+      });
+    });
+
+    it('accepts a trimmed identifier at the request size limit', async () => {
+      const { find } = stubFind([]);
+      stubAuditSave();
+      const response = await callSearch(
+        request({ network: 'github', identifier: 'example'.padEnd(2048) }),
+      );
+      response.statusCode.should.equal(200);
+      assert.deepEqual(find.firstCall.args[0], {
+        connectionSearchKeys: 'github:example',
+      });
     });
 
     it('parses a valid profile URL, keeps duplicate members, and marks historical matches', async () => {
@@ -245,7 +281,10 @@ describe('Admin network connections controller unit tests', () => {
           _id: new mongoose.Types.ObjectId(),
           username: 'member-two',
           displayName: 'Member Two',
-          additionalProvidersData: { github: { login: 'Different' } },
+          additionalProvidersData: {
+            github: { login: 'Different' },
+            twitter: { screen_name: 'Example' },
+          },
         },
       ];
       const { find, query } = stubFind(members);
@@ -275,6 +314,8 @@ describe('Admin network connections controller unit tests', () => {
       assert.deepStrictEqual((find.firstCall.args as unknown[])[0], {
         connectionSearchKeys: 'github:example',
       });
+      assert.match(query.select.firstCall.args[0], /^username displayName /);
+      query.sort.calledOnceWithExactly({ _id: 1 }).should.equal(true);
       query.skip.calledOnceWithExactly(0).should.equal(true);
       query.limit.calledOnceWithExactly(51).should.equal(true);
       save.calledOnce.should.equal(true);
@@ -315,6 +356,9 @@ describe('Admin network connections controller unit tests', () => {
         request({ network: 'github', identifier: 'member' }),
       );
       failed.statusCode.should.equal(500);
+      assert.deepEqual(failed.body, {
+        message: 'Could not search connections.',
+      });
     });
 
     it('fails closed when search audit persistence fails', async () => {

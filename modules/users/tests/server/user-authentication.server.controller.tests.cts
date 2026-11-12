@@ -1281,6 +1281,7 @@ describe('Authentication controller OAuth unit tests', () => {
             emailToken: 'change-email-token',
             emailTokenIssuedAt: new Date(),
             emailTokenExpires: new Date(Date.now() + 86400000),
+            connectionHistoryRevision: 7,
           },
         },
       );
@@ -1301,9 +1302,13 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
       const after = await User.findById(saved._id)
-        .select('+connectionHistory +connectionSearchKeys')
-        .lean();
-      after!.connectionHistory!.should.containDeep([
+        .select(
+          '+connectionHistory +connectionSearchKeys +connectionHistoryRevision',
+        )
+        .lean()
+        .orFail();
+      should(after.connectionHistoryRevision).equal(8);
+      after.connectionHistory!.should.containDeep([
         {
           network: 'email',
           oldIdentifier: saved.email,
@@ -1311,8 +1316,8 @@ describe('Authentication controller OAuth unit tests', () => {
           initial: false,
         },
       ]);
-      after!.connectionSearchKeys!.should.containEql(`email:${saved.email}`);
-      after!.connectionSearchKeys!.should.containEql(`email:${pendingEmail}`);
+      after.connectionSearchKeys!.should.containEql(`email:${saved.email}`);
+      after.connectionSearchKeys!.should.containEql(`email:${pendingEmail}`);
     });
 
     it('redirects invalid email tokens to the invalid confirmation page', async () => {
@@ -1573,16 +1578,18 @@ describe('Authentication controller OAuth unit tests', () => {
     it('confirms an email when the account already has an auth version', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const token = 'versioned-confirm-token';
-      await User.updateOne(
+      await User.collection.updateOne(
         { _id: saved._id },
         {
           $set: {
             public: false,
+            email: saved.email.toUpperCase(),
             emailTemporary: saved.email,
             emailToken: token,
             emailTokenIssuedAt: new Date(),
             emailTokenExpires: new Date(Date.now() + 86400000),
             authVersion: 2,
+            connectionHistoryRevision: 7,
           },
         },
       );
@@ -1598,9 +1605,19 @@ describe('Authentication controller OAuth unit tests', () => {
       await res.waitForResponse();
       res.statusCode.should.equal(200);
 
-      const reloaded = await findUser(saved._id);
+      const reloaded = await User.findById(saved._id)
+        .select('+connectionHistory +connectionHistoryRevision')
+        .orFail();
       userField(reloaded, 'public').should.be.true();
       userField(reloaded, 'authVersion').should.equal(2);
+      reloaded.email.should.equal(saved.email);
+      should(reloaded.connectionHistoryRevision).equal(7);
+      should(reloaded.connectionHistory).not.containDeep([
+        {
+          oldIdentifier: saved.email.toUpperCase(),
+          newIdentifier: saved.email,
+        },
+      ]);
       should.not.exist(reloaded.emailToken);
     });
 
@@ -1618,11 +1635,16 @@ describe('Authentication controller OAuth unit tests', () => {
       const query = User.findOne({});
       sinon.stub(query, 'exec').resolves(member);
       sinon.stub(User, 'findOne').returns(query);
+      const update = sinon.spy(User, 'findOneAndUpdate');
 
       const res = deferredResponse();
       authController.confirmEmail({ params: { token: 'pending' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+      res.body!.should.deepEqual({
+        message: 'Email confirm token is invalid or has expired.',
+      });
+      update.called.should.be.false();
     });
 
     it('confirms an address on a legacy account without a previous email', async () => {

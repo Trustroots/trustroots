@@ -58,9 +58,12 @@ describe('Admin network connections routes', () => {
         .get('/api/admin/network-connections')
         .query({ network: 'email', identifier: address.toUpperCase() })
         .expect(200);
-      const match = response.body.members.find(
-        (member: { _id: string }) => member._id === String(id),
+      const [match] = response.body.members;
+      assert.deepEqual(
+        response.body.members.map((member: { _id: string }) => member._id),
+        [String(id)],
       );
+      assert.equal(match.identifier, address);
       assert.equal(match.current, address.startsWith('current'));
       await regularAgent
         .get('/api/admin/network-connections')
@@ -141,6 +144,27 @@ describe('Admin network connections routes', () => {
     secondPage.history.length.should.equal(1);
     secondPage.history[0]!.newIdentifier.should.equal('profile-0');
     secondPage.hasNextPage.should.equal(false);
+
+    await mongoose.connection
+      .collection('users')
+      .updateOne({ _id: memberId }, { $pop: { connectionHistory: -1 } });
+    const finalPage = await supportAgent
+      .get(`/api/admin/network-connections/${memberId}`)
+      .expect(200);
+    assert.equal(finalPage.body.history.length, 50);
+    assert.equal(finalPage.body.hasNextPage, false);
+  });
+
+  it('returns an empty history for a member without stored history', async () => {
+    const id = savedUsers[2]!._id;
+    await mongoose.connection
+      .collection('users')
+      .updateOne({ _id: id }, { $unset: { connectionHistory: 1 } });
+    const response = await supportAgent
+      .get(`/api/admin/network-connections/${id}`)
+      .expect(200);
+    assert.deepEqual(response.body.history, []);
+    assert.equal(response.body.hasNextPage, false);
   });
 
   it('finds exact current and historical matches from profile URLs without duplicate member rows', async () => {
@@ -283,6 +307,17 @@ describe('Admin network connections routes', () => {
     secondPage.members[0]!._id.should.equal(members[50]!._id.toString());
     secondPage.members[0]!.current.should.equal(true);
     secondPage.hasNextPage.should.equal(false);
+
+    await mongoose.connection
+      .collection('users')
+      .deleteOne({ _id: members[50]!._id });
+    const finalPage = await supportAgent
+      .get(
+        '/api/admin/network-connections?network=github&identifier=bulk-handle',
+      )
+      .expect(200);
+    assert.equal(finalPage.body.members.length, 50);
+    assert.equal(finalPage.body.hasNextPage, false);
   });
 
   it('validates search and history requests at the route boundary', async () => {
