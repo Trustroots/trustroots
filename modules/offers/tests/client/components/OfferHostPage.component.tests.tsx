@@ -127,7 +127,7 @@ describe('OfferHostPage', () => {
       offersApiMock.getOffers.mockResolvedValue([
         { ...hostOffer, status, meetingStatus: 'yes' },
       ]);
-      render(<OfferHostPage user={user} />);
+      render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
       const group = within(
         await screen.findByRole('radiogroup', {
           name: 'Would you like to meet people?',
@@ -150,7 +150,7 @@ describe('OfferHostPage', () => {
     offersApiMock.getOffers.mockResolvedValue([
       { ...hostOffer, status: 'no', description: '' },
     ]);
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     const meeting = within(
       await screen.findByRole('radiogroup', {
         name: 'Would you like to meet people?',
@@ -161,7 +161,9 @@ describe('OfferHostPage', () => {
     fireEvent.click(meeting);
     expect(screen.getByText(/for meetings, but not as a host/)).toBeVisible();
     expect(
-      screen.getByLabelText(/Only my circles can find me on the map/),
+      screen.getByRole('checkbox', {
+        name: /People that are not in any of my circles should not find me/,
+      }),
     ).toBeVisible();
     fireEvent.click(screen.getByRole('tab', { name: 'Location' }));
     fireEvent.click(screen.getByRole('button', { name: 'Change location' }));
@@ -179,7 +181,7 @@ describe('OfferHostPage', () => {
   });
 
   it('explains hosting and meeting visibility together', async () => {
-    render(<OfferHostPage user={user} />);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
     const meeting = within(
       await screen.findByRole('radiogroup', {
         name: 'Would you like to meet people?',
@@ -431,10 +433,14 @@ describe('OfferHostPage', () => {
     expect(screen.getByDisplayValue('3')).toBeInTheDocument();
 
     fireEvent.click(
-      screen.getByLabelText(/Only my circles can find me on the map/),
+      screen.getByRole('checkbox', {
+        name: /People that are not in any of my circles should not find me/,
+      }),
     );
     expect(
-      screen.getByLabelText(/Only my circles can find me on the map/),
+      screen.getByRole('checkbox', {
+        name: /People that are not in any of my circles should not find me/,
+      }),
     ).toBeChecked();
   });
 
