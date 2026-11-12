@@ -31,20 +31,22 @@ test('administrators can feature and remove a published Nostr note', async ({
     {
       kind: 1,
       created_at: 1780000000,
-      content: 'A fictional Trustroots announcement.\n<br> remains text.',
+      content:
+        'A fictional Trustroots announcement.\n<br> remains text.\n[Details](https://example.test/details)\n[Unsupported](javascript:ignored)',
       tags: [],
     },
     author,
   );
   const noteCode = nip19.noteEncode(event.id);
   const adminUrl = '/api/admin/nostr/featured-notes';
-  const heading = page.getByRole('heading', { name: 'Updates from Nostr' });
+  const heading = page.getByRole('heading', { name: 'Trustroots updates' });
   const article = page
     .getByRole('article')
     .filter({ hasText: 'A fictional Trustroots announcement.' });
 
   const deletionEvents: Event[] = [];
   const publishedNotes = new Map<string, Event>();
+  const publicationRelays: string[] = [];
   await page.exposeFunction(
     'signFixtureNostrEvent',
     (template: EventTemplate) => finalizeEvent(template, author),
@@ -68,7 +70,10 @@ test('administrators can feature and remove a published Nostr note', async ({
         const [type, subscription, filter] = JSON.parse(String(message));
         if (type === 'EVENT') {
           const signed = subscription as Event;
-          if (signed.kind === 1) publishedNotes.set(signed.id, signed);
+          if (signed.kind === 1) {
+            publicationRelays.push(new URL(relay.url()).origin);
+            publishedNotes.set(signed.id, signed);
+          }
           if (signed.kind === 5) deletionEvents.push(signed);
           relay.send(JSON.stringify(['OK', signed.id, true, 'accepted']));
           return;
@@ -107,11 +112,17 @@ test('administrators can feature and remove a published Nostr note', async ({
 
     await page.goto('/');
     await expect(heading).toBeVisible();
-    await expect(article).toContainText(nip19.npubEncode(event.pubkey));
+    const npub = nip19.npubEncode(event.pubkey);
+    await expect(article.getByRole('link', { name: npub })).toHaveAttribute(
+      'href',
+      `https://njump.me/${npub}`,
+    );
     await expect(article).toContainText('<br> remains text.');
     await expect(
-      article.getByRole('link', { name: 'View on Nostr' }),
-    ).toHaveAttribute('href', `https://njump.me/${noteCode}`);
+      article.getByRole('link', { name: 'Details' }),
+    ).toHaveAttribute('href', 'https://example.test/details');
+    await expect(article).toContainText('[Unsupported](javascript:ignored)');
+    await expect(article.getByRole('link')).toHaveCount(2);
 
     await page.context().clearCookies();
     await page.reload();
@@ -139,6 +150,7 @@ test('administrators can feature and remove a published Nostr note', async ({
     const confirmation = page.getByRole('dialog', {
       name: 'Request Nostr deletion?',
     });
+    await expect(confirmation).toContainText(FEATURED_NOTE_RELAYS.join(', '));
     await confirmation
       .getByRole('button', { name: 'Sign and request deletion' })
       .click();
@@ -169,15 +181,20 @@ test('administrators can feature and remove a published Nostr note', async ({
       ),
     ).not.toContain(event.id);
 
-    const content = 'A fictional update composed in Trustroots.\nSecond line.';
+    const content =
+      'A fictional update composed in Trustroots.\n[Get involved](https://example.test/volunteering)';
+    await expect(
+      page.getByText('Your NIP-07 browser signer', { exact: false }),
+    ).toContainText('wss://relay.trustroots.org');
     await page.getByLabel('Note text').fill(content);
     await page
       .getByRole('button', { name: 'Publish and feature note' })
       .click();
     await expect(page.getByRole('status')).toHaveText(
-      'Note published on Nostr and featured on the homepage.',
+      'Note published to wss://relay.trustroots.org and featured on the homepage.',
     );
     expect(publishedNotes.size).toBe(1);
+    expect(publicationRelays).toEqual(['wss://relay.trustroots.org']);
     const [published] = publishedNotes.values();
     expect(verifyEvent(published)).toBe(true);
     expect(published).toMatchObject({ kind: 1, pubkey: event.pubkey, content });
@@ -186,13 +203,9 @@ test('administrators can feature and remove a published Nostr note', async ({
     const publishedArticle = page
       .getByRole('article')
       .filter({ hasText: 'A fictional update composed in Trustroots.' });
-    await expect(publishedArticle).toContainText('Second line.');
     await expect(
-      publishedArticle.getByRole('link', { name: 'View on Nostr' }),
-    ).toHaveAttribute(
-      'href',
-      `https://njump.me/${nip19.noteEncode(published.id)}`,
-    );
+      publishedArticle.getByRole('link', { name: 'Get involved' }),
+    ).toHaveAttribute('href', 'https://example.test/volunteering');
   } finally {
     await withE2eDb(db =>
       db

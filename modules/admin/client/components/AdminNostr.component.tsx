@@ -11,7 +11,11 @@ import type { Event } from 'nostr-tools';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
 import { getErrorMessage } from '@/modules/core/client/api/http-client';
 import FeaturedNostrNoteContent from '@/modules/core/client/components/FeaturedNostrNote.component';
-import type { FeaturedNostrNote } from '@/modules/core/shared/featured-nostr-notes.mts';
+import {
+  FEATURED_NOTE_PUBLISH_RELAY,
+  FEATURED_NOTE_RELAYS,
+  type FeaturedNostrNote,
+} from '@/modules/core/shared/featured-nostr-notes.mts';
 import {
   featureNostrNote,
   featureSignedNostrNote,
@@ -71,7 +75,9 @@ export default function AdminNostr() {
       addFeaturedNote(await featureSignedNostrNote(signed));
       setPublication(null);
       setDraft('');
-      setStatus('Note published on Nostr and featured on the homepage.');
+      setStatus(
+        `Note published to ${FEATURED_NOTE_PUBLISH_RELAY} and featured on the homepage.`,
+      );
     } catch (cause) {
       const message = getErrorMessage(
         cause,
@@ -79,7 +85,7 @@ export default function AdminNostr() {
       );
       setError(
         acknowledged
-          ? `Published on Nostr. Could not save to the homepage. ${message}`
+          ? `Published to ${FEATURED_NOTE_PUBLISH_RELAY}. Could not save to the homepage. ${message}`
           : message,
       );
     } finally {
@@ -163,8 +169,8 @@ export default function AdminNostr() {
         <h1>Featured Nostr notes</h1>
         <h2>Publish a note</h2>
         <p>
-          Your NIP-07 browser signer will sign the note. It will be public on
-          Nostr and featured on the Trustroots homepage.
+          Your NIP-07 browser signer will sign the note. Trustroots will publish
+          it to {FEATURED_NOTE_PUBLISH_RELAY} and feature it on the homepage.
         </p>
         <form onSubmit={publish}>
           <div className="form-group">
@@ -181,7 +187,15 @@ export default function AdminNostr() {
               required
               disabled={busy}
               readOnly={publication?.acknowledged}
+              aria-describedby="nostr-note-markdown"
             />
+            <p id="nostr-note-markdown" className="help-block">
+              Add a link with Markdown, for example{' '}
+              <code>
+                [Get involved](https://www.trustroots.org/volunteering)
+              </code>
+              .
+            </p>
           </div>
           <Button type="submit" disabled={busy || !notes || !draft.trim()}>
             {publication?.acknowledged
@@ -246,6 +260,7 @@ export default function AdminNostr() {
           <ModalBody>
             <p>
               Sign a deletion request with the key that published this note.
+              Trustroots will send it to {FEATURED_NOTE_RELAYS.join(', ')}.
               Trustroots will remove its copy once a relay accepts the request.
               Other relays and clients may retain copies.
             </p>

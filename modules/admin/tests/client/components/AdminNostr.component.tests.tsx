@@ -71,13 +71,13 @@ it('keeps the draft and retries each failed step with the same signed event', as
 
   fireEvent.click(submit);
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Published on Nostr. Could not save to the homepage. Service unavailable.',
+    'Published to wss://relay.trustroots.org. Could not save to the homepage. Service unavailable.',
   );
   expect(input).toHaveAttribute('readonly');
   fireEvent.click(screen.getByRole('button', { name: 'Retry homepage save' }));
 
   expect(await screen.findByRole('status')).toHaveTextContent(
-    'Note published on Nostr and featured on the homepage.',
+    'Note published to wss://relay.trustroots.org and featured on the homepage.',
   );
   expect(input).toHaveValue('');
   expect(screen.getByRole('article')).toHaveTextContent(note.content);

@@ -10,6 +10,7 @@ import axios, {
   getErrorResponse,
 } from '@/modules/core/client/api/http-client.js';
 import {
+  HACKER_PLACE_RELAY_URLS,
   nostrService,
   type HackerPlaceRelayConnection,
 } from '@/modules/search/client/services/nostr.client.service';
@@ -394,7 +395,7 @@ export default function AdminHackerspaces() {
           approve publication with your NIP-07 extension. Source validation is
           automated and does not mean a person verified the location. Trustroots
           stores no signing key. Each event is signed once and published to
-          relay.trustroots.org and relay.nomadwiki.org.
+          {HACKER_PLACE_RELAY_URLS.join(', ')}.
         </p>
         <p>
           Listings identified as being in Russia, Israel or Belarus are excluded

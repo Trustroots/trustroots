@@ -377,6 +377,9 @@ test('logged-in members can read radio chat but need a matching signer to publis
   await expect(listeningNow).toContainText('Groovesalad');
   await expect(listeningNow).toContainText(unknownNpub);
   await expect(radio.getByLabel('Message')).toBeDisabled();
+  await expect(radio).toContainText(
+    'radio messages, listening activity and favourites are sent to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
+  );
   await radio.getByRole('button', { name: 'Connect Nostr identity' }).click();
   await expect(radio.getByRole('alert')).toContainText(
     'Connect a Nostr extension',
@@ -463,6 +466,9 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
 
   await signInViaApi(page, undefined, SEEDED_ADMIN);
   await page.goto('/circles/hackers');
+  await expect(chat).toContainText(
+    'Chat messages are published publicly to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
+  );
   await expect(chat.getByText('A fictional Hackers message')).toHaveCount(1);
   const unknownNpub = nip19.npubEncode(authorPublicKey);
   await expect(chat.getByText(unknownNpub, { exact: true })).toBeVisible();
@@ -520,6 +526,9 @@ test('volunteering chat reads and publishes on its own Nostr topic', async ({
     .fill(SEEDED_ADMIN.password);
   await page.getByRole('button', { name: 'Sign in to continue' }).click();
   await expect(page).toHaveURL(/\/volunteering$/);
+  await expect(chat).toContainText(
+    'Chat messages are published publicly to wss://relay.trustroots.org, wss://relay.nomadwiki.org.',
+  );
   const message = chat.getByText(volunteeringMessage, { exact: true });
   await expect(message).toBeVisible();
   await expect(message.locator('strong')).toHaveCount(0);

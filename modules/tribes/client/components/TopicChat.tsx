@@ -7,6 +7,7 @@ import useCircleSigner from '../hooks/useCircleSigner';
 import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
 import {
   HACKERS_CHAT_TOPIC,
+  RADIO_RELAYS,
   VOLUNTEERING_CHAT_TOPIC,
   RadioRoom,
 } from '../services/radio.client.service';
@@ -98,9 +99,9 @@ export default function TopicChat({
       {user ? (
         <>
           <p>
-            {isVolunteering
-              ? t('Volunteering chat messages are shared publicly on Nostr.')
-              : t('Hackers chat messages are shared publicly on Nostr.')}
+            {t('Chat messages are published publicly to {{relays}}.', {
+              relays: RADIO_RELAYS.join(', '),
+            })}
           </p>
           {signer ? (
             <p role="status">

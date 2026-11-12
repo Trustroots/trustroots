@@ -32,6 +32,10 @@ jest.mock('@/modules/core/client/api/http-client.js', () => ({
   default: { get: jest.fn() },
 }));
 jest.mock('@/modules/search/client/services/nostr.client.service', () => ({
+  HACKER_PLACE_RELAY_URLS: [
+    'wss://relay.trustroots.org',
+    'wss://relay.nomadwiki.org',
+  ],
   nostrService: {
     fetchHackerPlaceEvents: jest.fn(),
     connectHackerPlaceRelays: jest.fn(),

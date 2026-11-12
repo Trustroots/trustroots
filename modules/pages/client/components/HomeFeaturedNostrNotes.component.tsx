@@ -21,7 +21,7 @@ export default function HomeFeaturedNostrNotes() {
   return (
     <section className="home-how" aria-labelledby="home-featured-nostr-notes">
       <div className="container">
-        <h2 id="home-featured-nostr-notes">{t('Updates from Nostr')}</h2>
+        <h2 id="home-featured-nostr-notes">{t('Trustroots updates')}</h2>
         {notes.map(note => (
           <article key={note.id} className="well">
             <FeaturedNostrNoteContent note={note} />

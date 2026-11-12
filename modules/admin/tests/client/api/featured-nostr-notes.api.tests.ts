@@ -115,12 +115,14 @@ describe('NIP-07 text notes', () => {
       .mockImplementationOnce(() => [Promise.reject(new Error('Offline'))])
       .mockImplementationOnce(() => [Promise.resolve('accepted')]);
     await expect(publishNostrTextNote(signed)).rejects.toThrow(
-      'No relay acknowledged publication.',
+      'wss://relay.trustroots.org did not acknowledge publication.',
     );
     await publishNostrTextNote(signed);
-    expect(publish).toHaveBeenLastCalledWith(FEATURED_NOTE_RELAYS, signed, {
-      maxWait: 5000,
-    });
+    expect(publish).toHaveBeenLastCalledWith(
+      ['wss://relay.trustroots.org'],
+      signed,
+      { maxWait: 5000 },
+    );
     expect(destroy).toHaveBeenCalledTimes(2);
   });
 
