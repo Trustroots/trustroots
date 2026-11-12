@@ -43,8 +43,9 @@ export const featureNote: RequestHandler = async (req, res) => {
     return;
   }
 
+  const id = String(event.id);
   let note = await FeaturedNote.findOneAndUpdate(
-    { _id: event.id },
+    { _id: id },
     {
       $setOnInsert: {
         npub: nip19.npubEncode(event.pubkey),
@@ -60,7 +61,7 @@ export const featureNote: RequestHandler = async (req, res) => {
 
   if (!note.featuredAt) {
     const restored = await FeaturedNote.findOneAndUpdate(
-      { _id: event.id, deletionId: { $exists: false } },
+      { _id: id, deletionId: { $exists: false } },
       { $set: { content: event.content, featuredAt: new Date() } },
       { returnDocument: 'after' },
     ).lean();
@@ -80,13 +81,14 @@ export const removeFeaturedNote: RequestHandler<{ id: string }> = async (
   req,
   res,
 ) => {
-  if (!eventIdPattern.test(req.params.id)) {
+  const id = String(req.params.id);
+  if (!eventIdPattern.test(id)) {
     res.status(400).json({ message: 'A valid Nostr event ID is required.' });
     return;
   }
 
   await FeaturedNote.updateOne(
-    { _id: req.params.id, deletionId: { $exists: false } },
+    { _id: id, deletionId: { $exists: false } },
     { $set: { content: '', featuredAt: null } },
   );
   res.sendStatus(204);
@@ -95,7 +97,7 @@ export const removeFeaturedNote: RequestHandler<{ id: string }> = async (
 export const recordFeaturedNoteDeletion: RequestHandler<{
   id: string;
 }> = async (req, res) => {
-  const { id } = req.params;
+  const id = String(req.params.id);
   const event = req.body?.event as Event | undefined;
   if (
     !eventIdPattern.test(id) ||
@@ -110,7 +112,7 @@ export const recordFeaturedNoteDeletion: RequestHandler<{
   }
 
   const result = await FeaturedNote.updateOne(
-    { _id: id, npub: nip19.npubEncode(event.pubkey) },
+    { _id: id, npub: nip19.npubEncode(String(event.pubkey)) },
     { $set: { content: '', featuredAt: null, deletionId: event.id } },
   );
   if (!result.matchedCount) {
