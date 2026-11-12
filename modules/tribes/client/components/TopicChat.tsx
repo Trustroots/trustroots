@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import type { Event } from 'nostr-tools';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
@@ -7,13 +7,25 @@ import useCircleSigner from '../hooks/useCircleSigner';
 import useCircleProfileUsernames from '../hooks/useCircleProfileUsernames';
 import {
   HACKERS_CHAT_TOPIC,
+  VOLUNTEERING_CHAT_TOPIC,
   RadioRoom,
 } from '../services/radio.client.service';
 import CircleChatLog from './CircleChatLog';
 import './radio-circle.less';
 
-export default function HackersCircleChat({ user }: { user?: UserProfile }) {
+export default function TopicChat({
+  roomName,
+  user,
+}: {
+  roomName: 'hackers' | 'volunteering';
+  user?: Pick<UserProfile, '_id' | 'username' | 'nostrNpub'>;
+}) {
   const { t } = useTranslation('circles');
+  const isVolunteering = roomName === 'volunteering';
+  const topic = isVolunteering ? VOLUNTEERING_CHAT_TOPIC : HACKERS_CHAT_TOPIC;
+  const path = isVolunteering ? '/volunteering' : '/circles/hackers';
+  const title = isVolunteering ? t('Volunteering chat') : t('Hackers chat');
+  const messageId = useId();
   const {
     signer,
     connecting,
@@ -44,7 +56,7 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
         );
       },
       () => setRelayError(true),
-      HACKERS_CHAT_TOPIC,
+      topic,
     );
     room.current = connection;
     void connection.open(true);
@@ -52,7 +64,7 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
       room.current = null;
       connection.close();
     };
-  }, [user?._id]);
+  }, [topic, user?._id]);
 
   useEffect(() => {
     if (signer) room.current?.setSigner(signer);
@@ -69,7 +81,7 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
       await connection.publish({
         kind: 1,
         created_at: Math.floor(Date.now() / 1000),
-        tags: [['t', HACKERS_CHAT_TOPIC]],
+        tags: [['t', topic]],
         content,
       });
       if (room.current === connection) setMessage('');
@@ -81,11 +93,15 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
   }
 
   return (
-    <section aria-label={t('Hackers chat')} className="hackers-circle-chat">
-      <h3>{t('Hackers chat')}</h3>
+    <section aria-label={title} className="topic-chat">
+      <h3>{title}</h3>
       {user ? (
         <>
-          <p>{t('Hackers chat messages are shared publicly on Nostr.')}</p>
+          <p>
+            {isVolunteering
+              ? t('Volunteering chat messages are shared publicly on Nostr.')
+              : t('Hackers chat messages are shared publicly on Nostr.')}
+          </p>
           {signer ? (
             <p role="status">
               {t('Connected as {{identity}}.', {
@@ -109,13 +125,17 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
             <p role="alert">{t('Message could not be sent. Try again.')}</p>
           )}
           {relayError && (
-            <p role="status">{t('The Hackers chat is unavailable.')}</p>
+            <p role="status">
+              {isVolunteering
+                ? t('The volunteering chat is unavailable.')
+                : t('The Hackers chat is unavailable.')}
+            </p>
           )}
           <CircleChatLog messages={messages} usernames={usernames} />
           <form onSubmit={send} className="radio-chat-form">
-            <label htmlFor="hackers-chat-message">{t('Message')}</label>
+            <label htmlFor={messageId}>{t('Message')}</label>
             <input
-              id="hackers-chat-message"
+              id={messageId}
               maxLength={500}
               value={message}
               onChange={event => setMessage(event.target.value)}
@@ -132,7 +152,9 @@ export default function HackersCircleChat({ user }: { user?: UserProfile }) {
         </>
       ) : (
         <p>
-          <a href="/signin?redirect=/circles/hackers">
+          <a
+            href={`/signin?continue=true&returnTo=${encodeURIComponent(path)}`}
+          >
             {t('Log in to see chat.')}
           </a>
         </p>

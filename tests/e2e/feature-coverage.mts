@@ -511,7 +511,7 @@ const features = [
     area: AREA.publicCore,
     status: STATUS.active,
     description:
-      'Volunteering page offers a short support enquiry for prospective volunteers.',
+      'Prospective volunteers can send a support enquiry and signed-in members can join a Nostr chat.',
     roles: ['visitor', 'member'],
     references: {
       clientRoutes: [
@@ -523,8 +523,14 @@ const features = [
       'Volunteering page loads.',
       'Visitors can submit a volunteer enquiry from the volunteering page.',
       'Members can submit a volunteer enquiry from the volunteering page.',
+      'Visitors see a sign-in link, and members can read volunteering chat without a signer.',
+      'A matching signer posts to the volunteering topic.',
     ],
     relatedSpecs: [
+      spec(
+        'features/public-core/radio-circle.spec.ts',
+        'volunteering chat reads and publishes on its own Nostr topic',
+      ),
       spec('public-pages.spec.js', 'public marketing page /volunteering loads'),
       spec(
         'support-categories.spec.js',

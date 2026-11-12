@@ -5,7 +5,7 @@ import Board from './PageBoard';
 import { useTranslation } from 'react-i18next';
 import { VOLUNTEERING_DISCLAIMER } from '@/modules/support/shared/volunteering-copy.ts';
 
-export default function Volunteering() {
+export default function Volunteering({ children }: React.PropsWithChildren) {
   const { t: rawT } = useTranslation(['pages', 'support']);
   const t = rawT as unknown as PageTranslator;
 
@@ -57,6 +57,7 @@ export default function Volunteering() {
                 <a href="https://team.trustroots.org/">{t('Team Guide')}</a>
               </li>
             </ul>
+            {children}
           </div>
         </div>
       </section>

@@ -10,7 +10,7 @@ import CircleMemberDiscovery from './CircleMemberDiscovery';
 import HackerspaceMap from './HackerspaceMap';
 import HitchhikingMap from './HitchhikingMap';
 import RadioCircle from './RadioCircle';
-import HackersCircleChat from './HackersCircleChat';
+import TopicChat from './TopicChat';
 import { getCircleBackgroundStyle } from '../utils';
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
@@ -352,7 +352,8 @@ export default function TribeDetailPage({
         }
       >
         {isHackersCircle && (
-          <HackersCircleChat
+          <TopicChat
+            roomName="hackers"
             key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}
             user={user}
           />
