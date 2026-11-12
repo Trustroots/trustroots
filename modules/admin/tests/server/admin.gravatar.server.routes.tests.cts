@@ -49,6 +49,132 @@ describe('Admin Gravatar usage', () => {
       await member.get('/api/admin/gravatar').expect(403);
     }
   });
+  it('checks Gravatar availability without changing accounts or exposing hashes', async () => {
+    const url = '/api/admin/gravatar/photo-check';
+    await request(app).get(url).expect(403);
+    await request(app).post(url).set('X-Trustroots-Request', '1').expect(403);
+    await member.get(url).expect(403);
+    await member.post(url).set('X-Trustroots-Request', '1').expect(403);
+    const idle = await admin.get(url).expect(200);
+    assert.equal(idle.body, null);
+
+    const validHashes = [
+      ...['a', 'b', 'c', 'd', 'e'].map(letter => letter.repeat(32)),
+      'F'.repeat(64),
+      '0'.repeat(32),
+    ];
+    const hashes = [
+      ...validHashes,
+      [validHashes[0]],
+      `!${validHashes[0]}`,
+      `${validHashes[0]}!`,
+      'z'.repeat(64),
+      undefined,
+    ];
+    const fixtures = hashes.map((emailHash, index) => {
+      const username = `fictional-photo-check-${String(index).padStart(2, '0')}`;
+      return {
+        username,
+        email: `${username}@example.test`,
+        avatarSource: 'gravatar',
+        ...(emailHash !== undefined && { emailHash }),
+      };
+    });
+    fixtures.push({
+      username: 'fictional-photo-check-former',
+      email: 'fictional-photo-check-former@example.test',
+      avatarSource: 'none',
+      emailHash: '1'.repeat(32),
+    });
+    await User.collection.insertMany(fixtures.map(fixture => ({ ...fixture })));
+    const find = sinon.spy(User.collection, 'find');
+    const upstream = sinon.stub(globalThis, 'fetch');
+    upstream
+      .onCall(0)
+      .resolves(
+        new Response(null, { headers: { 'content-type': 'image/png' } }),
+      );
+    upstream.onCall(1).resolves(new Response(null, { status: 404 }));
+    upstream.onCall(2).resolves(new Response(null, { status: 503 }));
+    upstream.onCall(3).rejects(new DOMException('Timed out', 'TimeoutError'));
+    upstream
+      .onCall(4)
+      .resolves(
+        new Response(null, { headers: { 'content-type': 'text/html' } }),
+      );
+
+    upstream
+      .onCall(5)
+      .resolves(
+        new Response(null, { headers: { 'content-type': 'image/jpeg' } }),
+      );
+    upstream.onCall(6).resolves(new Response(null));
+
+    const started = await admin
+      .post(url)
+      .set('X-Trustroots-Request', '1')
+      .expect(202);
+    assert.equal(started.body.state, 'running');
+    const repeated = await admin
+      .post(url)
+      .set('X-Trustroots-Request', '1')
+      .expect(202);
+    assert.equal(repeated.body.startedAt, started.body.startedAt);
+
+    let result = await admin.get(url).expect(200);
+    for (
+      let attempt = 0;
+      attempt < 60 && result.body.state === 'running';
+      attempt++
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      result = await admin.get(url).expect(200);
+    }
+    assert.equal(result.headers['cache-control'], 'no-store');
+    assert.deepEqual(result.body, {
+      state: 'complete',
+      startedAt: started.body.startedAt,
+      finishedAt: result.body.finishedAt,
+      counts: { available: 2, unavailable: 1, inconclusive: 9 },
+    });
+    assert.ok(Number.isFinite(Date.parse(result.body.finishedAt)));
+    assert.ok(
+      find.calledWith(
+        { avatarSource: 'gravatar' },
+        sinon.match({ projection: { emailHash: 1, _id: 0 }, batchSize: 50 }),
+      ),
+    );
+    assert.deepEqual(
+      upstream.args.map(([target]) => new URL(String(target)).pathname).sort(),
+      validHashes.map(hash => `/avatar/${hash}`).sort(),
+    );
+    for (const [target, options] of upstream.args) {
+      const requestUrl = new URL(String(target));
+      assert.equal(requestUrl.origin, 'https://gravatar.com');
+      assert.equal(requestUrl.searchParams.get('d'), '404');
+      assert.equal(options?.method, 'HEAD');
+      assert.equal(options?.redirect, 'error');
+    }
+
+    const members = await User.collection
+      .find({ username: /^fictional-photo-check-/ })
+      .project({ _id: 0, username: 1, email: 1, avatarSource: 1, emailHash: 1 })
+      .sort({ username: 1 })
+      .toArray();
+    assert.deepEqual(members, fixtures);
+  });
+  it('reports an incomplete check when the account query fails', async () => {
+    sinon.stub(User, 'find').throws(new Error('Query failed'));
+    const url = '/api/admin/gravatar/photo-check';
+    await admin.post(url).set('X-Trustroots-Request', '1').expect(202);
+    const result = await admin.get(url).expect(200);
+    assert.equal(result.body.state, 'failed');
+    assert.deepEqual(result.body.counts, {
+      available: 0,
+      unavailable: 0,
+      inconclusive: 0,
+    });
+  });
   it('returns an empty count and member list', async () => {
     const response = await admin.get('/api/admin/gravatar').expect(200);
     assert.deepEqual(response.body.members, []);

@@ -1,5 +1,9 @@
 import unsuspension from '../controllers/admin.unsuspend.server.controller.mts';
 import gravatar from '../controllers/admin.gravatar.server.controller.mts';
+import {
+  getPhotoCheck,
+  startPhotoCheck,
+} from '../controllers/admin.gravatar-photo-check.server.controller.mts';
 import { diagnostics as mongoDiagnostics } from '../controllers/admin.mongo.server.controller.mts';
 import {
   diagnostics,
@@ -70,6 +74,11 @@ const registerRoutes = (app: RouteApp): void => {
     .route('/api/admin/gravatar')
     .all(adminPolicy.isAllowed)
     .get(gravatar.list);
+  app
+    .route('/api/admin/gravatar/photo-check')
+    .all(adminPolicy.isAllowed)
+    .get(getPhotoCheck)
+    .post(startPhotoCheck);
   app
     .route('/api/admin/support-flagged-members')
     .all(adminPolicy.isAllowed)

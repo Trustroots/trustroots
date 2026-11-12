@@ -194,6 +194,8 @@ describe('Admin policy unit tests', () => {
       'get /api/admin/audit-log/actors',
       'get /api/admin/username-changes',
       'get /api/admin/gravatar',
+      'get /api/admin/gravatar/photo-check',
+      'post /api/admin/gravatar/photo-check',
       'post /api/admin/messages',
       'post /api/admin/messages/scammer-recipients',
       'post /api/admin/messages/scammer-warning',

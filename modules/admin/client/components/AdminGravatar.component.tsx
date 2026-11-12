@@ -9,6 +9,7 @@ import {
   formatAdminDateTime,
   getAdminDateTimeAttribute,
 } from '../utils/admin-date';
+import AdminGravatarPhotoCheck from './AdminGravatarPhotoCheck';
 import AdminHeader from './AdminHeader.component';
 
 const columnLabels: Record<GravatarSort['column'], string> = {
@@ -74,6 +75,7 @@ export default function AdminGravatar() {
           Gravatar used to be the default avatar setting. Accounts without a
           Gravatar image may display a placeholder.
         </p>
+        <AdminGravatarPhotoCheck />
         {failed && <p role="alert">Could not load Gravatar usage.</p>}
         {loading && !failed && <p role="status">Loading Gravatar usage…</p>}
         {usage && !failed && (

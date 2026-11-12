@@ -108,3 +108,38 @@ test('administrators can count and inspect Gravatar members', async ({
     });
   }
 });
+
+test('administrators can check Gravatar photo availability', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.gravatar', [
+    'Administrators can check Gravatar photo availability.',
+  ]);
+  await signInViaApi(page, request, SEEDED_ADMIN);
+  const id = new ObjectId();
+  await withE2eDb(async db => {
+    await db.collection('users').insertOne({
+      _id: id,
+      username: 'gravatar-without-hash',
+      email: 'gravatar-without-hash@example.test',
+      avatarSource: 'gravatar',
+    });
+  });
+
+  try {
+    await page.goto('/admin/gravatar');
+    await page.getByRole('button', { name: 'Check Gravatar photos' }).click();
+    await expect(page.getByText('Photo check complete.')).toBeVisible();
+    await page.reload();
+    await expect(page.getByText('Photo check complete.')).toBeVisible();
+    const results = page.getByRole('table', {
+      name: 'Gravatar photo check counts',
+    });
+    await expect(results.getByRole('cell').nth(2)).toHaveText('1');
+  } finally {
+    await withE2eDb(async db => {
+      await db.collection('users').deleteOne({ _id: id });
+    });
+  }
+});

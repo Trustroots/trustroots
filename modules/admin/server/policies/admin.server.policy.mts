@@ -143,6 +143,10 @@ export const invokeRolesPolicies = () => {
         { resources: '/api/admin/audit-log/actors', permissions: ['get'] },
         { resources: '/api/admin/username-changes', permissions: ['get'] },
         { resources: '/api/admin/gravatar', permissions: ['get'] },
+        {
+          resources: '/api/admin/gravatar/photo-check',
+          permissions: ['get', 'post'],
+        },
         { resources: '/api/admin/messages', permissions: ['post'] },
         {
           resources: '/api/admin/messages/scammer-recipients',
