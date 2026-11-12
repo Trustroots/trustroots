@@ -1,6 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ExperienceRecommendation } from '../../../shared/experience';
+import ExperienceTextarea from './ExperienceTextarea';
 
 interface FeedbackProps {
   feedback: string;
@@ -68,15 +69,14 @@ export default function Feedback({
             ) as string
           }
         </label>
-        <textarea
-          className="form-control input-lg"
+        <ExperienceTextarea
           rows={7}
           id="feedback-message"
           onChange={event => onChangeFeedback(event.target.value)}
           value={feedback}
           aria-describedby="feedback-length"
           aria-invalid={feedback.length > maximumLength}
-        ></textarea>
+        />
         <p id="feedback-length" className="help-block">
           {t('{{used}} / {{maximum}} characters', {
             used: feedback.length,
