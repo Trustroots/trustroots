@@ -401,7 +401,7 @@ export default function Thread({
               {isFetchingMore && <Loading />}
               {otherUser && !removed && (
                 <details style={{ flexShrink: 0 }}>
-                  <summary>{t<string>('Your connection')}</summary>
+                  <summary>{t('Your connection')}</summary>
                   <div style={{ maxHeight: '35vh', overflowY: 'auto' }}>
                     <YourConnection viewer={user} member={otherUser} />
                   </div>

@@ -13,13 +13,13 @@ import YourConnection from '../../../client/components/YourConnection';
 import * as contacts from '../../../client/api/contacts.api';
 import * as experiences from '@/modules/experiences/client/api/experiences.api';
 import * as feedback from '@/modules/references-thread/client/api/reference-thread.api';
-import { useSettings } from '@/modules/core/client/react-app/AppProviders';
+import { useSettings } from '@/modules/core/client/react-app/app-context';
 import type { ExperienceMine } from '@/modules/experiences/shared/experience';
 
 jest.mock('../../../client/api/contacts.api');
 jest.mock('@/modules/experiences/client/api/experiences.api');
 jest.mock('@/modules/references-thread/client/api/reference-thread.api');
-jest.mock('@/modules/core/client/react-app/AppProviders', () => ({
+jest.mock('@/modules/core/client/react-app/app-context', () => ({
   useSettings: jest.fn(),
 }));
 
@@ -174,8 +174,10 @@ it('reports rejected contact changes and refreshes the section', async () => {
     section('Contact').getByRole('button', { name: 'Remove contact' }),
   );
   fireEvent.click(screen.getByRole('button', { name: 'Yes, remove contact' }));
-  expect(await section('Contact').findByRole('alert')).toHaveTextContent(
-    'Could not save',
+  await waitFor(() =>
+    expect(section('Contact').getByRole('alert')).toHaveTextContent(
+      'Could not save',
+    ),
   );
   await waitFor(() => expect(getContact).toHaveBeenCalledTimes(2));
 });
@@ -198,7 +200,9 @@ it.each([403, 404])(
     fireEvent.click(
       screen.getByRole('button', { name: 'Yes, remove contact' }),
     );
-    expect(await section('Contact').findByText('No contact')).toBeVisible();
+    await waitFor(() =>
+      expect(section('Contact').getByText('No contact')).toBeVisible(),
+    );
     expect(section('Contact').getByRole('alert')).toBeVisible();
     expect(section('Contact').queryByRole('link')).not.toBeInTheDocument();
     expect(feedbackSection().queryByRole('button')).not.toBeInTheDocument();
