@@ -16,6 +16,7 @@ import SiteFooter, {
 } from '@/modules/core/client/components/SiteFooter.component.js';
 import type { PhotoCredit } from '@/modules/core/client/components/BoardCredits';
 import HomeConnections from './HomeConnections.component';
+import HomeFeaturedNostrNotes from './HomeFeaturedNostrNotes.component';
 import ManifestoText from './ManifestoText.component.js';
 import Screenshot from '@/modules/core/client/components/Screenshot.js';
 import screenshotProfilePng from '../img/screenshot-profile.png';
@@ -245,6 +246,8 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
           </div>
         </Board>
       )}
+
+      <HomeFeaturedNostrNotes />
 
       {/* How does it work */}
       <section className="home-how">

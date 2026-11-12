@@ -4,9 +4,7 @@
 
 Let Trustroots members connect their Nostr identity and discover community
 notes through Nostroots while preserving the privacy of non-public profiles.
-
 ## Requirements
-
 ### Requirement: Nostr public-key association
 
 The system SHALL let a member associate one valid Nostr public key (`npub`)
@@ -115,3 +113,47 @@ validation-server events.
 - **WHEN** a visitor views community notes associated with a member profile
 - **THEN** the system fetches and displays only original kind `30397` events
 - **AND** does not fetch kind `30398` validation-server copies
+
+### Requirement: Administrator-curated homepage notes
+
+Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes. It SHALL verify a note's event ID and signature before storing it and SHALL use the original event ID to prevent duplicate entries. Featuring SHALL accept a Nostr note or event identifier, a Nostr URI, or a web link containing an event identifier. Trustroots SHALL render the featured note as text on the homepage for signed-in and signed-out visitors, with its original author, publication date and a link to the original note.
+
+#### Scenario: Administrator features a published note
+
+- **WHEN** an administrator supplies a link for an available signed kind 1 note
+- **THEN** Trustroots displays the note on the homepage with attribution to its Nostr author
+- **AND** featuring the same note again does not duplicate it
+
+#### Scenario: Administrator removes a featured note
+
+- **WHEN** an administrator removes a note from the featured list
+- **THEN** the note no longer appears on the homepage
+
+#### Scenario: An unauthorised or invalid request is made
+
+- **WHEN** a non-administrator requests a change, or a feature request contains an invalid signature or non-kind-1 event
+- **THEN** Trustroots rejects the request and leaves the featured notes unchanged
+
+### Requirement: Request deletion of a featured Nostr note
+
+Trustroots SHALL let an administrator request deletion of a featured note by signing a NIP-09 kind 5 event with the note's original author key. The deletion request SHALL include the note's event ID and kind. After at least one relay acknowledges publication, Trustroots SHALL verify the signed deletion request against the original author, remove the note content from its featured collection and prevent it from being featured again. The confirmation SHALL explain that relays and clients may retain copies.
+
+#### Scenario: The note author requests deletion
+
+- **WHEN** an administrator confirms the request, the matching signer signs it and a relay acknowledges publication
+- **THEN** Trustroots removes the note from the homepage and prevents it from being featured again
+
+#### Scenario: Deletion is not acknowledged
+
+- **WHEN** the signer is unavailable, its key differs from the note author's key, or no relay acknowledges publication
+- **THEN** the admin page reports the failure and the homepage keeps showing the note
+
+#### Scenario: A deletion record is retried
+
+- **WHEN** the relay accepted the deletion request and recording it on Trustroots temporarily fails
+- **THEN** the administrator can retry saving the signed deletion without publishing a new request
+
+#### Scenario: The administrator removes a note locally
+
+- **WHEN** an administrator uses the homepage removal action
+- **THEN** Trustroots removes the homepage copy and allows the note to be featured again

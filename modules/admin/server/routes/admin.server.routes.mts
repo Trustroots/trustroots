@@ -10,6 +10,11 @@ import adminAuditLog from './../controllers/admin.audit-log.server.controller.mt
 import adminMessages from './../controllers/admin.messages.server.controller.mts';
 import adminNewsletter from './../controllers/admin.newsletter.server.controller.mts';
 import adminPolicy from './../policies/admin.server.policy.mts';
+import {
+  featureNote,
+  recordFeaturedNoteDeletion,
+  removeFeaturedNote,
+} from '../../../core/server/controllers/featured-nostr-notes.server.controller.mts';
 import adminThreads from './../controllers/admin.threads.server.controller.mts';
 import adminUsernameChanges from './../controllers/admin.username-changes.server.controller.mts';
 import adminUsers from './../controllers/admin.users.server.controller.mts';
@@ -28,6 +33,7 @@ type RouteHandler = (...args: never[]) => unknown;
 
 interface RouteChain {
   all(...handlers: RouteHandler[]): RouteChain;
+  delete(...handlers: RouteHandler[]): RouteChain;
   get(...handlers: RouteHandler[]): RouteChain;
   patch(...handlers: RouteHandler[]): RouteChain;
   post(...handlers: RouteHandler[]): RouteChain;
@@ -43,6 +49,18 @@ interface RouteApp {
  */
 
 const registerRoutes = (app: RouteApp): void => {
+  app
+    .route('/api/admin/nostr/featured-notes')
+    .all(adminPolicy.isAllowed)
+    .post(featureNote);
+  app
+    .route('/api/admin/nostr/featured-notes/:id')
+    .all(adminPolicy.isAllowed)
+    .delete(removeFeaturedNote);
+  app
+    .route('/api/admin/nostr/featured-notes/:id/deletion')
+    .all(adminPolicy.isAllowed)
+    .post(recordFeaturedNoteDeletion);
   app
     .route('/api/admin/user/unsuspend')
     .all(adminPolicy.isAllowed)

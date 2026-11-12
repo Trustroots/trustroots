@@ -1,3 +1,4 @@
+import { FEATURED_NOTE_RELAYS } from '../../modules/core/shared/featured-nostr-notes.mts';
 import type { Connection } from 'mongoose';
 import { pathToFileURL } from 'node:url';
 import _ from 'lodash';
@@ -370,7 +371,7 @@ function initHelmetHeaders(app: Express) {
           'https://events.mapbox.com',
           'https://fonts.openmaptiles.org',
           'https://tile.openstreetmap.org',
-          'wss://relay.trustroots.org',
+          ...FEATURED_NOTE_RELAYS,
           'wss://relay.nomadwiki.org',
           'wss://relay.maps.hitchwiki.org',
           'https://1p.trustroots.org', // Umami analytics

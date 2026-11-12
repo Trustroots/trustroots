@@ -3010,6 +3010,50 @@ const features = [
     ],
   },
   {
+    id: 'admin.nostr',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Administrators curate published Nostr notes for the homepage.',
+    roles: ['admin', 'visitor', 'member'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin.nostr', '/admin/nostr', source.adminClient, {
+          requiresAuth: true,
+        }),
+      ],
+      apiRoutes: [
+        apiRoute(
+          'GET',
+          '/api/nostr/featured-notes',
+          'modules/core/server/routes/core.server.routes.mts',
+        ),
+        apiRoute('POST', '/api/admin/nostr/featured-notes', source.adminServer),
+        apiRoute(
+          'DELETE',
+          '/api/admin/nostr/featured-notes/:id',
+          source.adminServer,
+        ),
+        apiRoute(
+          'POST',
+          '/api/admin/nostr/featured-notes/:id/deletion',
+          source.adminServer,
+        ),
+      ],
+    },
+    requiredScenarios: [
+      'Administrators can feature and remove a published note on the homepage.',
+      'Visitors can read featured notes and regular members cannot change them.',
+      'An author-signed Nostr deletion request removes the note and prevents re-featuring.',
+    ],
+    relatedSpecs: [
+      spec(
+        'features/admin-moderation/admin-nostr.spec.ts',
+        'administrators can feature and remove a published Nostr note',
+      ),
+    ],
+  },
+  {
     id: 'admin.gravatar',
     area: AREA.adminModeration,
     status: STATUS.active,

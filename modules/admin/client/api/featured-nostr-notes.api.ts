@@ -1,0 +1,107 @@
+import { verifyEvent, type Event } from 'nostr-tools';
+import { decode } from 'nostr-tools/nip19';
+import { SimplePool } from 'nostr-tools/pool';
+import http from '@/modules/core/client/api/http-client';
+import {
+  FEATURED_NOTE_RELAYS,
+  type FeaturedNostrNote,
+} from '@/modules/core/shared/featured-nostr-notes.mts';
+
+function readEventId(reference: string) {
+  try {
+    let code = reference.trim().replace(/^nostr:/i, '');
+    if (/^https?:\/\//i.test(code)) {
+      code = new URL(code).pathname.split('/').filter(Boolean).pop() ?? '';
+    }
+    if (/^[0-9a-f]{64}$/i.test(code)) return code.toLowerCase();
+
+    const decoded = decode(code);
+    if (decoded.type === 'note') return decoded.data;
+    if (decoded.type === 'nevent') return decoded.data.id;
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}
+
+export async function featureNostrNote(reference: string) {
+  const id = readEventId(reference);
+  if (!id) throw new Error('Enter a Nostr note link or event ID.');
+
+  const pool = new SimplePool();
+  try {
+    const event = await pool.get(
+      FEATURED_NOTE_RELAYS,
+      { ids: [id], kinds: [1] },
+      { maxWait: 5000 },
+    );
+    if (!event) {
+      throw new Error('Could not find that text note on the supported relays.');
+    }
+    const { data } = await http.post<FeaturedNostrNote>(
+      '/api/admin/nostr/featured-notes',
+      { event },
+      { expectedStatuses: [400, 409] },
+    );
+    return data;
+  } finally {
+    pool.destroy();
+  }
+}
+
+export async function removeFeaturedNostrNote(id: string) {
+  await http.delete(`/api/admin/nostr/featured-notes/${id}`);
+}
+
+export async function publishNostrNoteDeletion(
+  note: FeaturedNostrNote,
+): Promise<Event> {
+  const signer = window.nostr;
+  if (!signer?.getPublicKey || !signer.signEvent) {
+    throw new Error('Connect a Nostr browser signer to request deletion.');
+  }
+  const author = decode(note.npub);
+  const pubkey = (await signer.getPublicKey()).toLowerCase();
+  if (author.type !== 'npub' || author.data !== pubkey) {
+    throw new Error('The signer must use the key that published this note.');
+  }
+  const template = {
+    kind: 5,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: [
+      ['e', note.id],
+      ['k', '1'],
+    ],
+    content: '',
+  };
+  const { id, sig } = await signer.signEvent({
+    ...template,
+    tags: template.tags.map(tag => [...tag]),
+  });
+  const event: Event = {
+    ...template,
+    pubkey,
+    id: id as string,
+    sig: sig as string,
+  };
+  if (!verifyEvent(event)) {
+    throw new Error('The signer did not return a valid deletion request.');
+  }
+
+  const pool = new SimplePool();
+  try {
+    const results = await Promise.allSettled(
+      pool.publish(FEATURED_NOTE_RELAYS, event, { maxWait: 5000 }),
+    );
+    if (!results.some(result => result.status === 'fulfilled')) {
+      throw new Error('No relay acknowledged the deletion request.');
+    }
+    return event;
+  } finally {
+    pool.destroy();
+  }
+}
+
+export async function recordNostrNoteDeletion(id: string, event: Event) {
+  await http.post(`/api/admin/nostr/featured-notes/${id}/deletion`, { event });
+}

@@ -44,7 +44,13 @@ describe('<AdminHeader />', () => {
       ['Experiences', ['Reference threads', 'Experience changes']],
       [
         'Outreach',
-        ['Acquisition stories', 'Newsletter', 'Email replies', 'SparkPost'],
+        [
+          'Acquisition stories',
+          'Newsletter',
+          'Nostr',
+          'Email replies',
+          'SparkPost',
+        ],
       ],
       [
         'Audit',
