@@ -395,6 +395,38 @@ test.describe('authenticated member flows', () => {
     expect(comparison).toBe(true);
   });
 
+  test('an unexpected language response leaves the profile form editable', async ({
+    page,
+  }) => {
+    const profile = await page.request.put('/api/users', {
+      data: { languages: ['eng'], languageLevels: {} },
+    });
+    expect(profile.ok()).toBeTruthy();
+    await page.route('**/api/languages?format=array', route =>
+      route.fulfill({ json: { eng: 'English' } }),
+    );
+
+    await page.goto('/profile/edit');
+    await expect(
+      page
+        .getByRole('alert')
+        .filter({ hasText: 'Snap! Something went wrong.' }),
+    ).toBeVisible();
+    await expect(
+      page.locator('input[aria-label="Add languages you speak."]'),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole('combobox', { name: 'Level for English' }),
+    ).toBeVisible();
+
+    await page.getByLabel('Short tagline').fill('Travelling by train');
+    await page
+      .getByRole('button', { name: 'Save', exact: true })
+      .last()
+      .click();
+    await expect(page.getByRole('status')).toHaveText('Profile updated.');
+  });
+
   test('profile language levels persist, display and can be cleared', async ({
     page,
   }, testInfo) => {
@@ -405,6 +437,8 @@ test.describe('authenticated member flows', () => {
       data: { languages: ['eng', 'fre'], languageLevels: {} },
     });
     await page.goto('/profile/edit');
+    await expect(page.getByText('English', { exact: true })).toBeVisible();
+    await expect(page.getByText('French', { exact: true })).toBeVisible();
     await page
       .getByRole('combobox', { name: 'Level for English' })
       .selectOption('native');

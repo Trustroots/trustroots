@@ -1,26 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
 import axios from '../../../core/client/api/http-client.js';
 
-export type LanguageOption = {
-  value: string;
-  label: string;
-  deprecated?: boolean;
+const languageOptionSchema = z.object({
+  value: z.string(),
+  label: z.string(),
+  deprecated: z.boolean().optional(),
+});
+
+const languageResponseSchemas = {
+  array: z.array(languageOptionSchema),
+  object: z.record(z.string(), z.string()),
 };
 
-type LanguageFormat = 'array' | 'object';
+export type LanguageOption = z.infer<typeof languageOptionSchema>;
+type LanguageFormat = keyof typeof languageResponseSchemas;
 type LanguagesOptions<Format extends LanguageFormat> = { format: Format };
-type LanguageResult<Format extends LanguageFormat> = Format extends 'array'
-  ? LanguageOption[]
-  : Record<string, string>;
+type LanguageResult<Format extends LanguageFormat> = z.infer<
+  (typeof languageResponseSchemas)[Format]
+>;
 
 /** Fetch languages in the selected API representation. */
 const getLanguages = async <Format extends LanguageFormat>({
   format,
 }: LanguagesOptions<Format>): Promise<LanguageResult<Format>> => {
-  const { data } = await axios.get<LanguageResult<Format>>(
-    `/api/languages?format=${format}`,
-  );
-  return data;
+  const { data } = await axios.get<unknown>(`/api/languages?format=${format}`);
+  const result = languageResponseSchemas[format].safeParse(data);
+  if (!result.success) {
+    throw new Error(`Invalid language response for format "${format}"`);
+  }
+  return result.data as LanguageResult<Format>;
 };
 
 /** Return the React Query hook for the selected API representation. */
