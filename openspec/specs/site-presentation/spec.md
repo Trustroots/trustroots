@@ -280,6 +280,29 @@ existing menu link.
 - **WHEN** a signed-in member hovers over the desktop Support trigger
 - **THEN** the dropdown opens and stays open while the pointer moves to a link
 
+### Requirement: Site-owned header navigation styles
+
+The web client SHALL style its fixed header, navigation lists and dropdown
+panels using site-owned styles. The header SHALL preserve its responsive
+navigation and show keyboard focus in its desktop dropdowns.
+
+#### Scenario: Open a desktop navigation panel
+
+- **WHEN** a member opens a header dropdown on desktop
+- **THEN** the panel is positioned next to its trigger using the document direction
+- **AND** its links remain legible and keyboard focus is visible
+
+#### Scenario: Read the profile dropdown's information links
+
+- **WHEN** the information links are wider than the profile panel
+- **THEN** they wrap onto additional rows within the panel
+- **AND** the information links omit Foundation and Media
+
+#### Scenario: Use navigation on a narrow screen
+
+- **WHEN** a member uses the site on a narrow screen
+- **THEN** the header stays fixed and the mobile navigation links remain visible
+
 ### Requirement: Consistent formatted content
 
 The browser SHALL render descriptions, notes, message bodies and message previews using a shared formatting policy aligned with the server formatter. Only supported formatting elements, per-element attributes and link schemes SHALL be retained. Message content SHALL retain only same-origin HTTP links. Plain-text excerpts SHALL be derived from complete markup, and externally supplied editor content SHALL use the same formatting policy without disturbing ordinary typing.

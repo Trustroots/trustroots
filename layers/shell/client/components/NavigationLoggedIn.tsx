@@ -57,56 +57,54 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
 
   return (
     <nav className="container" aria-label={t('Page navigation')}>
-      <div className="navbar-header">
-        <div className="navbar-brand">
-          <a href="/" className="hidden-xs">
-            <img
-              className="hidden-xs hidden-sm"
-              src="/img/logo/horizontal-white.svg"
-              alt="Trustroots"
-              width="177"
-              height="31"
-            />
-            <img
-              className="hidden-md hidden-lg"
-              src="/img/tree-white.svg"
-              alt="Trustroots"
-              width="31"
-              height="31"
-            />
-          </a>
-        </div>
+      <div className="header-brand">
+        <a href="/" className="hidden-xs">
+          <img
+            className="hidden-xs hidden-sm"
+            src="/img/logo/horizontal-white.svg"
+            alt="Trustroots"
+            width="177"
+            height="31"
+          />
+          <img
+            className="hidden-md hidden-lg"
+            src="/img/tree-white.svg"
+            alt="Trustroots"
+            width="31"
+            height="31"
+          />
+        </a>
       </div>
 
-      <ul className="navbar-nav hidden-xs">
+      <ul className="header-nav hidden-xs">
         <NavigationDropdown
           className="hidden-xs cursor-pointer"
           id="support-dropdown"
           label={t('Support')}
         >
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/faq"
             onClick={trackNav('support_faq')}
           >
             {t('Frequently Asked Questions')}
           </a>
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/safety"
             onClick={trackNav('support_safety')}
           >
             {t('Safety')}
           </a>
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/support?category=reportBug"
             onClick={trackNav('support_report_bug')}
           >
             {t('Report a bug')}
           </a>
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/support"
             onClick={trackNav('support_contact')}
           >
@@ -115,7 +113,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         </NavigationDropdown>
       </ul>
 
-      <ul className="navbar-nav nav-header-primary">
+      <ul className="header-nav nav-header-primary">
         {(user.roles?.includes('admin') ||
           user.roles?.includes('support-team') ||
           user.roles?.includes('welcome-team')) && (
@@ -144,16 +142,14 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           path="/circles"
           onLinkClick={trackNav('circles')}
           aria-label={t('Circles')}
-          className={
-            circles.length ? 'dropdown header-link-dropdown' : undefined
-          }
+          className={circles.length ? 'header-link-dropdown' : undefined}
           submenu={
             circles.length > 0 && (
-              <ul className="dropdown-menu hidden-xs">
+              <ul className="header-shortcut-list tw:navigation-panel hidden-xs">
                 {circles.map(tribe => (
                   <li key={tribe._id}>
                     <a
-                      className="dropdown-item"
+                      className="tw:navigation-panel-item"
                       href={`/circles/${encodeURIComponent(tribe.slug)}`}
                     >
                       {tribe.label}
@@ -177,11 +173,11 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           path="/search"
           onLinkClick={trackNav('search')}
           aria-label={t('Search hosts')}
-          className="dropdown header-link-dropdown"
+          className="header-link-dropdown"
           submenu={
-            <ul className="dropdown-menu hidden-xs">
+            <ul className="header-shortcut-list tw:navigation-panel hidden-xs">
               <li>
-                <a className="dropdown-item" href="/search/members">
+                <a className="tw:navigation-panel-item" href="/search/members">
                   {t('Find member by name')}
                 </a>
               </li>
@@ -229,7 +225,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           Nostroots
         </MenuItem>
         <NavigationDropdown
-          className="dropdown-user hidden-xs cursor-pointer"
+          className="header-profile hidden-xs cursor-pointer"
           id="profile-dropdown"
           align="end"
           label={
@@ -245,41 +241,44 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
             </>
           }
         >
-          <div className="dropdown-header" aria-hidden="true">
+          <div
+            className="tw:max-w-[170px] tw:truncate tw:px-4 tw:py-2 tw:text-muted"
+            aria-hidden="true"
+          >
             {user.displayName}
           </div>
-          <hr className="dropdown-divider" />
+          <div role="separator" className="tw:navigation-panel-divider" />
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href={`/profile/${user.username}`}
             onClick={trackNav('profile')}
           >
             {t('My profile')}
           </a>
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/profile/edit"
             onClick={trackNav('profile_edit')}
           >
             {t('Edit profile')}
           </a>
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href={`/profile/${user.username}/contacts`}
             onClick={trackNav('contacts')}
           >
             {t('Contacts')}
           </a>
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/search/members"
             onClick={trackNav('find_people')}
           >
             {t('Find people')}
           </a>
-          <hr className="dropdown-divider" />
+          <div role="separator" className="tw:navigation-panel-divider" />
           <a
-            className="dropdown-item"
+            className="tw:navigation-panel-item"
             href="/profile/edit/account"
             onClick={trackNav('account')}
           >
@@ -288,24 +287,16 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           <button
             type="button"
             onClick={() => void signOut()}
-            className="dropdown-item tw:hover:underline! tw:focus:bg-brand-primary! tw:focus:text-white! tw:focus:underline! tw:focus:outline-none! tw:active:bg-brand-primary! tw:active:text-white! tw:active:no-underline!"
+            className="tw:navigation-panel-item tw:hover:underline tw:focus:underline tw:active:no-underline"
           >
             {t('Sign out')}
           </button>
-          <hr className="dropdown-divider" />
+          <div role="separator" className="tw:navigation-panel-divider" />
           <SubMenuList
             list={[
               {
                 href: '/',
                 label: t('About'),
-              },
-              {
-                href: '/foundation',
-                label: t('Foundation'),
-              },
-              {
-                href: '/media',
-                label: t('Media'),
               },
               {
                 href: '/privacy',
@@ -335,7 +326,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
               },
             ]}
           />
-          <hr className="dropdown-divider" />
+          <div role="separator" className="tw:navigation-panel-divider" />
           <SubMenuList
             list={[
               /*

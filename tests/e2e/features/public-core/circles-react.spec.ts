@@ -723,7 +723,7 @@ test('member navigation menus and narrow layout remain usable', async ({
   await page.keyboard.press('Enter');
   await expect(safetyLink).toBeVisible();
 
-  await page.locator('.dropdown-user .dropdown-toggle').click();
+  await header.getByRole('button', { name: 'Profile menu' }).click();
   await expect(page.getByRole('link', { name: 'My profile' })).toBeVisible();
 
   await page.setViewportSize({ width: 390, height: 844 });

@@ -21,6 +21,21 @@ test('navigation links and profile menu have accessible names on desktop and mob
     exact: true,
   });
   await expect(myProfile).toBeVisible();
+  const profilePanel = header.getByRole('dialog', { name: 'Profile menu' });
+  const about = profilePanel.getByRole('link', { name: 'About', exact: true });
+  const team = profilePanel.getByRole('link', { name: 'Team', exact: true });
+  await expect(about).toBeVisible();
+  await expect(team).toBeVisible();
+  await expect(
+    profilePanel.getByRole('link', { name: /^(Media|Foundation)$/ }),
+  ).toHaveCount(0);
+  await expect
+    .poll(
+      async () =>
+        (await team.boundingBox())!.y - (await about.boundingBox())!.y,
+    )
+    .toBeGreaterThan(0);
+
   await page.keyboard.press('Tab');
   await expect(myProfile).toBeFocused();
   await page.keyboard.press('Escape');
@@ -36,7 +51,7 @@ test('navigation links and profile menu have accessible names on desktop and mob
   await expect(supportLink).toBeVisible();
   await supportLink.hover();
   await expect(supportLink).toBeVisible();
-  await header.locator('.navbar-brand').hover();
+  await header.locator('.header-brand').hover();
   await expect(supportLink).toBeHidden();
 
   await page.setViewportSize({ width: 390, height: 844 });
@@ -70,11 +85,11 @@ test('desktop header offers own circles and member search on hover and focus', a
   await expect(nameSearch).toBeVisible();
   await nameSearch.hover();
   await expect(nameSearch).toBeVisible();
-  await header.locator('.navbar-brand').hover();
+  await header.locator('.header-brand').hover();
   await expect(nameSearch).toBeHidden();
   await search.click();
   await expect(page).toHaveURL(/\/search$/);
-  await header.locator('.navbar-brand').hover();
+  await header.locator('.header-brand').hover();
   await expect(nameSearch).toBeHidden();
   await page.keyboard.press('Tab');
   await search.focus();
@@ -83,7 +98,7 @@ test('desktop header offers own circles and member search on hover and focus', a
   await expect(nameSearch).toBeVisible();
   await nameSearch.click();
   await expect(page).toHaveURL(/\/search\/members$/);
-  await header.locator('.navbar-brand').hover();
+  await header.locator('.header-brand').hover();
   await expect(nameSearch).toBeHidden();
 
   const circles = header.locator('a[href="/circles"]');
@@ -102,12 +117,12 @@ test('desktop header offers own circles and member search on hover and focus', a
     .slice(0, 10)
     .map(({ tribe }) => tribe.label);
   expect(expected.length).toBeGreaterThan(0);
-  const menu = circles.locator('..').locator('.dropdown-menu');
+  const menu = circles.locator('..').locator('.header-shortcut-list');
   await expect(menu.locator('a')).toHaveCount(expected.length);
   await expect(menu).toBeHidden();
   await circles.click();
   await expect(page).toHaveURL(/\/circles$/);
-  await header.locator('.navbar-brand').hover();
+  await header.locator('.header-brand').hover();
   await expect(menu).toBeHidden();
   await page.keyboard.press('Tab');
   await circles.focus();
@@ -124,7 +139,7 @@ test('desktop header offers own circles and member search on hover and focus', a
   await expect(menu).toBeVisible();
   await menu.locator('a').first().click();
   await expect(page).toHaveURL(/\/circles\//);
-  await header.locator('.navbar-brand').hover();
+  await header.locator('.header-brand').hover();
   await expect(menu).toBeHidden();
 
   await page.setViewportSize({ width: 390, height: 844 });
