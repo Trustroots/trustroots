@@ -191,6 +191,7 @@ export const invokeRolesPolicies = () => {
           resources: '/api/admin/sparkpost/:action',
           permissions: ['get'],
         },
+        { resources: '/api/admin/mongo', permissions: ['get'] },
         {
           resources: '/api/admin/newsletter-subscribers',
           permissions: ['get'],

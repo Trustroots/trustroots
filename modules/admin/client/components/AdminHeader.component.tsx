@@ -70,6 +70,7 @@ export default function AdminHeader() {
         { path: 'username-changes', label: 'Username changes' },
         { path: 'gravatar', label: 'Gravatar' },
         { path: 'signup-review-rules', label: 'Signup watchlist' },
+        { path: 'mongo', label: 'MongoDB' },
       ],
     },
   ]

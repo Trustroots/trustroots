@@ -153,6 +153,7 @@ const specPaths: Record<string, string> = {
     'features/admin-moderation/admin-acquisition.spec.js',
   'admin-inspection.spec.js':
     'features/admin-moderation/admin-inspection.spec.js',
+  'admin-mongo.spec.ts': 'features/admin-moderation/admin-mongo.spec.ts',
   'admin-newsletter-api.spec.js':
     'features/admin-moderation/admin-newsletter-api.spec.js',
   'admin-notes.spec.js': 'features/admin-moderation/admin-notes.spec.js',
@@ -3671,6 +3672,32 @@ const features = [
       'Admin can check the reply mailbox and see when configuration is missing.',
     ],
     relatedSpecs: [],
+  },
+  {
+    id: 'admin.mongo',
+    area: AREA.adminModeration,
+    status: STATUS.active,
+    description:
+      'Administrators inspect MongoDB version, topology, feature compatibility, collection storage, and live Agenda job counts.',
+    roles: ['admin'],
+    references: {
+      clientRoutes: [
+        clientRoute('admin-mongo', '/admin/mongo', source.adminClient, {
+          requiresAuth: true,
+          requiresRole: 'admin',
+        }),
+      ],
+      apiRoutes: [apiRoute('GET', '/api/admin/mongo', source.adminServer)],
+    },
+    requiredScenarios: [
+      'Admin sees the live MongoDB server version, feature compatibility version, and topology.',
+      'Admin sees the ordered 4.4 → 5.0 → 6.0 → 7.0 migration path.',
+      'Admin compares collection storage and refreshes live job counts.',
+      'Non-admin access is rejected.',
+    ],
+    relatedSpecs: [
+      spec('admin-mongo.spec.ts', 'admin inspects MongoDB diagnostics'),
+    ],
   },
   {
     id: 'admin.sparkpost',
