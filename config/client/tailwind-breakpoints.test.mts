@@ -29,14 +29,14 @@ async function build(candidates: string[]): Promise<string> {
   return compiler.build(candidates);
 }
 
-test('bs-* breakpoints match the Bootstrap 3 grid', async () => {
+test('sm/md/lg breakpoints match the Bootstrap 3 grid', async () => {
   const css = await build([
-    'tw:max-bs-sm:hidden',
-    'tw:bs-sm:block',
-    'tw:max-bs-md:hidden',
-    'tw:bs-md:block',
-    'tw:max-bs-lg:hidden',
-    'tw:bs-lg:block',
+    'tw:max-sm:hidden',
+    'tw:sm:block',
+    'tw:max-md:hidden',
+    'tw:md:block',
+    'tw:max-lg:hidden',
+    'tw:lg:block',
   ]);
 
   for (const query of [
@@ -49,11 +49,4 @@ test('bs-* breakpoints match the Bootstrap 3 grid', async () => {
   ]) {
     assert.ok(css.includes(`@media ${query}`), `missing @media ${query}`);
   }
-});
-
-test('the default sm and md breakpoints are untouched', async () => {
-  const css = await build(['tw:sm:block', 'tw:md:block']);
-
-  assert.ok(css.includes('@media (width >= 40rem)'));
-  assert.ok(css.includes('@media (width >= 48rem)'));
 });

@@ -24,10 +24,10 @@
 }
 
 @theme {
-  /* Bootstrap 3 grid (Less @screen-*-min), only for the Bootstrap migration. */
-  --breakpoint-bs-sm: 768px;
-  --breakpoint-bs-md: 992px;
-  --breakpoint-bs-lg: 1200px;
+  /* These match Bootstrap 3 during the migration; delete to return to Tailwind's defaults. */
+  --breakpoint-sm: 768px;
+  --breakpoint-md: 992px;
+  --breakpoint-lg: 1200px;
 
   /* Matches Bootstrap's .spinner-border timing. */
   --animate-spinner: spinner-rotate 0.75s linear infinite;
