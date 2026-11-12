@@ -237,7 +237,8 @@ test('profile descriptions link matching circle hashtags', async ({
   const about = page
     .locator('header.panel-heading')
     .filter({ hasText: /^About me$/ })
-    .locator('..');
+    .locator('..')
+    .locator('.panel-body');
   await expect(about.getByRole('link')).toHaveCount(3);
   for (const slug of ['cyclists', 'hitchhikers', 'musicians']) {
     await expect(about.getByRole('link', { name: `#${slug}` })).toHaveAttribute(
