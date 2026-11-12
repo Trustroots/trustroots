@@ -158,7 +158,9 @@ export default function SignupPage() {
     async function loadSuggestedTribes(withoutTribeId?: string | null) {
       const tribes = await tribesApi.read({ limit: 40 });
       const shuffled = shuffle(tribes).filter(
-        suggestedTribe => suggestedTribe._id !== withoutTribeId,
+        suggestedTribe =>
+          suggestedTribe._id !== withoutTribeId &&
+          suggestedTribe.slug !== 'trustroots-volunteers',
       );
 
       if (isMounted) {

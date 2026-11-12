@@ -848,7 +848,16 @@ describe('SignupPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('loads more suggested circles', async () => {
+  it('loads more suggested circles without suggesting Trustroots Volunteers', async () => {
+    readTribes.mockResolvedValue([
+      ...suggestedTribes,
+      {
+        _id: 'tribe-volunteers',
+        label: 'Trustroots Volunteers',
+        slug: 'trustroots-volunteers',
+        count: 10,
+      },
+    ]);
     signup.mockResolvedValue({
       _id: 'user-1',
       username: 'ada',
@@ -868,6 +877,9 @@ describe('SignupPage', () => {
     fireEvent.click(showMoreButton);
 
     expect(screen.getByRole('button', { name: 'Join Swimmers' })).toBeVisible();
+    expect(
+      screen.queryByRole('button', { name: 'Join Trustroots Volunteers' }),
+    ).not.toBeInTheDocument();
     expect(showMoreButton).toBeDisabled();
   });
 
