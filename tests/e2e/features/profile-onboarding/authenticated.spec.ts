@@ -413,7 +413,7 @@ test.describe('authenticated member flows', () => {
         .filter({ hasText: 'Snap! Something went wrong.' }),
     ).toBeVisible();
     await expect(
-      page.getByRole('combobox', { name: 'Add languages you speak.' }),
+      page.locator('input[aria-label="Add languages you speak."]'),
     ).toBeDisabled();
     await expect(
       page.getByRole('combobox', { name: 'Level for English' }),
