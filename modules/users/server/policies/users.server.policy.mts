@@ -77,6 +77,10 @@ function invokeRolesPolicies() {
           permissions: ['get', 'delete'],
         },
         {
+          resources: '/api/users/nostr/challenge',
+          permissions: ['post'],
+        },
+        {
           resources: '/api/users/remove/:token',
           permissions: ['delete'],
         },

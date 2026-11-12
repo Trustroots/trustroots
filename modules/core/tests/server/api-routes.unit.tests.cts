@@ -521,13 +521,20 @@ describe('API route registrations', () => {
 
   it('registers users routes behind the users policy', () => {
     const policy = { isAllowed: handler('usersPolicy.isAllowed') };
+    const {
+      challenge,
+    }: typeof import('../../../users/server/controllers/users.nostr.server.controller.mts') = require('../../../users/server/controllers/users.nostr.server.controller.mts');
     const { params, routes } = register(
       './../../../users/server/routes/users.server.routes.mts',
       { '../policies/users.server.policy': policy },
     );
 
-    assert.strictEqual(routes.length, 15);
+    assert.strictEqual(routes.length, 16);
     routes.forEach(route => assertPolicy(route, policy));
+    assert.deepStrictEqual(
+      routeByPath(routes, '/api/users/nostr/challenge').post,
+      [challenge],
+    );
     assert.deepStrictEqual(
       params.map(param => param.name),
       ['userId', 'username', 'avatarUserId'],

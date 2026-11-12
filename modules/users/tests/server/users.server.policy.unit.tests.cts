@@ -81,6 +81,7 @@ describe('Users policy unit tests', () => {
     ['/api/users', ['get', 'put', 'delete']],
     ['/api/users/export', ['get']],
     ['/api/users/removal/pending', ['get', 'delete']],
+    ['/api/users/nostr/challenge', ['post']],
     ['/api/users/remove/:token', ['delete']],
     ['/api/users/:username', ['get']],
     ['/api/users/:avatarUserId/avatar', ['get']],

@@ -1,4 +1,17 @@
-import type { Page } from '@playwright/test';
+import { expect, type APIRequestContext, type Page } from '@playwright/test';
+import { finalizeEvent, getPublicKey, nip19 } from 'nostr-tools';
+
+export async function createNostrProof(
+  request: APIRequestContext,
+  key: Uint8Array,
+) {
+  const response = await request.post('/api/users/nostr/challenge', {
+    headers: { 'X-Trustroots-Request': '1' },
+    data: { nostrNpub: nip19.npubEncode(getPublicKey(key)) },
+  });
+  await expect(response).toBeOK();
+  return finalizeEvent((await response.json()).event, key);
+}
 
 export type SignedNostrEvent = {
   id: string;

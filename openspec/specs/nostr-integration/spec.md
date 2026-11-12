@@ -7,14 +7,12 @@ notes through Nostroots while preserving the privacy of non-public profiles.
 ## Requirements
 ### Requirement: Nostr public-key association
 
-The system SHALL let a member associate one valid Nostr public key (`npub`)
-with their profile, canonicalise the stored public-key value, and prevent the
-same public key from being associated with more than one member.
+The system SHALL let a member associate one valid Nostr public key (`npub`) with their profile, canonicalise the stored public-key value, and prevent the same public key from being associated with more than one member. Adding or replacing a non-empty key SHALL require a valid signed, fresh, single-use server challenge bound to the authenticated member and requested key. The editor SHALL support NIP-07, NIP-46 bunker signing and externally signed events without requesting private keys or publishing proofs. Existing unchanged keys and removal SHALL NOT require proof.
 
 #### Scenario: Member saves a valid public key
 
-- **WHEN** a signed-in member saves a valid Nostr public key in their network settings
-- **THEN** the system saves its canonical public-key representation
+- **WHEN** a signed-in member supplies a valid signature over their fresh challenge using the requested key
+- **THEN** the system consumes the challenge and saves the canonical npub
 - **AND** the saved value remains available when the member revisits network settings
 
 #### Scenario: Member submits an invalid or secret key
@@ -26,6 +24,28 @@ same public key from being associated with more than one member.
 
 - **WHEN** a member submits a public key already associated with another member
 - **THEN** the system rejects the update and explains that the key is already in use
+
+#### Scenario: Missing or invalid ownership proof
+
+- **WHEN** a member changes a non-empty key without proof, or supplies expired, reused, altered, wrong-member or wrong-key proof
+- **THEN** the system rejects the update and retains the existing profile
+
+#### Scenario: Signer rejects a request
+
+- **WHEN** signing fails, is rejected or times out
+- **THEN** the editor preserves draft values and permits retry
+- **AND** temporary remote signer resources are closed
+
+#### Scenario: Existing association or removal
+
+- **WHEN** a member saves an unchanged key or removes it
+- **THEN** the system permits the update without requesting a signature
+
+#### Scenario: Nostroots bridge associates a key
+
+- **WHEN** nr-bridge writes an npub through its existing email verification flow
+- **THEN** the shared user document remains compatible with that write
+- **AND** NIP-05 lookup and unchanged-key profile saves continue to work
 
 ### Requirement: Public NIP-05 identity lookup
 
@@ -157,3 +177,20 @@ Trustroots SHALL let an administrator request deletion of a featured note by sig
 
 - **WHEN** an administrator uses the homepage removal action
 - **THEN** Trustroots removes the homepage copy and allows the note to be featured again
+
+### Requirement: Guided Nostr profile linking
+
+The profile networks editor SHALL offer NIP-07 as the primary linking method when a browser signer is available. Otherwise it SHALL offer NIP-46 pairing via a QR code and a link to open a compatible signer app. Linking SHALL require a member action and use a fresh server challenge for the key supplied by the signer.
+
+#### Scenario: Link through a browser signer
+
+- **WHEN** a member chooses to link with their available browser signer
+- **THEN** the editor obtains the signer's public key, requests a challenge for that key, and asks the signer to sign it
+- **AND** the editor saves the public key with the signed proof
+
+#### Scenario: Pair a remote signer
+
+- **WHEN** a member starts remote pairing
+- **THEN** the editor provides an expiring NIP-46 connection as a QR code and an app link
+- **AND** after pairing it requests and signs a fresh challenge for the signer's key
+- **AND** cancelling pairing closes the connection and leaves the profile unchanged

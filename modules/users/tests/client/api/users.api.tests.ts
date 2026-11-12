@@ -4,6 +4,7 @@ import {
   cancelProfileRemoval,
   getProfileRemovalStatus,
   changePassword,
+  nostrChallenge,
   fetch,
   fetchMini,
   removeProfile,
@@ -32,6 +33,14 @@ afterEach(() => {
 });
 
 describe('users api', () => {
+  it('requests a signing challenge for the draft npub', async () => {
+    const event = { kind: 27235, created_at: 1, tags: [], content: '' };
+    axiosMock.post.mockResolvedValueOnce(response({ event }));
+    await expect(nostrChallenge('npub1fictional')).resolves.toEqual(event);
+    expect(axiosMock.post).toHaveBeenCalledWith('/api/users/nostr/challenge', {
+      nostrNpub: 'npub1fictional',
+    });
+  });
   it('updates the authenticated user', async () => {
     axiosMock.put.mockResolvedValueOnce(response({}));
 

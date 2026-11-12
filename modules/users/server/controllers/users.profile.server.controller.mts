@@ -25,6 +25,10 @@ import sanitizeHtml from 'sanitize-html';
 import mongoose from 'mongoose';
 import moment from 'moment';
 import * as nip19 from 'nostr-tools/nip19';
+import {
+  consumeProof,
+  proofError,
+} from '../services/nostr-proof.server.service.mts';
 import validator from 'validator';
 import type {
   ProfilePayload,
@@ -309,6 +313,18 @@ service.update = function (req, res) {
         });
         return;
       }
+    }
+    if (
+      requestedNostrNpub &&
+      requestedNostrNpub !== authenticatedUser.nostrNpub &&
+      !(await consumeProof(
+        authenticatedUser._id,
+        requestedNostrNpub,
+        req.body.nostrProof,
+      ))
+    ) {
+      res.status(400).send({ message: proofError });
+      return;
     }
     let token: string | false = false;
     const email =

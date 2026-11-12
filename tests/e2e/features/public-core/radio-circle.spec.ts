@@ -1,7 +1,10 @@
 /* global window, HTMLMediaElement */
 import { annotateFeature, expect, test } from '../../support/fixtures.mts';
 import type { Page } from '@playwright/test';
-import { installNostrRelayStub } from '../../support/nostr.mts';
+import {
+  createNostrProof,
+  installNostrRelayStub,
+} from '../../support/nostr.mts';
 import { SEEDED_ADMIN, signInViaApi } from '../../support/helpers.mts';
 import {
   finalizeEvent,
@@ -232,7 +235,10 @@ test('a matching Trustroots Nostr signer can chat, share favourites and announce
   const publicKey = getPublicKey(key);
   const profile = await page.request.put('/api/users', {
     headers: { 'X-Trustroots-Request': '1' },
-    data: { nostrNpub: nip19.npubEncode(publicKey) },
+    data: {
+      nostrNpub: nip19.npubEncode(publicKey),
+      nostrProof: await createNostrProof(page.request, key),
+    },
   });
   expect(profile.ok()).toBe(true);
   await prepareRadio(page);
@@ -426,7 +432,10 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
   const publicKey = getPublicKey(key);
   const profile = await page.request.put('/api/users', {
     headers: { 'X-Trustroots-Request': '1' },
-    data: { nostrNpub: nip19.npubEncode(publicKey) },
+    data: {
+      nostrNpub: nip19.npubEncode(publicKey),
+      nostrProof: await createNostrProof(page.request, key),
+    },
   });
   expect(profile.ok()).toBe(true);
   await page.exposeFunction(

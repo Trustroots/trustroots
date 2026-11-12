@@ -532,7 +532,9 @@ describe('Profile controller unit tests', () => {
       });
     }
 
-    it('accepts a valid nostrNpub', async () => {
+    it('accepts an unchanged valid nostrNpub without proof', async () => {
+      userDoc.nostrNpub = validNpub;
+      await userDoc.save();
       const { res } = await runHandler(res =>
         profileController.update(
           {
