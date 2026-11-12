@@ -20,6 +20,10 @@ jest.mock('@tanstack/react-router', () =>
   jest.requireActual('@/testutils/client/router-location.testutil'),
 );
 jest.mock('@/modules/tribes/client/api/tribes.api');
+jest.mock(
+  '@/modules/pages/client/components/HomeFeaturedNostrNotes.component',
+  () => () => null,
+);
 
 const mockReadCircles = jest.mocked(circlesAPI.read);
 const mockGetConnections = jest.mocked(circlesAPI.getConnections);

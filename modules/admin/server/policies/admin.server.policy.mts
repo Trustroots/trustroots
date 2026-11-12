@@ -102,6 +102,15 @@ export const invokeRolesPolicies = () => {
         },
         { resources: '/api/admin/support-import/apply', permissions: ['post'] },
         { resources: '/api/admin/circles', permissions: ['get', 'post'] },
+        { resources: '/api/admin/nostr/featured-notes', permissions: ['post'] },
+        {
+          resources: '/api/admin/nostr/featured-notes/:id',
+          permissions: ['delete'],
+        },
+        {
+          resources: '/api/admin/nostr/featured-notes/:id/deletion',
+          permissions: ['post'],
+        },
         {
           resources: '/api/admin/circles/:circle',
           permissions: ['get', 'put'],

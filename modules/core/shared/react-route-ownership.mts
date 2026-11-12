@@ -385,6 +385,11 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
   },
   {
     ...ADMIN_ROUTE_DEFAULTS,
+    path: '/admin/nostr',
+    title: 'Admin - Featured Nostr notes',
+  },
+  {
+    ...ADMIN_ROUTE_DEFAULTS,
     path: '/admin/audit-log',
     title: 'Admin - Audit log',
   },

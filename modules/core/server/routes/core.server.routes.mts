@@ -7,6 +7,7 @@ import authenticationService from './../../../users/server/services/authenticati
 import * as nip19 from 'nostr-tools/nip19';
 import mongoose from 'mongoose';
 import { getMapDefaultLocation } from '../controllers/map-default-location.server.controller.mts';
+import { listFeaturedNotes } from '../controllers/featured-nostr-notes.server.controller.mts';
 
 /**
  * Module dependencies.
@@ -57,6 +58,7 @@ const defaultExport = function (app: Application) {
   app.route('/api/report-csp-violation').post(core.receiveCSPViolationReport);
   app.route('/api/languages').get(core.getLanguages);
   app.route('/api/map-default-location').get(getMapDefaultLocation);
+  app.route('/api/nostr/featured-notes').get(listFeaturedNotes);
   app.route('/api/nostr/author-visibility').get(function (req, res) {
     const profilesRequested = req.query.profiles === '1';
     const includeProfiles =

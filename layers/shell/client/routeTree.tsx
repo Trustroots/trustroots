@@ -69,6 +69,7 @@ import { Route as AdminSupportRequestsRequestIdRoute } from './routes/admin.supp
 import { Route as AdminSupportMembersRoute } from './routes/admin.support.members';
 import { Route as AdminSupportMemberUsernameRoute } from './routes/admin.support.member.$username';
 import { Route as AdminHackerspacesRoute } from './routes/admin.hackerspaces';
+import { Route as AdminNostrRoute } from './routes/admin.nostr';
 import { Route as AdminAuditLogRoute } from './routes/admin.audit-log';
 import { Route as AdminUsernameChangesRoute } from './routes/admin.username-changes';
 import { Route as AdminSignupReviewRulesRoute } from './routes/admin.signup-review-rules';
@@ -148,6 +149,7 @@ const rootChildren = [
   AdminSupportMembersRoute,
   AdminSupportMemberUsernameRoute,
   AdminHackerspacesRoute,
+  AdminNostrRoute,
   AdminAuditLogRoute,
   AdminUsernameChangesRoute,
   AdminSignupReviewRulesRoute,
