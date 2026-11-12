@@ -79,6 +79,7 @@ import { Route as AdminLocationCorrectionsRoute } from './routes/admin.location-
 import { Route as AdminMessagesRoute } from './routes/admin.messages';
 import { Route as AdminThreadsRoute } from './routes/admin.threads';
 import { Route as AdminSearchUsersRoute } from './routes/admin.search-users';
+import { Route as AdminNetworkConnectionsRoute } from './routes/admin.network-connections';
 import { Route as AdminUserIndexRoute } from './routes/admin.user.index';
 import { Route as AdminUserUsernameRoute } from './routes/admin.user.$username';
 import { Route as AdminReferenceThreadsRoute } from './routes/admin.reference-threads';
@@ -162,6 +163,7 @@ const rootChildren = [
   AdminMessagesRoute,
   AdminThreadsRoute,
   AdminSearchUsersRoute,
+  AdminNetworkConnectionsRoute,
   AdminUserIndexRoute,
   AdminUserUsernameRoute,
   AdminReferenceThreadsRoute,

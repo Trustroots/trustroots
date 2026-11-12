@@ -295,7 +295,9 @@ describe('Authentication controller OAuth unit tests', () => {
     it('removes the provider data and returns the sanitized user', async () => {
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.additionalProvidersData = { github: { id: 'gh-1' } };
+      userDoc.additionalProvidersData = {
+        github: { id: 'gh-1', login: 'gh-member' },
+      };
       userDoc.markModified('additionalProvidersData');
       await userDoc.save();
 
@@ -1607,6 +1609,41 @@ describe('Authentication controller OAuth unit tests', () => {
       authController.confirmEmail({ params: { token: 'missing' } }, res);
       await res.waitForResponse();
       res.statusCode.should.equal(400);
+    });
+
+    it('returns 400 if a matching member has no pending email address', async () => {
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const member = await User.findOne({ _id: saved._id }).orFail();
+      member.emailTemporary = undefined;
+      const query = User.findOne({});
+      sinon.stub(query, 'exec').resolves(member);
+      sinon.stub(User, 'findOne').returns(query);
+
+      const res = deferredResponse();
+      authController.confirmEmail({ params: { token: 'pending' } }, res);
+      await res.waitForResponse();
+      res.statusCode.should.equal(400);
+    });
+
+    it('confirms an address on a legacy account without a previous email', async () => {
+      const member = await pendingChange();
+      await User.collection.updateOne(
+        { _id: member._id },
+        { $unset: { email: 1 } },
+      );
+
+      const res = deferredResponse();
+      authController.confirmEmail(
+        {
+          params: { token: 'cancel-token' },
+          login: (_user: unknown, callback: AuthCallback) => callback(),
+        },
+        res,
+      );
+      await res.waitForResponse();
+      res.statusCode.should.equal(200);
+      const reloaded = await findUser(member._id);
+      reloaded.email.should.equal('pending@example.org');
     });
 
     it('returns 400 when updating the confirmed user fails', async () => {

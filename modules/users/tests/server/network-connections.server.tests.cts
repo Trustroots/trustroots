@@ -23,6 +23,7 @@ describe('network connections shared helpers', function () {
       'facebook',
       'twitter',
       'github',
+      'email',
     ]);
   });
 
