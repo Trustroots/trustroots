@@ -80,6 +80,15 @@ disabled fieldset disables the options. Base UI's ToggleGroup has pressed-button
 semantics and its Radio ignores fieldsets, so it is not used here. The group
 needs `aria-labelledby` pointing at its question.
 
+## NavigationDropdown
+
+Import `NavigationDropdown` from `@trustroots/ui/NavigationDropdown`. It
+renders a list item for desktop navigation. Its button
+opens a Base UI popover on hover or activation. Give the trigger a unique
+`id` and a `label` and pass links or buttons as children. The panel aligns to
+the start of the trigger by default, or the end when `align="end"` is set.
+Tab reaches its links and Escape closes it and returns focus to the trigger.
+
 ## Modal
 
 `Modal` is Base UI's Dialog with Bootstrap's modal look and the app's grey

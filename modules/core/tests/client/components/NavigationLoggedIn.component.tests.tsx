@@ -235,44 +235,52 @@ describe('<NavigationLoggedIn />', () => {
           user={{ ...user, roles: ['admin'] }}
         />,
       );
-      fireEvent.click(screen.getByRole('button', { name: 'Support' }));
-      fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
+      function expectTrackedClicks(
+        navigation: ReturnType<typeof within>,
+        clicks: Array<[string, string]>,
+      ) {
+        clicks.forEach(([name, item]) => {
+          fireEvent.click(navigation.getByRole('link', { name }));
+          expect(analytics.track).toHaveBeenLastCalledWith(
+            'navigation_clicked',
+            {
+              surface: 'top',
+              item,
+            },
+          );
+        });
+      }
 
-      const clicks: Array<[string, string]> = [
-        ['Frequently Asked Questions', 'support_faq'],
-        ['Report a bug', 'support_report_bug'],
-        ['Contact us', 'support_contact'],
+      expectTrackedClicks(screen, [
         ['Admin', 'admin'],
         ['Circles', 'circles'],
         ['Search hosts', 'search'],
         ['Messages', 'messages'],
         ['Host', 'host'],
         ['Nostroots', 'nostroots'],
-        ['My profile', 'profile'],
-        ['Edit profile', 'profile_edit'],
-        ['Contacts', 'contacts'],
-        ['Find people', 'find_people'],
-        ['Account', 'account'],
         ['My profile, info and support', 'menu'],
-      ];
-      clicks.forEach(([name, item]) => {
-        fireEvent.click(screen.getByRole('link', { name }));
-        expect(analytics.track).toHaveBeenLastCalledWith('navigation_clicked', {
-          surface: 'top',
-          item,
-        });
-      });
-      fireEvent.click(
-        within(
-          requireElement(
-            screen.getByRole('button', { name: 'Support' }).closest('li'),
-          ),
-        ).getByRole('link', { name: 'Safety' }),
+      ]);
+      fireEvent.click(screen.getByRole('button', { name: 'Support' }));
+      expectTrackedClicks(
+        within(screen.getByRole('dialog', { name: 'Support' })),
+        [
+          ['Frequently Asked Questions', 'support_faq'],
+          ['Report a bug', 'support_report_bug'],
+          ['Contact us', 'support_contact'],
+          ['Safety', 'support_safety'],
+        ],
       );
-      expect(analytics.track).toHaveBeenLastCalledWith('navigation_clicked', {
-        surface: 'top',
-        item: 'support_safety',
-      });
+      fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
+      expectTrackedClicks(
+        within(screen.getByRole('dialog', { name: 'Profile menu' })),
+        [
+          ['My profile', 'profile'],
+          ['Edit profile', 'profile_edit'],
+          ['Contacts', 'contacts'],
+          ['Find people', 'find_people'],
+          ['Account', 'account'],
+        ],
+      );
 
       // Submenu entries and padding are not credited to the parent item.
       analytics.track.mockClear();

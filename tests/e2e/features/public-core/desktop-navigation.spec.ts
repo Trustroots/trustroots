@@ -16,11 +16,29 @@ test('navigation links and profile menu have accessible names on desktop and mob
   await profileMenu.focus();
   await page.keyboard.press('Enter');
   await expect(profileMenu).toHaveAttribute('aria-expanded', 'true');
-  await expect(
-    header.getByRole('link', { name: 'My profile', exact: true }),
-  ).toBeVisible();
+  const myProfile = header.getByRole('link', {
+    name: 'My profile',
+    exact: true,
+  });
+  await expect(myProfile).toBeVisible();
+  await page.keyboard.press('Tab');
+  await expect(myProfile).toBeFocused();
   await page.keyboard.press('Escape');
   await expect(profileMenu).toHaveAttribute('aria-expanded', 'false');
+  await expect(profileMenu).toBeFocused();
+
+  const supportMenu = header.getByRole('button', { name: 'Support' });
+  const supportLink = header.getByRole('link', {
+    name: 'Frequently Asked Questions',
+    exact: true,
+  });
+  await supportMenu.hover();
+  await expect(supportLink).toBeVisible();
+  await supportLink.hover();
+  await expect(supportLink).toBeVisible();
+  await header.locator('.navbar-brand').hover();
+  await expect(supportLink).toBeHidden();
+
   await page.setViewportSize({ width: 390, height: 844 });
   for (const name of [
     'Circles',

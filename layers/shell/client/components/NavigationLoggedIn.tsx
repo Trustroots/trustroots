@@ -1,7 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React, { useEffect, useState } from 'react';
-import { Navbar, NavDropdown, Nav, Dropdown } from 'react-bootstrap';
+import { NavigationDropdown } from '@trustroots/ui/NavigationDropdown';
 
 // Internal dependencies
 import {
@@ -56,9 +56,9 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
     .slice(0, 10);
 
   return (
-    <div className="container">
+    <nav className="container" aria-label={t('Page navigation')}>
       <div className="navbar-header">
-        <Navbar.Brand as="div">
+        <div className="navbar-brand">
           <a href="/" className="hidden-xs">
             <img
               className="hidden-xs hidden-sm"
@@ -75,36 +75,47 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
               height="31"
             />
           </a>
-        </Navbar.Brand>
+        </div>
       </div>
 
-      <Nav as="ul" className="hidden-xs">
-        <NavDropdown
-          as="li"
-          renderMenuOnMount
+      <ul className="navbar-nav hidden-xs">
+        <NavigationDropdown
           className="hidden-xs cursor-pointer"
           id="support-dropdown"
-          title={t('Support')}
+          label={t('Support')}
         >
-          <Dropdown.Item href="/faq" onClick={trackNav('support_faq')}>
+          <a
+            className="dropdown-item"
+            href="/faq"
+            onClick={trackNav('support_faq')}
+          >
             {t('Frequently Asked Questions')}
-          </Dropdown.Item>
-          <Dropdown.Item href="/safety" onClick={trackNav('support_safety')}>
+          </a>
+          <a
+            className="dropdown-item"
+            href="/safety"
+            onClick={trackNav('support_safety')}
+          >
             {t('Safety')}
-          </Dropdown.Item>
-          <Dropdown.Item
+          </a>
+          <a
+            className="dropdown-item"
             href="/support?category=reportBug"
             onClick={trackNav('support_report_bug')}
           >
             {t('Report a bug')}
-          </Dropdown.Item>
-          <Dropdown.Item href="/support" onClick={trackNav('support_contact')}>
+          </a>
+          <a
+            className="dropdown-item"
+            href="/support"
+            onClick={trackNav('support_contact')}
+          >
             {t('Contact us')}
-          </Dropdown.Item>
-        </NavDropdown>
-      </Nav>
+          </a>
+        </NavigationDropdown>
+      </ul>
 
-      <Nav as="ul" className="nav-header-primary">
+      <ul className="navbar-nav nav-header-primary">
         {(user.roles?.includes('admin') ||
           user.roles?.includes('support-team') ||
           user.roles?.includes('welcome-team')) && (
@@ -217,13 +228,11 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         >
           Nostroots
         </MenuItem>
-        <NavDropdown
-          as="li"
-          renderMenuOnMount
+        <NavigationDropdown
           className="dropdown-user hidden-xs cursor-pointer"
           id="profile-dropdown"
           align="end"
-          title={
+          label={
             <>
               <span className="sr-only">{t('Profile menu')}</span>
               <span aria-hidden="true">
@@ -239,47 +248,51 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
           <div className="dropdown-header" aria-hidden="true">
             {user.displayName}
           </div>
-          <Dropdown.Divider />
-          <Dropdown.Item
+          <hr className="dropdown-divider" />
+          <a
+            className="dropdown-item"
             href={`/profile/${user.username}`}
             onClick={trackNav('profile')}
           >
             {t('My profile')}
-          </Dropdown.Item>
-          <Dropdown.Item
+          </a>
+          <a
+            className="dropdown-item"
             href="/profile/edit"
             onClick={trackNav('profile_edit')}
           >
             {t('Edit profile')}
-          </Dropdown.Item>
-          <Dropdown.Item
+          </a>
+          <a
+            className="dropdown-item"
             href={`/profile/${user.username}/contacts`}
             onClick={trackNav('contacts')}
           >
             {t('Contacts')}
-          </Dropdown.Item>
-          <Dropdown.Item
+          </a>
+          <a
+            className="dropdown-item"
             href="/search/members"
             onClick={trackNav('find_people')}
           >
             {t('Find people')}
-          </Dropdown.Item>
-          <Dropdown.Divider />
-          <Dropdown.Item
+          </a>
+          <hr className="dropdown-divider" />
+          <a
+            className="dropdown-item"
             href="/profile/edit/account"
             onClick={trackNav('account')}
           >
             {t('Account')}
-          </Dropdown.Item>
-          <Dropdown.Item
-            as="button"
+          </a>
+          <button
             type="button"
             onClick={() => void signOut()}
-            className="tw:hover:underline! tw:focus:bg-brand-primary! tw:focus:text-white! tw:focus:underline! tw:focus:outline-none! tw:active:bg-brand-primary! tw:active:text-white! tw:active:no-underline!"
+            className="dropdown-item tw:hover:underline! tw:focus:bg-brand-primary! tw:focus:text-white! tw:focus:underline! tw:focus:outline-none! tw:active:bg-brand-primary! tw:active:text-white! tw:active:no-underline!"
           >
             {t('Sign out')}
-          </Dropdown.Item>
-          <Dropdown.Divider />
+          </button>
+          <hr className="dropdown-divider" />
           <SubMenuList
             list={[
               {
@@ -322,7 +335,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
               },
             ]}
           />
-          <Dropdown.Divider />
+          <hr className="dropdown-divider" />
           <SubMenuList
             list={[
               /*
@@ -358,7 +371,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
               },
             ]}
           />
-        </NavDropdown>
+        </NavigationDropdown>
         <MenuItem
           aria-label={t('My profile, info and support')}
           className="visible-xs-block"
@@ -368,7 +381,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         >
           <Icon icon="menu" fixedWidth size="lg" />
         </MenuItem>
-      </Nav>
-    </div>
+      </ul>
+    </nav>
   );
 }

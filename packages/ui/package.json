@@ -19,6 +19,7 @@
     "./ToggleGroup": "./src/components/ToggleGroup.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
     "./Modal": "./src/components/Modal.tsx",
+    "./NavigationDropdown": "./src/components/NavigationDropdown.tsx",
     "./intent": "./src/lib/intent.ts"
   },
   "imports": {
