@@ -6,7 +6,7 @@ import styled from 'styled-components';
 // Internal dependencies
 import '@/config/client/i18n';
 import Switch from '@/modules/core/client/components/Switch';
-import ExperienceTextarea from './ExperienceTextarea';
+import { Textarea } from '@trustroots/ui/Textarea';
 
 interface ReportProps {
   onChangeReport: () => void;
@@ -53,7 +53,7 @@ export default function Report({
           <label htmlFor="report-message" className="control-label">
             {t('Message to the moderators') as string}
           </label>
-          <ExperienceTextarea
+          <Textarea
             rows={7}
             id="report-message"
             onChange={event => onChangeReportMessage(event.target.value)}
