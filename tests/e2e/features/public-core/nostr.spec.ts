@@ -3,6 +3,7 @@ import {
   generateSecretKey,
   getPublicKey,
   nip19,
+  type EventTemplate,
 } from 'nostr-tools';
 
 import { annotateFeature, test, expect } from '../../support/fixtures.mts';
@@ -18,6 +19,14 @@ import {
   createNostrProof,
   installNostrRelayStub,
 } from '../../support/nostr.mts';
+
+declare global {
+  interface Window {
+    signProfileChallenge(
+      event: EventTemplate,
+    ): Promise<ReturnType<typeof finalizeEvent>>;
+  }
+}
 
 const PRIVATE_MEMBER_KEY = generateSecretKey();
 const PUBLIC_MEMBER_KEY = generateSecretKey();
@@ -180,6 +189,34 @@ test.describe.serial('nostr npub on the profile networks form', () => {
     await page.locator('.profile-editor-save').click();
 
     await expect(page.getByText(/invalid nostr key/i)).toBeVisible();
+  });
+
+  test('links a browser signer without entering a public key', async ({
+    page,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'profile.edit-networks', [
+      'Networks edit form is reachable.',
+    ]);
+    const secret = generateSecretKey();
+    const pubkey = getPublicKey(secret);
+    await page.exposeFunction('signProfileChallenge', (event: EventTemplate) =>
+      finalizeEvent(event, secret),
+    );
+    await page.addInitScript(key => {
+      window.nostr = {
+        getPublicKey: async () => key,
+        signEvent: event => window.signProfileChallenge(event),
+      };
+    }, pubkey);
+    await page.goto('/profile/edit/networks');
+    await page
+      .getByRole('button', { name: 'Link with browser signer' })
+      .click();
+    await expect(page.getByText(/networks updated/i)).toBeVisible();
+    await page.reload();
+    await expect(page.getByLabel('nostr npub')).toHaveValue(
+      nip19.npubEncode(pubkey),
+    );
   });
 
   test('saves a valid npub and persists it across reloads', async ({

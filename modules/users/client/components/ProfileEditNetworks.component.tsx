@@ -1,13 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
-import { nip19 } from 'nostr-tools';
 
 import ProfileEditPage from './ProfileEditPage.component';
 import { nostrChallenge, removeSocialAccount, update } from '../api/users.api';
 import {
+  hasBrowserNostrSigner,
   NostrSigningError,
   signNostrProof,
+  signWithConnectedNostr,
 } from '../services/nostr-proof.client';
 import { saveFailureReason, useAnalytics } from '@trustroots/analytics/client';
 import { useAuth } from '@/modules/core/client/react-app/auth';
@@ -51,7 +52,10 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   const [hasChanges, setHasChanges] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [savedNpub, setSavedNpub] = useState(normalizeNpub(user.nostrNpub));
-  const [suggestedNpub, setSuggestedNpub] = useState('');
+  const [browserSignerAvailable, setBrowserSignerAvailable] = useState(
+    hasBrowserNostrSigner,
+  );
+  const [pairing, setPairing] = useState<{ uri: string; qr: string }>();
   const [signingMethod, setSigningMethod] = useState<
     'browser' | 'bunker' | 'external'
   >('browser');
@@ -64,14 +68,11 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   useEffect(() => () => operation.current?.abort(), []);
 
   useEffect(() => {
-    if (!window.nostr || typeof window.nostr.getPublicKey !== 'function') {
-      return;
-    }
-
-    window.nostr
-      .getPublicKey()
-      .then(publicKey => setSuggestedNpub(nip19.npubEncode(publicKey)))
-      .catch(() => undefined);
+    const detectSigner = () =>
+      setBrowserSignerAvailable(hasBrowserNostrSigner());
+    window.addEventListener('focus', detectSigner);
+    detectSigner();
+    return () => window.removeEventListener('focus', detectSigner);
   }, []);
 
   function updateDraft(changes: Partial<UserProfile>) {
@@ -96,17 +97,12 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
       return;
     }
 
-    setStatusMessage('');
-    setAuthUrl('');
-    setBusy(true);
-    operation.current = new AbortController();
-
-    try {
-      let nostrProof: unknown;
+    await saveNetworks(async signal => {
+      let proof: unknown;
       if (npub && npub !== savedNpub) {
         if (signingMethod === 'external') {
           try {
-            nostrProof = JSON.parse(signedJson);
+            proof = JSON.parse(signedJson);
           } catch {
             throw new NostrSigningError(
               'Paste the signed event JSON from your signing tool.',
@@ -114,19 +110,38 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
           }
         } else {
           const event = await nostrChallenge(npub);
-          nostrProof = await signNostrProof(
+          signal.throwIfAborted();
+          proof = await signNostrProof(
             event,
             npub,
             signingMethod,
             bunkerUri,
             setAuthUrl,
-            operation.current.signal,
+            signal,
           );
         }
       }
+      return { npub, proof };
+    });
+  }
+
+  async function saveNetworks(
+    getProof: (
+      signal: AbortSignal,
+    ) => Promise<{ npub: string; proof: unknown }>,
+  ) {
+    setStatusMessage('');
+    setAuthUrl('');
+    setBusy(true);
+    const controller = new AbortController();
+    operation.current = controller;
+
+    try {
+      const { npub, proof } = await getProof(controller.signal);
+      controller.signal.throwIfAborted();
       const savedUser = await update({
         nostrNpub: npub,
-        ...(nostrProof === undefined ? {} : { nostrProof }),
+        ...(proof === undefined ? {} : { nostrProof: proof }),
         extSitesCouchers: draftUser.extSitesCouchers,
         extSitesBW: draftUser.extSitesBW,
         extSitesCS: draftUser.extSitesCS,
@@ -152,8 +167,10 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
             : t('Something went wrong. Please try again!')),
       );
     } finally {
+      operation.current = null;
       setBusy(false);
       setAuthUrl('');
+      setPairing(undefined);
     }
   }
 
@@ -198,9 +215,18 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
     }
   }
 
-  const hasNip07Suggestion =
-    suggestedNpub &&
-    normalizeNpub(draftUser.nostrNpub) !== normalizeNpub(suggestedNpub);
+  function linkNostr() {
+    const method = browserSignerAvailable ? 'browser' : 'pair';
+    return saveNetworks(signal =>
+      signWithConnectedNostr(
+        method,
+        nostrChallenge,
+        setPairing,
+        setAuthUrl,
+        signal,
+      ),
+    );
+  }
 
   const legacyAccounts = LEGACY_SOCIAL_PROVIDERS.filter(
     provider => draftUser.additionalProvidersData?.[provider],
@@ -209,6 +235,29 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
   return (
     <ProfileEditPage user={user}>
       <form onSubmit={handleSubmit} autoComplete="off">
+        {pairing && (
+          <div className="panel panel-default">
+            <div className="panel-body">
+              <p>
+                {t(
+                  'Scan this QR code with your Nostr signer and approve the connection.',
+                )}
+              </p>
+              <img
+                src={pairing.qr}
+                width={240}
+                height={240}
+                alt={t('Remote signer connection QR code')}
+              />
+              <p>
+                <a href={pairing.uri}>{t('Open signer app')}</a>
+              </p>
+              <Button type="button" onClick={() => operation.current?.abort()}>
+                {t('Cancel pairing')}
+              </Button>
+            </div>
+          </div>
+        )}
         <fieldset disabled={busy}>
           <div className="panel panel-default">
             <div className="panel-heading">{t('Elsewhere')}</div>
@@ -223,6 +272,13 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                     Nostroots
                   </a>
                 </h4>
+                <p>
+                  <Button type="button" intent="primary" onClick={linkNostr}>
+                    {browserSignerAvailable
+                      ? t('Link with browser signer')
+                      : t('Connect a Nostr signer')}
+                  </Button>
+                </p>
                 <div className="form-group">
                   <div className="input-group">
                     <label className="input-group-addon" htmlFor="nostrNpub">
@@ -240,23 +296,6 @@ export default function ProfileEditNetworks({ user }: { user: UserProfile }) {
                       aria-label={t('nostr npub')}
                     />
                   </div>
-                  {hasNip07Suggestion && (
-                    <p className="help-block nostr-nip07-suggestion">
-                      {t('Your browser Nostr extension suggests')}{' '}
-                      <code>{suggestedNpub}</code>{' '}
-                      <Button
-                        type="button"
-                        size="xs"
-                        onClick={() =>
-                          updateDraft({ nostrNpub: suggestedNpub })
-                        }
-                      >
-                        {draftUser.nostrNpub
-                          ? t('Replace with this npub')
-                          : t('Use this npub')}
-                      </Button>
-                    </p>
-                  )}
                   {normalizeNpub(draftUser.nostrNpub) &&
                     normalizeNpub(draftUser.nostrNpub) !== savedNpub && (
                       <div className="nostr-ownership-proof">

@@ -1,6 +1,10 @@
 import { nip19 } from 'nostr-tools';
-import { BunkerSigner } from 'nostr-tools/nip46';
-import { signNostrProof } from '../../../client/services/nostr-proof.client';
+import QRCode from 'qrcode';
+import { BunkerSigner, createNostrConnectURI } from 'nostr-tools/nip46';
+import {
+  signNostrProof,
+  signWithConnectedNostr,
+} from '../../../client/services/nostr-proof.client';
 
 const mockDestroy = jest.fn();
 jest.mock('nostr-tools', () => ({
@@ -8,8 +12,10 @@ jest.mock('nostr-tools', () => ({
   SimplePool: jest.fn(() => ({ destroy: mockDestroy })),
 }));
 jest.mock('nostr-tools/nip46', () => ({
-  BunkerSigner: { fromBunker: jest.fn() },
+  BunkerSigner: { fromBunker: jest.fn(), fromURI: jest.fn() },
+  createNostrConnectURI: jest.fn(() => 'nostrconnect://fictional'),
 }));
+jest.mock('qrcode', () => ({ toDataURL: jest.fn() }));
 const pubkey = '11'.repeat(32);
 const npub = nip19.npubEncode(pubkey);
 const event = { kind: 27235, created_at: 1, content: '', tags: [] };
@@ -34,6 +40,9 @@ describe('Nostr proof signing transports', () => {
       sig: 'signature',
     });
     signer.close.mockResolvedValue(undefined);
+    jest
+      .mocked(QRCode.toDataURL)
+      .mockResolvedValue('data:image/png;base64,fictional' as never);
     jest
       .mocked(BunkerSigner.fromBunker)
       .mockReturnValue(signer as unknown as BunkerSigner);
@@ -166,6 +175,69 @@ describe('Nostr proof signing transports', () => {
   it('destroys the relay pool even if signer closure fails', async () => {
     signer.close.mockRejectedValue(new Error('close failed'));
     await expect(run()).rejects.toThrow('close failed');
+    expect(mockDestroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('pairs a remote signer, requests the challenge for its key and closes after signing', async () => {
+    jest
+      .mocked(BunkerSigner.fromURI)
+      .mockResolvedValue(signer as unknown as BunkerSigner);
+    const requestChallenge = jest.fn().mockResolvedValue(event);
+    const onPairing = jest.fn();
+    const onAuth = jest.fn();
+    const signal = new AbortController().signal;
+
+    await expect(
+      signWithConnectedNostr(
+        'pair',
+        requestChallenge,
+        onPairing,
+        onAuth,
+        signal,
+      ),
+    ).resolves.toEqual({
+      npub,
+      proof: expect.objectContaining({ id: 'proof' }),
+    });
+    expect(createNostrConnectURI).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clientPubkey: expect.stringMatching(/^[0-9a-f]{64}$/),
+        secret: expect.any(String),
+        perms: ['sign_event:27235'],
+      }),
+    );
+    expect(BunkerSigner.fromURI).toHaveBeenCalledWith(
+      expect.any(Uint8Array),
+      'nostrconnect://fictional',
+      expect.objectContaining({ skipSwitchRelays: true }),
+      signal,
+    );
+    expect(onPairing).toHaveBeenNthCalledWith(1, {
+      uri: 'nostrconnect://fictional',
+      qr: 'data:image/png;base64,fictional',
+    });
+    expect(onPairing).toHaveBeenNthCalledWith(2, undefined);
+    expect(requestChallenge).toHaveBeenCalledWith(npub);
+    expect(signer.signEvent).toHaveBeenCalledWith(event);
+    expect(signer.close).toHaveBeenCalledTimes(1);
+    expect(mockDestroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the relay pool when pairing is cancelled before a signer connects', async () => {
+    jest
+      .mocked(BunkerSigner.fromURI)
+      .mockImplementationOnce(() => new Promise(() => {}));
+    const controller = new AbortController();
+    const requestChallenge = jest.fn();
+    const result = signWithConnectedNostr(
+      'pair',
+      requestChallenge,
+      () => controller.abort(),
+      jest.fn(),
+      controller.signal,
+    );
+    await expect(result).rejects.toThrow('cancelled');
+    expect(requestChallenge).not.toHaveBeenCalled();
     expect(mockDestroy).toHaveBeenCalledTimes(1);
   });
 });

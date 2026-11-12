@@ -1,5 +1,6 @@
 import {
   generateSecretKey,
+  getPublicKey,
   nip19,
   SimplePool,
   type EventTemplate,
@@ -7,18 +8,38 @@ import {
 
 export class NostrSigningError extends Error {}
 
-export async function signNostrProof(
-  event: EventTemplate,
-  npub: string,
-  method: 'browser' | 'bunker',
-  bunkerUri: string,
-  onAuth: (url: string) => void,
+function browserSigner() {
+  const signer = window.nostr;
+  if (
+    typeof signer?.getPublicKey === 'function' &&
+    typeof signer.signEvent === 'function'
+  ) {
+    return signer as Required<NonNullable<Window['nostr']>>;
+  }
+}
+
+export function hasBrowserNostrSigner() {
+  return Boolean(browserSigner());
+}
+
+function requireBrowserSigner() {
+  const signer = browserSigner();
+  if (!signer)
+    throw new NostrSigningError(
+      'Connect a browser Nostr signer or choose another signing method.',
+    );
+  return signer;
+}
+
+async function runNostrSigning<T>(
   signal: AbortSignal,
-): Promise<unknown> {
-  const decoded = nip19.decode(npub);
-  if (decoded.type !== 'npub')
-    throw new NostrSigningError('Please provide a valid npub.');
-  const pubkey = decoded.data;
+  onAuth: (url: string) => void,
+  work: (controls: {
+    checkActive: () => void;
+    setCleanup: (cleanup: () => Promise<void>) => void;
+    authorise: (url: string) => void;
+  }) => Promise<T>,
+): Promise<T> {
   let close = async () => {};
   let stopped = false;
   const checkActive = () => {
@@ -27,9 +48,9 @@ export async function signNostrProof(
   };
   let timer: ReturnType<typeof setTimeout>;
   let rejectAbort: () => void;
-  let rejectOperation: (error: Error) => void;
+  let fail: (error: Error) => void;
   const interrupted = new Promise<never>((_, reject) => {
-    rejectOperation = reject;
+    fail = reject;
     rejectAbort = () =>
       reject(new NostrSigningError('Nostr signing was cancelled.'));
     signal.addEventListener('abort', rejectAbort, { once: true });
@@ -43,14 +64,56 @@ export async function signNostrProof(
     );
   });
   try {
-    const work = async () => {
+    return await Promise.race([
+      work({
+        checkActive,
+        authorise: url => {
+          try {
+            checkActive();
+            if (new URL(url).protocol !== 'https:')
+              throw new Error('Invalid URL');
+            onAuth(url);
+          } catch {
+            fail(
+              new NostrSigningError(
+                'The signer returned an invalid authorisation URL.',
+              ),
+            );
+          }
+        },
+        setCleanup: cleanup => {
+          close = cleanup;
+        },
+      }),
+      interrupted,
+    ]);
+  } finally {
+    stopped = true;
+    clearTimeout(timer!);
+    signal.removeEventListener('abort', rejectAbort!);
+    await close();
+  }
+}
+
+export async function signNostrProof(
+  event: EventTemplate,
+  npub: string,
+  method: 'browser' | 'bunker',
+  bunkerUri: string,
+  onAuth: (url: string) => void,
+  signal: AbortSignal,
+): Promise<unknown> {
+  const decoded = nip19.decode(npub);
+  if (decoded.type !== 'npub')
+    throw new NostrSigningError('Please provide a valid npub.');
+  const pubkey = decoded.data;
+  return runNostrSigning(
+    signal,
+    onAuth,
+    async ({ checkActive, setCleanup, authorise }) => {
       checkActive();
       if (method === 'browser') {
-        const signer = window.nostr;
-        if (!signer?.getPublicKey || !signer.signEvent)
-          throw new NostrSigningError(
-            'Connect a browser Nostr signer or choose another signing method.',
-          );
+        const signer = requireBrowserSigner();
         const signerPubkey = await signer.getPublicKey();
         checkActive();
         if (signerPubkey !== pubkey)
@@ -88,30 +151,17 @@ export async function signNostrProof(
         },
         {
           pool,
-          onauth: url => {
-            try {
-              checkActive();
-              if (new URL(url).protocol !== 'https:')
-                throw new NostrSigningError('Invalid URL');
-              onAuth(url);
-            } catch {
-              rejectOperation(
-                new NostrSigningError(
-                  'The signer returned an invalid authorisation URL.',
-                ),
-              );
-            }
-          },
+          onauth: authorise,
           skipSwitchRelays: true,
         },
       );
-      close = async () => {
+      setCleanup(async () => {
         try {
           await signer.close();
         } finally {
           pool.destroy();
         }
-      };
+      });
       await signer.connect({ name: 'Trustroots', url: window.location.origin });
       checkActive();
       const signerPubkey = await signer.getPublicKey();
@@ -121,12 +171,74 @@ export async function signNostrProof(
           'The signer public key does not match this npub.',
         );
       return signer.signEvent(event);
-    };
-    return await Promise.race([work(), interrupted]);
-  } finally {
-    stopped = true;
-    clearTimeout(timer!);
-    signal.removeEventListener('abort', rejectAbort!);
-    await close();
-  }
+    },
+  );
+}
+
+export async function signWithConnectedNostr(
+  method: 'browser' | 'pair',
+  requestChallenge: (npub: string) => Promise<EventTemplate>,
+  onPairing: (connection: { uri: string; qr: string } | undefined) => void,
+  onAuth: (url: string) => void,
+  signal: AbortSignal,
+) {
+  return runNostrSigning(
+    signal,
+    onAuth,
+    async ({ checkActive, setCleanup, authorise }) => {
+      checkActive();
+      let signer: {
+        getPublicKey: () => Promise<string>;
+        signEvent: (event: EventTemplate) => Promise<unknown>;
+      };
+      if (method === 'browser') {
+        const extension = requireBrowserSigner();
+        signer = {
+          getPublicKey: () => extension.getPublicKey(),
+          signEvent: event => extension.signEvent({ ...event }),
+        };
+      } else {
+        const [{ BunkerSigner, createNostrConnectURI }, { default: QRCode }] =
+          await Promise.all([import('nostr-tools/nip46'), import('qrcode')]);
+        checkActive();
+        const key = generateSecretKey();
+        const uri = createNostrConnectURI({
+          clientPubkey: getPublicKey(key),
+          relays: ['wss://relay.trustroots.org'],
+          secret: crypto.randomUUID(),
+          perms: ['sign_event:27235'],
+          name: 'Trustroots',
+          url: window.location.origin,
+        });
+        const qr = await QRCode.toDataURL(uri, { width: 240 });
+        checkActive();
+        const pool = new SimplePool({ enableReconnect: false });
+        setCleanup(async () => pool.destroy());
+        const connection = BunkerSigner.fromURI(
+          key,
+          uri,
+          { pool, skipSwitchRelays: true, onauth: authorise },
+          signal,
+        );
+        onPairing({ uri, qr });
+        const remote = await connection;
+        checkActive();
+        setCleanup(async () => {
+          try {
+            await remote.close();
+          } finally {
+            pool.destroy();
+          }
+        });
+        onPairing(undefined);
+        signer = remote;
+      }
+
+      const npub = nip19.npubEncode(await signer.getPublicKey());
+      checkActive();
+      const challenge = await requestChallenge(npub);
+      checkActive();
+      return { npub, proof: await signer.signEvent(challenge) };
+    },
+  );
 }
