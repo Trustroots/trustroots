@@ -7,17 +7,24 @@ import HomeFeaturedNostrNotes from '@/modules/pages/client/components/HomeFeatur
 
 afterEach(() => jest.restoreAllMocks());
 
-it('shows public note text, attribution and a link to the original', async () => {
+it('links safe Markdown and the author profile while preserving other content as text', async () => {
   const note = {
     id: 'cd'.repeat(32),
-    content: '<b>Fictional announcement</b>\nSecond line.',
+    content: [
+      '<b>Fictional announcement</b>',
+      '[Details](https://example.test/details)',
+      '[Get involved]\\(https\\://example\\.test/volunteering)',
+      '[Unsupported](javascript:ignored)',
+      '[Invalid](https://%)',
+      '![Image](https://example.test/image)',
+    ].join('\n'),
     npub: 'npub1example',
     publishedAt: '2026-11-01T12:00:00.000Z',
   };
   const get = jest.spyOn(http, 'get').mockResolvedValue({ data: [note] });
   const { container, unmount } = render(<HomeFeaturedNostrNotes />);
   expect(
-    await screen.findByRole('heading', { name: 'Updates from Nostr' }),
+    await screen.findByRole('heading', { name: 'Trustroots updates' }),
   ).toBeVisible();
   expect(screen.getByRole('article')).toHaveTextContent(
     '<b>Fictional announcement</b>',
@@ -28,10 +35,22 @@ it('shows public note text, attribution and a link to the original', async () =>
     'datetime',
     note.publishedAt,
   );
-  expect(screen.getByRole('link', { name: 'View on Nostr' })).toHaveAttribute(
+  expect(screen.getByRole('link', { name: note.npub })).toHaveAttribute(
     'href',
-    expect.stringMatching(/^https:\/\/njump\.me\/note1/),
+    'https://njump.me/' + note.npub,
   );
+  expect(screen.getByRole('link', { name: 'Details' })).toHaveAttribute(
+    'href',
+    'https://example.test/details',
+  );
+  expect(screen.getByRole('link', { name: 'Get involved' })).toHaveAttribute(
+    'href',
+    'https://example.test/volunteering',
+  );
+  expect(screen.getByRole('article')).toHaveTextContent(
+    '[Unsupported](javascript:ignored)',
+  );
+  expect(screen.getAllByRole('link')).toHaveLength(3);
   expect(get).toHaveBeenCalledWith('/api/nostr/featured-notes', {
     signal: expect.any(AbortSignal),
   });

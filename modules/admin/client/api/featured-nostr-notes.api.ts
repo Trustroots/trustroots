@@ -3,6 +3,7 @@ import { decode } from 'nostr-tools/nip19';
 import { SimplePool } from 'nostr-tools/pool';
 import http from '@/modules/core/client/api/http-client';
 import {
+  FEATURED_NOTE_PUBLISH_RELAY,
   FEATURED_NOTE_RELAYS,
   type FeaturedNostrNote,
 } from '@/modules/core/shared/featured-nostr-notes.mts';
@@ -86,9 +87,10 @@ export async function signNostrTextNote(content: string): Promise<Event> {
 }
 
 export async function publishNostrTextNote(event: Event) {
-  await publishToFeaturedRelays(
+  await publishToRelays(
+    [FEATURED_NOTE_PUBLISH_RELAY],
     event,
-    'No relay acknowledged publication. Try again.',
+    `${FEATURED_NOTE_PUBLISH_RELAY} did not acknowledge publication. Try again.`,
   );
 }
 
@@ -131,18 +133,23 @@ export async function publishNostrNoteDeletion(
     throw new Error('The signer did not return a valid deletion request.');
   }
 
-  await publishToFeaturedRelays(
+  await publishToRelays(
+    FEATURED_NOTE_RELAYS,
     event,
     'No relay acknowledged the deletion request.',
   );
   return event;
 }
 
-async function publishToFeaturedRelays(event: Event, failureMessage: string) {
+async function publishToRelays(
+  relays: string[],
+  event: Event,
+  failureMessage: string,
+) {
   const pool = new SimplePool();
   try {
     const results = await Promise.allSettled(
-      pool.publish(FEATURED_NOTE_RELAYS, event, { maxWait: 5000 }),
+      pool.publish(relays, event, { maxWait: 5000 }),
     );
     if (!results.some(result => result.status === 'fulfilled')) {
       throw new Error(failureMessage);

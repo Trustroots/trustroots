@@ -13,6 +13,7 @@ import {
   eventType,
   FAVOURITES_KEY,
   mergeFavourites,
+  RADIO_RELAYS,
   RadioRoom,
   readFavourites,
   roomTemplate,
@@ -324,6 +325,14 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       aria-label={t('Trustroots Radio')}
     >
       <div className="radio-player-panel">
+        {user && (
+          <p>
+            {t(
+              'With a connected Nostr identity, radio messages, listening activity and favourites are sent to {{relays}}.',
+              { relays: RADIO_RELAYS.join(', ') },
+            )}
+          </p>
+        )}
         <div className="radio-now-playing">
           <div>
             <p>{playing ? t('Now playing') : t('Ready to listen')}</p>
@@ -430,11 +439,6 @@ export default function RadioCircle({ user }: { user?: UserProfile }) {
       {user && (
         <section className="radio-social-panel" aria-label={t('Radio chat')}>
           <h3>{t('Chat')}</h3>
-          <p>
-            {t(
-              'Radio messages and listening activity are shared publicly on Nostr.',
-            )}
-          </p>
           {!signer ? (
             <>
               <Button

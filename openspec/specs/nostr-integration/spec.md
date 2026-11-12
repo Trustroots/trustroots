@@ -138,13 +138,19 @@ validation-server events.
 
 ### Requirement: Administrator-curated homepage notes
 
-Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes. It SHALL verify a note's event ID and signature before storing it and SHALL use the original event ID to prevent duplicate entries. Featuring SHALL accept a Nostr note or event identifier, a Nostr URI, or a web link containing an event identifier. Trustroots SHALL render the featured note as text on the homepage for signed-in and signed-out visitors, with its original author, publication date and a link to the original note.
+Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes. It SHALL verify a note's event ID and signature before storing it and SHALL use the original event ID to prevent duplicate entries. Featuring SHALL accept a Nostr note or event identifier, a Nostr URI, or a web link containing an event identifier. Trustroots SHALL show featured notes under Trustroots updates for signed-in and signed-out visitors, with the publication date and a link to the author's Nostr profile. The homepage and admin list SHALL render inline Markdown links with absolute HTTP or HTTPS destinations. All other content SHALL be rendered as text.
 
 #### Scenario: Administrator features a published note
 
 - **WHEN** an administrator supplies a link for an available signed kind 1 note
 - **THEN** Trustroots displays the note on the homepage with attribution to its Nostr author
 - **AND** featuring the same note again does not duplicate it
+
+#### Scenario: A featured update contains Markdown and HTML
+
+- **WHEN** a featured note contains an inline HTTPS Markdown link, raw HTML and a Markdown link with an unsupported URL scheme
+- **THEN** Trustroots renders the HTTPS link as clickable text
+- **AND** displays the raw HTML and unsupported link syntax as text
 
 #### Scenario: Administrator removes a featured note
 
@@ -158,17 +164,17 @@ Trustroots SHALL let administrators feature and remove existing public Nostr kin
 
 ### Requirement: Publish a featured Nostr note from admin
 
-Trustroots SHALL let administrators compose a public Nostr kind 1 text note on the Nostr admin page and sign it with a NIP-07 browser signer. Trustroots SHALL verify the signature, author and requested contents before publishing to the supported relays. The page SHALL feature the signed note only after at least one relay acknowledges publication.
+Trustroots SHALL let administrators compose a public Nostr kind 1 text note on the Nostr admin page and sign it with a NIP-07 browser signer. Trustroots SHALL verify the signature, author and requested contents before publishing only to `wss://relay.trustroots.org`. The page SHALL feature the signed note only after that relay acknowledges publication.
 
 #### Scenario: Publish and feature an update
 
 - **WHEN** an administrator submits a note and approves signing with their NIP-07 signer
-- **AND** a supported relay acknowledges the signed event
+- **AND** the Trustroots relay acknowledges the signed event
 - **THEN** Trustroots features that event on the homepage with its Nostr attribution
 
 #### Scenario: Retry a failed homepage save
 
-- **WHEN** a relay acknowledges publication but the homepage save fails
+- **WHEN** the Trustroots relay acknowledges publication but the homepage save fails
 - **THEN** the page reports that the note was published and allows the administrator to retry saving the same event without signing or publishing it again
 
 ### Requirement: Request deletion of a featured Nostr note
@@ -211,3 +217,12 @@ The profile networks editor SHALL offer NIP-07 as the primary linking method whe
 - **THEN** the editor provides an expiring NIP-46 connection as a QR code and an app link
 - **AND** after pairing it requests and signs a fresh challenge for the signer's key
 - **AND** cancelling pairing closes the connection and leaves the profile unchanged
+
+### Requirement: Disclose Nostr publication destinations
+
+Before publishing a Nostr note or other user-initiated Nostr event from a Trustroots web or app interface, Trustroots SHALL identify each configured destination relay in the interface. The displayed destinations SHALL come from the same configuration as the publication.
+
+#### Scenario: A member opens a Nostr publishing interface
+
+- **WHEN** a member is presented with a control that publishes Nostr events
+- **THEN** the interface shows the configured relay destinations before the member uses the control
