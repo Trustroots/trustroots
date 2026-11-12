@@ -205,6 +205,7 @@ internal sealed interface HostMapEvent {
     data class MapVisibilityChanged(val visible: Boolean) : HostMapEvent
     data class OwnerLifecycleChanged(val isStarted: Boolean) : HostMapEvent
     data class ViewportChanged(val viewport: MapViewport, val bounds: MapBounds) : HostMapEvent
+    data class ViewportCommandApplied(val id: Long) : HostMapEvent
     data class FiltersChanged(val filters: HostMapFilters) : HostMapEvent
     data class LocationQueryChanged(val value: String) : HostMapEvent
     data class PlaceSelected(val suggestion: PlaceSuggestion) : HostMapEvent
@@ -260,8 +261,10 @@ internal class HostMapViewModel(
             is HostMapEvent.MapVisibilityChanged -> {
                 mutableState.update { it.copy(mapVisible = event.visible) }
                 reconcileNotesSource()
-                if (event.visible) maybeSearch(force = false)
-                else cancelSearch()
+                if (event.visible) {
+                    saveCurrentSnapshot()
+                    maybeSearch(force = false)
+                } else cancelSearch()
             }
             is HostMapEvent.OwnerLifecycleChanged -> {
                 mutableState.update { it.copy(ownerStarted = event.isStarted) }
@@ -272,6 +275,11 @@ internal class HostMapViewModel(
                 mutableState.update { it.copy(viewport = event.viewport, measuredBounds = event.bounds) }
                 saveCurrentSnapshot()
                 maybeSearch(force = false)
+            }
+            is HostMapEvent.ViewportCommandApplied -> {
+                mutableState.update {
+                    if (it.viewportCommand?.id == event.id) it.copy(viewportCommand = null) else it
+                }
             }
             is HostMapEvent.FiltersChanged -> {
                 val includeMeetChanged = state.value.filters.includeMeet != event.filters.includeMeet
@@ -347,17 +355,16 @@ internal class HostMapViewModel(
         circlesRequest.cancel()
         lastSuccessfulSearch = null
         lastSuccessfulSearchAt = null
-        resultsCache.clear()
         receivedNotes.clear()
         mutableState.update { current ->
             current.copy(
                 offers = emptyList(), selectedNotes = emptyList(), communityNotes = emptyList(),
                 noteError = false, isLoading = false, failure = null, placeFailure = null,
                 locationQuery = "", suggestions = emptyList(), filters = HostMapFilters(),
-                circles = emptyList(), viewport = MapViewport(), measuredBounds = null,
-                viewportCommand = MapViewportCommand(++nextViewportCommand, MapViewport()),
+                circles = emptyList(), viewportCommand = null,
             )
         }
+        saveCurrentSnapshot()
         reconcileNotesSource()
     }
 
@@ -373,8 +380,8 @@ internal class HostMapViewModel(
             cancelSearch()
             lastSuccessfulSearch = null
             lastSuccessfulSearchAt = null
-            resultsCache.clear()
             mutableState.update { it.copy(offers = emptyList(), isLoading = false) }
+            saveCurrentSnapshot()
             return
         }
         val fingerprint = searchFingerprint(bounds, current.filters)
@@ -405,7 +412,7 @@ internal class HostMapViewModel(
 
     private fun saveCurrentSnapshot() {
         val current = state.value
-        if (!current.mapVisible || !current.ownerStarted) return
+        if (!current.mapVisible || !current.ownerStarted || sessionInvalidationEmitted) return
         val bounds = current.measuredBounds ?: return
         resultsCache.save(
             HostMapSnapshot(

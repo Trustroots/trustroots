@@ -715,6 +715,17 @@ class Navigation3MemberShellJourneyTest {
             assertEquals(expectedViewport.get().longitude, map.mapCenter.longitude, 0.00001)
             assertEquals(expectedViewport.get().zoom, map.zoomLevelDouble, 0.001)
         }
+
+        selectMembersMode()
+        waitForText("Find a member")
+        compose.onNodeWithTag("navigation-search").performClick()
+        waitForText("Search places")
+        requireNotNull(scenario).onActivity { activity ->
+            val map = requireNotNull(findMapView(activity.window.decorView))
+            assertEquals(expectedViewport.get().latitude, map.mapCenter.latitude, 0.00001)
+            assertEquals(expectedViewport.get().longitude, map.mapCenter.longitude, 0.00001)
+            assertEquals(expectedViewport.get().zoom, map.zoomLevelDouble, 0.001)
+        }
     }
 
     @Test fun hostDetailDialogRestoresAboveTheSameMapEntryWithoutRepeatingRequests() {

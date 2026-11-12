@@ -684,7 +684,7 @@ class HostMapViewModelTest {
     }
 
     @Test
-    fun resetRestoresDefaultsAndIgnoresDuplicateGeneration() = withViewModel { viewModel, _, _ ->
+    fun resetPreservesCameraAndIgnoresDuplicateGeneration() = withViewModel { viewModel, _, _ ->
         viewModel.onEvent(HostMapEvent.ViewportChanged(MapViewport(38.5, -9.5, 8.0), bounds()))
         viewModel.onEvent(HostMapEvent.FiltersChanged(HostMapFilters(includeMeet = true, languages = setOf("eng"))))
         viewModel.onEvent(HostMapEvent.PlaceSelected(PlaceSuggestion("Fictional place", 12.0, 34.0)))
@@ -692,11 +692,42 @@ class HostMapViewModelTest {
         val reset = viewModel.state.value
 
         assertEquals(HostMapFilters(), reset.filters)
-        assertNull(reset.measuredBounds)
-        assertEquals(MapViewport(), reset.viewport)
-        assertTrue(reset.viewportCommand != null)
+        assertEquals(bounds(), reset.measuredBounds)
+        assertEquals(MapViewport(12.0, 34.0, 9.0), reset.viewport)
+        assertNull(reset.viewportCommand)
         viewModel.onEvent(HostMapEvent.Reset(7))
         assertEquals(reset, viewModel.state.value)
+    }
+
+    @Test
+    fun mapCameraIsCachedWithBothOfferTypesDisabled() {
+        val cache = HostMapResultsCache()
+        withViewModel(resultsCache = cache) { viewModel, repository, _ ->
+            val filters = HostMapFilters(includeHosts = false, includeMeet = false)
+            val viewport = MapViewport(40.0, -4.0, 8.0)
+            viewModel.onEvent(HostMapEvent.FiltersChanged(filters))
+            viewModel.onEvent(HostMapEvent.MapVisibilityChanged(true))
+            viewModel.onEvent(HostMapEvent.ViewportChanged(viewport, bounds(39.5)))
+
+            assertEquals(viewport, cache.snapshot?.viewport)
+            assertEquals(filters, cache.snapshot?.filters)
+            assertEquals(0, repository.searchCalls)
+        }
+    }
+
+    @Test
+    fun appliedPlaceCommandDoesNotReplaceTheLaterCamera() = withViewModel { viewModel, _, _ ->
+        viewModel.onEvent(HostMapEvent.PlaceSelected(PlaceSuggestion("Fictional place", 12.0, 34.0)))
+        val command = requireNotNull(viewModel.state.value.viewportCommand)
+        viewModel.onEvent(HostMapEvent.ViewportCommandApplied(command.id - 1))
+        assertEquals(command, viewModel.state.value.viewportCommand)
+
+        viewModel.onEvent(HostMapEvent.ViewportCommandApplied(command.id))
+        val pannedViewport = MapViewport(13.0, 35.0, 8.0)
+        viewModel.onEvent(HostMapEvent.ViewportChanged(pannedViewport, bounds(12.5)))
+        viewModel.onEvent(HostMapEvent.ViewportCommandApplied(command.id))
+        assertEquals(pannedViewport, viewModel.state.value.viewport)
+        assertNull(viewModel.state.value.viewportCommand)
     }
 
     @Test
