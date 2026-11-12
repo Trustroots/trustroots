@@ -3070,6 +3070,7 @@ const features = [
     requiredScenarios: [
       'Administrators can count current Gravatar accounts and paginate member links.',
       'Gravatar member data is restricted to administrators.',
+      'Administrators can view profile pictures and sort Gravatar accounts by last seen.',
     ],
     relatedSpecs: [
       spec(

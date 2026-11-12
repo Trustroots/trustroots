@@ -1,20 +1,44 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
+import {
+  gravatarSortColumns,
+  type GravatarSort,
+} from '../../shared/gravatar.mts';
 import { getGravatarUsage, type GravatarUsage } from '../api/gravatar.api';
-import { formatAdminDateTime } from '../utils/admin-date';
+import {
+  formatAdminDateTime,
+  getAdminDateTimeAttribute,
+} from '../utils/admin-date';
 import AdminHeader from './AdminHeader.component';
 
+const columnLabels: Record<GravatarSort['column'], string> = {
+  username: 'Username',
+  displayName: 'Display name',
+  seen: 'Last seen (UTC)',
+};
+
+interface MemberQuery {
+  page: number;
+  sort?: GravatarSort;
+}
+
 export default function AdminGravatar() {
-  const [page, setPage] = useState(1);
-  const [usage, setUsage] = useState<GravatarUsage | null>(null);
+  const [query, setQuery] = useState<MemberQuery>({ page: 1 });
+  const [loaded, setLoaded] = useState<{
+    query: MemberQuery;
+    usage: GravatarUsage;
+  } | null>(null);
   const [failed, setFailed] = useState(false);
+  const usage = loaded?.usage;
+  const appliedSort = loaded?.query.sort;
+  const loading = loaded?.query !== query;
+
   useEffect(() => {
     let active = true;
-    setUsage(null);
     setFailed(false);
-    getGravatarUsage(page)
-      .then(result => {
-        if (active) setUsage(result);
+    getGravatarUsage(query.page, query.sort)
+      .then(usage => {
+        if (active) setLoaded({ query, usage });
       })
       .catch(() => {
         if (active) setFailed(true);
@@ -22,7 +46,24 @@ export default function AdminGravatar() {
     return () => {
       active = false;
     };
-  }, [page]);
+  }, [query]);
+
+  function changeSort(column: GravatarSort['column']) {
+    setQuery(current => ({
+      page: 1,
+      sort: {
+        column,
+        direction:
+          current.sort?.column === column
+            ? current.sort.direction === 'ascending'
+              ? 'descending'
+              : 'ascending'
+            : column === 'seen'
+              ? 'descending'
+              : 'ascending',
+      },
+    }));
+  }
 
   return (
     <>
@@ -30,15 +71,16 @@ export default function AdminGravatar() {
       <div className="container">
         <h2>Gravatar usage</h2>
         <p>
-          Members currently using Gravatar. Existing images remain available
-          while the retirement approach is agreed.
+          Gravatar used to be the default avatar setting. Accounts without a
+          Gravatar image may display a placeholder.
         </p>
         {failed && <p role="alert">Could not load Gravatar usage.</p>}
-        {!usage && !failed && <p role="status">Loading Gravatar usage…</p>}
-        {usage && (
+        {loading && !failed && <p role="status">Loading Gravatar usage…</p>}
+        {usage && !failed && (
           <>
             <p>
-              <strong>{usage.accounts}</strong> accounts currently use Gravatar.
+              <strong>{usage.accounts}</strong> accounts have Gravatar set as
+              their avatar source.
             </p>
             <p>
               Measured at{' '}
@@ -51,13 +93,34 @@ export default function AdminGravatar() {
               <p>No Gravatar members on this page.</p>
             ) : (
               <table
+                aria-busy={loading}
                 className="table table-striped"
                 aria-label="Gravatar members"
               >
                 <thead>
                   <tr>
-                    <th scope="col">Username</th>
-                    <th scope="col">Display name</th>
+                    {gravatarSortColumns.map(column => {
+                      const direction =
+                        appliedSort?.column === column
+                          ? appliedSort.direction
+                          : undefined;
+                      return (
+                        <th key={column} scope="col" aria-sort={direction}>
+                          <Button
+                            variant="link"
+                            type="button"
+                            onClick={() => changeSort(column)}
+                          >
+                            {columnLabels[column]}
+                            {direction && (
+                              <span aria-hidden="true">
+                                {direction === 'ascending' ? ' ▲' : ' ▼'}
+                              </span>
+                            )}
+                          </Button>
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -65,10 +128,28 @@ export default function AdminGravatar() {
                     <tr key={member._id}>
                       <td>
                         <a href={`/admin/user/${member.username}`}>
+                          <img
+                            alt=""
+                            className="avatar avatar-32"
+                            width={32}
+                            height={32}
+                            loading="lazy"
+                            referrerPolicy="no-referrer"
+                            src={`/api/users/${member._id}/avatar?size=32`}
+                          />{' '}
                           {member.username}
                         </a>
                       </td>
                       <td>{member.displayName}</td>
+                      <td>
+                        {getAdminDateTimeAttribute(member.seen) ? (
+                          <time dateTime={member.seen}>
+                            {formatAdminDateTime(member.seen)}
+                          </time>
+                        ) : (
+                          'Unknown'
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -76,15 +157,15 @@ export default function AdminGravatar() {
             )}
             <nav aria-label="Gravatar member pages">
               <Button
-                disabled={usage.page === 1}
-                onClick={() => setPage(usage.page - 1)}
+                disabled={loading || usage.page === 1}
+                onClick={() => setQuery({ ...query, page: usage.page - 1 })}
               >
                 Previous
               </Button>
               <span> Page {usage.page} </span>
               <Button
-                disabled={!usage.hasNextPage}
-                onClick={() => setPage(usage.page + 1)}
+                disabled={loading || !usage.hasNextPage}
+                onClick={() => setQuery({ ...query, page: usage.page + 1 })}
               >
                 Next
               </Button>

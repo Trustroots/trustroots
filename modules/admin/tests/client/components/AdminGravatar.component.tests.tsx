@@ -1,5 +1,11 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminGravatar from '@/modules/admin/client/components/AdminGravatar.component';
 import * as api from '@/modules/admin/client/api/gravatar.api';
@@ -20,6 +26,7 @@ const usage: api.GravatarUsage = {
       _id: 'member-1',
       username: 'fictional-member',
       displayName: 'Fictional Member',
+      seen: '2026-11-05T18:15:00.000Z',
     },
   ],
 };
@@ -33,21 +40,79 @@ it('shows the count, measurement time, member links and pagination', async () =>
   );
   const table = await screen.findByRole('table', { name: 'Gravatar members' });
   expect(table).toHaveTextContent('Fictional Member');
-  expect(screen.getByText('51')).toBeVisible();
+  expect(screen.getByText('51').parentElement).toHaveTextContent(
+    '51 accounts have Gravatar set as their avatar source.',
+  );
   expect(screen.getByText('2026-11-06 12:00')).toBeVisible();
-  expect(
-    screen.getByRole('link', { name: 'fictional-member' }),
-  ).toHaveAttribute('href', '/admin/user/fictional-member');
+  const memberLink = screen.getByRole('link', { name: 'fictional-member' });
+  expect(memberLink).toHaveAttribute('href', '/admin/user/fictional-member');
+  expect(memberLink.querySelector('img')).toHaveAttribute(
+    'src',
+    '/api/users/member-1/avatar?size=32',
+  );
+  expect(screen.getByText('2026-11-05 18:15')).toHaveAttribute(
+    'datetime',
+    usage.members[0].seen,
+  );
   expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
   getUsage.mockResolvedValueOnce({ ...usage, page: 2, hasNextPage: false });
   fireEvent.click(screen.getByRole('button', { name: 'Next' }));
   await screen.findByText('Page 2');
-  expect(getUsage).toHaveBeenLastCalledWith(2);
+  expect(getUsage).toHaveBeenLastCalledWith(2, undefined);
   expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
   getUsage.mockResolvedValueOnce(usage);
   fireEvent.click(screen.getByRole('button', { name: 'Previous' }));
   await screen.findByText('Page 1');
-  expect(getUsage).toHaveBeenLastCalledWith(1);
+  expect(getUsage).toHaveBeenLastCalledWith(1, undefined);
+});
+it('sorts from page one and preserves the sort on subsequent pages', async () => {
+  getUsage.mockResolvedValueOnce({ ...usage, page: 2 });
+  render(<AdminGravatar />);
+  await screen.findByText('Page 2');
+  const lastSeen = screen.getByRole('button', { name: 'Last seen (UTC)' });
+  getUsage.mockResolvedValueOnce(usage);
+  fireEvent.click(lastSeen);
+  await screen.findByText('Page 1');
+  expect(getUsage).toHaveBeenLastCalledWith(1, {
+    column: 'seen',
+    direction: 'descending',
+  });
+  expect(lastSeen.closest('th')).toHaveAttribute('aria-sort', 'descending');
+
+  getUsage.mockResolvedValueOnce({
+    ...usage,
+    members: [{ ...usage.members[0], seen: undefined }],
+  });
+  fireEvent.click(lastSeen);
+  expect(await screen.findByText('Unknown')).toBeVisible();
+  expect(lastSeen.closest('th')).toHaveAttribute('aria-sort', 'ascending');
+
+  getUsage.mockResolvedValueOnce({ ...usage, page: 2 });
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+  await screen.findByText('Page 2');
+  expect(getUsage).toHaveBeenLastCalledWith(2, {
+    column: 'seen',
+    direction: 'ascending',
+  });
+
+  getUsage.mockResolvedValueOnce(usage);
+  const displayName = screen.getByRole('button', { name: 'Display name' });
+  fireEvent.click(displayName);
+  await screen.findByText('Page 1');
+  expect(getUsage).toHaveBeenLastCalledWith(1, {
+    column: 'displayName',
+    direction: 'ascending',
+  });
+  expect(displayName.closest('th')).toHaveAttribute('aria-sort', 'ascending');
+
+  getUsage.mockResolvedValueOnce(usage);
+  fireEvent.click(displayName);
+  await waitFor(() =>
+    expect(displayName.closest('th')).toHaveAttribute(
+      'aria-sort',
+      'descending',
+    ),
+  );
 });
 it('shows an empty state for zero accounts', async () => {
   getUsage.mockResolvedValue({

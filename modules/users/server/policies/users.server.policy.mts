@@ -36,8 +36,8 @@ function invokeRolesPolicies() {
           permissions: ['get'],
         },
         {
-          resources: '/api/users/avatar',
-          permissions: [],
+          resources: '/api/users/:avatarUserId/avatar',
+          permissions: ['get'],
         },
         {
           resources: '/api/users/mini/:userId',
@@ -167,8 +167,14 @@ function isAllowed(req: UsersRequest, res: PolicyResponse, next: PolicyNext) {
       req.method === 'GET') ||
     isSupportProfileRead(req);
 
+  const isAdminAvatarRead =
+    req.user?.roles?.includes('admin') &&
+    req.route.path === '/api/users/:avatarUserId/avatar' &&
+    req.method === 'GET';
+
   // Non-public profiles are invisible
   if (
+    !isAdminAvatarRead &&
     !isStaffProfileRead &&
     req.profile &&
     !req.profile.public &&
@@ -182,6 +188,7 @@ function isAllowed(req: UsersRequest, res: PolicyResponse, next: PolicyNext) {
 
   // No profile browsing for non-public users
   if (
+    !isAdminAvatarRead &&
     !isStaffProfileRead &&
     req.profile &&
     req.user &&

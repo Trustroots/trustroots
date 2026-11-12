@@ -57,13 +57,34 @@ describe('Admin Gravatar usage', () => {
     assert.equal(response.body.hasNextPage, false);
     assert.ok(Number.isFinite(Date.parse(response.body.measuredAt)));
   });
+  it('lets only administrators load another member’s private Gravatar', async () => {
+    const emailHash = '0123456789abcdef0123456789abcdef';
+    const { insertedId } = await User.collection.insertOne({
+      username: 'fictional-private-member',
+      avatarSource: 'gravatar',
+      public: false,
+      roles: ['user'],
+      emailHash,
+    });
+    const url = `/api/users/${insertedId}/avatar?size=32`;
+    const response = await admin.get(url).expect(302);
+    const redirect = new URL(response.headers.location);
+    assert.equal(redirect.origin, 'https://gravatar.com');
+    assert.equal(redirect.pathname, `/avatar/${emailHash}`);
+    assert.equal(redirect.searchParams.get('s'), '32');
+    await member.get(url).expect(404);
+    await request(app).get(url).expect(403);
+  });
   it('counts current selections and returns stable bounded pages without private fields', async () => {
+    const oldest = new Date('2026-10-01T08:00:00.000Z');
+    const newest = new Date('2026-11-05T18:15:00.000Z');
     const fixtures = Array.from({ length: 51 }, (_, index) => ({
       username: `fictional-${index}`,
-      displayName: 'Fictional Member',
+      displayName: index === 50 ? 'alpha Member' : 'Fictional Member',
       avatarSource: 'gravatar',
       email: `fictional-${index}@example.test`,
       emailHash: 'private-hash',
+      ...(index === 50 ? { seen: newest } : index < 2 ? { seen: oldest } : {}),
     }));
     await User.collection.insertMany(fixtures);
     await User.collection.insertOne({
@@ -77,8 +98,10 @@ describe('Admin Gravatar usage', () => {
     assert.deepEqual(Object.keys(first.body.members[0]).sort(), [
       '_id',
       'displayName',
+      'seen',
       'username',
     ]);
+    assert.equal(first.body.members[0].seen, oldest.toISOString());
     assert.equal(first.body.members[0].username, 'fictional-0');
     const second = await admin.get('/api/admin/gravatar?page=2').expect(200);
     assert.equal(second.body.members.length, 1);
@@ -87,6 +110,35 @@ describe('Admin Gravatar usage', () => {
     const beyond = await admin.get('/api/admin/gravatar?page=3').expect(200);
     assert.equal(beyond.body.accounts, 51);
     assert.deepEqual(beyond.body.members, []);
+
+    const recent = await admin
+      .get('/api/admin/gravatar?sort=seen&direction=descending')
+      .expect(200);
+    assert.equal(recent.body.accounts, 51);
+    assert.deepEqual(
+      recent.body.members
+        .slice(0, 3)
+        .map(({ username }: { username: string }) => username),
+      ['fictional-50', 'fictional-0', 'fictional-1'],
+    );
+    assert.equal(recent.body.members[0].seen, newest.toISOString());
+    const early = await admin.get('/api/admin/gravatar?sort=seen').expect(200);
+    assert.equal(early.body.members[0].username, 'fictional-0');
+    assert.equal(early.body.members[3].seen, undefined);
+    const undated = await admin
+      .get('/api/admin/gravatar?page=2&sort=seen')
+      .expect(200);
+    assert.equal(undated.body.members[0].username, 'fictional-49');
+
+    const names = await admin
+      .get('/api/admin/gravatar?sort=displayName')
+      .expect(200);
+    assert.equal(names.body.members[0].username, 'fictional-50');
+    const usernames = await admin
+      .get('/api/admin/gravatar?sort=username&direction=descending')
+      .expect(200);
+    assert.equal(usernames.body.members[0].username, 'fictional-9');
+
     await User.updateOne(
       { username: 'fictional-0' },
       { $set: { avatarSource: 'local' } },
@@ -98,6 +150,13 @@ describe('Admin Gravatar usage', () => {
   it('rejects excessive page values', async () => {
     await admin.get('/api/admin/gravatar?page=9007199254740992').expect(400);
     await admin.get('/api/admin/gravatar?page=180143985094820').expect(400);
+  });
+  it('rejects unsupported sort columns and directions', async () => {
+    await admin.get('/api/admin/gravatar?sort=emailHash').expect(400);
+    await admin.get('/api/admin/gravatar?sort=seen&sort=username').expect(400);
+    await admin
+      .get('/api/admin/gravatar?sort=seen&direction=other')
+      .expect(400);
   });
   it('returns an error without leaking database details', async () => {
     sinon.stub(User, 'aggregate').throws(new Error('private database details'));

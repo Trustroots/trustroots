@@ -14,4 +14,10 @@ it('requests the selected page of Gravatar members', async () => {
   expect(axios.get).toHaveBeenCalledWith('/api/admin/gravatar', {
     params: { page: 2 },
   });
+  await expect(
+    getGravatarUsage(2, { column: 'seen', direction: 'descending' }),
+  ).resolves.toEqual(data);
+  expect(axios.get).toHaveBeenLastCalledWith('/api/admin/gravatar', {
+    params: { page: 2, sort: 'seen', direction: 'descending' },
+  });
 });
