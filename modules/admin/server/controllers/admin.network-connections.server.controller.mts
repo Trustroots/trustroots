@@ -106,7 +106,7 @@ export async function search(req: StaffRequest, res: StaffResponse) {
   ) {
     return res.status(400).send({ message: 'Invalid connection search.' });
   }
-  const identifier = parseConnectionSearch(network, input);
+  const identifier = parseConnectionSearch(network, String(input));
   if (!identifier) {
     return res.status(400).send({
       message: 'Enter a valid identifier or profile URL for this network.',

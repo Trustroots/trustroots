@@ -665,10 +665,13 @@ service.confirmEmail = function (req, res) {
     }
     const result: EmailConfirmationResult = { profileMadePublic: !user.public };
     const oldEmail = user.email;
-    const emailChanged =
-      oldEmail &&
-      normaliseIdentifier('email', oldEmail) !==
-        normaliseIdentifier('email', user.emailTemporary);
+    const newEmail = user.emailTemporary;
+    if (typeof newEmail !== 'string') {
+      res
+        .status(400)
+        .send({ message: 'Email confirm token is invalid or has expired.' });
+      return;
+    }
     const authVersion = user.authVersion || 0;
     const authVersionQuery =
       authVersion === 0
@@ -681,19 +684,21 @@ service.confirmEmail = function (req, res) {
         findOneAndUpdateWithCallback(
           {
             _id: user._id,
-            emailTemporary: user.emailTemporary,
+            emailTemporary: newEmail,
             // The token query already contains an $or for legacy expiry
             // handling, so combine both conditions without overwriting it.
             $and: [tokenQuery, authVersionQuery],
           },
           {
-            ...(emailChanged
+            ...(typeof oldEmail === 'string' &&
+            normaliseIdentifier('email', oldEmail) !==
+              normaliseIdentifier('email', newEmail)
               ? {
                   $push: {
                     connectionHistory: {
                       network: 'email',
                       oldIdentifier: oldEmail,
-                      newIdentifier: user.emailTemporary,
+                      newIdentifier: newEmail,
                       changedAt: now,
                       initial: false,
                     },
@@ -702,7 +707,7 @@ service.confirmEmail = function (req, res) {
                     connectionSearchKeys: {
                       $each: [
                         connectionSearchKey('email', oldEmail),
-                        connectionSearchKey('email', user.emailTemporary),
+                        connectionSearchKey('email', newEmail),
                       ],
                     },
                   },
@@ -726,13 +731,13 @@ service.confirmEmail = function (req, res) {
               // Welcome sequence emails are sent in time intervals
               welcomeSequenceSent: new Date(),
               // Replace old email with new one
-              email: user.emailTemporary,
+              email: newEmail,
               // @todo: this should be done at user.server.model.js
               emailHash: crypto
                 .createHash('md5')
                 .update(
                   // Stryker disable next-line MethodExpression: the emailTemporary filter is cast trimmed and lowercased, so the update only applies when the stored value already is
-                  user.emailTemporary!.trim().toLowerCase(),
+                  newEmail.trim().toLowerCase(),
                 )
                 .digest('hex'),
             },

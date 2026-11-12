@@ -13,6 +13,11 @@ import {
 } from '@/modules/admin/client/components/NetworkConnections.component';
 import * as api from '@/modules/admin/client/api/network-connections.api';
 import type { Network } from '@/modules/users/shared/network-connections';
+import { setViewer } from '@/testutils/client/auth.testutil';
+
+jest.mock('@/modules/core/client/react-app/auth', () =>
+  jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
+);
 
 jest.mock('@/modules/admin/client/api/network-connections.api', () => ({
   getMemberNetworkConnections: jest.fn(),
@@ -75,10 +80,10 @@ const memberPage = {
 
 afterEach(() => jest.resetAllMocks());
 beforeEach(() => {
-  window.user = { roles: ['support-team'] };
+  setViewer({ roles: ['support-team'] });
 });
 afterEach(() => {
-  delete window.user;
+  setViewer(null);
 });
 
 test('shows current connections and history with paging', async () => {
