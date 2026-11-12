@@ -593,7 +593,10 @@ describe('User profile CRUD tests', function () {
   });
   it('requires signed proof to update own nostr npub and retains the session', async function () {
     await agent.post('/api/auth/signin').send(credentials).expect(200);
-    await agent.put('/api/users').send({ nostrNpub: validNpub }).expect(400);
+    await agent.put('/api/users').send({ nostrNpub: validNpub }).expect(400, {
+      message:
+        'Sign a fresh Nostr challenge with the matching key before saving.',
+    });
     const challenge = await agent
       .post('/api/users/nostr/challenge')
       .send({ nostrNpub: validNpub })

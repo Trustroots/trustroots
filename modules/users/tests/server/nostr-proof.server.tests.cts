@@ -30,19 +30,6 @@ const otherNpub = nip19.npubEncode(getPublicKey(otherKey));
 let user: import('../../server/models/user.server.types.mts').UserServerDocument;
 
 describe('Nostr ownership proofs', () => {
-  it('binds proofs to the configured HTTPS endpoint', async () => {
-    const previous = config.https;
-    config.https = true;
-    try {
-      const event = await createChallenge(user._id, npub);
-      event.tags[0][1].should.startWith('https://');
-      (
-        await consumeProof(user._id, npub, finalizeEvent(event, key))
-      ).should.equal(true);
-    } finally {
-      config.https = previous;
-    }
-  });
   beforeEach(async () => {
     user = new User(utils.generateUsers(1)[0]);
     await user.save();
@@ -51,6 +38,25 @@ describe('Nostr ownership proofs', () => {
     sinon.restore();
     await utils.clearDatabase();
   });
+
+  for (const protocol of ['http', 'https']) {
+    it(`binds proofs to the configured ${protocol} endpoint`, async () => {
+      const previous = config.https;
+      config.https = protocol === 'https';
+      try {
+        const event = await createChallenge(user._id, npub);
+        event.tags[0].should.deepEqual([
+          'u',
+          `${protocol}://${config.domain}/api/users`,
+        ]);
+        (
+          await consumeProof(user._id, npub, finalizeEvent(event, key))
+        ).should.equal(true);
+      } finally {
+        config.https = previous;
+      }
+    });
+  }
 
   it('accepts a matching proof once and excludes challenges from ordinary queries', async () => {
     const event = await createChallenge(user._id, npub);
@@ -76,6 +82,9 @@ describe('Nostr ownership proofs', () => {
         finalizeEvent({ ...proof }, otherKey),
       )
     ).should.equal(false);
+    (
+      await consumeProof(user._id, npub, finalizeEvent({ ...proof }, otherKey))
+    ).should.equal(false);
     await User.updateOne(
       { _id: user._id },
       { $set: { nostrChallengeExpiresAt: new Date(0) } },
@@ -91,6 +100,18 @@ describe('Nostr ownership proofs', () => {
     ]);
     results.sort().should.deepEqual([false, true]);
   });
+
+  for (const offset of [-300, 30]) {
+    it(`accepts a signed proof at the ${offset} second timestamp boundary`, async () => {
+      sinon.useFakeTimers({ now: Date.now(), toFake: ['Date'] });
+      const event = await createChallenge(user._id, npub);
+      const proof = finalizeEvent(
+        { ...event, created_at: event.created_at + offset },
+        key,
+      );
+      (await consumeProof(user._id, npub, proof)).should.equal(true);
+    });
+  }
 
   it('rejects malformed proof objects', async () => {
     const unsigned = await createChallenge(user._id, npub);
@@ -121,6 +142,7 @@ describe('Nostr ownership proofs', () => {
       { created_at: Math.floor(Date.now() / 1000) + 60 },
       { created_at: 1.5 },
       { tags: [] },
+      { tags: event.tags.slice(1) },
       { tags: [['u', 'wrong'], ...event.tags.slice(1)] },
       { tags: [['u', event.tags[0][1], 'extra'], ...event.tags.slice(1)] },
       { tags: [event.tags[0], event.tags[0], event.tags[2]] },
@@ -142,10 +164,27 @@ describe('Nostr ownership proofs', () => {
     (await consumeProof(user._id, npub, signed)).should.equal(true);
   });
 
-  it('rejects invalid or secret keys and missing members', async () => {
-    for (const value of [undefined, 123, 'invalid', nip19.nsecEncode(key)]) {
-      (() => decodeNpub(value)).should.throw();
+  it('rejects malformed nonces before looking up a stored challenge', async () => {
+    const event = await createChallenge(user._id, npub);
+    const update = sinon.spy(User, 'updateOne');
+    for (const nonce of ['', 'invalid']) {
+      const proof = finalizeEvent(
+        {
+          ...event,
+          tags: [event.tags[0], event.tags[1], ['challenge', nonce]],
+        },
+        key,
+      );
+      (await consumeProof(user._id, npub, proof)).should.equal(false);
     }
+    update.called.should.equal(false);
+  });
+
+  it('rejects invalid or secret keys and missing members', async () => {
+    for (const value of [undefined, 123, nip19.nsecEncode(key)]) {
+      (() => decodeNpub(value)).should.throw('Invalid Nostr public key.');
+    }
+    (() => decodeNpub('invalid')).should.throw();
     await createChallenge(
       new mongoose.Types.ObjectId(),
       npub,
@@ -174,6 +213,9 @@ describe('Nostr ownership proofs', () => {
       res as never,
     );
     res.code.should.equal(400);
+    res.json.firstCall.args.should.deepEqual([
+      { message: 'Please provide a valid npub, never an nsec.' },
+    ]);
     res = response();
     await challenge({ user, body: { nostrNpub: npub } } as never, res as never);
     res.code.should.equal(200);
@@ -183,6 +225,9 @@ describe('Nostr ownership proofs', () => {
     res = response();
     await challenge({ user, body: { nostrNpub: npub } } as never, res as never);
     res.code.should.equal(503);
+    res.json.firstCall.args.should.deepEqual([
+      { message: 'Nostr verification is unavailable. Please try again.' },
+    ]);
     stub.restore();
   });
 
