@@ -208,7 +208,6 @@ export async function trackConnectionHistoryBeforeSave(
   changedNetworks.forEach(network => {
     const oldIdentifier = persistedConnections[network] || null;
     const newIdentifier = current[network] || null;
-    if (sameIdentifier(network, oldIdentifier, newIdentifier)) return;
     history.push({
       network,
       oldIdentifier,
