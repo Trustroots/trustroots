@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import httpClient from '@/modules/core/client/api/http-client';
 import AdminMongo from '@/modules/admin/client/components/AdminMongo.component';
+import type { MongoServerDiagnostics } from '@/modules/admin/shared/mongo-diagnostics.mts';
 
 jest.mock('@/modules/core/client/api/http-client', () => ({
   __esModule: true,
@@ -137,7 +138,7 @@ it('shows each job state and uses zero for states absent from the snapshot', asy
   ).toEqual(['0', '0', '4', '0', '0', '0']);
 });
 
-it.each([
+it.each<[MongoServerDiagnostics, string]>([
   [
     {
       version: '5.0.28',

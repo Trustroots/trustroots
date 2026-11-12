@@ -4,20 +4,8 @@ const assert: typeof import('node:assert/strict') = require('node:assert/strict'
 require('should');
 const adminMongo: typeof import('../../server/controllers/admin.mongo.server.controller.mts') = require('../../server/controllers/admin.mongo.server.controller.mts');
 
-type MongoBody = {
-  capturedAt: string;
-  server: {
-    version: string | null;
-    topology: 'standalone' | 'replicaSet' | 'sharded' | null;
-    fcv: {
-      version: string;
-      targetVersion: string | null;
-      transitioning: boolean;
-    } | null;
-  };
-  collections: Array<Record<string, unknown>>;
-  jobs: Array<Record<string, unknown>> | null;
-};
+type MongoBody =
+  import('../../shared/mongo-diagnostics.mts').MongoDiagnosticsSnapshot;
 
 type Response = {
   statusCode: number;
@@ -324,7 +312,7 @@ describe('Admin Mongo diagnostics', () => {
 
     const response = mockResponse();
     await adminMongo.diagnostics({} as never, response as never);
-    mongoBody(response).server.version.should.equal('7.0.1');
+    assert.equal(mongoBody(response).server.version, '7.0.1');
     mongoBody(response)
       .collections.every(item => item.status === 'unavailable')
       .should.equal(true);
