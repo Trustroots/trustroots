@@ -45,11 +45,7 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
   }, []);
 
   return (
-    <header
-      className="hidden-print navbar navbar-expand navbar-light fixed-top"
-      id="tr-header"
-      ref={headerRef}
-    >
+    <header id="tr-header" ref={headerRef}>
       <Button
         intent="primary"
         onClick={event => {

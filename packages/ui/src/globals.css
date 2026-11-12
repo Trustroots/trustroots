@@ -33,3 +33,22 @@
     }
   }
 }
+
+@utility navigation-panel {
+  @apply tw:m-0 tw:min-w-40 tw:list-none tw:rounded-md tw:border tw:border-solid tw:border-black/17.5 tw:bg-white tw:bg-clip-padding tw:px-0 tw:py-2 tw:text-start tw:text-sm tw:text-[#212529];
+}
+
+@utility navigation-panel-item {
+  @apply tw:block tw:w-full tw:border-0 tw:bg-transparent tw:px-4 tw:py-1 tw:text-start tw:font-normal tw:whitespace-nowrap tw:text-[#212529] tw:no-underline;
+  &:hover {
+    @apply tw:bg-[#f8f9fa] tw:text-[#212529];
+  }
+  &:focus,
+  &:active {
+    @apply tw:bg-brand-primary tw:text-white tw:outline-none;
+  }
+}
+
+@utility navigation-panel-divider {
+  @apply tw:my-2 tw:border-0 tw:border-t tw:border-solid tw:border-black/17.5;
+}

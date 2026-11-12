@@ -11,10 +11,10 @@ const meta = {
     label: 'Support',
     children: (
       <>
-        <a className="dropdown-item" href="/faq">
+        <a className="tw:navigation-panel-item" href="/faq">
           Frequently Asked Questions
         </a>
-        <a className="dropdown-item" href="/support">
+        <a className="tw:navigation-panel-item" href="/support">
           Contact us
         </a>
       </>

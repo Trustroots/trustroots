@@ -92,7 +92,7 @@ describe('<NavigationLoggedIn />', () => {
     const supportMenu = requireElement(
       requireElement(
         screen.getByRole('button', { name: 'Support' }).closest('li'),
-      ).querySelector<HTMLElement>('.dropdown-menu'),
+      ).querySelector<HTMLElement>('[data-slot="navigation-dropdown-panel"]'),
     );
     expect(
       within(supportMenu).getByRole('link', { name: 'Safety' }),
@@ -102,6 +102,9 @@ describe('<NavigationLoggedIn />', () => {
     ).toHaveAttribute('href', '/support?category=reportBug');
     fireEvent.click(screen.getByRole('button', { name: 'Profile menu' }));
     expect(screen.getAllByText('Alice Example').length).toBe(2);
+    expect(
+      screen.queryByRole('link', { name: /^(Media|Foundation)$/ }),
+    ).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(
       'href',
       '/',
@@ -322,9 +325,9 @@ describe('<NavigationLoggedIn />', () => {
     const item = requireElement(
       screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
-    expect(item).toHaveClass('dropdown', 'header-link-dropdown', 'active');
+    expect(item).toHaveClass('header-link-dropdown', 'active');
     const menu = requireElement(
-      item.querySelector<HTMLElement>('.dropdown-menu'),
+      item.querySelector<HTMLElement>('.header-shortcut-list'),
     );
     expect(menu).toHaveClass('hidden-xs');
     const links = within(menu).getAllByRole('link');
@@ -342,8 +345,8 @@ describe('<NavigationLoggedIn />', () => {
     const item = requireElement(
       screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
-    expect(item.querySelector('.dropdown-menu')).toBeNull();
-    expect(item).not.toHaveClass('dropdown');
+    expect(item.querySelector('.header-shortcut-list')).toBeNull();
+    expect(item).not.toHaveClass('header-link-dropdown');
     expect(
       screen.getByRole('link', { name: 'Find member by name' }),
     ).toHaveAttribute('href', '/search/members');
@@ -367,7 +370,7 @@ describe('<NavigationLoggedIn />', () => {
       screen.getByRole('link', { name: 'Circles' }).closest('li'),
     );
     const menu = requireElement(
-      item.querySelector<HTMLElement>('.dropdown-menu'),
+      item.querySelector<HTMLElement>('.header-shortcut-list'),
     );
     const links = within(menu).getAllByRole('link');
     expect(links.map(link => link.textContent)).toEqual([

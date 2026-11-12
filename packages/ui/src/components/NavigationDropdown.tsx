@@ -23,7 +23,7 @@ export function NavigationDropdown({
       <Popover.Root>
         <Popover.Trigger
           id={id}
-          className="dropdown-toggle"
+          className="tw:after:ms-[.255em] tw:after:inline-block tw:after:align-[.255em] tw:after:border-x-[.3em] tw:after:border-x-transparent tw:after:border-t-[.3em] tw:after:border-t-current tw:after:border-solid"
           data-slot="navigation-dropdown-trigger"
           openOnHover
           delay={0}
@@ -35,7 +35,8 @@ export function NavigationDropdown({
             <Popover.Popup
               aria-labelledby={id}
               initialFocus={false}
-              className="dropdown-menu show tw:static! tw:max-h-(--available-height) tw:overflow-auto"
+              data-slot="navigation-dropdown-panel"
+              className="tw:navigation-panel tw:max-h-(--available-height) tw:overflow-auto"
             >
               {children}
             </Popover.Popup>

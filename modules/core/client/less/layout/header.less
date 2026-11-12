@@ -9,33 +9,35 @@
   color: @navbar-default-color;
   background: @navbar-default-bg;
   min-height: @navbar-height;
-  padding: 0;
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: @zindex-navbar-fixed;
+  display: flex;
+  align-items: center;
+
+  @media print {
+    display: none;
+  }
 
   > .container {
     min-height: @navbar-height;
-    justify-content: flex-start;
-  }
-
-  .navbar {
-    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .navbar-brand {
-    padding-top: 6px;
-  }
-
-  .navbar-nav {
-    flex-direction: row;
+    display: flex;
     align-items: center;
-    margin-top: 0;
-    margin-bottom: 0;
   }
 
-  .navbar-nav {
-    // Fix, because we don't have normal Bootstrap collapsable menu
-    > li {
-      float: left;
-    }
+  .header-brand {
+    flex-shrink: 0;
+    margin-inline-end: 1rem;
+    padding-block: 6px 0.3125rem;
+    white-space: nowrap;
+  }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    margin: 0;
+    padding: 0;
+    list-style: none;
 
     a {
       text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.3);
@@ -49,7 +51,7 @@
       text-decoration: none;
     }
 
-    // Anchor the unread badge to its link, as Bootstrap 3 did for nav items.
+    // Anchor the unread badge to its link.
     > li > a {
       position: relative;
     }
@@ -59,21 +61,9 @@
       border: 0;
     }
 
-    .dropdown-header {
-      cursor: auto;
-    }
-
-    .dropdown-menu {
-      a {
-        text-shadow: none;
-        &.active,
-        &:active,
-        &:focus {
-          outline: none;
-          color: @navbar-default-color;
-          background: @brand-primary;
-        }
-      }
+    [data-slot='navigation-dropdown-panel'] a,
+    .header-shortcut-list a {
+      text-shadow: none;
     }
 
     // Keep mobile icons legible against the green header.
@@ -91,7 +81,7 @@
   }
 
   .nav-header-primary {
-    margin-left: auto;
+    margin-inline-start: auto;
 
     > li > a:hover,
     > li > a:focus-visible {
@@ -99,7 +89,6 @@
       background: @navbar-default-link-hover-bg;
     }
 
-    // Bootstrap 5 no longer colours an active item from the legacy li class.
     > li.active > a,
     > li.active > a:hover,
     > li.active > a:focus {
@@ -108,7 +97,7 @@
     }
 
     @media (max-width: @grid-float-breakpoint-max) {
-      margin-left: auto;
+      margin-inline-start: auto;
       display: flex;
       width: 100%;
       justify-content: space-between;
@@ -131,31 +120,65 @@
     }
   }
 
-  /* Bootstrap dropdowns */
   @media (min-width: @grid-float-breakpoint) {
-    .header-link-dropdown:focus-within .dropdown-menu {
-      display: block;
+    .header-link-dropdown {
+      position: relative;
+
+      &:hover .header-shortcut-list,
+      &:focus-within .header-shortcut-list {
+        display: block;
+      }
     }
 
-    // Bootstrap 5 adds a gap below the toggle. It breaks the hover path into
-    // the menu, closing it before the pointer reaches the first item.
-    .dropdown-menu {
-      margin-top: 0;
+    .header-shortcut-list {
+      display: none;
+      position: absolute;
+      inset-block-start: 100%;
+      inset-inline-start: 0;
+      z-index: 1000;
+
+      > li > a {
+        padding: 6px 20px;
+      }
     }
 
-    .header-link-dropdown:hover .dropdown-menu {
-      display: block;
-    }
-
-    /* Make sure avatar works as a dropdown handle */
-    .dropdown-user {
-      .dropdown-toggle {
+    .header-profile {
+      [data-slot='navigation-dropdown-trigger'] {
         width: 73px;
+
         .avatar {
-          float: left;
-          margin-right: 8px;
+          float: inline-start;
+          margin-inline-end: 8px;
         }
       }
+
+      [data-slot='navigation-dropdown-panel'] {
+        inline-size: min(16rem, var(--available-width, 16rem));
+      }
+    }
+  }
+
+  .header-menu-meta {
+    padding-inline: 10px;
+    text-align: center;
+    font-size: 0.875em;
+
+    a {
+      color: @text-muted;
+    }
+  }
+
+  .header-menu-meta-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: 10px;
+    margin: 0 0 1rem;
+    padding: 0;
+    list-style: none;
+
+    a {
+      overflow-wrap: anywhere;
     }
   }
 }
@@ -167,6 +190,7 @@
   align-items: center;
   justify-content: center;
   padding: 5px 0;
+  text-align: center;
 
   .header-more-text,
   .header-welcome-text {
@@ -196,11 +220,5 @@
   .language-switch {
     display: flex;
     justify-content: flex-end;
-
-    .dropdown-menu {
-      margin-top: 5px;
-      margin-right: 5px;
-      min-width: 100%; // We'd like dropdown-menu to be similar size to button. But it's 10px wider.
-    }
   }
 }

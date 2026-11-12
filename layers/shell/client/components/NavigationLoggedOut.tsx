@@ -14,10 +14,10 @@ export default function NavigationLoggedOut({
   const { t } = useTranslation('core');
 
   return (
-    <div className="container w-100">
+    <div className="container">
       <nav
         aria-label={t('Page navigation')}
-        className="header-welcome text-center"
+        className="header-welcome"
         role="navigation"
       >
         {/* a span for centering the main header content */}

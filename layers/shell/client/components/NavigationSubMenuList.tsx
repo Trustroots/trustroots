@@ -13,11 +13,11 @@ export default function NavigationSubMenuList({
   list,
 }: NavigationSubMenuListProps) {
   return (
-    <div className="small text-muted dropdown-meta text-center font-brand-regular">
-      <ul className="list-inline">
+    <div className="header-menu-meta font-brand-regular">
+      <ul className="header-menu-meta-links">
         {list.map(({ href, label, rel, target }) => (
           <li key={href}>
-            <a className="text-muted" href={href} rel={rel} target={target}>
+            <a href={href} rel={rel} target={target}>
               {label}
             </a>
           </li>
