@@ -151,7 +151,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(
         page
           .getByRole('radiogroup', { name: 'Would you like to meet people?' })
-          .getByRole('radio', { name: 'Not set', exact: true }),
+          .getByRole('radio', { name: /Not set/ }),
       ).toBeChecked();
       await page
         .getByRole('radiogroup', { name: 'Would you like to meet people?' })
@@ -160,6 +160,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await expect(
         page.getByText(/for meetings, but not as a host/),
       ).toBeVisible();
+      await page.getByRole('tab', { name: 'Location' }).click();
       await page.evaluate(() => {
         Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
           publicKey: 'test-geocoding-token',
@@ -191,9 +192,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       await page.getByRole('button', { name: 'Save and Exit' }).click();
       expect((await saved).ok()).toBeTruthy();
       await page.goto(`/profile/${berlin.username}/accommodation`);
-      await expect(
-        page.getByRole('radio', { name: 'Yes', exact: true }),
-      ).toBeChecked();
+      await expect(page.getByRole('radio', { name: /Yes/ })).toBeChecked();
       await expect(
         page.getByText('Cannot host currently', { exact: true }),
       ).toBeVisible();
@@ -253,7 +252,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         expect((await savedFromProfile).ok()).toBeTruthy();
         await page.reload();
         await expect(
-          page.getByRole('radio', { name: label, exact: true }),
+          page.getByRole('radio', { name: new RegExp(`^(?:✓ )?${label}$`) }),
         ).toBeChecked();
         if (status === 'maybe') expect(await discover(['meet'])).toBeDefined();
         else expect(await discover(['meet'])).toBeUndefined();
@@ -262,9 +261,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         ).toBeVisible();
       }
       await page.goto('/offer/host');
-      await expect(
-        page.getByRole('radio', { name: 'Not set', exact: true }),
-      ).toBeChecked();
+      await expect(page.getByRole('radio', { name: /Not set/ })).toBeChecked();
     } finally {
       const restored = await page.request.put(`/api/offers/${original._id}`, {
         data: {
@@ -280,18 +277,22 @@ test.describe.serial('search offers and circles feature coverage', () => {
     page,
   }) => {
     await page.goto('/offer/host#location');
-    await expect(page.locator('#location')).toBeInViewport();
+    await expect(
+      page.getByRole('tabpanel', { name: 'Location' }),
+    ).toBeVisible();
+    await page.getByRole('tab', { name: 'Description' }).click();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
     );
     await description.fill('An unsaved spare room description.');
-    await page.evaluate(() => {
-      window.location.hash = 'description';
-    });
-    await expect(page.locator('#description')).toBeInViewport();
+    await expect(page).toHaveURL(/\/offer\/host#description$/);
+    await page.getByRole('tab', { name: 'Location' }).click();
+    await expect(page).toHaveURL(/\/offer\/host#location$/);
     await page.goBack();
-    await expect(page.locator('#location')).toBeInViewport();
+    await expect(
+      page.getByRole('tabpanel', { name: 'Description' }),
+    ).toBeVisible();
     await expect(description).toHaveValue('An unsaved spare room description.');
   });
 
@@ -330,6 +331,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/offer/host');
+    await page.getByRole('tab', { name: 'Description' }).click();
     const description = page.getByLabel(
       'Tell about your home and hosting possibilities',
       { exact: false },
@@ -630,7 +632,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
   }) => {
     const memberId = await fetchUserIdByUsername(page.request, berlin.username);
     const [originalOffer] = await findOffersByUser(memberId, { type: 'host' });
-    await page.goto('/offer/host');
+    await page.goto('/offer/host#location');
     await page.evaluate(() => {
       Reflect.set(Reflect.get(window, 'settings'), 'mapbox', {
         publicKey: 'test-geocoding-token',
@@ -694,7 +696,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       ]);
       await page.setViewportSize(viewport);
       await prepareRasterSearchMap(page, context, { includeMapbox: true });
-      await page.goto('/offer/host');
+      await page.goto('/offer/host#location');
       const map = page.locator('.offer-map .leaflet-container');
       const overlay = page.locator('.offer-location-overlay');
 
@@ -751,7 +753,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
       route.abort('failed'),
     );
     await routeRasterMapTiles(context, { includeMapbox: true });
-    await page.goto('/offer/host');
+    await page.goto('/offer/host#location');
     expect(
       await page.evaluate(() =>
         Boolean(document.createElement('canvas').getContext('webgl')),
