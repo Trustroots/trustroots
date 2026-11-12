@@ -6,6 +6,7 @@ import Admin from '@/modules/admin/client/components/Admin.component';
 import * as dashboardApi from '@/modules/admin/client/api/admin-dashboard.api';
 import * as usersApi from '@/modules/admin/client/api/users.api';
 import type { AdminDashboard } from '@/modules/admin/client/api/admin-dashboard.api';
+import { setViewer } from '@/testutils/client/auth.testutil';
 
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
@@ -59,12 +60,14 @@ function malformedDashboardResponse(
 }
 
 afterEach(() => {
+  setViewer(null);
   jest.clearAllMocks();
   window.history.pushState({}, '', '/');
 });
 
 describe('<Admin />', () => {
   beforeEach(() => {
+    setViewer({ roles: ['admin'] });
     mockedDashboardApi.getAdminDashboard.mockResolvedValue({
       negativeExperiences: [
         {
@@ -198,6 +201,26 @@ describe('<Admin />', () => {
     expect(
       screen.getByText('No negative experiences found.'),
     ).toBeInTheDocument();
+  });
+
+  it('shows support staff activity with support member links', async () => {
+    setViewer({ roles: ['support-team'] });
+    render(<Admin />);
+
+    expect(
+      await screen.findByRole('link', { name: 'sender (Sender)' }),
+    ).toHaveAttribute('href', '/admin/support/member/sender');
+    expect(screen.getByText('12 messages')).toBeVisible();
+    expect(screen.getByText(/A generous welcome/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Last 10 Negative Thread Votes' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Manage circles' }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByLabelText('Name, username or email'),
+    ).not.toBeInTheDocument();
   });
 
   it('renders dashboard rows with missing optional data', async () => {

@@ -33,6 +33,7 @@ describe('<AdminHeader />', () => {
       [
         'Member support',
         [
+          'Dashboard',
           'Support inbox',
           'Member search',
           'Flagged members',
@@ -73,6 +74,10 @@ describe('<AdminHeader />', () => {
   it('shows support navigation without administrator tools', () => {
     setViewer({ roles: ['support-team'] });
     render(<AdminHeader />);
+    expect(screen.getByRole('link', { name: 'Dashboard' })).toHaveAttribute(
+      'href',
+      '/admin',
+    );
     expect(
       screen.getByRole('link', { name: 'Support inbox' }),
     ).toBeInTheDocument();

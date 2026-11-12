@@ -64,6 +64,10 @@ describe('Admin policy unit tests', () => {
     support.allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/support/:requestId/:kind');
+    support.allows.should.containEql({
+      resources: '/api/admin/dashboard',
+      permissions: ['get'],
+    });
     const welcome = policies.shift();
     if (!welcome) throw new Error('Expected the welcome policy');
     welcome.roles.should.deepEqual(['welcome-team', 'support-team']);
@@ -102,7 +106,6 @@ describe('Admin policy unit tests', () => {
       'acquisition-stories',
       'acquisition-stories/:memberId/resend-confirmation',
       'staff-blockers',
-      'dashboard',
       'reference-threads',
       'newsletter-subscribers/audience',
       'newsletter-subscribers',
@@ -150,6 +153,7 @@ describe('Admin policy unit tests', () => {
 
   describe('grants per role', () => {
     const supportAndAdmin = [
+      'get /api/admin/dashboard',
       'get /api/admin/experiences',
       'post /api/admin/experiences/:id/change-links',
       'get /api/admin/experience-change-requests',
@@ -190,7 +194,6 @@ describe('Admin policy unit tests', () => {
       'get /api/admin/audit-log/actors',
       'get /api/admin/username-changes',
       'get /api/admin/gravatar',
-      'get /api/admin/dashboard',
       'post /api/admin/messages',
       'post /api/admin/messages/scammer-recipients',
       'post /api/admin/messages/scammer-warning',

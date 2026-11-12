@@ -2971,19 +2971,21 @@ const features = [
     id: 'admin.dashboard',
     area: AREA.adminModeration,
     status: STATUS.active,
-    description: 'Admins can load the admin dashboard; non-admins cannot.',
-    roles: ['admin', 'member'],
+    description:
+      'Administrators and support team members can load the admin dashboard.',
+    roles: ['admin', 'support-team', 'member'],
     references: {
       clientRoutes: [
         clientRoute('admin', '/admin', source.adminClient, {
           requiresAuth: true,
-          requiresRole: 'admin',
+          requiresRole: ['admin', 'support-team'],
         }),
       ],
       apiRoutes: [],
     },
     requiredScenarios: [
       'Admin dashboard loads for admin.',
+      'Support team can open the dashboard and read all three activity panes.',
       'Dashboard search shows all matching members.',
       'The historical spam cleanup page and API are unavailable.',
       'Regular member is denied access to admin tools.',
@@ -3010,6 +3012,7 @@ const features = [
         'admin-pages.spec.js',
         'admin dashboard previews negative experience feedback',
       ),
+      spec('admin-pages.spec.js', 'support team can view dashboard activity'),
       spec(
         'authenticated.spec.js',
         'regular members are turned away from admin tools',
