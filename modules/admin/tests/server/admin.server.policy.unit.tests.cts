@@ -64,6 +64,13 @@ describe('Admin policy unit tests', () => {
     support.allows
       .map(allow => allow.resources)
       .should.containEql('/api/admin/support/:requestId/:kind');
+    support.allows.should.containDeep([
+      { resources: '/api/admin/network-connections', permissions: ['get'] },
+      {
+        resources: '/api/admin/network-connections/:memberId',
+        permissions: ['get'],
+      },
+    ]);
     const welcome = policies.shift();
     if (!welcome) throw new Error('Expected the welcome policy');
     welcome.roles.should.deepEqual(['welcome-team', 'support-team']);

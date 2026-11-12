@@ -8,10 +8,7 @@ import statService from '../../../stats/server/services/stats.server.service.mts
 import log from '../../../../config/lib/logger.mjs';
 import passport from 'passport';
 import crypto from 'crypto';
-import {
-  connectionSearchKey,
-  normaliseIdentifier,
-} from '../../shared/network-connections.ts';
+import { connectionSearchKey } from '../../shared/network-connections.ts';
 import mongoose, { type QueryFilter, type UpdateQuery } from 'mongoose';
 import type {
   UserServerDocument,
@@ -672,6 +669,11 @@ service.confirmEmail = function (req, res) {
         .send({ message: 'Email confirm token is invalid or has expired.' });
       return;
     }
+    const oldEmailKey =
+      typeof oldEmail === 'string'
+        ? connectionSearchKey('email', oldEmail)
+        : null;
+    const newEmailKey = connectionSearchKey('email', newEmail);
     const authVersion = user.authVersion || 0;
     const authVersionQuery =
       authVersion === 0
@@ -690,9 +692,7 @@ service.confirmEmail = function (req, res) {
             $and: [tokenQuery, authVersionQuery],
           },
           {
-            ...(typeof oldEmail === 'string' &&
-            normaliseIdentifier('email', oldEmail) !==
-              normaliseIdentifier('email', newEmail)
+            ...(oldEmailKey && oldEmailKey !== newEmailKey
               ? {
                   $push: {
                     connectionHistory: {
@@ -705,10 +705,7 @@ service.confirmEmail = function (req, res) {
                   },
                   $addToSet: {
                     connectionSearchKeys: {
-                      $each: [
-                        connectionSearchKey('email', oldEmail),
-                        connectionSearchKey('email', newEmail),
-                      ],
+                      $each: [oldEmailKey, newEmailKey],
                     },
                   },
                   $inc: { connectionHistoryRevision: 1 },
