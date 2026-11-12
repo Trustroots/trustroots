@@ -467,7 +467,7 @@ function list(req: OfferRequest, res: OfferResponse) {
     $and: [
       { $eq: ['$type', 'host'] },
       { $in: ['$meetingStatus', ['yes', 'maybe']] },
-      meetingsOnly ? { $literal: true } : { $eq: ['$status', 'no'] },
+      meetingsOnly ? true : { $eq: ['$status', 'no'] },
     ],
   };
   query.push({
