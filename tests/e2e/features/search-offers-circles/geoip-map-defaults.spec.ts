@@ -346,11 +346,13 @@ test.describe('approximate initial map locations', () => {
         name: 'Close information dialog about hosting location map',
       })
       .click();
+    await page.getByRole('tab', { name: 'Description' }).click();
     await page
       .getByLabel('Tell about your home and hosting possibilities', {
         exact: false,
       })
       .fill('A fictional spare room.');
+    await page.getByRole('tab', { name: 'Location' }).click();
     const save = page.getByRole('button', { name: 'Save and Exit' });
     await expect(save).toBeDisabled();
     await map.getByRole('button', { name: 'Zoom in' }).click();
