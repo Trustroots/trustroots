@@ -215,6 +215,42 @@ test('mobile profile navigation stays compact and readable', async ({
   expect(actionsBar!.height).toBeLessThanOrEqual(60);
 });
 
+test('profile descriptions link matching circle hashtags', async ({
+  page,
+  request,
+}) => {
+  const member = SEEDED_MEMBERS[0];
+  await signInViaApi(page, request, member);
+  await page.route(`**/api/users/${member.username}`, async route => {
+    const response = await route.fetch();
+    await route.fulfill({
+      response,
+      json: {
+        ...(await response.json()),
+        description:
+          '<p>#cyclists #hitchhikers and <b>#musicians</b> very welcome. #fictional-circle</p>',
+      },
+    });
+  });
+
+  await page.goto(`/profile/${member.username}`);
+  const about = page
+    .locator('header.panel-heading')
+    .filter({ hasText: /^About me$/ })
+    .locator('..');
+  await expect(about.getByRole('link')).toHaveCount(3);
+  for (const slug of ['cyclists', 'hitchhikers', 'musicians']) {
+    await expect(about.getByRole('link', { name: `#${slug}` })).toHaveAttribute(
+      'href',
+      `/circles/${slug}`,
+    );
+  }
+  await expect(about.getByText(/#fictional-circle/)).toBeVisible();
+  await about.getByRole('link', { name: '#musicians' }).click();
+  await expect(page).toHaveURL(/\/circles\/musicians$/);
+  await expect(page.getByRole('heading', { name: 'Musicians' })).toBeVisible();
+});
+
 test('profile descriptions disable links while dedicated network exceptions remain clickable', async ({
   page,
   request,

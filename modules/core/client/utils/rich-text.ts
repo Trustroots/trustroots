@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { findHashtagLinks } from './hashtag-links';
 import {
   richTextTags,
   richTextAttributes,
@@ -56,6 +57,43 @@ export function disableUserContentLinks(
       }
     }
     link.replaceWith(...Array.from(link.childNodes));
+  }
+
+  return template.innerHTML;
+}
+
+/** Add links from an application-provided map to already sanitised HTML. */
+export function linkHashtags(
+  html: string,
+  links: ReadonlyMap<string, string>,
+): string {
+  const template = document.createElement('template');
+  template.innerHTML = html;
+  const walker = document.createTreeWalker(
+    template.content,
+    NodeFilter.SHOW_TEXT,
+  );
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+
+  for (const node of textNodes) {
+    if (node.parentElement?.closest('a')) continue;
+    const replacement = document.createDocumentFragment();
+    let offset = 0;
+    for (const { label, href, start, end } of findHashtagLinks(
+      node.data,
+      links,
+    )) {
+      const link = document.createElement('a');
+      link.href = href;
+      link.textContent = label;
+      replacement.append(node.data.slice(offset, start), link);
+      offset = end;
+    }
+    if (offset) {
+      replacement.append(node.data.slice(offset));
+      node.replaceWith(replacement);
+    }
   }
 
   return template.innerHTML;

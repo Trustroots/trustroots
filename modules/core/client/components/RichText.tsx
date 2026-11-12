@@ -1,5 +1,9 @@
 import React, { useMemo } from 'react';
-import { sanitiseRichText, disableUserContentLinks } from '../utils/rich-text';
+import {
+  sanitiseRichText,
+  disableUserContentLinks,
+  linkHashtags,
+} from '../utils/rich-text';
 
 type RichTextProps = Omit<
   React.ComponentProps<'div'>,
@@ -8,21 +12,24 @@ type RichTextProps = Omit<
   content: string;
   allowTrustrootsLinks?: boolean;
   allowLinks?: boolean;
+  hashtagLinks?: ReadonlyMap<string, string>;
 };
 
 export default function RichText({
   content,
   allowTrustrootsLinks = false,
   allowLinks = false,
+  hashtagLinks,
   ...props
 }: RichTextProps) {
   const html = useMemo(() => {
     const sanitised = sanitiseRichText(content);
-    return allowLinks
+    const html = allowLinks
       ? sanitised
       : disableUserContentLinks(sanitised, allowTrustrootsLinks);
-  }, [content, allowLinks, allowTrustrootsLinks]);
-  // html is produced by DOMPurify in sanitiseRichText; link handling only removes destinations.
+    return hashtagLinks?.size ? linkHashtags(html, hashtagLinks) : html;
+  }, [content, allowLinks, allowTrustrootsLinks, hashtagLinks]);
+  // DOMPurify sanitises user content. Generated destinations come from application code.
   // nosemgrep: typescript.react.security.audit.react-dangerouslysetinnerhtml.react-dangerouslysetinnerhtml
   return <div {...props} dangerouslySetInnerHTML={{ __html: html }} />;
 }

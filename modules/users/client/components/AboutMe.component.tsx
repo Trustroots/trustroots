@@ -1,12 +1,16 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Internal dependencies
 import '@/config/client/i18n';
-import { plainTextLength } from '@/modules/core/client/utils/filters';
+import {
+  plainText,
+  plainTextLength,
+} from '@/modules/core/client/utils/filters';
 import ReadMorePanel from '@/modules/core/client/components/ReadMorePanel';
+import { read as readCircles } from '@/modules/tribes/client/api/tribes.api';
 import type { UserProfile } from '../types';
 
 interface AboutMeProps {
@@ -23,6 +27,32 @@ export default function AboutMe({
   const { t } = useTranslation('users') as {
     t: (key: string, options?: Record<string, unknown>) => string;
   };
+  const hasHashtags = plainText(profile.description).includes('#');
+  const [circleLinks, setCircleLinks] = useState<ReadonlyMap<string, string>>();
+
+  useEffect(() => {
+    if (!hasHashtags) return;
+    let cancelled = false;
+    // A limit of zero requests the complete visible circle directory.
+    readCircles({ limit: 0 })
+      .then(circles => {
+        if (cancelled) return;
+        setCircleLinks(
+          new Map(
+            circles.map(({ slug }) => [
+              slug.toLowerCase(),
+              `/circles/${encodeURIComponent(slug)}`,
+            ]),
+          ),
+        );
+      })
+      .catch(() => {
+        // Keep the description readable if the circle directory is unavailable.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasHashtags]);
 
   return (
     <>
@@ -32,6 +62,7 @@ export default function AboutMe({
           {profile.description && (
             <ReadMorePanel
               content={profile.description}
+              hashtagLinks={circleLinks}
               id="profile-description"
             />
           )}
