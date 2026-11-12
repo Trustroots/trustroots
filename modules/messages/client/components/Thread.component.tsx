@@ -428,7 +428,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
               {isFetchingMore && <Loading />}
               {otherUser && !removed && (
                 <details style={{ flexShrink: 0 }}>
-                  <summary>{t<string>('Your connection')}</summary>
+                  <summary>{t('Your connection')}</summary>
                   <div style={{ maxHeight: '35vh', overflowY: 'auto' }}>
                     <YourConnection viewer={user} member={otherUser} />
                   </div>
@@ -507,9 +507,6 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                 }
               />
             </QueryClientProvider>
-            {messages.length > 0 && (
-              <ReferenceThread userToId={otherUser._id} />
-            )}
             <ReportMember username={otherUser.username as string} />
             <br />
             <br />
