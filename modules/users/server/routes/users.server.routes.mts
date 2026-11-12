@@ -40,7 +40,6 @@ const defaultExport = function (app: RouteApplication) {
     .get(userProfile.getProfileRemovalStatus)
     .delete(userProfile.cancelProfileRemoval);
 
-  // Confirm user removal
   app
     .route('/api/users/nostr/challenge')
     .all(usersPolicy.isAllowed)
