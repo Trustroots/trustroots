@@ -108,7 +108,7 @@ function SharedFooter({ build, photoCredits, variant }: Props) {
       id="tr-footer"
       role="contentinfo"
       className={classnames('container hidden-print', {
-        'hidden-xs': !showOnMobile,
+        'tw:[@media(max-width:767px)]:hidden': !showOnMobile,
         'site-footer-circle': variant === 'circle',
       })}
     >
