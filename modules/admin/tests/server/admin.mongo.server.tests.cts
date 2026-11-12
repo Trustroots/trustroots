@@ -52,10 +52,18 @@ describe('Admin Mongo diagnostics', () => {
   });
 
   it('reports live Mongo metadata, storage statistics and grouped Agenda states', async () => {
+    const earlier = new Date('2026-11-12T11:00:00Z');
+    const later = new Date('2026-11-12T12:00:00Z');
     await agenda.insertMany([
-      { name: 'sample', nextRunAt: new Date('2026-11-12T12:00:00Z') },
+      { name: 'sample', nextRunAt: later },
       { name: 'sample', disabled: true },
-      { name: 'other', lastFinishedAt: new Date('2026-11-12T11:00:00Z') },
+      { name: 'sample', lockedAt: earlier, nextRunAt: later },
+      { name: 'sample', failedAt: later, lastFinishedAt: earlier },
+      { name: 'sample', failedAt: earlier },
+      { name: 'sample', failedAt: earlier, lastFinishedAt: later },
+      { name: 'sample' },
+      { name: 'sample', failedAt: null, lastFinishedAt: null },
+      { lastFinishedAt: earlier },
     ]);
     await archived.insertOne({ name: 'archived' });
 
@@ -79,9 +87,13 @@ describe('Admin Mongo diagnostics', () => {
       .counts.should.deepEqual({
         queued: 1,
         disabled: 1,
+        locked: 1,
+        failed: 2,
+        completed: 1,
+        unscheduled: 2,
       });
     jobs
-      .find(job => job.name === 'other')!
+      .find(job => job.name === '(Unnamed job)')!
       .counts.should.deepEqual({
         completed: 1,
       });
@@ -158,6 +170,7 @@ describe('Admin Mongo diagnostics', () => {
       fcv: null,
     });
     mongoBody(response).collections[0]!.status.should.equal('missing');
+    assert.deepEqual(mongoBody(response).jobs, []);
   });
 
   it('reports unavailable topology when both hello commands fail', async () => {
@@ -184,6 +197,7 @@ describe('Admin Mongo diagnostics', () => {
         { name: 'agendaJobsArchived' },
       ],
     } as never);
+    const aggregate = sinon.spy();
     const collection = sinon
       .stub(db, 'collection')
       .callsFake((name: string) => {
@@ -217,6 +231,7 @@ describe('Admin Mongo diagnostics', () => {
                     count: 1,
                     storageSize: 10,
                     totalIndexSize: 2,
+                    wiredTiger: {},
                   },
                 },
                 {
@@ -229,7 +244,10 @@ describe('Admin Mongo diagnostics', () => {
                 },
               ];
         return {
-          aggregate: () => ({ toArray: async () => rows }),
+          aggregate: (pipeline: unknown[], options: unknown) => {
+            aggregate(name, pipeline, options);
+            return { toArray: async () => rows };
+          },
         } as never;
       });
     const admin = db.admin();
@@ -245,6 +263,11 @@ describe('Admin Mongo diagnostics', () => {
     const response = mockResponse();
     await adminMongo.diagnostics({} as never, response as never);
     const body = mongoBody(response);
+    assert.deepEqual(body.server.fcv, {
+      version: '4.4',
+      targetVersion: null,
+      transitioning: false,
+    });
     body.collections[0]!.should.deepEqual({
       name: 'agendaJobs',
       status: 'available',
@@ -261,7 +284,31 @@ describe('Admin Mongo diagnostics', () => {
       indexBytes: 6,
       reusableBytes: null,
     });
-    list.calledOnce.should.equal(true);
+    sinon.assert.calledOnceWithExactly(
+      list,
+      { name: { $in: ['agendaJobs', 'agendaJobsArchived'] } },
+      { nameOnly: true, maxTimeMS: 5_000 },
+    );
+    for (const name of ['agendaJobs', 'agendaJobsArchived']) {
+      sinon.assert.calledWithExactly(
+        aggregate,
+        name,
+        [{ $collStats: { storageStats: {} } }],
+        { maxTimeMS: 5_000 },
+      );
+    }
+    sinon.assert.calledWithExactly(aggregate, 'agendaJobs', sinon.match.array, {
+      maxTimeMS: 5_000,
+      allowDiskUse: false,
+    });
+    for (const request of [
+      { buildInfo: 1 },
+      { hello: 1 },
+      { isMaster: 1 },
+      { getParameter: 1, featureCompatibilityVersion: 1 },
+    ]) {
+      sinon.assert.calledWithExactly(command, request, { timeoutMS: 5_000 });
+    }
     collection.callCount.should.equal(3);
   });
 

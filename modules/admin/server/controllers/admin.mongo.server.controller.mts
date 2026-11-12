@@ -16,13 +16,15 @@ async function readServerDiagnostics(db: Db): Promise<MongoServerDiagnostics> {
   const admin = db.admin();
   const options = { timeoutMS: maxTimeMS };
   const [buildInfo, hello, compatibility] = await Promise.all([
-    admin.command({ buildInfo: 1 }, options).catch(() => null),
+    admin.command({ buildInfo: 1 }, options).catch(() => undefined),
     admin
       .command({ hello: 1 }, options)
-      .catch(() => admin.command({ isMaster: 1 }, options).catch(() => null)),
+      .catch(() =>
+        admin.command({ isMaster: 1 }, options).catch(() => undefined),
+      ),
     admin
       .command({ getParameter: 1, featureCompatibilityVersion: 1 }, options)
-      .catch(() => null),
+      .catch(() => undefined),
   ]);
 
   const rawVersion: unknown = buildInfo?.version;
