@@ -95,6 +95,26 @@ describe('Admin featured Nostr notes', () => {
       .expect(403);
   });
 
+  it('only exposes usernames eligible for Trustroots NIP-05 lookup', async () => {
+    const npub = nip19.npubEncode(event.pubkey);
+    const member = await users
+      .createTestUser({
+        username: 'featurednoteauthor',
+        nostrNpub: npub,
+      })
+      .save();
+
+    const featured = await admin.post(featurePath).send({ event }).expect(200);
+    assert.equal(featured.body.authorUsername, member.username);
+
+    const listed = await request(app).get(publicPath).expect(200);
+    assert.equal(listed.body[0].authorUsername, member.username);
+
+    await member.updateOne({ public: false });
+    const hidden = await request(app).get(publicPath).expect(200);
+    assert.equal(hidden.body[0].authorUsername, undefined);
+  });
+
   it('rejects malformed, non-text, and tampered events', async () => {
     for (const invalid of [
       undefined,

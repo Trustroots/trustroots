@@ -4,23 +4,31 @@ import type { FeaturedNostrNote } from '../../shared/featured-nostr-notes.mts';
 import FeaturedNote, {
   type FeaturedNostrNoteRecord,
 } from '../models/featured-nostr-note.server.model.mts';
+import { findPublicNip05Usernames } from '../services/nostr-identity.server.service.mts';
 
 const eventIdPattern = /^[0-9a-f]{64}$/;
 
-function publicNote(note: FeaturedNostrNoteRecord): FeaturedNostrNote {
-  return {
+async function publicNotes(
+  notes: FeaturedNostrNoteRecord[],
+): Promise<FeaturedNostrNote[]> {
+  if (!notes.length) return [];
+  const usernames = await findPublicNip05Usernames(
+    notes.map(note => note.npub),
+  );
+  return notes.map(note => ({
     id: note._id,
     npub: note.npub,
+    authorUsername: usernames.get(note.npub),
     content: note.content,
     publishedAt: note.publishedAt.toISOString(),
-  };
+  }));
 }
 
 export const listFeaturedNotes: RequestHandler = async (_req, res) => {
   const notes = await FeaturedNote.find({ featuredAt: { $ne: null } })
     .sort({ featuredAt: -1, _id: 1 })
     .lean();
-  res.set('Cache-Control', 'no-store').json(notes.map(publicNote));
+  res.set('Cache-Control', 'no-store').json(await publicNotes(notes));
 };
 
 export const featureNote: RequestHandler = async (req, res) => {
@@ -74,7 +82,8 @@ export const featureNote: RequestHandler = async (req, res) => {
     note = restored;
   }
 
-  res.json(publicNote(note));
+  const [featured] = await publicNotes([note]);
+  res.json(featured);
 };
 
 export const removeFeaturedNote: RequestHandler<{ id: string }> = async (

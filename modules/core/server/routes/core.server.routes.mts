@@ -8,6 +8,7 @@ import * as nip19 from 'nostr-tools/nip19';
 import mongoose from 'mongoose';
 import { getMapDefaultLocation } from '../controllers/map-default-location.server.controller.mts';
 import { listFeaturedNotes } from '../controllers/featured-nostr-notes.server.controller.mts';
+import { publicNip05MemberFilter } from '../services/nostr-identity.server.service.mts';
 
 /**
  * Module dependencies.
@@ -161,15 +162,8 @@ const defaultExport = function (app: Application) {
     }
     const name = String(rawName).toLowerCase();
     User.findOne({
+      ...publicNip05MemberFilter,
       username: name,
-      public: true,
-      email: {
-        $exists: true,
-        $nin: ['', null],
-      },
-      roles: {
-        $nin: ['suspended', 'shadowban'],
-      },
     }).then(
       (user: NostrUserRecord | null) => {
         const obj: { names: Record<string, string> } = {

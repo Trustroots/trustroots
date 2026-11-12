@@ -1,6 +1,7 @@
 export interface FeaturedNostrNote {
   id: string;
   npub: string;
+  authorUsername?: string;
   content: string;
   publishedAt: string;
 }
