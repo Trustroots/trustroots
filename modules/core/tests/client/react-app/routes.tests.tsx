@@ -180,7 +180,20 @@ jest.mock('@/modules/pages/client/components/Team.component', () => ({
 }));
 jest.mock(
   '@/modules/pages/client/components/Volunteering.component',
-  () => () => <main>Volunteering</main>,
+  () =>
+    ({ children }: React.PropsWithChildren) => (
+      <main>Volunteering{children}</main>
+    ),
+);
+jest.mock(
+  '@/modules/tribes/client/components/TopicChat',
+  () =>
+    ({ roomName, user }: UserRouteProps & { roomName: string }) => (
+      <p>
+        {roomName} chat for {user?.username ?? 'visitor'}
+        {typeof user?.nostrNpub === 'string' && ` with ${user.nostrNpub}`}
+      </p>
+    ),
 );
 jest.mock('@/modules/users/client/components/Welcome.component', () => () => (
   <main>Welcome</main>
@@ -598,6 +611,29 @@ describe('React route ownership', () => {
     });
     expect(renderRoute(route).getByText('Admin circles')).toBeInTheDocument();
   });
+
+  it.each([
+    [null, 'volunteering chat for visitor'],
+    [
+      { _id: 'fictional-volunteer', username: 'river' },
+      'volunteering chat for river',
+    ],
+    [
+      {
+        _id: 'fictional-volunteer',
+        username: 'river',
+        nostrNpub: 'linked-key',
+      },
+      'volunteering chat for river with linked-key',
+    ],
+  ])(
+    'passes the available member identity to volunteering chat',
+    (user, text) => {
+      expect(
+        renderRoute(findRoute('/volunteering'), user).getByText(text),
+      ).toBeInTheDocument();
+    },
+  );
 
   it('returns access redirects for protected route policies', () => {
     const route = getReactRoutePolicy('/admin');

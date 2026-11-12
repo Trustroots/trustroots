@@ -23,6 +23,8 @@ declare global {
   }
 }
 
+const volunteeringMessage = '<strong>Fictional volunteering message</strong>';
+
 async function prepareRadio(page: Page, unavailable = false) {
   await stubArtworkImages(page);
   const key = generateSecretKey();
@@ -47,6 +49,15 @@ async function prepareRadio(page: Page, unavailable = false) {
         created_at,
         content: 'A fictional Hackers message',
         tags: [['t', 'trustroots-circle-hackers']],
+      },
+      key,
+    ),
+    finalizeEvent(
+      {
+        kind: 1,
+        created_at,
+        content: volunteeringMessage,
+        tags: [['t', 'trustroots-volunteering']],
       },
       key,
     ),
@@ -404,6 +415,37 @@ test('radio remains playable when the shared room is unavailable and stops on na
   );
 });
 
+async function linkChatSigner(page: Page) {
+  const key = generateSecretKey();
+  const publicKey = getPublicKey(key);
+  const profile = await page.request.put('/api/users', {
+    headers: { 'X-Trustroots-Request': '1' },
+    data: {
+      nostrNpub: nip19.npubEncode(publicKey),
+      nostrProof: await createNostrProof(page.request, key),
+    },
+  });
+  expect(profile.ok()).toBe(true);
+  await page.exposeFunction(
+    'signRadioFixtureEvent',
+    (template: EventTemplate) => finalizeEvent(template, key),
+  );
+  await page.addInitScript(publicKey => {
+    window.nostr = {
+      getPublicKey: async () => publicKey,
+      signEvent: template => window.signRadioFixtureEvent(template),
+    };
+  }, publicKey);
+  return publicKey;
+}
+
+async function unlinkChatSigner(page: Page) {
+  await page.request.put('/api/users', {
+    headers: { 'X-Trustroots-Request': '1' },
+    data: { nostrNpub: '' },
+  });
+}
+
 test('Hackers chat requires sign-in and publishes separately from Radio', async ({
   page,
 }, testInfo) => {
@@ -428,26 +470,7 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
   await expect(chat.getByText('A fictional radio message')).toHaveCount(0);
   await expect(chat.getByLabel('Message')).toBeDisabled();
 
-  const key = generateSecretKey();
-  const publicKey = getPublicKey(key);
-  const profile = await page.request.put('/api/users', {
-    headers: { 'X-Trustroots-Request': '1' },
-    data: {
-      nostrNpub: nip19.npubEncode(publicKey),
-      nostrProof: await createNostrProof(page.request, key),
-    },
-  });
-  expect(profile.ok()).toBe(true);
-  await page.exposeFunction(
-    'signRadioFixtureEvent',
-    (template: EventTemplate) => finalizeEvent(template, key),
-  );
-  await page.addInitScript(publicKey => {
-    window.nostr = {
-      getPublicKey: async () => publicKey,
-      signEvent: template => window.signRadioFixtureEvent(template),
-    };
-  }, publicKey);
+  const publicKey = await linkChatSigner(page);
   try {
     await page.reload();
     await expect(chat.getByLabel('Message')).toBeEnabled();
@@ -475,9 +498,54 @@ test('Hackers chat requires sign-in and publishes separately from Radio', async 
       ]),
     );
   } finally {
-    await page.request.put('/api/users', {
-      headers: { 'X-Trustroots-Request': '1' },
-      data: { nostrNpub: '' },
-    });
+    await unlinkChatSigner(page);
+  }
+});
+
+test('volunteering chat reads and publishes on its own Nostr topic', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.volunteering', [
+    'Visitors see a sign-in link, and members can read volunteering chat without a signer.',
+    'A matching signer posts to the volunteering topic.',
+  ]);
+  await prepareRadio(page);
+  await page.goto('/volunteering');
+  const chat = page.getByRole('region', { name: 'Volunteering chat' });
+  await expect(chat.getByText(volunteeringMessage)).toHaveCount(0);
+  await chat.getByRole('link', { name: 'Log in to see chat.' }).click();
+  await page.getByLabel('Email or username').fill(SEEDED_ADMIN.username);
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill(SEEDED_ADMIN.password);
+  await page.getByRole('button', { name: 'Sign in to continue' }).click();
+  await expect(page).toHaveURL(/\/volunteering$/);
+  const message = chat.getByText(volunteeringMessage, { exact: true });
+  await expect(message).toBeVisible();
+  await expect(message.locator('strong')).toHaveCount(0);
+  await expect(chat.getByText('A fictional Hackers message')).toHaveCount(0);
+  await expect(chat.getByText('A fictional radio message')).toHaveCount(0);
+  await expect(chat.getByLabel('Message')).toBeDisabled();
+
+  await linkChatSigner(page);
+  try {
+    await page.reload();
+    await expect(chat.getByLabel('Message')).toBeEnabled();
+    await chat.getByLabel('Message').fill('Hello from a fictional volunteer');
+    await chat.getByRole('button', { name: 'Send' }).click();
+    await expect(
+      chat.getByText('Hello from a fictional volunteer'),
+    ).toBeVisible();
+    const published = await page.evaluate(() => window.__radioPublished);
+    expect(published).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          content: 'Hello from a fictional volunteer',
+          tags: [['t', 'trustroots-volunteering']],
+        }),
+      ]),
+    );
+  } finally {
+    await unlinkChatSigner(page);
   }
 });

@@ -5,7 +5,9 @@ import {
   type RadioSigner,
 } from '../services/radio.client.service';
 
-export default function useCircleSigner(user?: UserProfile) {
+export default function useCircleSigner(
+  user?: Pick<UserProfile, 'username' | 'nostrNpub'>,
+) {
   const username = user?.username;
   const nostrNpub = user?.nostrNpub;
   const attempt = useRef<{ pending: boolean; triedProvider: boolean } | null>(

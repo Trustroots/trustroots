@@ -8,7 +8,7 @@ import {
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import '@/config/client/i18n';
-import HackersCircleChat from '@/modules/tribes/client/components/HackersCircleChat';
+import TopicChat from '@/modules/tribes/client/components/TopicChat';
 import {
   connectRadioSigner,
   fetchRadioAuthorUsernames,
@@ -69,19 +69,22 @@ beforeEach(() => {
 });
 
 it('does not create a room for a guest', () => {
-  render(<HackersCircleChat />);
+  render(<TopicChat roomName="hackers" />);
 
   expect(RadioRoom).not.toHaveBeenCalled();
   expect(
     screen.getByRole('link', { name: 'Log in to see chat.' }),
-  ).toHaveAttribute('href', '/signin?redirect=/circles/hackers');
+  ).toHaveAttribute(
+    'href',
+    '/signin?continue=true&returnTo=%2Fcircles%2Fhackers',
+  );
 });
 
-it('opens a room for a signed-in member and deduplicates received events', async () => {
+it('deduplicates received events and displays their content as text', async () => {
   jest.mocked(fetchRadioAuthorUsernames).mockResolvedValueOnce({
     [publicKey]: user.username,
   });
-  render(<HackersCircleChat user={user} />);
+  render(<TopicChat roomName="hackers" user={user} />);
 
   expect(RadioRoom).toHaveBeenCalledWith(
     expect.any(Function),
@@ -95,7 +98,7 @@ it('opens a room for a signed-in member and deduplicates received events', async
     created_at: 1_800_000_000,
     kind: 1,
     tags: [],
-    content: 'A fictional chat message.',
+    content: '<strong>A fictional chat message.</strong>',
     sig: 'signature',
   };
   act(() => {
@@ -103,7 +106,9 @@ it('opens a room for a signed-in member and deduplicates received events', async
     receive(event);
   });
 
-  expect(await screen.findByText(event.content)).toBeInTheDocument();
+  const message = await screen.findByText(event.content);
+  expect(message).toBeInTheDocument();
+  expect(message.children).toHaveLength(0);
   expect(screen.getAllByText(event.content)).toHaveLength(1);
   const identity = await screen.findByRole('link', {
     name: 'fictional-member@trustroots.org',
@@ -123,7 +128,7 @@ it('shows an unknown author as a plain full npub', async () => {
     content: 'A message from an unknown author.',
     sig: 'signature',
   };
-  render(<HackersCircleChat user={user} />);
+  render(<TopicChat roomName="hackers" user={user} />);
   act(() => receive(event));
 
   const npub = npubEncode(unknownKey);
@@ -132,7 +137,7 @@ it('shows an unknown author as a plain full npub', async () => {
 });
 
 it('keeps sending disabled until the linked signer connects', async () => {
-  render(<HackersCircleChat user={user} />);
+  render(<TopicChat roomName="hackers" user={user} />);
 
   expect(screen.getByLabelText('Message')).toBeDisabled();
   expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
@@ -147,7 +152,7 @@ it('keeps sending disabled until the linked signer connects', async () => {
 });
 
 it('publishes trimmed text with the hackers chat topic tag', async () => {
-  render(<HackersCircleChat user={user} />);
+  render(<TopicChat roomName="hackers" user={user} />);
   fireEvent.click(
     screen.getByRole('button', { name: 'Connect Nostr identity' }),
   );
@@ -169,7 +174,7 @@ it('publishes trimmed text with the hackers chat topic tag', async () => {
 
 it('keeps the draft and shows an error when publishing fails', async () => {
   room.publish.mockRejectedValueOnce(new Error('relay unavailable'));
-  render(<HackersCircleChat user={user} />);
+  render(<TopicChat roomName="hackers" user={user} />);
   fireEvent.click(
     screen.getByRole('button', { name: 'Connect Nostr identity' }),
   );
@@ -185,22 +190,26 @@ it('keeps the draft and shows an error when publishing fails', async () => {
   expect(screen.getByLabelText('Message')).toHaveValue('Keep this draft.');
 });
 
-it('reports relay errors and closes the room on unmount', () => {
-  const { unmount } = render(<HackersCircleChat user={user} />);
+it.each([
+  ['hackers', 'The Hackers chat is unavailable.'],
+  ['volunteering', 'The volunteering chat is unavailable.'],
+] as const)(
+  'reports relay errors and closes the %s room on unmount',
+  (roomName, error) => {
+    const { unmount } = render(<TopicChat roomName={roomName} user={user} />);
 
-  act(() => relayFailure());
-  expect(screen.getByRole('status')).toHaveTextContent(
-    'The Hackers chat is unavailable.',
-  );
-  unmount();
-  expect(room.close).toHaveBeenCalledTimes(1);
-});
+    act(() => relayFailure());
+    expect(screen.getByRole('status')).toHaveTextContent(error);
+    unmount();
+    expect(room.close).toHaveBeenCalledTimes(1);
+  },
+);
 
 it('orders different messages and shows signer connection errors', async () => {
   jest
     .mocked(connectRadioSigner)
     .mockRejectedValueOnce(new Error('Signer denied access.'));
-  render(<HackersCircleChat user={user} />);
+  render(<TopicChat roomName="hackers" user={user} />);
   const sample: Event = {
     id: 'new',
     pubkey: publicKey,
@@ -242,7 +251,7 @@ it.each(['resolve', 'reject'])(
               : reject(new Error('Offline'));
         }),
     );
-    const { unmount } = render(<HackersCircleChat user={user} />);
+    const { unmount } = render(<TopicChat roomName="hackers" user={user} />);
     fireEvent.click(
       screen.getByRole('button', { name: 'Connect Nostr identity' }),
     );

@@ -15,6 +15,7 @@ export const RADIO_RELAYS = [
   'wss://relay.nomadwiki.org',
 ];
 export const HACKERS_CHAT_TOPIC = 'trustroots-circle-hackers';
+export const VOLUNTEERING_CHAT_TOPIC = 'trustroots-volunteering';
 export const LISTENER_TTL = 12 * 60;
 export const EVENT_TTL = 30 * 24 * 60 * 60;
 export const FAVOURITES_KEY = 'radiostr:starred-stations:v1';
