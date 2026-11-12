@@ -89,7 +89,10 @@ test('administrators can feature and remove a published Nostr note', async ({
       page.getByRole('heading', { name: 'Featured Nostr notes' }),
     ).toBeVisible();
     const input = page.getByLabel('Nostr note link or event ID');
-    const feature = page.getByRole('button', { name: 'Feature note' });
+    const feature = page.getByRole('button', {
+      name: 'Feature note',
+      exact: true,
+    });
     for (const reference of [
       `https://njump.me/${noteCode}`,
       `nostr:${nip19.neventEncode({ id: event.id })}`,
