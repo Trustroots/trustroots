@@ -725,6 +725,7 @@ class HostMapViewModelTest {
         viewModel.onEvent(HostMapEvent.ViewportCommandApplied(command.id))
         val pannedViewport = MapViewport(13.0, 35.0, 8.0)
         viewModel.onEvent(HostMapEvent.ViewportChanged(pannedViewport, bounds(12.5)))
+        viewModel.onEvent(HostMapEvent.ViewportCommandApplied(command.id))
         assertEquals(pannedViewport, viewModel.state.value.viewport)
         assertNull(viewModel.state.value.viewportCommand)
     }
