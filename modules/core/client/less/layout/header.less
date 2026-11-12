@@ -42,7 +42,7 @@
     }
 
     > li > a,
-    > .dropdown > .dropdown-toggle {
+    > li > [data-slot='navigation-dropdown-trigger'] {
       display: block;
       padding: 10px 12px;
       color: @navbar-default-link-color;
@@ -54,7 +54,7 @@
       position: relative;
     }
 
-    > .dropdown > .dropdown-toggle {
+    > li > [data-slot='navigation-dropdown-trigger'] {
       background: transparent;
       border: 0;
     }
@@ -143,12 +143,8 @@
       margin-top: 0;
     }
 
-    /* Make Bootstrap dropdowns open at hover */
-    .dropdown:hover,
-    .dropdown:focus {
-      &:not(.disable-hover-display) .dropdown-menu {
-        display: block;
-      }
+    .header-link-dropdown:hover .dropdown-menu {
+      display: block;
     }
 
     /* Make sure avatar works as a dropdown handle */
