@@ -3014,7 +3014,7 @@ const features = [
     area: AREA.adminModeration,
     status: STATUS.active,
     description:
-      'Administrators curate published Nostr notes for the homepage.',
+      'Administrators publish and curate Nostr notes for the homepage.',
     roles: ['admin', 'visitor', 'member'],
     references: {
       clientRoutes: [
@@ -3045,6 +3045,7 @@ const features = [
       'Administrators can feature and remove a published note on the homepage.',
       'Visitors can read featured notes and regular members cannot change them.',
       'An author-signed Nostr deletion request removes the note and prevents re-featuring.',
+      'Administrators can publish a public note with a NIP-07 signer and feature it on the homepage.',
     ],
     relatedSpecs: [
       spec(

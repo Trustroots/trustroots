@@ -14,17 +14,25 @@ import FeaturedNostrNoteContent from '@/modules/core/client/components/FeaturedN
 import type { FeaturedNostrNote } from '@/modules/core/shared/featured-nostr-notes.mts';
 import {
   featureNostrNote,
+  featureSignedNostrNote,
   publishNostrNoteDeletion,
+  publishNostrTextNote,
   recordNostrNoteDeletion,
   removeFeaturedNostrNote,
+  signNostrTextNote,
 } from '../api/featured-nostr-notes.api';
 import AdminHeader from './AdminHeader.component';
 
 type PendingDeletion = { note: FeaturedNostrNote; event?: Event };
+type PendingPublication = { event: Event; acknowledged: boolean };
 
 export default function AdminNostr() {
   const [notes, setNotes] = useState<FeaturedNostrNote[] | null>(null);
   const [reference, setReference] = useState('');
+  const [draft, setDraft] = useState('');
+  const [publication, setPublication] = useState<PendingPublication | null>(
+    null,
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState('');
@@ -40,16 +48,52 @@ export default function AdminNostr() {
     return () => controller.abort();
   }, []);
 
+  function addFeaturedNote(note: FeaturedNostrNote) {
+    if (!featuredNotes.some(entry => entry.id === note.id)) {
+      setNotes([note, ...featuredNotes]);
+    }
+  }
+
+  async function publish(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true);
+    setError('');
+    setStatus('');
+    let acknowledged = publication?.acknowledged ?? false;
+    try {
+      const signed = publication?.event ?? (await signNostrTextNote(draft));
+      if (!acknowledged) {
+        setPublication({ event: signed, acknowledged: false });
+        await publishNostrTextNote(signed);
+        acknowledged = true;
+        setPublication({ event: signed, acknowledged });
+      }
+      addFeaturedNote(await featureSignedNostrNote(signed));
+      setPublication(null);
+      setDraft('');
+      setStatus('Note published on Nostr and featured on the homepage.');
+    } catch (cause) {
+      const message = getErrorMessage(
+        cause,
+        cause instanceof Error ? cause.message : 'Could not publish the note.',
+      );
+      setError(
+        acknowledged
+          ? `Published on Nostr. Could not save to the homepage. ${message}`
+          : message,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function feature(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
     setError('');
     setStatus('');
     try {
-      const note = await featureNostrNote(reference);
-      if (!featuredNotes.some(entry => entry.id === note.id)) {
-        setNotes([note, ...featuredNotes]);
-      }
+      addFeaturedNote(await featureNostrNote(reference));
       setReference('');
       setStatus('Note featured on the homepage.');
     } catch (cause) {
@@ -117,10 +161,35 @@ export default function AdminNostr() {
       <AdminHeader />
       <div className="container">
         <h1>Featured Nostr notes</h1>
+        <h2>Publish a note</h2>
         <p>
-          Publish a public text note in your Nostr client, then paste its link
-          to feature it on the Trustroots homepage.
+          Your NIP-07 browser signer will sign the note. It will be public on
+          Nostr and featured on the Trustroots homepage.
         </p>
+        <form onSubmit={publish}>
+          <div className="form-group">
+            <label htmlFor="nostr-note-text">Note text</label>
+            <textarea
+              id="nostr-note-text"
+              className="form-control"
+              rows={4}
+              value={draft}
+              onChange={event => {
+                setDraft(event.target.value);
+                setPublication(null);
+              }}
+              required
+              disabled={busy}
+              readOnly={publication?.acknowledged}
+            />
+          </div>
+          <Button type="submit" disabled={busy || !notes || !draft.trim()}>
+            {publication?.acknowledged
+              ? 'Retry homepage save'
+              : 'Publish and feature note'}
+          </Button>
+        </form>
+        <h2>Feature an existing note</h2>
         <form onSubmit={feature}>
           <div className="form-group">
             <label htmlFor="featured-note-reference">

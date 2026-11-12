@@ -5,9 +5,12 @@ import '@testing-library/jest-dom';
 import AdminNostr from '@/modules/admin/client/components/AdminNostr.component';
 import {
   featureNostrNote,
+  featureSignedNostrNote,
   publishNostrNoteDeletion,
+  publishNostrTextNote,
   recordNostrNoteDeletion,
   removeFeaturedNostrNote,
+  signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr-notes.api';
 
@@ -29,6 +32,60 @@ const note = {
 };
 
 afterEach(() => jest.resetAllMocks());
+
+it('keeps the draft and retries each failed step with the same signed event', async () => {
+  const signed = { id: note.id, kind: 1 } as Event;
+  const sign = jest.mocked(signNostrTextNote);
+  const publish = jest.mocked(publishNostrTextNote);
+  const save = jest.mocked(featureSignedNostrNote);
+  listNotes.mockResolvedValue([]);
+  sign
+    .mockRejectedValueOnce(new Error('Signing cancelled.'))
+    .mockResolvedValue(signed);
+  publish.mockRejectedValueOnce(undefined).mockResolvedValue(undefined);
+  save
+    .mockRejectedValueOnce(new Error('Service unavailable.'))
+    .mockResolvedValue(note);
+  render(<AdminNostr />);
+  await screen.findByText('No featured notes.');
+
+  const input = screen.getByRole('textbox', { name: 'Note text' });
+  const submit = screen.getByRole('button', {
+    name: 'Publish and feature note',
+  });
+  expect(submit).toBeDisabled();
+  fireEvent.change(input, { target: { value: note.content } });
+
+  fireEvent.click(submit);
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Signing cancelled.',
+  );
+  expect(publish).not.toHaveBeenCalled();
+
+  fireEvent.click(submit);
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Could not publish the note.',
+  );
+  expect(save).not.toHaveBeenCalled();
+  expect(input).toHaveValue(note.content);
+
+  fireEvent.click(submit);
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Published on Nostr. Could not save to the homepage. Service unavailable.',
+  );
+  expect(input).toHaveAttribute('readonly');
+  fireEvent.click(screen.getByRole('button', { name: 'Retry homepage save' }));
+
+  expect(await screen.findByRole('status')).toHaveTextContent(
+    'Note published on Nostr and featured on the homepage.',
+  );
+  expect(input).toHaveValue('');
+  expect(screen.getByRole('article')).toHaveTextContent(note.content);
+  expect(sign).toHaveBeenCalledTimes(2);
+  expect(sign).toHaveBeenLastCalledWith(note.content);
+  expect(publish.mock.calls).toEqual([[signed], [signed]]);
+  expect(save.mock.calls).toEqual([[signed], [signed]]);
+});
 
 it('features a note once and removes it from the list', async () => {
   listNotes.mockResolvedValue([]);
