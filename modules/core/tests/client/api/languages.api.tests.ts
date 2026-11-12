@@ -25,10 +25,7 @@ afterEach(() => {
 
 describe('languages api', () => {
   it('loads object format by default', async () => {
-    const payload: LanguageOption[] = [
-      { value: 'eng', label: 'English' },
-      { value: 'fin', label: 'Finnish' },
-    ];
+    const payload = { eng: 'English', fin: 'Finnish' };
     mockUseQuery.mockImplementation((options: unknown) => options);
     mockedAxios.get.mockResolvedValueOnce({ data: payload });
 
@@ -63,6 +60,30 @@ describe('languages api', () => {
     expect(mockedAxios.get).toHaveBeenCalledWith('/api/languages?format=array');
     expect(queryFn).toBe(Reflect.get(result, 'queryFn'));
   });
+
+  it.each([
+    { format: 'array', data: { eng: 'English' } },
+    { format: 'array', data: [{ value: 'eng', label: null }] },
+    {
+      format: 'array',
+      data: [{ value: 'eng', label: 'English', deprecated: 'false' }],
+    },
+    { format: 'object', data: [{ value: 'eng', label: 'English' }] },
+    { format: 'object', data: { eng: null } },
+    { format: 'object', data: '<html>Unexpected response</html>' },
+  ] as const)(
+    'rejects invalid $format responses ($data)',
+    async ({ format, data }) => {
+      mockUseQuery.mockImplementation((options: unknown) => options);
+      mockedAxios.get.mockResolvedValueOnce({ data });
+
+      useLanguagesQuery({ format });
+      const { queryFn }: { queryFn: QueryFn } = mockUseQuery.mock.calls[0][0];
+      await expect(queryFn()).rejects.toThrow(
+        `Invalid language response for format "${format}"`,
+      );
+    },
+  );
 
   it('forwards request failures', async () => {
     const networkError = new Error('network failed');
