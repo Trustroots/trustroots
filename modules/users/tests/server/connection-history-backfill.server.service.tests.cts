@@ -122,6 +122,7 @@ describe('connection history backfill service', function () {
     const second = record({
       _id: first._id,
       extSitesBW: 'second-member',
+      connectionHistoryRevision: 3,
     });
     const find = sinon.stub(User, 'findById');
     find.onFirstCall().returns(lookupQuery(first) as never);
@@ -136,9 +137,11 @@ describe('connection history backfill service', function () {
     should(
       (update.secondCall.args[0] as Record<string, unknown>).extSitesBW,
     ).equal('second-member');
+    should(update.secondCall.args[0].connectionHistoryRevision).equal(3);
     const secondWrite = update.secondCall.args[1] as {
       $set: Record<string, unknown>;
     };
+    should(secondWrite.$set.connectionHistoryRevision).equal(4);
     should(
       (
         secondWrite.$set.connectionHistory as Array<{ newIdentifier: string }>

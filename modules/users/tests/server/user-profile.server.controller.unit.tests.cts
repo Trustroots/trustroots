@@ -9,6 +9,9 @@ const sinon: typeof import('sinon') = require('sinon');
 
 require('./../../server/models/user.server.model.mjs');
 const profileController = require('./../../server/controllers/users.profile.server.controller.mjs');
+const {
+  ConnectionHistoryConflictError,
+}: typeof import('../../server/services/connection-history.server.service.mts') = require('../../server/services/connection-history.server.service.mts');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
 const should = require('should');
 
@@ -642,6 +645,23 @@ describe('Profile controller unit tests', () => {
       should.exist(
         await User.exists({ _id: userDoc._id, username: 'renamedelsewhere' }),
       );
+    });
+
+    it('returns a conflict when an external connection changed concurrently', async () => {
+      sinon.stub(userDoc, 'save').rejects(new ConnectionHistoryConflictError());
+
+      const { res } = await runHandler(res =>
+        profileController.update(
+          { user: userDoc, body: { extSitesBW: 'another-member' } },
+          res,
+        ),
+      );
+
+      res.statusCode.should.equal(409);
+      responseBody(res).should.deepEqual({
+        message:
+          'An external connection changed in another request. Please try again.',
+      });
     });
 
     const usernameFailures: Array<[string, () => void, number]> = [

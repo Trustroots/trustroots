@@ -20,10 +20,7 @@ const identityPaths = [
 function identityFilter(record: UserServerRecord): Record<string, unknown> {
   return Object.fromEntries(
     identityPaths.map(path => {
-      const value = path.split('.').reduce<unknown>((current, part) => {
-        if (!current || typeof current !== 'object') return undefined;
-        return (current as Record<string, unknown>)[part];
-      }, record);
+      const value = record[path];
       return [path, value === undefined ? { $exists: false } : value];
     }),
   );

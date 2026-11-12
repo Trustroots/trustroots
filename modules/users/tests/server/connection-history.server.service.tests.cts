@@ -110,6 +110,25 @@ describe('connection history service', function () {
     user.connectionSearchKeys?.should.containEql('couchers:member');
   });
 
+  it('checks a marked identity without an earlier snapshot against the stored value', async function () {
+    const user = trackedUser({
+      values: { extSitesCouchers: 'member', $locals: {} },
+      modifiedPaths: ['extSitesCouchers'],
+    });
+    stubPersisted({
+      _id: user._id,
+      extSitesCouchers: 'member',
+      connectionHistoryInitialised: true,
+      connectionHistoryRevision: 3,
+      connectionHistory: [],
+    });
+
+    await service.trackConnectionHistoryBeforeSave(user);
+
+    user.connectionHistory?.should.have.length(0);
+    user.$where.should.deepEqual({ connectionHistoryRevision: 3 });
+  });
+
   it('rejects stale sibling provider identifiers when the Mixed provider object changes', async function () {
     const user = trackedUser({
       values: {
