@@ -262,6 +262,24 @@ The signed-in desktop header SHALL show dropdowns on hover and keyboard focus. C
 - **WHEN** a member uses the header on a mobile viewport
 - **THEN** Circles and Search retain their direct links without hover dropdowns
 
+### Requirement: Owned site header navigation
+
+The web client SHALL render the site header with owned markup and the Support
+and Profile dropdowns with the shared UI package. Desktop dropdown content SHALL
+retain ordinary links and actions. The mobile navigation SHALL retain its
+existing menu link.
+
+#### Scenario: Open and dismiss a desktop dropdown
+
+- **WHEN** a signed-in member activates a desktop dropdown with the keyboard
+- **THEN** the dropdown opens and Tab reaches its first link
+- **AND** Escape dismisses the dropdown and returns focus to its trigger
+
+#### Scenario: Follow a Support link with the pointer
+
+- **WHEN** a signed-in member hovers over the desktop Support trigger
+- **THEN** the dropdown opens and stays open while the pointer moves to a link
+
 ### Requirement: Consistent formatted content
 
 The browser SHALL render descriptions, notes, message bodies and message previews using a shared formatting policy aligned with the server formatter. Only supported formatting elements, per-element attributes and link schemes SHALL be retained. Message content SHALL retain only same-origin HTTP links. Plain-text excerpts SHALL be derived from complete markup, and externally supplied editor content SHALL use the same formatting policy without disturbing ordinary typing.

@@ -2,7 +2,6 @@ import React, { useEffect, useRef } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import { useTranslation } from 'react-i18next';
-import { Navbar } from 'react-bootstrap';
 
 // Internal dependencies
 import type { AuthUser } from '@/modules/core/client/react-app/auth';
@@ -20,7 +19,6 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
   const headerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    // The effect runs after Navbar attaches its ref.
     const header = headerRef.current as HTMLElement;
     const updateHeight = () => {
       document.documentElement.style.setProperty(
@@ -47,7 +45,11 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
   }, []);
 
   return (
-    <Navbar className="hidden-print" id="tr-header" fixed="top" ref={headerRef}>
+    <header
+      className="hidden-print navbar navbar-expand navbar-light fixed-top"
+      id="tr-header"
+      ref={headerRef}
+    >
       <Button
         intent="primary"
         onClick={event => {
@@ -66,6 +68,6 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
       ) : (
         <NavigationLoggedOut currentPath={currentPath} />
       )}
-    </Navbar>
+    </header>
   );
 }
