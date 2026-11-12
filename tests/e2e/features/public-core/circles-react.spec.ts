@@ -853,7 +853,7 @@ test('Hackers circle puts community resources beside members on desktop and stac
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto('/circles/hackers');
     const community = page.locator('.hackers-circle-community.has-members');
-    const chat = community.locator('.hackers-circle-chat');
+    const chat = community.locator('.topic-chat');
     const resources = community.locator('.hackers-circle-resources');
     const members = community.locator('.circle-member-discovery');
     await expect(members.locator('.member-search-card')).toHaveCount(2);
