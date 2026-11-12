@@ -23,7 +23,7 @@ export function NavigationDropdown({
       <Popover.Root>
         <Popover.Trigger
           id={id}
-          className="tw:after:ms-[.255em] tw:after:inline-block tw:after:align-[.255em] tw:after:border-x-[.3em] tw:after:border-x-transparent tw:after:border-t-[.3em] tw:after:border-t-current tw:after:border-solid"
+          className="tw:after:ms-[.255em] tw:after:inline-block tw:after:align-[.255em] tw:after:border-x-[.3em] tw:after:border-x-transparent tw:after:border-t-[.3em] tw:after:border-t-current tw:after:border-b-0 tw:after:border-solid"
           data-slot="navigation-dropdown-trigger"
           openOnHover
           delay={0}
