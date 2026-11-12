@@ -4,7 +4,7 @@ import classnames from 'classnames';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 import { useAnalytics, type CircleSource } from '@trustroots/analytics/client';
 import LeaveTribeModal from './LeaveTribeModal';
-import Tooltip from '@/modules/core/client/components/Tooltip';
+import { Tooltip } from '@trustroots/ui/Tooltip';
 
 import * as api from '../api/tribes.api';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
@@ -37,14 +37,6 @@ interface JoinButtonProps extends Omit<
   /** Where the button is shown, for analytics; defaults to 'other'. */
   source?: CircleSource;
 }
-
-const TooltipWithContent = Tooltip as unknown as React.ComponentType<{
-  tooltip: React.ReactNode;
-  placement: 'bottom';
-  hidden?: boolean;
-  id?: string;
-  children: React.ReactNode;
-}>;
 
 function JoinButtonPresentational({
   className,
@@ -90,11 +82,10 @@ function JoinButtonPresentational({
   }
 
   return (
-    <TooltipWithContent
+    <Tooltip
       tooltip={t('Leave circle') as string}
       placement="bottom"
       hidden={!isMember}
-      id={`tribe-${tribe._id}`}
     >
       <Button
         {...currentLook}
@@ -116,7 +107,7 @@ function JoinButtonPresentational({
         )}
         {buttonLabel}
       </Button>
-    </TooltipWithContent>
+    </Tooltip>
   );
 }
 

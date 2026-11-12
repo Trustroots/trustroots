@@ -18,7 +18,6 @@ import {
   type TribeSummary,
 } from '@/modules/tribes/client/api/tribes.api';
 import type LeaveTribeModal from '@/modules/tribes/client/components/LeaveTribeModal';
-import type Tooltip from '@/modules/core/client/components/Tooltip';
 import type { UserProfile } from '@/modules/users/client/types';
 
 const analytics = fakeAnalytics();
@@ -34,13 +33,6 @@ const user: UserProfile = {
 };
 
 jest.mock('@/modules/tribes/client/api/tribes.api');
-
-jest.mock('@/modules/core/client/components/Tooltip', () => {
-  function MockTooltip({ children }: React.ComponentProps<typeof Tooltip>) {
-    return <>{children}</>;
-  }
-  return MockTooltip;
-});
 
 jest.mock('@/modules/tribes/client/components/LeaveTribeModal', () => {
   function MockLeaveTribeModal({
