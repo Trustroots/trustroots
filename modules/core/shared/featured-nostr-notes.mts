@@ -5,10 +5,13 @@ export interface FeaturedNostrNote {
   publishedAt: string;
 }
 
-export const FEATURED_NOTE_PUBLISH_RELAY = 'wss://relay.trustroots.org';
+export const FEATURED_NOTE_PUBLISH_RELAYS = [
+  'wss://relay.trustroots.org',
+  'wss://relay.nomadwiki.org',
+];
 
 export const FEATURED_NOTE_RELAYS = [
-  FEATURED_NOTE_PUBLISH_RELAY,
+  ...FEATURED_NOTE_PUBLISH_RELAYS,
   'wss://relay.damus.io',
   'wss://relay.primal.net',
 ];

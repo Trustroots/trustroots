@@ -42,7 +42,9 @@ it('keeps the draft and retries each failed step with the same signed event', as
   sign
     .mockRejectedValueOnce(new Error('Signing cancelled.'))
     .mockResolvedValue(signed);
-  publish.mockRejectedValueOnce(undefined).mockResolvedValue(undefined);
+  publish
+    .mockRejectedValueOnce(undefined)
+    .mockResolvedValue(['wss://relay.nomadwiki.org']);
   save
     .mockRejectedValueOnce(new Error('Service unavailable.'))
     .mockResolvedValue(note);
@@ -71,13 +73,13 @@ it('keeps the draft and retries each failed step with the same signed event', as
 
   fireEvent.click(submit);
   expect(await screen.findByRole('alert')).toHaveTextContent(
-    'Published to wss://relay.trustroots.org. Could not save to the homepage. Service unavailable.',
+    'Published to wss://relay.nomadwiki.org. Could not save to the homepage. Service unavailable.',
   );
   expect(input).toHaveAttribute('readonly');
   fireEvent.click(screen.getByRole('button', { name: 'Retry homepage save' }));
 
   expect(await screen.findByRole('status')).toHaveTextContent(
-    'Note published to wss://relay.trustroots.org and featured on the homepage.',
+    'Note published to wss://relay.nomadwiki.org and featured on the homepage.',
   );
   expect(input).toHaveValue('');
   expect(screen.getByRole('article')).toHaveTextContent(note.content);

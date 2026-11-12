@@ -3,7 +3,7 @@ import { decode } from 'nostr-tools/nip19';
 import { SimplePool } from 'nostr-tools/pool';
 import http from '@/modules/core/client/api/http-client';
 import {
-  FEATURED_NOTE_PUBLISH_RELAY,
+  FEATURED_NOTE_PUBLISH_RELAYS,
   FEATURED_NOTE_RELAYS,
   type FeaturedNostrNote,
 } from '@/modules/core/shared/featured-nostr-notes.mts';
@@ -87,10 +87,10 @@ export async function signNostrTextNote(content: string): Promise<Event> {
 }
 
 export async function publishNostrTextNote(event: Event) {
-  await publishToRelays(
-    [FEATURED_NOTE_PUBLISH_RELAY],
+  return publishToRelays(
+    FEATURED_NOTE_PUBLISH_RELAYS,
     event,
-    `${FEATURED_NOTE_PUBLISH_RELAY} did not acknowledge publication. Try again.`,
+    'Neither relay acknowledged publication. Try again.',
   );
 }
 
@@ -151,9 +151,13 @@ async function publishToRelays(
     const results = await Promise.allSettled(
       pool.publish(relays, event, { maxWait: 5000 }),
     );
-    if (!results.some(result => result.status === 'fulfilled')) {
+    const acknowledgedRelays = results.flatMap((result, index) =>
+      result.status === 'fulfilled' ? [relays[index]] : [],
+    );
+    if (!acknowledgedRelays.length) {
       throw new Error(failureMessage);
     }
+    return acknowledgedRelays;
   } finally {
     pool.destroy();
   }

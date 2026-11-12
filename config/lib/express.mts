@@ -372,7 +372,6 @@ function initHelmetHeaders(app: Express) {
           'https://fonts.openmaptiles.org',
           'https://tile.openstreetmap.org',
           ...FEATURED_NOTE_RELAYS,
-          'wss://relay.nomadwiki.org',
           'wss://relay.maps.hitchwiki.org',
           'wss:', // Member-selected NIP-46 signer relays.
           'https://1p.trustroots.org', // Umami analytics

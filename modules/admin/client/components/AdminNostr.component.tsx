@@ -12,7 +12,7 @@ import { listFeaturedNostrNotes } from '@/modules/core/client/api/featured-nostr
 import { getErrorMessage } from '@/modules/core/client/api/http-client';
 import FeaturedNostrNoteContent from '@/modules/core/client/components/FeaturedNostrNote.component';
 import {
-  FEATURED_NOTE_PUBLISH_RELAY,
+  FEATURED_NOTE_PUBLISH_RELAYS,
   FEATURED_NOTE_RELAYS,
   type FeaturedNostrNote,
 } from '@/modules/core/shared/featured-nostr-notes.mts';
@@ -28,7 +28,7 @@ import {
 import AdminHeader from './AdminHeader.component';
 
 type PendingDeletion = { note: FeaturedNostrNote; event?: Event };
-type PendingPublication = { event: Event; acknowledged: boolean };
+type PendingPublication = { event: Event; acknowledgedRelays?: string[] };
 
 export default function AdminNostr() {
   const [notes, setNotes] = useState<FeaturedNostrNote[] | null>(null);
@@ -63,20 +63,19 @@ export default function AdminNostr() {
     setBusy(true);
     setError('');
     setStatus('');
-    let acknowledged = publication?.acknowledged ?? false;
+    let acknowledgedRelays = publication?.acknowledgedRelays;
     try {
       const signed = publication?.event ?? (await signNostrTextNote(draft));
-      if (!acknowledged) {
-        setPublication({ event: signed, acknowledged: false });
-        await publishNostrTextNote(signed);
-        acknowledged = true;
-        setPublication({ event: signed, acknowledged });
+      if (!acknowledgedRelays) {
+        setPublication({ event: signed });
+        acknowledgedRelays = await publishNostrTextNote(signed);
+        setPublication({ event: signed, acknowledgedRelays });
       }
       addFeaturedNote(await featureSignedNostrNote(signed));
       setPublication(null);
       setDraft('');
       setStatus(
-        `Note published to ${FEATURED_NOTE_PUBLISH_RELAY} and featured on the homepage.`,
+        `Note published to ${acknowledgedRelays.join(', ')} and featured on the homepage.`,
       );
     } catch (cause) {
       const message = getErrorMessage(
@@ -84,8 +83,8 @@ export default function AdminNostr() {
         cause instanceof Error ? cause.message : 'Could not publish the note.',
       );
       setError(
-        acknowledged
-          ? `Published to ${FEATURED_NOTE_PUBLISH_RELAY}. Could not save to the homepage. ${message}`
+        acknowledgedRelays
+          ? `Published to ${acknowledgedRelays.join(', ')}. Could not save to the homepage. ${message}`
           : message,
       );
     } finally {
@@ -170,7 +169,8 @@ export default function AdminNostr() {
         <h2>Publish a note</h2>
         <p>
           Your NIP-07 browser signer will sign the note. Trustroots will publish
-          it to {FEATURED_NOTE_PUBLISH_RELAY} and feature it on the homepage.
+          it to {FEATURED_NOTE_PUBLISH_RELAYS.join(', ')} and feature it on the
+          homepage.
         </p>
         <form onSubmit={publish}>
           <div className="form-group">
@@ -186,7 +186,7 @@ export default function AdminNostr() {
               }}
               required
               disabled={busy}
-              readOnly={publication?.acknowledged}
+              readOnly={Boolean(publication?.acknowledgedRelays)}
               aria-describedby="nostr-note-markdown"
             />
             <p id="nostr-note-markdown" className="help-block">
@@ -198,7 +198,7 @@ export default function AdminNostr() {
             </p>
           </div>
           <Button type="submit" disabled={busy || !notes || !draft.trim()}>
-            {publication?.acknowledged
+            {publication?.acknowledgedRelays
               ? 'Retry homepage save'
               : 'Publish and feature note'}
           </Button>

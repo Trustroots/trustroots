@@ -66,12 +66,13 @@ test('administrators can feature and remove a published Nostr note', async ({
   await page.routeWebSocket(
     url => FEATURED_NOTE_RELAYS.includes(url.origin),
     relay => {
+      const relayOrigin = new URL(relay.url()).origin;
       relay.onMessage(message => {
         const [type, subscription, filter] = JSON.parse(String(message));
         if (type === 'EVENT') {
           const signed = subscription as Event;
           if (signed.kind === 1) {
-            publicationRelays.push(new URL(relay.url()).origin);
+            publicationRelays.push(relayOrigin);
             publishedNotes.set(signed.id, signed);
           }
           if (signed.kind === 5) deletionEvents.push(signed);
@@ -79,7 +80,10 @@ test('administrators can feature and remove a published Nostr note', async ({
           return;
         }
         if (type !== 'REQ') return;
-        if (filter.ids.includes(event.id)) {
+        if (
+          relayOrigin === 'wss://relay.nomadwiki.org' &&
+          filter.ids.includes(event.id)
+        ) {
           relay.send(JSON.stringify(['EVENT', subscription, event]));
         }
         relay.send(JSON.stringify(['EOSE', subscription]));
@@ -185,16 +189,19 @@ test('administrators can feature and remove a published Nostr note', async ({
       'A fictional update composed in Trustroots.\n[Get involved](https://example.test/volunteering)';
     await expect(
       page.getByText('Your NIP-07 browser signer', { exact: false }),
-    ).toContainText('wss://relay.trustroots.org');
+    ).toContainText('wss://relay.trustroots.org, wss://relay.nomadwiki.org');
     await page.getByLabel('Note text').fill(content);
     await page
       .getByRole('button', { name: 'Publish and feature note' })
       .click();
     await expect(page.getByRole('status')).toHaveText(
-      'Note published to wss://relay.trustroots.org and featured on the homepage.',
+      'Note published to wss://relay.trustroots.org, wss://relay.nomadwiki.org and featured on the homepage.',
     );
     expect(publishedNotes.size).toBe(1);
-    expect(publicationRelays).toEqual(['wss://relay.trustroots.org']);
+    expect(publicationRelays.sort()).toEqual([
+      'wss://relay.nomadwiki.org',
+      'wss://relay.trustroots.org',
+    ]);
     const [published] = publishedNotes.values();
     expect(verifyEvent(published)).toBe(true);
     expect(published).toMatchObject({ kind: 1, pubkey: event.pubkey, content });

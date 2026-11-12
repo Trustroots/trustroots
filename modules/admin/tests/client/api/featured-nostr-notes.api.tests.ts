@@ -46,7 +46,7 @@ it.each([
       .mockResolvedValue({ data: featuredNote });
     await expect(featureNostrNote(reference)).resolves.toEqual(featuredNote);
     expect(get).toHaveBeenCalledWith(
-      FEATURED_NOTE_RELAYS,
+      expect.arrayContaining(['wss://relay.nomadwiki.org']),
       { ids: [id], kinds: [1] },
       { maxWait: 5000 },
     );
@@ -97,7 +97,7 @@ describe('NIP-07 text notes', () => {
   });
   afterEach(() => delete window.nostr);
 
-  it('signs the requested text and requires a relay acknowledgement', async () => {
+  it('signs the requested text and reports the relay that acknowledges it', async () => {
     const signed = await signNostrTextNote(content);
     expect(signed).toMatchObject({
       kind: 1,
@@ -112,14 +112,22 @@ describe('NIP-07 text notes', () => {
       tags: [],
     });
     publish
-      .mockImplementationOnce(() => [Promise.reject(new Error('Offline'))])
-      .mockImplementationOnce(() => [Promise.resolve('accepted')]);
+      .mockImplementationOnce(() => [
+        Promise.reject(new Error('Offline')),
+        Promise.reject(new Error('Offline')),
+      ])
+      .mockImplementationOnce(() => [
+        Promise.reject(new Error('Offline')),
+        Promise.resolve('accepted'),
+      ]);
     await expect(publishNostrTextNote(signed)).rejects.toThrow(
-      'wss://relay.trustroots.org did not acknowledge publication.',
+      'Neither relay acknowledged publication.',
     );
-    await publishNostrTextNote(signed);
+    await expect(publishNostrTextNote(signed)).resolves.toEqual([
+      'wss://relay.nomadwiki.org',
+    ]);
     expect(publish).toHaveBeenLastCalledWith(
-      ['wss://relay.trustroots.org'],
+      ['wss://relay.trustroots.org', 'wss://relay.nomadwiki.org'],
       signed,
       { maxWait: 5000 },
     );
