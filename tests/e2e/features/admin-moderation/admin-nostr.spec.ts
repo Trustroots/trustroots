@@ -23,6 +23,7 @@ test('administrators can feature and remove a published Nostr note', async ({
     'Administrators can feature and remove a published note on the homepage.',
     'Visitors can read featured notes and regular members cannot change them.',
     'An author-signed Nostr deletion request removes the note and prevents re-featuring.',
+    'Administrators can publish a public note with a NIP-07 signer and feature it on the homepage.',
   ]);
 
   const author = generateSecretKey();
@@ -43,6 +44,7 @@ test('administrators can feature and remove a published Nostr note', async ({
     .filter({ hasText: 'A fictional Trustroots announcement.' });
 
   const deletionEvents: Event[] = [];
+  const publishedNotes = new Map<string, Event>();
   await page.exposeFunction(
     'signFixtureNostrEvent',
     (template: EventTemplate) => finalizeEvent(template, author),
@@ -65,9 +67,10 @@ test('administrators can feature and remove a published Nostr note', async ({
       relay.onMessage(message => {
         const [type, subscription, filter] = JSON.parse(String(message));
         if (type === 'EVENT') {
-          const deletion = subscription as Event;
-          deletionEvents.push(deletion);
-          relay.send(JSON.stringify(['OK', deletion.id, true, 'accepted']));
+          const signed = subscription as Event;
+          if (signed.kind === 1) publishedNotes.set(signed.id, signed);
+          if (signed.kind === 5) deletionEvents.push(signed);
+          relay.send(JSON.stringify(['OK', signed.id, true, 'accepted']));
           return;
         }
         if (type !== 'REQ') return;
@@ -86,7 +89,10 @@ test('administrators can feature and remove a published Nostr note', async ({
       page.getByRole('heading', { name: 'Featured Nostr notes' }),
     ).toBeVisible();
     const input = page.getByLabel('Nostr note link or event ID');
-    const feature = page.getByRole('button', { name: 'Feature note' });
+    const feature = page.getByRole('button', {
+      name: 'Feature note',
+      exact: true,
+    });
     for (const reference of [
       `https://njump.me/${noteCode}`,
       `nostr:${nip19.neventEncode({ id: event.id })}`,
@@ -162,11 +168,36 @@ test('administrators can feature and remove a published Nostr note', async ({
         (note: { id: string }) => note.id,
       ),
     ).not.toContain(event.id);
+
+    const content = 'A fictional update composed in Trustroots.\nSecond line.';
+    await page.getByLabel('Note text').fill(content);
+    await page
+      .getByRole('button', { name: 'Publish and feature note' })
+      .click();
+    await expect(page.getByRole('status')).toHaveText(
+      'Note published on Nostr and featured on the homepage.',
+    );
+    expect(publishedNotes.size).toBe(1);
+    const [published] = publishedNotes.values();
+    expect(verifyEvent(published)).toBe(true);
+    expect(published).toMatchObject({ kind: 1, pubkey: event.pubkey, content });
+    await page.context().clearCookies();
+    await page.goto('/');
+    const publishedArticle = page
+      .getByRole('article')
+      .filter({ hasText: 'A fictional update composed in Trustroots.' });
+    await expect(publishedArticle).toContainText('Second line.');
+    await expect(
+      publishedArticle.getByRole('link', { name: 'View on Nostr' }),
+    ).toHaveAttribute(
+      'href',
+      `https://njump.me/${nip19.noteEncode(published.id)}`,
+    );
   } finally {
     await withE2eDb(db =>
       db
         .collection<{ _id: string }>('featurednostrnotes')
-        .deleteOne({ _id: event.id }),
+        .deleteMany({ _id: { $in: [event.id, ...publishedNotes.keys()] } }),
     );
   }
 });

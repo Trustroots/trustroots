@@ -4,7 +4,9 @@
 
 Let Trustroots members connect their Nostr identity and discover community
 notes through Nostroots while preserving the privacy of non-public profiles.
+
 ## Requirements
+
 ### Requirement: Nostr public-key association
 
 The system SHALL let a member associate one valid Nostr public key (`npub`) with their profile, canonicalise the stored public-key value, and prevent the same public key from being associated with more than one member. Adding or replacing a non-empty key SHALL require a valid signed, fresh, single-use server challenge bound to the authenticated member and requested key. The editor SHALL support NIP-07, NIP-46 bunker signing and externally signed events without requesting private keys or publishing proofs. Existing unchanged keys and removal SHALL NOT require proof.
@@ -153,6 +155,21 @@ Trustroots SHALL let administrators feature and remove existing public Nostr kin
 
 - **WHEN** a non-administrator requests a change, or a feature request contains an invalid signature or non-kind-1 event
 - **THEN** Trustroots rejects the request and leaves the featured notes unchanged
+
+### Requirement: Publish a featured Nostr note from admin
+
+Trustroots SHALL let administrators compose a public Nostr kind 1 text note on the Nostr admin page and sign it with a NIP-07 browser signer. Trustroots SHALL verify the signature, author and requested contents before publishing to the supported relays. The page SHALL feature the signed note only after at least one relay acknowledges publication.
+
+#### Scenario: Publish and feature an update
+
+- **WHEN** an administrator submits a note and approves signing with their NIP-07 signer
+- **AND** a supported relay acknowledges the signed event
+- **THEN** Trustroots features that event on the homepage with its Nostr attribution
+
+#### Scenario: Retry a failed homepage save
+
+- **WHEN** a relay acknowledges publication but the homepage save fails
+- **THEN** the page reports that the note was published and allows the administrator to retry saving the same event without signing or publishing it again
 
 ### Requirement: Request deletion of a featured Nostr note
 

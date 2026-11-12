@@ -6,8 +6,10 @@ import { FEATURED_NOTE_RELAYS } from '@/modules/core/shared/featured-nostr-notes
 import {
   featureNostrNote,
   publishNostrNoteDeletion,
+  publishNostrTextNote,
   recordNostrNoteDeletion,
   removeFeaturedNostrNote,
+  signNostrTextNote,
 } from '@/modules/admin/client/api/featured-nostr-notes.api';
 
 jest.mock('nostr-tools/pool', () => ({ SimplePool: jest.fn() }));
@@ -79,6 +81,84 @@ it('removes a featured note by event ID', async () => {
   const remove = jest.spyOn(http, 'delete').mockResolvedValue({});
   await removeFeaturedNostrNote(id);
   expect(remove).toHaveBeenCalledWith(`/api/admin/nostr/featured-notes/${id}`);
+});
+
+describe('NIP-07 text notes', () => {
+  const author = new Uint8Array(32).fill(7);
+  const publicKey = getPublicKey(author);
+  const content = 'A fictional note.\nSecond line.';
+  const signEvent = jest.fn();
+
+  beforeEach(() => {
+    signEvent.mockImplementation(async (template: Record<string, unknown>) => ({
+      ...finalizeEvent({ ...template } as unknown as EventTemplate, author),
+    }));
+    window.nostr = { getPublicKey: async () => publicKey, signEvent };
+  });
+  afterEach(() => delete window.nostr);
+
+  it('signs the requested text and requires a relay acknowledgement', async () => {
+    const signed = await signNostrTextNote(content);
+    expect(signed).toMatchObject({
+      kind: 1,
+      pubkey: publicKey,
+      content,
+      tags: [],
+    });
+    expect(signEvent).toHaveBeenCalledWith({
+      kind: 1,
+      created_at: signed.created_at,
+      content,
+      tags: [],
+    });
+    publish
+      .mockImplementationOnce(() => [Promise.reject(new Error('Offline'))])
+      .mockImplementationOnce(() => [Promise.resolve('accepted')]);
+    await expect(publishNostrTextNote(signed)).rejects.toThrow(
+      'No relay acknowledged publication.',
+    );
+    await publishNostrTextNote(signed);
+    expect(publish).toHaveBeenLastCalledWith(FEATURED_NOTE_RELAYS, signed, {
+      maxWait: 5000,
+    });
+    expect(destroy).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects blank and oversized notes before asking for a signature', async () => {
+    await expect(signNostrTextNote('   ')).rejects.toThrow('Enter a note');
+    await expect(signNostrTextNote('🌍'.repeat(8193))).rejects.toThrow(
+      '32 KiB',
+    );
+    expect(signEvent).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, { getPublicKey: async () => publicKey }])(
+    'requires both NIP-07 methods',
+    async signer => {
+      window.nostr = signer;
+      await expect(signNostrTextNote(content)).rejects.toThrow(
+        'Connect a NIP-07 browser signer',
+      );
+    },
+  );
+
+  it.each(['different content', 'different key'])(
+    'rejects a signature with %s',
+    async change => {
+      signEvent.mockImplementationOnce(async template => ({
+        ...finalizeEvent(
+          {
+            ...template,
+            content: change === 'different content' ? 'Changed text.' : content,
+          } as unknown as EventTemplate,
+          change === 'different key' ? new Uint8Array(32).fill(8) : author,
+        ),
+      }));
+      await expect(signNostrTextNote(content)).rejects.toThrow(
+        'valid signature',
+      );
+    },
+  );
 });
 
 describe('NIP-09 deletion', () => {
