@@ -45,6 +45,21 @@ test('allows sanitised links when explicitly requested', () => {
   ).not.toBeInTheDocument();
 });
 
+test('preserves allowed links around hashtags', () => {
+  render(
+    <RichText
+      allowLinks
+      content={'<a href="/safety"><b>#hackers</b></a> #hackers <i>#unknown</i>'}
+      hashtagLinks={new Map([['hackers', '/circles/hackers']])}
+    />,
+  );
+  const links = screen.getAllByRole('link', { name: '#hackers' });
+  expect(links).toHaveLength(2);
+  expect(links[0]).toHaveAttribute('href', '/safety');
+  expect(links[1]).toHaveAttribute('href', '/circles/hackers');
+  expect(screen.getByText('#unknown').tagName).toBe('I');
+});
+
 test('retains supported formatting and attributes on their supported elements', () => {
   const { container, rerender } = render(
     <RichText
