@@ -129,7 +129,7 @@ test.describe('admin circles feature coverage', () => {
     await page.getByRole('button', { name: 'New circle' }).click();
     await page.getByLabel('Name', { exact: true }).fill(label);
     await page.locator('#circle-description').fill(description);
-    await page.getByLabel('Public').check();
+    await page.getByRole('checkbox', { name: 'Public', exact: true }).check();
     const preview = page.getByRole('region', { name: 'Description preview' });
     await expect(
       preview.getByRole('link', { name: 'the circle guide' }),
@@ -215,6 +215,8 @@ test.describe('admin circles feature coverage', () => {
     await expect(page.locator('#circle-description')).toHaveValue(
       'Edited by the administration test.',
     );
-    await expect(page.getByLabel('Public')).toBeChecked();
+    await expect(
+      page.getByRole('checkbox', { name: 'Public', exact: true }),
+    ).toBeChecked();
   });
 });
