@@ -18,6 +18,7 @@
     "./Tabs": "./src/components/Tabs.tsx",
     "./ToggleGroup": "./src/components/ToggleGroup.tsx",
     "./Tooltip": "./src/components/Tooltip.tsx",
+    "./Textarea": "./src/components/Textarea.tsx",
     "./Modal": "./src/components/Modal.tsx",
     "./NavigationDropdown": "./src/components/NavigationDropdown.tsx",
     "./intent": "./src/lib/intent.ts"

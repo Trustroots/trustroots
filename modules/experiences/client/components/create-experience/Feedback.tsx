@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ExperienceRecommendation } from '../../../shared/experience';
-import ExperienceTextarea from './ExperienceTextarea';
+import { Textarea } from '@trustroots/ui/Textarea';
 
 interface FeedbackProps {
   feedback: string;
@@ -69,7 +69,7 @@ export default function Feedback({
             ) as string
           }
         </label>
-        <ExperienceTextarea
+        <Textarea
           rows={7}
           id="feedback-message"
           onChange={event => onChangeFeedback(event.target.value)}
