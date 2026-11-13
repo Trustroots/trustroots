@@ -3076,17 +3076,26 @@ const features = [
           requiresAuth: true,
         }),
       ],
-      apiRoutes: [apiRoute('GET', '/api/admin/gravatar', source.adminServer)],
+      apiRoutes: [
+        apiRoute('GET', '/api/admin/gravatar', source.adminServer),
+        apiRoute('GET', '/api/admin/gravatar/photo-check', source.adminServer),
+        apiRoute('POST', '/api/admin/gravatar/photo-check', source.adminServer),
+      ],
     },
     requiredScenarios: [
       'Administrators can count current Gravatar accounts and paginate member links.',
       'Gravatar member data is restricted to administrators.',
       'Administrators can view profile pictures and sort Gravatar accounts by last seen.',
+      'Administrators can check Gravatar photo availability.',
     ],
     relatedSpecs: [
       spec(
-        'admin-gravatar.spec.js',
+        'features/admin-moderation/admin-gravatar.spec.ts',
         'administrators can count and inspect Gravatar members',
+      ),
+      spec(
+        'features/admin-moderation/admin-gravatar.spec.ts',
+        'administrators can check Gravatar photo availability',
       ),
     ],
   },

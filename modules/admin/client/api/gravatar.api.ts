@@ -1,3 +1,4 @@
+import type { GravatarPhotoCheck } from '../../shared/gravatar-photo-check.mts';
 import axios from '../../../core/client/api/http-client.js';
 import type { GravatarSort } from '../../shared/gravatar.mts';
 
@@ -24,4 +25,18 @@ export async function getGravatarUsage(
       : { page },
   });
   return data as GravatarUsage;
+}
+
+export async function getGravatarPhotoCheck(): Promise<GravatarPhotoCheck | null> {
+  const { data } = await axios.get<GravatarPhotoCheck | null>(
+    '/api/admin/gravatar/photo-check',
+  );
+  return data;
+}
+
+export async function startGravatarPhotoCheck(): Promise<GravatarPhotoCheck> {
+  const { data } = await axios.post<GravatarPhotoCheck>(
+    '/api/admin/gravatar/photo-check',
+  );
+  return data;
 }

@@ -5,6 +5,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import AdminGravatar from '@/modules/admin/client/components/AdminGravatar.component';
@@ -30,6 +31,9 @@ const usage: api.GravatarUsage = {
     },
   ],
 };
+beforeEach(() =>
+  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValue(null),
+);
 afterEach(() => jest.resetAllMocks());
 
 it('shows the count, measurement time, member links and pagination', async () => {
@@ -149,4 +153,89 @@ it.each(['resolve', 'reject'])('ignores %s after unmount', async outcome => {
     if (outcome === 'resolve') resolve(usage);
     else reject(new Error('unavailable'));
   });
+});
+
+it('starts a photo check and displays the result', async () => {
+  getUsage.mockResolvedValue(usage);
+  const startedAt = '2026-11-06T12:00:00.000Z';
+  const counts = { available: 3, unavailable: 5, inconclusive: 2 };
+  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce(null);
+  jest.mocked(api.startGravatarPhotoCheck).mockResolvedValueOnce({
+    state: 'running',
+    startedAt,
+    counts: { available: 0, unavailable: 0, inconclusive: 0 },
+  });
+  jest.mocked(api.getGravatarPhotoCheck).mockResolvedValueOnce({
+    state: 'complete',
+    startedAt,
+    finishedAt: '2026-11-06T12:05:00.000Z',
+    counts,
+  });
+  render(<AdminGravatar />);
+  const button = screen.getByRole('button', { name: 'Check Gravatar photos' });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+  expect(await screen.findByText('Photo check complete.')).toBeVisible();
+  const results = screen.getByRole('table', {
+    name: 'Gravatar photo check counts',
+  });
+  const cells = within(results).getAllByRole('cell');
+  expect(cells.map(cell => cell.textContent)).toEqual(['3', '5', '2']);
+  expect(button).toBeEnabled();
+});
+
+it('retries loading the photo check and shows when a running check stops early', async () => {
+  jest.useFakeTimers();
+  try {
+    const startedAt = '2026-11-06T12:00:00.000Z';
+    const counts = { available: 3, unavailable: 5, inconclusive: 2 };
+    getUsage.mockResolvedValue(usage);
+    jest
+      .mocked(api.getGravatarPhotoCheck)
+      .mockRejectedValueOnce(new Error('Offline'))
+      .mockResolvedValueOnce({ state: 'running', startedAt, counts })
+      .mockResolvedValueOnce({
+        state: 'failed',
+        startedAt,
+        finishedAt: '2026-11-06T12:05:00.000Z',
+        counts,
+      });
+
+    render(<AdminGravatar />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Could not load photo check results. Retrying…',
+    );
+    await act(async () => jest.advanceTimersByTimeAsync(5000));
+    expect(
+      screen.getByText('Checking photos… 10 accounts checked.'),
+    ).toBeVisible();
+    const button = screen.getByRole('button', {
+      name: 'Check Gravatar photos',
+    });
+    expect(button).toBeDisabled();
+    await act(async () => jest.advanceTimersByTimeAsync(2000));
+    expect(
+      screen.getByText('Check stopped early. Counts are partial.'),
+    ).toBeVisible();
+    expect(button).toBeEnabled();
+  } finally {
+    jest.useRealTimers();
+  }
+});
+
+it('shows a start error and lets the administrator try again', async () => {
+  getUsage.mockResolvedValue(usage);
+  jest
+    .mocked(api.startGravatarPhotoCheck)
+    .mockRejectedValueOnce(new Error('Offline'));
+
+  render(<AdminGravatar />);
+  const button = screen.getByRole('button', { name: 'Check Gravatar photos' });
+  await waitFor(() => expect(button).toBeEnabled());
+  fireEvent.click(button);
+
+  expect(await screen.findByRole('alert')).toHaveTextContent(
+    'Could not start the photo check.',
+  );
+  expect(button).toBeEnabled();
 });
