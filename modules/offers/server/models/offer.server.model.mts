@@ -161,6 +161,12 @@ const OfferSchema = new Schema<OfferServerRecord>({
   reactivateReminderSent: {
     type: Date,
   },
+  // Ongoing meeting availability at the same location, independent of hosting.
+  meetingStatus: {
+    type: String,
+    enum: ['yes', 'maybe', 'no', 'not-set'],
+    default: 'not-set',
+  },
   showOnlyInMyCircles: {
     type: Boolean,
     default: false,

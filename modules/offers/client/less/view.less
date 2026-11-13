@@ -1,4 +1,5 @@
 @import '~less/global-variables';
+@import '~less/layout/typography';
 
 /**
  * View offer
@@ -66,4 +67,113 @@
     background: @offer-meet;
     color: #fff;
   }
+}
+
+.offer-meeting-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 15px;
+
+  > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 22px;
+    line-height: 28px;
+    .font-brand-regular();
+
+    @media (max-width: @screen-xs-max) {
+      font-size: 19px;
+    }
+  }
+
+  > a {
+    flex-shrink: 0;
+  }
+}
+
+.meeting-availability-control {
+  min-width: 0;
+  margin: 0;
+
+  legend {
+    margin-bottom: 8px;
+    border: 0;
+    font-size: 22px;
+    line-height: 24px;
+    .font-brand-regular();
+
+    @media (max-width: @screen-xs-max) {
+      font-size: 19px;
+    }
+  }
+
+  .btn-group {
+    display: flex;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 8px 12px;
+  }
+
+  .btn-meeting-not-set {
+    color: @gray-dark;
+    background-color: @gray-lighter;
+    border-color: darken(@gray-lighter, 10%);
+
+    &:hover,
+    &:focus-within,
+    &.active {
+      background-color: darken(@gray-lighter, 10%);
+      border-color: darken(@gray-lighter, 20%);
+    }
+  }
+
+  .btn:focus-within {
+    outline: 2px solid @gray-dark;
+    outline-offset: 2px;
+    z-index: 1;
+  }
+}
+
+.offer-availability-radio {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.offer-meta .btn:focus-within,
+.meeting-availability-control .btn:focus-within {
+  outline: 2px solid @brand-primary;
+  outline-offset: 2px;
+  z-index: 1;
+}
+
+.offer-meta .btn-group > .btn.active,
+.offer-meeting-status .meeting-availability-control .btn.active {
+  box-shadow:
+    inset 0 0 0 2px #fff,
+    inset 0 0 0 3px fade(#000, 20%);
+  font-weight: 600;
+  z-index: 1;
+
+  &::before {
+    content: '✓';
+    display: inline-block;
+    margin-right: 6px;
+    font-weight: 700;
+  }
+}
+
+.offer-meta .btn-group > .btn-meeting-not-set.active,
+.offer-meeting-status .btn-meeting-not-set.active {
+  box-shadow: inset 0 0 0 2px @brand-primary;
 }

@@ -352,9 +352,9 @@ test.describe('approximate initial map locations', () => {
         exact: false,
       })
       .fill('A fictional spare room.');
+    await page.getByRole('tab', { name: 'Location' }).click();
     const save = page.getByRole('button', { name: 'Save and Exit' });
     await expect(save).toBeDisabled();
-    await page.getByRole('tab', { name: 'Location' }).click();
     await map.getByRole('button', { name: 'Zoom in' }).click();
     await expect(save).toBeDisabled();
     await map.click({ position: { x: 100, y: 100 } });
