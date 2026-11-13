@@ -110,6 +110,7 @@ describe('Public statistics charts', () => {
     const refreshedAt = Date.now() + 3_660_001;
     const clock = vi.spyOn(Date, 'now').mockReturnValue(refreshedAt);
     const query = vi.spyOn(User, 'aggregate');
+    const messageQuery = vi.spyOn(MessageStat, 'aggregate');
     try {
       const read = (suffix = '') =>
         request(app)
@@ -117,6 +118,12 @@ describe('Public statistics charts', () => {
           .expect(200);
       const [response, concurrent] = await Promise.all([read(), read('?v=2')]);
       expect(query).toHaveBeenCalledTimes(2);
+      expect(messageQuery).toHaveBeenCalledTimes(2);
+      for (const aggregate of [query, messageQuery]) {
+        for (const result of aggregate.mock.results) {
+          expect(result.value.options.maxTimeMS).toBe(5000);
+        }
+      }
       expect(concurrent.body).toEqual(response.body);
       const data: PublicCharts = response.body;
       expect(data.weeks).toEqual(
@@ -146,7 +153,7 @@ describe('Public statistics charts', () => {
         .expect(response.body);
       expect(query).toHaveBeenCalledTimes(2);
 
-      clock.mockReturnValue(refreshedAt + 3_600_001);
+      clock.mockReturnValue(refreshedAt + 3_600_000);
       query.mockImplementationOnce(() => {
         throw new Error('Database unavailable');
       });
@@ -156,7 +163,7 @@ describe('Public statistics charts', () => {
       await read('?v=3').expect(response.body);
       expect(query).toHaveBeenCalledTimes(4);
 
-      clock.mockReturnValue(refreshedAt + 86_400_001);
+      clock.mockReturnValue(refreshedAt + 86_400_000);
       query.mockImplementationOnce(() => {
         throw new Error('Database unavailable');
       });
@@ -168,6 +175,7 @@ describe('Public statistics charts', () => {
     } finally {
       clock.mockRestore();
       query.mockRestore();
+      messageQuery.mockRestore();
     }
   });
 });
