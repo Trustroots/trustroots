@@ -56,8 +56,11 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
     .slice(0, 10);
 
   return (
-    <nav className="container" aria-label={t('Page navigation')}>
-      <div className="header-brand">
+    <nav
+      className="container tw:flex tw:min-h-[43px] tw:items-center"
+      aria-label={t('Page navigation')}
+    >
+      <div className="header-brand tw:me-4 tw:shrink-0 tw:pt-1.5 tw:pb-1.25 tw:whitespace-nowrap">
         <a href="/" className="hidden-xs">
           <img
             className="hidden-xs hidden-sm"
@@ -76,7 +79,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         </a>
       </div>
 
-      <ul className="header-nav hidden-xs">
+      <ul className="header-nav hidden-xs tw:m-0 tw:flex tw:list-none tw:items-center tw:p-0">
         <NavigationDropdown
           className="hidden-xs cursor-pointer"
           id="support-dropdown"
@@ -113,7 +116,7 @@ export default function NavigationLoggedIn({ currentPath, user }: Props) {
         </NavigationDropdown>
       </ul>
 
-      <ul className="header-nav nav-header-primary">
+      <ul className="header-nav nav-header-primary tw:m-0 tw:ms-auto tw:flex tw:list-none tw:items-center tw:p-0">
         {(user.roles?.includes('admin') ||
           user.roles?.includes('support-team') ||
           user.roles?.includes('welcome-team')) && (

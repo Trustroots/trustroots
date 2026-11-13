@@ -45,7 +45,11 @@ export default function AppHeader({ currentPath: routedPath, user }: Props) {
   }, []);
 
   return (
-    <header id="tr-header" ref={headerRef}>
+    <header
+      id="tr-header"
+      ref={headerRef}
+      className="tw:fixed tw:inset-x-0 tw:top-0 tw:z-1030 tw:flex tw:min-h-[43px] tw:items-center tw:bg-brand-primary tw:text-white tw:print:hidden"
+    >
       <Button
         intent="primary"
         onClick={event => {
