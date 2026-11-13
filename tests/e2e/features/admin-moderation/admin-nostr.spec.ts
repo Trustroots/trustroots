@@ -38,6 +38,8 @@ test('administrators can feature and remove a published Nostr note', async ({
     author,
   );
   const noteCode = nip19.noteEncode(event.id);
+  const authorUsername = 'e2efeaturednoteauthor';
+  const npub = nip19.npubEncode(event.pubkey);
   const adminUrl = '/api/admin/nostr/featured-notes';
   const heading = page.getByRole('heading', { name: 'Trustroots updates' });
   const article = page
@@ -92,6 +94,15 @@ test('administrators can feature and remove a published Nostr note', async ({
   );
 
   try {
+    await withE2eDb(db =>
+      db.collection('users').insertOne({
+        username: authorUsername,
+        email: 'featured-note-author@example.test',
+        public: true,
+        roles: ['user'],
+        nostrNpub: npub,
+      }),
+    );
     await signInViaApi(page, request, SEEDED_ADMIN);
     await page.goto('/admin/nostr');
     await expect(
@@ -116,22 +127,23 @@ test('administrators can feature and remove a published Nostr note', async ({
 
     await page.goto('/');
     await expect(heading).toBeVisible();
-    const npub = nip19.npubEncode(event.pubkey);
-    await expect(article.getByRole('link', { name: npub })).toHaveAttribute(
-      'href',
-      `https://njump.me/${npub}`,
-    );
+    await expect(article).toContainText(`${authorUsername} · `);
+    await expect(
+      article.getByRole('link', { name: authorUsername }),
+    ).toHaveCount(0);
+    await expect(article).not.toContainText(npub);
     await expect(article).toContainText('<br> remains text.');
     await expect(
       article.getByRole('link', { name: 'Details' }),
     ).toHaveAttribute('href', 'https://example.test/details');
     await expect(article).toContainText('[Unsupported](javascript:ignored)');
-    await expect(article.getByRole('link')).toHaveCount(2);
+    await expect(article.getByRole('link')).toHaveCount(1);
 
     await page.context().clearCookies();
     await page.reload();
     await expect(heading).toBeVisible();
     await expect(article).toBeVisible();
+    await expect(article).toContainText(`${authorUsername} · `);
 
     await signInViaApi(page, request, SEEDED_MEMBERS[0]);
     const forbidden = await page.request.post(adminUrl, { data: { event } });
@@ -214,10 +226,13 @@ test('administrators can feature and remove a published Nostr note', async ({
       publishedArticle.getByRole('link', { name: 'Get involved' }),
     ).toHaveAttribute('href', 'https://example.test/volunteering');
   } finally {
-    await withE2eDb(db =>
-      db
+    await withE2eDb(async db => {
+      await db
         .collection<{ _id: string }>('featurednostrnotes')
-        .deleteMany({ _id: { $in: [event.id, ...publishedNotes.keys()] } }),
-    );
+        .deleteMany({ _id: { $in: [event.id, ...publishedNotes.keys()] } });
+      await db
+        .collection('users')
+        .deleteOne({ username: authorUsername, nostrNpub: npub });
+    });
   }
 });

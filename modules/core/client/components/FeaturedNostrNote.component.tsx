@@ -45,10 +45,7 @@ export default function FeaturedNostrNoteContent({
         {renderNoteLinks(note.content)}
       </p>
       <p className="text-muted" style={{ overflowWrap: 'anywhere' }}>
-        <a href={'https://njump.me/' + encodeURIComponent(note.npub)}>
-          {note.npub}
-        </a>
-        {' · '}
+        {note.authorUsername && <>{note.authorUsername} · </>}
         <time dateTime={note.publishedAt}>{note.publishedAt.slice(0, 10)}</time>
       </p>
     </>

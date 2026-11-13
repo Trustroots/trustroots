@@ -138,13 +138,18 @@ validation-server events.
 
 ### Requirement: Administrator-curated homepage notes
 
-Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes. It SHALL verify a note's event ID and signature before storing it and SHALL use the original event ID to prevent duplicate entries. Featuring SHALL accept a Nostr note or event identifier, a Nostr URI, or a web link containing an event identifier. The admin lookup SHALL include the NomadWiki relay. Trustroots SHALL show featured notes under Trustroots updates for signed-in and signed-out visitors, with the publication date and a link to the author's Nostr profile. The homepage and admin list SHALL render inline Markdown links with absolute HTTP or HTTPS destinations. All other content SHALL be rendered as text.
+Trustroots SHALL let administrators feature and remove existing public Nostr kind 1 notes. It SHALL verify a note's event ID and signature before storing it and SHALL use the original event ID to prevent duplicate entries. Featuring SHALL accept a Nostr note or event identifier, a Nostr URI, or a web link containing an event identifier. The admin lookup SHALL include the NomadWiki relay. Trustroots SHALL show featured notes under Trustroots updates for signed-in and signed-out visitors, with the publication date and the author's plain-text Trustroots NIP-05 username when available. Trustroots SHALL only show usernames eligible for public NIP-05 lookup. The homepage and admin list SHALL render inline Markdown links with absolute HTTP or HTTPS destinations. All other content SHALL be rendered as text.
 
 #### Scenario: Administrator features a published note
 
 - **WHEN** an administrator supplies a link for a signed kind 1 note available on a supported relay such as NomadWiki
-- **THEN** Trustroots displays the note on the homepage with attribution to its Nostr author
+- **THEN** Trustroots displays the note on the homepage with plain-text attribution when the author has an eligible Trustroots NIP-05 username
 - **AND** featuring the same note again does not duplicate it
+
+#### Scenario: A featured note has no public Trustroots NIP-05 username
+
+- **WHEN** the author's key has no eligible Trustroots NIP-05 username
+- **THEN** the featured note shows its publication date without an author label
 
 #### Scenario: A featured update contains Markdown and HTML
 

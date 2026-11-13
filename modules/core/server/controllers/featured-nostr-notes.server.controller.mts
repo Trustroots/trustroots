@@ -4,31 +4,40 @@ import type { FeaturedNostrNote } from '../../shared/featured-nostr-notes.mts';
 import FeaturedNote, {
   type FeaturedNostrNoteRecord,
 } from '../models/featured-nostr-note.server.model.mts';
+import { findPublicNip05Usernames } from '../services/nostr-identity.server.service.mts';
 
-const eventIdPattern = /^[0-9a-f]{64}$/;
+function isEventId(id: unknown) {
+  return typeof id === 'string' && /^[0-9a-f]{64}$/.test(id);
+}
 
-function publicNote(note: FeaturedNostrNoteRecord): FeaturedNostrNote {
-  return {
+async function publicNotes(
+  notes: FeaturedNostrNoteRecord[],
+): Promise<FeaturedNostrNote[]> {
+  if (!notes.length) return [];
+  const usernames = await findPublicNip05Usernames(
+    notes.map(note => note.npub),
+  );
+  return notes.map(note => ({
     id: note._id,
     npub: note.npub,
+    authorUsername: usernames.get(note.npub),
     content: note.content,
     publishedAt: note.publishedAt.toISOString(),
-  };
+  }));
 }
 
 export const listFeaturedNotes: RequestHandler = async (_req, res) => {
   const notes = await FeaturedNote.find({ featuredAt: { $ne: null } })
     .sort({ featuredAt: -1, _id: 1 })
     .lean();
-  res.set('Cache-Control', 'no-store').json(notes.map(publicNote));
+  res.set('Cache-Control', 'no-store').json(await publicNotes(notes));
 };
 
 export const featureNote: RequestHandler = async (req, res) => {
   const event = req.body?.event as Event | undefined;
   if (
     event?.kind !== 1 ||
-    typeof event.id !== 'string' ||
-    !eventIdPattern.test(event.id) ||
+    !isEventId(event.id) ||
     !Number.isInteger(event.created_at) ||
     event.created_at < 0 ||
     event.created_at > 253402300799 ||
@@ -74,7 +83,8 @@ export const featureNote: RequestHandler = async (req, res) => {
     note = restored;
   }
 
-  res.json(publicNote(note));
+  const [featured] = await publicNotes([note]);
+  res.json(featured);
 };
 
 export const removeFeaturedNote: RequestHandler<{ id: string }> = async (
@@ -82,7 +92,7 @@ export const removeFeaturedNote: RequestHandler<{ id: string }> = async (
   res,
 ) => {
   const id = String(req.params.id);
-  if (!eventIdPattern.test(id)) {
+  if (!isEventId(id)) {
     res.status(400).json({ message: 'A valid Nostr event ID is required.' });
     return;
   }
@@ -100,7 +110,7 @@ export const recordFeaturedNoteDeletion: RequestHandler<{
   const id = String(req.params.id);
   const event = req.body?.event as Event | undefined;
   if (
-    !eventIdPattern.test(id) ||
+    !isEventId(id) ||
     event?.kind !== 5 ||
     !verifyEvent(event) ||
     !event.tags.some(([type, value]) => type === 'e' && value === id)
