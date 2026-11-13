@@ -3,7 +3,6 @@ import path from 'node:path';
 import {
   expect,
   test as base,
-  type BrowserContext,
   type Page,
   type TestInfo,
 } from '@playwright/test';
@@ -14,7 +13,6 @@ import {
   useElementScreenshot,
   useViewportScreenshot,
 } from './screenshot-capture.mts';
-import { stubStatisticsImages } from './statistics.mts';
 
 type CoverageRange = {
   startOffset: number;
@@ -59,13 +57,6 @@ export const test = base.extend<{ screenshotCapture: void }>({
     },
     { auto: process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true' },
   ],
-  context: async (
-    { context }: { context: BrowserContext },
-    use: (context: BrowserContext) => Promise<void>,
-  ) => {
-    await stubStatisticsImages(context);
-    await use(context);
-  },
   page: async (
     { page, browserName }: { page: Page; browserName: string },
     use: (page: Page) => Promise<void>,

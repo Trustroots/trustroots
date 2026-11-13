@@ -2,6 +2,7 @@ import axios, { type AxiosResponse } from 'axios';
 
 import {
   get,
+  getCharts,
   type StatisticsResponse,
 } from '@/modules/statistics/client/api/statistics.api';
 
@@ -30,4 +31,12 @@ describe('statistics api', () => {
     await expect(get()).resolves.toBe(result);
     expect(axiosMock.get).toHaveBeenCalledWith('/api/statistics');
   });
+});
+
+it('fetches public charts separately from the summary', async () => {
+  const result = response({ weeks: [] });
+  axiosMock.get.mockResolvedValueOnce(result);
+
+  await expect(getCharts()).resolves.toBe(result);
+  expect(axiosMock.get).toHaveBeenCalledWith('/api/statistics/charts');
 });

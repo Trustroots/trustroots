@@ -7,7 +7,6 @@ import {
 } from '../../support/fixtures.mts';
 import { SEEDED_MEMBERS, signInViaApi } from '../../support/helpers.mts';
 import { withE2eDb } from '../../support/db.mts';
-import { stubStatisticsImages } from '../../support/statistics.mts';
 import type { APIRequestContext, Page } from '@playwright/test';
 import { SUPPORT_CATEGORIES } from '../../../../modules/support/shared/categories.ts';
 
@@ -208,7 +207,6 @@ for (const [path, name, selector] of [
   test(`volunteer link ${name} on ${path} opens the selected support category`, async ({
     page,
   }) => {
-    if (path === '/statistics') await stubStatisticsImages(page.context());
     await page.goto(path);
     const scope = selector ? page.locator(selector) : page;
     const link = scope.getByRole('link', { name, exact: true });

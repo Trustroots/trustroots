@@ -1,3 +1,4 @@
+import type { PublicCharts } from '../../shared/public-charts.mts';
 import axios from '../../../core/client/api/http-client.js';
 
 export interface StatisticsResponse {
@@ -33,4 +34,8 @@ export interface StatisticsResponse {
 
 export async function get() {
   return axios.get<StatisticsResponse>('/api/statistics');
+}
+
+export async function getCharts() {
+  return axios.get<PublicCharts>('/api/statistics/charts');
 }

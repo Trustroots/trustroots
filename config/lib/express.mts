@@ -15,6 +15,7 @@ import { redactSupportRequestUrl } from '../../modules/support/shared/request-ur
 import session from 'express-session';
 import csrfProtection from './csrf-protection.mjs';
 import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mjs';
+import { getPublicCharts } from '../../modules/statistics/server/controllers/public-charts.server.controller.mts';
 import mongoStore from 'connect-mongo';
 import favicon from 'serve-favicon';
 import compress from 'compression';
@@ -335,8 +336,6 @@ function initHelmetHeaders(app: Express) {
           // Official radio artwork used for links to broadcaster websites.
           'https://somafm.com/img/',
           'https://radioparadise.com/apple-touch-icon.png',
-          'grafana.trustroots.org',
-          // Stats tool, used on /statistics page
           'https://*.tiles.mapbox.com',
           // Map tiles
           'https://api.mapbox.com',
@@ -550,6 +549,9 @@ async function init(
 
   // Initialize Helmet security headers
   this.initHelmetHeaders(app);
+
+  // The aggregate chart response is public and independent of browser sessions.
+  app.get('/api/statistics/charts', getPublicCharts);
 
   // Initialize modules static client routes
   this.initModulesClientRoutes(app);
