@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@trustroots/core": "workspace:*",
+    "@trustroots/experiences": "workspace:*",
+    "@trustroots/references-thread": "workspace:*",
     "@trustroots/users": "workspace:*"
   }
 }
