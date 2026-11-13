@@ -702,6 +702,7 @@ const features = [
       ],
       apiRoutes: [
         apiRoute('GET', '/api/statistics', source.statisticsServer),
+        apiRoute('GET', '/api/statistics/charts', 'config/lib/express.mts'),
         apiRoute(
           'GET',
           '/api/experiences/suggestion',
@@ -717,9 +718,24 @@ const features = [
       'Signed-in members without an eligible contact see a general experience-writing encouragement.',
       'Signed-in members can be encouraged to write an experience for an eligible confirmed contact.',
       'The personalised encouragement opens the suggested contact experience form.',
+      'Public weekly trends and member activity match the chart API.',
+      'Pending chart data does not block statistics or support navigation.',
+      'Chart failures show a readable status and leave other statistics available.',
     ],
     relatedSpecs: [
       spec('seeded-content.spec.js', 'statistics page loads for visitors'),
+      spec(
+        'statistics-availability.spec.js',
+        'statistics remains usable while charts are loading',
+      ),
+      spec(
+        'statistics-availability.spec.js',
+        'statistics shows an independent chart error when the chart API fails',
+      ),
+      spec(
+        'statistics-availability.spec.js',
+        'statistics renders MongoDB-backed charts without Grafana',
+      ),
       spec(
         'authenticated.spec.js',
         'statistics page loads for a signed in member',

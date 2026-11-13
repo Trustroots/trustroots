@@ -1,8 +1,7 @@
 import { test, expect, annotateFeature } from '../../support/fixtures.mts';
 import type { StatisticsResponse } from '../../../../modules/statistics/client/api/statistics.api';
 
-const externalImages =
-  /^https:\/\/(grafana\.trustroots\.org\/render\/|hosted\.weblate\.org\/widgets\/)/;
+import type { PublicCharts } from '../../../../modules/statistics/shared/public-charts.mts';
 
 test('statistics shows rolling signup and messaging counts', async ({
   page,
@@ -107,70 +106,114 @@ test('statistics includes Couchers.org and identifies legacy networks', async ({
   }
 });
 
-test('statistics remains usable while external images never respond', async ({
+test('statistics remains usable while charts are loading', async ({
   page,
-  context,
 }, testInfo) => {
   annotateFeature(testInfo, 'public.statistics', [
-    'Unavailable external images do not block statistics or support navigation.',
+    'Pending chart data does not block statistics or support navigation.',
   ]);
-  let releaseImages: (() => void) | undefined;
-  let imageRequests = 0;
-  const pendingImages = new Promise<void>(resolve => {
-    releaseImages = resolve;
+  let releaseCharts!: () => void;
+  const pendingCharts = new Promise<void>(resolve => {
+    releaseCharts = resolve;
   });
-  await context.route(externalImages, async route => {
-    imageRequests += 1;
-    await pendingImages;
+  await page.route('**/api/statistics/charts', async route => {
+    await pendingCharts;
     await route.abort();
   });
 
   try {
-    await page.goto('/statistics', { waitUntil: 'load', timeout: 10000 });
+    await page.goto('/statistics');
+    await expect(page.getByText('Loading charts…')).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'Members', exact: true }),
     ).toBeVisible();
-    await page
-      .getByRole('heading', { name: 'Member growth', exact: true })
-      .scrollIntoViewIfNeeded();
-    await expect.poll(() => imageRequests).toBeGreaterThan(0);
-    const volunteer = page.getByRole('link', {
-      name: 'Consider volunteering!',
-      exact: true,
-    });
-    await volunteer.click();
+    await page.getByRole('link', { name: 'Consider volunteering!' }).click();
     await expect(page).toHaveURL(/\/support\?category=volunteering$/);
     await expect(page.getByLabel('What can we help with?')).toHaveValue(
       'volunteering',
     );
   } finally {
-    releaseImages?.();
-    await context.unrouteAll({ behavior: 'wait' });
+    releaseCharts();
+    await page.unrouteAll({ behavior: 'wait' });
   }
 });
 
-test('statistics shows a fallback and dashboard link when Grafana fails', async ({
+test('statistics shows an independent chart error when the chart API fails', async ({
   page,
-  context,
 }, testInfo) => {
   annotateFeature(testInfo, 'public.statistics', [
-    'Failed charts show readable fallback text and retain their dashboard links.',
+    'Chart failures show a readable status and leave other statistics available.',
   ]);
-  await context.route(externalImages, route => route.abort('failed'));
+  await page.route('**/api/statistics/charts', route =>
+    route.fulfill({ status: 503 }),
+  );
   await page.goto('/statistics');
 
-  const chart = page.locator('.panel').filter({
-    has: page.getByRole('heading', { name: 'Member growth', exact: true }),
-  });
-  await chart.scrollIntoViewIfNeeded();
-  await expect(chart.getByRole('status')).toHaveText(
-    'Member growth: Image unavailable',
-  );
-  await expect(chart.getByRole('link')).toHaveAttribute(
-    'href',
-    'https://grafana.trustroots.org/d/000000002/members',
-  );
+  await expect(page.getByText('Chart data is unavailable.')).toBeVisible();
   await expect(
-    page.getByRole('heading', { name: 'Members', exact: true }),
-  ).toBeAttached();
+    page.getByRole('table', { name: 'Recent activity' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Consider volunteering!' }),
+  ).toBeVisible();
+});
+
+test('statistics renders MongoDB-backed charts without Grafana', async ({
+  page,
+}, testInfo) => {
+  annotateFeature(testInfo, 'public.statistics', [
+    'Public weekly trends and member activity match the chart API.',
+  ]);
+  const grafanaRequests: string[] = [];
+  page.on('request', request => {
+    if (new URL(request.url()).hostname === 'grafana.trustroots.org') {
+      grafanaRequests.push(request.url());
+    }
+  });
+  const responsePromise = page.waitForResponse('**/api/statistics/charts');
+  await page.goto('/statistics');
+  const response = await responsePromise;
+  expect(response.ok()).toBe(true);
+  const charts: PublicCharts = await response.json();
+  expect(charts.weeks).toHaveLength(12);
+  const [week] = charts.weeks;
+  const format = (count: number) => new Intl.NumberFormat('en').format(count);
+  const signups = page.getByRole('table', { name: 'Weekly signups' });
+  const conversations = page.getByRole('table', {
+    name: 'Conversations and first replies',
+  });
+  const members = page.getByRole('table', { name: 'Member activity' });
+  await expect(
+    signups
+      .getByRole('row', { name: new RegExp(week.weekStarting) })
+      .getByRole('cell'),
+  ).toHaveText([format(week.signups)]);
+  await expect(
+    conversations
+      .getByRole('row', { name: new RegExp(week.weekStarting) })
+      .getByRole('cell'),
+  ).toHaveText([format(week.conversationsStarted), format(week.firstReplies)]);
+  await expect(members.getByRole('cell')).toHaveText(
+    [
+      charts.memberActivity.past7Days,
+      charts.memberActivity.past14Days,
+      charts.memberActivity.past30Days,
+      charts.memberActivity.past6Months,
+      charts.memberActivity.past12Months,
+    ].map(format),
+  );
+  const volunteer = page.getByRole('link', { name: 'Consider volunteering!' });
+  await expect(volunteer).toBeVisible();
+  await expect(volunteer).toHaveAttribute(
+    'href',
+    '/support?category=volunteering',
+  );
+  expect((await volunteer.boundingBox())!.y).toBeGreaterThan(
+    (await conversations.boundingBox())!.y,
+  );
+  await expect(page.getByText('stats galore', { exact: false })).toHaveCount(0);
+  await expect(page.locator('a[href*="grafana.trustroots.org"]')).toHaveCount(
+    0,
+  );
+  expect(grafanaRequests).toEqual([]);
 });

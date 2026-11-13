@@ -13,7 +13,6 @@ import {
   waitForTribesList,
 } from '../../support/helpers.mts';
 import { updateUserByUsername } from '../../support/db.mts';
-import { stubStatisticsImages } from '../../support/statistics.mts';
 
 test.describe('authenticated member flows', () => {
   let authenticatedMember: ReturnType<typeof createUser> | undefined;
@@ -652,7 +651,6 @@ test.describe('authenticated member flows', () => {
     const page = await context.newPage();
 
     try {
-      await stubStatisticsImages(context);
       await signInViaApi(page, context.request, SEEDED_MEMBERS[2]);
       await page.goto('/statistics');
 
@@ -681,7 +679,6 @@ test.describe('authenticated member flows', () => {
     const page = await context.newPage();
 
     try {
-      await stubStatisticsImages(context);
       await signInViaApi(page, context.request, SEEDED_MEMBERS[1]);
       await page.goto('/statistics');
 

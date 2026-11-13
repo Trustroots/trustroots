@@ -1,5 +1,5 @@
 // External dependencies
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 
@@ -10,7 +10,7 @@ import { getProfileExperiencesPath } from '@/modules/core/shared/navigation-link
 import { getNetworkName } from '@/modules/users/client/utils/networks';
 import BoardImplementation from '@/modules/core/client/components/Board';
 import Stat from './Stat';
-import StatisticsImage from './StatisticsImage';
+import StatisticsCharts from './StatisticsCharts';
 import { Tooltip } from '@trustroots/ui/Tooltip';
 import { Button } from '@trustroots/ui/Button';
 
@@ -54,18 +54,6 @@ const MetricStack = styled.div`
 const ChartsGrid = styled(Grid)`
   > :last-child {
     grid-column: 1 / -1;
-  }
-
-  .panel-body > a {
-    display: block;
-    width: 100%;
-  }
-
-  img {
-    aspect-ratio: 2 / 1;
-    max-height: 300px;
-    object-fit: contain;
-    width: 100%;
   }
 `;
 
@@ -609,46 +597,10 @@ export default function Statistics({
             </Grid>
 
             <ChartsGrid>
-              <Stat title={t('Member growth')} className="is-graph">
-                <a href="https://grafana.trustroots.org/d/000000002/members">
-                  <StatisticsImage
-                    src="https://grafana.trustroots.org/render/d-solo/000000002/members?orgId=1&theme=light&panelId=1&width=800&height=400&tz=UTC"
-                    width="100%"
-                    alt={t('Member growth')}
-                  />
-                </a>
-              </Stat>
-
-              <Stat title={t('Member retention')} className="is-graph">
-                <a href="https://grafana.trustroots.org/d/UCqv_IYiz/member-retention">
-                  <StatisticsImage
-                    src="https://grafana.trustroots.org/render/d-solo/UCqv_IYiz/member-retention?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
-                    width="100%"
-                    alt={t('Member retention')}
-                  />
-                </a>
-              </Stat>
-
-              <Stat title={t('Message replies')} className="is-graph">
-                <p className="text-muted">{t('Weekly messages and replies')}</p>
-                <a href="https://grafana.trustroots.org/d/000000004/messages-detailed">
-                  <StatisticsImage
-                    src="https://grafana.trustroots.org/render/d-solo/000000004/messages-detailed?orgId=1&theme=light&panelId=4&width=800&height=400&tz=UTC"
-                    width="100%"
-                    alt={t('Weekly messages and replies')}
-                  />
-                </a>
-              </Stat>
+              <StatisticsCharts />
             </ChartsGrid>
 
             <hr />
-
-            <p className="lead">
-              <Trans t={rawT} ns="statistics">
-                Check <a href="https://grafana.trustroots.org/">our Grafana</a>{' '}
-                for stats galore.
-              </Trans>
-            </p>
 
             <p className="lead">
               {t('Wanna help understand Trustroots more in depth?')}{' '}

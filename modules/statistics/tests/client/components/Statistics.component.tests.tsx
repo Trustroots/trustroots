@@ -6,6 +6,7 @@ import '@/config/client/i18n';
 import Statistics from '@/modules/statistics/client/components/Statistics.component';
 import {
   get,
+  getCharts,
   type StatisticsResponse,
 } from '@/modules/statistics/client/api/statistics.api';
 import { getSuggestion } from '@/modules/experiences/client/api/experiences.api';
@@ -13,18 +14,10 @@ import { AxiosHeaders, type AxiosResponse } from 'axios';
 import type Board from '@/modules/core/client/components/Board';
 
 const getMock = jest.mocked(get);
+const getChartsMock = jest.mocked(getCharts);
 const getSuggestionMock = jest.mocked(getSuggestion);
 
-type DetailedStatistics = StatisticsResponse & {
-  experiences?: NonNullable<StatisticsResponse['experiences']> & {
-    total?: number;
-    recent?: NonNullable<StatisticsResponse['experiences']>['recent'] & {
-      total?: number;
-    };
-  };
-};
-
-function response(data: DetailedStatistics): AxiosResponse<StatisticsResponse> {
+function response<T>(data: T): AxiosResponse<T> {
   const headers = new AxiosHeaders();
   return { data, status: 200, statusText: 'OK', headers, config: { headers } };
 }
@@ -42,6 +35,7 @@ jest.mock('@/modules/core/client/components/Board', () => {
 
 beforeEach(() => {
   getSuggestionMock.mockResolvedValue(null);
+  getChartsMock.mockImplementation(() => new Promise(() => {}));
 });
 
 afterEach(() => {
@@ -105,6 +99,7 @@ describe('<Statistics />', () => {
         .map(heading => heading.textContent),
     ).toEqual(['Real-life connections', 'Message interactions']);
     expect(screen.getByText('Trustroots Statistics')).toBeInTheDocument();
+    expect(screen.getByText('Loading charts…')).toBeInTheDocument();
     expect(screen.queryByAltText('Translation status')).not.toBeInTheDocument();
     expect(screen.getByText('Members')).toBeInTheDocument();
     expect(
@@ -186,6 +181,67 @@ describe('<Statistics />', () => {
     expect(
       screen.queryByText('Recommended by members'),
     ).not.toBeInTheDocument();
+  });
+
+  it('renders chart counts and keeps the volunteering link below the charts', async () => {
+    getMock.mockResolvedValueOnce(response({ total: 10 }));
+    getChartsMock.mockResolvedValueOnce(
+      response({
+        weeks: [
+          {
+            weekStarting: '2026-01-05',
+            signups: 12,
+            conversationsStarted: 8,
+            firstReplies: 5,
+          },
+        ],
+        memberActivity: {
+          past7Days: 1,
+          past14Days: 2,
+          past30Days: 3,
+          past6Months: 4,
+          past12Months: 5,
+        },
+      }),
+    );
+    render(<Statistics isAuthenticated={false} />);
+
+    const signups = await screen.findByRole('table', {
+      name: 'Weekly signups',
+    });
+    const activity = screen.getByRole('table', { name: 'Member activity' });
+    const conversations = screen.getByRole('table', {
+      name: 'Conversations and first replies',
+    });
+    expect(within(signups).getByRole('cell', { name: '12' })).toBeVisible();
+    expect(
+      within(activity).getByRole('row', { name: 'Past 6 months 4' }),
+    ).toBeVisible();
+    expect(
+      within(conversations)
+        .getAllByRole('cell')
+        .map(cell => cell.textContent),
+    ).toEqual(['8', '5']);
+    const volunteer = screen.getByRole('link', {
+      name: 'Consider volunteering!',
+    });
+    expect(volunteer).toHaveAttribute('href', '/support?category=volunteering');
+    expect(
+      conversations.compareDocumentPosition(volunteer) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(screen.queryByText(/stats galore/)).not.toBeInTheDocument();
+  });
+
+  it('reports a chart request failure independently of the statistics', async () => {
+    getMock.mockResolvedValueOnce(response({ total: 10 }));
+    getChartsMock.mockRejectedValueOnce(new Error('Unavailable'));
+    render(<Statistics isAuthenticated={false} />);
+
+    expect(await screen.findByText('Chart data is unavailable.')).toBeVisible();
+    expect(
+      screen.getByRole('table', { name: 'Recent activity' }),
+    ).toBeVisible();
   });
 
   it('hides the newsletter subscribe link for unauthenticated visitors', async () => {
