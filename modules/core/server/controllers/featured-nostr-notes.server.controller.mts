@@ -6,7 +6,9 @@ import FeaturedNote, {
 } from '../models/featured-nostr-note.server.model.mts';
 import { findPublicNip05Usernames } from '../services/nostr-identity.server.service.mts';
 
-const eventIdPattern = /^[0-9a-f]{64}$/;
+function isEventId(id: unknown) {
+  return typeof id === 'string' && /^[0-9a-f]{64}$/.test(id);
+}
 
 async function publicNotes(
   notes: FeaturedNostrNoteRecord[],
@@ -35,8 +37,7 @@ export const featureNote: RequestHandler = async (req, res) => {
   const event = req.body?.event as Event | undefined;
   if (
     event?.kind !== 1 ||
-    typeof event.id !== 'string' ||
-    !eventIdPattern.test(event.id) ||
+    !isEventId(event.id) ||
     !Number.isInteger(event.created_at) ||
     event.created_at < 0 ||
     event.created_at > 253402300799 ||
@@ -91,7 +92,7 @@ export const removeFeaturedNote: RequestHandler<{ id: string }> = async (
   res,
 ) => {
   const id = String(req.params.id);
-  if (!eventIdPattern.test(id)) {
+  if (!isEventId(id)) {
     res.status(400).json({ message: 'A valid Nostr event ID is required.' });
     return;
   }
@@ -109,7 +110,7 @@ export const recordFeaturedNoteDeletion: RequestHandler<{
   const id = String(req.params.id);
   const event = req.body?.event as Event | undefined;
   if (
-    !eventIdPattern.test(id) ||
+    !isEventId(id) ||
     event?.kind !== 5 ||
     !verifyEvent(event) ||
     !event.tags.some(([type, value]) => type === 'e' && value === id)
