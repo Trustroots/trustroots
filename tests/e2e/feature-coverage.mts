@@ -1545,12 +1545,21 @@ const features = [
           { requiresAuth: true },
         ),
       ],
-      apiRoutes: [apiRoute('PUT', '/api/users', source.usersServer)],
+      apiRoutes: [
+        apiRoute('PUT', '/api/users', source.usersServer),
+        apiRoute('POST', '/api/users/nostr/challenge', source.usersServer),
+      ],
     },
     requiredScenarios: [
       'Networks edit form is reachable.',
       'Invalid Nostr secret key is rejected.',
       'Valid npub is saved and shown on profile view.',
+      'Members can prove ownership of a new key using a browser signer when saving the profile.',
+      'Members can import a public key from a NIP-46 bunker.',
+      'Members can pair with a signer through a generated Nostr Connect URI.',
+      'Members can import a public key through a correlated NIP-55 callback.',
+      'Members can prove ownership of a new key using a NIP-46 signer when saving the profile.',
+      'Members can prove ownership of a new key using a NIP-55 signer when saving the profile.',
     ],
     relatedSpecs: [
       spec('authenticated.spec.js', 'profile edit networks page is reachable'),
@@ -1566,6 +1575,26 @@ const features = [
       spec(
         'nostr.spec.js',
         'links the saved npub to nos.trustroots.org on the profile view',
+      ),
+      spec(
+        'nostr.spec.js',
+        'imports and saves the public key returned by a NIP-46 bunker',
+      ),
+      spec(
+        'nostr.spec.js',
+        'completes generated Nostr Connect pairing through the local encrypted relay',
+      ),
+      spec(
+        'nostr.spec.js',
+        'imports a NIP-55 key and saves it with a signed profile challenge',
+      ),
+      spec(
+        'nostr.spec.js',
+        'rejects a mismatched NIP-07 signer before updating the profile',
+      ),
+      spec(
+        'nostr.spec.js',
+        'saves a new npub through a browser signer and rejects unsigned API changes',
       ),
     ],
   },
