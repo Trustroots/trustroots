@@ -324,14 +324,17 @@ describe('Tribes controller unit tests', () => {
 
     it('returns an empty organiser list when no assigned accounts are visible', async () => {
       const _id = new mongoose.Types.ObjectId();
+      const organiserId = new mongoose.Types.ObjectId();
       await Tribe.create({
         _id,
         label: 'Sample circle',
-        organiserIds: [new mongoose.Types.ObjectId()],
+        organiserIds: [organiserId],
       });
       const memberQuery = mongoose.model('User').find();
       const select = sinon.spy(memberQuery, 'select');
-      sinon.stub(mongoose.model('User'), 'find').returns(memberQuery);
+      const find = sinon
+        .stub(mongoose.model('User'), 'find')
+        .returns(memberQuery);
       sinon.stub(memberQuery, 'exec').resolves([]);
       const res = deferredResponse();
       await tribesController.getTribe(
@@ -345,6 +348,10 @@ describe('Tribes controller unit tests', () => {
         },
       );
       res.body.should.have.property('organisers').deepEqual([]);
+      sinon.assert.calledWithMatch(
+        find,
+        sinon.match.has('_id', { $in: [organiserId], $nin: [] }),
+      );
       sinon.assert.calledOnceWithExactly(select, 'username displayName');
     });
 
