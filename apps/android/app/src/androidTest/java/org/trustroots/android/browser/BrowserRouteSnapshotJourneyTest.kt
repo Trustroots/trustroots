@@ -115,7 +115,8 @@ class BrowserRouteSnapshotJourneyTest {
                     socket.use { connection ->
                         connection.soTimeout = 3_000
                         val input = connection.getInputStream().bufferedReader()
-                        val requestPath = input.readLine().orEmpty().substringAfter(' ').substringBefore(' ')
+                        val requestLine = input.readLine() ?: return@use
+                        val requestPath = requestLine.substringAfter(' ').substringBefore(' ')
                         while (!input.readLine().isNullOrEmpty()) Unit
                         requests += requestPath
                         val (title, content) = when (requestPath) {
@@ -132,6 +133,8 @@ class BrowserRouteSnapshotJourneyTest {
                             flush()
                         }
                     }
+                } catch (_: SocketException) {
+                    // WebView may close an in-flight connection when its route is released.
                 } catch (error: IOException) {
                     if (!server.isClosed) throw error
                 } finally {

@@ -1017,6 +1017,7 @@ test.describe.serial('search offers and circles feature coverage', () => {
         'aria-label',
         /Join \(/i,
       );
+      await scrollingOverviewJoinButton.click();
       const joinResponse = memberPage.waitForResponse(
         response =>
           response
@@ -1024,7 +1025,10 @@ test.describe.serial('search offers and circles feature coverage', () => {
             .includes(`/api/users/memberships/${hitchhikers._id}`) &&
           response.request().method() === 'POST',
       );
-      await scrollingOverviewJoinButton.click();
+      await memberPage
+        .getByRole('dialog', { name: 'Join Hitchhikers' })
+        .getByRole('button', { name: 'Join circle', exact: true })
+        .click();
       expect((await joinResponse).ok()).toBeTruthy();
       await expect(scrollingOverviewJoinButton).toHaveClass(
         /tribe-join-active/,

@@ -286,7 +286,10 @@ describe('Admin circles controller', () => {
     await controller.update(
       {
         ...request,
-        body: { ...body, organiserIds: [String(new mongoose.Types.ObjectId())] },
+        body: {
+          ...body,
+          organiserIds: [String(new mongoose.Types.ObjectId())],
+        },
       },
       unknown,
     );
