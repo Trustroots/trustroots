@@ -1823,6 +1823,7 @@ describe('Profile controller unit tests', () => {
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
+            body: { joinReason: '  Looking for a local community.  ' },
           },
           res,
         ),
@@ -1832,13 +1833,73 @@ describe('Profile controller unit tests', () => {
 
       const reloaded = await findUser(saved._id);
       reloaded.member!.length.should.equal(1);
+      should(reloaded.member![0].joinReason).equal(
+        'Looking for a local community.',
+      );
+    });
+
+    for (const joinReason of [
+      'First line\nsecond line',
+      'x'.repeat(161),
+      false,
+    ]) {
+      it(`rejects an invalid join reason (${typeof joinReason}, ${String(joinReason).length} characters) before changing membership`, async () => {
+        const tribe = await new Tribe({ label: 'Invalid Reason Tribe' }).save();
+        const [saved] = await utils.saveUsers(utils.generateUsers(1));
+        const userDoc = await findUser(saved._id);
+        userDoc.member = [];
+        await userDoc.save();
+
+        const { res } = await runHandler(res =>
+          profileController.joinTribe(
+            {
+              user: userDoc,
+              params: { tribeId: tribe._id.toString() },
+              body: { joinReason },
+            },
+            res,
+          ),
+        );
+
+        res.statusCode.should.equal(400);
+        const reloaded = await findUser(saved._id);
+        reloaded.member!.length.should.equal(0);
+        (
+          await Tribe.findById(tribe._id).select('count').orFail()
+        ).count!.should.equal(0);
+      });
+    }
+
+    it('joins without a reason when the supplied line is blank', async () => {
+      const tribe = await Tribe.create({ label: 'Blank Reason Circle' });
+      const [saved] = await utils.saveUsers(utils.generateUsers(1));
+      const userDoc = await findUser(saved._id);
+      const { res } = await runHandler(res =>
+        profileController.joinTribe(
+          {
+            user: userDoc,
+            params: { tribeId: String(tribe._id) },
+            body: { joinReason: '  ' },
+          },
+          res,
+        ),
+      );
+      res.statusCode.should.equal(200);
+      const reloaded = await findUser(saved._id);
+      should.not.exist(reloaded.member![0].joinReason);
     });
 
     it('leaveTribe removes the user from a tribe', async () => {
       const tribe = await new Tribe({ label: 'Leave Success Tribe' }).save();
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
-      userDoc.member = [{ tribe: tribe._id, since: new Date() }];
+      userDoc.member = [
+        {
+          tribe: tribe._id,
+          since: new Date(),
+          joinReason: 'A local community.',
+        },
+      ];
       await userDoc.save();
 
       const { res } = await runHandler(res =>
@@ -1923,6 +1984,30 @@ describe('Profile controller unit tests', () => {
   describe('sanitizeProfile', () => {
     it('returns undefined for a missing profile', () => {
       (profileController.sanitizeProfile(null) === undefined).should.be.true();
+    });
+
+    it('shows join reasons only to signed-in viewers', async () => {
+      const [savedProfile, savedViewer] = await utils.saveUsers(
+        utils.generateUsers(2),
+      );
+      const profile = await findUser(savedProfile._id);
+      const viewer = await findUser(savedViewer._id);
+      const tribe = await new Tribe({ label: 'Example Circle' }).save();
+      profile.member = [
+        {
+          tribe: tribe._id,
+          since: new Date(),
+          joinReason: 'A reason to be here.',
+        },
+      ];
+
+      const signedIn = profileController.sanitizeProfile(profile, viewer);
+      const guest = profileController.sanitizeProfile(profile, false, null);
+
+      (signedIn.member![0] as { joinReason?: string }).joinReason!.should.equal(
+        'A reason to be here.',
+      );
+      should.not.exist(guest.member![0].joinReason);
     });
 
     const bareProfile = (extra: Record<string, unknown> = {}) => {

@@ -135,8 +135,55 @@ describe('Admin circle routes', () => {
       .expect(403);
     await agent
       .put(`/api/admin/circles/${id}`)
-      .send({ label: 'Example walkers' })
+      .send({ label: 'Example walkers', organiserIds: [String(id)] })
       .expect(403);
+  });
+
+  it('updates organiser assignments on an existing circle', async () => {
+    await utils.signIn(credentials, agent);
+    const circle = await Tribe.create({ label: 'Example walkers' });
+    const [member] = await utils.saveUsersWithCachedPasswords(
+      utils.generateUsersWithSharedPassword(1),
+    );
+    const id = String(member._id);
+    const path = `/api/admin/circles/${circle._id}`;
+    await Tribe.create({ label: 'Unassigned circle' });
+    for (const organiserIds of [
+      '{',
+      {},
+      ['invalid'],
+      [id, id.toUpperCase()],
+      [String(new mongoose.Types.ObjectId())],
+    ]) {
+      await agent
+        .put(path)
+        .send({ label: circle.label, organiserIds })
+        .expect(400);
+    }
+    await agent
+      .put(path)
+      .send({ label: circle.label, organiserIds: [id] })
+      .expect(200);
+    await agent.put(path).send({ label: circle.label }).expect(200);
+    const assigned = await agent.get(path).expect(200);
+    assert.deepStrictEqual(assigned.body.organiserIds, [id]);
+    assert.strictEqual(assigned.body.organisers[0].username, member.username);
+    await member.deleteOne();
+    const deleted = await agent.get('/api/admin/circles').expect(200);
+    assert.deepStrictEqual(
+      deleted.body.map((item: { organisers?: unknown }) => item.organisers),
+      [[{ _id: id }], []],
+    );
+    await agent
+      .put(path)
+      .send({ label: circle.label, organiserIds: [id] })
+      .expect(200);
+    await agent
+      .put(path)
+      .send({ label: circle.label, organiserIds: [] })
+      .expect(200);
+    const cleared = await agent.get(path).expect(200);
+    assert.deepStrictEqual(cleared.body.organiserIds, []);
   });
 
   it('denies unauthenticated catalogue reads and writes', async () => {

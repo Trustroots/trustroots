@@ -97,6 +97,20 @@ const UserMemberSchema = new Schema<UserServerRecord['member'][number]>(
       default: Date.now,
       required: true,
     },
+    joinReason: {
+      type: String,
+      set: (value: string | undefined) => {
+        const trimmed = value?.trim();
+        return trimmed || undefined;
+      },
+      validate: {
+        validator: (value: string | undefined) =>
+          value === undefined ||
+          (Array.from(value).length <= 160 &&
+            !/[\r\n\u0085\u2028\u2029]/.test(value)),
+        message: 'Please use a single line of up to 160 characters.',
+      },
+    },
   },
   { _id: false },
 );

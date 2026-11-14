@@ -50,6 +50,20 @@ const memberships: (TribeMembership & { tribe: TribeSummary })[] = [
 ];
 
 describe('ProfileTribesTab', () => {
+  it('shows a saved join reason to a signed-in viewer', () => {
+    const withReason = [
+      { ...memberships[0], joinReason: 'I want to meet other cyclists.' },
+    ];
+    const { rerender } = render(
+      <ProfileTribesTab memberships={withReason} user={user} />,
+    );
+    expect(screen.getByText('I want to meet other cyclists.')).toBeVisible();
+    rerender(<ProfileTribesTab memberships={withReason} />);
+    expect(
+      screen.queryByText('I want to meet other cyclists.'),
+    ).not.toBeInTheDocument();
+  });
+
   it('renders tribe cards with member counts and join buttons', () => {
     render(
       <ProfileTribesTab

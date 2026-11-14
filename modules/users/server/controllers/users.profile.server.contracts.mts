@@ -56,6 +56,7 @@ export interface SanitizedProfileRecord {
       | ProfileTribe<import('mongoose').Types.ObjectId>
       | null;
     since?: Date;
+    joinReason?: string;
   }>;
   memberIds?: string[];
   additionalProvidersData?: PublicProviderIdentities;

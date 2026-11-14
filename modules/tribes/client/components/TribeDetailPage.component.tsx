@@ -103,8 +103,9 @@ export default function TribeDetailPage({
   }, [circle, user]);
 
   const handleMembershipUpdated = (data: MembershipUpdate) => {
-    if (data?.tribe) {
-      setTribe(data.tribe);
+    const updatedTribe = data?.tribe;
+    if (updatedTribe) {
+      setTribe(current => ({ ...current, ...updatedTribe }));
     }
     const updatedTribeId = data?.tribe?._id || tribe?._id;
     if (data?.user?.memberIds && updatedTribeId) {
@@ -204,6 +205,20 @@ export default function TribeDetailPage({
                     content={tribe.description}
                     allowLinks
                   />
+                )}
+                {user && !!tribe.organisers?.length && (
+                  <section aria-label={t('Circle organisers')}>
+                    <h3>{t('Circle organisers')}</h3>
+                    <ul>
+                      {tribe.organisers.map(({ username, displayName }) => (
+                        <li key={username}>
+                          <a href={`/profile/${encodeURIComponent(username)}`}>
+                            {displayName || username}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
                 )}
                 {!user && (
                   <p className="lead tribe-intro">

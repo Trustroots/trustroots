@@ -100,13 +100,47 @@ describe('<JoinButton />', () => {
     });
   });
 
+  it('asks for an optional reason on circle pages and submits it trimmed', async () => {
+    const updatedMembership: MembershipUpdate = {
+      user: { ...user, memberIds: ['tribe-1'] },
+    };
+    joinMock.mockResolvedValueOnce(updatedMembership);
+
+    render(
+      <JoinButton
+        source="circle_page"
+        tribe={tribe}
+        user={{ ...user, memberIds: [] }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Join (Hitchhikers)' }));
+    const dialog = await screen.findByRole('dialog');
+    const reason = within(dialog).getByRole('textbox');
+    expect(reason).toHaveAttribute('maxLength', '160');
+    fireEvent.change(reason, {
+      target: { value: '  I enjoy sharing journeys.  ' },
+    });
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: 'Join circle' }),
+    );
+
+    await waitFor(() =>
+      expect(join).toHaveBeenCalledWith('tribe-1', {
+        joinReason: 'I enjoy sharing journeys.',
+      }),
+    );
+    expect(
+      await screen.findByRole('button', { name: 'Leave circle' }),
+    ).toBeVisible();
+  });
+
   it('re-enables the button after a failed join without tracking it', async () => {
     const onUpdated = jest.fn();
     joinMock.mockRejectedValueOnce(new Error('join failed'));
 
     render(
       <JoinButton
-        source="circle_page"
         tribe={tribe}
         user={{ ...user, memberIds: [] }}
         onUpdated={onUpdated}

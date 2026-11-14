@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { getCircles, saveCircle, type AdminCircle } from '../api/circles.api';
+import { getUserByUsername } from '../api/users.api';
 import AdminHeader from './AdminHeader.component';
 import RichText from '@/modules/core/client/components/RichText';
 import { Button } from '@trustroots/ui/Button';
@@ -72,8 +74,12 @@ export default function AdminCircles({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [organiserUsername, setOrganiserUsername] = useState('');
+  const [organiserError, setOrganiserError] = useState<string | null>(null);
+  const [lookingUpOrganiser, setLookingUpOrganiser] = useState(false);
   const imageInput = useRef<HTMLInputElement>(null);
   const saving = useRef(false);
+  const organiserLookup = useRef<AbortController | null>(null);
 
   async function loadCircles() {
     setCircles(await getCircles());
@@ -98,6 +104,7 @@ export default function AdminCircles({
       });
     return () => {
       active = false;
+      organiserLookup.current?.abort();
     };
   }, [circleSlug]);
 
@@ -107,6 +114,11 @@ export default function AdminCircles({
   }
 
   function editCircle(selected: AdminCircle) {
+    organiserLookup.current?.abort();
+    organiserLookup.current = null;
+    setLookingUpOrganiser(false);
+    setOrganiserUsername('');
+    setOrganiserError(null);
     setCircle({ ...selected });
     clearSelectedImage();
     setMessage(null);
@@ -118,9 +130,52 @@ export default function AdminCircles({
     );
   }
 
+  async function addOrganiser() {
+    const username = organiserUsername.trim().toLowerCase();
+    if (!username || organiserLookup.current || saving.current) return;
+    const lookup = new AbortController();
+    organiserLookup.current = lookup;
+    setLookingUpOrganiser(true);
+    setOrganiserError(null);
+    try {
+      const result = await getUserByUsername(username, lookup.signal);
+      if (lookup.signal.aborted) return;
+      const member = result?.profile;
+      if (!member?._id) {
+        setOrganiserError('No member found with that username.');
+      } else if (
+        circle.organisers?.some(organiser => organiser._id === member._id)
+      ) {
+        setOrganiserError('This member is already listed.');
+      } else {
+        const { _id, username, displayName } = member;
+        setCircle(current => ({
+          ...current,
+          organisers: [
+            ...(current.organisers ?? []),
+            { _id, username, displayName },
+          ],
+        }));
+        setOrganiserUsername('');
+      }
+    } catch (error) {
+      if (lookup.signal.aborted) return;
+      setOrganiserError(
+        isAxiosError(error) && error.response?.status === 404
+          ? 'No member found with that username.'
+          : 'Could not look up the member.',
+      );
+    } finally {
+      if (organiserLookup.current === lookup) {
+        organiserLookup.current = null;
+        setLookingUpOrganiser(false);
+      }
+    }
+  }
+
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving.current) return;
+    if (saving.current || organiserLookup.current) return;
     saving.current = true;
     setIsSaving(true);
     setMessage(null);
@@ -327,6 +382,72 @@ export default function AdminCircles({
                   <RichText content={circle.description || ''} allowLinks />
                 </section>
               </div>
+              <fieldset className="form-group" disabled={isSaving}>
+                <legend>Circle organisers</legend>
+                {!!circle.organisers?.length && (
+                  <ul>
+                    {circle.organisers.map(member => {
+                      const name =
+                        member.displayName ||
+                        member.username ||
+                        'Deleted member';
+                      return (
+                        <li key={member._id}>
+                          {name}{' '}
+                          <Button
+                            variant="link"
+                            type="button"
+                            aria-label={`Remove ${name}`}
+                            disabled={lookingUpOrganiser}
+                            onClick={() =>
+                              setCircle(current => ({
+                                ...current,
+                                organisers: current.organisers?.filter(
+                                  organiser => organiser._id !== member._id,
+                                ),
+                              }))
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+                <label htmlFor="circle-organiser-username">
+                  Organiser username
+                </label>
+                <input
+                  className="form-control"
+                  id="circle-organiser-username"
+                  aria-describedby="circle-organiser-help"
+                  aria-invalid={Boolean(organiserError)}
+                  disabled={lookingUpOrganiser}
+                  value={organiserUsername}
+                  onChange={event => {
+                    setOrganiserUsername(event.currentTarget.value);
+                    setOrganiserError(null);
+                  }}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      void addOrganiser();
+                    }
+                  }}
+                />
+                <p className="help-block" id="circle-organiser-help">
+                  Add members who have agreed to be listed.
+                </p>
+                {organiserError && <p role="alert">{organiserError}</p>}
+                <Button
+                  type="button"
+                  disabled={lookingUpOrganiser || !organiserUsername.trim()}
+                  onClick={addOrganiser}
+                >
+                  Add organiser
+                </Button>
+              </fieldset>
               <div className="row">
                 <div className="col-sm-4 form-group">
                   <label htmlFor="circle-color">Colour</label>
@@ -414,7 +535,11 @@ export default function AdminCircles({
                   value={circle.attribution_url || ''}
                 />
               </div>
-              <Button intent="primary" disabled={isSaving} type="submit">
+              <Button
+                intent="primary"
+                disabled={isSaving || lookingUpOrganiser}
+                type="submit"
+              >
                 {isSaving ? 'Saving…' : 'Save circle'}
               </Button>
             </form>

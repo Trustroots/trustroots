@@ -659,6 +659,7 @@ export async function deleteUserAccount(
  * Show the profile of the user
  */
 service.getUser = function (req: SanitizedProfileRequest, res) {
+  res.set('Cache-Control', 'private, no-store');
   // Not a profile of currently authenticated user:
   if (req.profile && !req.user._id.equals(req.profile._id)) {
     // 'public' isn't needed at frontend.
@@ -948,6 +949,11 @@ function sanitizeProfile(
     profile.member = _.reject(profile.member, function (o) {
       return !o.tribe;
     });
+    if (!authenticatedUser) {
+      profile.member.forEach(membership => {
+        delete membership.joinReason;
+      });
+    }
   }
 
   // Create simple arrays of tribe id's
@@ -1074,6 +1080,21 @@ service.sanitizeOwnProfile = function (
 
 type TribeMembershipAction = 'join' | 'leave';
 
+/** Validate and normalise the optional reason captured when joining a circle. */
+function normaliseJoinReason(value: unknown): string | undefined | null {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') return null;
+  const reason = value.trim();
+  if (!reason) return undefined;
+  if (
+    Array.from(reason).length > 160 ||
+    /[\r\n\u0085\u2028\u2029]/.test(reason)
+  ) {
+    return null;
+  }
+  return reason;
+}
+
 function changeTribeMembership(
   req: Parameters<UserProfileController['joinTribe']>[0],
   res: Parameters<UserProfileController['joinTribe']>[1],
@@ -1096,6 +1117,14 @@ function changeTribeMembership(
       message: isJoining
         ? 'You are already a member of this tribe.'
         : 'You are not a member of this tribe.',
+    });
+  }
+  const joinReason = isJoining
+    ? normaliseJoinReason(req.body?.joinReason)
+    : undefined;
+  if (joinReason === null) {
+    return res.status(400).send({
+      message: 'Please use a single line of up to 160 characters.',
     });
   }
   async function change(): Promise<void> {
@@ -1125,6 +1154,7 @@ function changeTribeMembership(
             member: {
               tribe: tribe._id,
               since: Date.now(),
+              ...(joinReason ? { joinReason } : {}),
             },
           },
         }

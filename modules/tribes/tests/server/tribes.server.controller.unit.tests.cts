@@ -296,9 +296,66 @@ describe('Tribes controller unit tests', () => {
   describe('getTribe', () => {
     it('returns an empty object when no tribe is attached', async () => {
       const res = deferredResponse<Record<string, unknown>>();
-      tribesController.getTribe({}, res);
+      await tribesController.getTribe({}, res, () => {});
       await res.waitForResponse();
       res.body.should.deepEqual({});
+    });
+
+    it('returns the tribe attached to the request', async () => {
+      const tribe = await new Tribe({ label: 'Shown', slug: 'shown' }).save();
+      const res = deferredResponse<TestTribeView>();
+      await tribesController.getTribe({ tribe }, res, () => {});
+      await res.waitForResponse();
+      res.body.slug.should.equal('shown');
+    });
+
+    it('preserves detail when an organiser assignment lookup finds no circle', async () => {
+      const tribe = { _id: new mongoose.Types.ObjectId(), slug: 'sample' };
+      const res = deferredResponse();
+      await tribesController.getTribe(
+        { tribe, user: { _id: new mongoose.Types.ObjectId(), public: true } },
+        res,
+        error => {
+          throw error;
+        },
+      );
+      res.body.should.deepEqual(tribe);
+    });
+
+    it('returns an empty organiser list when no assigned accounts are visible', async () => {
+      const _id = new mongoose.Types.ObjectId();
+      await Tribe.create({
+        _id,
+        label: 'Sample circle',
+        organiserIds: [new mongoose.Types.ObjectId()],
+      });
+      const res = deferredResponse();
+      await tribesController.getTribe(
+        {
+          tribe: { _id },
+          user: { _id: new mongoose.Types.ObjectId(), public: true },
+        },
+        res,
+        error => {
+          throw error;
+        },
+      );
+      res.body.should.have.property('organisers').deepEqual([]);
+    });
+
+    it('forwards an organiser lookup failure to the route error handler', async () => {
+      const error = new Error('Assignments unavailable');
+      sinon.stub(Tribe, 'findById').throws(error);
+      const next = sinon.spy();
+      await tribesController.getTribe(
+        {
+          tribe: { _id: new mongoose.Types.ObjectId() },
+          user: { _id: new mongoose.Types.ObjectId(), public: true },
+        },
+        deferredResponse(),
+        next,
+      );
+      sinon.assert.calledOnceWithExactly(next, error);
     });
   });
 

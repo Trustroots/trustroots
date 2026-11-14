@@ -11,6 +11,7 @@ import '@testing-library/jest-dom';
 
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import { getCircles, saveCircle } from '@/modules/admin/client/api/circles.api';
+import { getUserByUsername } from '@/modules/admin/client/api/users.api';
 
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
@@ -20,9 +21,11 @@ jest.mock('@tanstack/react-router', () =>
 );
 
 jest.mock('@/modules/admin/client/api/circles.api');
+jest.mock('@/modules/admin/client/api/users.api');
 
 const getCirclesMock = jest.mocked(getCircles);
 const saveCircleMock = jest.mocked(saveCircle);
+const getUserByUsernameMock = jest.mocked(getUserByUsername);
 
 type CircleFixture = {
   _id?: string;
@@ -55,6 +58,43 @@ describe('<AdminCircles />', () => {
       public: true,
       image: false,
     } as CircleFixture);
+  });
+
+  it('looks up organisers and reports unknown and duplicate usernames', async () => {
+    const member = {
+      _id: 'member-1',
+      username: 'sample-member',
+      displayName: 'Sample Member',
+    };
+    getUserByUsernameMock
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce({ profile: member })
+      .mockResolvedValueOnce({ profile: member });
+    render(<AdminCircles />);
+    await screen.findByRole('button', { name: 'Hikers' });
+    const input = screen.getByLabelText('Organiser username');
+    const add = screen.getByRole('button', { name: 'Add organiser' });
+    fireEvent.change(input, { target: { value: 'unknown' } });
+    fireEvent.click(add);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No member found with that username.',
+    );
+    fireEvent.change(input, { target: { value: ' Sample-Member ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    const remove = await screen.findByRole('button', {
+      name: 'Remove Sample Member',
+    });
+    expect(getUserByUsernameMock).toHaveBeenLastCalledWith(
+      'sample-member',
+      expect.any(AbortSignal),
+    );
+    fireEvent.change(input, { target: { value: member.username } });
+    fireEvent.click(add);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This member is already listed.',
+    );
+    fireEvent.click(remove);
+    expect(remove).not.toBeInTheDocument();
   });
 
   it('loads circles and lets an administrator edit one', async () => {

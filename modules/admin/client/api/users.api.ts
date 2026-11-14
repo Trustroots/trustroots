@@ -45,8 +45,15 @@ export async function getUser(id: string) {
   return data;
 }
 
-export async function getUserByUsername(username: string) {
-  const { data } = await axios.post('/api/admin/user', { username });
+export async function getUserByUsername(
+  username: string,
+  signal?: AbortSignal,
+) {
+  const { data } = await axios.post(
+    '/api/admin/user',
+    { username },
+    ...(signal ? [{ signal }] : []),
+  );
   return data;
 }
 

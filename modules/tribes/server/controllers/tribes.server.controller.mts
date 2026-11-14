@@ -12,9 +12,12 @@ interface TribeRecord {
   label?: string;
   count?: number;
   public?: boolean;
+  organiserIds?: Types.ObjectId[];
 }
 interface UserRecord {
   _id?: Types.ObjectId;
+  username?: string;
+  displayName?: string;
   blocked?: Types.ObjectId[];
   public?: boolean;
   roles?: string[];
@@ -92,6 +95,12 @@ interface JsonResponse<Body> {
   json(body: Body | { message?: string }): this;
 }
 
+interface TribeDetailResponse extends JsonResponse<
+  TribeRecord & { organisers?: { username: string; displayName?: string }[] }
+> {
+  set(key: string, value: string): this;
+}
+
 type Next = (error?: unknown) => void;
 type ErrorResponse = { message?: string };
 interface PaginatedResponse extends JsonResponse<TribeRecord[]> {
@@ -110,8 +119,9 @@ const service = {} as {
   listTribes(req: ListTribesRequest, res: PaginatedResponse): void;
   getTribe(
     req: TribeRequest,
-    res: JsonResponse<TribeRecord | Record<string, never>>,
-  ): void;
+    res: TribeDetailResponse,
+    next: Next,
+  ): Promise<unknown>;
   listMembers(
     req: MemberRequest,
     res: JsonResponse<MemberListResponse>,
@@ -208,9 +218,49 @@ service.listTribes = function (req, res) {
     });
 };
 
-/** Return the tribe attached by the route parameter middleware. */
-service.getTribe = function (req, res) {
-  res.json(req.tribe || {});
+/** Return the circle with the organiser profiles visible to this viewer. */
+service.getTribe = async function (req, res, next) {
+  res.set('Cache-Control', 'private, no-store');
+  const { tribe, user } = req;
+  if (!tribe?._id || !user?._id || !user.public) {
+    return res.json(tribe || {});
+  }
+
+  try {
+    // Assignment IDs are excluded from the shared catalogue and HTML projection.
+    const assignment = await Tribe.findById(tribe._id)
+      .select('organiserIds')
+      .lean()
+      .exec();
+    const ids = assignment?.organiserIds;
+    if (!ids?.length) return res.json(tribe);
+
+    const members = await User.find({
+      _id: { $in: ids, $nin: user.blocked || [] },
+      public: true,
+      roles: { $nin: userRolesService.restrictedMessagingRoles },
+      blocked: { $nin: [user._id] },
+    })
+      .select('username displayName')
+      .lean()
+      .exec();
+    const byId = new Map(
+      members.map(({ _id, username, displayName }) => [
+        String(_id),
+        { username, displayName },
+      ]),
+    );
+    const organisers = ids.flatMap(id => {
+      const member = byId.get(String(id));
+      return member?.username
+        ? [{ username: member.username, displayName: member.displayName }]
+        : [];
+    });
+    const detail = tribe instanceof Tribe ? tribe.toJSON() : tribe;
+    return res.json({ ...detail, organisers });
+  } catch (error) {
+    return next(error);
+  }
 };
 
 function visibleMemberMatch(

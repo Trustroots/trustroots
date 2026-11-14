@@ -141,6 +141,30 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     getMock.mockResolvedValue(tribe);
   });
 
+  it('keeps organiser links visible when membership changes', async () => {
+    getMock.mockResolvedValue({
+      ...tribe,
+      organisers: [
+        { username: 'example-organiser', displayName: 'Example Organiser' },
+      ],
+    });
+    render(
+      <TribeDetailPage
+        circle="hitchhikers"
+        user={user}
+        onMembershipUpdated={jest.fn()}
+      />,
+    );
+    const link = await screen.findByRole('link', { name: 'Example Organiser' });
+    expect(link).toHaveAttribute('href', '/profile/example-organiser');
+    fireEvent.click(
+      screen.getByRole('button', { name: 'Join as circle member' }),
+    );
+    expect(
+      screen.getByRole('link', { name: 'Example Organiser' }),
+    ).toBeVisible();
+  });
+
   it.each([undefined, ['user'], ['support-team'], ['admin']])(
     'shows the editor only to circle administrators (%j)',
     async roles => {

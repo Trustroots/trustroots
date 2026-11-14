@@ -25,6 +25,7 @@ export interface TribeRecord {
   attribution?: string;
   attribution_url?: string;
   description?: string;
+  organiserIds?: Types.ObjectId[];
 }
 
 interface TribeVirtuals {
@@ -140,6 +141,11 @@ const TribeSchema = new Schema<TribeRecord>({
     maxlength: [4000, 'Please keep the description under 4000 characters.'],
     get: (value: string | undefined) =>
       value && sanitizeHtml(value, sanitizeOptions),
+  },
+  organiserIds: {
+    type: [Schema.Types.ObjectId],
+    select: false,
+    default: undefined,
   },
 });
 
