@@ -89,6 +89,16 @@ describe('tribes api', () => {
     );
   });
 
+  it('includes a reason when supplied to the join request', async () => {
+    const reason = { joinReason: 'I enjoy sharing journeys.' };
+    axiosMock.post.mockResolvedValueOnce(response({}));
+    await join('tribe-1', reason);
+    expect(axiosMock.post).toHaveBeenCalledWith(
+      '/api/users/memberships/tribe-1',
+      reason,
+    );
+  });
+
   it('reads tribes with the default limit', async () => {
     const tribes: TribeSummary[] = [
       {

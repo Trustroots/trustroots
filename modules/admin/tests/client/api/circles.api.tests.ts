@@ -100,3 +100,12 @@ it('sends an empty organiser list to clear assignments', async () => {
     organiserIds: [],
   });
 });
+
+it('omits organiser IDs when uploading an image without changing assignments', async () => {
+  const circle = { _id: 'circle-1', label: 'Walkers', public: true };
+  const image = new File(['image'], 'circle.png');
+  axiosMock.put.mockResolvedValueOnce(response(circle));
+  await saveCircle(circle, image);
+  const [, payload] = axiosMock.put.mock.calls[0] as [string, FormData];
+  expect(payload.has('organiserIds')).toBe(false);
+});

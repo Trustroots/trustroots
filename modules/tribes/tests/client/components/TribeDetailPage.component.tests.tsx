@@ -146,6 +146,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
       ...tribe,
       organisers: [
         { username: 'example-organiser', displayName: 'Example Organiser' },
+        { username: 'another-organiser' },
       ],
     });
     render(
@@ -157,6 +158,9 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     );
     const link = await screen.findByRole('link', { name: 'Example Organiser' });
     expect(link).toHaveAttribute('href', '/profile/example-organiser');
+    expect(
+      screen.getByRole('link', { name: 'another-organiser' }),
+    ).toHaveAttribute('href', '/profile/another-organiser');
     fireEvent.click(
       screen.getByRole('button', { name: 'Join as circle member' }),
     );

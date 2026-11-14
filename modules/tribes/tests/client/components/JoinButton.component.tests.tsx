@@ -135,6 +135,42 @@ describe('<JoinButton />', () => {
     ).toBeVisible();
   });
 
+  it('lets a member cancel or retry joining from the circle page', async () => {
+    joinMock
+      .mockRejectedValueOnce(new Error('Join failed'))
+      .mockResolvedValueOnce({ user: { ...user, memberIds: ['tribe-1'] } });
+    render(
+      <JoinButton
+        source="circle_page"
+        tribe={tribe}
+        user={{ ...user, memberIds: [] }}
+      />,
+    );
+
+    const open = screen.getByRole('button', { name: 'Join (Hitchhikers)' });
+    fireEvent.click(open);
+    const firstDialog = await screen.findByRole('dialog');
+    fireEvent.click(
+      within(firstDialog).getByRole('button', { name: 'Cancel' }),
+    );
+    await waitFor(() => expect(firstDialog).not.toBeInTheDocument());
+    expect(joinMock).not.toHaveBeenCalled();
+
+    fireEvent.click(open);
+    const dialog = await screen.findByRole('dialog');
+    const submit = within(dialog).getByRole('button', { name: 'Join circle' });
+    fireEvent.click(submit);
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      'Could not join the circle. Please try again.',
+    );
+    expect(submit).toBeEnabled();
+    fireEvent.click(submit);
+    expect(
+      await screen.findByRole('button', { name: 'Leave circle' }),
+    ).toBeVisible();
+    expect(joinMock).toHaveBeenLastCalledWith('tribe-1');
+  });
+
   it('re-enables the button after a failed join without tracking it', async () => {
     const onUpdated = jest.fn();
     joinMock.mockRejectedValueOnce(new Error('join failed'));
