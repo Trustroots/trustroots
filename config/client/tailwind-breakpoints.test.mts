@@ -50,3 +50,17 @@ test('sm/md/lg breakpoints match the Bootstrap 3 grid', async () => {
     assert.ok(css.includes(`@media ${query}`), `missing @media ${query}`);
   }
 });
+
+test('max-width breakpoint rules run from widest to narrowest', async () => {
+  const css = await build([
+    'tw:max-lg:hidden',
+    'tw:max-xl:block',
+    'tw:max-2xl:flex',
+  ]);
+
+  assert.deepEqual(css.match(/@media \(width < [^)]+\)/g), [
+    '@media (width < 1536px)',
+    '@media (width < 1280px)',
+    '@media (width < 1200px)',
+  ]);
+});
