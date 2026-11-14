@@ -13,11 +13,12 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
@@ -271,6 +272,11 @@ class MapAndCircleTransportJourneysTest {
                 compose.onAllNodesWithText("Quiet Coast").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Quiet Coast").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("circleJoinReason").fetchSemanticsNodes().isNotEmpty()
+        }
+        val reasonInput = compose.onNodeWithTag("circleJoinReason").performScrollTo()
+        reasonInput.performTextReplacement("x".repeat(161))
         compose.onNodeWithText("Join circle").performScrollTo().performClick()
         awaitDynamicError(local, CIRCLE_DETAIL_LABELS) { request ->
             request.method == "POST" && request.path == "/api/users/memberships/circle-one"
@@ -293,8 +299,8 @@ class MapAndCircleTransportJourneysTest {
         assertTrue(local.requests.filter { it.path == membershipPath }.all { it.body.isEmpty() })
 
         allowRecovery.set(true)
-        compose.onNodeWithTag("circleJoinReason").performScrollTo()
-            .performTextInput("  To meet other coastal walkers.  ")
+        reasonInput.performScrollTo().performTextReplacement("First line\nSecond line")
+        reasonInput.performTextReplacement("  To meet other coastal walkers.  ")
         compose.onNodeWithText("Join circle").performScrollTo().performClick()
         compose.waitUntil(10_000) {
             updateRequests.get() > failedUpdateCount &&
