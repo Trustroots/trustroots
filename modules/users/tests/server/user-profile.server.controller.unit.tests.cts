@@ -50,6 +50,7 @@ const validNpub =
 
 interface MockResponse {
   statusCode: number;
+  headers: Record<string, string>;
   body: unknown;
   _next: boolean;
   _nextArg: unknown;
@@ -72,10 +73,12 @@ function runHandler(invoke: Handler): Promise<HandlerOutcome> {
       resolve({ res, nextCalled: res._next, nextArg: res._nextArg });
     const res: MockResponse = {
       statusCode: 200,
+      headers: {},
       body: null,
       _next: false,
       _nextArg: undefined,
-      set() {
+      set(field, value) {
+        res.headers[field] = value;
         return res;
       },
       status(code) {
@@ -529,6 +532,7 @@ describe('Profile controller unit tests', () => {
           profileController.update({ user: userDoc, body: { nostrNpub } }, res),
         );
         res.statusCode.should.equal(400);
+        responseString(res, 'message').should.startWith('Invalid nostr key.');
       });
     }
 
@@ -1224,6 +1228,7 @@ describe('Profile controller unit tests', () => {
         ),
       );
       responseFieldIsUndefined(res, 'public').should.be.true();
+      res.headers['Cache-Control'].should.equal('private, no-store');
     });
 
     it('returns the own profile', async () => {
@@ -1811,8 +1816,9 @@ describe('Profile controller unit tests', () => {
       res.statusCode.should.equal(400);
     });
 
-    it('joinTribe adds the user to a tribe', async () => {
+    it('joinTribe saves a trimmed reason at the 160-character limit', async () => {
       const tribe = await new Tribe({ label: 'Join Tribe' }).save();
+      const reason = 'x'.repeat(160);
       const [saved] = await utils.saveUsers(utils.generateUsers(1));
       const userDoc = await findUser(saved._id);
       userDoc.member = [];
@@ -1823,7 +1829,7 @@ describe('Profile controller unit tests', () => {
           {
             user: userDoc,
             params: { tribeId: tribe._id.toString() },
-            body: { joinReason: '  Looking for a local community.  ' },
+            body: { joinReason: `  ${reason}  ` },
           },
           res,
         ),
@@ -1833,9 +1839,7 @@ describe('Profile controller unit tests', () => {
 
       const reloaded = await findUser(saved._id);
       reloaded.member!.length.should.equal(1);
-      should(reloaded.member![0].joinReason).equal(
-        'Looking for a local community.',
-      );
+      should(reloaded.member![0].joinReason).equal(reason);
     });
 
     for (const joinReason of [
@@ -1862,6 +1866,9 @@ describe('Profile controller unit tests', () => {
         );
 
         res.statusCode.should.equal(400);
+        responseString(res, 'message').should.equal(
+          'Please use a single line of up to 160 characters.',
+        );
         const reloaded = await findUser(saved._id);
         reloaded.member!.length.should.equal(0);
         (

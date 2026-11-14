@@ -1085,7 +1085,6 @@ function normaliseJoinReason(value: unknown): string | undefined | null {
   if (value === undefined) return undefined;
   if (typeof value !== 'string') return null;
   const reason = value.trim();
-  if (!reason) return undefined;
   if (
     Array.from(reason).length > 160 ||
     /[\r\n\u0085\u2028\u2029]/.test(reason)

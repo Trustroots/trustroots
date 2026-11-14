@@ -174,6 +174,60 @@ describe('Users policy unit tests', () => {
     }
   });
 
+  it('recognises only support-team profile reads', () => {
+    const user = { roles: ['support-team'] };
+    const route = { path: '/api/users/:username' };
+    policyModule
+      .isSupportProfileRead({ user, route, method: 'GET' })
+      .should.be.true();
+    for (const request of [
+      { user, method: 'GET' },
+      { user, route: { path: '/api/users/export' }, method: 'GET' },
+      { user, route, method: 'PUT' },
+      { route, method: 'GET' },
+      { user: {}, route, method: 'GET' },
+      { user: { roles: ['admin'] }, route, method: 'GET' },
+    ]) {
+      policyModule.isSupportProfileRead(request).should.be.false();
+    }
+  });
+
+  it('checks profile visibility before authorising other staff requests', () => {
+    const { policy, mockAcl } = loadPolicy();
+    mockAcl.areAnyRolesAllowed.yields(null, true);
+    const profilePath = '/api/users/:username';
+    const avatarPath = '/api/users/:avatarUserId/avatar';
+    const profile = { _id: { equals: () => false }, public: false };
+    for (const [roles, path, method, allowed] of [
+      [['support-team'], profilePath, 'GET', true],
+      [['admin'], avatarPath, 'GET', true],
+      [['admin'], profilePath, 'PUT', false],
+      [['admin'], avatarPath, 'PUT', false],
+      [['admin'], '/api/users/export', 'GET', false],
+      [undefined, profilePath, 'GET', false],
+      [undefined, avatarPath, 'GET', false],
+    ] as const) {
+      const next = sinon.spy();
+      const res = mockResponse();
+      policy.isAllowed(
+        {
+          user: {
+            _id: noProfileUserId,
+            public: false,
+            roles: roles && [...roles],
+          },
+          profile,
+          route: { path },
+          method,
+        },
+        res,
+        next,
+      );
+      res.statusCode.should.equal(allowed ? 200 : 404);
+      next.calledOnce.should.equal(allowed);
+    }
+  });
+
   it('calls next when ACL allows the request', () => {
     const { policy, mockAcl } = loadPolicy();
     mockAcl.areAnyRolesAllowed.yields(null, true);

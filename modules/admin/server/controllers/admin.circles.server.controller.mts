@@ -107,14 +107,14 @@ function invalidCircleImage() {
 
 async function parseOrganiserIds(
   input: unknown,
-  existing: mongoose.Types.ObjectId[] = [],
+  existing?: mongoose.Types.ObjectId[],
 ) {
   let values: unknown = input;
   if (typeof input === 'string') {
     try {
       values = JSON.parse(input);
     } catch {
-      throw validationError('Enter valid organiser IDs.');
+      throw validationError('Enter organiser IDs as a JSON array.');
     }
   }
   if (
@@ -127,7 +127,7 @@ async function parseOrganiserIds(
   if (new Set(ids).size !== ids.length) {
     throw validationError('An organiser is listed twice.');
   }
-  const current = new Set(existing.map(String));
+  const current = new Set(existing?.map(String));
   const added = ids.filter(id => !current.has(id));
   if (
     added.length &&

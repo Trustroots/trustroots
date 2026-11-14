@@ -329,6 +329,10 @@ describe('Tribes controller unit tests', () => {
         label: 'Sample circle',
         organiserIds: [new mongoose.Types.ObjectId()],
       });
+      const memberQuery = mongoose.model('User').find();
+      const select = sinon.spy(memberQuery, 'select');
+      sinon.stub(mongoose.model('User'), 'find').returns(memberQuery);
+      sinon.stub(memberQuery, 'exec').resolves([]);
       const res = deferredResponse();
       await tribesController.getTribe(
         {
@@ -341,6 +345,7 @@ describe('Tribes controller unit tests', () => {
         },
       );
       res.body.should.have.property('organisers').deepEqual([]);
+      sinon.assert.calledOnceWithExactly(select, 'username displayName');
     });
 
     it('forwards an organiser lookup failure to the route error handler', async () => {

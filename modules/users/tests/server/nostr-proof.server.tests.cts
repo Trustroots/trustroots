@@ -181,6 +181,10 @@ describe('Nostr ownership proofs', () => {
     update.called.should.equal(false);
   });
 
+  it('trims and normalises pasted public keys', () => {
+    decodeNpub(` NPUB${npub.slice(4)} `).should.equal(getPublicKey(key));
+  });
+
   it('rejects invalid or secret keys and missing members', async () => {
     for (const value of [undefined, 123, nip19.nsecEncode(key)]) {
       (() => decodeNpub(value)).should.throw('Invalid Nostr public key.');

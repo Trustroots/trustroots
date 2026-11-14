@@ -15,7 +15,9 @@ export const proofError =
 
 export function decodeNpub(value: unknown): string {
   if (typeof value !== 'string') throw new Error('Invalid Nostr public key.');
-  const decoded = nip19.decode(value.trim().toLowerCase());
+  const trimmed = value.trim();
+  // Stryker disable next-line MethodExpression: decoding accepts all-uppercase and all-lowercase keys equally; normalising also accepts mixed case.
+  const decoded = nip19.decode(trimmed.toLowerCase());
   if (decoded.type !== 'npub') throw new Error('Invalid Nostr public key.');
   return decoded.data;
 }
