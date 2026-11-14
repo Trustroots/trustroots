@@ -99,7 +99,9 @@ describe('<SiteFooter />', () => {
     expect(container.querySelector('.site-footer-links')).toHaveClass(
       'list-inline',
     );
-    expect(container.querySelector('#tr-footer')).toHaveClass('hidden-xs');
+    expect(container.querySelector('#tr-footer')).toHaveClass(
+      'tw:[@media(max-width:767px)]:hidden',
+    );
   });
 
   it('tracks footer link clicks', () => {
@@ -173,7 +175,7 @@ describe('<SiteFooter />', () => {
     expect(container.querySelector('.site-footer-content')).toBeInTheDocument();
     expect(container.querySelector('.site-footer-meta')).toBeInTheDocument();
     expect(footer).not.toHaveClass('tr-footer-admin');
-    expect(footer).not.toHaveClass('hidden-xs');
+    expect(footer).not.toHaveClass('tw:[@media(max-width:767px)]:hidden');
   });
 
   it('renders account footer build metadata without the standard navigation', () => {
