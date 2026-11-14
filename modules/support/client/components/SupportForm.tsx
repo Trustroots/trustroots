@@ -14,6 +14,7 @@ import { SUPPORT_CATEGORIES } from '../../shared/categories.ts';
 import { VOLUNTEERING_DISCLAIMER } from '../../shared/volunteering-copy.ts';
 import { Button } from '@trustroots/ui/Button';
 import { Alert } from '@trustroots/ui/Alert';
+import { Textarea } from '@trustroots/ui/Textarea';
 
 type SupportUser = { displayName?: string; username?: string; email?: string };
 type SupportFormProps = { user?: SupportUser | null };
@@ -239,8 +240,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                   {t(VOLUNTEERING_DISCLAIMER)}
                 </p>
               )}
-              <textarea
-                className="form-control input-lg"
+              <Textarea
                 rows={7}
                 id="message"
                 required
@@ -254,7 +254,7 @@ export default function SupportForm({ user }: SupportFormProps) {
                 onChange={event => {
                   setSupportMessage(event.target.value);
                 }}
-              ></textarea>
+              />
               <span className="help-block" id="message-help">
                 {category === 'volunteering' && (
                   <>
