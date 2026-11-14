@@ -24,6 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -32,7 +33,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -109,7 +112,7 @@ internal fun CircleDetailEntry(
         onRetry = { viewModel.onEvent(CircleDetailEvent.RetryLoad) },
         contentPadding = contentPadding,
         onBack = onBack,
-        onToggleMembership = { viewModel.onEvent(CircleDetailEvent.ToggleMembership) },
+        onToggleMembership = { viewModel.onEvent(CircleDetailEvent.ToggleMembership(it)) },
         onOpenProfile = onOpenProfile,
     )
 }
@@ -132,10 +135,11 @@ internal fun CircleDetailContent(
     onRetry: () -> Unit,
     contentPadding: PaddingValues,
     onBack: () -> Unit,
-    onToggleMembership: () -> Unit,
+    onToggleMembership: (String?) -> Unit,
     onOpenProfile: (String) -> Unit,
 ) {
     val failureMessage = failure?.let { circlesFailureMessage(it) }
+    var joinReason by remember(circle?.id, session.member.username, isMember) { mutableStateOf("") }
     val topPadding = contentPadding.calculateTopPadding()
     val compactHeaderHeight = 64.dp
     val collapsibleHeader = rememberSnappableCollapseHeader(
@@ -219,8 +223,23 @@ internal fun CircleDetailContent(
                                 Text(circleDescription(it), modifier = Modifier.padding(vertical = 16.dp))
                             }
                             if (!membershipsLoaded && isLoading) CircularProgressIndicator()
+                            if (membershipsLoaded && !isMember) {
+                                OutlinedTextField(
+                                    value = joinReason,
+                                    onValueChange = { value ->
+                                        if (Character.codePointCount(value, 0, value.length) <= 160 &&
+                                            value.none { it in "\r\n\u0085\u2028\u2029" }
+                                        ) joinReason = value
+                                    },
+                                    modifier = Modifier.fillMaxWidth().testTag("circleJoinReason"),
+                                    enabled = !isUpdating,
+                                    label = { Text(stringResource(R.string.screen_circle_join_reason)) },
+                                    supportingText = { Text(stringResource(R.string.screen_circle_join_reason_visibility)) },
+                                    singleLine = true,
+                                )
+                            }
                             Button(
-                                onClick = onToggleMembership,
+                                onClick = { onToggleMembership(if (isMember) null else joinReason) },
                                 enabled = membershipsLoaded && !isUpdating,
                             ) {
                                 Text(stringResource(if (isMember) R.string.screen_leave_circle else R.string.screen_join_circle))

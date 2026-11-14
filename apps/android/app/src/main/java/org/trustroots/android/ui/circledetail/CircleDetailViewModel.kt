@@ -43,7 +43,7 @@ internal data class CircleDetailUiState(
 
 internal sealed interface CircleDetailEvent {
     data object RetryLoad : CircleDetailEvent
-    data object ToggleMembership : CircleDetailEvent
+    data class ToggleMembership(val joinReason: String? = null) : CircleDetailEvent
     data class SessionInvalidationDelivered(val id: Long) : CircleDetailEvent
     data class OverviewMembershipEventDelivered(val id: Long) : CircleDetailEvent
 }
@@ -72,7 +72,7 @@ internal class CircleDetailViewModel(
     fun onEvent(event: CircleDetailEvent) {
         when (event) {
             CircleDetailEvent.RetryLoad -> if (!sessionInvalidationEmitted) load()
-            CircleDetailEvent.ToggleMembership -> toggleMembership()
+            is CircleDetailEvent.ToggleMembership -> toggleMembership(event.joinReason)
             is CircleDetailEvent.SessionInvalidationDelivered -> mutableState.update { current ->
                 if (current.pendingSessionInvalidation?.id == event.id) {
                     current.copy(pendingSessionInvalidation = null)
@@ -156,7 +156,7 @@ internal class CircleDetailViewModel(
         }
     }
 
-    private fun toggleMembership() {
+    private fun toggleMembership(joinReason: String?) {
         val current = state.value
         val circle = current.circle ?: return
         if (sessionInvalidationEmitted || !current.membershipsLoaded || current.isUpdating) return
@@ -164,7 +164,7 @@ internal class CircleDetailViewModel(
         membershipUpdate.launch {
             mutableState.update { it.copy(isUpdating = true, failure = null, canRetryLoad = false) }
             val requestContext = currentCoroutineContext()
-            requestResult { repository.setMembership(circle.id, isMember = !joining) }.fold(
+            requestResult { repository.setMembership(circle.id, isMember = !joining, joinReason = joinReason) }.fold(
                 onSuccess = {
                     membershipRevision++
                     val event = CircleDetailMembershipEvent(

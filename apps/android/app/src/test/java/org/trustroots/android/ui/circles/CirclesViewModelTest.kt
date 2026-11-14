@@ -508,7 +508,7 @@ class CirclesViewModelTest {
 
         override suspend fun memberships(): Result<Set<String>> = membershipsHandler(++membershipReads)
 
-        override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
+        override suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String?): Result<Unit> {
             membershipChanges += circleID to isMember
             return updateHandler()
         }

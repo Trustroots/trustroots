@@ -30,12 +30,12 @@ class CircleDetailViewModelConcurrencyTest {
         val repository = RaceRepository(lateGroups)
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertTrue(viewModel.state.value.isMember)
         assertTrue(viewModel.state.value.isLoadingMembers)
         assertEquals(1, repository.memberGroupReads)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertFalse(viewModel.state.value.isMember)
         assertFalse(viewModel.state.value.isLoadingMembers)
         assertNull(viewModel.state.value.memberGroups)
@@ -56,7 +56,7 @@ class CircleDetailViewModelConcurrencyTest {
         val repository = RaceRepository(circleResponse = circleResponse)
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
 
         assertTrue(viewModel.state.value.isLoading)
         assertFalse(viewModel.state.value.isUpdating)
@@ -90,7 +90,7 @@ class CircleDetailViewModelConcurrencyTest {
                 ?: Result.success(CircleMemberGroups(emptyList(), emptyList(), emptyList()))
         }
         override suspend fun memberships(): Result<Set<String>> = Result.success(emptySet())
-        override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
+        override suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String?): Result<Unit> {
             membershipChanges += circleID to isMember
             return Result.success(Unit)
         }

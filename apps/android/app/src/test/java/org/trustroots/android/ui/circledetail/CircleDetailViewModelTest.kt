@@ -97,7 +97,7 @@ class CircleDetailViewModelTest {
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
         assertTrue(viewModel.state.value.isLoadingMembers)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertFalse(viewModel.state.value.isMember)
         assertNull(viewModel.state.value.memberGroups)
 
@@ -162,7 +162,7 @@ class CircleDetailViewModelTest {
 
     @Test
     fun joinAndLeaveUseFetchedCircleIDAndEmitOverviewUpdatesWithoutChangingCount() = withDetail { viewModel, repository, _ ->
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertEquals(listOf("quiet-id" to false), repository.membershipChanges)
         assertTrue(viewModel.state.value.isMember)
         assertEquals(7, viewModel.state.value.circle?.count)
@@ -172,7 +172,7 @@ class CircleDetailViewModelTest {
         viewModel.onEvent(CircleDetailEvent.OverviewMembershipEventDelivered(joined.id))
         assertNull(viewModel.state.value.pendingOverviewMembershipEvent)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertEquals(listOf("quiet-id" to false, "quiet-id" to true), repository.membershipChanges)
         assertFalse(viewModel.state.value.isMember)
         val left = requireNotNull(viewModel.state.value.pendingOverviewMembershipEvent)
@@ -265,14 +265,14 @@ class CircleDetailViewModelTest {
             } else Result.success(Unit)
         }
 
-        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        fresh.onEvent(CircleDetailEvent.ToggleMembership())
         assertTrue(fresh.state.value.isMember)
         assertFalse(fresh.state.value.isUpdating)
         assertEquals(CirclesFailureKind.MEMBERSHIP_UPDATE, fresh.state.value.failure?.kind)
         assertEquals("Temporary membership failure", fresh.state.value.failure?.serverMessage)
         assertEquals(ApiFailureKind.REQUEST_REJECTED, fresh.state.value.failure?.apiFailureKind)
 
-        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        fresh.onEvent(CircleDetailEvent.ToggleMembership())
         assertFalse(fresh.state.value.isMember)
         assertNull(fresh.state.value.failure)
     }
@@ -285,14 +285,14 @@ class CircleDetailViewModelTest {
             Result.success(Unit)
         }
 
-        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        fresh.onEvent(CircleDetailEvent.ToggleMembership())
 
         assertFalse(fresh.state.value.isMember)
         assertFalse(fresh.state.value.isUpdating)
         assertEquals(CirclesFailureKind.MEMBERSHIP_UPDATE, fresh.state.value.failure?.kind)
         assertFalse(fresh.state.value.canRetryLoad)
 
-        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        fresh.onEvent(CircleDetailEvent.ToggleMembership())
 
         assertTrue(fresh.state.value.isMember)
         assertFalse(fresh.state.value.isUpdating)
@@ -393,7 +393,7 @@ class CircleDetailViewModelTest {
         repository.updateHandler = { pending.await() }
         val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
 
-        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        fresh.onEvent(CircleDetailEvent.ToggleMembership())
         fresh.updateEnvironment(api("https://api.example.test/"), session("stable-cookie"))
 
         assertEquals(listOf("quiet-id" to false), repository.membershipChanges)
@@ -433,7 +433,7 @@ class CircleDetailViewModelTest {
         }
         val fresh = CircleDetailViewModel("quiet-circle", repository, scope = scope)
 
-        fresh.onEvent(CircleDetailEvent.ToggleMembership)
+        fresh.onEvent(CircleDetailEvent.ToggleMembership())
         assertTrue(fresh.state.value.isUpdating)
         fresh.onEvent(CircleDetailEvent.RetryLoad)
         val invalidation = requireNotNull(fresh.state.value.pendingSessionInvalidation)
@@ -519,7 +519,7 @@ class CircleDetailViewModelTest {
                 StoreOwner(store),
                 CircleDetailViewModel.Factory("quiet-circle", repository, scope),
             ).get(CircleDetailViewModel::class.java)
-            viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+            viewModel.onEvent(CircleDetailEvent.ToggleMembership())
             assertTrue(viewModel.state.value.isUpdating)
 
             store.clear()
@@ -613,7 +613,7 @@ class CircleDetailViewModelTest {
             memberGroupSlugs += slug
             return memberGroupsHandler(memberGroupSlugs.size, slug)
         }
-        override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
+        override suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String?): Result<Unit> {
             membershipChanges += circleID to isMember
             return updateHandler()
         }

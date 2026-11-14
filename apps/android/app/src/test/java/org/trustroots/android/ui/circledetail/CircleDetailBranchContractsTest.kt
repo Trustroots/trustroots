@@ -33,7 +33,7 @@ class CircleDetailBranchContractsTest {
         repository.updateHandler = { withContext(NonCancellable) { pendingUpdate.await() } }
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertTrue(viewModel.state.value.isUpdating)
         viewModel.onEvent(CircleDetailEvent.RetryLoad)
 
@@ -58,7 +58,7 @@ class CircleDetailBranchContractsTest {
         }
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         viewModel.onEvent(CircleDetailEvent.RetryLoad)
         pendingUpdate.complete(Result.success(Unit))
         pendingCircle.complete(Result.success(circle().copy(label = "Stale circle snapshot")))
@@ -81,7 +81,7 @@ class CircleDetailBranchContractsTest {
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
         val initialGroupReads = repository.memberGroupSlugs.toList()
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         viewModel.onEvent(CircleDetailEvent.RetryLoad)
         pendingUpdate.complete(Result.success(Unit))
         pendingMemberships.complete(Result.success(setOf("quiet-id")))
@@ -99,7 +99,7 @@ class CircleDetailBranchContractsTest {
 
         assertEquals("quiet-id", viewModel.state.value.circle?.id)
         assertFalse(viewModel.state.value.membershipsLoaded)
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
 
         assertTrue(repository.membershipChanges.isEmpty())
         assertFalse(viewModel.state.value.isUpdating)
@@ -117,9 +117,9 @@ class CircleDetailBranchContractsTest {
         repository.updateHandler = { withContext(NonCancellable) { pendingUpdate.await() } }
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertTrue(viewModel.state.value.isUpdating)
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
 
         assertEquals(listOf("quiet-id" to false), repository.membershipChanges)
         assertTrue(viewModel.state.value.isUpdating)
@@ -140,7 +140,7 @@ class CircleDetailBranchContractsTest {
         repository.updateHandler = { Result.failure(MobileApiException(401, "Fictional session expired.")) }
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
 
         val invalidation = requireNotNull(viewModel.state.value.pendingSessionInvalidation)
         assertFalse(viewModel.state.value.isUpdating)
@@ -148,7 +148,7 @@ class CircleDetailBranchContractsTest {
 
         viewModel.onEvent(CircleDetailEvent.SessionInvalidationDelivered(invalidation.id))
         repository.updateHandler = { Result.success(Unit) }
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
 
         assertNull(viewModel.state.value.pendingSessionInvalidation)
         assertFalse(viewModel.state.value.isMember)
@@ -166,7 +166,7 @@ class CircleDetailBranchContractsTest {
         }
         val viewModel = CircleDetailViewModel("quiet-circle", repository, scope)
 
-        viewModel.onEvent(CircleDetailEvent.ToggleMembership)
+        viewModel.onEvent(CircleDetailEvent.ToggleMembership())
         assertTrue(viewModel.state.value.isMember)
         assertTrue(viewModel.state.value.isLoadingMembers)
         assertEquals(1, repository.memberGroupSlugs.size)
@@ -232,7 +232,7 @@ class CircleDetailBranchContractsTest {
             return memberGroupsHandler(memberGroupSlugs.size, slug)
         }
 
-        override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
+        override suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String?): Result<Unit> {
             membershipChanges += circleID to isMember
             return updateHandler()
         }
