@@ -1,0 +1,12 @@
+.thread-messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-top: 30px;
+  padding-right: 30px;
+}
+@media (min-width: 768px) {
+  .thread-messages {
+    padding-right: 0;
+  }
+}

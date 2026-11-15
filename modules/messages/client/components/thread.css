@@ -1,0 +1,32 @@
+.thread-container {
+  position: fixed;
+  top: 44px;
+  bottom: var(--trustroots-keyboard-inset, 0px);
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.thread-loading-container {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  text-align: center;
+}
+@media (min-width: 768px) {
+  .thread-container {
+    width: 505px;
+    bottom: 12px;
+  }
+}
+@media (min-width: 992px) {
+  .thread-container {
+    width: 667px;
+  }
+}
+@media (min-width: 1200px) {
+  .thread-container {
+    width: 800px;
+  }
+}

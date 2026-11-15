@@ -1,21 +1,11 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import styled from 'styled-components';
 import { Button } from '@trustroots/ui/Button';
+import './users-results.css';
 
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import NoContent from '@/modules/core/client/components/NoContent';
 import type { UserProfile } from '@/modules/users/client/types';
-
-const Results = styled.div`
-  display: grid;
-  gap: 12px;
-  grid-template-columns: 1fr;
-
-  @media (min-width: 616px) {
-    grid-template-columns: 1fr 1fr;
-  }
-`;
 
 export default function UsersResults({
   users,
@@ -56,11 +46,11 @@ export default function UsersResults({
           </Button>
         </p>
       )}
-      <Results>
+      <div className="users-results">
         {users.map(user => (
           <MemberSearchCard key={user._id} user={user} query={query} />
         ))}
-      </Results>
+      </div>
     </>
   );
 }

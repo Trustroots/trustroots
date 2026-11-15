@@ -1,0 +1,10 @@
+.users-results {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 616px) {
+  .users-results {
+    grid-template-columns: 1fr 1fr;
+  }
+}

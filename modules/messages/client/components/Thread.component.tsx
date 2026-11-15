@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
+import './thread.css';
 import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -35,38 +35,6 @@ const api = {
   messages: messagesAPI,
   users: usersAPI,
 };
-
-const ThreadContainer = styled.div`
-  position: fixed;
-  top: 44px;
-  bottom: var(--trustroots-keyboard-inset, 0px);
-  width: 100%;
-  min-height: 0;
-  overflow: hidden;
-  @media (min-width: 768px) {
-    width: 505px;
-    bottom: 12px;
-  }
-  @media (min-width: 992px) {
-    width: 667px;
-  }
-  @media (min-width: 1200px) {
-    width: 800px;
-  }
-  display: flex;
-  flex-direction: column;
-`;
-
-const LoadingContainer = styled.div`
-  position: absolute;
-  top: 0;
-  width: 100%;
-  text-align: center;
-`;
-
-const FlexGrow = styled.div`
-  flex-grow: 1;
-`;
 
 function YouHaveNotBeenTalkingYet({ name }: { name?: string | null }) {
   const { t } = useTranslation('messages');
@@ -134,9 +102,9 @@ function FailedToLoadThread() {
 
 function Loading() {
   return (
-    <LoadingContainer>
+    <div className="thread-loading-container">
       <LoadingIndicator />
-    </LoadingContainer>
+    </div>
   );
 }
 
@@ -424,11 +392,11 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         <div className="col-xs-12 col-sm-9">
           {isFetching && <Loading />}
           {!isFetching && (
-            <ThreadContainer>
+            <div className="thread-container">
               {isFetchingMore && <Loading />}
               {messages.length === 0 ? (
                 <>
-                  <FlexGrow />
+                  <div className="tw:grow" />
                   {hasEmptyProfile ? (
                     <>
                       <MessageGateShown reason="profile_too_short" />
@@ -439,7 +407,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
                       name={otherUser?.displayName || otherUser?.username}
                     />
                   )}
-                  <FlexGrow />
+                  <div className="tw:grow" />
                 </>
               ) : (
                 <ThreadMessages
@@ -484,7 +452,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
               {isBlocked && (
                 <BlockedMemberBanner username={otherUser!.username as string} />
               )}
-            </ThreadContainer>
+            </div>
           )}
         </div>
         {otherUser && !isExtraSmall && !removed && (

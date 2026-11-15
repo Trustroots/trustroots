@@ -1,0 +1,12 @@
+.search-map-no-content {
+  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.5);
+  color: #333;
+}
+.search-map-no-content i {
+  color: #333;
+}

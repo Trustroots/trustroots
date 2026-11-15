@@ -9,7 +9,7 @@ import {
   ModalTitle,
 } from '@trustroots/ui/Modal';
 import React, { useState } from 'react';
-import styled from 'styled-components';
+import './language-switch.css';
 
 // Internal dependencies
 import {
@@ -27,61 +27,6 @@ const buttonLooks = {
   default: {},
   inverse: { variant: 'outline', intent: 'inverse' },
 } satisfies Record<string, ButtonStyleProps>;
-
-const SelectedLanguage = styled.strong`
-  color: var(--tr-link-color);
-  background: var(--tr-gray-lighter);
-
-  &::after {
-    content: '✓';
-    margin-inline-start: auto;
-    padding-inline-start: 8px;
-  }
-`;
-
-const LanguageOption = styled.button`
-  color: var(--tr-text-color);
-  background: transparent;
-  cursor: pointer;
-
-  &:hover {
-    background: var(--tr-gray-lighter);
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--tr-link-color);
-    outline-offset: 2px;
-  }
-`;
-
-const LanguageList = styled.ul`
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  gap: 4px 12px;
-
-  li > * {
-    display: flex;
-    align-items: center;
-    width: 100%;
-    min-height: 44px;
-    height: 100%;
-    padding: 10px 12px;
-    border: 0;
-    border-radius: var(--bs-border-radius);
-    font-size: inherit;
-    line-height: 1.5;
-    text-align: start;
-    overflow-wrap: anywhere;
-  }
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  margin-bottom: 16px;
-`;
 
 /**
  * LanguageSwitch component.
@@ -157,9 +102,9 @@ export default function LanguageSwitch({
         </ModalHeader>
         <ModalBody>
           {locales.length >= 8 && (
-            <SearchInput
+            <input
+              className="language-switch-search form-control"
               type="search"
-              className="form-control"
               value={search}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                 setSearch(event.target.value)
@@ -168,20 +113,22 @@ export default function LanguageSwitch({
               aria-label={t('Search languages…')}
             />
           )}
-          <LanguageList>
+          <ul className="language-switch-list">
             {filteredLocales.map(({ code, label }, index) => (
               <li key={`${code}-${label}-${index}`}>
                 {code === currentLanguageCode && (
-                  <SelectedLanguage
+                  <strong
+                    className="language-switch-selected"
                     lang={code}
                     dir={i18n.dir(code)}
                     aria-current="true"
                   >
                     {label}
-                  </SelectedLanguage>
+                  </strong>
                 )}
                 {code !== currentLanguageCode && (
-                  <LanguageOption
+                  <button
+                    className="language-switch-option"
                     type="button"
                     dir={i18n.dir(code)}
                     lang={code}
@@ -191,11 +138,11 @@ export default function LanguageSwitch({
                     }}
                   >
                     {label}
-                  </LanguageOption>
+                  </button>
                 )}
               </li>
             ))}
-          </LanguageList>
+          </ul>
         </ModalBody>
         <ModalFooter>
           <Button className="pull-left" onClick={onModalHide}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import './thread-messages.css';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 
@@ -9,16 +9,13 @@ import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
 import type { Message, MessageUser } from '../api/messages.api';
 import { Alert } from '@trustroots/ui/Alert';
 
-const MessagesContainer = styled.div`
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  padding-top: 30px;
-  padding-right: 30px;
-  @media (min-width: 768px) {
-    padding-right: 0;
-  }
-`;
+const MessagesContainer = ({
+  className,
+  ref,
+  ...props
+}: React.ComponentProps<'div'>) => (
+  <div ref={ref} className={`thread-messages ${className || ''}`} {...props} />
+);
 
 type ThreadMessagesProps = {
   isExtraSmall: boolean;
@@ -38,15 +35,7 @@ export default function ThreadMessages({
 }: ThreadMessagesProps) {
   const { t } = useTranslation('messages');
   return (
-    <InfiniteMessages
-      component={
-        MessagesContainer as React.ElementType<{
-          ref?: React.Ref<HTMLDivElement>;
-          onScroll: React.UIEventHandler<HTMLDivElement>;
-        }>
-      }
-      onFetchMore={onFetchMore}
-    >
+    <InfiniteMessages component={MessagesContainer} onFetchMore={onFetchMore}>
       <Alert intent="warning" role="note">
         <strong>{t('Safety note:')}</strong>{' '}
         {t(
