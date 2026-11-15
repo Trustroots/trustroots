@@ -6,6 +6,7 @@ import org.trustroots.android.ui.common.findActivity
 
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -29,7 +30,9 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -84,12 +87,15 @@ import org.trustroots.android.ui.signin.SignInDestinationStoreHolder
 import org.trustroots.android.ui.signin.SignInNavigation
 import org.trustroots.android.ui.signin.SignUpOnboarding
 import org.trustroots.android.ui.startup.StartupScreen
+import org.trustroots.shared.ui.SharedComposeRoot
 
 @Composable
 internal fun TrustrootsApp(
     apiBaseUrl: String = BuildConfig.API_BASE_URL,
     reconcileAlerts: (Context, MemberSession) -> Unit = MessageAlerts::reconcile,
     browserContent: @Composable (BrowserRoute, () -> Unit, PaddingValues) -> Unit = DefaultBrowserContent,
+    sharedMemberPilot: Boolean = false,
+    onExitSharedMemberPilot: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val analytics = remember { AndroidUsageAnalytics.get(context) }
@@ -130,6 +136,7 @@ internal fun TrustrootsApp(
         onDispose { }
     }
     val sessionState by sessionViewModel.state.collectAsState()
+    var sharedPilotActive by remember { mutableStateOf(sharedMemberPilot) }
     var onboardingUsername by rememberSaveable(apiBaseUrl) { mutableStateOf<String?>(null) }
     val session = sessionState.session
     val starting = sessionState.isStarting
@@ -147,7 +154,32 @@ internal fun TrustrootsApp(
         StartupScreen(sessionState.startupFirstName)
         return
     }
-    if (session == null) {
+    if (sharedPilotActive) {
+        val pilotScope = rememberCoroutineScope()
+        val sharedPilotGateway = remember(activity, apiBaseUrl, sessionViewModel, responseCache, sessionStore) {
+            SharedMemberPilotGateway(
+                context = context.applicationContext,
+                apiBaseUrl = apiBaseUrl,
+                responseCache = responseCache,
+                sessionStore = sessionStore,
+                sessionViewModel = sessionViewModel,
+                scope = pilotScope,
+                exitPilot = {
+                    sharedPilotActive = false
+                    onExitSharedMemberPilot()
+                },
+            )
+        }
+        SideEffect { sharedPilotGateway.updateSession(session) }
+        SharedComposeRoot(
+            gateway = sharedPilotGateway,
+            username = session?.member?.username,
+            initialError = if (sessionState.signedOutMessage != null) {
+                stringResource(R.string.screen_sign_in_session_expired)
+            } else null,
+            installBackHandler = { enabled, onBack -> BackHandler(enabled, onBack) },
+        )
+    } else if (session == null) {
         key(signInGraphGeneration, apiBaseUrl.trim().trimEnd('/')) {
             SignInNavigation(
                 analytics = analytics,

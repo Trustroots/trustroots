@@ -60,10 +60,22 @@ jobs:
           echo "id=$device_id" >> "$GITHUB_OUTPUT"
       - name: Run iOS tests
         working-directory: apps/ios
-        run: >-
-          xcodebuild
-          -project Trustroots.xcodeproj
-          -scheme TrustrootsTests
-          -destination 'id=${{ steps.simulator.outputs.id }}'
-          CODE_SIGNING_ALLOWED=NO
-          test
+        env:
+          TRUSTROOTS_IOS_PILOT_PORT: 18765
+        run: |
+          python3 scripts/shared_member_pilot_server.py --port "$TRUSTROOTS_IOS_PILOT_PORT" &
+          fixture_pid=$!
+          trap 'kill "$fixture_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent "http://127.0.0.1:$TRUSTROOTS_IOS_PILOT_PORT/health" >/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent "http://127.0.0.1:$TRUSTROOTS_IOS_PILOT_PORT/health" >/dev/null
+          xcodebuild \
+            -project Trustroots.xcodeproj \
+            -scheme TrustrootsTests \
+            -destination 'id=${{ steps.simulator.outputs.id }}' \
+            CODE_SIGNING_ALLOWED=NO \
+            test

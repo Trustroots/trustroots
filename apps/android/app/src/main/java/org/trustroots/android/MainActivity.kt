@@ -20,7 +20,13 @@ class MainActivity : ComponentActivity() {
         applyAppearance()
         setContent {
             TrustrootsTheme {
-                TrustrootsApp()
+                TrustrootsApp(
+                    sharedMemberPilot = BuildConfig.DEBUG &&
+                        intent.getBooleanExtra(SHARED_MEMBER_PILOT_EXTRA, false),
+                    onExitSharedMemberPilot = {
+                        setIntent(Intent(intent).putExtra(SHARED_MEMBER_PILOT_EXTRA, false))
+                    },
+                )
             }
         }
     }
@@ -48,5 +54,9 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         MessageAlerts.captureIntent(intent)
+    }
+
+    companion object {
+        const val SHARED_MEMBER_PILOT_EXTRA = "org.trustroots.android.debug.SHARED_MEMBER_PILOT"
     }
 }

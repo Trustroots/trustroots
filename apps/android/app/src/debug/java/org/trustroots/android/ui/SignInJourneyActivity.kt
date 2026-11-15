@@ -29,6 +29,7 @@ class SignInJourneyActivity : ComponentActivity() {
                 TrustrootsApp(
                     apiBaseUrl = apiBaseUrl,
                     reconcileAlerts = { _, _ -> },
+                    sharedMemberPilot = intent.getBooleanExtra(SHARED_MEMBER_PILOT_EXTRA, false),
                     browserContent = if (intent.getBooleanExtra(FAKE_BROWSER_EXTRA, false)) {
                         { route, onClose, contentPadding ->
                             Column(
@@ -70,6 +71,7 @@ class SignInJourneyActivity : ComponentActivity() {
 
     companion object {
         const val API_BASE_URL_EXTRA = "org.trustroots.android.test.API_BASE_URL"
+        const val SHARED_MEMBER_PILOT_EXTRA = "org.trustroots.android.test.SHARED_MEMBER_PILOT"
         const val FAKE_BROWSER_EXTRA = "org.trustroots.android.test.FAKE_BROWSER"
         const val PROFILE_BROWSER_URL_EXTRA = "org.trustroots.android.test.PROFILE_BROWSER_URL"
         const val BROWSER_BASE_URL_EXTRA = "org.trustroots.android.test.BROWSER_BASE_URL"

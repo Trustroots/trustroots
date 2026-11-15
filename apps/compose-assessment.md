@@ -2,8 +2,8 @@
 
 Status: source assessment prepared 22 October and updated 26 October 2026.
 Related: [#3232](https://github.com/Trustroots/trustroots/issues/3232). This
-assessment records the shared build foundation below; it does not claim a
-shared member journey or runtime evaluation. The working SwiftUI iOS app remains
+assessment records the shared build foundation and the later debug member
+journey pilot. The working SwiftUI iOS app remains
 the comparison baseline.
 
 ## Recommendation and agreed direction
@@ -97,12 +97,10 @@ toolchain combination or a simulator launch; the pinned CI job remains the
 compatibility gate.
 
 The build foundation adds `apps/shared`, a minimal Compose entry point, and a
-SwiftUI controller wrapper. The wrapper is compiled but is not shown by either
-application. The Android debug APK, iOS simulator framework and existing SwiftUI
-app build succeeded locally. No sign-in, profile, inbox or conversation screen
-has moved to Compose, and no member journey, credential handling, API behaviour,
-accessibility, performance or on-device behaviour has been verified. Those
-remain separate acceptance gates for issue #3232.
+SwiftUI controller wrapper. At the foundation stage, both apps compiled the wrapper without presenting it. The Android debug APK, iOS simulator framework and existing SwiftUI
+app build succeeded locally. The foundation stage verified builds. Runtime acceptance for the member journey,
+credential handling, API behaviour, accessibility and performance remains a
+separate gate for issue #3232.
 
 The [documented SwiftUI integration](https://kotlinlang.org/docs/multiplatform/compose-swiftui-integration.html)
 embeds a `ComposeUIViewController` using `UIViewControllerRepresentable`.
@@ -197,7 +195,7 @@ compared with the existing two-app baseline.
 
 ## Evidence limits and completion
 
-This report used source/test inspection, repository build/release configuration,
+The initial assessment used source/test inspection, repository build/release configuration,
 the installed Xcode version and the official documentation linked above. No mobile
 builds, simulator/device journeys, live API mutations, accessibility checks,
 performance measurements or App Store uploads were performed for the assessment.
@@ -208,3 +206,40 @@ implementation stages. A viable fallback additionally requires member feature
 parity, secure native integrations, offline behaviour, accessibility, reliable
 device journeys and a repeatable signed iOS release. Record gaps explicitly;
 archive the migration OpenSpec change only when those agreed gates are satisfied.
+
+## First shared member journey pilot
+
+The pilot implements sign-in, profile viewing, inbox pagination, conversation
+navigation and replies in `apps/shared`. Compose owns the journey's screens,
+back stack, loading and error states, and reply handling. The Android and iOS
+hosts project their existing API models into a small common interface. Each
+host still owns its secure session, token refresh and API transport. This
+isolates the work of sharing UI from the proposed shared networking migration.
+
+The pilot is available by explicit launch option in debug builds:
+
+- On Android, run `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez shared-member-pilot true`.
+- On iOS, add `--shared-member-pilot` to the Xcode scheme's launch arguments, or
+  run `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-member-pilot`.
+- Choose **Open native app** on the pilot's first screen to return to the
+  existing app with the same session. Android also supports system Back.
+
+Use an existing test account or a controlled backend with fictional data to
+compare both hosts. Launching the pilot with a saved session opens the
+member's profile. From **Messages**, open a conversation directly or view the
+other member's profile and then choose **Send a message**.
+
+| Area                  | Pilot                                                                                          | Remaining comparison                                                                                                         |
+| --------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Session               | Uses Android Keystore or iOS Keychain via the host                                             | Verify refresh, expiry, interrupted sign-in and repeat launches on both platforms                                            |
+| Profiles and messages | Plain-text profiles and messages, paginated inbox, recent conversation, reply and manual retry | Compare complete profiles, safety actions, unread state, history limits, attachments or rich content, and notification entry |
+| Offline data          | Uses host API caches, Android's existing draft store, and an in-memory iOS draft               | Check saved-data indicators, cache parity and process recreation                                                             |
+| Device behaviour      | Native host with shared controls and shared navigation                                         | Check VoiceOver, TalkBack, dynamic text, keyboard, screen insets and Back on supported devices                               |
+| Distribution          | Uses the existing Android and iOS debug apps                                                   | Verify pinned Xcode CI, APK/app size and startup, followed by repeatable signing and release                                 |
+
+Continue the pilot alongside SwiftUI. The next decision should follow
+simulator/device results and a comparison with current native behaviour.
+Allow the existing estimate of 3–6 engineering days for platform verification
+and corrections, then re-estimate the remaining feature work based on those
+results. A fallback also requires the native integrations and parity gates
+described above.
