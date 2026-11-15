@@ -141,7 +141,7 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     getMock.mockResolvedValue(tribe);
   });
 
-  it('keeps organiser links visible when membership changes', async () => {
+  it('shows organisers above the description and keeps them after joining', async () => {
     getMock.mockResolvedValue({
       ...tribe,
       organisers: [
@@ -158,6 +158,10 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     );
     const link = await screen.findByRole('link', { name: 'Example Organiser' });
     expect(link).toHaveAttribute('href', '/profile/example-organiser');
+    const description = screen.getByText('Guide the galaxy.');
+    expect(link.compareDocumentPosition(description)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
     expect(
       screen.getByRole('link', { name: 'another-organiser' }),
     ).toHaveAttribute('href', '/profile/another-organiser');
