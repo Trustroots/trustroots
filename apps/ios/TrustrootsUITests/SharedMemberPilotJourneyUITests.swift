@@ -2,6 +2,7 @@ import XCTest
 
 final class SharedMemberPilotJourneyUITests: XCTestCase {
     func testMemberJourneyRetainsFailedReplyAndUsesSavedSession() throws {
+        continueAfterFailure = false
         let port = ProcessInfo.processInfo.environment["TRUSTROOTS_IOS_PILOT_PORT"] ?? "18765"
         let app = XCUIApplication()
         app.launchArguments = [
@@ -17,7 +18,8 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
-        XCTAssertTrue(element(labelled: "Mira Example", in: app).waitForExistence(timeout: 10))
+        let profile = element(labelled: "Mira Example", in: app)
+        XCTAssertTrue(profile.waitForExistence(timeout: 15), app.debugDescription)
         app.buttons["Open native app"].tap()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10))
 
@@ -71,7 +73,9 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         app.typeText("pilot-member")
         password.tap()
         app.typeText("example-password")
-        app.buttons["Sign in"].tap()
+        let submit = app.buttons["Sign in"]
+        XCTAssertTrue(submit.isEnabled, "The pilot should receive both credentials.")
+        submit.tap()
     }
 
     private func signOutIfAlreadySignedIn(_ app: XCUIApplication) {

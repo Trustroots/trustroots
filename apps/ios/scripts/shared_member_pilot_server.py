@@ -33,9 +33,6 @@ class FixtureHandler(BaseHTTPRequestHandler):
     ]
     send_attempts = 0
 
-    def log_message(self, _format, *_args):
-        return
-
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
         if self.path == "/health":
             self._json(200, {"status": "ready"})
