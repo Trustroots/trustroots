@@ -20,6 +20,45 @@ struct MemberAvatarView: View {
     }
 }
 
+struct MemberIdentityView: View {
+    let memberID: String?
+    let displayName: String?
+    let username: String?
+    let serverURLString: String
+
+    var body: some View {
+        let name = identityText(displayName)
+        let handle = identityText(username)
+        let label = name ?? handle.map { "@\($0)" } ?? String(localized: "Unknown member")
+
+        HStack(spacing: 10) {
+            MemberAvatarView(
+                memberID: memberID,
+                displayName: name ?? handle ?? "",
+                serverURLString: serverURLString
+            )
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(label)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                if name != nil, let handle {
+                    Text("@\(handle)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func identityText(_ value: String?) -> String? {
+        guard let text = value?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !text.isEmpty else { return nil }
+        return text
+    }
+}
+
 struct MemberAvatarImageView: View {
     let memberID: String?
     let displayName: String

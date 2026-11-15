@@ -279,34 +279,20 @@ private struct HostOfferCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top, spacing: 14) {
-                NavigationLink {
-                    MemberProfileView(session: session, username: host.user.username)
-                } label: {
-                    MemberAvatarView(
-                        memberID: host.user.id,
-                        displayName: host.user.displayName ?? host.user.username ?? "Trustroots member",
-                        serverURLString: session.serverURLString,
-                        size: 76
-                    )
-                }
-
-                NavigationLink {
-                    MemberProfileView(session: session, username: host.user.username)
-                } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Potential host")
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(TrustrootsPalette.darkGreen)
-                        Text(host.user.displayName ?? host.user.username ?? "Trustroots member")
-                            .font(.title3.weight(.bold))
-                            .foregroundStyle(.primary)
-                        if let username = host.user.username {
-                            Text("@\(username)")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Potential host")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(TrustrootsPalette.darkGreen)
+                    if let username = host.user.username {
+                        NavigationLink {
+                            MemberProfileView(session: session, username: username)
+                        } label: {
+                            identity
                         }
+                        .accessibilityLabel("View \(host.user.displayName ?? username)'s profile")
+                    } else {
+                        identity
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
 
                 Button(action: dismiss) {
@@ -337,6 +323,15 @@ private struct HostOfferCard: View {
             Divider()
         }
         .shadow(color: .black.opacity(0.18), radius: 12, y: -4)
+    }
+
+    private var identity: some View {
+        MemberIdentityView(
+            memberID: host.user.id,
+            displayName: host.user.displayName,
+            username: host.user.username,
+            serverURLString: session.serverURLString
+        )
     }
 }
 

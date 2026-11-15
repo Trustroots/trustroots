@@ -38,6 +38,7 @@ describe('<ContactPresentational />', () => {
       'href',
       '/profile/alice',
     );
+    expect(screen.getByText('@alice')).toBeVisible();
     expect(screen.getByRole('link', { name: 'Helsinki' })).toHaveAttribute(
       'href',
       '/search?location=Helsinki',

@@ -124,7 +124,8 @@
 
 .circle-member-discovery {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
   gap: 16px;
   padding-top: 28px;
   padding-bottom: 36px;
@@ -142,17 +143,13 @@
   }
   ul {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    align-items: start;
     gap: 10px;
     margin: 16px 0 0;
   }
   li {
     min-width: 0;
-  }
-  @media (min-width: @screen-md-min) {
-    ul {
-      grid-template-columns: 1fr 1fr;
-    }
   }
 }
 

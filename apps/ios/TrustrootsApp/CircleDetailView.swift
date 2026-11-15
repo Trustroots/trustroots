@@ -146,23 +146,12 @@ struct CircleDetailView: View {
 
     private func memberRow(_ member: MiniMember) -> some View {
         HStack(spacing: 11) {
-            MemberAvatarView(
+            MemberIdentityView(
                 memberID: member.id,
-                displayName: member.displayName ?? member.username ?? "Trustroots member",
-                serverURLString: session.serverURLString,
-                size: 46
+                displayName: member.displayName,
+                username: member.username,
+                serverURLString: session.serverURLString
             )
-            VStack(alignment: .leading, spacing: 2) {
-                Text(member.displayName ?? member.username ?? "Trustroots member")
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
-                if let username = member.username {
-                    Text("@\(username)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-            Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tertiary)

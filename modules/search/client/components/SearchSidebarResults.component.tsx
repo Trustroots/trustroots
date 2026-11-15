@@ -6,7 +6,7 @@ import { Button } from '@trustroots/ui/Button';
 import { rememberOutreachSource } from '@trustroots/analytics/client';
 
 import { useLanguagesQuery } from '@/modules/core/client/api/languages.api';
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import CommunityNotesSidebar from './CommunityNotesSidebar.component';
 import type { OfferStatus, OfferType } from '@/modules/offers/shared/offer';
 
@@ -174,11 +174,8 @@ export default function SearchSidebarResults({
               }`,
               () => onOfferSelect(item),
               <>
-                <Avatar link={false} size={32} user={item.user} />
                 <span>
-                  <strong>{item.user.displayName || item.user.username}</strong>
-                  <span className="text-muted"> @{item.user.username}</span>
-                  <br />
+                  <MemberIdentity size={32} user={item.user} />
                   {item.type === 'host' ? 'Hosting' : 'Meet'}
                   {item.type === 'host' && item.status && ` · ${item.status}`}
                 </span>
@@ -258,11 +255,7 @@ export default function SearchSidebarResults({
               rememberOutreachSource(offer.user.username, 'search')
             }
           >
-            <Avatar link={false} size={32} user={offer.user} />
-            <h4>
-              {offer.user.displayName}
-              <small className="text-muted"> @{offer.user.username} </small>
-            </h4>
+            <MemberIdentity size={36} user={offer.user} />
             <div className="search-result-meta">
               {offer.user.birthdate && (
                 <span>{formatAge(offer.user.birthdate)}</span>

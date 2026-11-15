@@ -176,6 +176,12 @@ test('circle membership retains account roles and legacy member links', async ({
               locationFrom: 'Example Coast',
               tagline: 'Glad to share a meal',
             },
+            {
+              _id: 'fictional-second-contact',
+              username: 'sample-walking-companion',
+              displayName: 'Sample Walking Companion',
+              avatarSource: 'none',
+            },
           ],
           recommenders: [
             {
@@ -207,6 +213,44 @@ test('circle membership retains account roles and legacy member links', async ({
     ).toHaveClass(/member-search-card/);
     await expect(page.getByText('Fictional Harbour')).toBeVisible();
     await expect(page.getByText('Glad to share a meal')).toBeVisible();
+    await page.setViewportSize({ width: 1160, height: 900 });
+    const contact = page.getByRole('link', { name: /Sample Contact/ });
+    const companion = page.getByRole('link', {
+      name: /Sample Walking Companion/,
+    });
+    await expect(companion).toBeVisible();
+    await expect
+      .poll(() =>
+        contact.evaluate(element => {
+          const identity = element
+            .querySelector('.member-search-card-identity')!
+            .getBoundingClientRect();
+          const details = element
+            .querySelector('.member-search-card-details')!
+            .getBoundingClientRect();
+          return {
+            detailsBelowIdentity: details.top >= identity.bottom,
+            detailsUseFullWidth: details.width === identity.width,
+          };
+        }),
+      )
+      .toEqual({ detailsBelowIdentity: true, detailsUseFullWidth: true });
+    const contactBox = (await contact.boundingBox())!;
+    const companionBox = (await companion.boundingBox())!;
+    expect(companionBox.x).toBeCloseTo(contactBox.x);
+    expect(companionBox.y).toBeGreaterThanOrEqual(
+      contactBox.y + contactBox.height,
+    );
+    if (process.env.TRUSTROOTS_E2E_SCREENSHOTS === 'true') {
+      fs.mkdirSync('tmp/screenshots', { recursive: true });
+      await page.locator('.circle-member-discovery').screenshot({
+        path: 'tmp/screenshots/circle-discovery-contacts-desktop.png',
+      });
+      fs.writeFileSync(
+        'tmp/screenshots/circle-discovery-contacts-desktop.url',
+        page.url(),
+      );
+    }
     await expect(
       page.getByRole('link', { name: /Sample Recommender/ }),
     ).toBeVisible();

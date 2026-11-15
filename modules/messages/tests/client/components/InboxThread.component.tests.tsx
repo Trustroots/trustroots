@@ -77,6 +77,7 @@ describe('<InboxThread />', () => {
       '/messages/other?userId=other',
     );
     expect(screen.getByText('Other Member')).toBeInTheDocument();
+    expect(screen.getByText('@other')).toBeVisible();
     expect(
       container.querySelector('.threadlist-thread-excerpt'),
     ).toHaveTextContent('<strong>Hello</strong>');
@@ -94,7 +95,7 @@ describe('<InboxThread />', () => {
     expect(preview?.querySelector('img, a')).toBeNull();
   });
 
-  it('renders replied and unknown-member states for read threads', () => {
+  it('uses the handle when a participant in a read thread has no display name', () => {
     const { container } = render(
       <InboxThread
         user={me}
@@ -112,7 +113,7 @@ describe('<InboxThread />', () => {
     expect(container.querySelector('li')).not.toHaveClass(
       'threadlist-thread-unread',
     );
-    expect(screen.getByText('Unknown member')).toBeInTheDocument();
+    expect(screen.getAllByText('@other')).toHaveLength(1);
     expect(container.querySelector('.icon-reply')).toHaveAttribute(
       'title',
       'You replied',

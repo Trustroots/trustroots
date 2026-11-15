@@ -5,8 +5,8 @@
  */
 .contacts-contact {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  flex-direction: column;
+  gap: 8px;
   min-height: 112px;
   margin: 0 0 14px;
   padding: 16px;
@@ -15,25 +15,13 @@
   border-radius: 12px;
   box-shadow: none;
 
-  .contact-avatar {
-    flex: 0 0 auto;
-    .avatar,
-    .member-avatar-fallback {
-      border-radius: 50%;
-    }
+  .contact-identity {
+    color: @text-color;
   }
 
   .contact-details {
     min-width: 0;
     flex: 1 1 auto;
-  }
-
-  h4 {
-    margin: 2px 0 8px;
-    a {
-      text-decoration: none;
-      color: @text-color;
-    }
   }
 
   .contact-locations {
@@ -70,13 +58,6 @@
   .contacts-contact {
     gap: 12px;
     padding: 12px;
-
-    .contact-avatar .member-avatar,
-    .contact-avatar .avatar,
-    .contact-avatar .member-avatar-fallback {
-      width: 56px;
-      height: 56px;
-    }
   }
 }
 

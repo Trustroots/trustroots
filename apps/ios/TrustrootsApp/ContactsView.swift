@@ -41,28 +41,18 @@ struct ContactsView: View {
     }
 
     private func contactRow(_ contact: TrustrootsContact) -> some View {
-        HStack(spacing: 12) {
-            MemberAvatarView(
+        VStack(alignment: .leading, spacing: 6) {
+            MemberIdentityView(
                 memberID: contact.user.id,
-                displayName: contact.user.displayName ?? contact.user.username ?? "Trustroots member",
-                serverURLString: session.serverURLString,
-                size: 48
+                displayName: contact.user.displayName,
+                username: contact.user.username,
+                serverURLString: session.serverURLString
             )
-            VStack(alignment: .leading, spacing: 3) {
-                Text(contact.user.displayName ?? contact.user.username ?? "Trustroots member")
-                    .font(.headline)
-                if let username = contact.user.username {
-                    Text("@\(username)")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                }
-                if !contact.confirmed {
-                    Text("Awaiting confirmation")
-                        .font(.caption)
-                        .foregroundStyle(.orange)
-                }
+            if !contact.confirmed {
+                Text("Awaiting confirmation")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
-            Spacer()
         }
         .padding(.vertical, 4)
     }

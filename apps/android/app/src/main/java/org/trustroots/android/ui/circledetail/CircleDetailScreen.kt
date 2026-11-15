@@ -6,15 +6,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -36,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clipToBounds
@@ -59,7 +55,7 @@ import org.trustroots.android.ui.circles.MobileApiCircleRepository
 import org.trustroots.android.ui.common.ArtworkHero
 import org.trustroots.android.ui.common.NativeBackButton
 import org.trustroots.android.ui.common.PinnedTopAppBar
-import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.circles.circleColor
 import org.trustroots.android.ui.circles.circleDescription
 import org.trustroots.android.ui.circles.circlesFailureMessage
@@ -337,25 +333,18 @@ private fun CircleMemberGroup(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         members.forEach { member ->
-            Row(
-                modifier = Modifier.fillMaxWidth().clickable {
-                    member.username?.let(onOpenProfile)
-                }.padding(vertical = 12.dp).testTag("circleMember-${member.username}"),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RemoteArtwork(
-                    url = member.id?.let { api.avatarURL(it, 64, session) },
-                    sessionCookie = session.cookieHeader,
-                    accessToken = session.accessToken,
-                    label = member.displayName,
-                    size = 48.dp,
-                )
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text(member.displayName.ifBlank { member.username.orEmpty() }, fontWeight = FontWeight.Bold)
-                    member.username?.let { Text("@$it", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                }
-            }
+            val username = member.username
+            MemberIdentity(
+                api = api,
+                session = session,
+                memberID = member.id,
+                displayName = member.displayName,
+                username = username,
+                modifier = Modifier.fillMaxWidth()
+                    .clickable(enabled = username != null) { username?.let(onOpenProfile) }
+                    .padding(vertical = 12.dp)
+                    .testTag("circleMember-$username"),
+            )
             HorizontalDivider()
         }
     }

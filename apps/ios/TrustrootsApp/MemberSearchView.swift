@@ -131,27 +131,18 @@ struct MemberSearchView: View {
     }
 
     private func memberRow(_ member: MemberSearchResult) -> some View {
-        HStack(spacing: 14) {
-            MemberAvatarView(
+        VStack(alignment: .leading, spacing: 6) {
+            MemberIdentityView(
                 memberID: member.id,
                 displayName: member.displayName,
-                serverURLString: session.serverURLString,
-                size: 64
+                username: member.username,
+                serverURLString: session.serverURLString
             )
-            VStack(alignment: .leading, spacing: 3) {
-                Text(member.displayName)
-                    .font(.headline)
-                Text("@\(member.username)")
-                    .font(.subheadline)
+            if let location = member.locationSummary {
+                Label(location, systemImage: "mappin.and.ellipse")
+                    .font(.caption)
                     .foregroundStyle(.secondary)
-                if let location = member.locationSummary {
-                    Label(location, systemImage: "mappin.and.ellipse")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
             }
-            Spacer()
         }
         .padding(.vertical, 5)
     }

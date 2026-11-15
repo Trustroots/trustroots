@@ -6,13 +6,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,19 +23,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.PinnedTopAppBar
-import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.UiFailure
 import org.trustroots.android.ui.common.UiFailureFallback
 import org.trustroots.android.ui.common.horizontalInset
@@ -58,8 +52,6 @@ internal fun ContactsScreen(
     val failure = state.failure
     val contactsTitle = stringResource(R.string.screen_contacts_title)
     val contactsEmpty = stringResource(R.string.screen_contacts_empty)
-    val usernameHandleFormat = stringResource(R.string.screen_username_handle)
-    val uiLocale = LocalConfiguration.current.locales[0]
 
     LaunchedEffect(model, state.pendingSessionInvalidation?.id) {
         val pending = state.pendingSessionInvalidation ?: return@LaunchedEffect
@@ -139,25 +131,16 @@ internal fun ContactsScreen(
             ) {
                 items(state.contacts, key = { it.id }) { contact ->
                     val username = contact.user.username
-                    Row(
+                    MemberIdentity(
+                        api = api,
+                        session = session,
+                        memberID = contact.user.id,
+                        displayName = contact.user.displayName,
+                        username = username,
                         modifier = Modifier.fillMaxWidth()
                             .then(if (username != null) Modifier.clickable { onOpenProfile(username) } else Modifier)
                             .padding(vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RemoteArtwork(
-                            url = contact.user.id?.let { api.avatarURL(it, 64, session) },
-                            sessionCookie = session.cookieHeader,
-                            accessToken = session.accessToken,
-                            label = contact.user.displayName,
-                            size = 54.dp,
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Column {
-                            Text(contact.user.displayName, fontWeight = FontWeight.Bold)
-                            username?.let { Text(String.format(uiLocale, usernameHandleFormat, it)) }
-                        }
-                    }
+                    )
                     HorizontalDivider()
                 }
             }
