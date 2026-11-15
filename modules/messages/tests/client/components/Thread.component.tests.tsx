@@ -1,6 +1,7 @@
 import { useParams } from '@tanstack/react-router';
 import React from 'react';
 import {
+  act,
   fireEvent,
   render as rtlRender,
   screen,
@@ -64,27 +65,6 @@ jest.mock('@/modules/core/client/hooks/use-media-query', () => ({
   __esModule: true,
   default: () => mockIsExtraSmall,
 }));
-jest.mock('@/modules/messages/client/components/InfiniteMessages', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-
-  function MockInfiniteMessages({
-    children,
-    onFetchMore,
-  }: {
-    children?: React.ReactNode;
-    onFetchMore?: () => void;
-  }) {
-    return (
-      <div data-testid="infinite-messages">
-        <button type="button" onClick={onFetchMore}>
-          Fetch older messages
-        </button>
-        {children}
-      </div>
-    );
-  }
-  return MockInfiniteMessages;
-});
 jest.mock('@/modules/users/client/components/Monkeybox', () => {
   return function MockMonkeybox() {
     return <div data-testid="monkeybox" />;
@@ -620,7 +600,7 @@ describe('<Thread>', () => {
     expect(screen.queryByRole('form')).not.toBeInTheDocument();
   });
 
-  it('loads older messages using next pagination params', async () => {
+  it('shows a loading indicator while fetching the next page of older messages', async () => {
     const newestMessage = {
       ...createMessage(otherUser),
       _id: 'newest-message',
@@ -635,14 +615,16 @@ describe('<Thread>', () => {
       created: '2026-06-04T12:00:00.000Z',
       read: true,
     };
+    let finishOlderPage!: (page: { messages: Message[] }) => void;
+    const olderPage = new Promise<{ messages: Message[] }>(resolve => {
+      finishOlderPage = resolve;
+    });
     api.messages.fetchMessages
       .mockResolvedValueOnce({
         messages: [newestMessage],
         nextParams: { before: 'older-page' },
       })
-      .mockResolvedValueOnce({
-        messages: [oldestMessage],
-      });
+      .mockReturnValueOnce(olderPage);
     resolveMalformed(api.messages.fetchMessages, {
       messages: [oldestMessage],
       // The API uses null to represent the end of pagination.
@@ -651,18 +633,16 @@ describe('<Thread>', () => {
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
-    expect(await screen.findByText('Newest message')).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Fetch older messages' }),
-    );
+    const message = await screen.findByText('Newest message');
+    fireEvent.scroll(message.closest('.thread-messages')!);
 
-    await waitFor(() =>
-      expect(api.messages.fetchMessages).toHaveBeenLastCalledWith(
-        otherUser._id,
-        { before: 'older-page' },
-      ),
-    );
+    const loading = await screen.findByRole('alertdialog');
+    expect(api.messages.fetchMessages).toHaveBeenLastCalledWith(otherUser._id, {
+      before: 'older-page',
+    });
+    await act(async () => finishOlderPage({ messages: [oldestMessage] }));
     expect(await screen.findByText('Oldest message')).toBeInTheDocument();
+    expect(loading).not.toBeInTheDocument();
   });
 
   it('prepends older paginated messages in chronological order', async () => {
@@ -703,10 +683,8 @@ describe('<Thread>', () => {
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
-    expect(await screen.findByText('Newest message')).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Fetch older messages' }),
-    );
+    const message = await screen.findByText('Newest message');
+    fireEvent.scroll(message.closest('.thread-messages')!);
 
     await screen.findByText('Middle message');
     const messages = screen.getAllByText(/message$/i);
@@ -733,14 +711,15 @@ describe('<Thread>', () => {
 
     render(<Thread user={me} profileMinimumLength={0} />);
 
-    expect(await screen.findByText('Only message')).toBeInTheDocument();
-    fireEvent.click(
-      screen.getByRole('button', { name: 'Fetch older messages' }),
-    );
-
-    await waitFor(() =>
-      expect(api.messages.fetchMessages).toHaveBeenCalledTimes(1),
-    );
+    const message = await screen.findByText('Only message');
+    jest.useFakeTimers();
+    try {
+      fireEvent.scroll(message.closest('.thread-messages')!);
+      act(() => jest.runOnlyPendingTimers());
+      expect(api.messages.fetchMessages).toHaveBeenCalledTimes(1);
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('displays an explicit rate-limit alert when send fails with 429', async () => {

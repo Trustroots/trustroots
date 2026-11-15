@@ -9,13 +9,11 @@ import ThreadMessage from '@/modules/messages/client/components/ThreadMessage';
 import type { Message, MessageUser } from '../api/messages.api';
 import { Alert } from '@trustroots/ui/Alert';
 
-const MessagesContainer = ({
-  className,
-  ref,
-  ...props
-}: React.ComponentProps<'div'>) => (
-  <div ref={ref} className={`thread-messages ${className || ''}`} {...props} />
-);
+function MessagesContainer(
+  props: Pick<React.ComponentProps<'div'>, 'children' | 'onScroll' | 'ref'>,
+) {
+  return <div {...props} className="thread-messages" />;
+}
 
 type ThreadMessagesProps = {
   isExtraSmall: boolean;
