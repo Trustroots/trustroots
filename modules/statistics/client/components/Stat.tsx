@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 
 const Container = styled.div`
   display: flex;
@@ -24,7 +24,7 @@ interface StatProps {
 
 export default function Stat({ children, title, className }: StatProps) {
   return (
-    <Container className={classnames('panel', 'panel-default', className)}>
+    <Container className={clsx('panel', 'panel-default', className)}>
       <div className="panel-heading">
         <h3 className="panel-title">{title}</h3>
       </div>

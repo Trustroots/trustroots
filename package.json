@@ -144,7 +144,7 @@
     "basic-auth": "3.1.0",
     "bootstrap": "5.3.8",
     "check-node-version": "4.2.1",
-    "classnames": "2.5.1",
+    "clsx": "2.1.1",
     "compression": "1.8.2",
     "connect-mongo": "6.0.0",
     "core-js": "3.51.0",

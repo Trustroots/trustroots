@@ -1,5 +1,5 @@
 // External dependencies
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 import React from 'react';
 
 // Internal dependencies
@@ -15,7 +15,7 @@ export default function ZendeskInboxSearch({
   return (
     <a
       aria-label={`Search from support with ${q}`}
-      className={classnames('zendesk-inbox-search', className)}
+      className={clsx('zendesk-inbox-search', className)}
       href={`https://trustroots.zendesk.com/inbox/search?q=${q}`}
       rel="noopener noreferrer"
       target="_blank"
