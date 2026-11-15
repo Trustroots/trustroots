@@ -2,7 +2,7 @@ import React from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import '@/config/client/i18n';
 import { Button } from '@trustroots/ui/Button';
-import MemberAvatar from '@/modules/users/client/components/MemberAvatar';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import type { ContactListEntry } from '../types';
 
 type ContactSituation = 'confirmed' | 'unconfirmedFromMe' | 'unconfirmedToMe';
@@ -29,13 +29,14 @@ export default function ContactPresentational({
   const { username, displayName, locationFrom, locationLiving } = contact.user;
   return (
     <div className={className}>
-      <div className="contact-avatar">
-        <MemberAvatar user={contact.user} size={avatarSize} link />
-      </div>
+      <a
+        className="contact-identity"
+        href={`/profile/${encodeURIComponent(username)}`}
+        aria-label={displayName}
+      >
+        <MemberIdentity user={contact.user} size={avatarSize} />
+      </a>
       <div className="contact-details">
-        <h4>
-          <a href={`/profile/${username}`}>{displayName}</a>
-        </h4>
         {(locationLiving || locationFrom) && (
           <div className="contact-locations">
             {locationLiving && (

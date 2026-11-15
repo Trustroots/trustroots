@@ -156,20 +156,25 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
         onMembershipUpdated={jest.fn()}
       />,
     );
-    const link = await screen.findByRole('link', { name: 'Example Organiser' });
+    const link = await screen.findByRole('link', {
+      name: 'Example Organiser @example-organiser',
+    });
     expect(link).toHaveAttribute('href', '/profile/example-organiser');
+    expect(link).toHaveClass('member-search-card');
     const description = screen.getByText('Guide the galaxy.');
     expect(link.compareDocumentPosition(description)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
     expect(
-      screen.getByRole('link', { name: 'another-organiser' }),
+      screen.getByRole('link', { name: '@another-organiser' }),
     ).toHaveAttribute('href', '/profile/another-organiser');
     fireEvent.click(
       screen.getByRole('button', { name: 'Join as circle member' }),
     );
     expect(
-      screen.getByRole('link', { name: 'Example Organiser' }),
+      screen.getByRole('link', {
+        name: 'Example Organiser @example-organiser',
+      }),
     ).toBeVisible();
   });
 

@@ -23,7 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -37,13 +36,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.api.HostOffer
 import org.trustroots.android.R
-import org.trustroots.android.ui.common.localizedLabel
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.hostGuestCountLabel
 import org.trustroots.android.api.MemberProfile
 import org.trustroots.android.api.MemberSession
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.horizontalInset
-import org.trustroots.android.ui.common.RemoteArtwork
 import org.trustroots.android.ui.common.memberLastActiveLabel
 import org.trustroots.android.ui.common.nonBlankMemberText
 import org.trustroots.android.ui.theme.HostResultCardTheme
@@ -67,9 +65,7 @@ internal fun HostResultCard(
     val maybeHosting = stringResource(R.string.screen_maybe_hosting)
     val notHosting = stringResource(R.string.screen_not_hosting_currently)
     val closeHostResult = stringResource(R.string.screen_close_host_result)
-    val uiLocale = LocalConfiguration.current.locales[0]
     val context = LocalContext.current
-    val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     HostResultCardTheme {
         Card(
             onClick = openProfile ?: {},
@@ -90,11 +86,12 @@ internal fun HostResultCard(
                     else -> notHosting
                 }
                 Row(verticalAlignment = Alignment.Top) {
-                    RemoteArtwork(offer.user.id?.let { api.avatarURL(it, 64, session) }, session.cookieHeader, offer.user.localizedLabel(), 64.dp, accessToken = session.accessToken)
-                    Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(offer.user.localizedLabel(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        offer.user.username?.let { Text(String.format(uiLocale, usernameHandleFormat, it), style = MaterialTheme.typography.bodySmall) }
+                        MemberIdentity(
+                            api = api,
+                            session = session,
+                            member = offer.user,
+                        )
                         Surface(
                             color = if (offer.status == "yes" || isMeet) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,
                             shape = MaterialTheme.shapes.small,

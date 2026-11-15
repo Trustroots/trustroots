@@ -5,15 +5,19 @@ import styled from 'styled-components';
 import Avatar from './Avatar.component';
 import type { UserProfile } from '../types';
 
-type MemberAvatarUser = Pick<UserProfile, '_id' | 'username' | 'displayName'> &
+type MemberAvatarUser = Partial<
   Pick<
     UserProfile,
+    | '_id'
+    | 'username'
+    | 'displayName'
     | 'avatarSource'
     | 'avatarUploaded'
     | 'avatarVersion'
     | 'updated'
     | 'emailHash'
-  >;
+  >
+>;
 
 const Fallback = styled.span<{ $size: number; $hue: number }>`
   display: inline-flex;

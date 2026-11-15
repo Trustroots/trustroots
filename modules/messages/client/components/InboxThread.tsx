@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 
-import Avatar from '@/modules/users/client/components/Avatar.component';
+import MemberIdentity from '@/modules/users/client/components/MemberIdentity';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import type { MessageThreadSummary, MessageUser } from '../api/messages.api';
 
@@ -21,9 +21,6 @@ export default function InboxThread({ user, thread }: InboxThreadProps) {
     >
       <a href={`/messages/${otherUser.username}?userId=${otherUser._id}`}>
         <div className="media">
-          <div className="media-left">
-            <Avatar user={otherUser} size={32} link={false} />
-          </div>
           <div className="media-body">
             <small className="text-muted pull-right">
               {haveReplied && (
@@ -32,8 +29,7 @@ export default function InboxThread({ user, thread }: InboxThreadProps) {
               &nbsp;
               <TimeAgo date={new Date(thread.updated)} />
             </small>
-            <span>{otherUser.displayName || t('Unknown member')}</span>
-            <br />
+            <MemberIdentity size={32} user={otherUser} />
             <span className="text-muted threadlist-thread-excerpt">
               {thread.message.excerpt}
             </span>
@@ -50,5 +46,5 @@ function findOtherUser(
 ): MessageUser {
   const otherUser =
     thread.userFrom?._id === currentUser._id ? thread.userTo : thread.userFrom;
-  return otherUser ?? { _id: '', displayName: 'Unknown member' };
+  return otherUser ?? { _id: '' };
 }

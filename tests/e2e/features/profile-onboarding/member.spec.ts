@@ -127,7 +127,10 @@ test.describe('confirmed member flows', () => {
       route.fulfill({ json: contacts }),
     );
     await page.goto(`/profile/${berlin.username}/contacts`);
-    const contactNames = page.locator('.contacts-contact h4 a');
+    const contactNames = page
+      .locator('.contacts-contact')
+      .getByRole('link', { name: /Example$/ })
+      .getByText(/Example$/);
     await expect(contactNames).toHaveText([
       'Bravo Example',
       'Charlie Example',

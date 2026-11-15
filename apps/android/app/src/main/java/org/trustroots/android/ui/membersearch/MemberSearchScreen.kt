@@ -5,7 +5,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,7 +30,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -42,8 +40,9 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
-import org.trustroots.android.ui.common.RemoteArtwork
+import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.SubmittedSearchField
 import org.trustroots.android.ui.common.horizontalInset
 import org.trustroots.android.ui.common.memberLocationLabel
@@ -64,8 +63,6 @@ internal fun MemberSearchScreen(
 ) {
     val model = viewModel ?: rememberMemberSearchViewModel(api, session)
     val state by model.state.collectAsState()
-    val uiLocale = LocalConfiguration.current.locales[0]
-    val usernameHandleFormat = stringResource(R.string.screen_username_handle)
     val keyboard = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
     val scrollState = remember { ScrollState(state.resultScrollOffset) }
@@ -158,7 +155,7 @@ internal fun MemberSearchScreen(
         }
         Column(Modifier.fillMaxWidth().verticalScroll(scrollState)) {
             state.results.forEach { member ->
-                Row(
+                Column(
                     Modifier
                         .fillMaxWidth()
                         .clickable { onOpenProfile(member.username) }
@@ -166,19 +163,12 @@ internal fun MemberSearchScreen(
                         .padding(horizontal = 20.dp)
                         .padding(contentPadding.horizontalInset()),
                 ) {
-                    RemoteArtwork(
-                        url = member.id?.let { api.avatarURL(it, 64, session) },
-                        sessionCookie = session.cookieHeader,
-                        accessToken = session.accessToken,
-                        label = member.displayName,
-                        size = 54.dp,
+                    MemberIdentity(
+                        api = api,
+                        session = session,
+                        member = MessageMember(member.id, member.username, member.displayName),
                     )
-                    Spacer(Modifier.width(12.dp))
-                    Column {
-                        Text(member.displayName, fontWeight = FontWeight.Bold)
-                        Text(String.format(uiLocale, usernameHandleFormat, member.username))
-                        memberLocationLabel(member.locationLiving, member.locationFrom)?.let { Text(it) }
-                    }
+                    memberLocationLabel(member.locationLiving, member.locationFrom)?.let { Text(it) }
                 }
                 HorizontalDivider()
             }

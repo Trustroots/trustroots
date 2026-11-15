@@ -3,13 +3,17 @@ import { useTranslation } from 'react-i18next';
 import styled from 'styled-components';
 import { Badge } from '@trustroots/ui/Badge';
 
-import MemberAvatar from './MemberAvatar';
+import MemberIdentity from './MemberIdentity';
 import type { UserProfile } from '../types';
+
+type MemberCardUser = React.ComponentProps<typeof MemberIdentity>['user'] &
+  Pick<UserProfile, 'username'> &
+  Partial<Pick<UserProfile, 'locationLiving' | 'locationFrom' | 'tagline'>>;
 
 const Card = styled.a.attrs({ className: 'member-search-card' })`
   display: flex;
-  align-items: flex-start;
-  gap: 14px;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
   padding: 16px;
   border: 1px solid #e5e8e6;
@@ -35,17 +39,11 @@ const Card = styled.a.attrs({ className: 'member-search-card' })`
     outline-offset: 2px;
   }
   &[data-compact] {
-    gap: 10px;
+    gap: 4px;
     padding: 10px;
   }
-  .avatar,
-  .member-avatar-fallback {
-    flex: 0 0 auto;
-    border-radius: 50%;
-    object-fit: cover;
-  }
 `;
-const Details = styled.div`
+const Details = styled.div.attrs({ className: 'member-search-card-details' })`
   display: flex;
   align-self: stretch;
   min-width: 0;
@@ -54,6 +52,15 @@ const Details = styled.div`
   p {
     margin: 2px 0 0;
   }
+  &:empty {
+    display: none;
+  }
+  .member-search-card-tagline {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
   ${Card}[data-compact] & {
     gap: 2px;
     line-height: 1.3;
@@ -61,18 +68,7 @@ const Details = styled.div`
     p {
       margin: 0;
     }
-    .member-search-card-tagline {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
-    }
   }
-`;
-const DisplayName = styled.span`
-  font-size: 1.05rem;
-  font-weight: 400;
-  line-height: 1.3;
 `;
 const Activity = styled.div`
   margin-top: auto;
@@ -137,7 +133,7 @@ export default function MemberSearchCard({
   activityLabel,
   compact = false,
 }: {
-  user: UserProfile;
+  user: MemberCardUser;
   query?: string;
   activityLabel?: string;
   compact?: boolean;
@@ -148,12 +144,13 @@ export default function MemberSearchCard({
       data-compact={compact || undefined}
       href={`/profile/${encodeURIComponent(user.username)}`}
     >
-      <MemberAvatar size={compact ? 36 : 64} user={user} />
+      <MemberIdentity
+        className="member-search-card-identity"
+        size={compact ? 36 : 64}
+        user={user}
+        format={value => highlightMatches(value, query)}
+      />
       <Details>
-        <DisplayName>{highlightMatches(user.displayName, query)}</DisplayName>
-        <span className="text-muted">
-          @{highlightMatches(user.username, query)}
-        </span>
         {user.locationLiving && (
           <p>
             {String(t('Lives in'))}:{' '}
