@@ -1,4 +1,4 @@
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 import React, { type ReactNode } from 'react';
 
 type NoContentProps = {
@@ -15,7 +15,7 @@ export default function NoContent({
   message,
 }: NoContentProps) {
   return (
-    <div className={classnames('row content-empty', className)}>
+    <div className={clsx('row content-empty', className)}>
       {icon && <i className={`icon-3x icon-${icon}`}></i>}
       <h4>{message}</h4>
       {children}

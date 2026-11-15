@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
@@ -80,7 +80,7 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
 
   return (
     <div
-      className={classnames('panel', 'text-center', {
+      className={clsx('panel', 'text-center', {
         'panel-default': isAsking,
         'panel-transparent': !isAsking,
       })}
@@ -101,7 +101,7 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
           <>
             <p className="text-muted">{question}</p>
             <p
-              className={classnames({
+              className={clsx({
                 'text-danger': referenceThread?.reference === 'no',
                 'text-muted': referenceThread?.reference === 'yes',
               })}

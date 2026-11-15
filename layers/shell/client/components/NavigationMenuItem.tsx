@@ -1,4 +1,4 @@
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 import React, { type ReactNode } from 'react';
 
 type NavigationMenuItemProps = React.LiHTMLAttributes<HTMLLIElement> & {
@@ -29,7 +29,7 @@ export default function NavigationMenuItem({
     // Keyboard navigation remains on the links, including submenu links.
     // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions
     <li
-      className={classnames(className, {
+      className={clsx(className, {
         active: path === currentPath,
       })}
       {...rest}

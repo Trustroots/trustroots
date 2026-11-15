@@ -2,7 +2,7 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
 
@@ -350,7 +350,7 @@ export default function Home({ user, photoCredits, build }: HomeProps) {
               {circles.slice(0, 3).map((circle, index) => (
                 <div
                   key={circle._id}
-                  className={classnames('col-sm-3 hidden-xs home-circle-card', {
+                  className={clsx('col-sm-3 hidden-xs home-circle-card', {
                     'home-circle-last': index === 2,
                   })}
                 >

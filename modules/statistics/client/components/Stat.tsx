@@ -1,5 +1,5 @@
 import React from 'react';
-import classnames from 'classnames';
+import { clsx } from 'clsx';
 
 interface StatProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface StatProps {
 export default function Stat({ children, title, className }: StatProps) {
   return (
     <div
-      className={classnames(
+      className={clsx(
         'panel panel-default tw:flex tw:min-w-0 tw:flex-col tw:[&.panel]:mb-0',
         className,
       )}
