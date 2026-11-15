@@ -105,7 +105,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     await agent
       .post('/api/users/unified-push/test')
       .send({ endpoint: registration.endpoint })
-      .expect(503);
+      .expect(503, { message: 'Message alerts are not configured.' });
     config.webPush = {
       ...originalConfiguration,
       publicKey: '',
@@ -131,14 +131,22 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     const testPath = '/api/users/unified-push/test';
     const body = { endpoint: registration.endpoint };
     await request(app).post(testPath).send(body).expect(403);
-    await agent.post(testPath).send({}).expect(400);
-    await agent.post(testPath).send({ endpoint: '' }).expect(400);
+    const invalid = { message: 'Invalid push endpoint.' };
+    const missing = {
+      message: 'Message alerts are not registered on this device.',
+    };
+    await agent.post(testPath).send({}).expect(400, invalid);
+    await agent.post(testPath).send({ endpoint: '' }).expect(400, invalid);
+    await agent
+      .post(testPath)
+      .send({ endpoint: `https://ntfy.sh/${'x'.repeat(2048 - 16)}` })
+      .expect(404, missing);
     await agent
       .post(testPath)
       .send({ endpoint: 'x'.repeat(2049) })
-      .expect(400);
+      .expect(400, invalid);
     await push.register(other._id, registration);
-    await agent.post(testPath).send(body).expect(404);
+    await agent.post(testPath).send(body).expect(404, missing);
     await push.register(user._id, registration);
     const otherDevice = {
       ...registration,
@@ -147,20 +155,27 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     await push.register(user._id, otherDevice);
     const before = Date.now();
     await agent.post(testPath).send(body).expect(202);
-    await agent.post(testPath).send(body).expect(429);
+    const after = Date.now();
+    await agent.post(testPath).send(body).expect(429, {
+      message: 'Please wait a minute before requesting another test.',
+    });
 
     schedule.calledOnce.should.equal(true);
     sent.called.should.equal(false);
     const [dueAt, jobName, data] = schedule.firstCall.args;
-    (dueAt as Date).getTime().should.be.aboveOrEqual(before + 15_000);
+    (dueAt as Date).getTime().should.be.within(before + 15_000, after + 15_000);
     jobName.should.equal(testPushJobName);
     const job = data as Parameters<typeof deliverTest>[0];
-    await deliverTest({ ...job, expiresAt: Date.now() });
+    const now = Date.now();
+    const clock = sinon.stub(Date, 'now').returns(now);
+    await deliverTest({ ...job, expiresAt: now });
+    clock.restore();
     sent.called.should.equal(false);
     await deliverTest(job);
     sent.calledOnce.should.equal(true);
     sent.firstCall.args[0].endpoint.should.equal(registration.endpoint);
     sent.firstCall.args[1].should.equal('{"test":true}');
+    sent.firstCall.args.slice(2).should.deepEqual([{ TTL: 60 }]);
     await push.register(other._id, registration);
     await deliverTest(job);
     sent.calledOnce.should.equal(true);
@@ -174,7 +189,10 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     await push.register(user._id, registration);
     const path = '/api/users/unified-push/test';
     const body = { endpoint: registration.endpoint };
-    await agent.post(path).send(body).expect(500);
+    await agent
+      .post(path)
+      .send(body)
+      .expect(500, { message: 'Could not schedule the test notification.' });
     await agent.post(path).send(body).expect(202);
     schedule.callCount.should.equal(2);
   });

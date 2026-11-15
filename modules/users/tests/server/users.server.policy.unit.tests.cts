@@ -94,6 +94,7 @@ describe('Users policy unit tests', () => {
     ['/api/users/push/registrations', ['post']],
     ['/api/users/push/registrations/:token', ['delete']],
     ['/api/users/unified-push', ['get', 'post', 'delete']],
+    ['/api/users/unified-push/test', ['post']],
     ['/api/blocked-users', ['get']],
     ['/api/blocked-users/:username', ['put', 'delete']],
   ];

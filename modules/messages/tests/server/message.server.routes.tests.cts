@@ -131,6 +131,10 @@ describe('Message CRUD tests', function () {
       const sent = sinon.stub(webPush, 'sendNotification').resolves();
       // Run the real push processor without starting unrelated recurring jobs.
       sinon.stub(agenda, 'every').resolves();
+      await push.register(userFromId, {
+        ...registration,
+        endpoint: 'https://ntfy.sh/anonymous-sender-device',
+      });
       const before = Date.now();
       const response = await agent
         .post('/api/messages')
@@ -138,7 +142,7 @@ describe('Message CRUD tests', function () {
         .expect(200);
       const job = await jobs.findOne({
         name: messagePushJobName,
-        'data.messageId': response.body._id,
+        'data.messageId': String(response.body._id),
       });
       if (!job)
         throw new Error('The message route did not persist a push job.');
@@ -157,7 +161,8 @@ describe('Message CRUD tests', function () {
           JSON.stringify({ senderId: String(userFromId) }),
         );
       } finally {
-        await agenda.stop();
+        // Other server suites share Agenda's MongoDB connection.
+        await agenda.stop(false);
         worker.removeExitListeners();
         await jobs.deleteOne({ _id: job._id });
       }
@@ -175,7 +180,7 @@ describe('Message CRUD tests', function () {
         .send(message)
         .expect(200);
       schedule.calledOnce.should.equal(true);
-      const saved = await Message.findById(response.body._id);
+      const saved = await Message.findById(String(response.body._id));
       should(saved?.content).equal(message.content);
     });
 
@@ -184,6 +189,7 @@ describe('Message CRUD tests', function () {
         await import('../../../../config/lib/agenda.mts');
       const schedule = sinon.spy(agenda, 'schedule');
       await push.unregister(userToId, registration.endpoint);
+      await push.register(userFromId, registration);
       await agent.post('/api/messages').send(message).expect(200);
       schedule.called.should.equal(false);
     });
