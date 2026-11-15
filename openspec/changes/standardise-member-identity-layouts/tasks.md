@@ -2,6 +2,7 @@
 
 - [x] 1.1 Fix nested circle grid sizing and move long member card metadata below the identity.
 - [x] 1.2 Add a browser regression at a desktop viewport with a constrained circle group.
+- [x] 1.3 Reuse the compact member card for circle organisers above the description.
 
 ## 2. Reuse identity on member-facing screens
 

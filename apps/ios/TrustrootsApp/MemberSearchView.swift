@@ -133,9 +133,7 @@ struct MemberSearchView: View {
     private func memberRow(_ member: MemberSearchResult) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             MemberIdentityView(
-                memberID: member.id,
-                displayName: member.displayName,
-                username: member.username,
+                member: MiniMember(id: member.id, username: member.username, displayName: member.displayName),
                 serverURLString: session.serverURLString
             )
             if let location = member.locationSummary {

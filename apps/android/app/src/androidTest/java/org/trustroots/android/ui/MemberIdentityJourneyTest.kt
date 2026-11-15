@@ -12,6 +12,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.api.MobileMember
 import org.trustroots.android.ui.common.MemberIdentity
@@ -27,10 +28,10 @@ class MemberIdentityJourneyTest {
         compose.setContent {
             TrustrootsTheme {
                 Column {
-                    MemberIdentity(api, session, null, " Sample Walking Companion ", "sample-walker")
-                    MemberIdentity(api, session, null, " ", "handle-only")
-                    MemberIdentity(api, session, null, "Name Only", null)
-                    MemberIdentity(api, session, null, null, " ")
+                    MemberIdentity(api, session, MessageMember(null, "sample-walker", " Sample Walking Companion "))
+                    MemberIdentity(api, session, MessageMember(null, "handle-only", " "))
+                    MemberIdentity(api, session, MessageMember(null, null, "Name Only"))
+                    MemberIdentity(api, session, MessageMember(null, " ", ""))
                 }
             }
         }

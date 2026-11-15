@@ -327,9 +327,7 @@ private struct HostOfferCard: View {
 
     private var identity: some View {
         MemberIdentityView(
-            memberID: host.user.id,
-            displayName: host.user.displayName,
-            username: host.user.username,
+            member: host.user,
             serverURLString: session.serverURLString
         )
     }

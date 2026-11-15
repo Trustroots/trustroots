@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import styled, { css } from 'styled-components';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
+import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import JoinButton from './JoinButton';
 import CircleMemberDiscovery from './CircleMemberDiscovery';
 import HackerspaceMap from './HackerspaceMap';
@@ -200,14 +201,15 @@ export default function TribeDetailPage({
                 </h2>
                 <span className="tribe-meta">{countInfo}</span>
                 {user && !!tribe.organisers?.length && (
-                  <section aria-label={t('Circle organisers')}>
+                  <section
+                    aria-label={t('Circle organisers')}
+                    className="tribe-organisers"
+                  >
                     <h3>{t('Circle organisers')}</h3>
                     <ul>
-                      {tribe.organisers.map(({ username, displayName }) => (
-                        <li key={username}>
-                          <a href={`/profile/${encodeURIComponent(username)}`}>
-                            {displayName || username}
-                          </a>
+                      {tribe.organisers.map(organiser => (
+                        <li key={organiser.username}>
+                          <MemberSearchCard user={organiser} compact />
                         </li>
                       ))}
                     </ul>

@@ -134,9 +134,7 @@ internal fun ContactsScreen(
                     MemberIdentity(
                         api = api,
                         session = session,
-                        memberID = contact.user.id,
-                        displayName = contact.user.displayName,
-                        username = username,
+                        member = contact.user,
                         modifier = Modifier.fillMaxWidth()
                             .then(if (username != null) Modifier.clickable { onOpenProfile(username) } else Modifier)
                             .padding(vertical = 12.dp),

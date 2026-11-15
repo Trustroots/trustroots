@@ -18,7 +18,7 @@ function renderPartialMemberAvatar(
   link = false,
 ) {
   // These cases deliberately exercise incomplete profiles from API responses.
-  return render(<MemberAvatar user={user as MemberAvatarUser} link={link} />);
+  return render(<MemberAvatar user={user} link={link} />);
 }
 
 function getImage(container: HTMLElement): HTMLImageElement {

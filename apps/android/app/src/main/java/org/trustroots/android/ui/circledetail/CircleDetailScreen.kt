@@ -337,9 +337,7 @@ private fun CircleMemberGroup(
             MemberIdentity(
                 api = api,
                 session = session,
-                memberID = member.id,
-                displayName = member.displayName,
-                username = username,
+                member = member,
                 modifier = Modifier.fillMaxWidth()
                     .clickable(enabled = username != null) { username?.let(onOpenProfile) }
                     .padding(vertical = 12.dp)

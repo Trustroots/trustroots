@@ -6,6 +6,10 @@ import { Badge } from '@trustroots/ui/Badge';
 import MemberIdentity from './MemberIdentity';
 import type { UserProfile } from '../types';
 
+type MemberCardUser = React.ComponentProps<typeof MemberIdentity>['user'] &
+  Pick<UserProfile, 'username'> &
+  Partial<Pick<UserProfile, 'locationLiving' | 'locationFrom' | 'tagline'>>;
+
 const Card = styled.a.attrs({ className: 'member-search-card' })`
   display: flex;
   flex-direction: column;
@@ -48,18 +52,21 @@ const Details = styled.div.attrs({ className: 'member-search-card-details' })`
   p {
     margin: 2px 0 0;
   }
+  &:empty {
+    display: none;
+  }
+  .member-search-card-tagline {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+  }
   ${Card}[data-compact] & {
     gap: 2px;
     line-height: 1.3;
 
     p {
       margin: 0;
-    }
-    .member-search-card-tagline {
-      display: -webkit-box;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
-      overflow: hidden;
     }
   }
 `;
@@ -126,14 +133,12 @@ export default function MemberSearchCard({
   activityLabel,
   compact = false,
 }: {
-  user: UserProfile;
+  user: MemberCardUser;
   query?: string;
   activityLabel?: string;
   compact?: boolean;
 }) {
   const { t } = useTranslation('search') as { t: (key: string) => string };
-  const hasDetails =
-    user.locationLiving || user.locationFrom || user.tagline || activityLabel;
   return (
     <Card
       data-compact={compact || undefined}
@@ -145,33 +150,31 @@ export default function MemberSearchCard({
         user={user}
         format={value => highlightMatches(value, query)}
       />
-      {hasDetails && (
-        <Details>
-          {user.locationLiving && (
-            <p>
-              {String(t('Lives in'))}:{' '}
-              {highlightMatches(user.locationLiving, query)}
-            </p>
-          )}
-          {user.locationFrom && (
-            <p>
-              {String(t('From'))}: {highlightMatches(user.locationFrom, query)}
-            </p>
-          )}
-          {user.tagline && (
-            <p className="member-search-card-tagline">
-              {highlightMatches(user.tagline, query)}
-            </p>
-          )}
-          {activityLabel && (
-            <Activity>
-              <Badge variant="outline" intent="neutral">
-                {activityLabel}
-              </Badge>
-            </Activity>
-          )}
-        </Details>
-      )}
+      <Details>
+        {user.locationLiving && (
+          <p>
+            {String(t('Lives in'))}:{' '}
+            {highlightMatches(user.locationLiving, query)}
+          </p>
+        )}
+        {user.locationFrom && (
+          <p>
+            {String(t('From'))}: {highlightMatches(user.locationFrom, query)}
+          </p>
+        )}
+        {user.tagline && (
+          <p className="member-search-card-tagline">
+            {highlightMatches(user.tagline, query)}
+          </p>
+        )}
+        {activityLabel && (
+          <Activity>
+            <Badge variant="outline" intent="neutral">
+              {activityLabel}
+            </Badge>
+          </Activity>
+        )}
+      </Details>
     </Card>
   );
 }

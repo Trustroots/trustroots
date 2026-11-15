@@ -43,9 +43,7 @@ struct ContactsView: View {
     private func contactRow(_ contact: TrustrootsContact) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             MemberIdentityView(
-                memberID: contact.user.id,
-                displayName: contact.user.displayName,
-                username: contact.user.username,
+                member: contact.user,
                 serverURLString: session.serverURLString
             )
             if !contact.confirmed {

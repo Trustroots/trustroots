@@ -147,9 +147,7 @@ struct CircleDetailView: View {
     private func memberRow(_ member: MiniMember) -> some View {
         HStack(spacing: 11) {
             MemberIdentityView(
-                memberID: member.id,
-                displayName: member.displayName,
-                username: member.username,
+                member: member,
                 serverURLString: session.serverURLString
             )
             Image(systemName: "chevron.right")

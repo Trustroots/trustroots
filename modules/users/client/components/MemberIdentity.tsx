@@ -4,9 +4,7 @@ import styled from 'styled-components';
 
 import MemberAvatar from './MemberAvatar';
 
-type IdentityMember = Partial<
-  React.ComponentProps<typeof MemberAvatar>['user']
->;
+type IdentityMember = React.ComponentProps<typeof MemberAvatar>['user'];
 
 const Identity = styled.span`
   display: flex;
@@ -51,15 +49,7 @@ export default function MemberIdentity({
 
   return (
     <Identity className={className}>
-      <MemberAvatar
-        size={size}
-        user={{
-          ...user,
-          _id: user._id ?? '',
-          username: username ?? '',
-          displayName: displayName ?? '',
-        }}
-      />
+      <MemberAvatar size={size} user={user} />
       <Names>
         <DisplayName>{format(name)}</DisplayName>
         {displayName && handle && (

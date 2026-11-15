@@ -21,19 +21,17 @@ struct MemberAvatarView: View {
 }
 
 struct MemberIdentityView: View {
-    let memberID: String?
-    let displayName: String?
-    let username: String?
+    let member: MiniMember
     let serverURLString: String
 
     var body: some View {
-        let name = identityText(displayName)
-        let handle = identityText(username)
+        let name = identityText(member.displayName)
+        let handle = identityText(member.username)
         let label = name ?? handle.map { "@\($0)" } ?? String(localized: "Unknown member")
 
         HStack(spacing: 10) {
             MemberAvatarView(
-                memberID: memberID,
+                memberID: member.id,
                 displayName: name ?? handle ?? "",
                 serverURLString: serverURLString
             )

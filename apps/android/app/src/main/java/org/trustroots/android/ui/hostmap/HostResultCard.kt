@@ -90,9 +90,7 @@ internal fun HostResultCard(
                         MemberIdentity(
                             api = api,
                             session = session,
-                            memberID = offer.user.id,
-                            displayName = offer.user.displayName,
-                            username = offer.user.username,
+                            member = offer.user,
                         )
                         Surface(
                             color = if (offer.status == "yes" || isMeet) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer,

@@ -13,19 +13,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 
 @Composable
 internal fun MemberIdentity(
     api: MobileApiClient,
     session: MemberSession,
-    memberID: String?,
-    displayName: String?,
-    username: String?,
+    member: MessageMember,
     modifier: Modifier = Modifier,
 ) {
-    val name = nonBlankMemberText(displayName?.trim())
-    val handle = nonBlankMemberText(username?.trim())?.let {
+    val name = nonBlankMemberText(member.displayName.trim())
+    val username = nonBlankMemberText(member.username?.trim())
+    val handle = username?.let {
         stringResource(R.string.screen_username_handle, it)
     }
     Row(
@@ -34,10 +34,10 @@ internal fun MemberIdentity(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         RemoteArtwork(
-            url = memberID?.let { api.avatarURL(it, 64, session) },
+            url = member.id?.let { api.avatarURL(it, 64, session) },
             sessionCookie = session.cookieHeader,
             accessToken = session.accessToken,
-            label = name ?: username.orEmpty(),
+            label = name ?: username ?: "?",
             size = 48.dp,
         )
         Column(Modifier.weight(1f)) {

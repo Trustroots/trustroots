@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.trustroots.android.R
 import org.trustroots.android.api.MemberSession
+import org.trustroots.android.api.MessageMember
 import org.trustroots.android.api.MobileApiClient
 import org.trustroots.android.ui.common.MemberIdentity
 import org.trustroots.android.ui.common.SubmittedSearchField
@@ -165,9 +166,7 @@ internal fun MemberSearchScreen(
                     MemberIdentity(
                         api = api,
                         session = session,
-                        memberID = member.id,
-                        displayName = member.displayName,
-                        username = member.username,
+                        member = MessageMember(member.id, member.username, member.displayName),
                     )
                     memberLocationLabel(member.locationLiving, member.locationFrom)?.let { Text(it) }
                 }
