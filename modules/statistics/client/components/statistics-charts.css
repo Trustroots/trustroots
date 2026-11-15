@@ -1,0 +1,24 @@
+.statistics-chart-table {
+  width: 100%;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.statistics-chart-table th,
+.statistics-chart-table td {
+  padding: 4px;
+}
+.statistics-chart-table tbody th {
+  font-weight: normal;
+}
+.statistics-chart-table td {
+  width: 30%;
+}
+.statistics-chart-table td > span {
+  display: block;
+  height: 5px;
+  border-radius: 2px;
+  background: #147963;
+}
+.statistics-chart-table td:nth-child(3) > span {
+  background: #3d6492;
+}
