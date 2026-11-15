@@ -95,7 +95,7 @@ class SharedMemberPilotJourneyTest {
         }.also { fixture = it }
         scenario = ActivityScenario.launch(
             Intent(context, SignInJourneyActivity::class.java)
-                .putExtra(SignInJourneyActivity.SHARED_MEMBER_PILOT_EXTRA, true)
+                .putExtra(SHARED_MEMBER_PILOT_EXTRA, true)
                 .putExtra(SignInJourneyActivity.API_BASE_URL_EXTRA, local.baseURL),
         )
 

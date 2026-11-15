@@ -216,7 +216,7 @@ isolates the work of sharing UI from the proposed shared networking migration.
 
 The pilot is available by explicit launch option in debug builds:
 
-- On Android, run `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez shared-member-pilot true`.
+- On Android, run `adb shell am start -S -n org.trustroots.android.debug/org.trustroots.android.MainActivity --ez org.trustroots.android.debug.SHARED_MEMBER_PILOT true`.
 - On iOS, add `--shared-member-pilot` to the Xcode scheme's launch arguments, or
   run `xcrun simctl launch --terminate-running-process booted org.trustroots.trustrootsApp --shared-member-pilot`.
 - Choose **Open native app** on the pilot's first screen to return to the
