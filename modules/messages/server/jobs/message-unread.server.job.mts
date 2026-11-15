@@ -5,7 +5,6 @@ import config from './../../../../config/config.mts';
 import moment from 'moment';
 import userRolesService from './../../../users/server/services/user-roles.server.service.mjs';
 import mongoose, { type Types } from 'mongoose';
-import unifiedPush from './../../../users/server/services/unified-push.server.service.mjs';
 import type { MessageRecord } from '../models/message.server.model.mts';
 
 interface Reminder {
@@ -35,10 +34,6 @@ interface ReminderUser {
 type Done<Results extends unknown[] = []> = {
   (error?: Error | null): void;
   (error: Error | null | undefined, ...results: Results): void;
-};
-
-const unifiedPushWithNotify = unifiedPush as {
-  notifyUnread(userId: Types.ObjectId, senderId: Types.ObjectId): Promise<void>;
 };
 
 /**
@@ -287,17 +282,6 @@ async function sendUnreadMessageReminders(reminder: Reminder): Promise<void> {
     // finish early if we don't want to send it
     if (notification.dontSend === true) {
       return;
-    }
-    // Only the first reminder can reach messages that were never reminded about: its query matches a notification count of 0 and nothing else
-    if (reminderOrder === 0) {
-      // Push is best effort. Keep the existing email callback independent.
-      unifiedPushWithNotify
-        .notifyUnread(userTo._id, userFrom._id)
-        .catch((error: unknown) => {
-          log('error', 'UnifiedPush unread-message delivery failed.', {
-            error,
-          });
-        });
     }
     await new Promise<void>((resolve, reject) => {
       emailService.sendMessagesUnread(userFrom, userTo, notification, err => {

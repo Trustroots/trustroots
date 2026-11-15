@@ -6,6 +6,7 @@ import config from '../../../../config/config.mts';
 import log from '../../../../config/lib/logger.mjs';
 import messageToStatsService from '../services/message-to-stats.server.service.mjs';
 import messageStatService from '../services/message-stat.server.service.mjs';
+import { queueMessagePush } from '../jobs/message-push.server.job.mts';
 import messageThrottleAlertService from '../services/message-throttle-alert.server.service.mts';
 import errorService from '../../../core/server/services/error.server.service.mjs';
 import textService from '../../../core/server/services/text.server.service.mts';
@@ -659,6 +660,18 @@ service.send = async function (req, res) {
           upsert: true,
         },
       );
+    }
+    if (
+      !message.shadowHidden &&
+      !userRolesService.hasRestrictedMessagingRole(receiver)
+    ) {
+      try {
+        await queueMessagePush(message._id, receiver._id);
+      } catch (error) {
+        log('error', 'Could not queue Android message notification.', {
+          error,
+        });
+      }
     }
     messageToStatsService.save(message, () => {});
     if (!message.shadowHidden) {

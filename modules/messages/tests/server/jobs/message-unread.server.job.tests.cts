@@ -14,7 +14,6 @@ const moment: typeof import('moment') = require('moment');
 const emailService: typeof import('./../../../../core/server/services/email.server.service.mjs') = require('./../../../../core/server/services/email.server.service.mjs');
 const sinon: typeof import('sinon') = require('sinon');
 const winston: typeof import('winston') = require('winston');
-const unifiedPush: typeof import('./../../../../users/server/services/unified-push.server.service.mjs') = require('./../../../../users/server/services/unified-push.server.service.mjs');
 const testutils: typeof import('../../../../../testutils/server/server.testutil') = require('../../../../../testutils/server/server.testutil');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const webPush: typeof import('../../../../users/server/services/web-push.server.transport.mts').webPush =
@@ -152,7 +151,9 @@ describe('Job: message unread', function () {
       .catch(err => done(err));
   });
 
-  it('sends one generic UnifiedPush alert with the first eligible reminder', async function () {
+  it('skips push for messages already read, hidden or stale', async function () {
+    const { deliverMessagePush } =
+      await import('../../../server/jobs/message-push.server.job.mts');
     const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
     await pushService.register(userToId, {
       endpoint: 'https://ntfy.sh/anonymous-unread-test',
@@ -160,58 +161,42 @@ describe('Job: message unread', function () {
         'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
       auth: 'abcdefghijklmnopqrstuv',
     });
-    message.created = moment().subtract({ minutes: 10, seconds: 1 }).toDate();
-    await message.save();
-    await new Message({
-      ..._message,
-      created: moment().subtract({ minutes: 11 }).toDate(),
-    }).save();
-    let finishPush: () => void = () => {};
-    const pushed = new Promise<void>(resolve => {
-      finishPush = resolve;
-    });
-    const sent = sinon.stub(webPush, 'sendNotification').callsFake(() => {
-      finishPush();
-      return Promise.resolve();
-    });
-    sinon.stub(webPush, 'setVapidDetails');
+    const sent = sinon.stub(webPush, 'sendNotification').resolves();
     try {
-      await new Promise<void>((resolve, reject) => {
-        messageUnreadJobHandler({}, (error?: Error | null) =>
-          error ? reject(error) : resolve(),
-        );
-      });
-      await pushed;
-      sent.calledOnce.should.equal(true);
-      required(sent.firstCall.args[1]).should.equal(
-        JSON.stringify({ senderId: userFromId.toString() }),
+      const data = { messageId: String(message._id) };
+      const { default: config } =
+        await import('../../../../../config/config.mts');
+      const key = sinon.stub(config.webPush, 'privateKey').value('');
+      await deliverMessagePush(data);
+      key.restore();
+
+      for (const state of [
+        { read: true, shadowHidden: false, created: new Date() },
+        { read: false, shadowHidden: true, created: new Date() },
+        {
+          read: false,
+          shadowHidden: false,
+          created: new Date(Date.now() - 360_000),
+        },
+      ]) {
+        message.set(state);
+        await message.save();
+        await deliverMessagePush(data);
+      }
+      await Message.updateOne(
+        { _id: message._id },
+        { $set: { created: new Date() }, $unset: { userFrom: 1 } },
       );
-      jobs.length.should.equal(1);
+      await deliverMessagePush(data);
+      await Message.updateOne(
+        { _id: message._id },
+        { $set: { userFrom: userFromId }, $unset: { userTo: 1 } },
+      );
+      await deliverMessagePush(data);
+      sent.called.should.equal(false);
+      jobs.length.should.equal(0);
     } finally {
       sinon.restore();
-    }
-  });
-
-  it('still schedules the email when UnifiedPush delivery fails', async function () {
-    const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
-    const notifyUnread = sinon
-      .stub(pushService, 'notifyUnread')
-      .rejects(new Error('push unavailable'));
-    message.created = moment().subtract({ minutes: 10, seconds: 1 }).toDate();
-    await message.save();
-
-    try {
-      await new Promise<void>((resolve, reject) => {
-        messageUnreadJobHandler({}, (error?: Error | null) =>
-          error ? reject(error) : resolve(),
-        );
-      });
-      await new Promise<void>(resolve => setImmediate(resolve));
-      notifyUnread.calledOnce.should.equal(true);
-      jobs.length.should.equal(1);
-      jobs[0].type.should.equal('send email');
-    } finally {
-      notifyUnread.restore();
     }
   });
 
@@ -418,7 +403,7 @@ describe('Job: message unread', function () {
       .catch(err => done(err));
   });
 
-  it('does not push when a sender is shadowbanned', async function () {
+  it('rechecks member restrictions and recipient blocks at push delivery', async function () {
     const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
     await pushService.register(userToId, {
       endpoint: 'https://ntfy.sh/anonymous-restricted-test',
@@ -426,17 +411,28 @@ describe('Job: message unread', function () {
         'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
       auth: 'abcdefghijklmnopqrstuv',
     });
-    message.created = moment().subtract({ minutes: 10, seconds: 1 }).toDate();
-    await message.save();
-    userFrom.roles = ['user', 'shadowban'];
-    await userFrom.save();
     const sent = sinon.stub(webPush, 'sendNotification');
     try {
-      await new Promise<void>((resolve, reject) => {
-        messageUnreadJobHandler({}, (error?: Error | null) =>
-          error ? reject(error) : resolve(),
-        );
-      });
+      const { deliverMessagePush } =
+        await import('../../../server/jobs/message-push.server.job.mts');
+      const data = { messageId: String(message._id) };
+      await User.updateOne(
+        { _id: userFromId },
+        { roles: ['user', 'shadowban'] },
+      );
+      await deliverMessagePush(data);
+      await User.updateOne({ _id: userFromId }, { roles: ['user'] });
+      await User.updateOne({ _id: userToId }, { roles: ['user', 'suspended'] });
+      await deliverMessagePush(data);
+      await User.updateOne(
+        { _id: userToId },
+        { roles: ['user'], blocked: [userFromId] },
+      );
+      await deliverMessagePush(data);
+      await User.deleteOne({ _id: userToId });
+      await deliverMessagePush(data);
+      await User.deleteOne({ _id: userFromId });
+      await deliverMessagePush(data);
       sent.called.should.equal(false);
       jobs.length.should.equal(0);
     } finally {
@@ -900,7 +896,6 @@ describe('Job: message unread', function () {
       sinon.stub(User, 'find').returns({
         exec: async () => [userFrom, userTo],
       } as unknown as ReturnType<typeof User.find>);
-      sinon.stub(unifiedPush, 'notifyUnread').resolves();
       let active = 0;
       let maximum = 0;
       let completed = 0;
@@ -975,7 +970,6 @@ describe('Job: message unread', function () {
       sinon
         .stub(emailService, 'sendMessagesUnread')
         .callsArgWith(3, emailFailure);
-      sinon.stub(unifiedPush, 'notifyUnread').resolves();
       sinon.stub(Message, 'updateMany').resolves();
 
       jobWithQueueError({}, function (err?: Error | null) {
@@ -1206,21 +1200,6 @@ describe('Job: message unread', function () {
       (entry.args[2] as object).should.have.property('error');
     });
 
-    it('logs a failed UnifiedPush delivery without failing the job', async function () {
-      const log = sinon.stub(winston.Logger.prototype, 'log');
-      sinon.stub(unifiedPush, 'notifyUnread').rejects(new Error('push down'));
-      await ageMessage();
-      await runJob();
-      await new Promise<void>(resolve => setImmediate(resolve));
-
-      const [entry] = logCalls(
-        log,
-        'UnifiedPush unread-message delivery failed.',
-      );
-      required(entry).args[0].should.equal('error');
-      (entry.args[2] as object).should.have.property('error');
-    });
-
     it('sends the first reminder after the shortest configured delay whatever the config order', async function () {
       sinon
         .stub(config.limits, 'unreadMessageReminders')
@@ -1248,25 +1227,26 @@ describe('Job: message unread', function () {
       jobs[0].data.subject.should.containEql('is still waiting for a reply');
     });
 
-    it('pushes only with the first reminder', async function () {
-      sinon.useFakeTimers({ now: 1500000000000, toFake: ['Date'] });
-      const notifyUnread = sinon.stub(unifiedPush, 'notifyUnread').resolves();
-      message.created = new Date();
-      await message.save();
-
-      sinon.clock.tick(
-        moment.duration({ minutes: 10, milliseconds: 1 }).asMilliseconds(),
-      );
+    it('still queues the first email reminder after push delivery fails', async function () {
+      const { deliverMessagePush } =
+        await import('../../../server/jobs/message-push.server.job.mts');
+      const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
+      await pushService.register(userToId, {
+        endpoint: 'https://ntfy.sh/anonymous-unavailable-distributor',
+        publicKey:
+          'BNPRQG83KHuc4ZkSKlmSKQWC3PQm2YD-yOiPdjFbQyB8VM6ZZSLD2caRpXad6G_2qXqb_WUz7V2T7w1KqAXbslQ',
+        auth: 'abcdefghijklmnopqrstuv',
+      });
+      const sent = sinon
+        .stub(webPush, 'sendNotification')
+        .rejects(new Error('push down'));
+      await deliverMessagePush({ messageId: String(message._id) });
+      sent.calledOnce.should.equal(true);
+      await ageMessage();
       await runJob();
       jobs.length.should.equal(1);
-      notifyUnread.callCount.should.equal(1);
-
-      sinon.clock.tick(
-        moment.duration({ hours: 23, minutes: 50 }).asMilliseconds(),
-      );
-      await runJob();
-      jobs.length.should.equal(2);
-      notifyUnread.callCount.should.equal(1);
+      jobs[0].type.should.equal('send email');
+      sent.calledOnce.should.equal(true);
     });
   });
 

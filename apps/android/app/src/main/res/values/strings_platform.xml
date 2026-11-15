@@ -13,6 +13,8 @@
     <string name="message_alerts_registration_error">Push distributor registration failed: %1$s.</string>
     <string name="message_alerts_push_name">Trustroots messages</string>
     <string name="message_alerts_channel">Messages</string>
+    <string name="message_alerts_test_title">Trustroots test notification</string>
+    <string name="message_alerts_test_text">Your Trustroots message alerts are working.</string>
     <string name="message_alerts_notification_title">Unread message</string>
     <string name="message_alerts_notification_text">You have an unread Trustroots conversation.</string>
     <string name="apk_updates_channel">APK updates</string>

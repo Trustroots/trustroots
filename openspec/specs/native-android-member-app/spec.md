@@ -2024,3 +2024,12 @@ The Android host map SHALL offer an explicit Use my location action. It SHALL re
 - **WHEN** permission is denied, location is unavailable, or the request times out
 - **THEN** the app shows a status message and leaves the current map position intact
 - **AND** the member can still search or pan the map
+
+### Requirement: Locked-screen message alert test
+
+The Android app SHALL offer a locked-screen test in Account settings when message alerts are set up. After the server accepts the request, the app SHALL prompt the member to lock their phone. The received test alert SHALL identify itself as a test.
+
+#### Scenario: A member requests a test
+
+- **WHEN** the member taps the test action and the server accepts the request
+- **THEN** the app says to lock the phone and that the alert is due in about 15 seconds

@@ -5,6 +5,7 @@ import {
   validRegistration,
   register,
   unregister,
+  default as pushService,
 } from './../services/unified-push.server.service.mjs';
 interface PushRequest extends Request {
   body: unknown;
@@ -51,16 +52,45 @@ async function remove(
     });
   }
 }
+async function test(req: PushRequest, res: Response): Promise<Response> {
+  if (!pushConfiguration().enabled)
+    return res
+      .status(503)
+      .json({ message: 'Message alerts are not configured.' });
+  const endpoint = (req.body as { endpoint?: unknown } | undefined)?.endpoint;
+  if (typeof endpoint !== 'string' || !endpoint || endpoint.length > 2048)
+    return res.status(400).json({ message: 'Invalid push endpoint.' });
+
+  try {
+    const result = await pushService.scheduleTest(req.user._id, endpoint);
+    if (result === 'missing')
+      return res
+        .status(404)
+        .json({ message: 'Message alerts are not registered on this device.' });
+    if (result === 'limited')
+      return res.status(429).json({
+        message: 'Please wait a minute before requesting another test.',
+      });
+    return res.status(202).end();
+  } catch {
+    return res
+      .status(500)
+      .json({ message: 'Could not schedule the test notification.' });
+  }
+}
+
 interface UnifiedPushController {
   configuration: typeof configuration;
   add: typeof add;
   remove: typeof remove;
+  test: typeof test;
 }
 
 const service: UnifiedPushController = {
   configuration,
   add,
   remove,
+  test,
 };
 export default service;
 /** @commonjs */

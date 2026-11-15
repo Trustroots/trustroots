@@ -6,6 +6,7 @@ interface UnifiedPushRegistrationRecord {
   publicKey: string;
   auth: string;
   updated: Date;
+  lastTestRequested?: Date;
 }
 
 const schema = new mongoose.Schema<UnifiedPushRegistrationRecord>({
@@ -28,6 +29,7 @@ const schema = new mongoose.Schema<UnifiedPushRegistrationRecord>({
     type: String,
     required: true,
   },
+  lastTestRequested: Date,
   updated: {
     type: Date,
     default: Date.now,

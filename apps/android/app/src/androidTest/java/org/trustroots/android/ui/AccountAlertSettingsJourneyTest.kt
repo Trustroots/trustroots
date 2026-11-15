@@ -145,6 +145,36 @@ class AccountAlertSettingsJourneyTest {
         responder?.join(1_000)
     }
 
+    @Test fun requestsALockedScreenTestAfterRegistration() {
+        preferences.edit()
+            .putString("account", session.member.username)
+            .putBoolean("enabled", true)
+            .putString("endpoint", "https://ntfy.sh/anonymous-test-device")
+            .commit()
+        respondToAccountRequest(
+            """{"username":"steady-heron","displayName":"Steady Heron","email":"member@example.test","newsletter":false}""",
+            alertTestResponses = listOf("202 Accepted", "429 Too Many Requests"),
+        )
+        compose.setContent {
+            TrustrootsTheme {
+                AccountSettingsScreen(
+                    api = api(),
+                    session = session,
+                    onSessionInvalidated = {},
+                    onBack = {},
+                    onResetPassword = {},
+                    onSignedOut = {},
+                )
+            }
+        }
+
+        waitForText("member@example.test")
+        compose.onNodeWithText("Test on locked screen").performScrollTo().performClick()
+        waitForText("Lock your phone now. The test alert is due in about 15 seconds.")
+        compose.onNodeWithText("Test on locked screen").performScrollTo().performClick()
+        waitForText("Could not schedule the test alert. Check your message alert setup and wait a minute before trying again.")
+    }
+
     private fun api() = MobileApiClient("http://127.0.0.1:${server.localPort}")
 
     private fun waitForText(text: String) {
@@ -153,7 +183,7 @@ class AccountAlertSettingsJourneyTest {
         }
     }
 
-    private fun respondToAccountRequest(payload: String) {
+    private fun respondToAccountRequest(payload: String, alertTestResponses: List<String> = emptyList()) {
         responder = thread(isDaemon = true, name = "account-alert-settings-fixture") {
             try {
                 val socket = try {
@@ -181,6 +211,18 @@ class AccountAlertSettingsJourneyTest {
                     }
                 }
                 activeSocket.compareAndSet(socket, null)
+                for (response in alertTestResponses) {
+                    server.accept().use { testSocket ->
+                        activeSocket.set(testSocket)
+                        testSocket.soTimeout = 5_000
+                        val input = testSocket.getInputStream()
+                        check(readLine(input) == "POST /api/users/unified-push/test HTTP/1.1")
+                        while (!readLine(input).isNullOrEmpty()) Unit
+                        testSocket.getOutputStream().write(
+                            "HTTP/1.1 $response\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".toByteArray(),
+                        )
+                    }
+                }
             } catch (error: IOException) {
                 if (!server.isClosed) throw error
             } finally {

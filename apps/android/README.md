@@ -64,11 +64,11 @@ Signed-in members can opt in under Account → Message alerts. The phone needs a
 installed [UnifiedPush distributor](https://unifiedpush.org/users/distributors/),
 such as ntfy, and Android notification permission. The app asks the member to
 choose a distributor, then registers a Web Push endpoint with Trustroots.
-Email reminders continue whether or not message alerts are enabled. An alert
-appears after the first unread-message reminder, around ten minutes after the
-message was sent, and shows only generic text on the lock screen. It opens the
-conversation when tapped. The APK does not use Firebase or Google Play
-services for message delivery.
+Email reminders continue whether or not message alerts are enabled. Trustroots
+queues a generic alert when a new message arrives, and tapping it opens the
+conversation. Once the distributor is registered, choose **Test on locked
+screen**, then lock the phone. The test alert is due in about 15 seconds.
+The APK does not use Firebase or Google Play services for message delivery.
 
 The server requires `TRUSTROOTS_WEB_PUSH_VAPID_PUBLIC_KEY`,
 `TRUSTROOTS_WEB_PUSH_VAPID_PRIVATE_KEY`, and
