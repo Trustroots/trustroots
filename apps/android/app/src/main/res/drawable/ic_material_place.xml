@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Material icon adapted from AndroidX Compose 1.7.8. See src/main/resources/META-INF/trustroots-material-icons-LICENSE.txt. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M12 2 C8.13 2 5 5.13 5 9 c0 5.25 7 13 7 13 s7 -7.75 7 -13 c0 -3.87 -3.13 -7 -7 -7 Z M12 11.5 c-1.38 0 -2.5 -1.12 -2.5 -2.5 s1.12 -2.5 2.5 -2.5 s2.5 1.12 2.5 2.5 s-1.12 2.5 -2.5 2.5 Z" />
+</vector>

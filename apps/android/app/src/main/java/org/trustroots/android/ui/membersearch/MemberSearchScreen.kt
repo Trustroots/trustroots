@@ -12,9 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.PersonSearch
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -33,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -127,7 +125,7 @@ internal fun MemberSearchScreen(
                 verticalArrangement = Arrangement.Center,
             ) {
                 Icon(
-                    Icons.Default.PersonSearch,
+                    painterResource(R.drawable.ic_material_person_search),
                     null,
                     modifier = Modifier.size(72.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
@@ -146,7 +144,7 @@ internal fun MemberSearchScreen(
                 if (onSwitchToMap != null) {
                     HorizontalDivider(Modifier.padding(vertical = 24.dp))
                     TextButton(onClick = onSwitchToMap) {
-                        Icon(Icons.Default.Place, contentDescription = null)
+                        Icon(painterResource(R.drawable.ic_material_place), contentDescription = null)
                         Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.screen_switch_to_map_search))
                     }

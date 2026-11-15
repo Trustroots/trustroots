@@ -28,14 +28,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MultiChoiceSegmentedButtonRow
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import org.trustroots.android.ui.common.SubmittedSearchField
@@ -335,7 +332,7 @@ internal fun HostMapScreen(
                     showFilters = !showFilters
                     if (showFilters && circles.isEmpty()) mapViewModel.onEvent(HostMapEvent.CirclesRequested)
                 }, modifier = Modifier.testTag("openFilters")) {
-                    Icon(Icons.Default.FilterList, if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(painterResource(R.drawable.ic_material_filter_list), if (showFilters) hideFiltersLabel else showFiltersLabel, tint = if (showFilters) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             if (showSuggestions) suggestions.forEach { suggestion ->
@@ -368,7 +365,7 @@ internal fun HostMapScreen(
                             FilterChip(
                                 selectedCircleIDs.isNotEmpty(),
                                 onClick = { circleMenuOpen = true },
-                                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
+                                trailingIcon = { Icon(painterResource(R.drawable.ic_material_arrow_drop_down), null) },
                                 label = {
                                     Text(
                                         when (selectedCircleIDs.size) {
@@ -393,7 +390,7 @@ internal fun HostMapScreen(
                                         .testTag("circleFilterOption-all")
                                         .semantics { selected = selectedCircleIDs.isEmpty() },
                                     trailingIcon = {
-                                        if (selectedCircleIDs.isEmpty()) Icon(Icons.Default.Check, contentDescription = null)
+                                        if (selectedCircleIDs.isEmpty()) Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                                     },
                                     onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(circleIDs = emptySet()))); circleMenuOpen = false },
                                 )
@@ -404,7 +401,7 @@ internal fun HostMapScreen(
                                             .testTag("circleFilterOption-${circle.id}")
                                             .semantics { selected = circle.id in selectedCircleIDs },
                                         trailingIcon = {
-                                            if (circle.id in selectedCircleIDs) Icon(Icons.Default.Check, contentDescription = null)
+                                            if (circle.id in selectedCircleIDs) Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                                         },
                                         onClick = {
                                             mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(circleIDs = if (circle.id in selectedCircleIDs) selectedCircleIDs - circle.id else selectedCircleIDs + circle.id)))
@@ -418,7 +415,7 @@ internal fun HostMapScreen(
                             FilterChip(
                                 selectedLanguages.isNotEmpty(),
                                 onClick = { languageMenuOpen = true },
-                                trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
+                                trailingIcon = { Icon(painterResource(R.drawable.ic_material_arrow_drop_down), null) },
                                 label = {
                                     Text(
                                         if (selectedLanguages.isEmpty()) spokenLanguagesLabel
@@ -433,7 +430,7 @@ internal fun HostMapScreen(
                                         .testTag("languageFilterOption-any")
                                         .semantics { selected = selectedLanguages.isEmpty() },
                                     trailingIcon = {
-                                        if (selectedLanguages.isEmpty()) Icon(Icons.Default.Check, contentDescription = null)
+                                        if (selectedLanguages.isEmpty()) Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                                     },
                                     onClick = { mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(languages = emptySet()))); languageMenuOpen = false },
                                 )
@@ -446,7 +443,7 @@ internal fun HostMapScreen(
                                             .testTag("languageFilterOption-$code")
                                             .semantics { selected = code in selectedLanguages },
                                         trailingIcon = {
-                                            if (code in selectedLanguages) Icon(Icons.Default.Check, contentDescription = null)
+                                            if (code in selectedLanguages) Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                                         },
                                         onClick = {
                                             mapViewModel.onEvent(HostMapEvent.FiltersChanged(mapState.filters.copy(languages = if (code in selectedLanguages) selectedLanguages - code else selectedLanguages + code)))

@@ -7,10 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.PersonSearch
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -31,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -74,15 +71,19 @@ internal fun SearchModeMenu(tab: Int, onSelect: (Int) -> Unit) {
     Box {
         IconButton(onClick = { expanded = true }) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(if (tab == 0) Icons.Default.Place else Icons.Default.PersonSearch, searchMode)
-                Icon(Icons.Default.ArrowDropDown, null)
+                val icon = if (tab == 0) R.drawable.ic_material_place else R.drawable.ic_material_person_search
+                Icon(painterResource(icon), searchMode)
+                Icon(painterResource(R.drawable.ic_material_arrow_drop_down), null)
             }
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             listOf(hostsMap, members).forEachIndexed { index, label ->
                 DropdownMenuItem(
                     text = { Text(label) },
-                    leadingIcon = { Icon(if (index == 0) Icons.Default.Place else Icons.Default.PersonSearch, null) },
+                    leadingIcon = {
+                        val icon = if (index == 0) R.drawable.ic_material_place else R.drawable.ic_material_person_search
+                        Icon(painterResource(icon), null)
+                    },
                     onClick = { expanded = false; onSelect(index) },
                 )
             }

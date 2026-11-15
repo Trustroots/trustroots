@@ -13,9 +13,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -35,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -252,7 +250,7 @@ internal fun EditProfileScreen(
             enabled = !state.isSaving,
             label = { Text(languagesLabel) },
             placeholder = { Text(chooseLanguagesLabel) },
-            trailingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+            trailingIcon = { Icon(painterResource(R.drawable.ic_material_edit), contentDescription = null) },
             interactionSource = languageInteractionSource,
             modifier = Modifier
               .fillMaxWidth()
@@ -271,7 +269,7 @@ internal fun EditProfileScreen(
                   .testTag("editProfileLanguageOption-$code")
                   .semantics { selected = code in state.languages },
                 trailingIcon = {
-                  if (code in state.languages) Icon(Icons.Default.Check, contentDescription = null)
+                  if (code in state.languages) Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                 },
                 onClick = { viewModel.onEvent(EditProfileEvent.LanguageToggled(code)) },
               )

@@ -8,9 +8,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -21,11 +18,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import org.trustroots.android.R
 
 @Composable
 internal fun LiveFilterField(
@@ -42,7 +41,7 @@ internal fun LiveFilterField(
         singleLine = true,
         shape = CircleShape,
         colors = searchFieldColors(),
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+        leadingIcon = { Icon(painterResource(R.drawable.ic_material_search), contentDescription = null) },
         trailingIcon = {
             ClearSearchButton(value, clearLabel) { onValueChange("") }
         },
@@ -84,7 +83,7 @@ internal fun SubmittedSearchField(
                     shape = CircleShape,
                     modifier = Modifier.size(48.dp).testTag("submittedSearchButton"),
                 ) {
-                    Icon(Icons.Default.Search, contentDescription = searchLabel)
+                    Icon(painterResource(R.drawable.ic_material_search), contentDescription = searchLabel)
                 }
             }
         },
@@ -96,7 +95,7 @@ internal fun SubmittedSearchField(
 private fun ClearSearchButton(value: String, label: String, onClear: () -> Unit) {
     if (value.isNotEmpty()) {
         IconButton(onClick = onClear, modifier = Modifier.size(48.dp)) {
-            Icon(Icons.Default.Close, contentDescription = label)
+            Icon(painterResource(R.drawable.ic_material_close), contentDescription = label)
         }
     }
 }

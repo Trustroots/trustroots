@@ -2,6 +2,7 @@
 
 package org.trustroots.android.ui.menu
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,16 +19,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.PersonSearch
-import androidx.compose.material.icons.filled.Public
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -125,13 +117,13 @@ internal fun MenuScreen(
             )
         }
         Spacer(Modifier.height(12.dp))
-        MenuLink(editProfile, Icons.Default.Edit, modifier = menuLinkModifier, openEditProfile)
-        MenuLink(host, Icons.Default.Home,modifier = menuLinkModifier,  openHost)
-        MenuLink(nostroots, Icons.Default.Public, modifier = menuLinkModifier, openNostroots)
-        MenuLink(contacts, Icons.Default.People, modifier = menuLinkModifier, openContacts)
-        MenuLink(findPeople, Icons.Default.PersonSearch, modifier = menuLinkModifier, openFindPeople)
-        MenuLink(circles, Icons.Default.Groups, modifier = menuLinkModifier, openCircles)
-        MenuLink(account, Icons.Default.Settings, modifier = menuLinkModifier, openAccount)
+        MenuLink(editProfile, R.drawable.ic_material_edit, modifier = menuLinkModifier, openEditProfile)
+        MenuLink(host, R.drawable.ic_material_home, modifier = menuLinkModifier, openHost)
+        MenuLink(nostroots, R.drawable.ic_material_public, modifier = menuLinkModifier, openNostroots)
+        MenuLink(contacts, R.drawable.ic_material_people, modifier = menuLinkModifier, openContacts)
+        MenuLink(findPeople, R.drawable.ic_material_person_search, modifier = menuLinkModifier, openFindPeople)
+        MenuLink(circles, R.drawable.ic_material_groups, modifier = menuLinkModifier, openCircles)
+        MenuLink(account, R.drawable.ic_material_settings, modifier = menuLinkModifier, openAccount)
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Text(
             stringResource(R.string.screen_info_and_support),
@@ -183,17 +175,18 @@ internal fun MenuScreen(
     }
 }
 
-private fun infoAndSupportIcon(id: String) =
+@DrawableRes
+private fun infoAndSupportIcon(id: String): Int =
     if (id == "contact" || id == "faq") {
-        Icons.AutoMirrored.Filled.HelpOutline
+        R.drawable.ic_material_help_outline_mirrored
     } else {
-        Icons.Default.Info
+        R.drawable.ic_material_info
     }
 
 @Composable
 private fun MenuLink(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    @DrawableRes icon: Int,
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
@@ -205,7 +198,7 @@ private fun MenuLink(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = foregroundColor)
+        Icon(painterResource(icon), contentDescription = null, tint = foregroundColor)
         Text(
             label,
             modifier = Modifier

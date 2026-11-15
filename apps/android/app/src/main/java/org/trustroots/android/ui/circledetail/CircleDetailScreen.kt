@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -38,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -193,7 +192,7 @@ internal fun CircleDetailContent(
                                 modifier = Modifier.size(48.dp).testTag("circleDetailBack"),
                             ) {
                                 Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    painterResource(R.drawable.ic_material_arrow_back),
                                     contentDescription = stringResource(R.string.back),
                                     tint = colorResource(R.color.artwork_on_scrim),
                                 )
