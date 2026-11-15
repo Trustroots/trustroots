@@ -7,7 +7,9 @@ import type {
   AdminExperienceChangeSearchExperience,
 } from '@/modules/admin/shared/admin-experience-change';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+);
 
 const axiosMock = jest.mocked(axios);
 const AxiosHeaders =

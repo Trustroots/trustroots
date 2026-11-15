@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from '../../../core/client/api/http-client.js';
 import type { StaffBlocker } from '../../shared/staff-blockers';
 
 export async function getStaffBlockers(): Promise<StaffBlocker[]> {
