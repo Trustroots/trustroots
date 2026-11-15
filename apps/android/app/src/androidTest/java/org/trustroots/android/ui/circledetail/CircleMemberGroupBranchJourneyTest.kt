@@ -1,7 +1,10 @@
 package org.trustroots.android.ui.circledetail
 
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -84,12 +87,12 @@ class CircleMemberGroupBranchJourneyTest {
             }
         }
 
-        compose.onNodeWithText("calm-lynx").assertIsDisplayed()
+        compose.onAllNodesWithText("@calm-lynx").assertCountEquals(1)
         compose.onNodeWithText("@calm-lynx").assertIsDisplayed()
         compose.onNodeWithText("Nameless Neighbour").assertIsDisplayed()
         compose.onNodeWithText("Quiet Fox").assertIsDisplayed()
 
-        compose.onNodeWithTag("circleMember-null").performClick()
+        compose.onNodeWithTag("circleMember-null").assertHasNoClickAction()
         assertEquals("Rows without a username remain inert", emptyList<String>(), openedProfiles)
 
         compose.onNodeWithTag("circleMember-calm-lynx").performClick()

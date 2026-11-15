@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
@@ -93,7 +94,7 @@ class CircleMemberSparseGroupsJourneyTest {
                 active = emptyList(),
             )
         }
-        compose.onNodeWithText("quiet-marten").assertIsDisplayed()
+        compose.onAllNodesWithText("@quiet-marten").assertCountEquals(1)
         compose.onNodeWithText("@quiet-marten").assertIsDisplayed()
         compose.onNodeWithTag("circleMember-quiet-marten").performClick()
         org.junit.Assert.assertEquals("quiet-marten", openedProfile.get())

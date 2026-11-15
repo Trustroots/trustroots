@@ -334,12 +334,15 @@ private fun CircleMemberGroup(
         )
         members.forEach { member ->
             val username = member.username
+            val profileAction = if (username == null) Modifier else Modifier.clickable {
+                onOpenProfile(username)
+            }
             MemberIdentity(
                 api = api,
                 session = session,
                 member = member,
                 modifier = Modifier.fillMaxWidth()
-                    .clickable(enabled = username != null) { username?.let(onOpenProfile) }
+                    .then(profileAction)
                     .padding(vertical = 12.dp)
                     .testTag("circleMember-$username"),
             )
