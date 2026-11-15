@@ -387,9 +387,12 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     ]);
   });
   it('does not send when Web Push is disabled', async function () {
+    await push.register(user._id, registration);
     config.webPush.privateKey = '';
+    const lookup = sinon.spy(Registration, 'find');
     const sent = sinon.stub(webPush, 'sendNotification');
     await push.notifyUnread(user._id, other._id);
+    lookup.called.should.equal(false);
     sent.called.should.equal(false);
   });
 });
