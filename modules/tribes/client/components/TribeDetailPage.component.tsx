@@ -199,13 +199,6 @@ export default function TribeDetailPage({
                   {tribe.label}
                 </h2>
                 <span className="tribe-meta">{countInfo}</span>
-                {tribe.description && (
-                  <RichText
-                    className="lead tribe-meta"
-                    content={tribe.description}
-                    allowLinks
-                  />
-                )}
                 {user && !!tribe.organisers?.length && (
                   <section aria-label={t('Circle organisers')}>
                     <h3>{t('Circle organisers')}</h3>
@@ -219,6 +212,13 @@ export default function TribeDetailPage({
                       ))}
                     </ul>
                   </section>
+                )}
+                {tribe.description && (
+                  <RichText
+                    className="lead tribe-meta"
+                    content={tribe.description}
+                    allowLinks
+                  />
                 )}
                 {!user && (
                   <p className="lead tribe-intro">
