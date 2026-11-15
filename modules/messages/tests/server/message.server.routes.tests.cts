@@ -17,6 +17,7 @@ const request = require('supertest');
 const moment = require('moment');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const sinon: typeof import('sinon') = require('sinon');
+const winston: typeof import('winston') = require('winston');
 const push: typeof import('../../../users/server/services/unified-push.server.service.mjs').default = require('../../../users/server/services/unified-push.server.service.mjs');
 const {
   webPush,
@@ -131,6 +132,7 @@ describe('Message CRUD tests', function () {
       const sent = sinon.stub(webPush, 'sendNotification').resolves();
       // Run the real push processor without starting unrelated recurring jobs.
       sinon.stub(agenda, 'every').resolves();
+      await User.updateOne({ _id: userToId }, { blocked: null });
       await push.register(userFromId, {
         ...registration,
         endpoint: 'https://ntfy.sh/anonymous-sender-device',
@@ -174,6 +176,7 @@ describe('Message CRUD tests', function () {
       const schedule = sinon
         .stub(agenda, 'schedule')
         .rejects(new Error('Agenda unavailable'));
+      const log = sinon.stub(winston.Logger.prototype, 'log');
 
       const response = await agent
         .post('/api/messages')
@@ -182,6 +185,13 @@ describe('Message CRUD tests', function () {
       schedule.calledOnce.should.equal(true);
       const saved = await Message.findById(String(response.body._id));
       should(saved?.content).equal(message.content);
+      const warning = 'Could not queue Android message notification.';
+      const entry = log.getCalls().find(call => call.args[1] === warning);
+      should(entry?.args).deepEqual([
+        'error',
+        warning,
+        { error: { name: 'Error' } },
+      ]);
     });
 
     it('skips scheduling for members without a registration', async function () {

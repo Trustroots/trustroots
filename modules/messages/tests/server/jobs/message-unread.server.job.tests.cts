@@ -167,7 +167,10 @@ describe('Job: message unread', function () {
       const { default: config } =
         await import('../../../../../config/config.mts');
       const key = sinon.stub(config.webPush, 'privateKey').value('');
+      const lookup = sinon.spy(Message, 'findOne');
       await deliverMessagePush(data);
+      lookup.called.should.equal(false);
+      lookup.restore();
       key.restore();
 
       for (const state of [
@@ -366,42 +369,33 @@ describe('Job: message unread', function () {
       .catch(err => done(err));
   });
 
-  it('Suppress reminder emails when sender is shadowbanned', function (done) {
-    message.created = moment()
-      .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-      .toDate();
-    message
-      .save()
-      .then(function () {
-        userFrom.roles = ['user', 'shadowban'];
-        userFrom
-          .save()
-          .then(function () {
-            messageUnreadJobHandler({}, function (err?: Error | null) {
-              if (err) return done(err);
-
-              jobs.length.should.equal(0);
-              Message.find({})
-                .exec()
-                .then(function (messages) {
-                  required(
-                    required(messages[0]).notificationCount,
-                  ).should.equal(1);
-                  done();
-                })
-                .catch(function (err) {
-                  if (typeof done === 'function') return done(err);
-                  throw err;
-                });
-            });
-          })
-          .catch(function (err) {
-            if (typeof done === 'function') return done(err);
-            throw err;
-          });
-      })
-      .catch(err => done(err));
-  });
+  for (const [member, role] of [
+    ['sender', 'shadowban'],
+    ['recipient', 'suspended'],
+  ] as const) {
+    it(`suppresses reminders when the ${member} has the ${role} role`, async function () {
+      message.created = new Date(Date.now() - 601_000);
+      await message.save();
+      const restricted = member === 'sender' ? userFrom : userTo;
+      restricted.roles = ['user', role];
+      await restricted.save();
+      const sendReminder = sinon.spy(emailService, 'sendMessagesUnread');
+      try {
+        await new Promise<void>((resolve, reject) => {
+          messageUnreadJobHandler({}, (err?: Error | null) =>
+            err ? reject(err) : resolve(),
+          );
+        });
+        sendReminder.called.should.equal(false);
+        jobs.length.should.equal(0);
+        required(
+          (await Message.findById(message._id))?.notificationCount,
+        ).should.equal(1);
+      } finally {
+        sendReminder.restore();
+      }
+    });
+  }
 
   it('rechecks member restrictions and recipient blocks at push delivery', async function () {
     const pushService = require('./../../../../users/server/services/unified-push.server.service.mjs');
@@ -420,7 +414,13 @@ describe('Job: message unread', function () {
         { _id: userFromId },
         { roles: ['user', 'shadowban'] },
       );
+      const members = sinon.spy(User, 'find');
       await deliverMessagePush(data);
+      members.firstCall.args.should.deepEqual([
+        { _id: { $in: [userFromId, userToId] } },
+        'roles blocked',
+      ]);
+      members.restore();
       await User.updateOne({ _id: userFromId }, { roles: ['user'] });
       await User.updateOne({ _id: userToId }, { roles: ['user', 'suspended'] });
       await deliverMessagePush(data);
@@ -438,43 +438,6 @@ describe('Job: message unread', function () {
     } finally {
       sinon.restore();
     }
-  });
-
-  it('Suppress reminder emails when recipient is suspended', function (done) {
-    message.created = moment()
-      .subtract(moment.duration({ minutes: 10, seconds: 1 }))
-      .toDate();
-    message
-      .save()
-      .then(function () {
-        userTo.roles = ['user', 'suspended'];
-        userTo
-          .save()
-          .then(function () {
-            messageUnreadJobHandler({}, function (err?: Error | null) {
-              if (err) return done(err);
-
-              jobs.length.should.equal(0);
-              Message.find({})
-                .exec()
-                .then(function (messages) {
-                  required(
-                    required(messages[0]).notificationCount,
-                  ).should.equal(1);
-                  done();
-                })
-                .catch(function (err) {
-                  if (typeof done === 'function') return done(err);
-                  throw err;
-                });
-            });
-          })
-          .catch(function (err) {
-            if (typeof done === 'function') return done(err);
-            throw err;
-          });
-      })
-      .catch(err => done(err));
   });
 
   it('Ignore notification messages from removed users but do not stop processing other notifications', function (done) {

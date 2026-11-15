@@ -124,7 +124,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
   it('schedules a test for the caller’s device and limits repeated requests', async function () {
     const { default: agenda } =
       await import('../../../../config/lib/agenda.mts');
-    const { deliverTest, testPushJobName } =
+    const { deliverTest } =
       await import('../../server/services/unified-push.server.service.mts');
     const schedule = sinon.stub(agenda, 'schedule').resolves();
     const sent = sinon.stub(webPush, 'sendNotification').resolves();
@@ -137,6 +137,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     };
     await agent.post(testPath).send({}).expect(400, invalid);
     await agent.post(testPath).send({ endpoint: '' }).expect(400, invalid);
+    await agent.post(testPath).send({ endpoint: 42 }).expect(400, invalid);
     await agent
       .post(testPath)
       .send({ endpoint: `https://ntfy.sh/${'x'.repeat(2048 - 16)}` })
@@ -164,7 +165,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     sent.called.should.equal(false);
     const [dueAt, jobName, data] = schedule.firstCall.args;
     (dueAt as Date).getTime().should.be.within(before + 15_000, after + 15_000);
-    jobName.should.equal(testPushJobName);
+    jobName.should.equal('send Android test notification');
     const job = data as Parameters<typeof deliverTest>[0];
     const now = Date.now();
     const clock = sinon.stub(Date, 'now').returns(now);
@@ -185,7 +186,15 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     const { default: agenda } =
       await import('../../../../config/lib/agenda.mts');
     const schedule = sinon.stub(agenda, 'schedule').resolves();
-    schedule.onFirstCall().rejects(new Error('Agenda unavailable'));
+    const otherDevice = {
+      ...registration,
+      endpoint: 'https://ntfy.sh/anonymous-device-with-a-pending-test',
+    };
+    await push.register(other._id, otherDevice);
+    (await push.scheduleTest(other._id, otherDevice.endpoint)).should.equal(
+      'scheduled',
+    );
+    schedule.onSecondCall().rejects(new Error('Agenda unavailable'));
     await push.register(user._id, registration);
     const path = '/api/users/unified-push/test';
     const body = { endpoint: registration.endpoint };
@@ -193,8 +202,11 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       .post(path)
       .send(body)
       .expect(500, { message: 'Could not schedule the test notification.' });
+    (await push.scheduleTest(other._id, otherDevice.endpoint)).should.equal(
+      'limited',
+    );
     await agent.post(path).send(body).expect(202);
-    schedule.callCount.should.equal(2);
+    schedule.callCount.should.equal(3);
   });
 
   it('rejects unsafe endpoints and invalid keys', async function () {
@@ -253,6 +265,7 @@ describe('UnifiedPush registration and unread-message delivery', function () {
   it('rejects requests without a parsed body', async function () {
     const controller: {
       add(request: Request, response: Response): Promise<unknown>;
+      test(request: Request, response: Response): Promise<unknown>;
     } = require('./../../server/controllers/users.unified-push.server.controller.mjs');
     const response = {
       status: sinon.stub().returnsThis(),
@@ -261,6 +274,16 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     await controller.add({} as Request, response as unknown as Response);
     response.status.calledOnceWithExactly(400).should.equal(true);
     response.json.calledOnce.should.equal(true);
+
+    response.status.resetHistory();
+    response.json.resetHistory();
+    await controller.test({} as Request, response as unknown as Response);
+    response.status.calledOnceWithExactly(400).should.equal(true);
+    response.json
+      .calledOnceWithExactly({
+        message: 'Invalid push endpoint.',
+      })
+      .should.equal(true);
   });
   it('attaches an endpoint to the current account and removes it on opt-out', async function () {
     await push.register(other._id, registration);
