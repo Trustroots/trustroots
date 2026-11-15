@@ -49,13 +49,13 @@ describe('UnifiedPush registration and unread-message delivery', function () {
     config.webPush = originalConfiguration;
     await utils.clearDatabase();
   });
-  it('exposes the service and controller from a fresh module load', function () {
+  it('exposes the service and controller from a fresh module load', async function () {
     const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
-    const keysOf = (path: string) =>
-      Object.keys(mockModule<object>(require.resolve(path), {}));
-    keysOf(
-      '../../server/services/unified-push.server.service.mts',
-    ).should.deepEqual([
+    const freshService = mockModule<typeof push>(
+      require.resolve('../../server/services/unified-push.server.service.mts'),
+      {},
+    );
+    Object.keys(freshService).should.deepEqual([
       'pushConfiguration',
       'validRegistration',
       'register',
@@ -64,9 +64,24 @@ describe('UnifiedPush registration and unread-message delivery', function () {
       'hasRegistrations',
       'scheduleTest',
     ]);
-    keysOf(
-      '../../server/controllers/users.unified-push.server.controller.mts',
-    ).should.deepEqual(['configuration', 'add', 'remove', 'test']);
+    const controller = mockModule<object>(
+      require.resolve('../../server/controllers/users.unified-push.server.controller.mts'),
+      {},
+    );
+    Object.keys(controller).should.deepEqual([
+      'configuration',
+      'add',
+      'remove',
+      'test',
+    ]);
+
+    const { default: agenda } =
+      await import('../../../../config/lib/agenda.mts');
+    const schedule = sinon.stub(agenda, 'schedule').resolves();
+    await freshService.register(user._id, registration);
+    await freshService.scheduleTest(user._id, registration.endpoint);
+    schedule.calledOnce.should.equal(true);
+    schedule.firstCall.args[1].should.equal('send Android test notification');
   });
   it('connects the transport to the real web-push delivery functions', function () {
     const mockModule: typeof import('../../../../testutils/server/mock-module.mts').default = require('../../../../testutils/server/mock-module');
