@@ -2,7 +2,6 @@ import RichText from '@/modules/core/client/components/RichText';
 import { Button } from '@trustroots/ui/Button';
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import styled, { css } from 'styled-components';
 
 import LoadingIndicator from '@/modules/core/client/components/LoadingIndicator';
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
@@ -23,26 +22,8 @@ const resourceLinkProps = {
 };
 
 export function getTribeHeaderBackgroundStyle(tribe: TribeSummary) {
-  const style = getCircleBackgroundStyle(tribe, '1400x900');
-
-  return css`
-    ${
-      style.backgroundImage ? `background-image: ${style.backgroundImage};` : ''
-    }
-    ${
-      style.backgroundColor ? `background-color: ${style.backgroundColor};` : ''
-    }
-  `;
+  return getCircleBackgroundStyle(tribe, '1400x900');
 }
-
-const Header = styled.section.attrs({
-  className: 'board tribe-image tribe-header' as string,
-})<{ tribe: TribeSummary }>`
-  &&& {
-    position: relative;
-    ${({ tribe }) => getTribeHeaderBackgroundStyle(tribe)}
-  }
-`;
 
 function circleWikiUrl(tribe: TribeSummary | null): string {
   const slug = tribe?.slug;
@@ -161,9 +142,12 @@ export default function TribeDetailPage({
 
   return (
     <>
-      <Header
-        tribe={tribe}
-        className={`${user ? '' : 'is-guest'} ${
+      <section
+        style={{
+          position: 'relative',
+          ...getTribeHeaderBackgroundStyle(tribe),
+        }}
+        className={`board tribe-image tribe-header ${user ? '' : 'is-guest'} ${
           hasLocationMap ? 'has-location-map' : ''
         } ${tribe.slug === 'radio' ? 'has-radio-player' : ''}`}
       >
@@ -350,7 +334,7 @@ export default function TribeDetailPage({
             </small>
           )}
         </div>
-      </Header>
+      </section>
       {tribe.slug === 'radio' && (
         <RadioCircle
           key={user ? `${user._id}:${user.nostrNpub || ''}` : 'visitor'}

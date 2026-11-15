@@ -1,7 +1,7 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import styled from 'styled-components';
+import './report.css';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -15,10 +15,6 @@ interface ReportProps {
   reportMessage: string;
 }
 
-const ReportContainer = styled.div`
-  margin-top: 50px;
-`;
-
 export default function Report({
   onChangeReport,
   onChangeReportMessage,
@@ -30,7 +26,7 @@ export default function Report({
   };
 
   return (
-    <ReportContainer>
+    <div className="experience-report">
       <p>
         {
           t(
@@ -65,6 +61,6 @@ export default function Report({
           </span>
         </>
       )}
-    </ReportContainer>
+    </div>
   );
 }

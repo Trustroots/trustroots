@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
 
 import React from 'react';
-import styled from 'styled-components';
+import './experience.css';
 
 // Internal dependencies
 import { DAYS_TO_REPLY } from '../../utils/constants';
@@ -14,70 +14,6 @@ import Meta from './Meta';
 import TimeAgo from '@/modules/core/client/components/TimeAgo';
 import UserLink from '@/modules/users/client/components/UserLink';
 import type { Experience as ExperienceModel } from '../../../shared/experience';
-
-const PendingNotice = styled.div`
-  font-style: italic;
-  padding: 20px 0;
-`;
-
-const PendingNoticePlaceholder = styled.div`
-  color: #ccc;
-  filter: blur(4px);
-  user-select: none;
-  padding: 0 0 10px 0;
-`;
-
-const FeedbackPublic = styled.div`
-  max-width: 600px;
-`;
-
-const Response = styled.div`
-  border-top: 1px solid #ccc;
-  margin: 20px 0 0 20px;
-  padding: 20px 0 0 0;
-
-  @media (max-width: 480px) {
-    margin-left: 10px;
-  }
-`;
-
-const Header = styled.div`
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap-reverse;
-  line-height: 1.3em;
-
-  .avatar {
-    margin-right: 10px;
-  }
-`;
-
-const UserMeta = styled.div`
-  display: flex;
-  flex-direction: column;
-`;
-
-const ExperienceLink = styled.a`
-  align-self: start;
-  margin-left: auto;
-  color: #333;
-
-  @media (max-width: 480px) {
-    width: 100%;
-    margin-left: 0;
-    margin-bottom: 10px;
-  }
-`;
-
-const UserLinkStyled = styled(
-  UserLink as React.ComponentType<{
-    user: ExperienceModel['userFrom'];
-    className?: string;
-  }>,
-)`
-  font-weight: bold;
-  margin-right: 5px;
-`;
 
 export default function Experience({
   experience,
@@ -116,10 +52,10 @@ export default function Experience({
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body">
-        <Header>
+        <div className="experience-header">
           <Avatar user={userFrom} size={36} />
-          <UserMeta>
-            <UserLinkStyled user={userFrom} />
+          <div className="experience-user-meta">
+            <UserLink user={userFrom} className="experience-user-link" />
             <span className="muted">
               {userFrom?.gender && `${getGender(userFrom.gender)}. `}
               {userFrom?.created &&
@@ -127,29 +63,33 @@ export default function Experience({
                   date: new Date(userFrom.created),
                 }) as string)}
             </span>
-          </UserMeta>
-          <ExperienceLink
+          </div>
+          <a
+            className="experience-link"
             href={`/profile/${userTo.username}/experiences#${_id}`}
           >
             <TimeAgo date={createdDate} />
-          </ExperienceLink>
-        </Header>
+          </a>
+        </div>
         {!isPublicExperience && feedbackPublic === undefined && (
           <>
-            <PendingNotice>
-              <PendingNoticePlaceholder aria-hidden="true">
+            <div className="experience-pending-notice">
+              <div
+                className="experience-pending-placeholder"
+                aria-hidden="true"
+              >
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
                 eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
                 enim ad minim veniam, quis nostrud exercitation ullamco laboris
                 nisi ut aliquip ex ea commodo consequat...
-              </PendingNoticePlaceholder>
+              </div>
               {
                 t(
                   'You have {{count}} days left to respond before their experience will become public.',
                   { count: getDaysLeft(createdDate) },
                 ) as string
               }
-            </PendingNotice>
+            </div>
             {userFrom?.username && (
               <p>
                 <Button
@@ -165,33 +105,37 @@ export default function Experience({
           </>
         )}
         <Meta interactions={interactions} recommend={recommend} />
-        {feedbackPublic && <FeedbackPublic>{feedbackPublic}</FeedbackPublic>}
+        {feedbackPublic && (
+          <div className="experience-feedback-public">{feedbackPublic}</div>
+        )}
         {response && (
-          <Response>
-            <Header>
+          <div className="experience-response">
+            <div className="experience-header">
               <Avatar user={userTo} size={24} />
-              <UserLinkStyled user={userTo} />
+              <UserLink user={userTo} className="experience-user-link" />
               (<TimeAgo date={new Date(response.created)} />)
-            </Header>
+            </div>
             <Meta
               interactions={response.interactions}
               recommend={response.recommend}
             />
             {response.feedbackPublic && (
-              <FeedbackPublic>{response.feedbackPublic}</FeedbackPublic>
+              <div className="experience-feedback-public">
+                {response.feedbackPublic}
+              </div>
             )}
-          </Response>
+          </div>
         )}
         {!isPublicExperience && feedbackPublic !== undefined && (
           <>
-            <PendingNotice>
+            <div className="experience-pending-notice">
               {
                 t(
                   'Your experience will become public in {{count}} days, or when they share their experience with you.',
                   { count: getDaysLeft(createdDate) },
                 ) as string
               }
-            </PendingNotice>
+            </div>
           </>
         )}
       </div>

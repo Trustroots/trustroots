@@ -1,0 +1,11 @@
+.recommend-sad-notice {
+  margin: 30px 0;
+}
+.recommendation-divider {
+  height: 20px;
+  width: 1px;
+  background: #ccc;
+  display: inline-block;
+  float: left;
+  margin: 12px 5px 0;
+}

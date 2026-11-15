@@ -2,7 +2,7 @@
 import { ToggleGroup, ToggleGroupItem } from '@trustroots/ui/ToggleGroup';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import styled from 'styled-components';
+import './recommend.css';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -20,19 +20,6 @@ interface RecommendProps {
   onChangeReport: () => void;
   onChangeReportMessage: (message: string) => void;
 }
-
-const SadNotice = styled.div`
-  margin: 30px 0;
-`;
-
-const RecommendationDivider = styled.div`
-  height: 20px;
-  width: 1px;
-  background: #ccc;
-  display: inline-block;
-  float: left;
-  margin: 12px 5px 0 5px;
-`;
 
 export default function Recommend({
   primaryInteraction,
@@ -75,20 +62,20 @@ export default function Recommend({
         >
           <ToggleGroupItem value="yes">{t('Yes') as string}</ToggleGroupItem>
           <ToggleGroupItem value="no">{t('No') as string}</ToggleGroupItem>
-          <RecommendationDivider />
+          <div className="recommendation-divider" />
           <ToggleGroupItem value="unknown">
             {t('Skip') as string}
           </ToggleGroupItem>
         </ToggleGroup>
         {recommend === 'no' && (
-          <SadNotice className="lead">
+          <div className="recommend-sad-notice lead">
             {
               t(
                 "We're sad to hear you didn't have a great experience using Trustroots!",
               ) as string
             }
             {' 😞'}
-          </SadNotice>
+          </div>
         )}
         <Report
           onChangeReport={onChangeReport}

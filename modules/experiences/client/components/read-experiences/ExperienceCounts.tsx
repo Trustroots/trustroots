@@ -1,27 +1,11 @@
 // Internal dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import styled from 'styled-components';
+import './experience-counts.css';
 
 // External dependencies
 import Icon from '@/modules/core/client/components/Icon';
 import type { Experience } from '../../../shared/experience';
-
-const Summary = styled.div`
-  margin: 20px 0;
-`;
-
-const SummarySentence = styled.p`
-  margin-bottom: 10px;
-`;
-
-const SummaryIcon = styled(Icon).attrs(() => ({
-  // Props are static here so that we don't need to repeat them later in the code
-  className: 'text-muted',
-  fixedWidth: true,
-}))`
-  margin-right: 7px;
-`;
 
 // NOTE: The array of `experiences` are all experiences where the user being
 // displayed is in the `userTo` field of the experience. So they are experience
@@ -64,7 +48,7 @@ export default function ExperienceCounts({
       }) as string;
     }
 
-    return <SummarySentence className="lead">{summary}</SummarySentence>;
+    return <p className="experience-counts-sentence lead">{summary}</p>;
   };
 
   // Details about recommendations.
@@ -99,7 +83,9 @@ export default function ExperienceCounts({
 
     return summaries.length > 0 ? (
       <p>
-        <SummaryIcon
+        <Icon
+          className="text-muted experience-counts-icon"
+          fixedWidth
           icon={nonRecommendCount > 0 ? 'close' : 'ok'}
           size={undefined}
         />
@@ -160,7 +146,12 @@ export default function ExperienceCounts({
 
     return (
       <p>
-        <SummaryIcon icon="tree" size={undefined} />
+        <Icon
+          className="text-muted experience-counts-icon"
+          fixedWidth
+          icon="tree"
+          size={undefined}
+        />
         {interactions.join(' ')}
       </p>
     );
@@ -210,18 +201,23 @@ export default function ExperienceCounts({
 
     return genderSummary ? (
       <p>
-        <SummaryIcon icon={genderIcon} size={undefined} />
+        <Icon
+          className="text-muted experience-counts-icon"
+          fixedWidth
+          icon={genderIcon}
+          size={undefined}
+        />
         {genderSummary}
       </p>
     ) : null;
   };
 
   return (
-    <Summary>
+    <div className="experience-counts-summary">
       {renderSummarySentence()}
       {totalCount > 1 && renderRecommendationStats()}
       {totalCount > 2 && renderGenderStats()}
       {totalCount > 1 && renderInteractionStats()}
-    </Summary>
+    </div>
   );
 }

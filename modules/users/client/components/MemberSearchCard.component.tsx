@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
 import { Badge } from '@trustroots/ui/Badge';
+import './member-search-card.css';
 
 import MemberIdentity from './MemberIdentity';
 import type { UserProfile } from '../types';
@@ -9,79 +9,6 @@ import type { UserProfile } from '../types';
 type MemberCardUser = React.ComponentProps<typeof MemberIdentity>['user'] &
   Pick<UserProfile, 'username'> &
   Partial<Pick<UserProfile, 'locationLiving' | 'locationFrom' | 'tagline'>>;
-
-const Card = styled.a.attrs({ className: 'member-search-card' })`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-  padding: 16px;
-  border: 1px solid #e5e8e6;
-  border-radius: 12px;
-  background: #fff;
-  color: inherit;
-  overflow-wrap: anywhere;
-  text-decoration: none;
-  transition:
-    border-color 150ms ease,
-    box-shadow 150ms ease,
-    transform 150ms ease;
-  &:hover,
-  &:focus-visible {
-    border-color: #94b8a4;
-    box-shadow: 0 5px 18px rgb(26 68 47 / 10%);
-    color: inherit;
-    text-decoration: none;
-    transform: translateY(-1px);
-  }
-  &:focus-visible {
-    outline: 3px solid rgb(72 130 97 / 35%);
-    outline-offset: 2px;
-  }
-  &[data-compact] {
-    gap: 4px;
-    padding: 10px;
-  }
-`;
-const Details = styled.div.attrs({ className: 'member-search-card-details' })`
-  display: flex;
-  align-self: stretch;
-  min-width: 0;
-  flex-direction: column;
-  gap: 4px;
-  p {
-    margin: 2px 0 0;
-  }
-  &:empty {
-    display: none;
-  }
-  .member-search-card-tagline {
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
-  }
-  ${Card}[data-compact] & {
-    gap: 2px;
-    line-height: 1.3;
-
-    p {
-      margin: 0;
-    }
-  }
-`;
-const Activity = styled.div`
-  margin-top: auto;
-  padding-top: 6px;
-
-  ${Card}[data-compact] & {
-    padding-top: 2px;
-  }
-
-  [data-slot='badge'] {
-    white-space: normal;
-  }
-`;
 
 function highlightMatches(value: string, query: string) {
   const terms = query.match(/[\p{L}\p{N}]+/gu) || [];
@@ -140,7 +67,8 @@ export default function MemberSearchCard({
 }) {
   const { t } = useTranslation('search') as { t: (key: string) => string };
   return (
-    <Card
+    <a
+      className="member-search-card"
       data-compact={compact || undefined}
       href={`/profile/${encodeURIComponent(user.username)}`}
     >
@@ -150,7 +78,7 @@ export default function MemberSearchCard({
         user={user}
         format={value => highlightMatches(value, query)}
       />
-      <Details>
+      <div className="member-search-card-details">
         {user.locationLiving && (
           <p>
             {String(t('Lives in'))}:{' '}
@@ -168,13 +96,13 @@ export default function MemberSearchCard({
           </p>
         )}
         {activityLabel && (
-          <Activity>
+          <div className="member-search-card-activity">
             <Badge variant="outline" intent="neutral">
               {activityLabel}
             </Badge>
-          </Activity>
+          </div>
         )}
-      </Details>
-    </Card>
+      </div>
+    </a>
   );
 }

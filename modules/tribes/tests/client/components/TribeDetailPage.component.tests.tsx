@@ -360,19 +360,17 @@ describe('<TribeDetailPage circle="hitchhikers" />', () => {
     expect(
       await screen.findByRole('heading', { name: 'Hitchhikers' }),
     ).toBeInTheDocument();
-    expect(JSON.stringify(getTribeHeaderBackgroundStyle(tribe))).not.toMatch(
-      /background-image|background-color/,
+    expect(getTribeHeaderBackgroundStyle(tribe)).toEqual({});
+    const styledBackground = getTribeHeaderBackgroundStyle({
+      ...tribe,
+      slug: 'hitchhikers',
+      image: 'circle-photo',
+      color: '123456',
+    });
+    expect(styledBackground.backgroundImage).toContain(
+      '/uploads-circle/hitchhikers/1400x900.',
     );
-    const styledBackground = JSON.stringify(
-      getTribeHeaderBackgroundStyle({
-        ...tribe,
-        slug: 'hitchhikers',
-        image: 'circle-photo',
-        color: '123456',
-      }),
-    );
-    expect(styledBackground).toContain('background-image');
-    expect(styledBackground).toContain('background-color');
+    expect(styledBackground.backgroundColor).toBe('#123456');
   });
 
   it('prompts guests to sign up for the circle', async () => {

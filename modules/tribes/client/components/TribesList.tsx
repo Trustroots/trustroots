@@ -1,33 +1,10 @@
 import React from 'react';
 
-import styled from 'styled-components';
+import './tribes-list.css';
 
 import Tribe from './Tribe';
 import type { MembershipUpdate, TribeSummary } from '../api/tribes.api';
 import type { UserProfile } from '@/modules/users/client/types';
-
-const List = styled.ul.attrs({ className: 'list-unstyled tribes-grid' })`
-  margin: -5px -5px 15px -5px;
-`;
-
-const Item = styled.li`
-  padding: 5px;
-  display: inline-block;
-  vertical-align: bottom;
-
-  // on small screens there is just one column of tribes
-  width: 100%;
-
-  @media (min-width: 616px) {
-    // two columns of tribes
-    width: 50%;
-  }
-
-  @media (min-width: 992px) {
-    // three columns of tribes
-    width: 33.3333%;
-  }
-`;
 
 export default function TribesList({
   tribes,
@@ -39,16 +16,16 @@ export default function TribesList({
   onMembershipUpdated: (data: MembershipUpdate) => void;
 }) {
   return (
-    <List>
+    <ul className="list-unstyled tribes-grid tribes-list">
       {tribes.map(tribe => (
-        <Item key={tribe._id}>
+        <li className="tribes-list-item" key={tribe._id}>
           <Tribe
             tribe={tribe}
             user={user}
             onMembershipUpdated={onMembershipUpdated}
           />
-        </Item>
+        </li>
       ))}
-    </List>
+    </ul>
   );
 }

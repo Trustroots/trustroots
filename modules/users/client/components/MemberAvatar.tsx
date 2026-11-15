@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import styled from 'styled-components';
 
 import Avatar from './Avatar.component';
+import './member-avatar.css';
 import type { UserProfile } from '../types';
 
 type MemberAvatarUser = Partial<
@@ -18,23 +18,6 @@ type MemberAvatarUser = Partial<
     | 'emailHash'
   >
 >;
-
-const Fallback = styled.span<{ $size: number; $hue: number }>`
-  display: inline-flex;
-  width: ${({ $size }) => $size}px;
-  height: ${({ $size }) => $size}px;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  background: ${({ $hue }) => `hsl(${$hue} 32% 91%)`};
-  color: ${({ $hue }) => `hsl(${$hue} 38% 32%)`};
-  font-size: ${({ $size }) => Math.max(14, Math.round($size * 0.34))}px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-`;
 
 function hasProfileImage(user: MemberAvatarUser): boolean {
   switch (user.avatarSource) {
@@ -90,15 +73,21 @@ export default function MemberAvatar({
     );
   }
 
+  const hue = hueFor(user);
   const fallback = (
-    <Fallback
+    <span
       aria-hidden="true"
       className="member-avatar-fallback"
-      $hue={hueFor(user)}
-      $size={size}
+      style={{
+        width: size,
+        height: size,
+        background: `hsl(${hue} 32% 91%)`,
+        color: `hsl(${hue} 38% 32%)`,
+        fontSize: Math.max(14, Math.round(size * 0.34)),
+      }}
     >
       {initialsFor(user)}
-    </Fallback>
+    </span>
   );
 
   return link && user.username ? (
