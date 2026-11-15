@@ -201,11 +201,9 @@ builds, simulator/device journeys, live API mutations, accessibility checks,
 performance measurements or App Store uploads were performed for the assessment.
 Documentation validation results belong in the PR's testing record.
 
-The broader issue remains open. Its build demonstration requires the subsequent
-implementation stages. A viable fallback additionally requires member feature
-parity, secure native integrations, offline behaviour, accessibility, reliable
-device journeys and a repeatable signed iOS release. Record gaps explicitly;
-archive the migration OpenSpec change only when those agreed gates are satisfied.
+A viable fallback requires member feature parity, secure native integrations,
+offline behaviour, accessibility, reliable device journeys and a repeatable
+signed iOS release.
 
 ## First shared member journey pilot
 
@@ -237,8 +235,19 @@ other member's profile and then choose **Send a message**.
 | Device behaviour      | Native host with shared controls and shared navigation                                         | Check VoiceOver, TalkBack, dynamic text, keyboard, screen insets and Back on supported devices                               |
 | Distribution          | Uses the existing Android and iOS debug apps                                                   | Verify pinned Xcode CI, APK/app size and startup, followed by repeatable signing and release                                 |
 
+The focused Android journey passed on a Pixel 8 API 36 emulator. The focused
+iOS journey passed on an iPhone 17 Pro iOS 26.5 simulator using ad-hoc signing.
+The tests exercised sign-in, native handoff, profile and inbox navigation,
+and a rejected reply followed by a successful retry. The iOS run also
+verified Keychain session restoration, reply persistence and sign-out across
+relaunches. Both journeys used local fixture servers.
+
+The local iOS simulator linker reported that a bundled ICU data object targeted
+iOS Simulator 18.5 while the app targets 17.0. The pilot needs runtime checks on
+older supported iOS versions before it becomes a default destination.
+
 Continue the pilot alongside SwiftUI. The next decision should follow
-simulator/device results and a comparison with current native behaviour.
+a device comparison with current native behaviour.
 Allow the existing estimate of 3–6 engineering days for platform verification
 and corrections, then re-estimate the remaining feature work based on those
 results. A fallback also requires the native integrations and parity gates

@@ -4,6 +4,7 @@
 import argparse
 import json
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlsplit
 
 
 MEMBER = {
@@ -34,16 +35,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
     send_attempts = 0
 
     def do_GET(self):  # noqa: N802 - BaseHTTPRequestHandler API
-        if self.path == "/health":
+        route = urlsplit(self.path).path
+        if route == "/health":
             self._json(200, {"status": "ready"})
             return
         if not self._authorised():
             return
-        if self.path.startswith("/api/mobile/v0/profiles/"):
-            username = self.path.rsplit("/", 1)[-1]
-            profile = MEMBER if username == MEMBER["username"] else PARTNER
-            self._json(200, {"profile": profile})
-        elif self.path.startswith("/api/mobile/v0/messages?"):
+        if route == f'/api/mobile/v0/profiles/{MEMBER["username"]}':
+            self._json(200, {"profile": MEMBER})
+        elif route == f'/api/mobile/v0/profiles/{PARTNER["username"]}':
+            self._json(200, {"profile": PARTNER})
+        elif route == "/api/mobile/v0/messages":
             self._json(200, [{
                 "_id": "thread-pilot-1",
                 "message": {"excerpt": self.messages[0]["content"]},
@@ -52,7 +54,7 @@ class FixtureHandler(BaseHTTPRequestHandler):
                 "userFrom": PARTNER,
                 "userTo": MEMBER,
             }])
-        elif self.path.startswith("/api/mobile/v0/messages/member-pilot-partner"):
+        elif route == f'/api/mobile/v0/messages/{PARTNER["_id"]}':
             self._json(200, self.messages)
         else:
             self._json(404, {"message": "Fixture route not found."})

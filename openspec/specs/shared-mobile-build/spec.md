@@ -1,3 +1,10 @@
+# Shared mobile build
+
+## Purpose
+
+Build shared Kotlin and Compose UI in the existing Android and iOS
+applications and verify both platform integrations in continuous integration.
+
 ## Requirements
 
 ### Requirement: Native applications build the shared Compose module
@@ -51,3 +58,28 @@ version.
 - **WHEN** a pull request changes files under `apps/shared`
 - **THEN** CI runs the Android app build and the iOS simulator app build
 - **AND** the existing native test jobs remain enabled
+
+### Requirement: Debug builds can present a shared member journey
+
+Android and iOS debug builds SHALL provide an explicit launch option that opens
+the shared Compose member journey and allows returning to the native app.
+The host SHALL use its existing secure session and authenticated API client.
+
+#### Scenario: Sign in and reply from a profile
+
+- **GIVEN** a signed-out member opens the shared journey
+- **WHEN** they sign in, open an inbox partner's profile and send a reply
+- **THEN** the shared screens show the authenticated profile and conversation
+- **AND** the successful reply appears once in the conversation
+- **AND** the native app can use the same saved session
+
+#### Scenario: Read a conversation from the inbox
+
+- **WHEN** a signed-in member opens a conversation from their inbox
+- **THEN** Compose displays the conversation and can return to the inbox
+
+#### Scenario: A reply fails
+
+- **WHEN** the API rejects a reply
+- **THEN** the shared conversation displays an error and retains the reply for
+  intentional retry
