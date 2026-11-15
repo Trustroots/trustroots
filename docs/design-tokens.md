@@ -6,7 +6,7 @@ and included in both production LTR and RTL stylesheets. The values still come
 from `modules/core/client/less/global-variables.less` and its legacy imports;
 change values there rather than duplicating colour or dimension literals.
 
-CSS, styled-components and React style props can reference the same values:
+Stylesheets and React style props can reference the same values:
 
 ```css
 .example {
