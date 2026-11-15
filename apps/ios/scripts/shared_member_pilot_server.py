@@ -78,13 +78,17 @@ class FixtureHandler(BaseHTTPRequestHandler):
         if self.path == "/api/mobile/v0/auth/signout":
             self._json(200, {})
         elif self.path == "/api/mobile/v0/messages":
+            content = body.get("content")
+            if body.get("userTo") != PARTNER["_id"] or not isinstance(content, str) or not content.strip():
+                self._json(422, {"message": "The fixture expects a reply to the configured partner."})
+                return
             type(self).send_attempts += 1
             if type(self).send_attempts == 1:
                 self._json(503, {"message": "Temporary fixture delivery failure."})
                 return
             message = {
                 "_id": f"message-pilot-reply-{type(self).send_attempts}",
-                "content": body.get("content", ""),
+                "content": content,
                 "userFrom": MEMBER,
             }
             type(self).messages.insert(0, message)

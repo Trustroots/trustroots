@@ -27,6 +27,7 @@ struct TrustrootsApp: App {
                 isSharedMemberPilotEnabled = false
             }
             .id(session.member?.username.lowercased() ?? "signed-out")
+            .ignoresSafeArea()
         } else {
             nativeAppContent
         }

@@ -17,7 +17,7 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         signOutIfAlreadySignedIn(app)
         signIn(app)
 
-        XCTAssertTrue(app.staticTexts["Mira Example"].waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "Mira Example", in: app).waitForExistence(timeout: 10))
         app.buttons["Open native app"].tap()
         XCTAssertTrue(app.buttons["Menu"].waitForExistence(timeout: 10))
 
@@ -34,10 +34,10 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         let draft = app.descendants(matching: .any)["pilot-draft"]
         XCTAssertTrue(draft.waitForExistence(timeout: 10))
         draft.tap()
-        draft.typeText("A reply kept after a delivery failure.")
+        app.typeText("A reply kept after a delivery failure.")
         app.buttons["Send reply"].tap()
 
-        XCTAssertTrue(app.staticTexts["Temporary fixture delivery failure."].waitForExistence(timeout: 10))
+        XCTAssertTrue(element(labelled: "Temporary fixture delivery failure.", in: app).waitForExistence(timeout: 10))
         XCTAssertEqual(draft.value as? String, "A reply kept after a delivery failure.")
         app.buttons["Send reply"].tap()
         XCTAssertTrue(app.staticTexts["A reply kept after a delivery failure."].waitForExistence(timeout: 10))
@@ -59,14 +59,18 @@ final class SharedMemberPilotJourneyUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Sign in"].waitForExistence(timeout: 10))
     }
 
+    private func element(labelled label: String, in app: XCUIApplication) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
+    }
+
     private func signIn(_ app: XCUIApplication) {
         let username = app.descendants(matching: .any)["pilot-username"]
         let password = app.descendants(matching: .any)["pilot-password"]
         XCTAssertTrue(username.waitForExistence(timeout: 10))
         username.tap()
-        username.typeText("pilot-member")
+        app.typeText("pilot-member")
         password.tap()
-        password.typeText("example-password")
+        app.typeText("example-password")
         app.buttons["Sign in"].tap()
     }
 
