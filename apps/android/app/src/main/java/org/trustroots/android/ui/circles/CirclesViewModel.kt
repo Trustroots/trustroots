@@ -27,7 +27,7 @@ internal interface CircleRepository {
     suspend fun circleBySlug(slug: String): Result<TrustrootsCircle>
     suspend fun circleMembers(slug: String): Result<CircleMemberGroups>
     suspend fun memberships(): Result<Set<String>>
-    suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit>
+    suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String? = null): Result<Unit>
 }
 
 /** Keeps the website session in memory for requests made by this account's entry-scoped model. */
@@ -59,8 +59,8 @@ internal class MobileApiCircleRepository(
 
     override suspend fun memberships(): Result<Set<String>> = api.circleMemberships(session)
 
-    override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> =
-        api.setCircleMembership(session, circleID, isMember)
+    override suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String?): Result<Unit> =
+        api.setCircleMembership(session, circleID, isMember, joinReason)
 }
 
 internal data class CirclesSessionInvalidation(val id: Long)

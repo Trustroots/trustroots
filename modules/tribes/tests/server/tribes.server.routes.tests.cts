@@ -108,6 +108,60 @@ describe('Tribe CRUD tests', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+  it('returns only current, visible organiser identities to signed-in viewers', async () => {
+    const organisers = await utils.saveUsersWithCachedPasswords(
+      utils.generateUsersWithSharedPassword(7).map((member, index) => ({
+        ...member,
+        username: `sampleorganiser${index}`,
+        public: true,
+      })),
+    );
+    const [
+      visible,
+      hidden,
+      suspended,
+      shadowbanned,
+      blocker,
+      blocked,
+      deleted,
+    ] = organisers;
+    await User.updateOne(
+      { _id: visible._id },
+      { username: 'renamedorganiser' },
+    );
+    await User.updateOne({ _id: hidden._id }, { public: false });
+    await User.updateOne({ _id: suspended._id }, { roles: ['suspended'] });
+    await User.updateOne({ _id: shadowbanned._id }, { roles: ['shadowban'] });
+    await User.updateOne({ _id: blocker._id }, { blocked: [user._id] });
+    await User.updateOne({ _id: user._id }, { blocked: [blocked._id] });
+    await deleted.deleteOne();
+    tribe.organiserIds = organisers.map(member => member._id);
+    await tribe.save();
+
+    const detail = `/api/tribes/${tribe.slug}`;
+    const guest = await request(app).get(detail).expect(200);
+    guest.headers['cache-control'].should.equal('private, no-store');
+    should.not.exist(guest.body.organiserIds);
+    should.not.exist(guest.body.organisers);
+
+    await utils.signIn(credentials, agent);
+    const member = await agent.get(detail).expect(200);
+    member.headers['cache-control'].should.equal('private, no-store');
+    should.not.exist(member.body.organiserIds);
+    member.body.organisers.should.deepEqual([
+      { username: 'renamedorganiser', displayName: visible.displayName },
+    ]);
+    const catalogue = await agent.get('/api/tribes').expect(200);
+    should.not.exist(catalogue.body[0].organiserIds);
+    should.not.exist(catalogue.body[0].organisers);
+    const joined = await agent
+      .post(`/api/users/memberships/${tribe._id}`)
+      .send({})
+      .expect(200);
+    should.not.exist(joined.body.tribe.organiserIds);
+    should.not.exist(joined.body.tribe.organisers);
+  });
+
   it('formats stored descriptions consistently in catalogue and detail responses', async () => {
     tribe.description = [
       '<p>Sample <b>formatted</b> <a href="https://example.org/">linked</a> text</p>',

@@ -13,6 +13,7 @@ export interface ProfileTribe<Id = string> {
 export interface ProfileMembership<Id = string, Timestamp = string> {
   tribe: ProfileTribe<Id>;
   since?: Timestamp;
+  joinReason?: string;
 }
 
 /** Public Facebook identifier retained for the member's profile avatar. */

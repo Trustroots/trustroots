@@ -705,11 +705,14 @@ class MobileApiClient(
         session: MemberSession,
         circleID: String,
         isMember: Boolean,
+        joinReason: String? = null,
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
+            val reason = if (isMember) null else joinReason?.trim()?.takeIf(String::isNotEmpty)
             jsonRequest(
                 "/api/users/memberships/${encode(circleID)}",
                 if (isMember) "DELETE" else "POST",
+                body = reason?.let { JSONObject().put("joinReason", it).toString() },
                 session = session,
             )
             Unit

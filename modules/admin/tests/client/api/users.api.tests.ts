@@ -119,6 +119,17 @@ describe('admin users api', () => {
     });
   });
 
+  it('passes the organiser lookup cancellation signal to the request', async () => {
+    const { signal } = new AbortController();
+    axiosMock.post.mockResolvedValueOnce(response({ profile: null }));
+    await getUserByUsername('sample-member', signal);
+    expect(axiosMock.post).toHaveBeenCalledWith(
+      '/api/admin/user',
+      { username: 'sample-member' },
+      { signal },
+    );
+  });
+
   it('passes explicit role removals to the API', async () => {
     axiosMock.post.mockResolvedValueOnce(response({}));
     await setUserRole('member-id', 'welcome-team', 'remove');

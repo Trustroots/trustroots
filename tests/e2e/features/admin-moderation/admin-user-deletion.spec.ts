@@ -35,7 +35,9 @@ test('admins can delete a suspended member after confirming the username', async
       page.getByText('Delete member?', { exact: true }),
     ).toBeVisible();
     await page.getByLabel('Confirm username').fill(member.username);
-    await page.getByLabel('Reason').fill('Fictional E2E deletion reason.');
+    await page
+      .getByRole('textbox', { name: 'Reason', exact: true })
+      .fill('Fictional E2E deletion reason.');
     await page.getByLabel('Audit keywords').fill('fictional, e2e-check');
     await page.getByRole('button', { name: 'Delete permanently' }).click();
 

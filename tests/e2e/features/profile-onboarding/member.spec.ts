@@ -430,14 +430,21 @@ test.describe('confirmed member flows', () => {
     await expect(joinButton).toBeVisible();
     await expect(joinButton).toHaveAttribute('aria-label', /join \(/i);
 
+    await joinButton.click();
+    const joinDialog = page.getByRole('dialog', { name: 'Join Hikers' });
     const joinResponse = page.waitForResponse(
       response =>
-        response.url().match(/\/api\/users\/memberships\//) !== null &&
-        response.request().method() === 'POST' &&
-        response.ok(),
+        response.url().endsWith(`/api/users/memberships/${hikers._id}`) &&
+        response.request().method() === 'POST',
     );
-    await joinButton.click();
-    await joinResponse;
+    await joinDialog
+      .getByRole('button', { name: 'Join circle', exact: true })
+      .click();
+    const joined = await joinResponse;
+    expect(joined.ok()).toBeTruthy();
+    expect(joined.request().postDataJSON() ?? {}).not.toHaveProperty(
+      'joinReason',
+    );
     await expect(joinButton).toContainText("You're a member");
     await expect(joinButton).toHaveClass(/circle-membership-active/);
     await expect(joinButton).not.toHaveCSS(

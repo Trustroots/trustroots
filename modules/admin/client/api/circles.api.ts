@@ -1,5 +1,11 @@
 import axios from '../../../core/client/api/http-client.js';
 
+export type CircleOrganiser = {
+  _id: string;
+  username?: string;
+  displayName?: string;
+};
+
 export type AdminCircle = {
   _id?: string;
   slug?: string;
@@ -12,6 +18,7 @@ export type AdminCircle = {
   description?: string;
   image?: boolean;
   modified?: string | Date;
+  organisers?: CircleOrganiser[];
 };
 
 export async function getCircles(): Promise<AdminCircle[]> {
@@ -32,12 +39,18 @@ export async function saveCircle(
   circle: AdminCircle,
   image?: File | null,
 ): Promise<AdminCircle> {
-  let payload: AdminCircle | FormData = circle;
+  const { organisers, ...metadata } = circle;
+  const organiserIds = organisers?.map(member => member._id);
+  let payload: (typeof metadata & { organiserIds?: string[] }) | FormData =
+    organiserIds === undefined ? metadata : { ...metadata, organiserIds };
   if (image) {
     const formData = new FormData();
     for (const field of editableFields) {
       const value = circle[field];
       formData.append(field, value == null ? '' : String(value));
+    }
+    if (organiserIds !== undefined) {
+      formData.append('organiserIds', JSON.stringify(organiserIds));
     }
     formData.append('image', image);
     payload = formData;
@@ -47,5 +60,5 @@ export async function saveCircle(
     : '/api/admin/circles';
   const method = circle._id ? 'put' : 'post';
   const { data } = await axios[method]<AdminCircle>(url, payload);
-  return data;
+  return organisers === undefined ? data : { ...data, organisers };
 }

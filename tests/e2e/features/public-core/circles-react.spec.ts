@@ -6,7 +6,11 @@ import {
   expectPresent,
   test,
 } from '../../support/fixtures.mts';
-import { SEEDED_ADMIN, signInViaApi } from '../../support/helpers.mts';
+import {
+  SEEDED_ADMIN,
+  SEEDED_MEMBERS,
+  signInViaApi,
+} from '../../support/helpers.mts';
 import { installNostrRelayStub } from '../../support/nostr.mts';
 import { finalizeEvent, generateSecretKey } from 'nostr-tools';
 
@@ -122,6 +126,38 @@ test('circle membership retains account roles and legacy member links', async ({
     await page
       .getByRole('button', { name: 'Join (Hitchhikers)', exact: true })
       .click();
+    const joinDialog = page.getByRole('dialog');
+    await joinDialog.getByRole('textbox').fill('  I enjoy sharing journeys.  ');
+    const joinResponse = page.waitForResponse(
+      response =>
+        response.url().endsWith(`/api/users/memberships/${circle._id}`) &&
+        response.request().method() === 'POST',
+    );
+    await joinDialog
+      .getByRole('button', { name: 'Join circle', exact: true })
+      .click();
+    const joinRequest = await joinResponse;
+    expect(JSON.parse(joinRequest.request().postData() ?? '{}')).toEqual({
+      joinReason: 'I enjoy sharing journeys.',
+    });
+    expect(joinRequest.ok()).toBeTruthy();
+    const viewer = await page
+      .context()
+      .browser()!
+      .newContext({
+        baseURL: new URL(page.url()).origin,
+      });
+    try {
+      const profilePage = await viewer.newPage();
+      await signInViaApi(profilePage, undefined, SEEDED_MEMBERS[0]);
+      const profileUrl = `/profile/${SEEDED_ADMIN.username}/tribes`;
+      await profilePage.goto(profileUrl);
+      await expect(
+        profilePage.getByText('I enjoy sharing journeys.'),
+      ).toBeVisible();
+    } finally {
+      await viewer.close();
+    }
     await expect(page.getByRole('alert')).toContainText(
       'Could not load circle members. Please try again.',
     );

@@ -60,7 +60,7 @@ export interface UserRecord {
   languages?: string[];
   locationLiving?: string;
   locationFrom?: string;
-  member?: Array<{ tribe: Types.ObjectId; since?: Date }>;
+  member?: Array<{ tribe: Types.ObjectId; since?: Date; joinReason?: string }>;
   nostrNpub?: string;
 }
 
@@ -231,6 +231,7 @@ export interface TribeRecord {
   attribution?: string;
   attribution_url?: string;
   description?: string;
+  organiserIds?: Types.ObjectId[];
 }
 
 /** Reference decision attached to a conversation between two members. */

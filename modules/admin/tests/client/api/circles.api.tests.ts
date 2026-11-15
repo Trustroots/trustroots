@@ -1,6 +1,10 @@
 import axios, { type AxiosResponse } from 'axios';
 
-import { getCircles, saveCircle } from '@/modules/admin/client/api/circles.api';
+import {
+  getCircles,
+  saveCircle,
+  type AdminCircle,
+} from '@/modules/admin/client/api/circles.api';
 
 const axiosMock = jest.mocked(axios);
 const AxiosHeaders =
@@ -48,15 +52,16 @@ it.each([undefined, 'circle-1'])(
 );
 
 it('sends multipart data when uploading an image', async () => {
-  const circle: CircleFixture & { description?: string } = {
+  const circle: AdminCircle = {
     _id: 'circle-1',
     label: 'Walkers',
     public: false,
     description: undefined,
+    organisers: [{ _id: 'member-1', username: 'sample-member' }],
   };
   const image = new File(['image'], 'circle.png', { type: 'image/png' });
   axiosMock.put.mockResolvedValueOnce(response(circle));
-  await expect(saveCircle(circle, image)).resolves.toBe(circle);
+  await expect(saveCircle(circle, image)).resolves.toEqual(circle);
   const [url, data] = axiosMock.put.mock.calls[0] as [string, FormData];
   expect(url).toBe('/api/admin/circles/circle-1');
   expect(data).toBeInstanceOf(FormData);
@@ -69,6 +74,7 @@ it('sends multipart data when uploading an image', async () => {
   expect(data.get('_id')).toBeNull();
   expect(data.get('slug')).toBeNull();
   expect(data.get('count')).toBeNull();
+  expect(data.get('organiserIds')).toBe('["member-1"]');
   expect(data.get('image')).toEqual(image);
   expect(Array.from(data.keys())).toEqual([
     'label',
@@ -77,6 +83,29 @@ it('sends multipart data when uploading an image', async () => {
     'attribution',
     'attribution_url',
     'description',
+    'organiserIds',
     'image',
   ]);
+});
+
+it('sends an empty organiser list to clear assignments', async () => {
+  const circle = { _id: 'circle-1', label: 'Walkers', public: true };
+  axiosMock.put.mockResolvedValueOnce(response(circle));
+  await expect(saveCircle({ ...circle, organisers: [] })).resolves.toEqual({
+    ...circle,
+    organisers: [],
+  });
+  expect(axiosMock.put).toHaveBeenCalledWith('/api/admin/circles/circle-1', {
+    ...circle,
+    organiserIds: [],
+  });
+});
+
+it('omits organiser IDs when uploading an image without changing assignments', async () => {
+  const circle = { _id: 'circle-1', label: 'Walkers', public: true };
+  const image = new File(['image'], 'circle.png');
+  axiosMock.put.mockResolvedValueOnce(response(circle));
+  await saveCircle(circle, image);
+  const [, payload] = axiosMock.put.mock.calls[0] as [string, FormData];
+  expect(payload.has('organiserIds')).toBe(false);
 });

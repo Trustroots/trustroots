@@ -94,6 +94,72 @@ test.describe('admin circles feature coverage', () => {
     await signInViaApi(page, request, SEEDED_ADMIN);
   });
 
+  test('admin can add and remove organisers on an existing circle', async ({
+    page,
+    request,
+  }, testInfo) => {
+    annotateFeature(testInfo, 'admin.circles', [
+      'Admins can edit organisers on an existing circle.',
+      'Signed-in viewers see organiser profile links even when the organiser has not joined the circle.',
+      'Guests do not see organisers.',
+    ]);
+    const [organiser, viewer] = SEEDED_MEMBERS;
+    const created = await request.post('/api/admin/circles', {
+      data: { label: `Example organisers ${Date.now()}`, public: true },
+    });
+    expect(created.status()).toBe(201);
+    const { slug, label } = await created.json();
+    const editPath = `/admin/circles/${slug}`;
+    const circlePath = `/circles/${slug}`;
+
+    await page.goto(editPath);
+    await expect(page.getByLabel('Name', { exact: true })).toHaveValue(label);
+    await page.getByLabel('Organiser username').fill(organiser.username);
+    await page.getByRole('button', { name: 'Add organiser' }).click();
+    const remove = page.getByRole('button', { name: /^Remove / });
+    await expect(remove).toBeVisible();
+    await page.locator('#circle-image').setInputFiles({
+      name: 'circle.png',
+      mimeType: 'image/png',
+      buffer: await sharp({
+        create: { width: 8, height: 8, channels: 3, background: '#123456' },
+      })
+        .png()
+        .toBuffer(),
+    });
+    await page.getByRole('button', { name: 'Save circle' }).click();
+    await expect(
+      page.getByText('Circle saved.', { exact: true }),
+    ).toBeVisible();
+
+    await signInViaApi(page, request, viewer);
+    await page.goto(circlePath);
+    const section = page.getByRole('region', { name: 'Circle organisers' });
+    await expect(section.getByRole('link')).toHaveAttribute(
+      'href',
+      `/profile/${organiser.username}`,
+    );
+    await page.context().clearCookies();
+    await page.goto(circlePath);
+    await expect(
+      page.getByRole('heading', { name: /^Example organisers / }),
+    ).toBeVisible();
+    await expect(section).toHaveCount(0);
+
+    await signInViaApi(page, request, SEEDED_ADMIN);
+    await page.goto(editPath);
+    await remove.click();
+    await page.getByRole('button', { name: 'Save circle' }).click();
+    await expect(
+      page.getByText('Circle saved.', { exact: true }),
+    ).toBeVisible();
+    await page.goto(circlePath);
+    await expect(
+      page.getByRole('heading', { name: /^Example organisers / }),
+    ).toBeVisible();
+    await expect(section).toHaveCount(0);
+  });
+
   test('admin can create and edit a circle', async ({ page }, testInfo) => {
     annotateFeature(testInfo, 'admin.circles', [
       'Admin circles page loads.',

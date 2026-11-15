@@ -13,14 +13,18 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -268,7 +272,12 @@ class MapAndCircleTransportJourneysTest {
                 compose.onAllNodesWithText("Quiet Coast").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Quiet Coast").performClick()
-        compose.onNodeWithText("Join circle").performClick()
+        compose.waitUntil(10_000) {
+            compose.onAllNodesWithTag("circleJoinReason").fetchSemanticsNodes().isNotEmpty()
+        }
+        val reasonInput = compose.onNodeWithTag("circleJoinReason").performScrollTo()
+        reasonInput.performTextReplacement("x".repeat(161))
+        compose.onNodeWithText("Join circle").performScrollTo().performClick()
         awaitDynamicError(local, CIRCLE_DETAIL_LABELS) { request ->
             request.method == "POST" && request.path == "/api/users/memberships/circle-one"
         }
@@ -286,15 +295,21 @@ class MapAndCircleTransportJourneysTest {
             minimumCount = failedUpdateCount,
         )
         assertEquals(0, invalidations.get())
+        val membershipPath = "/api/users/memberships/circle-one"
+        assertTrue(local.requests.filter { it.path == membershipPath }.all { it.body.isEmpty() })
 
         allowRecovery.set(true)
-        compose.onNodeWithText("Join circle").performClick()
+        reasonInput.performScrollTo().performTextReplacement("First line\nSecond line")
+        reasonInput.performTextReplacement("  To meet other coastal walkers.  ")
+        compose.onNodeWithText("Join circle").performScrollTo().performClick()
         compose.waitUntil(10_000) {
             updateRequests.get() > failedUpdateCount &&
                 compose.onAllNodesWithText("Leave circle").fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithText("Leave circle").assertIsDisplayed()
         assertEquals(0, invalidations.get())
+        val requestBody = JSONObject(local.requests.last { it.path == membershipPath }.body)
+        assertEquals("To meet other coastal walkers.", requestBody.getString("joinReason"))
         assertMatchingRequests(
             local,
             pathMatches = { it.path == "/api/users/memberships/circle-one" },
@@ -383,7 +398,12 @@ class MapAndCircleTransportJourneysTest {
             "Back",
             "Q",
         )
-        val CIRCLE_DETAIL_LABELS = CIRCLE_LABELS + setOf("Join circle", "Leave circle")
+        val CIRCLE_DETAIL_LABELS = CIRCLE_LABELS + setOf(
+            "Join circle",
+            "Leave circle",
+            "Why would you like to join? (optional)",
+            "Signed-in members who can view your profile can read this.",
+        )
         val MAP_LABELS = setOf(
             "Search places",
             "Hosting",

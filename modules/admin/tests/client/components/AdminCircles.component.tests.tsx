@@ -1,4 +1,5 @@
 import React from 'react';
+import { AxiosError } from 'axios';
 import {
   act,
   fireEvent,
@@ -11,6 +12,7 @@ import '@testing-library/jest-dom';
 
 import AdminCircles from '@/modules/admin/client/components/AdminCircles.component';
 import { getCircles, saveCircle } from '@/modules/admin/client/api/circles.api';
+import { getUserByUsername } from '@/modules/admin/client/api/users.api';
 
 jest.mock('@/modules/core/client/react-app/auth', () =>
   jest.requireActual('@/testutils/client/auth.testutil').mockAuthModule(),
@@ -20,9 +22,11 @@ jest.mock('@tanstack/react-router', () =>
 );
 
 jest.mock('@/modules/admin/client/api/circles.api');
+jest.mock('@/modules/admin/client/api/users.api');
 
 const getCirclesMock = jest.mocked(getCircles);
 const saveCircleMock = jest.mocked(saveCircle);
+const getUserByUsernameMock = jest.mocked(getUserByUsername);
 
 type CircleFixture = {
   _id?: string;
@@ -39,6 +43,7 @@ type CircleFixture = {
 
 describe('<AdminCircles />', () => {
   beforeEach(() => {
+    getUserByUsernameMock.mockClear();
     getCirclesMock.mockResolvedValue([
       {
         _id: 'circle-id',
@@ -55,6 +60,120 @@ describe('<AdminCircles />', () => {
       public: true,
       image: false,
     } as CircleFixture);
+  });
+
+  it('looks up organisers and reports unknown and duplicate usernames', async () => {
+    const member = {
+      _id: 'member-1',
+      username: 'sample-member',
+      displayName: 'Sample Member',
+    };
+    getUserByUsernameMock
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce({ profile: member })
+      .mockResolvedValueOnce({ profile: member });
+    render(<AdminCircles />);
+    await screen.findByRole('button', { name: 'Hikers' });
+    const input = screen.getByLabelText('Organiser username');
+    const add = screen.getByRole('button', { name: 'Add organiser' });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    expect(getUserByUsernameMock).not.toHaveBeenCalled();
+    fireEvent.change(input, { target: { value: 'unknown' } });
+    fireEvent.keyDown(input, { key: 'Space' });
+    expect(getUserByUsernameMock).not.toHaveBeenCalled();
+    fireEvent.click(add);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'No member found with that username.',
+    );
+    fireEvent.change(input, { target: { value: ' Sample-Member ' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+    const remove = await screen.findByRole('button', {
+      name: 'Remove Sample Member',
+    });
+    expect(getUserByUsernameMock).toHaveBeenLastCalledWith(
+      'sample-member',
+      expect.any(AbortSignal),
+    );
+    fireEvent.change(input, { target: { value: member.username } });
+    fireEvent.click(add);
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'This member is already listed.',
+    );
+    fireEvent.click(remove);
+    expect(remove).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [
+      Object.assign(new AxiosError('Unknown member'), {
+        response: { status: 404 },
+      }),
+      'No member found with that username.',
+    ],
+    [new AxiosError('Network failure'), 'Could not look up the member.'],
+    [new Error('Lookup failure'), 'Could not look up the member.'],
+  ])('reports lookup errors to administrators (%s)', async (error, message) => {
+    getUserByUsernameMock.mockRejectedValueOnce(error);
+    render(<AdminCircles />);
+    await screen.findByRole('button', { name: 'Hikers' });
+    fireEvent.change(screen.getByLabelText('Organiser username'), {
+      target: { value: 'sample-member' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Add organiser' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(message);
+  });
+
+  it.each([false, true])(
+    'ignores a lookup that finishes after switching circles (failure: %s)',
+    async fails => {
+      const member = { _id: 'member-1', username: 'sample-member' };
+      let complete: () => void = () => undefined;
+      getUserByUsernameMock.mockReturnValueOnce(
+        new Promise((resolve, reject) => {
+          complete = () => {
+            if (fails) reject(new Error('Lookup cancelled'));
+            else resolve({ profile: member });
+          };
+        }),
+      );
+      render(<AdminCircles />);
+      const circle = await screen.findByRole('button', { name: 'Hikers' });
+      fireEvent.change(screen.getByLabelText('Organiser username'), {
+        target: { value: member.username },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Add organiser' }));
+      const [, signal] = getUserByUsernameMock.mock.calls[0];
+      fireEvent.click(circle);
+      expect(signal?.aborted).toBe(true);
+      await act(async () => {
+        complete();
+      });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: 'Remove sample-member' }),
+      ).not.toBeInTheDocument();
+    },
+  );
+
+  it('labels organisers using their username when the display name is absent', async () => {
+    getCirclesMock.mockResolvedValueOnce([
+      {
+        label: 'Hikers',
+        public: true,
+        organisers: [
+          { _id: 'member-1', username: 'sample-member' },
+          { _id: 'deleted-member' },
+        ],
+      },
+    ]);
+    render(<AdminCircles />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Hikers' }));
+    expect(
+      screen.getByRole('button', { name: 'Remove sample-member' }),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('button', { name: 'Remove Deleted member' }),
+    ).toBeVisible();
   });
 
   it('loads circles and lets an administrator edit one', async () => {

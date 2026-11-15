@@ -77,7 +77,7 @@ class CirclesViewModelInvalidationTest {
 
         override suspend fun memberships(): Result<Set<String>> = Result.success(emptySet())
 
-        override suspend fun setMembership(circleID: String, isMember: Boolean): Result<Unit> {
+        override suspend fun setMembership(circleID: String, isMember: Boolean, joinReason: String?): Result<Unit> {
             membershipChanges += circleID to isMember
             return Result.success(Unit)
         }

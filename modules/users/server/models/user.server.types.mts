@@ -3,6 +3,7 @@ import type { HydratedDocument, Model, Types } from 'mongoose';
 export interface UserMemberRecord {
   tribe: Types.ObjectId;
   since: Date;
+  joinReason?: string;
 }
 
 export interface UserPushRegistrationRecord {

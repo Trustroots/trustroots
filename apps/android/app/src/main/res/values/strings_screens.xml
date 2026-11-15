@@ -19,6 +19,8 @@
     <string name="screen_search_name_or_username">Search by name or username</string>
     <string name="screen_switch_to_map_search">Switch to map search</string>
     <string name="screen_join_circle">Join circle</string>
+    <string name="screen_circle_join_reason">Why would you like to join? (optional)</string>
+    <string name="screen_circle_join_reason_visibility">Signed-in members who can view your profile can read this.</string>
     <string name="screen_leave_circle">Leave circle</string>
     <string name="screen_discover_circles">Discover circles</string>
     <string name="screen_circles_description">Joining circles helps you find likeminded Trustroots members.</string>

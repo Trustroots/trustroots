@@ -47,6 +47,9 @@ function TribeCard({
         <div className={`tribe-content ${tribe.image ? 'is-image' : ''}`}>
           <h3 className="tribe-label">{tribe.label}</h3>
           <div className="tribe-meta">{countLabel}</div>
+          {user && membership.joinReason && (
+            <p className="tribe-join-reason">{membership.joinReason}</p>
+          )}
           <JoinButton
             look={{ size: 'xs', intent: 'primary' }}
             onUpdated={onMembershipUpdated}

@@ -32,6 +32,10 @@ interface PublicationState {
   hadVariants: boolean;
 }
 const Tribe = mongoose.model<TribeRecord>('Tribe');
+const User = mongoose.model<{
+  username: string;
+  displayName?: string;
+}>('User');
 const imageSizes = [
   [120, 120],
   [742, 496],
@@ -39,7 +43,7 @@ const imageSizes = [
   [1400, 900],
 ];
 const circleFields =
-  '_id slug label count color image public attribution attribution_url description created modified';
+  '_id slug label count color image public attribution attribution_url description created modified organiserIds';
 const descriptionLimit = 4000;
 const maxImagePixels = 50_000_000;
 const lockWaitMs = 30_000;
@@ -101,7 +105,43 @@ function invalidCircleImage() {
   );
 }
 
-function circleData(body: Record<string, unknown>, existing?: TribeRecord) {
+async function parseOrganiserIds(
+  input: unknown,
+  existing?: mongoose.Types.ObjectId[],
+) {
+  let values: unknown = input;
+  if (typeof input === 'string') {
+    try {
+      values = JSON.parse(input);
+    } catch {
+      throw validationError('Enter organiser IDs as a JSON array.');
+    }
+  }
+  if (
+    !Array.isArray(values) ||
+    !values.every(id => typeof id === 'string' && /^[a-f0-9]{24}$/i.test(id))
+  ) {
+    throw validationError('Enter valid organiser IDs.');
+  }
+  const ids = values.map((id: string) => id.toLowerCase());
+  if (new Set(ids).size !== ids.length) {
+    throw validationError('An organiser is listed twice.');
+  }
+  const current = new Set(existing?.map(String));
+  const added = ids.filter(id => !current.has(id));
+  if (
+    added.length &&
+    (await User.countDocuments({ _id: { $in: added } }).exec()) !== added.length
+  ) {
+    throw validationError('An organiser account could not be found.');
+  }
+  return ids.map(id => new mongoose.Types.ObjectId(id));
+}
+
+async function circleData(
+  body: Record<string, unknown>,
+  existing?: TribeRecord,
+) {
   const data: Partial<Omit<TribeRecord, 'label'>> & { label: unknown } = {
     label: body.label,
     public: parseBoolean(body.public, existing ? existing.public : true),
@@ -116,7 +156,41 @@ function circleData(body: Record<string, unknown>, existing?: TribeRecord) {
     assertColour(body.color);
     data.color = body.color;
   }
+  if (body.organiserIds !== undefined) {
+    data.organiserIds = await parseOrganiserIds(
+      body.organiserIds,
+      existing?.organiserIds,
+    );
+  }
   return data;
+}
+
+async function withOrganisers(
+  circles: mongoose.HydratedDocument<TribeRecord>[],
+) {
+  const ids = [
+    ...new Set(
+      circles.flatMap(circle => (circle.organiserIds ?? []).map(String)),
+    ),
+  ];
+  if (!ids.length) return circles;
+
+  const members = await User.find({ _id: { $in: ids } })
+    .select('username displayName')
+    .lean()
+    .exec();
+  const byId = new Map(members.map(member => [String(member._id), member]));
+  return circles.map(circle => ({
+    ...circle.toJSON(),
+    organisers: (circle.organiserIds ?? []).map(id => {
+      const member = byId.get(String(id));
+      return {
+        _id: String(id),
+        username: member?.username,
+        displayName: member?.displayName,
+      };
+    }),
+  }));
 }
 
 function imageRoot() {
@@ -353,7 +427,7 @@ export const list = async (req: CircleRequest, res: CircleResponse) => {
       .select(circleFields)
       .sort({ label: 1 })
       .exec();
-    return res.json(circles);
+    return res.json(await withOrganisers(circles));
   } catch (err) {
     return sendError(res, err);
   }
@@ -365,7 +439,8 @@ export const get = async (req: CircleRequest, res: CircleResponse) => {
       .select(circleFields)
       .exec();
     if (!circle) return res.status(404).send({ message: 'Circle not found.' });
-    return res.json(circle);
+    const [result] = await withOrganisers([circle]);
+    return res.json(result);
   } catch (err) {
     return sendError(res, err);
   }
@@ -374,7 +449,7 @@ export const get = async (req: CircleRequest, res: CircleResponse) => {
 export const create = async (req: CircleRequest, res: CircleResponse) => {
   let circle;
   try {
-    circle = new Tribe(circleData(req.body!));
+    circle = new Tribe(await circleData(req.body!));
     circle.modified = new Date();
     await circle.validate();
     await saveCircle(circle, req.file?.path);
@@ -388,9 +463,11 @@ export const create = async (req: CircleRequest, res: CircleResponse) => {
 
 export const update = async (req: CircleRequest, res: CircleResponse) => {
   try {
-    const circle = await Tribe.findById(req.params!.circle).exec();
+    const circle = await Tribe.findById(req.params!.circle)
+      .select('+organiserIds')
+      .exec();
     if (!circle) return res.status(404).send({ message: 'Circle not found.' });
-    Object.assign(circle, circleData(req.body!, circle));
+    Object.assign(circle, await circleData(req.body!, circle));
     circle.modified = new Date();
     await circle.validate();
     await saveCircle(circle, req.file?.path);

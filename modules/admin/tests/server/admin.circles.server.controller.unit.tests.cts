@@ -65,6 +65,8 @@ describe('Admin circles controller', () => {
   let uploadFile: Stub;
   let circle: Circle;
   let query: Query;
+  let findOrganisers: Stub;
+  let countOrganisers: Stub;
   let config: { circleImagesDir: string };
   let res: MockResponse;
   const failure = new Error('Storage unavailable');
@@ -126,11 +128,19 @@ describe('Admin circles controller', () => {
     };
     sharp = sinon.stub().returns(image);
     uploadFile = sinon.stub();
+    findOrganisers = sinon.stub();
+    countOrganisers = sinon.stub();
     config = { circleImagesDir: '/circle-images' };
     controller = proxyquire<Controller>(
       require.resolve('../../server/controllers/admin.circles.server.controller.mts'),
       {
-        mongoose: { model: () => Tribe },
+        mongoose: {
+          Types: mongoose.Types,
+          model: (name: string) =>
+            name === 'Tribe'
+              ? Tribe
+              : { find: findOrganisers, countDocuments: countOrganisers },
+        },
         'node:fs': { promises: fs },
         sharp,
         '../../../../config/config': config,
@@ -155,6 +165,145 @@ describe('Admin circles controller', () => {
     await controller.get({ params: { circle: 'circle-1' } }, res);
     assert.strictEqual(res.body, circle);
     sinon.assert.calledWith(Tribe.findById, 'circle-1');
+  });
+
+  it('resolves current organiser details and retains deleted assignments', async () => {
+    const existing = new mongoose.Types.ObjectId();
+    const deleted = new mongoose.Types.ObjectId();
+    circle.organiserIds = [existing, deleted];
+    const unassigned = {
+      ...circle,
+      organiserIds: undefined,
+      toJSON: () => ({ label: 'Unassigned' }),
+    };
+    query.exec.resolves([circle, unassigned]);
+    const select = sinon.stub().returnsThis();
+    findOrganisers.returns({
+      select,
+      lean: () => ({
+        exec: async () => [
+          {
+            _id: existing,
+            username: 'examplemember',
+            displayName: 'Example Member',
+          },
+        ],
+      }),
+    });
+    await controller.list({}, res);
+    sinon.assert.calledOnceWithExactly(findOrganisers, {
+      _id: { $in: [String(existing), String(deleted)] },
+    });
+    sinon.assert.calledOnceWithExactly(select, 'username displayName');
+    const result = res.body as unknown as { organisers: unknown[] }[];
+    assert.deepStrictEqual(result[0].organisers, [
+      {
+        _id: String(existing),
+        username: 'examplemember',
+        displayName: 'Example Member',
+      },
+      { _id: String(deleted), username: undefined, displayName: undefined },
+    ]);
+    assert.deepStrictEqual(result[1].organisers, []);
+  });
+
+  it('checks and saves organiser assignments when creating a circle', async () => {
+    const organiser = new mongoose.Types.ObjectId();
+    countOrganisers.returns({ exec: async () => 1 });
+    await controller.create(
+      { body: { label: 'Walkers', organiserIds: [String(organiser)] } },
+      res,
+    );
+    assert.strictEqual(res.statusCode, 201);
+    assert.deepStrictEqual(res.body.organiserIds, [organiser]);
+    sinon.assert.calledOnceWithExactly(countOrganisers, {
+      _id: { $in: [String(organiser)] },
+    });
+  });
+
+  it('validates organiser assignments before saving', async () => {
+    const existing = new mongoose.Types.ObjectId();
+    const added = new mongoose.Types.ObjectId();
+    circle.organiserIds = [existing];
+    const body = {
+      label: 'Walkers',
+      organiserIds: JSON.stringify([String(existing), String(added)]),
+    };
+    const request = { params: { circle: 'circle-1' }, body };
+    countOrganisers.returns({ exec: async () => 1 });
+    await controller.update(request, res);
+    assert.deepStrictEqual(res.body.organiserIds, [existing, added]);
+    sinon.assert.calledWithExactly(countOrganisers, {
+      _id: { $in: [String(added)] },
+    });
+
+    countOrganisers.returns({ exec: async () => 0 });
+    const malformed = 'Enter valid organiser IDs.';
+    countOrganisers.resetHistory();
+    const invalidJson = response();
+    await controller.update(
+      { ...request, body: { ...body, organiserIds: '{' } },
+      invalidJson,
+    );
+    assert.strictEqual(invalidJson.statusCode, 400);
+    assert.strictEqual(
+      invalidJson.body.message,
+      'Enter organiser IDs as a JSON array.',
+    );
+
+    for (const organiserIds of [
+      {},
+      [[String(added)]],
+      ['invalid'],
+      [`x${added}`],
+      [`${added}x`],
+    ]) {
+      const invalid = response();
+      await controller.update(
+        { ...request, body: { ...body, organiserIds } },
+        invalid,
+      );
+      assert.strictEqual(invalid.statusCode, 400);
+      assert.strictEqual(invalid.body.message, malformed);
+    }
+    sinon.assert.notCalled(countOrganisers);
+
+    const duplicate = response();
+    await controller.update(
+      {
+        ...request,
+        body: {
+          ...body,
+          organiserIds: [String(added), String(added).toUpperCase()],
+        },
+      },
+      duplicate,
+    );
+    assert.strictEqual(duplicate.statusCode, 400);
+    assert.strictEqual(duplicate.body.message, 'An organiser is listed twice.');
+
+    const unknown = response();
+    await controller.update(
+      {
+        ...request,
+        body: {
+          ...body,
+          organiserIds: [String(new mongoose.Types.ObjectId())],
+        },
+      },
+      unknown,
+    );
+    assert.strictEqual(unknown.statusCode, 400);
+    assert.strictEqual(
+      unknown.body.message,
+      'An organiser account could not be found.',
+    );
+    await controller.update(
+      { ...request, body: { ...body, organiserIds: [] } },
+      res,
+    );
+    assert.deepStrictEqual(res.body.organiserIds, []);
+    sinon.assert.calledTwice(circle.save);
   });
 
   for (const method of ['get', 'update'] as const) {

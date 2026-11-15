@@ -12,6 +12,7 @@ export interface TribeSummary {
   description?: string;
   attribution?: string;
   attribution_url?: string;
+  organisers?: { username: string; displayName?: string }[];
   [key: string]: unknown;
 }
 
@@ -55,8 +56,14 @@ export async function listMemberships(): Promise<MembershipUpdate[]> {
   return data;
 }
 
-export async function join(tribeId: string): Promise<MembershipUpdate> {
-  const { data } = await axios.post(`/api/users/memberships/${tribeId}`);
+export async function join(
+  tribeId: string,
+  options?: { joinReason?: string },
+): Promise<MembershipUpdate> {
+  const { data } = await axios.post(
+    `/api/users/memberships/${tribeId}`,
+    ...(options ? [options] : []),
+  );
   return data;
 }
 

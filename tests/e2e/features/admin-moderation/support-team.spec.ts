@@ -389,8 +389,13 @@ test('support can triage a report and investigate only its verified member pair'
     const noteText = `Fictional safety follow-up ${Date.now()}`;
     await page.locator('.admin-notes .tr-editor').click();
     await page.keyboard.insertText(noteText);
+    const noteSaved = page.waitForResponse(
+      response =>
+        new URL(response.url()).pathname === '/api/admin/notes' &&
+        response.request().method() === 'POST',
+    );
     await page.getByRole('button', { name: 'Save note', exact: true }).click();
-    await expect(page.getByText(noteText, { exact: true })).toBeVisible();
+    expect((await noteSaved).ok()).toBeTruthy();
     await page.reload();
     await expect(page.getByText(noteText, { exact: true })).toBeVisible();
     const denied = await context.request.post('/api/admin/user/change-role', {

@@ -216,3 +216,69 @@ show a sanitised live preview of the description.
 
 - **WHEN** a user views a circle
 - **THEN** its edit link is visible only if the user has the admin role
+
+### Requirement: Circle organisers
+
+The system SHALL show linked organiser names on the web circle detail page to signed-in members who can view the circle and the listed profiles. The organiser designation SHALL grant no permissions and SHALL be independent of circle membership.
+
+#### Scenario: Signed-in member views a circle with organisers
+
+- **WHEN** a signed-in member opens a circle with eligible organisers
+- **THEN** the circle page shows the organisers' current names linked to their profiles
+- **AND** joining or leaving the circle preserves the organiser section
+
+#### Scenario: Organisers are unavailable to the viewer
+
+- **WHEN** a guest opens a circle or a signed-in viewer has no eligible organisers to see
+- **THEN** the page omits the organiser section
+- **AND** the detail API omits organiser identities the viewer cannot access
+
+#### Scenario: Organiser identities are scoped to circle details
+
+- **WHEN** a client requests the circle catalogue or a circle membership payload
+- **THEN** the response excludes organiser assignments
+
+### Requirement: Circle join reason
+
+A member joining a circle on the web SHALL be able to provide an optional reason of up to 160 characters on a single line. The system SHALL attach the reason to that membership and remove it when the member leaves.
+
+The profile Circles tab SHALL show the reason to signed-in members who can view the profile.
+
+#### Scenario: Member joins with a reason
+
+- **WHEN** a member enters a valid reason and joins a circle
+- **THEN** the system saves the reason on the new membership
+
+#### Scenario: Member joins without a reason
+
+- **WHEN** a member leaves the reason blank or joins from a client without the reason field
+- **THEN** the system creates the membership without a reason
+
+#### Scenario: Member leaves a circle
+
+- **WHEN** a member leaves a circle
+- **THEN** the membership and its join reason are removed
+
+#### Scenario: Signed-in member views a profile
+
+- **WHEN** a signed-in member opens the Circles tab of a profile they can access
+- **THEN** the tab displays saved join reasons alongside their circles
+
+#### Scenario: Guest requests a profile
+
+- **WHEN** a guest requests profile data
+- **THEN** the system excludes join reasons
+
+### Requirement: Android circle detail join reason
+
+An Android member joining from circle detail SHALL be able to provide an optional reason of up to 160 characters on a single line. The field SHALL explain who can read the reason.
+
+#### Scenario: Android member enters a reason
+
+- **WHEN** a member enters a reason on Android circle detail and taps Join circle
+- **THEN** the app submits the trimmed reason with the membership request
+
+#### Scenario: Android member leaves the reason blank
+
+- **WHEN** a member taps Join circle with the reason blank
+- **THEN** the app submits the membership request without a reason
