@@ -6,7 +6,9 @@ import {
   type LocationCorrectionSendResult,
 } from '@/modules/admin/client/api/location-corrections.api';
 
-jest.mock('axios');
+jest.mock('axios', () =>
+  jest.requireActual('@/modules/core/tests/client/api/axios.mock'),
+);
 
 const getMock = axios.get as jest.MockedFunction<
   (url: string) => Promise<{ data: LocationCorrectionCandidate[] }>
