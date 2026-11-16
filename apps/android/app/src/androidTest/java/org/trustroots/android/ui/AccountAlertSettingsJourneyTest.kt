@@ -10,6 +10,8 @@ import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -109,34 +111,48 @@ class AccountAlertSettingsJourneyTest {
         MessageAlerts.statusMetadata.value = null
         val enableCalls = AtomicInteger()
         val disableCalls = AtomicInteger()
+        val openedUri = AtomicReference<String>()
+        val uriHandler = object : UriHandler {
+            override fun openUri(uri: String) {
+                openedUri.set(uri)
+            }
+        }
         respondToAccountRequest(
             """{"username":"steady-heron","displayName":"Steady Heron","email":"member@example.test","newsletter":false}""",
         )
         compose.setContent {
             TrustrootsTheme {
-                AccountSettingsScreen(
-                    api = api(),
-                    session = session,
-                    onSessionInvalidated = {},
-                    onBack = {},
-                    onResetPassword = {},
-                    onSignedOut = {},
-                    enableMessageAlerts = { _, activeSession, onResult ->
-                        enableCalls.incrementAndGet()
-                        preferences.edit()
-                            .putString("account", activeSession.member.username)
-                            .putBoolean("enabled", true)
-                            .apply()
-                        onResult(MessageAlertStatusMetadata(org.trustroots.android.R.string.message_alerts_ready))
-                    },
-                    disableMessageAlerts = { _, _ ->
-                        disableCalls.incrementAndGet()
-                        preferences.edit().clear().apply()
-                    },
-                )
+                CompositionLocalProvider(LocalUriHandler provides uriHandler) {
+                    AccountSettingsScreen(
+                        api = api(),
+                        session = session,
+                        onSessionInvalidated = {},
+                        onBack = {},
+                        onResetPassword = {},
+                        onSignedOut = {},
+                        enableMessageAlerts = { _, activeSession, onResult ->
+                            enableCalls.incrementAndGet()
+                            preferences.edit()
+                                .putString("account", activeSession.member.username)
+                                .putBoolean("enabled", true)
+                                .apply()
+                            onResult(MessageAlertStatusMetadata(org.trustroots.android.R.string.message_alerts_ready))
+                        },
+                        disableMessageAlerts = { _, _ ->
+                            disableCalls.incrementAndGet()
+                            preferences.edit().clear().apply()
+                        },
+                    )
+                }
             }
         }
         waitForText("member@example.test")
+
+        compose.onNodeWithText("Install and set up ntfy").performScrollTo().performClick()
+        org.junit.Assert.assertEquals(
+            "https://unifiedpush.org/users/distributors/ntfy/#ntfy-quickstart-guide",
+            openedUri.get(),
+        )
 
         compose.onNodeWithText("Turn on message alerts").performScrollTo().performClick()
         waitForText("Message alerts are ready.")
