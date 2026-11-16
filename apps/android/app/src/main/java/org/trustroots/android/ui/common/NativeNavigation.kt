@@ -4,9 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -25,6 +22,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import org.trustroots.android.R
 import androidx.compose.ui.Modifier
@@ -37,7 +35,7 @@ internal val LocalLeaveGuard = compositionLocalOf<MutableState<LeaveGuard?>?> { 
 @Composable
 internal fun NativeBackButton(onBack: () -> Unit, modifier: Modifier = Modifier, tint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurface) {
     IconButton(onClick = onBack, modifier = modifier) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = tint)
+        Icon(painterResource(R.drawable.ic_material_arrow_back), contentDescription = stringResource(R.string.back), tint = tint)
     }
 }
 
@@ -112,7 +110,7 @@ internal fun FormActionBar(
         ),
         navigationIcon = {
             IconButton(onClick = onCancel, enabled = !saving) {
-                Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
+                Icon(painterResource(R.drawable.ic_material_close), contentDescription = stringResource(R.string.cancel))
             }
         },
         actions = {

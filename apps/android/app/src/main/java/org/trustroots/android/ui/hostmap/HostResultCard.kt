@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -28,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -98,11 +95,12 @@ internal fun HostResultCard(
                             modifier = Modifier.padding(top = 4.dp),
                         ) {
                             Row(Modifier.padding(horizontal = 8.dp, vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Icon(when {
-                                    isMeet || offer.status == "yes" -> Icons.Default.Check
-                                    offer.status == "maybe" -> Icons.Default.HelpOutline
-                                    else -> Icons.Default.Close
-                                }, contentDescription = null)
+                                val statusIcon = when {
+                                    isMeet || offer.status == "yes" -> R.drawable.ic_material_check
+                                    offer.status == "maybe" -> R.drawable.ic_material_help_outline
+                                    else -> R.drawable.ic_material_close
+                                }
+                                Icon(painterResource(statusIcon), contentDescription = null)
                                 Spacer(Modifier.width(4.dp))
                                 Text(status, style = MaterialTheme.typography.labelLarge)
                             }
@@ -111,7 +109,7 @@ internal fun HostResultCard(
                     IconButton(
                         onClick = onClose,
                         modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
-                    ) { Icon(Icons.Default.Close, closeHostResult) }
+                    ) { Icon(painterResource(R.drawable.ic_material_close), closeHostResult) }
                 }
                 offer.maxGuests?.let { Text(hostGuestCountLabel(it), style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp)) }
                 nonBlankMemberText(profile?.tagline)?.let { Text(Html.fromHtml(it, Html.FROM_HTML_MODE_COMPACT).toString().trim(), fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 8.dp)) }

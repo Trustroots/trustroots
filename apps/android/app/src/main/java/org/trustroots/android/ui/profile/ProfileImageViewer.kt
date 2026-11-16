@@ -15,8 +15,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +38,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -250,7 +249,7 @@ internal fun ProfileImageViewer(
                     onClick = onClose,
                     modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp).testTag("closeProfileImage"),
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.close_profile_photo), tint = viewerContent)
+                    Icon(painterResource(R.drawable.ic_material_close), contentDescription = stringResource(R.string.close_profile_photo), tint = viewerContent)
                 }
             }
         }

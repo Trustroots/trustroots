@@ -9,10 +9,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
@@ -31,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
@@ -95,7 +92,7 @@ internal fun ProfileActionBar(
                 modifier = Modifier.heightIn(min = 48.dp).testTag("profileEditAction"),
                 colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.artwork_on_scrim)),
             ) {
-                Icon(Icons.Filled.Edit, contentDescription = null)
+                Icon(painterResource(R.drawable.ic_material_edit), contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(stringResource(R.string.profile_edit_your_profile))
             }
@@ -117,7 +114,7 @@ internal fun ProfileActionBar(
                     modifier = Modifier.size(48.dp).testTag("profileActionsMenuButton"),
                 ) {
                     Icon(
-                        Icons.Filled.MoreVert,
+                        painterResource(R.drawable.ic_material_more_vert),
                         contentDescription = stringResource(R.string.profile_more_actions),
                         tint = colorResource(R.color.artwork_on_scrim),
                     )

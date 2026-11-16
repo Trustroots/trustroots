@@ -16,9 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
@@ -42,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -300,12 +298,12 @@ private fun CircleOverviewScreen(
                     }
                     if (circle.id in memberships) {
                         OutlinedButton(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
-                            Icon(Icons.Default.Check, contentDescription = null)
+                            Icon(painterResource(R.drawable.ic_material_check), contentDescription = null)
                             Text(stringResource(R.string.screen_joined))
                         }
                     } else {
                         Button(onClick = { onToggleMembership(circle) }, enabled = updating == null) {
-                            Icon(Icons.Default.Add, contentDescription = null)
+                            Icon(painterResource(R.drawable.ic_material_add), contentDescription = null)
                             Text(stringResource(R.string.screen_join))
                         }
                     }

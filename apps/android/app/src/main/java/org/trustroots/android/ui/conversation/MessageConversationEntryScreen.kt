@@ -2,6 +2,7 @@
 
 package org.trustroots.android.ui.conversation
 
+import androidx.compose.ui.res.painterResource
 import org.trustroots.android.ui.common.requireNavigationViewModelStoreOwner
 
 import android.text.Html
@@ -24,8 +25,6 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -209,7 +208,7 @@ internal fun MessageConversationEntryScreen(
                         onClick = { send(state.draft) },
                         enabled = member != null && state.draft.isNotBlank() && !state.isSending,
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.Send,
+                        Icon(painterResource(R.drawable.ic_material_send),
                             contentDescription = stringResource(if (state.isSending) R.string.form_sending_message else R.string.form_send_message))
                     }
                 },
