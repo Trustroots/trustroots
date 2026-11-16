@@ -270,6 +270,13 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         authenticates(`Basic ${paddedToken}`, 'pa:sss').should.be.true();
       });
 
+      it('accepts an unpadded unaligned token', function () {
+        authenticates(
+          `Basic ${paddedToken.slice(0, -2)}`,
+          'pa:sss',
+        ).should.be.true();
+      });
+
       it('accepts a case-insensitive scheme and surrounding spaces', function () {
         authenticates(`  bAsIc   ${token}  `).should.be.true();
       });
@@ -278,6 +285,7 @@ describe('Sparkpost Webhooks - Integration Test', function () {
         [
           ['a missing Basic scheme', token],
           ['another scheme', `Bearer ${token}`],
+          ['another scheme before Basic', `Bearer Basic ${token}`],
           ['invalid base64 characters', `Basic ${token}!`],
           ['a one-character remainder', `Basic ${token}A`],
           [
@@ -285,7 +293,12 @@ describe('Sparkpost Webhooks - Integration Test', function () {
             `Basic ${paddedToken.slice(0, -1)}`,
             'pa:sss',
           ],
-          ['credentials without a colon', 'Basic c3BhcmtwYXNz'],
+          // sparkposts: a colon-less split would give sparkpost and sparkposts
+          [
+            'credentials without a colon',
+            'Basic c3Bhcmtwb3N0cw==',
+            'sparkposts',
+          ],
         ] as [string, string, string?][]
       ).forEach(([description, authorization, password]) => {
         it(`rejects a header with ${description}`, function () {
