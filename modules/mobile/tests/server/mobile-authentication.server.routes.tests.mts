@@ -91,6 +91,29 @@ describe('Mobile authentication API', function () {
     storedSession.refreshTokenHash.should.not.equal(response.body.refreshToken);
   });
 
+  it('requires enrolled members to complete MFA on the web', async function () {
+    const { body: tokens } = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    await User.updateOne({ _id: member._id }, { $set: { mfaEnabled: true } });
+
+    const response = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(403);
+    response.body.code.should.equal('web_sign_in_required');
+    should.not.exist(response.body.accessToken);
+    await request(app)
+      .get('/api/mobile/v0/auth/me')
+      .set('Authorization', `Bearer ${tokens.accessToken}`)
+      .expect(401);
+    await request(app)
+      .post('/api/mobile/v0/auth/refresh')
+      .send({ refreshToken: tokens.refreshToken })
+      .expect(401);
+  });
+
   it('requires an account challenge before creating a mobile session', async function () {
     for (let attempt = 0; attempt < 20; attempt += 1) {
       await consume({
