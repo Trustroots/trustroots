@@ -36,10 +36,11 @@ a real consumer, and add them to the component's stories.
 
 ## Class names
 
-Components build their class names with `cn()` from `@trustroots/classnames`:
-`clsx` joins conditional classes, and `tailwind-merge`, configured for the `tw:`
-prefix and this package's theme
-tokens, lets a later utility replace a conflicting earlier one. When
+Components build their class names with `cn()` from `src/lib/cn.ts` (imported
+as `#lib/cn`, or `@trustroots/ui/cn` outside this package): `clsx` joins
+conditional classes, and `tailwind-merge`, configured for the `tw:` prefix and
+this package's theme tokens, lets a later utility replace a conflicting earlier
+one. When
 `globals.css` gains a token that utilities use (a spacing, radius or line
 height name), add it to the `extendTailwindMerge` call too.
 

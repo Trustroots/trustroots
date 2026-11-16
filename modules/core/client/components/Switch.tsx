@@ -1,5 +1,5 @@
 import React, { type ChangeEvent, type ReactNode } from 'react';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 
 type SwitchProps = {
   checked: boolean;

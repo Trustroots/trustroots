@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import { useTranslation } from 'react-i18next';
 
 import {

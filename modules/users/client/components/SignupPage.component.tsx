@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
 import useDesktopAutofocus from '@/modules/core/client/hooks/use-desktop-autofocus';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import shuffle from 'lodash/shuffle';
 
 import { useAnalytics } from '@trustroots/analytics/client';

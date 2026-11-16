@@ -1,4 +1,4 @@
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import React, { type ReactNode } from 'react';
 
 type NoContentProps = {

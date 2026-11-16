@@ -1,6 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 

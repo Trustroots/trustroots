@@ -1,5 +1,5 @@
 // External dependencies
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import React from 'react';
 
 // Internal dependencies

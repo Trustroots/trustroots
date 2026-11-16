@@ -1,6 +1,6 @@
 import React, { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 import {
   Modal,

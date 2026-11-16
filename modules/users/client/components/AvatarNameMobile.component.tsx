@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 
 import Avatar from './Avatar.component';
 import type { UserProfile } from '../types';

@@ -1,4 +1,4 @@
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import React from 'react';
 
 type IconSize = 'lg' | '2x' | '3x' | '4x' | '5x';

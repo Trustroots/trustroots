@@ -2,7 +2,7 @@ import { clsx, type ClassValue } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /*
- * The `tw:` prefix and theme tokens match packages/ui/src/globals.css. Add a
+ * The `tw:` prefix and theme tokens match ../globals.css. Add a
  * name here whenever that file adds a token used by a Tailwind utility.
  */
 const twMerge = extendTailwindMerge({

@@ -1,6 +1,6 @@
 import React, { useContext, type ComponentProps } from 'react';
 
-import { cn } from '@trustroots/classnames';
+import { cn } from '#lib/cn';
 
 import { ButtonGroupContext, type ButtonSize } from './Button';
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 
 const Container = styled.div`
   display: flex;
