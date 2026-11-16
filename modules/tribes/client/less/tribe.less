@@ -124,36 +124,18 @@
 
 .circle-member-discovery {
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
   align-items: start;
   gap: 16px;
   padding-top: 28px;
   padding-bottom: 36px;
-  @media (min-width: @screen-sm-min) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
 }
 
 .board .tribe-organisers {
   margin-block: 12px;
 
   h3 {
-    margin: 0 0 6px;
     font-size: 1.125rem;
-  }
-
-  ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  li {
-    min-width: 0;
-    max-width: 100%;
   }
 
   .member-search-card {
@@ -172,19 +154,6 @@
   border-radius: 8px;
   padding: 20px;
   background: #f5f5f5;
-  h3 {
-    margin-top: 0;
-  }
-  ul {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
-    align-items: start;
-    gap: 10px;
-    margin: 16px 0 0;
-  }
-  li {
-    min-width: 0;
-  }
 }
 
 .circle-member-empty {

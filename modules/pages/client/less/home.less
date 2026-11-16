@@ -19,24 +19,12 @@
   padding-bottom: 32px;
 }
 .home-recent-members h2 {
-  margin: 0 0 20px;
   font-size: clamp(23px, 3vw, 32px);
   line-height: 1.2;
   .font-brand-semibold();
 }
 .home-recent-member-list {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 12px;
-  margin-bottom: 0;
-
-  @media (min-width: @screen-sm-min) {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  @media (min-width: @screen-md-min) {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  --member-section-card-width: 18rem;
 
   .member-search-card {
     height: 100%;

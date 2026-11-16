@@ -68,9 +68,9 @@ function MemberSection({
 
   return (
     <section className="circle-member-section">
-      <h3>{title}</h3>
-      <p>{subtitle}</p>
-      <ul className="list-unstyled">
+      <h3 className="web-section-heading">{title}</h3>
+      <p className="web-section-description">{subtitle}</p>
+      <ul className="web-section-list list-unstyled">
         {members.map(member => (
           <li className="circle-member-row" key={member._id}>
             <div className="circle-discovery-card">
