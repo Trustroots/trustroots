@@ -183,7 +183,7 @@ test.describe('seeded message flows', () => {
     );
   });
 
-  test('received messages offer quick reply buttons', async ({
+  test('received hosting messages offer quick reply buttons', async ({
     page,
     request,
     browser,
@@ -208,6 +208,7 @@ test.describe('seeded message flows', () => {
       userFrom: senderDoc._id,
       userTo: recipientDoc._id,
       content: 'A fictional member asks about hosting.',
+      hostingDetails: { guests: 1 },
       created: new Date(),
       read: false,
       shadowHidden: false,

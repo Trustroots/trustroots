@@ -231,6 +231,7 @@ describe('Mobile authentication API', function () {
       `/api/mobile/v0/experiences?userTo=${member._id}`,
       `/api/mobile/v0/experiences/with/${member._id}`,
       '/api/mobile/v0/messages',
+      `/api/mobile/v0/messages-hosting?userTo=${member._id}`,
       `/api/mobile/v0/messages/${member._id}`,
     ];
 
@@ -338,6 +339,7 @@ describe('Mobile authentication API', function () {
       ['post', '/api/mobile/v0/experiences'],
       ['get', `/api/mobile/v0/experiences/with/${member.id}`],
       ['get', '/api/mobile/v0/messages'],
+      ['get', `/api/mobile/v0/messages-hosting?userTo=${member.id}`],
       ['post', '/api/mobile/v0/messages'],
       ['get', `/api/mobile/v0/messages/${member.id}`],
       ['post', '/api/mobile/v0/messages-read'],
@@ -501,6 +503,19 @@ describe('Mobile authentication API', function () {
     acknowledged.headers['cache-control'].should.equal('no-store');
     (await Message.findById(incoming.id)).read.should.equal(true);
     (await Message.findById(outgoing.id)).read.should.equal(false);
+  });
+
+  it('provides hosting context through the authenticated mobile API', async function () {
+    const signin = await request(app)
+      .post('/api/mobile/v0/auth/signin')
+      .send(credentials)
+      .expect(200);
+    const response = await request(app)
+      .get(`/api/mobile/v0/messages-hosting?userTo=${member.id}`)
+      .set('Authorization', `Bearer ${signin.body.accessToken}`)
+      .expect(200, { description: '', acknowledgementRequired: false });
+    response.headers['cache-control'].should.equal('no-store');
+    should.not.exist(response.headers['set-cookie']);
   });
 
   it('rejects malformed or unbounded message acknowledgements', async function () {

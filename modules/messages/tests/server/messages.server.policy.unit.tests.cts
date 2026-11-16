@@ -70,6 +70,7 @@ describe('Messages policy unit tests', () => {
       {
         roles: ['admin'],
         allows: [
+          { resources: '/api/messages-hosting', permissions: ['get'] },
           { resources: '/api/messages', permissions: [] },
           { resources: '/api/messages/:messageUserId', permissions: [] },
           { resources: '/api/messages-preview', permissions: ['post'] },
@@ -81,6 +82,7 @@ describe('Messages policy unit tests', () => {
       {
         roles: ['user'],
         allows: [
+          { resources: '/api/messages-hosting', permissions: ['get'] },
           { resources: '/api/messages', permissions: ['get', 'post'] },
           { resources: '/api/messages/:messageUserId', permissions: ['get'] },
           { resources: '/api/messages-preview', permissions: ['post'] },

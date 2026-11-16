@@ -21,4 +21,5 @@ export interface OfferServerRecord {
   reactivateReminderSent?: Date;
   meetingStatus?: 'yes' | 'maybe' | 'no' | 'not-set';
   showOnlyInMyCircles?: boolean;
+  requireHostingDescriptionAcknowledgement?: boolean;
 }

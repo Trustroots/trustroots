@@ -70,6 +70,43 @@ const hostOffer: OfferPayload = {
 const analytics = fakeAnalytics();
 
 describe('OfferHostPage', () => {
+  it('defaults acknowledgement off, persists opting in and reloads the preference', async () => {
+    offersApiMock.updateOffer.mockResolvedValue({ message: 'Offer updated.' });
+    const { unmount } = render(<OfferHostPage user={user} />, {
+      wrapper: analytics.wrapper,
+    });
+    const descriptionRegion = await screen.findByRole('region', {
+      name: 'Description',
+    });
+    const checkbox = within(descriptionRegion).getByRole('checkbox', {
+      name: /Require guests to acknowledge/,
+    });
+    expect(checkbox).not.toBeChecked();
+    fireEvent.click(checkbox);
+    expect(hasUnsavedChanges()).toBe(true);
+    fireEvent.click(
+      screen.getAllByRole('button', { name: 'Save and Exit' })[1],
+    );
+    await waitFor(() =>
+      expect(offersApiMock.updateOffer).toHaveBeenCalledWith(
+        'offer-1',
+        expect.objectContaining({
+          requireHostingDescriptionAcknowledgement: true,
+        }),
+      ),
+    );
+    await waitFor(() => expect(hasUnsavedChanges()).toBe(false));
+    unmount();
+    offersApiMock.getOffers.mockResolvedValue([
+      { ...hostOffer, requireHostingDescriptionAcknowledgement: true },
+    ]);
+    render(<OfferHostPage user={user} />, { wrapper: analytics.wrapper });
+    expect(
+      await screen.findByRole('checkbox', {
+        name: /Require guests to acknowledge/,
+      }),
+    ).toBeChecked();
+  });
   beforeEach(() => {
     jest.clearAllMocks();
     window.history.replaceState({}, '', '/offer/host');

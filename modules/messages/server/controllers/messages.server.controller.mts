@@ -18,9 +18,13 @@ import type {
   MessageMember,
   MessagePayload,
   MessageThreadSummary,
+  HostingDetails,
+  MessageHostingContext,
 } from '../../shared/messages.js';
+import { parseHostingDetails } from '../services/hosting-details.server.service.mts';
 import type { MessageRecord } from '../models/message.server.model.mts';
 import type { ThreadRecord } from '../models/thread.server.model.mts';
+import type { OfferServerRecord } from '../../../offers/server/models/offer.server.types.mts';
 import {
   prepareMarkReadSelector,
   prepareMarkReadResponse,
@@ -96,6 +100,7 @@ interface MessageEndpointModel {
     },
   ): MessageEndpointDocument;
   distinct(field: string, query: object): Promise<Types.ObjectId[]>;
+  exists(query: object): Promise<{ _id: Types.ObjectId } | null>;
   find(query: object): QueryResult<MessageEndpointDocument[]>;
   paginate(
     query: object,
@@ -184,6 +189,7 @@ type MessageResponseBody =
     }
   | { unread: number }
   | { content: string }
+  | MessageHostingContext
   | ReturnType<typeof prepareMarkReadResponse>;
 type ClientThreadSummary = MessageThreadSummary<
   Types.ObjectId | string,
@@ -220,6 +226,10 @@ interface MessagesController {
   sync(req: ControllerRequest, res: ControllerResponse): unknown;
   markAllMessagesToUserNotified(userId: string, callback: ErrorCallback): void;
   preview(req: ControllerRequest, res: ControllerResponse): unknown;
+  hostingContext(
+    req: ControllerRequest,
+    res: ControllerResponse,
+  ): Promise<unknown>;
   sanitizeMessages<Message extends { content: string }>(
     messages?: Message[] | null,
   ): Message[];
@@ -240,6 +250,7 @@ const Thread = mongoose.model<ThreadEndpointRecord>(
 const User = mongoose.model<MessageUser>(
   'User',
 ) as unknown as UserEndpointModel;
+const Offer = mongoose.model<OfferServerRecord>('Offer');
 type ObjectIdInput = Parameters<typeof mongoose.Types.ObjectId.isValid>[0];
 function isValidObjectId(value: unknown): value is ObjectIdInput {
   return mongoose.Types.ObjectId.isValid(value as ObjectIdInput);
@@ -279,6 +290,7 @@ const messageFields = [
   'read',
   'userFrom',
   'userTo',
+  'hostingDetails',
 ].join(' ');
 
 // Allowed fields of thread object to be set over API
@@ -490,6 +502,71 @@ async function recentRecipientCount(userId: Types.ObjectId): Promise<number> {
   return writtenTo.length;
 }
 
+async function hostingContextFor(
+  user: MessageUser,
+  userTo: string,
+): Promise<MessageHostingContext> {
+  const offer = await Offer.findOne({
+    user: new mongoose.Types.ObjectId(userTo),
+    type: 'host',
+    $or: [
+      { validUntil: { $gte: new Date() } },
+      { validUntil: { $exists: false } },
+    ],
+  })
+    .sort({ requireHostingDescriptionAcknowledgement: -1 })
+    .select('description requireHostingDescriptionAcknowledgement')
+    .exec();
+  let description = sanitizeHtml(
+    offer?.description || '',
+    textService.sanitizeOptions,
+  );
+  if (user.roles.includes('shadowban') && !user.roles.includes('admin')) {
+    description = textService.stripContactDetails(description);
+  }
+  const acknowledgementRequired = Boolean(
+    offer?.requireHostingDescriptionAcknowledgement &&
+    !(await Message.exists(
+      excludeBlockedUsers(
+        {
+          hostingDetails: { $exists: true },
+          $or: [
+            { userFrom: user._id, userTo },
+            { userFrom: userTo, userTo: user._id, shadowHidden: { $ne: true } },
+          ],
+        },
+        user,
+      ),
+    )),
+  );
+  return { description, acknowledgementRequired };
+}
+
+/** Read hosting guidance independently of the paginated message history. */
+service.hostingContext = async function (req, res) {
+  const user = authenticatedUser(req);
+  if (!user) return errorService.sendForbidden(res);
+  const userTo = req.query?.userTo;
+  if (typeof userTo !== 'string' || !isValidObjectId(userTo)) {
+    return errorService.sendInvalidId(res);
+  }
+  try {
+    const receiver = await User.findOne({
+      _id: new mongoose.Types.ObjectId(userTo),
+      ...(user.roles.includes('admin')
+        ? {}
+        : {
+            public: true,
+            roles: { $nin: ['suspended', 'shadowban'] },
+          }),
+    }).exec();
+    if (!receiver) return errorService.sendNotFound(res);
+    return res.json(await hostingContextFor(user, userTo));
+  } catch (error) {
+    return errorService.sendBadRequest(res, error);
+  }
+};
+
 /**
  * Send a message
  */
@@ -525,6 +602,16 @@ service.send = async function (req, res) {
   if (!body.content || textService.isEmpty(body.content as string)) {
     return res.status(400).send({
       message: 'Please write a message.',
+    });
+  }
+
+  let hostingDetails: HostingDetails | undefined;
+  try {
+    hostingDetails = parseHostingDetails(body.hostingDetails);
+  } catch (error) {
+    return res.status(400).send({
+      error: 'invalid-hosting-details',
+      message: (error as Error).message,
     });
   }
 
@@ -586,6 +673,16 @@ service.send = async function (req, res) {
         { userTo: String(body.userTo), userFrom: user._id },
       ],
     });
+    if (hostingDetails && body.hostingDescriptionAcknowledged !== true) {
+      const context = await hostingContextFor(user, String(body.userTo));
+      if (context.acknowledgementRequired) {
+        return res.status(400).send({
+          error: 'hosting-description-acknowledgement-required',
+          message:
+            'Please acknowledge this host’s hosting description and requirements before sending your first hosting message.',
+        });
+      }
+    }
     if (!existingThread) {
       // Stryker disable next-line StringLiteral: an empty projection returns the whole user, which still includes the description
       const sender = await User.findById(user._id, 'description').exec();
@@ -607,6 +704,7 @@ service.send = async function (req, res) {
         {
           userTo: body.userTo as string,
           content: textService.html(body.content as string),
+          hostingDetails,
         },
         user._id,
       ),
@@ -1028,6 +1126,7 @@ service.preview = function (req, res) {
   return res.json(preparePreviewMessageResponse(textService.html(content)));
 };
 const preview = service.preview;
+const hostingContext = service.hostingContext;
 const inbox = service.inbox;
 const markAllMessagesToUserNotified = service.markAllMessagesToUserNotified;
 const markRead = service.markRead;
@@ -1040,6 +1139,7 @@ const threadByUser = service.threadByUser;
 /** @esmNamed */
 export {
   preview,
+  hostingContext,
   inbox,
   markAllMessagesToUserNotified,
   markRead,
