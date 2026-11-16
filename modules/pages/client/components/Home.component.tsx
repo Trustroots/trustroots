@@ -2,7 +2,7 @@
 import { Trans, useTranslation } from 'react-i18next';
 import { useSearch } from '@tanstack/react-router';
 import { Button } from '@trustroots/ui/Button';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import React, { useState, useEffect } from 'react';
 import type { PageTranslator, PageUser } from '../types';
 

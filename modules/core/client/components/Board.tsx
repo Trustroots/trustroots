@@ -5,7 +5,7 @@ import React, {
   type ReactNode,
   type HTMLAttributes,
 } from 'react';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import isArray from 'lodash/isArray';
 
 import { selectPhoto } from '../services/photos.service';

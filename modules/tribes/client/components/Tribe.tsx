@@ -1,5 +1,5 @@
 import React from 'react';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@trustroots/ui/Badge';
 

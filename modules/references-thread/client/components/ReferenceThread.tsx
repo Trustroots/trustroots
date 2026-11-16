@@ -2,7 +2,7 @@
 import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
-import { cn } from '@trustroots/classnames';
+import { cn } from '@trustroots/ui/cn';
 import React, { useState, useEffect } from 'react';
 
 // Internal dependencies
