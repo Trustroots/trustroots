@@ -1,6 +1,5 @@
 import React, { type ReactNode } from 'react';
 import sparklesSvg from '../img/sparkles.svg';
-import './success-message.css';
 
 type SuccessMessageProps = {
   children?: ReactNode;
@@ -14,16 +13,11 @@ export default function SuccessMessage({
   title,
 }: SuccessMessageProps) {
   return (
-    <div className="success-message">
-      <img
-        className="success-message-sparkles"
-        src={sparklesSvg}
-        alt=""
-        aria-hidden
-      />
+    <div className="tw:mx-auto tw:flex tw:max-w-[500px] tw:flex-col tw:items-center tw:p-[30px] tw:text-center">
+      <img className="tw:mb-[-50px]" src={sparklesSvg} alt="" aria-hidden />
       <h2 className="font-brand-light">{title}</h2>
-      {children && <div className="success-message-spacer">{children}</div>}
-      {cta && <div className="success-message-spacer">{cta}</div>}
+      {children && <div className="tw:my-[15px]">{children}</div>}
+      {cta && <div className="tw:my-[15px]">{cta}</div>}
     </div>
   );
 }

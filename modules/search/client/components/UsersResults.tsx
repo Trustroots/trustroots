@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Button } from '@trustroots/ui/Button';
-import './users-results.css';
 
 import MemberSearchCard from '@/modules/users/client/components/MemberSearchCard.component';
 import NoContent from '@/modules/core/client/components/NoContent';
@@ -46,7 +45,7 @@ export default function UsersResults({
           </Button>
         </p>
       )}
-      <div className="users-results">
+      <div className="tw:grid tw:grid-cols-[1fr] tw:gap-3 tw:min-[616px]:grid-cols-[1fr_1fr]">
         {users.map(user => (
           <MemberSearchCard key={user._id} user={user} query={query} />
         ))}

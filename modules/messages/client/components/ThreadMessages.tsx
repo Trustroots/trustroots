@@ -1,5 +1,4 @@
 import React from 'react';
-import './thread-messages.css';
 import moment from 'moment';
 import { useTranslation } from 'react-i18next';
 
@@ -12,7 +11,12 @@ import { Alert } from '@trustroots/ui/Alert';
 function MessagesContainer(
   props: Pick<React.ComponentProps<'div'>, 'children' | 'onScroll' | 'ref'>,
 ) {
-  return <div {...props} className="thread-messages" />;
+  return (
+    <div
+      {...props}
+      className="thread-messages tw:min-h-0 tw:flex-[1_1_auto] tw:overflow-y-auto tw:pt-[30px] tw:pe-[30px] tw:sm:pe-0"
+    />
+  );
 }
 
 type ThreadMessagesProps = {

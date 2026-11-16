@@ -9,7 +9,6 @@ import {
   ModalTitle,
 } from '@trustroots/ui/Modal';
 import React, { useState } from 'react';
-import './language-switch.css';
 
 // Internal dependencies
 import {
@@ -22,6 +21,9 @@ import {
 } from '@trustroots/analytics/client';
 import * as usersApi from '@/modules/users/client/api/users.api';
 import i18n from '@/config/client/i18n';
+
+const languageChoiceClass =
+  'tw:flex tw:h-full tw:min-h-11 tw:w-full tw:items-center tw:rounded-(--bs-border-radius) tw:border-0 tw:px-3 tw:py-2.5 tw:text-start tw:text-[length:inherit] tw:leading-[1.5] tw:wrap-anywhere';
 
 const buttonLooks = {
   default: {},
@@ -103,7 +105,7 @@ export default function LanguageSwitch({
         <ModalBody>
           {locales.length >= 8 && (
             <input
-              className="language-switch-search form-control"
+              className="form-control tw:mb-4 tw:w-full"
               type="search"
               value={search}
               onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
@@ -113,12 +115,12 @@ export default function LanguageSwitch({
               aria-label={t('Search languages…')}
             />
           )}
-          <ul className="language-switch-list">
+          <ul className="tw:m-0 tw:grid tw:list-none tw:grid-cols-[repeat(auto-fit,minmax(min(100%,200px),1fr))] tw:gap-x-3 tw:gap-y-1 tw:p-0">
             {filteredLocales.map(({ code, label }, index) => (
               <li key={`${code}-${label}-${index}`}>
                 {code === currentLanguageCode && (
                   <strong
-                    className="language-switch-selected"
+                    className={`${languageChoiceClass} tw:bg-(--tr-gray-lighter) tw:text-link tw:after:ms-auto tw:after:ps-2 tw:after:content-['✓']`}
                     lang={code}
                     dir={i18n.dir(code)}
                     aria-current="true"
@@ -128,7 +130,7 @@ export default function LanguageSwitch({
                 )}
                 {code !== currentLanguageCode && (
                   <button
-                    className="language-switch-option"
+                    className={`${languageChoiceClass} tw:cursor-pointer tw:bg-transparent tw:text-text tw:[&:hover]:bg-(--tr-gray-lighter) tw:focus-visible:outline-2 tw:focus-visible:outline-solid tw:focus-visible:outline-offset-2 tw:focus-visible:outline-link`}
                     type="button"
                     dir={i18n.dir(code)}
                     lang={code}

@@ -1,7 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Badge } from '@trustroots/ui/Badge';
-import './meta.css';
 
 import type {
   ExperienceInteractions,
@@ -20,7 +19,7 @@ export default function Meta({
   };
 
   return (
-    <div className="experience-meta-labels">
+    <div className="tw:flex tw:flex-wrap tw:items-center tw:py-2.5 tw:*:me-[5px] tw:*:mb-[5px]">
       {[
         recommend === 'yes' && t('Recommend'),
         recommend === 'no' && t('Not recommend'),

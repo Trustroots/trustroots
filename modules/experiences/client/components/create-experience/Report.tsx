@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import './report.css';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -26,7 +25,7 @@ export default function Report({
   };
 
   return (
-    <div className="experience-report">
+    <div className="tw:mt-[50px]">
       <p>
         {
           t(

@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@trustroots/ui/Button';
 
 import React from 'react';
-import './experience.css';
 
 // Internal dependencies
 import { DAYS_TO_REPLY } from '../../utils/constants';
@@ -52,10 +51,10 @@ export default function Experience({
   return (
     <div className="panel panel-default" id={_id}>
       <div className="panel-body">
-        <div className="experience-header">
+        <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:leading-[1.3em] tw:[&_.avatar]:me-2.5">
           <Avatar user={userFrom} size={36} />
-          <div className="experience-user-meta">
-            <UserLink user={userFrom} className="experience-user-link" />
+          <div className="tw:flex tw:flex-col">
+            <UserLink user={userFrom} className="tw:me-[5px] tw:font-bold" />
             <span className="muted">
               {userFrom?.gender && `${getGender(userFrom.gender)}. `}
               {userFrom?.created &&
@@ -65,7 +64,7 @@ export default function Experience({
             </span>
           </div>
           <a
-            className="experience-link"
+            className="tw:ms-auto tw:self-start tw:text-[#333] tw:[@media(max-width:480px)]:ms-0 tw:[@media(max-width:480px)]:mb-2.5 tw:[@media(max-width:480px)]:w-full"
             href={`/profile/${userTo.username}/experiences#${_id}`}
           >
             <TimeAgo date={createdDate} />
@@ -73,9 +72,9 @@ export default function Experience({
         </div>
         {!isPublicExperience && feedbackPublic === undefined && (
           <>
-            <div className="experience-pending-notice">
+            <div className="tw:py-5 tw:italic">
               <div
-                className="experience-pending-placeholder"
+                className="tw:pb-2.5 tw:text-[#ccc] tw:blur-[4px] tw:select-none"
                 aria-hidden="true"
               >
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
@@ -106,13 +105,13 @@ export default function Experience({
         )}
         <Meta interactions={interactions} recommend={recommend} />
         {feedbackPublic && (
-          <div className="experience-feedback-public">{feedbackPublic}</div>
+          <div className="tw:max-w-[600px]">{feedbackPublic}</div>
         )}
         {response && (
-          <div className="experience-response">
-            <div className="experience-header">
+          <div className="tw:ms-5 tw:mt-5 tw:border-t tw:border-solid tw:border-[#ccc] tw:pt-5 tw:[@media(max-width:480px)]:ms-2.5">
+            <div className="tw:flex tw:flex-wrap-reverse tw:items-center tw:leading-[1.3em] tw:[&_.avatar]:me-2.5">
               <Avatar user={userTo} size={24} />
-              <UserLink user={userTo} className="experience-user-link" />
+              <UserLink user={userTo} className="tw:me-[5px] tw:font-bold" />
               (<TimeAgo date={new Date(response.created)} />)
             </div>
             <Meta
@@ -120,15 +119,13 @@ export default function Experience({
               recommend={response.recommend}
             />
             {response.feedbackPublic && (
-              <div className="experience-feedback-public">
-                {response.feedbackPublic}
-              </div>
+              <div className="tw:max-w-[600px]">{response.feedbackPublic}</div>
             )}
           </div>
         )}
         {!isPublicExperience && feedbackPublic !== undefined && (
           <>
-            <div className="experience-pending-notice">
+            <div className="tw:py-5 tw:italic">
               {
                 t(
                   'Your experience will become public in {{count}} days, or when they share their experience with you.',

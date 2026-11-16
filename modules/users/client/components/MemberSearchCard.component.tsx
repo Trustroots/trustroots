@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@trustroots/ui/Badge';
-import './member-search-card.css';
 
 import MemberIdentity from './MemberIdentity';
 import type { UserProfile } from '../types';
@@ -68,7 +67,13 @@ export default function MemberSearchCard({
   const { t } = useTranslation('search') as { t: (key: string) => string };
   return (
     <a
-      className="member-search-card"
+      className={[
+        'member-search-card tw:group tw:flex tw:min-w-0 tw:flex-col tw:gap-2 tw:rounded-xl tw:border tw:border-solid tw:border-[#e5e8e6] tw:bg-white tw:p-4 tw:text-inherit tw:no-underline tw:wrap-anywhere',
+        'tw:data-[compact]:gap-1 tw:data-[compact]:p-2.5',
+        'tw:transition-[border-color,box-shadow,transform] tw:duration-150 tw:ease-[ease]',
+        'tw:[&:hover,&:focus-visible]:border-[#94b8a4] tw:[&:hover,&:focus-visible]:text-inherit tw:[&:hover,&:focus-visible]:no-underline tw:[&:hover,&:focus-visible]:shadow-[0_5px_18px_rgb(26_68_47_/_10%)] tw:[&:hover,&:focus-visible]:[transform:translateY(-1px)]',
+        'tw:focus-visible:outline-3 tw:focus-visible:outline-solid tw:focus-visible:outline-offset-2 tw:focus-visible:outline-[rgb(72_130_97_/_35%)]',
+      ].join(' ')}
       data-compact={compact || undefined}
       href={`/profile/${encodeURIComponent(user.username)}`}
     >
@@ -78,7 +83,7 @@ export default function MemberSearchCard({
         user={user}
         format={value => highlightMatches(value, query)}
       />
-      <div className="member-search-card-details">
+      <div className="member-search-card-details tw:flex tw:min-w-0 tw:flex-col tw:gap-1 tw:self-stretch tw:empty:hidden tw:group-data-[compact]:gap-0.5 tw:group-data-[compact]:leading-[1.3] tw:[&>p]:mt-0.5 tw:[&>p]:mb-0 tw:group-data-[compact]:[&>p]:m-0">
         {user.locationLiving && (
           <p>
             {String(t('Lives in'))}:{' '}
@@ -91,12 +96,12 @@ export default function MemberSearchCard({
           </p>
         )}
         {user.tagline && (
-          <p className="member-search-card-tagline">
+          <p className="tw:line-clamp-2">
             {highlightMatches(user.tagline, query)}
           </p>
         )}
         {activityLabel && (
-          <div className="member-search-card-activity">
+          <div className="tw:mt-auto tw:pt-1.5 tw:group-data-[compact]:pt-0.5 tw:[&_[data-slot=badge]]:whitespace-normal">
             <Badge variant="outline" intent="neutral">
               {activityLabel}
             </Badge>

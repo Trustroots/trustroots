@@ -1,7 +1,6 @@
 // Internal dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import './experience-counts.css';
 
 // External dependencies
 import Icon from '@/modules/core/client/components/Icon';
@@ -48,7 +47,7 @@ export default function ExperienceCounts({
       }) as string;
     }
 
-    return <p className="experience-counts-sentence lead">{summary}</p>;
+    return <p className="lead tw:mb-2.5">{summary}</p>;
   };
 
   // Details about recommendations.
@@ -84,7 +83,7 @@ export default function ExperienceCounts({
     return summaries.length > 0 ? (
       <p>
         <Icon
-          className="text-muted experience-counts-icon"
+          className="text-muted tw:me-[7px]"
           fixedWidth
           icon={nonRecommendCount > 0 ? 'close' : 'ok'}
           size={undefined}
@@ -147,7 +146,7 @@ export default function ExperienceCounts({
     return (
       <p>
         <Icon
-          className="text-muted experience-counts-icon"
+          className="text-muted tw:me-[7px]"
           fixedWidth
           icon="tree"
           size={undefined}
@@ -202,7 +201,7 @@ export default function ExperienceCounts({
     return genderSummary ? (
       <p>
         <Icon
-          className="text-muted experience-counts-icon"
+          className="text-muted tw:me-[7px]"
           fixedWidth
           icon={genderIcon}
           size={undefined}
@@ -213,7 +212,7 @@ export default function ExperienceCounts({
   };
 
   return (
-    <div className="experience-counts-summary">
+    <div className="tw:my-5">
       {renderSummarySentence()}
       {totalCount > 1 && renderRecommendationStats()}
       {totalCount > 2 && renderGenderStats()}

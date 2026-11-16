@@ -1,9 +1,0 @@
-.experience-meta-labels {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  padding: 10px 0;
-}
-.experience-meta-labels > * {
-  margin: 0 5px 5px 0;
-}

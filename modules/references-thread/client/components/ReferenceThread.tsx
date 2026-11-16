@@ -4,7 +4,6 @@ import { Button } from '@trustroots/ui/Button';
 import { ButtonGroup } from '@trustroots/ui/ButtonGroup';
 import classnames from 'classnames';
 import React, { useState, useEffect } from 'react';
-import './reference-thread.css';
 
 // Internal dependencies
 import {
@@ -116,7 +115,7 @@ export default function ReferenceThread({ userToId }: ReferenceThreadProps) {
               <TimeAgo date={new Date(referenceThread?.created || '')} />
               {' · '}
               <Button
-                className="reference-thread-change"
+                className="tw:m-0 tw:inline tw:p-0 tw:text-[#999]"
                 variant="link"
                 onClick={() => setIsAsking(true)}
               >

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import Avatar from './Avatar.component';
-import './member-avatar.css';
 import type { UserProfile } from '../types';
 
 type MemberAvatarUser = Partial<
@@ -77,7 +76,7 @@ export default function MemberAvatar({
   const fallback = (
     <span
       aria-hidden="true"
-      className="member-avatar-fallback"
+      className="member-avatar-fallback tw:inline-flex tw:flex-[0_0_auto] tw:items-center tw:justify-center tw:rounded-full tw:font-semibold tw:leading-none tw:tracking-[0.02em] tw:uppercase"
       style={{
         width: size,
         height: size,

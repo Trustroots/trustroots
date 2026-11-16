@@ -1,7 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import './search-map-no-content.css';
 
 // Internal dependencies
 import NoContent from '@/modules/core/client/components/NoContent';
@@ -10,7 +9,7 @@ export default function SearchMapNoContent() {
   const { t } = useTranslation('search');
   return (
     <NoContent
-      className="search-map-no-content"
+      className="tw:mx-auto tw:flex tw:h-screen tw:flex-col tw:justify-center tw:bg-white/50 tw:text-[#333] tw:[&.content-empty_i]:text-[#333]"
       icon="users"
       message={String(t('Zoom closer to find members.'))}
     />

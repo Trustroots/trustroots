@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import './statistics-charts.css';
 import { getCharts } from '../api/statistics.api';
 import type { PublicCharts } from '../../shared/public-charts.mts';
 import Stat from './Stat';
@@ -20,7 +19,7 @@ function BarTable({
   const formatter = new Intl.NumberFormat();
 
   return (
-    <table className="statistics-chart-table">
+    <table className="tw:w-full tw:text-start tw:tabular-nums tw:[&_th,&_td]:p-1 tw:[&_tbody_th]:font-normal tw:[&_td]:w-[30%] tw:[&_td:nth-child(3)>span]:bg-[#3d6492]">
       <caption className="sr-only">{caption}</caption>
       <thead>
         <tr>
@@ -41,6 +40,7 @@ function BarTable({
                 {formatter.format(count)}
                 <span
                   aria-hidden="true"
+                  className="tw:block tw:h-[5px] tw:rounded-[2px] tw:bg-[#147963]"
                   style={{ width: `${(count / maximum) * 100}%` }}
                 />
               </td>

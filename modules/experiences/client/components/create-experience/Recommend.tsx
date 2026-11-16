@@ -2,7 +2,6 @@
 import { ToggleGroup, ToggleGroupItem } from '@trustroots/ui/ToggleGroup';
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import './recommend.css';
 
 // Internal dependencies
 import '@/config/client/i18n';
@@ -62,13 +61,13 @@ export default function Recommend({
         >
           <ToggleGroupItem value="yes">{t('Yes') as string}</ToggleGroupItem>
           <ToggleGroupItem value="no">{t('No') as string}</ToggleGroupItem>
-          <div className="recommendation-divider" />
+          <div className="tw:float-start tw:mx-[5px] tw:mt-3 tw:inline-block tw:h-5 tw:w-px tw:bg-[#ccc]" />
           <ToggleGroupItem value="unknown">
             {t('Skip') as string}
           </ToggleGroupItem>
         </ToggleGroup>
         {recommend === 'no' && (
-          <div className="recommend-sad-notice lead">
+          <div className="lead tw:my-[30px]">
             {
               t(
                 "We're sad to hear you didn't have a great experience using Trustroots!",

@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import './thread.css';
 import useMediaQuery from '@/modules/core/client/hooks/use-media-query';
 import { useTranslation } from 'react-i18next';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -102,7 +101,7 @@ function FailedToLoadThread() {
 
 function Loading() {
   return (
-    <div className="thread-loading-container">
+    <div className="thread-loading-container tw:absolute tw:top-0 tw:w-full tw:text-center">
       <LoadingIndicator />
     </div>
   );
@@ -392,7 +391,7 @@ export default function Thread({ user, profileMinimumLength }: ThreadProps) {
         <div className="col-xs-12 col-sm-9">
           {isFetching && <Loading />}
           {!isFetching && (
-            <div className="thread-container">
+            <div className="thread-container tw:fixed tw:top-11 tw:bottom-[var(--trustroots-keyboard-inset,0px)] tw:flex tw:min-h-0 tw:w-full tw:flex-col tw:overflow-hidden tw:sm:bottom-3 tw:sm:w-[505px] tw:md:w-[667px] tw:lg:w-[800px]">
               {isFetchingMore && <Loading />}
               {messages.length === 0 ? (
                 <>
