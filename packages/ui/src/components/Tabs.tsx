@@ -7,7 +7,7 @@ import React, {
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
 import { cva } from 'class-variance-authority';
 
-import { cn } from '#lib/utils';
+import { cn } from '@trustroots/classnames';
 
 /*
  * Bootstrap 5.3 `.nav-tabs` and `.nav-pills` geometry on Base UI's tabs.

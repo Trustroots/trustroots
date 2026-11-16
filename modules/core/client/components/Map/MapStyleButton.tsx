@@ -1,5 +1,5 @@
 // External dependencies
-import { clsx } from 'clsx';
+import { cn } from '@trustroots/classnames';
 import { Button } from '@trustroots/ui/Button';
 import React from 'react';
 
@@ -26,7 +26,7 @@ export default function MapStyleButton({
 }: MapStyleButtonProps) {
   return (
     <Button
-      className={clsx({
+      className={cn({
         'is-active': selectedStyle === styleName,
       })}
       disabled={disabled}

@@ -1,6 +1,6 @@
 // External dependencies
 import { useTranslation } from 'react-i18next';
-import { clsx } from 'clsx';
+import { cn } from '@trustroots/classnames';
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@trustroots/ui/Badge';
 
@@ -54,7 +54,7 @@ export default function ProfileTabs({
         role="tablist"
       >
         <li
-          className={clsx({
+          className={cn({
             active: pathName === 'profile.about',
           })}
           role="presentation"
@@ -65,7 +65,7 @@ export default function ProfileTabs({
         </li>
         {(contactsCount || isOWnProfile) && (
           <li
-            className={clsx({
+            className={cn({
               active: pathName === 'profile.contacts',
             })}
             role="presentation"
@@ -91,7 +91,7 @@ export default function ProfileTabs({
         )}
         {isExperiencesEnabled && (experiencesCount >= 0 || isOWnProfile) && (
           <li
-            className={clsx({
+            className={cn({
               active: pathName === 'profile.experiences.list',
             })}
             role="presentation"

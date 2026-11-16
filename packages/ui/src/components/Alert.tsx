@@ -2,7 +2,7 @@ import React, { type ComponentProps } from 'react';
 import { cva } from 'class-variance-authority';
 
 import type { Intent } from '#lib/intent';
-import { cn } from '#lib/utils';
+import { cn } from '@trustroots/classnames';
 
 /*
  * Bootstrap 5.3 `.alert` geometry. The tints are Bootstrap's own subtle

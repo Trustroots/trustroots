@@ -4,7 +4,7 @@ import { useRender } from '@base-ui/react/use-render';
 import { cva } from 'class-variance-authority';
 
 import { intentClassNames, type Intent } from '#lib/intent';
-import { cn } from '#lib/utils';
+import { cn } from '@trustroots/classnames';
 
 /*
  * Started from shadcn's Base UI button. The intent sets `--intent` and

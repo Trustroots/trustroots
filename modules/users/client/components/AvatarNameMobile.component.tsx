@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { clsx } from 'clsx';
+import { cn } from '@trustroots/classnames';
 
 import Avatar from './Avatar.component';
 import type { UserProfile } from '../types';
@@ -30,7 +30,7 @@ export default function AvatarNameMobile({
             ? undefined
             : () => setIsBiggerAvatar(prevState => !prevState)
         }
-        className={clsx('visible-xs-block', 'avatar-circle', {
+        className={cn('visible-xs-block', 'avatar-circle', {
           'profile-avatar-lg': isBiggerAvatar,
         })}
         aria-label={showPhotoEditLink ? 'Edit profile photo' : undefined}

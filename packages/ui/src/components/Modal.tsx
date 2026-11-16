@@ -2,7 +2,7 @@ import React, { useRef, type ReactNode, type RefObject } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import { cva } from 'class-variance-authority';
 
-import { cn } from '#lib/utils';
+import { cn } from '@trustroots/classnames';
 
 /*
  * Bootstrap 5.3 `.modal` geometry on Base UI's Dialog, with the app's own

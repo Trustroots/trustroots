@@ -1,6 +1,6 @@
 import React, { useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { clsx } from 'clsx';
+import { cn } from '@trustroots/classnames';
 import { Button, type ButtonStyleProps } from '@trustroots/ui/Button';
 import {
   Modal,
@@ -76,7 +76,7 @@ function JoinButtonPresentational({
       <Button
         {...look}
         render={<a href={`/signup?tribe=${tribe.slug}`} />}
-        className={clsx(className, 'tribe-join')}
+        className={cn(className, 'tribe-join')}
       >
         {icon && (
           <>
@@ -97,7 +97,7 @@ function JoinButtonPresentational({
       <Button
         {...currentLook}
         type="button"
-        className={clsx(
+        className={cn(
           isMember && 'tribe-join-active',
           isMember && activeClassName,
           className,

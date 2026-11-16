@@ -15,7 +15,7 @@
   "aliases": {
     "components": "#components",
     "ui": "#components",
-    "utils": "#lib/utils",
+    "utils": "@trustroots/classnames",
     "lib": "#lib",
     "hooks": "#hooks"
   }
