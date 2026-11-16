@@ -3103,6 +3103,7 @@ const features = [
       'Gravatar member data is restricted to administrators.',
       'Administrators can view profile pictures and sort Gravatar accounts by last seen.',
       'Administrators can check Gravatar photo availability.',
+      'Administrators can start missing Gravatar cleanup.',
     ],
     relatedSpecs: [
       spec(
@@ -3112,6 +3113,10 @@ const features = [
       spec(
         'features/admin-moderation/admin-gravatar.spec.ts',
         'administrators can check Gravatar photo availability',
+      ),
+      spec(
+        'features/admin-moderation/admin-gravatar.spec.ts',
+        'administrators can start missing Gravatar cleanup without clearing inconclusive accounts',
       ),
     ],
   },

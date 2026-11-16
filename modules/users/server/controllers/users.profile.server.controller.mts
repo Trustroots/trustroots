@@ -4,6 +4,7 @@ import {
   matchToken,
 } from '../services/action-token.server.service.mjs';
 import { setEmailConfirmationToken } from '../services/email-confirmation.server.service.mjs';
+import { queueProfileGravatarCheck } from '../services/gravatar-cleanup.server.service.mts';
 import { readFileSync } from 'node:fs';
 import getContactHandlerModule from './../../../contacts/server/controllers/contacts.server.controller.mjs';
 import getMessageHandlerModule from './../../../messages/server/controllers/messages.server.controller.mjs';
@@ -672,6 +673,7 @@ service.getUser = function (req: SanitizedProfileRequest, res) {
     // Profile of currently authenticated user:
     res.json(req.profile || {});
   }
+  if (req.profile) queueProfileGravatarCheck(req.profile);
 };
 
 /**

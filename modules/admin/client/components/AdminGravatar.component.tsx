@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Button } from '@trustroots/ui/Button';
 import {
   gravatarSortColumns,
@@ -33,6 +33,9 @@ export default function AdminGravatar() {
   const usage = loaded?.usage;
   const appliedSort = loaded?.query.sort;
   const loading = loaded?.query !== query;
+  const refreshUsage = useCallback(() => {
+    setQuery(current => ({ ...current, page: 1 }));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -75,7 +78,7 @@ export default function AdminGravatar() {
           Gravatar used to be the default avatar setting. Accounts without a
           Gravatar image may display a placeholder.
         </p>
-        <AdminGravatarPhotoCheck />
+        <AdminGravatarPhotoCheck onCleanupFinished={refreshUsage} />
         {failed && <p role="alert">Could not load Gravatar usage.</p>}
         {loading && !failed && <p role="status">Loading Gravatar usage…</p>}
         {usage && !failed && (

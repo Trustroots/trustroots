@@ -143,3 +143,41 @@ test('administrators can check Gravatar photo availability', async ({
     });
   }
 });
+
+test('administrators can start missing Gravatar cleanup without clearing inconclusive accounts', async ({
+  page,
+  request,
+}, testInfo) => {
+  annotateFeature(testInfo, 'admin.gravatar', [
+    'Administrators can start missing Gravatar cleanup.',
+  ]);
+  await signInViaApi(page, request, SEEDED_ADMIN);
+  const id = new ObjectId();
+  await withE2eDb(async db => {
+    await db.collection('users').insertOne({
+      _id: id,
+      username: 'gravatar-cleanup-without-hash',
+      email: 'gravatar-cleanup-without-hash@example.test',
+      avatarSource: 'gravatar',
+    });
+  });
+
+  try {
+    await page.goto('/admin/gravatar');
+    await page
+      .getByRole('button', { name: 'Switch missing Gravatars to no photo' })
+      .click();
+    await expect(page.getByText('Photo check complete.')).toBeVisible();
+    await expect(
+      page.getByText('0 accounts switched to no photo.'),
+    ).toBeVisible();
+    await withE2eDb(async db => {
+      const member = await db.collection('users').findOne({ _id: id });
+      expect(member?.avatarSource).toBe('gravatar');
+    });
+  } finally {
+    await withE2eDb(async db => {
+      await db.collection('users').deleteOne({ _id: id });
+    });
+  }
+});

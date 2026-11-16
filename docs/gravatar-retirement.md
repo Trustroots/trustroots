@@ -8,9 +8,18 @@ notices and email hashes remain during this transition.
 
 ## Aggregate account count
 
-Administrators can open `/admin/gravatar` for the current count and a paginated
-member list linking to existing admin profiles. The page does not fetch external
-images or change accounts. The API returns no email addresses or hashes.
+Administrators can open `/admin/gravatar` for the current selected-source count
+and a paginated member list linking to existing admin profiles. Gravatar was the
+default for older accounts, so this count includes accounts without an image.
+**Check Gravatar photos** measures availability without changing accounts.
+**Switch missing Gravatars to no photo** runs a paced scan and updates accounts
+only when Gravatar returns a 404 with its default image disabled. The report API
+returns no email addresses or hashes.
+
+Successful profile views also queue a background check for accounts still using
+Gravatar. Both paths verify the account's avatar source, email hash and uploaded
+avatar version before switching to no photo. Failed or inconclusive requests
+leave the setting in place.
 
 For an aggregate-only measurement, an authorised production operator can run this read-only query against the
 production database. Record only aggregate counts and the UTC measurement date;

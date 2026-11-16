@@ -2,6 +2,12 @@ const should: typeof import('should') = require('should');
 const request: typeof import('supertest') = require('supertest');
 const mongoose: typeof import('mongoose') = require('mongoose');
 const moment: typeof import('moment') = require('moment');
+const sinon: typeof import('sinon') = require('sinon');
+const assert: typeof import('node:assert').strict =
+  require('node:assert').strict;
+const {
+  setTimeout: delay,
+}: typeof import('node:timers/promises') = require('node:timers/promises');
 const config: typeof import('../../../../config/config.mts').default = require('./../../../../config/config.mts');
 const express: import('../../../../testutils/server/model-contracts.mts').TestExpressModule = require('./../../../../config/lib/express.mjs');
 const utils: typeof import('../../../../testutils/server/data.server.testutil.mts') = require('../../../../testutils/server/data.server.testutil');
@@ -125,6 +131,43 @@ describe('User profile CRUD tests', function () {
       .catch(done);
   });
   afterEach(utils.clearDatabase);
+  it('clears a confirmed missing Gravatar in the background after a profile view', async () => {
+    await User.updateOne(
+      { _id: user2._id },
+      { $set: { avatarSource: 'gravatar' } },
+    );
+    await agent.post('/api/auth/signin').send(credentials).expect(200);
+    const url = `/api/users/${user2.username}`;
+    let resolvePhoto!: (response: Response) => void;
+    const photo = new Promise<Response>(resolve => {
+      resolvePhoto = resolve;
+    });
+    const upstream = sinon.stub(globalThis, 'fetch').returns(photo);
+    try {
+      const profile = await agent.get(url).expect(200);
+      assert.equal(profile.body.avatarSource, 'gravatar');
+      await agent.get(url).expect(200);
+
+      resolvePhoto(new Response(null, { status: 404 }));
+      let storedSource: string | undefined;
+      for (let attempt = 0; attempt < 60; attempt++) {
+        storedSource = (await User.findById(user2._id).lean())?.avatarSource;
+        if (storedSource === 'none') break;
+        await delay(25);
+      }
+      assert.equal(storedSource, 'none');
+      sinon.assert.calledOnce(upstream);
+      await agent
+        .get(url)
+        .expect(200)
+        .expect(response => {
+          assert.equal(response.body.avatarSource, 'none');
+        });
+    } finally {
+      resolvePhoto(new Response(null, { status: 503 }));
+      upstream.restore();
+    }
+  });
   it('should be able to get own user details successfully even when profile is still non-public', function (done) {
     agent
       .post('/api/auth/signin')

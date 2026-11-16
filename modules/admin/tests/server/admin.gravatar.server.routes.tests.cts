@@ -163,6 +163,65 @@ describe('Admin Gravatar usage', () => {
       .toArray();
     assert.deepEqual(members, fixtures);
   });
+  it('clears only confirmed missing photos whose avatar settings still match', async () => {
+    const url = '/api/admin/gravatar/photo-check?cleanup=1';
+    await member.post(url).set('X-Trustroots-Request', '1').expect(403);
+    const fixtures = ['a', 'b', 'c', 'd'].map(letter => ({
+      username: `fictional-cleanup-${letter}`,
+      email: `fictional-cleanup-${letter}@example.test`,
+      avatarSource: 'gravatar',
+      emailHash: letter.repeat(32),
+    }));
+    await User.collection.insertMany(fixtures);
+    const upstream = sinon.stub(globalThis, 'fetch');
+    upstream
+      .withArgs(sinon.match(`/avatar/${'a'.repeat(32)}?`))
+      .resolves(new Response(null, { status: 404 }));
+    upstream
+      .withArgs(sinon.match(`/avatar/${'b'.repeat(32)}?`))
+      .resolves(
+        new Response(null, { headers: { 'content-type': 'image/png' } }),
+      );
+    upstream
+      .withArgs(sinon.match(`/avatar/${'c'.repeat(32)}?`))
+      .resolves(new Response(null, { status: 429 }));
+    upstream
+      .withArgs(sinon.match(`/avatar/${'d'.repeat(32)}?`))
+      .callsFake(async () => {
+        await User.updateOne(
+          { username: fixtures[3].username },
+          { $set: { avatarVersion: '1'.repeat(32) } },
+        );
+        return new Response(null, { status: 404 });
+      });
+
+    await admin.post(url).set('X-Trustroots-Request', '1').expect(202);
+    let result = await admin.get(url).expect(200);
+    for (
+      let attempt = 0;
+      attempt < 60 && result.body.state === 'running';
+      attempt++
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      result = await admin.get(url).expect(200);
+    }
+    assert.equal(result.body.state, 'complete');
+    assert.equal(result.body.retired, 1);
+    assert.deepEqual(result.body.counts, {
+      available: 1,
+      unavailable: 2,
+      inconclusive: 1,
+    });
+
+    const members = await User.collection
+      .find({ username: /^fictional-cleanup-/ })
+      .sort({ username: 1 })
+      .toArray();
+    assert.deepEqual(
+      members.map(member => member.avatarSource),
+      ['none', 'gravatar', 'gravatar', 'gravatar'],
+    );
+  });
   it('reports an incomplete check when the account query fails', async () => {
     sinon.stub(User, 'find').throws(new Error('Query failed'));
     const url = '/api/admin/gravatar/photo-check';

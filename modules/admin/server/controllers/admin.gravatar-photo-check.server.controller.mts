@@ -1,50 +1,39 @@
-import { setTimeout as delay } from 'node:timers/promises';
 import type { Request, Response } from 'express';
-import mongoose from 'mongoose';
+import mongoose, { type Types } from 'mongoose';
+import {
+  checkGravatarPhoto,
+  clearMissingGravatar,
+} from '../../../users/server/services/gravatar-cleanup.server.service.mts';
 import type { GravatarPhotoCheck } from '../../shared/gravatar-photo-check.mts';
 
 const User = mongoose.model('User');
-const REQUEST_INTERVAL_MS = 250;
-const REQUEST_TIMEOUT_MS = 5000;
 let currentCheck: GravatarPhotoCheck | null = null;
 
-async function checkPhoto(
-  hash: unknown,
-): Promise<keyof GravatarPhotoCheck['counts']> {
-  if (
-    typeof hash !== 'string' ||
-    !/^(?:[a-f0-9]{32}|[a-f0-9]{64})$/i.test(hash)
-  ) {
-    return 'inconclusive';
-  }
-
-  const [response] = await Promise.all([
-    fetch(`https://gravatar.com/avatar/${hash}?s=32&d=404`, {
-      method: 'HEAD',
-      redirect: 'error',
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    }).catch(() => undefined),
-    delay(REQUEST_INTERVAL_MS),
-  ]);
-  if (response?.status === 404) return 'unavailable';
-  if (
-    response?.status === 200 &&
-    response.headers.get('content-type')?.startsWith('image/')
-  ) {
-    return 'available';
-  }
-  return 'inconclusive';
+interface CheckMember {
+  _id: Types.ObjectId;
+  emailHash?: string;
+  avatarVersion?: string;
 }
 
 async function run(check: GravatarPhotoCheck): Promise<void> {
   try {
+    const cleanup = check.retired !== undefined;
     const members = User.find({ avatarSource: 'gravatar' })
-      .select({ emailHash: 1, _id: 0 })
-      .lean<{ emailHash?: unknown }[]>()
+      .select(
+        cleanup ? { emailHash: 1, avatarVersion: 1 } : { emailHash: 1, _id: 0 },
+      )
+      .lean<CheckMember[]>()
       .cursor({ batchSize: 50 });
     for await (const member of members) {
-      const outcome = await checkPhoto(member.emailHash);
+      const outcome = await checkGravatarPhoto(member.emailHash);
       check.counts[outcome]++;
+      if (
+        check.retired !== undefined &&
+        outcome === 'unavailable' &&
+        (await clearMissingGravatar(member))
+      ) {
+        check.retired++;
+      }
     }
     check.state = 'complete';
   } catch {
@@ -57,12 +46,13 @@ export function getPhotoCheck(_req: Request, res: Response): void {
   res.set('Cache-Control', 'no-store').json(currentCheck);
 }
 
-export function startPhotoCheck(_req: Request, res: Response): void {
+export function startPhotoCheck(req: Request, res: Response): void {
   if (currentCheck?.state !== 'running') {
     currentCheck = {
       state: 'running',
       startedAt: new Date().toISOString(),
       counts: { available: 0, unavailable: 0, inconclusive: 0 },
+      ...(req.query.cleanup === '1' && { retired: 0 }),
     };
     void run(currentCheck);
   }
