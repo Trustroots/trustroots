@@ -230,12 +230,6 @@ declare module 'morgan' {
   export default morgan;
 }
 
-declare module 'serve-favicon' {
-  export default function favicon(
-    path: string,
-  ): import('express').RequestHandler;
-}
-
 declare module 'cookie-parser' {
   export default function cookieParser(): import('express').RequestHandler;
 }

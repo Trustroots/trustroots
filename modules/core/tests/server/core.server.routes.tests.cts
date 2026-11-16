@@ -51,6 +51,12 @@ describe('Core CRUD tests', function () {
     response.headers['cache-control'].should.equal('private, no-store');
   });
 
+  it('serves the favicon with a one-year cache', async function () {
+    const response = await request(app).get('/favicon.ico').expect(200);
+    response.headers['content-type'].should.match(/^image\//);
+    response.headers['cache-control'].should.equal('public, max-age=31536000');
+  });
+
   describe('Content Security Policy Tests:', function () {
     it('Responses should load Umami analytics', function (done) {
       agent

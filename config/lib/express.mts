@@ -17,7 +17,6 @@ import csrfProtection from './csrf-protection.mjs';
 import validateApiInput from '../../modules/core/server/middleware/api-input.server.middleware.mjs';
 import { getPublicCharts } from '../../modules/statistics/server/controllers/public-charts.server.controller.mts';
 import mongoStore from 'connect-mongo';
-import favicon from 'serve-favicon';
 import compress from 'compression';
 import helmet from 'helmet';
 import nunjucks from 'nunjucks';
@@ -170,8 +169,9 @@ function initMiddleware(app: Express) {
   // Set Pagination default values (limit, max limit)
   app.use(paginate.middleware(config.limits.paginationLimit, 50));
 
-  // Initialize favicon middleware
-  app.use(favicon('public/favicon.ico'));
+  app.get('/favicon.ico', (_req, res) =>
+    res.sendFile('favicon.ico', { root: path.resolve('public'), maxAge: '1y' }),
+  );
 
   // Environment dependent middleware
   if (process.env.NODE_ENV === 'development') {
