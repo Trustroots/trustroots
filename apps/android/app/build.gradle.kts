@@ -1,7 +1,6 @@
 import org.gradle.api.tasks.testing.Test
 import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 import org.gradle.testing.jacoco.tasks.JacocoReport
-import java.io.File
 
 plugins {
     id("com.android.application")
@@ -136,22 +135,33 @@ tasks.named("preBuild").configure {
     dependsOn(copyLanguageCatalogue)
 }
 
+// Both reports measure the same native classes. The debug-only Compose pilot
+// has its own device journey and ships no Android release classes.
+val nativeCoverageClasses = tasks.register<Sync>("nativeCoverageClasses") {
+    dependsOn("compileDebugKotlin", "compileDebugJavaWithJavac")
+    from(layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes"))
+    from(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes"))
+    include("**/*.class")
+    exclude("**/R.class", "**/R\$*.class", "**/BuildConfig.class")
+    exclude(
+        "org/trustroots/android/ui/SharedMemberPilotKt.class",
+        "org/trustroots/android/ui/SharedMemberPilotKt\$*.class",
+        "org/trustroots/android/ui/SharedMemberPilotGateway.class",
+        "org/trustroots/android/ui/SharedMemberPilotGateway\$*.class",
+        "org/trustroots/android/ui/ComposableSingletons\$SharedMemberPilotKt*.class",
+    )
+    into(layout.buildDirectory.dir("intermediates/nativeCoverageClasses"))
+}
+
 // Combine host-side unit tests and device journeys against the same debug classes.
 val debugCoverageReport = tasks.register<JacocoReport>("debugCoverageReport") {
     val collectCoverage = coverageEnabled
     group = "verification"
     description = "Combine Android unit and device test coverage (requires -PtrustrootsCoverage=true)."
     dependsOn("testDebugUnitTest", "connectedDebugAndroidTest")
-    dependsOn("compileDebugKotlin", "compileDebugJavaWithJavac")
+    dependsOn(nativeCoverageClasses)
     sourceDirectories.setFrom(files("src/main/java"))
-    classDirectories.setFrom(
-        fileTree(layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes")) {
-            exclude("**/R.class", "**/R\$*.class", "**/BuildConfig.class")
-        },
-        fileTree(layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes")) {
-            exclude("**/R.class", "**/R\$*.class", "**/BuildConfig.class")
-        },
-    )
+    classDirectories.setFrom(nativeCoverageClasses.map { it.destinationDir })
     executionData.setFrom(fileTree(layout.buildDirectory) {
         include("outputs/unit_test_code_coverage/debugUnitTest/*.exec")
         include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
@@ -180,10 +190,7 @@ val debugExecutableCoverageReport = tasks.register<JavaExec>("debugExecutableCov
     val reportDirectory = layout.buildDirectory.dir("reports/coverage/debug")
     args(
         layout.buildDirectory.dir("outputs").get().asFile.absolutePath,
-        listOf(
-            layout.buildDirectory.dir("intermediates/built_in_kotlinc/debug/compileDebugKotlin/classes").get().asFile,
-            layout.buildDirectory.dir("intermediates/javac/debug/compileDebugJavaWithJavac/classes").get().asFile,
-        ).joinToString(File.pathSeparator) { it.absolutePath },
+        nativeCoverageClasses.get().destinationDir.absolutePath,
         file("src/main/java").absolutePath,
         reportDirectory.get().file("coverage-raw.xml").asFile.absolutePath,
         reportDirectory.get().file("coverage.xml").asFile.absolutePath,

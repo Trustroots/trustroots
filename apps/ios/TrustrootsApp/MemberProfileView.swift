@@ -897,8 +897,12 @@ private struct ExperienceRow: View {
 }
 
 private extension String {
-    var plainText: String {
-        replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: [.regularExpression, .caseInsensitive])
+    var plainText: String { TrustrootsRichText.plainText(self) }
+}
+
+enum TrustrootsRichText {
+    static func plainText(_ value: String) -> String {
+        value.replacingOccurrences(of: "<br\\s*/?>", with: "\n", options: [.regularExpression, .caseInsensitive])
             .replacingOccurrences(of: "</p>", with: "\n", options: [.caseInsensitive])
             .replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
             .replacingOccurrences(of: "&amp;", with: "&")

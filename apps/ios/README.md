@@ -18,7 +18,7 @@ using a regenerated project for an App Store build.
 ```sh
 ruby scripts/generate_xcodeproj.rb
 xcodebuild -project Trustroots.xcodeproj -scheme Trustroots -sdk iphonesimulator build
-xcodebuild -project Trustroots.xcodeproj -scheme TrustrootsTests -sdk iphonesimulator test
+xcodebuild -project Trustroots.xcodeproj -scheme TrustrootsTests -sdk iphonesimulator -only-testing:TrustrootsTests test
 ```
 
 The generated Xcode project builds the shared Compose framework through the
@@ -28,6 +28,25 @@ toolchain documented in [the shared Kotlin and Compose UI assessment](../compose
 The app uses `/api/mobile/v0` with rotating bearer credentials stored in
 Keychain. The native URL session does not share that
 credential with the bounded browser used for confirmation and recovery flows.
+
+## Run the shared Compose pilot journey
+
+Run the fixture in one terminal from `apps/ios`. Use a disposable iOS simulator
+for this test, which signs in with a fictional account and checks Keychain
+restoration after relaunch.
+
+```sh
+python3 scripts/shared_member_pilot_server.py --port 18765
+```
+
+Run the UI test in another terminal with the UUID of that simulator. Ad-hoc
+signing gives the test app an identity for Keychain access.
+
+```sh
+xcodebuild -project Trustroots.xcodeproj -scheme TrustrootsTests \
+  -destination "id=$SIMULATOR_UDID" -only-testing:TrustrootsUITests \
+  CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test
+```
 
 ## App Store Connect delivery
 
@@ -44,8 +63,8 @@ is managed in App Store Connect, not in this repository:
 
 With these settings, every push to a branch whose name begins with `ios`
 starts an archive and upload, while a push to `main` does not start this Xcode
-Cloud workflow. The GitHub Actions iOS workflow only runs unsigned simulator
-tests and does not upload an app binary.
+Cloud workflow. The GitHub Actions iOS workflow uses ad-hoc signing for its
+simulator tests.
 
 Use a matching branch only when a new App Store Connect build is intended.
 After an `ITMS-90382` upload-limit failure, pause pushes to matching branches,

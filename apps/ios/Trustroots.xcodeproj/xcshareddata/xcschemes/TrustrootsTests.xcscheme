@@ -34,6 +34,20 @@
                ReferencedContainer = "container:Trustroots.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "92C84B4F7ED4E3E5614A9065"
+               BuildableName = "TrustrootsUITests.xctest"
+               BlueprintName = "TrustrootsUITests"
+               ReferencedContainer = "container:Trustroots.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -58,6 +72,16 @@
                BlueprintIdentifier = "CD10BD10FA189C5D20E6DD66"
                BuildableName = "TrustrootsTests.xctest"
                BlueprintName = "TrustrootsTests"
+               ReferencedContainer = "container:Trustroots.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "92C84B4F7ED4E3E5614A9065"
+               BuildableName = "TrustrootsUITests.xctest"
+               BlueprintName = "TrustrootsUITests"
                ReferencedContainer = "container:Trustroots.xcodeproj">
             </BuildableReference>
          </TestableReference>

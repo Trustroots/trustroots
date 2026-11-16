@@ -147,6 +147,9 @@ internal fun TrustrootsApp(
         StartupScreen(sessionState.startupFirstName)
         return
     }
+    if (showSharedMemberPilot(activity, apiBaseUrl, sessionStore, responseCache, sessionViewModel, sessionState)) {
+        return
+    }
     if (session == null) {
         key(signInGraphGeneration, apiBaseUrl.trim().trimEnd('/')) {
             SignInNavigation(

@@ -1,10 +1,205 @@
+import Foundation
 import SwiftUI
 import TrustrootsShared
 
 struct SharedComposeHost: UIViewControllerRepresentable {
+    let session: MemberSessionStore
+    let exit: () -> Void
+
     func makeUIViewController(context: Context) -> UIViewController {
-        MainViewControllerKt.MainViewController()
+        MainViewControllerKt.MainViewController(
+            gateway: SharedMemberPilotGateway(session: session, exit: exit),
+            username: session.member?.username,
+            initialError: session.errorMessage
+        )
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
+
+@MainActor
+private final class SharedMemberPilotGateway: NSObject, @preconcurrency PilotGateway {
+    private let session: MemberSessionStore
+    private let exitAction: () -> Void
+    private let api = TrustrootsAPI()
+    private var drafts: [String: String] = [:]
+    private var isActive = true
+
+    init(session: MemberSessionStore, exit: @escaping () -> Void) {
+        self.session = session
+        self.exitAction = exit
+    }
+
+    func signIn(
+        username: String,
+        password: String,
+        completion: @escaping (String?) -> Void
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self, isActive else { return }
+            await session.signIn(usernameOrEmail: username, password: password)
+            guard isActive else { return }
+            completion(session.member == nil ? session.errorMessage : nil)
+        }
+    }
+
+    func signOut(completion: @escaping (String?) -> Void) {
+        Task { @MainActor [weak self] in
+            guard let self, isActive else { return }
+            await session.signOut()
+            guard isActive else { return }
+            drafts.removeAll()
+            completion(nil)
+        }
+    }
+
+    func profile(
+        username: String,
+        completion: @escaping (PilotProfile?, String?) -> Void
+    ) {
+        let account = session.member?.username
+        let api = api
+        let serverURL = session.serverURLString
+        perform(account: account, completion: completion) {
+            try await api.profile(serverURLString: serverURL, username: username)
+        } map: { profile in
+            PilotProfile(
+                person: PilotPerson(
+                    id: profile.id,
+                    username: profile.username,
+                    name: Self.displayText(profile.displayName, fallback: profile.username)
+                ),
+                tagline: Self.optionalDisplayText(profile.tagline),
+                location: Self.optionalDisplayText(profile.locationLiving),
+                about: Self.optionalDisplayText(profile.description)
+            )
+        }
+    }
+
+    func inbox(
+        page: Int32,
+        completion: @escaping ([PilotThread]?, String?) -> Void
+    ) {
+        let account = session.member?.username
+        let api = api
+        let serverURL = session.serverURLString
+        perform(account: account, completion: completion) {
+            try await api.inbox(serverURLString: serverURL, page: Int(page))
+        } map: { threads in
+            threads.map { thread in
+                let member = thread.otherMember(excluding: account)
+                let username = Self.optionalDisplayText(member.username)
+                return PilotThread(
+                    id: thread.id,
+                    partner: PilotPerson(
+                        id: member.id,
+                        username: username,
+                        name: Self.displayText(member.displayName, fallback: username ?? "Member")
+                    ),
+                    excerpt: Self.displayText(thread.message.excerpt, fallback: "")
+                )
+            }
+        }
+    }
+
+    func conversation(
+        memberId: String,
+        completion: @escaping ([PilotMessage]?, String?) -> Void
+    ) {
+        let account = session.member?.username
+        let api = api
+        let serverURL = session.serverURLString
+        perform(account: account, completion: completion) {
+            try await api.conversation(serverURLString: serverURL, memberID: memberId)
+        } map: { messages in
+            messages.map { message in
+                PilotMessage(
+                    id: message.id,
+                    author: Self.displayText(message.userFrom.displayName, fallback: message.userFrom.username ?? "Member"),
+                    content: Self.displayText(message.content, fallback: ""),
+                    outgoing: message.isFrom(username: account)
+                )
+            }
+        }
+    }
+
+    func send(
+        memberId: String,
+        content: String,
+        completion: @escaping (PilotMessage?, String?) -> Void
+    ) {
+        let account = session.member?.username
+        let api = api
+        let serverURL = session.serverURLString
+        perform(account: account, completion: completion) {
+            try await api.sendMessage(
+                serverURLString: serverURL,
+                memberID: memberId,
+                content: content
+            )
+        } map: { message in
+            PilotMessage(
+                id: message.id,
+                author: Self.displayText(message.userFrom.displayName, fallback: message.userFrom.username ?? "Member"),
+                content: Self.displayText(message.content, fallback: ""),
+                outgoing: message.isFrom(username: account)
+            )
+        }
+    }
+
+    func loadDraft(partner: PilotPerson) -> String {
+        drafts[partnerKey(partner)] ?? ""
+    }
+
+    func saveDraft(partner: PilotPerson, value: String) {
+        let key = partnerKey(partner)
+        if value.isEmpty {
+            drafts.removeValue(forKey: key)
+        } else {
+            drafts[key] = value
+        }
+    }
+
+    func exit() {
+        isActive = false
+        drafts.removeAll()
+        exitAction()
+    }
+
+    private func perform<Value, Output>(
+        account: String?,
+        completion: @escaping (Output?, String?) -> Void,
+        operation: @escaping () async throws -> Value,
+        map: @escaping (Value) -> Output
+    ) {
+        Task { @MainActor [weak self] in
+            guard let self, isActive else { return }
+            do {
+                let value = try await operation()
+                guard isActive, session.member?.username == account else { return }
+                completion(map(value), nil)
+            } catch is CancellationError {
+                return
+            } catch let error as URLError where error.code == .cancelled {
+                return
+            } catch {
+                guard isActive, session.member?.username == account else { return }
+                completion(nil, error.localizedDescription)
+            }
+        }
+    }
+
+    private func partnerKey(_ partner: PilotPerson) -> String {
+        partner.id ?? partner.username ?? partner.name
+    }
+
+    private static func optionalDisplayText(_ value: String?) -> String? {
+        guard let value else { return nil }
+        let cleaned = TrustrootsRichText.plainText(value).trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    private static func displayText(_ value: String?, fallback: String) -> String {
+        optionalDisplayText(value) ?? fallback
+    }
 }

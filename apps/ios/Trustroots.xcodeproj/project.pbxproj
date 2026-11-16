@@ -7,9 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6D3A51B903D24E6FA875C102 /* SharedComposeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */; };
+		096987F1528B6A1267D53671 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3D103BD8F57CC26B8A23F9A9 /* Foundation.framework */; };
 		0E831D2402FCD69878BB4CEF /* NostrIdentity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96D160385B89B56C5385E8E9 /* NostrIdentity.swift */; };
 		0EE9C2C716DAC81E1D756A95 /* CircleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81AC8FF10AA3FC5D79B111BA /* CircleDetailView.swift */; };
+		11086D15C75E0EC78D94AF5E /* SharedMemberPilotJourneyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE49AB8DAB9E8298A4AEE62 /* SharedMemberPilotJourneyUITests.swift */; };
 		15790C63AF0422B5D50AB4EA /* LocationPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5627FC9D7597842E4C1125E1 /* LocationPreviewView.swift */; };
 		1F1A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */; };
 		29DF2AC39A79037D7C0457CA /* MapFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF9474F8363D8A2E281F012D /* MapFilterSheet.swift */; };
@@ -23,6 +24,7 @@
 		5075F95D7E7D5F5D9D022873 /* EditProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEC636B6F46452816543589A /* EditProfileView.swift */; };
 		5BF5363FD85409C9BDD0E7C3 /* MessageInboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFDE64017484020751FDBD35 /* MessageInboxView.swift */; };
 		5D53E983A973D00747EA523A /* CommunityNotesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */; };
+		6D3A51B903D24E6FA875C102 /* SharedComposeHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */; };
 		702E6098414F2BC4B224218A /* ContactsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE7AB2FCB36234867ED449D3 /* ContactsView.swift */; };
 		7125170B263060867C2D9674 /* ContactSupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */; };
 		77990193D2DCF1011199162F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */; };
@@ -45,6 +47,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		4BDAECF0027CA854F0586AF7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F0C2DE3599D7D097B448A1B2 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FA2DC08ABCA8570E20579B8E;
+			remoteInfo = Trustroots;
+		};
 		5A7D5D196AAE0608808031D9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F0C2DE3599D7D097B448A1B2 /* Project object */;
@@ -55,11 +64,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComposeHost.swift; sourceTree = "<group>"; };
 		16B6D2A9ABB3F6C095F1D7A4 /* TrustrootsBrowserView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsBrowserView.swift; sourceTree = "<group>"; };
 		1F2A4B84AF934DE09A9EB2D1 /* MemberSearchView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberSearchView.swift; sourceTree = "<group>"; };
 		2D39D0CB9F25268806927E57 /* CommunityNotesStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CommunityNotesStore.swift; sourceTree = "<group>"; };
 		3BEBBFF3D5A19B724A3AD0AA /* Trustroots.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Trustroots.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3D103BD8F57CC26B8A23F9A9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		4B3A8DF28B2E964E6E81F6FC /* ContactSupportView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ContactSupportView.swift; sourceTree = "<group>"; };
 		4C99E5EF486955BCD9BC9DC7 /* MemberProfileView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberProfileView.swift; sourceTree = "<group>"; };
 		4FD89512795B2D934CB3A788 /* ProfileCircleDetailView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ProfileCircleDetailView.swift; sourceTree = "<group>"; };
@@ -67,6 +76,7 @@
 		63684517FEA4D117EEDA1429 /* NIP07Bridge.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NIP07Bridge.swift; sourceTree = "<group>"; };
 		6874F19F24BF3E9D4D801051 /* CirclesView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CirclesView.swift; sourceTree = "<group>"; };
 		6A585B155D89FE06EFCB3140 /* TrustrootsTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsTests.swift; sourceTree = "<group>"; };
+		6D3A51B903D24E6FA875C101 /* SharedComposeHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComposeHost.swift; sourceTree = "<group>"; };
 		6EC27FA444EF5257316FDB35 /* SignInView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		7040954AE5BE42F61ACC6E79 /* MemberAvatarView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MemberAvatarView.swift; sourceTree = "<group>"; };
 		721EB49D8267392766F4B575 /* OfflineResponseCache.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OfflineResponseCache.swift; sourceTree = "<group>"; };
@@ -78,9 +88,11 @@
 		88F0F0A6BCACE2D83D36BE89 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		92AE73C6AB6DC2A54B383CFE /* TrustrootsTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrustrootsTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		96D160385B89B56C5385E8E9 /* NostrIdentity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NostrIdentity.swift; sourceTree = "<group>"; };
+		9BFC1FE789D2FB23B886508D /* TrustrootsUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TrustrootsUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		A72DC40FF60CB3CA2D4A4931 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		AFDE64017484020751FDBD35 /* MessageInboxView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = MessageInboxView.swift; sourceTree = "<group>"; };
 		C4451489F9D874431A361845 /* TrustrootsRootView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TrustrootsRootView.swift; sourceTree = "<group>"; };
+		CCE49AB8DAB9E8298A4AEE62 /* SharedMemberPilotJourneyUITests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedMemberPilotJourneyUITests.swift; sourceTree = "<group>"; };
 		D449CA143A8F71AB9A565F05 /* OfferMapView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OfferMapView.swift; sourceTree = "<group>"; };
 		DEC636B6F46452816543589A /* EditProfileView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = EditProfileView.swift; sourceTree = "<group>"; };
 		E5790E2D72B85D29F350AE24 /* FlowLayout.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
@@ -107,6 +119,14 @@
 			files = (
 				A5C31937E8B49D456879DAE3 /* Foundation.framework in Frameworks */,
 				8FE78AFBE55997278FA05FC6 /* NostrSDK in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AD17718D23E225E74AB499AB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				096987F1528B6A1267D53671 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -166,6 +186,7 @@
 				2CE3164561742DEA77BC7FB6 /* Frameworks */,
 				1C70D5DF006B62B67C7D0EF6 /* TrustrootsApp */,
 				6518714F4DE2BF250E7D82D7 /* TrustrootsTests */,
+				DB6069272DC7532F812C87AA /* TrustrootsUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -182,6 +203,7 @@
 			isa = PBXGroup;
 			children = (
 				A72DC40FF60CB3CA2D4A4931 /* Foundation.framework */,
+				3D103BD8F57CC26B8A23F9A9 /* Foundation.framework */,
 			);
 			name = iOS;
 			sourceTree = "<group>";
@@ -191,13 +213,41 @@
 			children = (
 				3BEBBFF3D5A19B724A3AD0AA /* Trustroots.app */,
 				92AE73C6AB6DC2A54B383CFE /* TrustrootsTests.xctest */,
+				9BFC1FE789D2FB23B886508D /* TrustrootsUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		DB6069272DC7532F812C87AA /* TrustrootsUITests */ = {
+			isa = PBXGroup;
+			children = (
+				CCE49AB8DAB9E8298A4AEE62 /* SharedMemberPilotJourneyUITests.swift */,
+			);
+			name = TrustrootsUITests;
+			path = TrustrootsUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		92C84B4F7ED4E3E5614A9065 /* TrustrootsUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0AFE8D39AE6831C5B30A94B2 /* Build configuration list for PBXNativeTarget "TrustrootsUITests" */;
+			buildPhases = (
+				2ECAB2AB5A0738CDF70973BA /* Sources */,
+				AD17718D23E225E74AB499AB /* Frameworks */,
+				92089BBEA561C5AC73D0E719 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				34D4162AD8FD7806F7283006 /* PBXTargetDependency */,
+			);
+			name = TrustrootsUITests;
+			productName = TrustrootsUITests;
+			productReference = 9BFC1FE789D2FB23B886508D /* TrustrootsUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		CD10BD10FA189C5D20E6DD66 /* TrustrootsTests */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 373DD8BD70E7F5CF54CBA5C6 /* Build configuration list for PBXNativeTarget "TrustrootsTests" */;
@@ -269,11 +319,19 @@
 			targets = (
 				FA2DC08ABCA8570E20579B8E /* Trustroots */,
 				CD10BD10FA189C5D20E6DD66 /* TrustrootsTests */,
+				92C84B4F7ED4E3E5614A9065 /* TrustrootsUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		92089BBEA561C5AC73D0E719 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CA9D2174839F1E6A50CF2DF8 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -310,6 +368,14 @@
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		2ECAB2AB5A0738CDF70973BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				11086D15C75E0EC78D94AF5E /* SharedMemberPilotJourneyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		697A263EDE362F28A6CDCC42 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -357,6 +423,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		34D4162AD8FD7806F7283006 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Trustroots;
+			target = FA2DC08ABCA8570E20579B8E /* Trustroots */;
+			targetProxy = 4BDAECF0027CA854F0586AF7 /* PBXContainerItemProxy */;
+		};
 		F90B87B1DC44300A450FB2AC /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = Trustroots;
@@ -387,6 +459,24 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		20A7B5015D2C5A685AD06B7F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.trustroots.trustrootsApp.UITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Trustroots;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -454,7 +544,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-			"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -488,6 +577,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -506,11 +596,27 @@
 			};
 			name = Release;
 		};
+		8D24DDC75768A91CE2EB4886 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = org.trustroots.trustrootsApp.UITests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_TARGET_NAME = Trustroots;
+			};
+			name = Debug;
+		};
 		99AF3734BED3E435B9D0E926 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
@@ -544,6 +650,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -572,6 +679,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0AFE8D39AE6831C5B30A94B2 /* Build configuration list for PBXNativeTarget "TrustrootsUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20A7B5015D2C5A685AD06B7F /* Release */,
+				8D24DDC75768A91CE2EB4886 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		373DD8BD70E7F5CF54CBA5C6 /* Build configuration list for PBXNativeTarget "TrustrootsTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

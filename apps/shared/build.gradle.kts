@@ -35,6 +35,7 @@ kotlin {
         commonMain.dependencies {
             implementation("org.jetbrains.compose.runtime:runtime:1.12.2")
             implementation("org.jetbrains.compose.foundation:foundation:1.12.2")
+            implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
         }
     }
 }

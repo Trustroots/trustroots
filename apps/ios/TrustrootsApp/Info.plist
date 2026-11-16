@@ -16,6 +16,8 @@
 	<string>2026.7.29</string>
 	<key>CFBundleVersion</key>
 	<string>3</string>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSAppTransportSecurity</key>

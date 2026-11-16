@@ -237,7 +237,8 @@ The generated table is `app/build/reports/coverage/debug/coverage.md`; the corre
 XML is `coverage.xml`, the original XML is `coverage-raw.xml`, and
 `generated-code-audit.txt` identifies each corrected bytecode sequence. The HTML
 report under `html/index.html` shows the raw JaCoCo measurement. CI uploads
-these reports with the test results. The global line and branch coverage ratios
+these reports with the test results. The debug-only shared Compose pilot runs
+its own device journey outside the native app coverage calculation. The global line and branch coverage ratios
 must not fall below `coverage-baseline.json`; comparisons use exact counters, not
 the table's rounded percentages. Per-file figures are informational. The baseline
 is measured with all unit and device tests, so do not use a filtered test run to
