@@ -130,6 +130,7 @@ class SharedMemberPilotJourneyTest {
         assertEquals("A saved fictional reply.", savedDrafts.getString(draftKey, null))
 
         compose.onNodeWithText("Send reply").performClick()
+        compose.waitUntil("the retry reaches the message endpoint", 10_000) { sends.get() >= 2 }
         compose.waitUntil(10_000) {
             runCatching { compose.onNodeWithTag("pilot-draft").assertTextEquals("") }.isSuccess &&
                 compose.onAllNodesWithText("A saved fictional reply.").fetchSemanticsNodes().size == 1
