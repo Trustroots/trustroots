@@ -1008,8 +1008,12 @@ export default function SearchMap({
   // Apply externally changed bounds object
   // Changed by the search sidebar
   useEffect(() => {
-    if (useWebGL && bounds?.northEast && bounds?.southWest) {
-      zoomToBounds(bounds as MapBounds);
+    if (bounds?.northEast && bounds?.southWest) {
+      offerSelectionGeneration.current += 1;
+      clearPreviouslySelectedState();
+      if (useWebGL) {
+        zoomToBounds(bounds as MapBounds);
+      }
     }
   }, [bounds, useWebGL, map]);
 
