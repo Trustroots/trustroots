@@ -51,6 +51,7 @@ import ReportMember from '@/modules/support/client/components/ReportMember.compo
 import { Tooltip } from '@trustroots/ui/Tooltip';
 import type {
   ContactList as ContactListData,
+  ContactListEntry,
   ContactRecord,
 } from '@/modules/contacts/client/types';
 import type { UserProfile } from '../types';
@@ -62,13 +63,20 @@ interface ResolvedUserProfile extends UserProfile {
 type ContactState = ContactRecord & { $resolved: boolean };
 
 function resolvedContactList(
-  contacts: ContactListData | undefined,
+  contacts: ContactListEntry[] | undefined,
 ): ContactListData {
   const entries = contacts ?? [];
   return Object.assign([...entries], {
     $resolved: true,
     length: entries.length,
   });
+}
+
+async function loadContactList(profileId: string) {
+  return contactsApi.list(profileId).then(
+    contacts => ({ contacts: resolvedContactList(contacts), failed: false }),
+    () => ({ contacts: resolvedContactList([]), failed: true }),
+  );
 }
 
 const ReportMemberButton = ReportMember as unknown as React.ComponentType<{
@@ -329,21 +337,14 @@ export default function ProfilePage({
     });
   }, []);
 
-  async function retryContacts() {
-    if (!profile?._id) return;
+  async function retryContacts(profileId: string) {
     const requestVersion = ++contactsRequestVersion.current;
-    const profileID = profile._id;
     setContactsLoadFailed(false);
     setContacts(Object.assign([], { $resolved: false }));
-    try {
-      const loadedContacts = await contactsApi.list(profileID);
-      if (requestVersion !== contactsRequestVersion.current) return;
-      setContacts(resolvedContactList(loadedContacts));
-    } catch {
-      if (requestVersion !== contactsRequestVersion.current) return;
-      setContactsLoadFailed(true);
-      setContacts(resolvedContactList(undefined));
-    }
+    const result = await loadContactList(profileId);
+    if (requestVersion !== contactsRequestVersion.current) return;
+    setContacts(result.contacts);
+    setContactsLoadFailed(result.failed);
   }
 
   useEffect(() => {
@@ -413,10 +414,7 @@ export default function ProfilePage({
           viewingOwnProfile || !authUser?._id
             ? Promise.resolve(null)
             : contactsApi.getByUserId(loadedProfile._id).catch(() => null),
-          contactsApi.list(loadedProfile._id).then(
-            contacts => ({ contacts: contacts ?? [], failed: false }),
-            () => ({ contacts: [], failed: true }),
-          ),
+          loadContactList(loadedProfile._id),
         ]);
 
         if (!isMounted) {
@@ -425,7 +423,7 @@ export default function ProfilePage({
 
         setContact(normalizeContact(loadedContact));
         setContactsLoadFailed(loadedContactsResult.failed);
-        setContacts(resolvedContactList(loadedContactsResult.contacts));
+        setContacts(loadedContactsResult.contacts);
       } catch {
         if (isMounted) {
           setProfile({
@@ -489,7 +487,7 @@ export default function ProfilePage({
             contacts={contacts}
             onContactRemoved={removeContact}
             loadFailed={contactsLoadFailed}
-            onRetry={retryContacts}
+            onRetry={() => retryContacts(profile._id)}
           />
         );
       case 'tribes':

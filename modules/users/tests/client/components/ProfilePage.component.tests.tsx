@@ -881,6 +881,29 @@ describe('ProfilePage', () => {
     expect(screen.getByTestId('profile-tabs')).toBeInTheDocument();
   });
 
+  it('ignores a contact list retry that finishes after the profile unmounts', async () => {
+    let resolveContacts!: (
+      contacts: Awaited<ReturnType<typeof contactsApi.list>>,
+    ) => void;
+    const retry = new Promise<Awaited<ReturnType<typeof contactsApi.list>>>(
+      resolve => {
+        resolveContacts = resolve;
+      },
+    );
+    listContacts
+      .mockRejectedValueOnce(new Error('Contact list unavailable'))
+      .mockReturnValueOnce(retry);
+    const { unmount } = renderPage(authUser, '/profile/bob/contacts');
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Retry contact list' }),
+    );
+    expect(listContacts).toHaveBeenCalledTimes(2);
+    unmount();
+    resolveContacts([]);
+    await retry;
+  });
+
   it('ignores a profile response after unmounting', async () => {
     let resolveProfile!: (value: UserProfile) => void;
     fetchProfile.mockReturnValue(

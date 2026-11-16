@@ -90,12 +90,11 @@ describe('<Inbox>', () => {
 
   it('shows a nice message if there are no conversations', async () => {
     api.fetchThreads.mockResolvedValue({ threads: [] });
-    const { findByRole } = render(<Inbox user={me} />, {
+    const { findByRole, getByRole } = render(<Inbox user={me} />, {
       wrapper: analytics.wrapper,
     });
-    expect(await findByRole('status')).toHaveTextContent(
-      'No conversations yet.',
-    );
+    expect(getByRole('status')).toHaveTextContent('Loading conversations…');
+    await findByRole('heading', { name: 'No conversations yet.' });
     expect(api.fetchThreads).toHaveBeenCalled();
   });
 
@@ -107,9 +106,7 @@ describe('<Inbox>', () => {
       wrapper: analytics.wrapper,
     });
 
-    expect(await findByRole('status')).toHaveTextContent(
-      'No unread conversations.',
-    );
+    await findByRole('heading', { name: 'No unread conversations.' });
     expect(api.fetchThreads).toHaveBeenCalledWith({ filter: 'unread' });
     expect(getByRole('link', { name: 'Unread conversations' })).toHaveAttribute(
       'aria-current',
