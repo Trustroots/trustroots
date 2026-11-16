@@ -251,8 +251,6 @@ internal fun MessageConversationEntryScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     when {
-                        state.hostingContextLoading || !state.hostingContextLoaded && !state.hostingContextError ->
-                            Text("Loading hosting details…")
                         state.hostingContextError -> Column {
                             Text(
                                 "Could not load hosting details. Retry or turn off hosting mode.",
@@ -263,10 +261,12 @@ internal fun MessageConversationEntryScreen(
                                 modifier = Modifier.testTag("hostingContextRetry"),
                             ) { Text(stringResource(R.string.retry)) }
                         }
-                        state.hostingContextLoaded -> {
-                            if (state.hostingDescription.isNotBlank()) {
-                                Text(Html.fromHtml(state.hostingDescription, Html.FROM_HTML_MODE_COMPACT).toString().trim())
+                        !state.hostingContextLoaded -> Text("Loading hosting details…")
+                        else -> {
+                            val description = remember(state.hostingDescription) {
+                                Html.fromHtml(state.hostingDescription, Html.FROM_HTML_MODE_COMPACT).toString().trim()
                             }
+                            if (description.isNotEmpty()) Text(description)
                             Text("Please read the host’s description before sending your visit details.")
                             if (state.hostingAcknowledgementStale) {
                                 Text(

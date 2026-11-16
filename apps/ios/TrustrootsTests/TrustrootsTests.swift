@@ -134,7 +134,8 @@ final class TrustrootsTests: XCTestCase {
         )
 
         XCTAssertTrue(HostingReplyPolicy.shouldShow(messages: [hostingMessage, ordinaryMessage], username: "me"))
-        XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [hostingMessage, outgoingMessage], username: "me"))
+        XCTAssertTrue(HostingReplyPolicy.shouldShow(messages: [hostingMessage, outgoingMessage], username: "me"))
+        XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [outgoingMessage, hostingMessage], username: "me"))
         XCTAssertFalse(HostingReplyPolicy.shouldShow(messages: [ordinaryMessage], username: "me"))
     }
 

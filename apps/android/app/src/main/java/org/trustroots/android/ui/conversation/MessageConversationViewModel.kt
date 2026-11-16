@@ -364,6 +364,7 @@ internal class MessageConversationViewModel(
         invalidationEmitted = true
         mutableState.update {
             it.copy(isLoading = false, messagesLoaded = true, loadFailed = false, isSending = false,
+                hostingContextLoading = false,
                 pendingSessionInvalidation = ConversationSessionInvalidation(++invalidationID))
         }
     }
