@@ -2,6 +2,9 @@ import type { PageTranslator } from '../types';
 import React, { useEffect, useRef, useState } from 'react';
 import Board from './PageBoard';
 import { Trans, useTranslation } from 'react-i18next';
+import GetStartedQuestions, {
+  getStartedQuestions,
+} from './FaqGetStartedQuestions';
 import GeneralQuestions from './FaqGeneralQuestions';
 import CircleQuestions from './FaqTribesQuestions';
 import FoundationQuestions from './FaqFoundationQuestions';
@@ -9,6 +12,7 @@ import TechnologyQuestions from './FaqTechnologyQuestions';
 import BugsQuestions from './FaqBugsAndFeaturesQuestions';
 
 const FAQ_CATEGORIES = [
+  { key: 'get-started', Questions: GetStartedQuestions },
   { key: 'general', Questions: GeneralQuestions },
   { key: 'circles', Questions: CircleQuestions },
   { key: 'foundation', Questions: FoundationQuestions },
@@ -25,6 +29,7 @@ interface FaqProps {
     | 'circles'
     | 'foundation'
     | 'general'
+    | 'get-started'
     | 'technology'
     | 'tribes';
   children?: React.ReactNode;
@@ -39,6 +44,7 @@ export default function Faq({ category, children }: FaqProps) {
   const selectedCategory =
     category === 'tribes' ? 'circles' : category || 'general';
   const categoryLabels: Record<string, string> = {
+    'get-started': rawT('Get Started'),
     general: t('Site & community'),
     circles: t('Circles'),
     foundation: t('Foundation'),
@@ -78,6 +84,7 @@ export default function Faq({ category, children }: FaqProps) {
             <div className="col-xs-12 text-center">
               <h2 className="visible-xs-block">{t('FAQ')}</h2>
               <h2 className="hidden-xs">{t('Frequently Asked Questions')}</h2>
+              {category === 'get-started' && <h3>{rawT('Get Started')}</h3>}
               {category === 'general' && (
                 <h3>{t('about the site & community')}</h3>
               )}
@@ -100,7 +107,35 @@ export default function Faq({ category, children }: FaqProps) {
         <div className="row">
           <div className="col-xs-12 col-sm-4 col-md-4">
             <div id="faq-sidebar" className="sidebar">
-              {/* <Site & Community */}
+              <div className="panel panel-default">
+                <div className="panel-heading">
+                  <h3 className="panel-title">
+                    <a
+                      href="/faq/get-started"
+                      className="undecorated-link text-color"
+                    >
+                      {rawT('Get Started')}
+                    </a>
+                  </h3>
+                </div>
+                {category === 'get-started' && (
+                  <div className="panel-body">
+                    <div className="list-group">
+                      {getStartedQuestions(t).map(({ id, title }) => (
+                        <a
+                          key={id}
+                          href={`/faq/get-started#${id}`}
+                          className="list-group-item"
+                        >
+                          {title}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Site & Community */}
               <div className="panel panel-default">
                 <div className="panel-heading">
                   <h3 className="panel-title">

@@ -11,6 +11,7 @@ import { Route as FaqIndexRoute } from './routes/faq.index';
 import { Route as FaqBugsAndFeaturesRoute } from './routes/faq.bugs-and-features';
 import { Route as FaqCirclesRoute } from './routes/faq.circles';
 import { Route as FaqFoundationRoute } from './routes/faq.foundation';
+import { Route as FaqGetStartedRoute } from './routes/faq.get-started';
 import { Route as FaqTechnologyRoute } from './routes/faq.technology';
 import { Route as FoundationRoute } from './routes/foundation';
 import { Route as GuideRoute } from './routes/guide';
@@ -100,6 +101,7 @@ const rootChildren = [
   FaqBugsAndFeaturesRoute,
   FaqCirclesRoute,
   FaqFoundationRoute,
+  FaqGetStartedRoute,
   FaqTechnologyRoute,
   FoundationRoute,
   GuideRoute,

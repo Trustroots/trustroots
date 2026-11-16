@@ -76,6 +76,10 @@ export const REACT_ROUTE_POLICIES: ReactRoutePolicy[] = [
     title: 'FAQ - Foundation',
   },
   {
+    path: '/faq/get-started',
+    title: 'FAQ - Get Started',
+  },
+  {
     path: '/faq/technology',
     title: 'FAQ - Technology',
   },
